@@ -1,27 +1,24 @@
-// import path from 'path';
-// import fs from 'fs/promises';
-// import { spawn } from 'child_process';
-// import cryptUtility from '../../Utilities/CryptUtility'
+import path from 'path';
+import fs from 'fs';
+import cryptUtility from '../../Utilities/CryptUtility'
 import { stores } from '../Stores';
-// import { remote } from "electron";
 
 export default class Files
 {
 	private path: string;
-	private encrypt: boolean;
 
-	constructor(fileName: string, encrypt: boolean)
+	constructor(fileName: string)
 	{
 		this.path = "";
-		// this.path = path.join(remote.app.getPath('appData'), fileName + '.json');
-		this.encrypt = encrypt;
+		this.path = path.join(window.userData + "/PasswordSafe", fileName + '.json');
 	}
 
 	private lock()
 	{
 		if (stores.appStore.isWindows)
 		{
-			// spawn("cacls", [this.path, "/P", "everyone:n"]);
+			//@ts-ignore
+			window.api.child_process.spawn("cacls", [this.path, "/P", "everyone:n"]);
 		}
 		else
 		{
@@ -33,7 +30,8 @@ export default class Files
 	{
 		if (stores.appStore.isWindows)
 		{
-			// spawn("cacls", [this.path, "/P", "everyone:f"]);
+			//@ts-ignore
+			window.api.child_process.spawn("cacls", [this.path, "/P", "everyone:f"]);
 		}
 		else
 		{
@@ -48,33 +46,32 @@ export default class Files
 		this.unlock();
 
 		const jsonData: string = JSON.stringify(data);
-		if (this.encrypt)
-		{
-			// await fs.writeFile(this.path, cryptUtility.encrypt(key, jsonData), 'utf-8');
-		}
-		else
-		{
-			// await fs.writeFile(this.path, jsonData, 'utf-8');
-		}
 
-		this.lock();
+		return new Promise((resolve, reject) =>
+		{
+			fs.writeFile(this.path, cryptUtility.encrypt(key, jsonData), { encoding: 'utf8' }, () =>
+			{
+				this.lock();
+				resolve()
+			});
+		});
+
 	}
 
 	public async read<T>(key: string): Promise<T>
 	{
 		this.unlock();
 
-		// let readData: string = "";
-		// const fileContents: string = await fs.readFile(this.path, 'utf-8');
-
-		if (this.encrypt)
+		return new Promise((resolve, reject) =>
 		{
-			// readData = cryptUtility.decrypt(key, fileContents);
-		}
+			fs.readFile(this.path, { encoding: 'utf8' }, (err, data) =>
+			{
+				const decryptedData: string = cryptUtility.decrypt(key, data);
+				this.lock();
 
-		this.lock();
-		// return JSON.parse(readData) as T;
-		return Promise.resolve({} as T);
+				resolve(JSON.parse(decryptedData) as T);
+			});
+		})
 	}
 }
 
