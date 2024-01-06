@@ -8,32 +8,33 @@
 		<RequestedAuthenticationPopup v-if="requestAuth" :authenticationSuccessful="onAuthSuccess"
 			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" />
 	</Transition>
-	<Transition name="appFade" mode="out-in">
-		<div v-show="!needsAuthentication">
-			<SideDrawer />
-			<div id="mainUI">
-				<ColorPaletteContainer />
-				<TableSelector :singleSelectorItems="[filtersTableControl, groupsTableControl]"
-					:style="{ 'left': '5%', 'top': '30%', 'width': '10%' }" />
-				<TableSelector :singleSelectorItems="[passwordTableControl, valuesTableControl]"
-					:style="{ 'left': '28%', 'top': '30%', 'width': '20%' }" />
-				<div id="tables">
-					<FilterGroupTable />
-					<LoginHistoryTable />
-					<PasswordValueTable />
-				</div>
-				<div class="footer" />
-			</div>
-			<MetricDrawer />
-		</div>
+	<Transition name="appFade">
+		<div v-if="coverMainUI" class="mainUICover"></div>
 	</Transition>
+	<div>
+		<SideDrawer />
+		<div id="mainUI">
+			<ColorPaletteContainer />
+			<TableSelector :singleSelectorItems="[filtersTableControl, groupsTableControl]"
+				:style="{ 'left': '5%', 'top': '30%', 'width': '10%' }" />
+			<TableSelector :singleSelectorItems="[passwordTableControl, valuesTableControl]"
+				:style="{ 'left': '28%', 'top': '30%', 'width': '20%' }" />
+			<div id="tables">
+				<FilterGroupTable />
+				<LoginHistoryTable />
+				<PasswordValueTable />
+			</div>
+			<div class="footer" />
+		</div>
+		<MetricDrawer />
+	</div>
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
 	</Transition>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide } from 'vue';
+import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide, watch } from 'vue';
 
 import SideDrawer from './components/SideDrawer.vue';
 import MetricDrawer from "./components/MetricDrawer.vue"
@@ -69,8 +70,8 @@ export default defineComponent({
 	},
 	setup()
 	{
-		const needsAuthentication: ComputedRef<boolean> = computed(() => stores.appStore.needsAuthentication);
-
+		const needsAuthentication: Ref<boolean> = ref(stores.appStore.needsAuthentication);
+		const coverMainUI: Ref<boolean> = ref(true);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
 		let backgroundClr: Ref<string> = ref('#0f111d');
@@ -192,6 +193,19 @@ export default defineComponent({
 			});
 		});
 
+		watch(() => stores.appStore.needsAuthentication, (newValue) =>
+		{
+			needsAuthentication.value = newValue;
+			if (newValue)
+			{
+				coverMainUI.value = true;
+			}
+			else
+			{
+				setTimeout(() => coverMainUI.value = false, 500);
+			}
+		});
+
 		let clr = "#0f111d";
 		return {
 			needsAuthentication,
@@ -209,7 +223,8 @@ export default defineComponent({
 			requestAuth,
 			onAuthSuccess,
 			onAuthCancel,
-			needsToSetupKey
+			needsToSetupKey,
+			coverMainUI
 		}
 	}
 });
@@ -232,18 +247,15 @@ export default defineComponent({
 
 .appFade-enter-active {
 	transition: opacity 1.5s ease-in;
-	z-index: 100;
 }
 
 .appFade-leave-active {
 	transition: opacity 0.5s ease-in;
-	z-index: 100;
 }
 
 .appFade-enter-from,
 .appFade-leave-to {
 	opacity: 0;
-	z-index: 100;
 }
 
 #app {
@@ -266,5 +278,13 @@ body {
 h2,
 div {
 	user-select: none;
+}
+
+.mainUICover {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background-color: black;
+	z-index: 90;
 }
 </style>
