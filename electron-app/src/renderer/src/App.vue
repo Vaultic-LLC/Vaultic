@@ -1,0 +1,270 @@
+<template>
+	<Teleport to="#body">
+		<Transition name="lockFade" mode="out-in">
+			<GlobalAuthenticationPopup v-if="needsAuthentication" />
+		</Transition>
+	</Teleport>
+	<Transition name="fade">
+		<RequestedAuthenticationPopup v-if="requestAuth" :authenticationSuccessful="onAuthSuccess"
+			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" />
+	</Transition>
+	<Transition name="appFade" mode="out-in">
+		<div v-show="!needsAuthentication">
+			<SideDrawer />
+			<div id="mainUI">
+				<ColorPaletteContainer />
+				<TableSelector :singleSelectorItems="[filtersTableControl, groupsTableControl]"
+					:style="{ 'left': '5%', 'top': '30%', 'width': '10%' }" />
+				<TableSelector :singleSelectorItems="[passwordTableControl, valuesTableControl]"
+					:style="{ 'left': '28%', 'top': '30%', 'width': '20%' }" />
+				<div id="tables">
+					<FilterGroupTable />
+					<LoginHistoryTable />
+					<PasswordValueTable />
+				</div>
+				<div class="footer" />
+			</div>
+			<MetricDrawer />
+		</div>
+	</Transition>
+	<Transition name="fade" mode="out-in">
+		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
+	</Transition>
+</template>
+
+<script lang="ts">
+import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide } from 'vue';
+
+import SideDrawer from './components/SideDrawer.vue';
+import MetricDrawer from "./components/MetricDrawer.vue"
+import TableSelector from "./components/TableSelector.vue"
+import FilterGroupTable from './components/Table/FilterGroupTable.vue';
+import GlobalAuthenticationPopup from './components/Authentication/GlobalAuthenticationPopup.vue';
+import PasswordValueTable from './components/Table/PasswordValueTable.vue';
+import ColorPaletteContainer from './components/ColorPalette/ColorPaletteContainer.vue';
+import LoginHistoryTable from './components/Table/LoginHistoryTable.vue';
+import ToastPopup from './components/ToastPopup.vue';
+import RequestedAuthenticationPopup from './components/Authentication/RequestedAuthenticationPopup.vue';
+
+import { SingleSelectorItemModel } from './Types/Models';
+import { stores } from './Objects/Stores';
+import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from './Types/Keys';
+import { ColorPalette } from './Types/Colors';
+import { DataType } from './Types/Table';
+
+export default defineComponent({
+	name: 'App',
+	components:
+	{
+		SideDrawer,
+		MetricDrawer,
+		TableSelector,
+		FilterGroupTable,
+		GlobalAuthenticationPopup,
+		PasswordValueTable,
+		ColorPaletteContainer,
+		LoginHistoryTable,
+		ToastPopup,
+		RequestedAuthenticationPopup
+	},
+	setup()
+	{
+		const needsAuthentication: ComputedRef<boolean> = computed(() => stores.appStore.needsAuthentication);
+
+		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
+		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
+		let backgroundClr: Ref<string> = ref('#0f111d');
+
+		const showToast: Ref<boolean> = ref(false);
+		const toastText: Ref<string> = ref('');
+		const toastSuccess: Ref<boolean> = ref(false);
+
+		const needsToSetupKey: Ref<boolean> = ref(false);
+		const requestAuth: Ref<boolean> = ref(false);
+		const onAuthSuccess: Ref<{ (key: string): void }> = ref((key: string) => { })
+		const onAuthCancel: Ref<{ (): void }> = ref(() => { })
+
+		provide(ShowToastFunctionKey, showToastFunc);
+		provide(RequestAuthenticationFunctionKey, requestAuthentication)
+
+		const passwordTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
+		{
+			return {
+				title: ref("Passwords"),
+				color: ref(currentColorPalette.value.passwordsColor.primaryColor),
+				isActive: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
+				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
+			}
+		});
+
+		const valuesTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
+		{
+			return {
+				title: ref("Values"),
+				color: ref(currentColorPalette.value.valuesColor.primaryColor),
+				isActive: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
+				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.NameValuePairs; }
+			}
+		});
+
+		const filtersTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
+		{
+			return {
+				title: ref("Filters"),
+				color: ref(currentColorPalette.value.filtersColor),
+				isActive: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters),
+				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Filters; }
+			}
+		});
+
+		const groupsTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
+		{
+			return {
+				title: ref("Groups"),
+				color: ref(currentColorPalette.value.groupsColor),
+				isActive: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Groups),
+				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Groups; }
+			}
+		});
+
+		const color: ComputedRef<string> = computed(() =>
+		{
+			switch (stores.appStore.activeFilterGroupsTable)
+			{
+				case DataType.Groups:
+					return stores.settingsStore.currentColorPalette.groupsColor;
+				case DataType.Filters:
+				default:
+					return stores.settingsStore.currentColorPalette.filtersColor
+			}
+		});
+
+		function showToastFunc(title: string, success: boolean)
+		{
+			toastText.value = title;
+			toastSuccess.value = success;
+			showToast.value = true;
+
+			setTimeout(() => showToast.value = false, 2000);
+		}
+
+		function requestAuthentication(onSuccess: (key: string) => void, onCancel: () => void)
+		{
+			// TODO: Check if we need to create a key and show a different popup / popup with differnt
+			// wording
+			if (!stores.encryptedDataStore.canAuthenticateKey)
+			{
+				needsToSetupKey.value = true;
+			}
+			else
+			{
+				needsToSetupKey.value = false;
+			}
+
+			onAuthSuccess.value = (key: string) =>
+			{
+				requestAuth.value = false;
+				onSuccess(key);
+			};
+
+			onAuthCancel.value = () =>
+			{
+				requestAuth.value = false;
+				onCancel();
+			}
+
+			requestAuth.value = true;
+		}
+
+		let lastMouseover: number = 0;
+		const threshold: number = 1000;
+		onMounted(() =>
+		{
+			document.getElementById('body')?.addEventListener('mouseover', () =>
+			{
+				if (Date.now() - lastMouseover < threshold)
+				{
+					return;
+				}
+
+				stores.appStore.resetSessionTime();
+				lastMouseover = Date.now();
+			});
+		});
+
+		let clr = "#0f111d";
+		return {
+			needsAuthentication,
+			backgroundColor,
+			currentColorPalette,
+			clr,
+			passwordTableControl,
+			valuesTableControl,
+			filtersTableControl,
+			groupsTableControl,
+			color,
+			showToast,
+			toastText,
+			toastSuccess,
+			requestAuth,
+			onAuthSuccess,
+			onAuthCancel,
+			needsToSetupKey
+		}
+	}
+});
+</script>
+
+<style>
+@import './variables.css';
+
+.lockFade-enter-active,
+.lockFade-leave-active {
+	transition: opacity 1.5s ease-in;
+	/* z-index: 100; */
+}
+
+.lockFade-enter-from,
+.lockFade-leave-to {
+	opacity: 0;
+	/* z-index: 100; */
+}
+
+.appFade-enter-active {
+	transition: opacity 1.5s ease-in;
+	z-index: 100;
+}
+
+.appFade-leave-active {
+	transition: opacity 0.5s ease-in;
+	z-index: 100;
+}
+
+.appFade-enter-from,
+.appFade-leave-to {
+	opacity: 0;
+	z-index: 100;
+}
+
+#app {
+	font-family: Avenir, Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-align: center;
+	color: var(--app-color);
+}
+
+body {
+	background-color: #0f111d;
+	overflow: hidden;
+}
+
+.footer {
+	height: 50px;
+}
+
+h2,
+div {
+	user-select: none;
+}
+</style>
