@@ -1,6 +1,6 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import child_process from 'child_process';
-import fs from "fs"
+import fs, { stat } from "fs"
 import os from "os"
 
 export interface API
@@ -9,9 +9,10 @@ export interface API
 	dataDirectory: string;
 	readFile: (file: string) => string;
 	writeFile: (data: string, file: string) => void;
+	fileExistsAndHasData: (file: string) => boolean;
 	checkMakeDataDirectory: () => void;
-	lockFile: (file: string) => Promise<void>;
-	unlockFile: (file: string) => Promise<void>;
+	lockFile: (file: string) => void;
+	unlockFile: (file: string) => void;
 }
 
 let dataDirectory: string = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
@@ -35,36 +36,43 @@ function checkMakeDataDirectory(): void
 	}
 }
 
-const unlockFile = async (file: string): Promise<void> =>
+function fileExistsAndHasData(file: string): boolean
 {
-	console.log('start unlock');
-	await new Promise<void>((resolve, reject) =>
-	{
-		const t = child_process.spawn("icacls", [file, "/remove:d", "everyone"], {
-			shell: true, stdio: [
-				'pipe', // stdin: changed from the default `pipe`
-				'inherit', // stdout
-				'inherit' // stderr: changed from the default `pipe`
-			],
-			cwd: dataDirectory
-		});
-	});
+	unlockFile(file);
 
-	console.log('finish unlock');
+	const filePath: string = dataDirectory + "\\" + file;
+	if (!fs.existsSync(filePath))
+	{
+		return false;
+	}
+
+	const size = fs.statSync(filePath).size;
+
+	lockFile(file);
+	return size > 0;
 }
 
-const lockFile = async (file: string): Promise<void> =>
+function unlockFile(file: string): void
 {
-	await new Promise<void>((resolve, reject) =>
-	{
-		const t = child_process.spawn("icacls", [file, "/deny", "everyone:f"], {
-			shell: true, stdio: [
-				'pipe', // stdin: changed from the default `pipe`
-				'inherit', // stdout
-				'inherit' // stderr: changed from the default `pipe`
-			],
-			cwd: dataDirectory
-		});
+	child_process.spawnSync("icacls", [file, "/remove:d", "everyone"], {
+		shell: true, stdio: [
+			'pipe', // stdin: changed from the default `pipe`
+			'inherit', // stdout
+			'inherit' // stderr: changed from the default `pipe`
+		],
+		cwd: dataDirectory
+	});
+}
+
+function lockFile(file: string): void
+{
+	child_process.spawnSync("icacls", [file, "/deny", "everyone:f"], {
+		shell: true, stdio: [
+			'pipe', // stdin: changed from the default `pipe`
+			'inherit', // stdout
+			'inherit' // stderr: changed from the default `pipe`
+		],
+		cwd: dataDirectory
 	});
 }
 
@@ -74,6 +82,7 @@ const api: API = {
 	unlockFile,
 	lockFile,
 	checkMakeDataDirectory,
+	fileExistsAndHasData,
 	readFile,
 	writeFile
 }

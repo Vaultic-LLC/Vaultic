@@ -1,5 +1,5 @@
 import { Password, NameValuePair, CurrentAndSafeStructure, IIdentifiable, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
-import { ComputedRef, computed, reactive } from "vue";
+import { ComputedRef, Ref, computed, reactive, ref } from "vue";
 import File from "../Files/File"
 import cryptUtility from "../../Utilities/CryptUtility";
 import hashUtility from "../../Utilities/HashUtility";
@@ -153,7 +153,16 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 	function writeState(key: string)
 	{
-		dataFile.write(key, encryptedDataState);
+		if (encryptedDataState.passwords.length == 0 && encryptedDataState.nameValuePairs.length == 0)
+		{
+			dataFile.write(key, "");
+		}
+		else
+		{
+			dataFile.write(key, encryptedDataState);
+		}
+
+		checkIfCanAuthenticate();
 	}
 
 	function updateDuplicatePasswordOrValueIndex<T extends IIdentifiable & (PasswordStore | NameValuePairStore)>
@@ -245,8 +254,13 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		delete duplicateValues[value.id];
 	}
 
+	function checkIfCanAuthenticate()
+	{
+		canAuthenticateKey.value = dataFile.exists();
+	}
+
 	// --- Public ---
-	const canAuthenticateKey: ComputedRef<boolean> = computed(() => !!encryptedDataState.passwordHash || !!encryptedDataState.valueHash);
+	const canAuthenticateKey: Ref<boolean> = ref(false);
 	const oldPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.isOld).map(p => p.id));
 	const weakPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.isWeak).map(p => p.id));
 	const containsLoginPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.containsLogin).map(p => p.id));
@@ -557,6 +571,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.activeAtRiskValueType = AtRiskType.None;
 		}
 	}
+
+	checkIfCanAuthenticate();
 
 	return {
 		get canAuthenticateKey() { return canAuthenticateKey.value; },
