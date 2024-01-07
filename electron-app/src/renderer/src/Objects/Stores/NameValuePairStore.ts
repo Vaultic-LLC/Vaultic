@@ -34,7 +34,7 @@ export interface NameValuePairStore
 	updateValue: (key: string, value: NameValuePair, valueWasUpdated: boolean) => void;
 }
 
-export default function useNameValuePair(key: string, nameValuePair: NameValuePair): NameValuePairStore
+export default function useNameValuePairStore(key: string, nameValuePair: NameValuePair): NameValuePairStore
 {
 	const nameValuePairState: NameValuePairState = reactive(
 		{

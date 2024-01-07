@@ -71,7 +71,7 @@ export default defineComponent({
 	setup()
 	{
 		const needsAuthentication: Ref<boolean> = ref(stores.appStore.needsAuthentication);
-		const coverMainUI: Ref<boolean> = ref(true);
+		const coverMainUI: Ref<boolean> = ref(stores.appStore.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
 		let backgroundClr: Ref<string> = ref('#0f111d');

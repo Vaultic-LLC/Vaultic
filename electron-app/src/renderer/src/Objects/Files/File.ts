@@ -1,7 +1,4 @@
-import path from 'path';
-import fs from 'fs';
 import cryptUtility from '../../Utilities/CryptUtility'
-import { stores } from '../Stores';
 
 export default class Files
 {
@@ -9,69 +6,63 @@ export default class Files
 
 	constructor(fileName: string)
 	{
-		this.path = "";
-		this.path = path.join(window.userData + "/PasswordSafe", fileName + '.json');
-	}
-
-	private lock()
-	{
-		if (stores.appStore.isWindows)
-		{
-			//@ts-ignore
-			window.api.child_process.spawn("cacls", [this.path, "/P", "everyone:n"]);
-		}
-		else
-		{
-			// linux command
-		}
-	}
-
-	private unlock(): boolean
-	{
-		if (stores.appStore.isWindows)
-		{
-			//@ts-ignore
-			window.api.child_process.spawn("cacls", [this.path, "/P", "everyone:f"]);
-		}
-		else
-		{
-			// linux command
-		}
-
-		return true;
+		window.api.checkMakeDataDirectory();
+		this.path = `${fileName}.json`
 	}
 
 	public async write<T>(key: string, data: T): Promise<void>
 	{
-		this.unlock();
-
-		const jsonData: string = JSON.stringify(data);
-
-		return new Promise((resolve, reject) =>
+		try
 		{
-			fs.writeFile(this.path, cryptUtility.encrypt(key, jsonData), { encoding: 'utf8' }, () =>
+			return new Promise((resolve, reject) =>
 			{
-				this.lock();
-				resolve()
-			});
-		});
+				window.api.unlockFile(this.path).then(() =>
+				{
+					const jsonData: string = JSON.stringify(data);
+					const encryptedData: string = cryptUtility.encrypt(key, jsonData);
+					window.api.writeFile(encryptedData, this.path);
 
+					window.api.lockFile(this.path).then(() =>
+					{
+						resolve();
+					});
+				});
+			})
+
+		}
+		catch (e)
+		{
+			console.log(e);
+		}
 	}
 
 	public async read<T>(key: string): Promise<T>
 	{
-		this.unlock();
-
-		return new Promise((resolve, reject) =>
+		try
 		{
-			fs.readFile(this.path, { encoding: 'utf8' }, (err, data) =>
+			return new Promise<T>((resolve, reject) =>
 			{
-				const decryptedData: string = cryptUtility.decrypt(key, data);
-				this.lock();
+				window.api.unlockFile(this.path).then(() =>
+				{
+					console.log('reading');
+					const data: string = window.api.readFile(this.path);
+					console.log('Data read in ' + data);
+					const decryptedData: string = cryptUtility.decrypt(key, data);
+					console.log('Decrypted Data ' + decryptedData);
+					window.api.lockFile(this.path).then(() =>
+					{
+						resolve(JSON.parse(decryptedData) as T);
+					});
+				});
+			})
 
-				resolve(JSON.parse(decryptedData) as T);
-			});
-		})
+		}
+		catch (e)
+		{
+			console.log(e);
+		}
+
+		return Promise.resolve({} as T);
 	}
 }
 

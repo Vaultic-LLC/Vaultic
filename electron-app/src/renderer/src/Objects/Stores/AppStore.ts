@@ -1,5 +1,4 @@
 import { ComputedRef, computed, reactive } from "vue";
-import os from "os";
 import { DataType } from "../../Types/Table";
 import { LoginRecord } from "../../Types/EncryptedData";
 import { Stores, stores } from ".";
@@ -27,7 +26,7 @@ export interface AppStore extends AppState
 
 const appState: AppState = reactive(
 	{
-		isWindows: os.platform() === "win32",
+		isWindows: window.api.platform === "win32",
 		lastUpdated: 0,
 		authenticated: false,
 		reloadMainUI: false,

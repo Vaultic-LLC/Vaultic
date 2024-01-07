@@ -26,5 +26,5 @@ Coloris({
 	]
 });
 
-await createTestData();
+//await createTestData();
 createApp(App).mount('#app')

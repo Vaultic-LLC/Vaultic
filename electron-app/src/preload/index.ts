@@ -1,11 +1,6 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import { spawn } from 'child_process';
-
-// Custom APIs for renderer
-const api = {
-	child_process: spawn
-}
+import api from "./api"
 
 const userData: string = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
 

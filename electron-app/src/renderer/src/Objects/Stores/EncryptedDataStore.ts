@@ -1,7 +1,6 @@
 import { Password, NameValuePair, CurrentAndSafeStructure, IIdentifiable, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
 import File from "../Files/File"
-import { DataFileState } from "../../Types/Files";
 import cryptUtility from "../../Utilities/CryptUtility";
 import hashUtility from "../../Utilities/HashUtility";
 import usePasswordStore, { PasswordStore } from "./PasswordStore";
@@ -57,7 +56,7 @@ export interface EncryptedDataStore
 	updatePassword: (password: Password, passwordWasUpdated: boolean,
 		updatedSecurityQuestionQuestions: string[],
 		updatedSecurityQuestionAnswers: string[], key: string) => void;
-	addNameValuePair: (key: string, nameValuePair: NameValuePair) => Promise<boolean>;
+	addNameValuePair: (key: string, nameValuePair: NameValuePair) => boolean;
 	updateNameValuePair: (nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string) => void;
 	addRemoveGroupsFromPasswordValue: (addedValues: string[], removedValues: string[], group: Group) => void;
 	deletePassword: (key: string, password: PasswordStore) => void;
@@ -67,7 +66,7 @@ export interface EncryptedDataStore
 	toggleAtRiskModels: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
-const passwordsFile: File = new File("Passwords", true);
+const dataFile: File = new File("data");
 
 const defaultState: EncryptedDataState = {
 	loadedFile: false,
@@ -103,17 +102,14 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
 		try
 		{
-			//const dataFileState: DataFileState = await passwordsFile.read<DataFileState>(key);
-			// if (getPasswordHash(key, dataFileState.passwords) == dataFileState.passwordHash)
-			// {
-			//     dataFileState.passwords.forEach(p => encryptedDataState.passwords.push(usePasswordStore(key, p)));
-			//     dataFileStore.encryptedValues.forEach(nvp => encryptedDataState.nameValuePairs.push(useNameValuePairStore(key, nvp)));
-			//     encryptedDataState.passwordHash = dataFileState.passwordHash;
+			const data: EncryptedDataState = await dataFile.read<EncryptedDataState>(key);
+			if (calculateHash(key, data.passwords, 'password') == data.passwordHash)
+			{
+				Object.assign(encryptedDataState, data);
+				encryptedDataState.loadedFile = true;
 
-			//     encryptedDataState.loadedFile = true;
-
-			//     return true;
-			// }
+				return true;
+			}
 		}
 		catch (e: any)
 		{
@@ -155,17 +151,9 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		return false;
 	}
 
-	async function writeState(key: string)
+	function writeState(key: string)
 	{
-		// TODO: Change this to just use the state
-		const fileState: DataFileState =
-		{
-			passwordHash: encryptedDataState.passwordHash,
-			passwords: encryptedDataState.passwords.map(p => p as Password),
-			nameValuePairs: encryptedDataState.nameValuePairs.map(nvp => nvp as NameValuePair)
-		}
-
-		// await passwordsFile.write(key, fileState);
+		dataFile.write(key, encryptedDataState);
 	}
 
 	function updateDuplicatePasswordOrValueIndex<T extends IIdentifiable & (PasswordStore | NameValuePairStore)>
@@ -287,9 +275,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			return true;
 		}
 
-		// TODO: put back once file is working
-		const value: boolean = true;
-		if (/*encryptedDataState.loadedFile*/ value)
+		if (encryptedDataState.loadedFile)
 		{
 			if (encryptedDataState.passwordHash)
 			{
@@ -384,7 +370,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		stores.filterStore.removeValueFromFilers(DataType.Passwords, password);
 	}
 
-	async function addNameValuePair(key: string, nameValuePair: NameValuePair): Promise<boolean>
+	function addNameValuePair(key: string, nameValuePair: NameValuePair): boolean
 	{
 		if (!checkKeyUpdateValueHash(key, nameValuePair.value))
 		{
