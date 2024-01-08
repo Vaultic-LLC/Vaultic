@@ -1,11 +1,11 @@
 <template>
 	<div id="filterGroupTableContainer">
 		<AddTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd"
-			:style="{ position: 'absolute', top: '35%', left: '23%' }" />
-		<SearchBar v-model="currentSearchText" :color="color" :width="'100px'"
+			:style="{ position: 'absolute', top: '35%', left: '28%' }" />
+		<SearchBar v-model="currentSearchText" :color="color" :width="'200px'"
 			:style="{ position: 'absolute', top: '35%', left: '17%' }" />
 		<TableTemplate ref="tableRef" :rowGap="10" class="shadow scrollbar" id="filterTable" :color="color"
-			:scrollbar-size="1" :style="{ height: '25%', width: '20%', left: '5%', top: '42%' }"
+			:scrollbar-size="1" :style="{ height: '25%', width: '25%', left: '5%', top: '42%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :model="headerModels" :backgroundColor="'#121a20'" />

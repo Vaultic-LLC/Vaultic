@@ -29,6 +29,7 @@
 		"chart.js": "^4.4.0",
 		"clipboardy": "^4.0.0",
 		"electron-updater": "^6.1.1",
+		"three-globe": "^2.30.0",
 		"tippy.js": "^6.3.7",
 		"uuid": "^9.0.1",
 		"vite-plugin-commonjs-externals": "^0.1.4",

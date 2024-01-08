@@ -56,9 +56,9 @@ export default function useAppStore(): AppStore
 
 	function resetSessionTime()
 	{
-		clearTimeout(autoLockTimeoutID);
-		autoLockTimeoutID = setTimeout(() => appState.authenticated = false,
-			stores.settingsStore.autoLockNumberTime);
+		// clearTimeout(autoLockTimeoutID);
+		// autoLockTimeoutID = setTimeout(() => appState.authenticated = false,
+		// 	stores.settingsStore.autoLockNumberTime);
 	}
 
 	function recordLogin(dateTime: number)

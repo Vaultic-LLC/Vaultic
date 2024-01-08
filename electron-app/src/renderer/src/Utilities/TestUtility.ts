@@ -199,7 +199,7 @@ export default async function createTestData()
 {
 	createGroups();
 	createFilters();
-	createPasswords();
-	await createNameValuePairs();
+	// createPasswords();
+	// await createNameValuePairs();
 	createLoginRecords();
 }

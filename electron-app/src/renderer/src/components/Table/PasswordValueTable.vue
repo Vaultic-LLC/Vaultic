@@ -1,10 +1,10 @@
 <template>
 	<div id="passwordValueTable">
 		<AddTableItemButton :color="color" :initalActiveContentOnClick="activeTable"
-			:style="{ position: 'absolute', top: '35%', left: '71%' }" />
-		<SearchBar v-model="currentSearchText" :color="color" :style="{ position: 'absolute', top: '35%', left: '50%' }" />
+			:style="{ position: 'absolute', top: '35%', left: '76%' }" />
+		<SearchBar v-model="currentSearchText" :color="color" :style="{ position: 'absolute', top: '35%', left: '55%' }" />
 		<TableTemplate ref="tableRef" :rowGap="0" id="passwordTable" class="shadow scrollbar" :color="color"
-			:scrollbar-size="1" :style="{ height: '55%', width: '45%', left: '28%', top: '42%' }"
+			:scrollbar-size="1" :style="{ height: '55%', width: '45%', left: '33%', top: '42%' }"
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :model="headerModels" :defaultActiveHeader="1" :backgroundColor="'#121a20'" />

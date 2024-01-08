@@ -11,14 +11,15 @@
 	<Transition name="appFade">
 		<div v-if="coverMainUI" class="mainUICover"></div>
 	</Transition>
-	<div>
+	<div id="mainUI" class="mainUI">
 		<SideDrawer />
-		<div id="mainUI">
+		<div class="center">
 			<ColorPaletteContainer />
+			<BreachedPasswords />
 			<TableSelector :singleSelectorItems="[filtersTableControl, groupsTableControl]"
 				:style="{ 'left': '5%', 'top': '30%', 'width': '10%' }" />
 			<TableSelector :singleSelectorItems="[passwordTableControl, valuesTableControl]"
-				:style="{ 'left': '28%', 'top': '30%', 'width': '20%' }" />
+				:style="{ 'left': '33%', 'top': '30%', 'width': '20%' }" />
 			<div id="tables">
 				<FilterGroupTable />
 				<LoginHistoryTable />
@@ -31,6 +32,10 @@
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
 	</Transition>
+	<!-- <div id="glassBackground" class="glassBackground">
+	</div> -->
+	<!-- <div ref="cursor" class="cursor">
+	</div> -->
 </template>
 
 <script lang="ts">
@@ -46,6 +51,7 @@ import ColorPaletteContainer from './components/ColorPalette/ColorPaletteContain
 import LoginHistoryTable from './components/Table/LoginHistoryTable.vue';
 import ToastPopup from './components/ToastPopup.vue';
 import RequestedAuthenticationPopup from './components/Authentication/RequestedAuthenticationPopup.vue';
+import BreachedPasswords from "./components/BreachedPasswords/BreachedPasswords.vue"
 
 import { SingleSelectorItemModel } from './Types/Models';
 import { stores } from './Objects/Stores';
@@ -66,10 +72,12 @@ export default defineComponent({
 		ColorPaletteContainer,
 		LoginHistoryTable,
 		ToastPopup,
-		RequestedAuthenticationPopup
+		RequestedAuthenticationPopup,
+		BreachedPasswords
 	},
 	setup()
 	{
+		// const cursor: Ref<HTMLElement | null> = ref(null);
 		const needsAuthentication: Ref<boolean> = ref(stores.appStore.needsAuthentication);
 		const coverMainUI: Ref<boolean> = ref(stores.appStore.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
@@ -181,8 +189,14 @@ export default defineComponent({
 		const threshold: number = 1000;
 		onMounted(() =>
 		{
-			document.getElementById('body')?.addEventListener('mouseover', () =>
+			document.getElementById('body')?.addEventListener('mouseover', (e) =>
 			{
+				// if (cursor.value)
+				// {
+				// 	cursor.value.style.left = e.clientX + "px";
+				// 	cursor.value.style.top = e.clientY + "px";
+				// }
+
 				if (Date.now() - lastMouseover < threshold)
 				{
 					return;
@@ -224,7 +238,8 @@ export default defineComponent({
 			onAuthSuccess,
 			onAuthCancel,
 			needsToSetupKey,
-			coverMainUI
+			coverMainUI,
+			//cursor
 		}
 	}
 });
@@ -287,4 +302,36 @@ div {
 	background-color: black;
 	z-index: 90;
 }
+
+/* .glassBackground {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 2;
+	background: #1a191d3b;
+	border-radius: 16px;
+	box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+	backdrop-filter: blur(4.6px);
+	-webkit-backdrop-filter: blur(4.6px);
+} */
+
+/* .mainUI {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	z-index: 3;
+}
+
+.cursor {
+	position: absolute;
+	z-index: 1;
+	width: 200px;
+	height: 200px;
+	background-color: blue;
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	filter: blur(50px);
+} */
 </style>
