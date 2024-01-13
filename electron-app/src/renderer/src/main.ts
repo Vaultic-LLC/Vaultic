@@ -3,6 +3,7 @@ import App from './App.vue'
 import createTestData from './Utilities/TestUtility';
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
+import { setupCalendar } from 'v-calendar';
 
 Coloris.init();
 Coloris({
@@ -27,4 +28,7 @@ Coloris({
 });
 
 await createTestData();
-createApp(App).mount('#app')
+
+const app = createApp(App)
+app.use(setupCalendar, {});
+app.mount('#app');

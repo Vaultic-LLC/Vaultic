@@ -17,6 +17,7 @@
 	--password-pair-2: #a712ec;
 	--values-pair-2: #03C4A1;
 
-	/* --app-color: #1f2234; */
+	--widget-background-color: rgb(44 44 51 / 16%);
 
+	--test: #867E7E;
 }

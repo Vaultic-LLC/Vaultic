@@ -3,6 +3,7 @@ import { ComputedRef, Ref, computed, reactive, ref, watch } from "vue";
 import { Stores, stores } from ".";
 import { DataType, FilterStatus } from "../../Types/Table";
 import { AutoLockTime } from "../../Types/Settings";
+import File from "../Files/File"
 
 export interface SettingsState
 {
@@ -14,7 +15,6 @@ export interface SettingsState
 	randomValueLength: number;
 	requireMasterKeyOnFilterGrouopSave: boolean;
 	requireMasterKeyOnFilterGroupDelete: boolean;
-	animationSpeed: number;
 	takePictureOnLogin: boolean;
 	multipleFilterBehavior: FilterStatus;
 }
@@ -34,9 +34,12 @@ export interface SettingsStore
 	requireMasterKeyOnFilterGroupDelete: boolean;
 	multipleFilterBehavior: FilterStatus;
 	init: (stores: Stores) => void;
+	loadData: (key: string) => void;
 	updateColorPalette: (colorPalette: ColorPalette) => void;
-	updateSettings: (newState: SettingsState) => void;
+	updateSettings: (key: string, newState: SettingsState) => void;
 }
+
+const settingsFile: File = new File("settings");
 
 const settingsState: SettingsState = reactive(
 	{
@@ -48,7 +51,6 @@ const settingsState: SettingsState = reactive(
 		randomValueLength: 20,
 		requireMasterKeyOnFilterGrouopSave: true,
 		requireMasterKeyOnFilterGroupDelete: true,
-		animationSpeed: 0,
 		takePictureOnLogin: true,
 		multipleFilterBehavior: FilterStatus.Or
 	});
@@ -71,6 +73,11 @@ export default function useSettingsStore(): SettingsStore
 				return 1000 * 60;
 		}
 	});
+
+	function writeState(key: string)
+	{
+		settingsFile.write(key, settingsState);
+	}
 
 	function updateColorPalette(colorPalette: ColorPalette)
 	{
@@ -105,6 +112,15 @@ export default function useSettingsStore(): SettingsStore
 		setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 	}
 
+	function loadData(key: string)
+	{
+		const [succeeded, state] = settingsFile.read<SettingsState>(key);
+		if (succeeded)
+		{
+			Object.assign(settingsState, state);
+		}
+	}
+
 	function setCurrentPrimaryColor(dataType: DataType)
 	{
 		switch (dataType)
@@ -118,9 +134,10 @@ export default function useSettingsStore(): SettingsStore
 		}
 	}
 
-	function updateSettings(newState: SettingsState)
+	function updateSettings(key: string, newState: SettingsState)
 	{
 		Object.assign(settingsState, newState);
+		writeState(key);
 	}
 
 	return {
@@ -139,6 +156,7 @@ export default function useSettingsStore(): SettingsStore
 		get multipleFilterBehavior() { return settingsState.multipleFilterBehavior; },
 		currentPrimaryColor,
 		init,
+		loadData,
 		updateColorPalette,
 		updateSettings
 	};

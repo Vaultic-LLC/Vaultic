@@ -1,11 +1,13 @@
 <template>
-	<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="model.onClick"
-		:class="{ active: active }">
-		<div class="title">
-			<h2>{{ amountOutOfTotal }}</h2>
-			<p>{{ model.title }}</p>
+	<div>
+		<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="model.onClick"
+			:class="{ active: active }">
+			<div class="title">
+				<h2>{{ amountOutOfTotal }}</h2>
+				<p>{{ model.title }}</p>
+			</div>
+			<Doughnut :data="data" :options="options" />
 		</div>
-		<Doughnut :data="data" :options="options" />
 	</div>
 </template>
 
@@ -66,7 +68,38 @@ export default defineComponent({
 				datasets: [
 					{
 						data: [props.model.filledAmount, props.model.totalAmount - props.model.filledAmount],
-						backgroundColor: [primaryColor.value, '#191919'],
+						//backgroundColor: [primaryColor.value, '#191919'],
+						backgroundColor: function (context)
+						{
+							const chart = context.chart;
+							const { ctx, chartArea } = chart;
+
+							if (!chartArea)
+							{
+								// This case happens on initial chart load
+								return;
+							}
+
+							let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
+							//gradient.addColorStop(0, mixHexes(primaryColor.value, '#363131'));
+							// gradient.addColorStop(0.35, primaryColor.value);
+							gradient.addColorStop(1, primaryColor.value);
+							// hex value already has opacity
+							// if (primaryColor.value.length > 7)
+							// {
+							// 	gradient.addColorStop(0, primaryColor.value);
+							// 	gradient.addColorStop(0.35, primaryColor.value);
+							// 	gradient.addColorStop(1, primaryColor.value);
+							// }
+							// else
+							// {
+							// 	gradient.addColorStop(0, primaryColor.value + "88");
+							// 	gradient.addColorStop(0.35, primaryColor.value + "44");
+							// 	gradient.addColorStop(1, primaryColor.value + "00");
+							// }
+
+							return [gradient, '#191919'];
+						},
 						borderColor: 'transparent',
 					}
 				]

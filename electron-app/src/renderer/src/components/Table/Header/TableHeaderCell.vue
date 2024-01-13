@@ -1,5 +1,5 @@
 <template>
-	<th class="tableHeader" @click="onClick()" :class="{ clickable: headerModel.clickable }">
+	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }">
 		<div class="tableHeaderContent">
 			<span class="iconContainer"
 				:class="{ descending: descending, active: isActive, hover: hoveringIcon || hoveringText }"
@@ -10,7 +10,7 @@
 				@mouseleave="hoveringText = false">{{
 					headerModel.name }}</span>
 		</div>
-	</th>
+	</div>
 </template>
 
 <script lang="ts">
@@ -73,7 +73,7 @@ export default defineComponent({
 </script>
 
 <style>
-.tableHeader {
+.tableHeaderCell {
 	top: 0;
 	position: sticky;
 	color: white;
@@ -84,7 +84,7 @@ export default defineComponent({
 	transition: 0.6s;
 	animation: fadeIn 1s linear forwards;
 	z-index: 1;
-	background-color: v-bind(background);
+	/* background-color: v-bind(background); */
 	opacity: 1;
 	width: v-bind('headerModel.width');
 }
@@ -109,7 +109,7 @@ export default defineComponent({
 	transform: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 
-.tableHeader.clickable .tableHeaderContent .tableHeaderText {
+.tableHeaderCell.clickable .tableHeaderContent .tableHeaderText {
 	cursor: pointer;
 }
 
@@ -133,8 +133,8 @@ export default defineComponent({
 }
 
 .tableHeaderText.hover,
-.tableHeader.clickable .tableHeaderContent .iconContainer.hover,
-.tableHeader.clickable .tableHeaderContent .iconContainer.active.hover {
+.tableHeaderCell.clickable .tableHeaderContent .iconContainer.hover,
+.tableHeaderCell.clickable .tableHeaderContent .iconContainer.active.hover {
 	opacity: 0.7;
 
 }

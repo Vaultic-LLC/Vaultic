@@ -1,19 +1,23 @@
 <template>
 	<div id="passwordValueTable">
-		<AddTableItemButton :color="color" :initalActiveContentOnClick="activeTable"
-			:style="{ position: 'absolute', top: '35%', left: '76%' }" />
-		<SearchBar v-model="currentSearchText" :color="color" :style="{ position: 'absolute', top: '35%', left: '55%' }" />
 		<TableTemplate ref="tableRef" :rowGap="0" id="passwordTable" class="shadow scrollbar" :color="color"
-			:scrollbar-size="1" :style="{ height: '55%', width: '45%', left: '33%', top: '42%' }"
+			:headerModels="headerModels" :scrollbar-size="1"
+			:style="{ height: '55%', width: '45%', left: '33%', top: '42%' }"
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #header>
-				<TableHeaderRow :model="headerModels" :defaultActiveHeader="1" :backgroundColor="'#121a20'" />
+				<TableHeaderRow :color="color" :model="headerModels" :tabs="headerTabs">
+					<template #controls>
+						<SearchBar v-if="activeTable == 0" v-model="currentSearchText" :color="color"
+							:labelBackground="'rgb(44 44 51 / 16%)'" />
+						<AddTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
+					</template>
+				</TableHeaderRow>
 			</template>
 			<template #body>
 				<!-- Empty table row so that our first table row doesn't get overlapped by the header -->
-				<tr>
+				<!-- <tr>
 					<div :style="{ 'min-height': '10px' }"></div>
-				</tr>
+				</tr> -->
 				<CollapsibleTableRow :shadow="true" v-slot="props"
 					v-for="(model, index) in collapsibleTableRowModels.visualValues" :key="model.id"
 					:groups="model.data.groups" :model="model" :rowNumber="index" :color="color">
@@ -62,12 +66,14 @@ import { DataType, Filter, FilterStatus } from '../../Types/Table';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { HeaderDisplayField, IFilterable, IGroupable, IIdentifiable } from '../../Types/EncryptedData';
-import { CollapsibleTableRowModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
+import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { createCollapsibleTableRowModels, createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores/index';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
+import { v4 as uuidv4 } from 'uuid';
+import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: "PasswordValueTable",
@@ -109,8 +115,8 @@ export default defineComponent({
 		let showEditValuePopup: Ref<boolean> = ref(false);
 		let currentEditingValueModel: Ref<NameValuePairStore | any> = ref({});
 
-		let deletePassword: Ref<(key: string) => void> = ref((key: string) => { });
-		let deleteValue: Ref<(key: string) => void> = ref((key: string) => { });
+		let deletePassword: Ref<(key: string) => void> = ref((_: string) => { });
+		let deleteValue: Ref<(key: string) => void> = ref((_: string) => { });
 
 		const passwordSearchText: Ref<string> = ref('');
 		const valueSearchText: Ref<string> = ref('');
@@ -119,6 +125,25 @@ export default defineComponent({
 
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+
+		const headerTabs: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Passwords',
+				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
+				color: computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor),
+				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
+				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
+			},
+			{
+				id: uuidv4(),
+				name: 'Values',
+				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
+				color: computed(() => stores.settingsStore.currentColorPalette.valuesColor.primaryColor),
+				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
+				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.NameValuePairs; }
+			}
+		];
 
 		const passwordActiveHeader: Ref<number> = ref(1);
 		const valueActiveHeader: Ref<number> = ref(1);
@@ -137,7 +162,7 @@ export default defineComponent({
 			{
 				displayName: "Login",
 				backingProperty: "login",
-				width: '200px'
+				width: '250px'
 			}
 		];
 
@@ -155,7 +180,7 @@ export default defineComponent({
 			{
 				displayName: "Type",
 				backingProperty: "valueType",
-				width: '200px'
+				width: '250px'
 			}
 		];
 
@@ -278,7 +303,7 @@ export default defineComponent({
 						(p: PasswordStore) =>
 						{
 							return [{ value: p.passwordFor, copiable: false, width: '150px', },
-							{ value: p.login, copiable: true, width: '150px' }]
+							{ value: p.login, copiable: true, width: '250px' }]
 						},
 						onEditPassword, onPasswordDeleteInitiated);
 			}
@@ -432,7 +457,7 @@ export default defineComponent({
 			setModels();
 		});
 
-		watch(() => stores.settingsStore.multipleFilterBehavior, (newValue) =>
+		watch(() => stores.settingsStore.multipleFilterBehavior, () =>
 		{
 			init();
 		});
@@ -450,6 +475,7 @@ export default defineComponent({
 			showEditValuePopup,
 			currentEditingValueModel,
 			currentSearchText,
+			headerTabs,
 			onEditPasswordPopupClose,
 			onEditValuePopupClose,
 			onDeletePasswordConfirmed,

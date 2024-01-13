@@ -1,10 +1,10 @@
 <template>
 	<div id="loginHistoryTable">
 		<TableTemplate ref="tableRef" :rowGap="10" class="shadow scrollbar" :color="color" :scrollbar-size="1"
-			:style="{ height: '25%', width: '25%', left: '5%', top: '72%' }"
+			:style="{ height: '25%', width: '20%', right: '0%', top: '72%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
-				<TableHeaderRow :model="headerModel" :backgroundColor="'#121a20'" />
+				<TableHeaderRow :model="headerModel" :backgroundColor="'rgb(44 44 51 / 16%)'" />
 			</template>
 			<template #body>
 				<TableRow class="shadow hover" v-for="(lr, index) in tableRowDatas.visualValues" :key="lr.id"

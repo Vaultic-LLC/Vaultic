@@ -144,12 +144,13 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	border-radius: 20px;
-	background: linear-gradient(145deg, #121a20, #0f161b);
+	/* background: linear-gradient(145deg, #121a20, #0f161b);
 	box-shadow: 5px 5px 10px #070a0c,
-		-5px -5px 10px #1b2630;
+		-5px -5px 10px #1b2630; */
 	cursor: pointer;
 	transition: 0.3s;
 	z-index: 2;
+	background: rgb(44 44 51 / 16%);
 }
 
 .colorPaletteContainer.hover {
@@ -158,9 +159,9 @@ export default defineComponent({
 
 .colorPaletteContainer.notCreated {
 	border-radius: 20px;
-	background: #11181e;
+	/* background: #11181e;
 	box-shadow: inset 5px 5px 10px #070a0c,
-		inset -5px -5px 10px #1b2630;
+		inset -5px -5px 10px #1b2630; */
 }
 
 .colorPaletteContainer .selectorButton {

@@ -75,7 +75,7 @@ export default defineComponent({
 			}
 
 			// reset animation delay in case the table is re rendered (filter, sorting, etc.)
-			setTimeout(() => setAnimationDelay(rowNumb.value), 1000);
+			setTimeout(() => setAnimationDelay(rowNumb.value), 800);
 		}
 
 		function onEdit()
@@ -124,7 +124,7 @@ export default defineComponent({
 	animation-delay: v-bind(animationDelay);
 	border-top-right-radius: 20px;
 	border-bottom-right-radius: 20px;
-	transition: box-shadow 0.5s linear forwards;
+	transition: box-shadow 0.3s;
 
 	border: 10px solid transparent;
 	/* background-color: #121a20; */
@@ -140,9 +140,10 @@ export default defineComponent({
 }
 
 .tableRow.shadow {
-	transition: box-shadow 0.5s linear forwards;
-	box-shadow: -5px 5px 10px #070a0c,
-		5px -5px 10px #1b2630;
+	transition: 0.3s;
+	/* box-shadow: -5px 5px 10px #070a0c,
+		5px -5px 10px #1b2630; */
+	/* background: rgb(44 44 51 / 16%); */
 }
 
 .tableRow.isOpen {
@@ -173,10 +174,10 @@ export default defineComponent({
 }
 
 .tableRow.hover:hover {
-	transition: 0.2s;
+	transition: 0.3s;
 	border: 10px solid v-bind(primaryColor);
 	box-shadow: 0 0px 10px v-bind(primaryColor);
-	transform: scale(1.01, 1.1);
+	/* transform: scale(1.01, 1.1); */
 	/* animation: rowHover 2s linear forwards; */
 }
 

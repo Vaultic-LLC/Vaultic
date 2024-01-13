@@ -1,6 +1,6 @@
 <template>
 	<div ref="container" class="spinningGlobeContainer">
-		<div class="globeIndent"></div>
+		<!-- <div class="globeIndent"></div> -->
 		<canvas ref="canvas" class="canvas" :style="{ 'width': '100%', 'height': '100%' }"></canvas>
 	</div>
 </template>
@@ -180,8 +180,10 @@ export default defineComponent({
 			// Globe.rotateY(-Math.PI * (5 / 9));
 			// Globe.rotateZ(-Math.PI / 6);
 			const globeMaterial = Globe.globeMaterial();
-			globeMaterial.color = new Color(0x1f2234);
-			globeMaterial.emissive = new Color(0x220038);
+			// globeMaterial.color = new Color(0xFB2576);
+			globeMaterial.transparent = true;
+			globeMaterial.opacity = 0;
+			//globeMaterial.emissive = new Color(0x220038);
 			globeMaterial.emissiveIntensity = 0.1;
 			globeMaterial.shininess = 0.7;
 
@@ -238,7 +240,7 @@ export default defineComponent({
 <style>
 .spinningGlobeContainer {
 	position: relative;
-	width: 50%;
+	width: 100%;
 	height: 100%;
 }
 

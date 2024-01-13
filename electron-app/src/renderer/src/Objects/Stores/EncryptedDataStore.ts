@@ -102,7 +102,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
 		try
 		{
-			const data: EncryptedDataState = await dataFile.read<EncryptedDataState>(key);
+			const [success, data]: [boolean, EncryptedDataState] = dataFile.read<EncryptedDataState>(key);
+			if (!success)
+			{
+				throw ('Unable to read data file');
+			}
+
 			if (calculateHash(key, data.passwords, 'password') == data.passwordHash)
 			{
 				Object.assign(encryptedDataState, data);

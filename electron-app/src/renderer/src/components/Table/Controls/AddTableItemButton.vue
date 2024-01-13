@@ -22,7 +22,7 @@ import ObjectPopup from '../../../components/ObjectPopups/ObjectPopup.vue';
 import AddObjectPopup from "../../../components/ObjectPopups/AddObjectPopup.vue"
 
 export default defineComponent({
-	name: "TableControls",
+	name: "AddTableItemButton",
 	components:
 	{
 		ObjectPopup,
@@ -63,17 +63,18 @@ export default defineComponent({
 }
 
 .addTableItemButton {
-	height: 45px;
-	width: 45px;
+	height: 35px;
+	width: 35px;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	font-size: 35px;
 
 	border-radius: 50%;
-	background: v-bind(primaryColor);
+	/* background: v-bind(primaryColor); */
 	color: white;
 	transition: 0.5s;
+	border: 2px solid v-bind(primaryColor);
 }
 
 .addTableItemButton:hover {

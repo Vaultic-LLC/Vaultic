@@ -16,26 +16,27 @@
 		<div class="center">
 			<ColorPaletteContainer />
 			<BreachedPasswords />
-			<TableSelector :singleSelectorItems="[filtersTableControl, groupsTableControl]"
-				:style="{ 'left': '5%', 'top': '30%', 'width': '10%' }" />
-			<TableSelector :singleSelectorItems="[passwordTableControl, valuesTableControl]"
-				:style="{ 'left': '33%', 'top': '30%', 'width': '20%' }" />
 			<div id="tables">
 				<FilterGroupTable />
-				<LoginHistoryTable />
 				<PasswordValueTable />
 			</div>
-			<div class="footer" />
 		</div>
-		<MetricDrawer />
+		<div class="tempWidget" :style="{ right: '2%', top: '4%' }">
+			<PasswordValueGauges />
+		</div>
+		<div class="tempWidget" :style="{ right: '2%', top: '45%' }">
+			<FilterGroupGauges />
+		</div>
+		<div class="tempWidget" :style="{ top: '65%', left: '5%', width: '25%', height: '20%' }">
+			<PasswordStrengthProgressChart />
+		</div>
+		<div class="tempWidget" :style="{ top: '72%', right: '2%', width: '17%' }">
+			<LoginHistoryCalendar />
+		</div>
 	</div>
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
 	</Transition>
-	<!-- <div id="glassBackground" class="glassBackground">
-	</div> -->
-	<!-- <div ref="cursor" class="cursor">
-	</div> -->
 </template>
 
 <script lang="ts">
@@ -48,10 +49,13 @@ import FilterGroupTable from './components/Table/FilterGroupTable.vue';
 import GlobalAuthenticationPopup from './components/Authentication/GlobalAuthenticationPopup.vue';
 import PasswordValueTable from './components/Table/PasswordValueTable.vue';
 import ColorPaletteContainer from './components/ColorPalette/ColorPaletteContainer.vue';
-import LoginHistoryTable from './components/Table/LoginHistoryTable.vue';
 import ToastPopup from './components/ToastPopup.vue';
 import RequestedAuthenticationPopup from './components/Authentication/RequestedAuthenticationPopup.vue';
 import BreachedPasswords from "./components/BreachedPasswords/BreachedPasswords.vue"
+import PasswordValueGauges from './components/Widgets/SmallMetricGauges/Combined/PasswordValueGauges.vue';
+import FilterGroupGauges from './components/Widgets/SmallMetricGauges/Combined/FilterGroupGauges.vue';
+import PasswordStrengthProgressChart from './components/Dashboard/PasswordStrengthProgressChart.vue';
+import LoginHistoryCalendar from './components/Widgets/LoginHistoryCalendar.vue';
 
 import { SingleSelectorItemModel } from './Types/Models';
 import { stores } from './Objects/Stores';
@@ -70,10 +74,13 @@ export default defineComponent({
 		GlobalAuthenticationPopup,
 		PasswordValueTable,
 		ColorPaletteContainer,
-		LoginHistoryTable,
 		ToastPopup,
 		RequestedAuthenticationPopup,
-		BreachedPasswords
+		BreachedPasswords,
+		PasswordValueGauges,
+		FilterGroupGauges,
+		PasswordStrengthProgressChart,
+		LoginHistoryCalendar
 	},
 	setup()
 	{
@@ -82,7 +89,7 @@ export default defineComponent({
 		const coverMainUI: Ref<boolean> = ref(stores.appStore.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
-		let backgroundClr: Ref<string> = ref('#0f111d');
+		//let backgroundClr: Ref<string> = ref('#0f111d');
 
 		const showToast: Ref<boolean> = ref(false);
 		const toastText: Ref<string> = ref('');
@@ -90,7 +97,7 @@ export default defineComponent({
 
 		const needsToSetupKey: Ref<boolean> = ref(false);
 		const requestAuth: Ref<boolean> = ref(false);
-		const onAuthSuccess: Ref<{ (key: string): void }> = ref((key: string) => { })
+		const onAuthSuccess: Ref<{ (key: string): void }> = ref((_: string) => { })
 		const onAuthCancel: Ref<{ (): void }> = ref(() => { })
 
 		provide(ShowToastFunctionKey, showToastFunc);
@@ -189,7 +196,7 @@ export default defineComponent({
 		const threshold: number = 1000;
 		onMounted(() =>
 		{
-			document.getElementById('body')?.addEventListener('mouseover', (e) =>
+			document.getElementById('body')?.addEventListener('mouseover', (_) =>
 			{
 				// if (cursor.value)
 				// {
@@ -286,10 +293,6 @@ body {
 	overflow: hidden;
 }
 
-.footer {
-	height: 50px;
-}
-
 h2,
 div {
 	user-select: none;
@@ -303,35 +306,7 @@ div {
 	z-index: 90;
 }
 
-/* .glassBackground {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	z-index: 2;
-	background: #1a191d3b;
-	border-radius: 16px;
-	box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-	backdrop-filter: blur(4.6px);
-	-webkit-backdrop-filter: blur(4.6px);
-} */
-
-/* .mainUI {
+.tempWidget {
 	position: absolute;
-	width: 100%;
-	height: 100%;
-	z-index: 3;
 }
-
-.cursor {
-	position: absolute;
-	z-index: 1;
-	width: 200px;
-	height: 200px;
-	background-color: blue;
-	border-radius: 50%;
-	transform: translate(-50%, -50%);
-	filter: blur(50px);
-} */
 </style>

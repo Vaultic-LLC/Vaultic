@@ -47,7 +47,7 @@ export default defineComponent({
 			if (showCollapseRow.value)
 			{
 				showCollapseRow.value = false
-				setTimeout(() => stayOpen.value = false, 1500);
+				setTimeout(() => stayOpen.value = false, 800);
 				return;
 			}
 

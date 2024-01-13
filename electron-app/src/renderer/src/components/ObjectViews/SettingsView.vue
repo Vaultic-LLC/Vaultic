@@ -35,7 +35,6 @@ import { stores } from '../../Objects/Stores';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import { SettingsState } from '../../Objects/Stores/SettingsStore';
 import { FilterStatus } from '../../Types/Table';
-import { promiseHooks } from 'v8';
 
 export default defineComponent({
 	name: "ValueView",
@@ -81,7 +80,7 @@ export default defineComponent({
 
 		function onAuthenticationSuccessful(key: string)
 		{
-			stores.settingsStore.updateSettings(settingsState.value);
+			stores.settingsStore.updateSettings(key, settingsState.value);
 			saveSucceeded(true);
 		}
 
@@ -89,20 +88,6 @@ export default defineComponent({
 		{
 			saveFaield(false);
 		}
-
-		// function enforceMaxInactiveLockTime(input: string): [boolean, string]
-		// {
-		//     const num: number = Number.parseInt(input);
-		//     if (num < 0)
-		//     {
-		//         return [false, "Value must be greater than 0"];
-		//     }
-		//     else if (num >= 30
-		//     {
-
-		//     }
-		//     return [Number.parseInt(input) <= 30]
-		// }
 
 		function enforceMinLoginRecords(input: string): [boolean, string]
 		{

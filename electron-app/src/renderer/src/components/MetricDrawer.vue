@@ -1,20 +1,23 @@
 <template>
 	<div class="metricDrawer">
-		<Transition name="fade" mode="out-in">
+		<!-- <Transition name="fade" mode="out-in">
 			<h2 class="atRiskTitle" :key="passwordValueRiskTitle">{{ passwordValueRiskTitle }}</h2>
-		</Transition>
+		</Transition> -->
 		<div class="passwordValueAtRiskModels">
-			<SmallMetricGauge v-for="model in passwordValueMetricGaugeModels" :key="model.key" :model="model"
-				:style="model.style" />
+			<PasswordValueGauges />
+			<!-- <SmallMetricGauge v-for="model in passwordValueMetricGaugeModels" :key="model.key" :model="model"
+				:style="model.style" /> -->
 		</div>
-		<Transition name="fade" mode="out-in">
+		<!-- <Transition name="fade" mode="out-in">
 			<h2 class="atRiskTitle" :key="passwordValueRiskTitle + filterGroupAtRiskTitle">{{ filterGroupAtRiskTitle }}</h2>
-		</Transition>
+		</Transition> -->
 		<div class="filterGroupAtRiskModels">
-			<SmallMetricGauge v-for="model in filterGroupSmallMetricGaugeModels" :key="model.key" :model="model"
-				:style="model.style" />
+			<!-- <SmallMetricGauge v-for="model in filterGroupSmallMetricGaugeModels" :key="model.key" :model="model"
+				:style="model.style" /> -->
+			<FilterGroupGauges />
 		</div>
 		<PasswordStrengthProgressChart />
+		<LoginHistoryCalendar :style="{ width: '90%', height: '25%', 'marginTop': '100px' }" />
 	</div>
 </template>
 
@@ -23,6 +26,9 @@ import { ComputedRef, computed, defineComponent } from 'vue';
 
 import SmallMetricGauge from "./Dashboard/SmallMetricGauge.vue"
 import PasswordStrengthProgressChart from './Dashboard/PasswordStrengthProgressChart.vue';
+import LoginHistoryCalendar from './Widgets/LoginHistoryCalendar.vue';
+import FilterGroupGauges from "./Widgets/SmallMetricGauges/Combined/FilterGroupGauges.vue"
+import PasswordValueGauges from "./Widgets/SmallMetricGauges/Combined/PasswordValueGauges.vue"
 
 import { DataType } from '../Types/Table';
 import { SmallMetricGaugeModel } from '../Types/Models';
@@ -35,9 +41,13 @@ export default defineComponent({
 	{
 		SmallMetricGauge,
 		PasswordStrengthProgressChart,
+		LoginHistoryCalendar,
+		FilterGroupGauges,
+		PasswordValueGauges
 	},
 	setup()
 	{
+		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 		const passwordValueRiskTitle: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			"Passwords at Risk" : "Values at Risk");
 
@@ -315,7 +325,8 @@ export default defineComponent({
 			passwordValueRiskTitle,
 			filterGroupAtRiskTitle,
 			passwordValueMetricGaugeModels,
-			filterGroupSmallMetricGaugeModels
+			filterGroupSmallMetricGaugeModels,
+			primaryColor
 		}
 	}
 })
@@ -336,13 +347,13 @@ export default defineComponent({
 	height: 100%;
 	width: 20%;
 	position: fixed;
-	background-color: #0f141a;
+	/* background-color: #0f141a; */
 	right: 0;
 	top: 0;
 	bottom: 0;
 	display: flex;
 	flex-direction: column;
-	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
+	/* box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25); */
 }
 
 .metricDrawer .atRiskTitle {

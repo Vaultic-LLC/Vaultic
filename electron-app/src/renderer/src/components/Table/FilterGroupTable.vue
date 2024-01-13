@@ -1,14 +1,15 @@
 <template>
 	<div id="filterGroupTableContainer">
-		<AddTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd"
-			:style="{ position: 'absolute', top: '35%', left: '28%' }" />
-		<SearchBar v-model="currentSearchText" :color="color" :width="'200px'"
-			:style="{ position: 'absolute', top: '35%', left: '17%' }" />
 		<TableTemplate ref="tableRef" :rowGap="10" class="shadow scrollbar" id="filterTable" :color="color"
-			:scrollbar-size="1" :style="{ height: '25%', width: '25%', left: '5%', top: '42%' }"
+			:scrollbar-size="1" :style="{ height: '32%', width: '25%', left: '5%', top: '35%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
-				<TableHeaderRow :model="headerModels" :backgroundColor="'#121a20'" />
+				<TableHeaderRow :model="headerModels" :tabs="headerTabs">
+					<template #controls>
+						<SearchBar v-model="currentSearchText" :color="color" :width="'250px'" />
+						<AddTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
+					</template>
+				</TableHeaderRow>
 			</template>
 			<template #body>
 				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues" :key="trd.id"
@@ -47,13 +48,15 @@ import SearchBar from './Controls/SearchBar.vue';
 
 import { DataType, Filter, Group } from '../../Types/Table';
 import AddTableItemButton from './Controls/AddTableItemButton.vue';
-import { SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
+import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
+import { v4 as uuidv4 } from 'uuid';
+import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: 'FilterGroupTable',
@@ -108,17 +111,48 @@ export default defineComponent({
 		const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
 			filterSearchText : groupSearchText);
 
-		let deleteFilter: Ref<(key: string) => void> = ref((key: string) => { });
-		let deleteGroup: Ref<(key: string) => void> = ref((key: string) => { });
+		let deleteFilter: Ref<(key: string) => void> = ref((_: string) => { });
+		let deleteGroup: Ref<(key: string) => void> = ref((_: string) => { });
 
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+
+		const color: ComputedRef<string> = computed(() =>
+		{
+			switch (stores.appStore.activeFilterGroupsTable)
+			{
+				case DataType.Groups:
+					return stores.settingsStore.currentColorPalette.groupsColor;
+				case DataType.Filters:
+				default:
+					return stores.settingsStore.currentColorPalette.filtersColor;
+			}
+		});
+
+		const headerTabs: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Filters',
+				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters),
+				color: computed(() => stores.settingsStore.currentColorPalette.filtersColor),
+				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
+				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Filters; }
+			},
+			{
+				id: uuidv4(),
+				name: 'Groups',
+				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Groups),
+				color: computed(() => stores.settingsStore.currentColorPalette.groupsColor),
+				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
+				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Groups; }
+			}
+		];
 
 		const filterHeaderDisplayField: HeaderDisplayField[] = [
 			{
 				displayName: "Active",
 				backingProperty: "isActive",
-				width: '50px',
+				width: '100px',
 			},
 			{
 				displayName: "Name",
@@ -174,18 +208,6 @@ export default defineComponent({
 					return valueFilterHeaders;
 			}
 		});
-
-		const color: ComputedRef<string> = computed(() =>
-		{
-			switch (stores.appStore.activeFilterGroupsTable)
-			{
-				case DataType.Groups:
-					return stores.settingsStore.currentColorPalette.groupsColor;
-				case DataType.Filters:
-				default:
-					return stores.settingsStore.currentColorPalette.filtersColor;
-			}
-		})
 
 		function setTableRowDatas()
 		{
@@ -387,6 +409,7 @@ export default defineComponent({
 			showEditFilterPopup,
 			currentlyEditingFilterModel,
 			currentSearchText,
+			headerTabs,
 			onEditGroupPopupClosed,
 			onEditFilterPopupClosed,
 			onFilterDeleteConfirmed,
