@@ -1,23 +1,25 @@
 <template>
-	<div class="breechedPasswordsContainer">
-		<div class="breachedItemContainer spinningGlobe">
-			<div class="breachedPasswordTitle">Scanning...</div>
-			<SpinningGlobe />
-		</div>
-		<div class="breachedItemContainer breeachedPasswordTable">
-			<div class="breachedPasswordTitle">Breached Passwords</div>
-			<TableTemplate ref="tableRef" :color="color" class="shadow scrollbar" :scrollbar-size="1"
-				@scrolledToBottom="tableRowDatas.loadNextChunk()" :style="{ 'height': '80%', 'position': 'relative' }"
-				:rowGap="10">
-				<template #header>
-					<TableHeaderRow :model="passwordHeaders" :defaultActiveHeader="1" :backgroundColor="'#121a20'" />
-				</template>
-				<template #body>
-					<TableRow v-for="(model, index) in tableRowDatas.visualValues" :key="model.id" :model="model"
-						:rowNumber="index" :allowPin="false" :allowDelete="false" :allowEdit="true" class="shadow hover"
-						:style="{ 'height': '70px' }" :color="color" />
-				</template>
-			</TableTemplate>
+	<div class="breachedPasswordsContainer">
+		<div class="breachedPasswordTitle">Breached Passwords</div>
+		<div class="breachedPasswordsContainer__items">
+			<div class="breachedItemContainer spinningGlobe">
+				<SpinningGlobe />
+				<div class="breachedPasswordsContainer__scanner">
+				</div>
+			</div>
+			<div class="breachedItemContainer breeachedPasswordTable">
+				<TableTemplate ref="tableRef" :color="color" class="shadow scrollbar" :scrollbar-size="1"
+					@scrolledToBottom="tableRowDatas.loadNextChunk()" :style="{ 'position': 'relative' }" :rowGap="10">
+					<template #header>
+						<TableHeaderRow :model="passwordHeaders" :defaultActiveHeader="1" :backgroundColor="'#121a20'" />
+					</template>
+					<template #body>
+						<TableRow v-for="(model, index) in tableRowDatas.visualValues" :key="model.id" :model="model"
+							:rowNumber="index" :allowPin="false" :allowDelete="false" :allowEdit="true" class="shadow hover"
+							:style="{ 'height': '70px' }" :color="color" />
+					</template>
+				</TableTemplate>
+			</div>
 		</div>
 	</div>
 </template>
@@ -52,7 +54,7 @@ export default defineComponent({
 	setup()
 	{
 		const tableRef: Ref<HTMLElement | null> = ref(null);
-		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
+		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 		const passwords: SortedCollection<PasswordStore> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
 		const tableRowDatas: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection());
 
@@ -119,7 +121,7 @@ export default defineComponent({
 })
 </script>
 <style>
-.breechedPasswordsContainer {
+.breachedPasswordsContainer {
 	position: absolute;
 	padding-top: 10px;
 	top: 4%;
@@ -127,13 +129,22 @@ export default defineComponent({
 	width: 45%;
 	height: 25%;
 	display: flex;
-	justify-content: flex-start;
-	align-items: flex-start;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 	border-radius: 20px;
 	/* background: linear-gradient(145deg, #121a20, #0f161b);
 	box-shadow: 5px 5px 10px #070a0c,
 		-5px -5px 10px #1b2630; */
 	background: rgb(44 44 51 / 16%);
+}
+
+.breachedPasswordsContainer__items {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	height: 100%;
 }
 
 .breeachedPasswordTable {
@@ -142,10 +153,10 @@ export default defineComponent({
 	height: 100%;
 }
 
-.breechedPasswordsContainer .spinningGlobe {
+.breachedPasswordsContainer .spinningGlobe {
 	position: relative;
-	width: 45%;
-	height: 80%;
+	/* width: 45%; */
+	height: 100%;
 }
 
 .breachedItemContainer {
@@ -157,5 +168,30 @@ export default defineComponent({
 .breachedPasswordTitle {
 	font-size: 24px;
 	color: white;
+}
+
+.breachedPasswordsContainer__scanner {
+	position: absolute;
+	z-index: 2;
+	top: 0%;
+	width: 100%;
+	height: 5%;
+	filter: blur(10px);
+	background-color: v-bind(color);
+	animation: scan 5s infinite;
+}
+
+@keyframes scan {
+	0% {
+		top: 0%;
+	}
+
+	50% {
+		top: 100%;
+	}
+
+	100% {
+		top: 0%;
+	}
 }
 </style>

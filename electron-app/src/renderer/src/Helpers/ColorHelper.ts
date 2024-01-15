@@ -1,3 +1,5 @@
+import { RGBColor } from "@renderer/Types/Colors";
+
 export function getLinearGradientFromColor(color: string)
 {
 	return `linear-gradient(90deg,
@@ -32,4 +34,14 @@ export function mixHexes(hex1: string, hex2: string, ratio: number = 0.5)
 	const g = Math.round(g1 * ratio + g2 * (1 - ratio));
 	const b = Math.round(b1 * ratio + b2 * (1 - ratio));
 	return rgb2hex(r, g, b);
+}
+
+export function hexToRgb(hex): RGBColor | null
+{
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return result ? {
+		r: parseInt(result[1], 16),
+		g: parseInt(result[2], 16),
+		b: parseInt(result[3], 16)
+	} : null;
 }

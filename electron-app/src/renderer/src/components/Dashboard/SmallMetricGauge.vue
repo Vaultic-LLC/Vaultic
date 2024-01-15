@@ -38,7 +38,6 @@ export default defineComponent({
 		let authenticated: Ref<boolean> = ref(stores.appStore.authenticated);
 		let fillAmount: ComputedRef<number> = computed(() => props.model.filledAmount / props.model.totalAmount * 100);
 		let amountOutOfTotal: ComputedRef<string> = computed(() => `${props.model.filledAmount} / ${props.model.totalAmount}`);
-
 		const textColor: Ref<string> = computed(() => fillAmount.value == 0 ? "white" : "white");
 
 		const options: any =
@@ -81,8 +80,9 @@ export default defineComponent({
 							}
 
 							let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
-							//gradient.addColorStop(0, mixHexes(primaryColor.value, '#363131'));
-							// gradient.addColorStop(0.35, primaryColor.value);
+							// gradient.addColorStop(0, mixHexes(primaryColor.value, '#363131'));
+							// gradient.addColorStop(fillAmount.value / 100 / 2, primaryColor.value);
+							// gradient.addColorStop(fillAmount.value / 100, mixHexes(primaryColor.value, '#363131'));
 							gradient.addColorStop(1, primaryColor.value);
 							// hex value already has opacity
 							// if (primaryColor.value.length > 7)

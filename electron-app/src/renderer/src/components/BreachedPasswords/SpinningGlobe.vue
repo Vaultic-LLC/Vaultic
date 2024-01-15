@@ -6,12 +6,10 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import { stores } from '../../Objects/Stores';
 import ThreeGlobe from "three-globe";
-import { valueOrDefault } from 'chart.js/dist/helpers/helpers.core';
-import { containsUppercaseAndLowercaseNumber } from '@renderer/Helpers/EncryptedDataHelper';
 import { WebGLRenderer, Scene } from "three";
 import
 {
@@ -31,6 +29,11 @@ import { createGlowMesh } from "three-glow-mesh";
 import countries from "../../assets/Files/globe-data-min.json";
 // import travelHistory from "./files/my-flights.json";
 // import airportHistory from "./files/my-airports.json";
+import * as TWEEN from '@tweenjs/tween.js'
+import { RGBColor } from '@renderer/Types/Colors';
+import { hexToRgb, mixHexes } from '@renderer/Helpers/ColorHelper';
+import GlobalAuthenticationPopup from '../Authentication/GlobalAuthenticationPopup.vue';
+
 
 var renderer, camera, scene, controls;
 let mouseX = 0;
@@ -83,7 +86,7 @@ export default defineComponent({
 			dLight2.position.set(-200, 500, 200);
 			camera.add(dLight2);
 
-			camera.position.z = 250;
+			camera.position.z = 275;
 			camera.position.x = 0;
 			camera.position.y = 0;
 
@@ -107,9 +110,10 @@ export default defineComponent({
 			controls.enablePan = false;
 			controls.minDistance = 200;
 			controls.maxDistance = 500;
-			controls.rotateSpeed = 0.8;
+			controls.rotateSpeed = 0.4;
 			controls.zoomSpeed = 1;
 			controls.autoRotate = true;
+			controls.autoRotateSpeed = 1;
 			controls.enableZoom = false;
 
 			// controls.minPolarAngle = Math.PI / 3.5;
@@ -122,6 +126,36 @@ export default defineComponent({
 		// SECTION Globe
 		function initGlobe()
 		{
+			const N_PATHS = 10;
+			const MAX_POINTS_PER_LINE = 10000;
+			const MAX_STEP_DEG = 1;
+			const MAX_STEP_ALT = 0.015;
+			const gData = [...Array(N_PATHS).keys()].map(() =>
+			{
+				let lat = (Math.random() - 0.5) * 90;
+				let lng = (Math.random() - 0.5) * 360;
+				let alt = 0;
+
+				return [[lat, lng, alt], ...[...Array(Math.round(Math.random() * MAX_POINTS_PER_LINE)).keys()].map(() =>
+				{
+					lat += (Math.random() * 2 - 1) * MAX_STEP_DEG;
+					lng += (Math.random() * 2 - 1) * MAX_STEP_DEG;
+					alt += (Math.random() * 2 - 1) * MAX_STEP_ALT;
+					alt = Math.max(0, alt);
+
+					return [lat, lng, alt];
+				})];
+			});
+
+			const N = 20;
+			const arcsData = [...Array(N).keys()].map(() => ({
+				startLat: (Math.random() - 0.5) * 180,
+				startLng: (Math.random() - 0.5) * 360,
+				endLat: (Math.random() - 0.5) * 180,
+				endLng: (Math.random() - 0.5) * 360,
+				color: [currentColor.value, mixHexes(currentColor.value, "FFFFFF")]
+			}));
+
 			// Initialize the Globe
 			Globe = new ThreeGlobe({
 				waitForGlobeReady: true,
@@ -131,12 +165,27 @@ export default defineComponent({
 				.hexPolygonResolution(3)
 				.hexPolygonMargin(0.1)
 				.showAtmosphere(true)
-				.atmosphereColor('#0f111d')
-				.atmosphereAltitude(0.25)
+				.atmosphereColor(mixHexes(currentColor.value, "FFFFFF"))
+				.atmosphereAltitude(0.3)
 				.hexPolygonColor((e) =>
 				{
 					return currentColor.value;
-				});
+				})
+				.hexPolygonAltitude(0.1)
+			// .pathsData(gData)
+			// .pathColor(() => ['rgba(0,0,255,0.6)', 'rgba(255,0,0,0.6)'])
+			// .pathDashLength(0.01)
+			// .pathDashGap(0.004)
+			// .pathDashAnimateTime(100000);
+			// .arcsData(arcsData)
+			// .arcColor('color')
+			// .arcDashLength(() => Math.random())
+			// .arcDashGap(() => Math.random())
+			// .arcDashAnimateTime(() => Math.random() * 4000 + 500)
+			// .polygonCapColor(feat => 'rgba(200, 0, 0, 0.6)')
+			// .polygonSideColor(() => 'rgba(0, 100, 0, 0.05)')
+			// .polygonsData(countries.features)
+			// .polygonsTransitionDuration(4000)
 
 			// NOTE Arc animations are followed after the globe enters the scene
 			// setTimeout(() =>
@@ -180,12 +229,12 @@ export default defineComponent({
 			// Globe.rotateY(-Math.PI * (5 / 9));
 			// Globe.rotateZ(-Math.PI / 6);
 			const globeMaterial = Globe.globeMaterial();
-			// globeMaterial.color = new Color(0xFB2576);
-			globeMaterial.transparent = true;
-			globeMaterial.opacity = 0;
-			//globeMaterial.emissive = new Color(0x220038);
-			globeMaterial.emissiveIntensity = 0.1;
-			globeMaterial.shininess = 0.7;
+			globeMaterial.color = new Color('#0b0b0b');
+			// globeMaterial.transparent = true;
+			// globeMaterial.opacity = 0;
+			globeMaterial.emissive = new Color(0x220038);
+			globeMaterial.emissiveIntensity = 0;
+			globeMaterial.shininess = 1;
 
 			// NOTE Cool stuff
 			// globeMaterial.wireframe = true;
@@ -230,6 +279,32 @@ export default defineComponent({
 			animate();
 		});
 
+		let tween: any;
+		let colorObject: RGBColor | null = hexToRgb(currentColor.value);
+		watch(() => stores.settingsStore.currentPrimaryColor.value, (newValue) =>
+		{
+			if (!colorObject)
+			{
+				return;
+			}
+
+			const newRGB: RGBColor | null = hexToRgb(newValue);
+			if (!newRGB)
+			{
+				return;
+			}
+
+			tween = new TWEEN.Tween(colorObject).to(newRGB, 1000).onUpdate((object) =>
+			{
+				Globe.hexPolygonColor(() => `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`);
+			});
+
+			tween.start();
+			TWEEN.update();
+
+			colorObject = hexToRgb(newValue);
+		});
+
 		return {
 			container,
 			canvas
@@ -242,6 +317,7 @@ export default defineComponent({
 	position: relative;
 	width: 100%;
 	height: 100%;
+	z-index: 1;
 }
 
 .spinningGlobeContainer .globeIndent {

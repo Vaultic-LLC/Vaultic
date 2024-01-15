@@ -1,6 +1,13 @@
 export const defaultInputColor = "#9e9e9e";
 export const defaultInputTextColor: string = "#e8e8e8"
 
+export interface RGBColor
+{
+	r: number;
+	g: number;
+	b: number;
+}
+
 export interface TableColorScheme
 {
 	primaryColor: string;

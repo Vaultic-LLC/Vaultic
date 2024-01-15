@@ -327,7 +327,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		updateDuplicatePasswordOrValueIndex(key, passwordStore, "password", encryptedDataState.passwords, encryptedDataState.duplicatePasswords);
 
-		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
+		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.Passwords, password);
@@ -361,12 +362,15 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		if (passwordWasUpdated)
 		{
 			updateDuplicatePasswordOrValueIndex(key, currentPassword[0], "password", encryptedDataState.passwords, encryptedDataState.duplicatePasswords);
+
+			encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
+				encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
+			encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.Passwords, addedGroups, removedGroups, password.id);
 		stores.filterStore.syncFiltersForValues(stores.filterStore.passwordFilters, [password as PasswordStore], "passwords");
 
-		// TODO: Figure out how to upate current and safe password counts so graph displays nice
 
 		writeState(key);
 	}
@@ -378,8 +382,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		encryptedDataState.passwords.splice(encryptedDataState.passwords.indexOf(password), 1);
 
-		// TODO: is this correct?
-		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
+		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
 		encryptedDataState.passwordHash = calculateHash(key, encryptedDataState.passwords, "password");
@@ -387,6 +391,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.Passwords, password);
 		stores.filterStore.removeValueFromFilers(DataType.Passwords, password);
+
+		writeState(key);
 	}
 
 	function addNameValuePair(key: string, nameValuePair: NameValuePair): boolean
@@ -403,7 +409,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		updateDuplicatePasswordOrValueIndex(key, nameValuePairStore, "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
 
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
+		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.NameValuePairs, nameValuePair);
@@ -435,6 +442,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		if (valueWasUpdated)
 		{
 			updateDuplicatePasswordOrValueIndex(key, currentValue[0], "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
+
+			encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
+				encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
+			encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
@@ -450,8 +461,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		encryptedDataState.nameValuePairs.splice(encryptedDataState.nameValuePairs.indexOf(nameValuePair), 1);
 
-		// TODO: is this correct?
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
+		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
 		encryptedDataState.valueHash = calculateHash(key, encryptedDataState.nameValuePairs, "value");
@@ -459,6 +470,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.NameValuePairs, nameValuePair);
 		stores.filterStore.removeValueFromFilers(DataType.NameValuePairs, nameValuePair);
+
+		writeState(key);
 	}
 
 	function addRemoveGroupsFromPasswordValue(addedValues: string[], removedValues: string[], group: Group)

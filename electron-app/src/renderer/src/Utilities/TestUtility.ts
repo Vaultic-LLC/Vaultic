@@ -35,43 +35,24 @@ function createPasswords()
 	const marysGroup: Group = stores.groupStore.groups.filter(g => g.name == "Mary's")[0];
 	const bankGroup: Group = stores.groupStore.groups.filter(g => g.name == "Banks")[0];
 
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "Password", "Gmail", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "Password", "FTMO", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Password123", "Gmail", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "ThisisMypassword123]pasdf", "FTMO", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisisMypssword123]pofo", "Gmail", testSecurityQuestions, "", Date.now()));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "Gmail", testSecurityQuestions, "", Date.now()));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "FTMO", testSecurityQuestions, "", Date.now()));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Weak", "Youtube", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "MaryPpass", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "MaryPpass", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "Password", "Gmail", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "Password", "FTMO", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Password123", "Gmail", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "ThisisMypassword123]pooff", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "ThisisMypassword123]pooff", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "ThisisMypassword123]pasdf", "FTMO", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisisMypssword123]pofo", "Gmail", testSecurityQuestions, "", Date.now()));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "FTMO", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Weak", "Youtube", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "MaryPpass", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "MaryPpass", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "Password", "Gmail", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "Password", "FTMO", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Password123", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "FTMO", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Weak", "Youtube", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "MaryPpass", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "MaryPpass", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "Password", "Gmail", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "Password", "FTMO", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Password123", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "FTMO", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Weak", "Youtube", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "MaryPpass", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "MaryPpass", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword1234$23424", "Gmail", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword1234$ffffff$", "FTMO", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIssdfNotAWeakPassword1234$", "Youtube", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "ThisIssdfNotAWeakPassword1234$", "Big Bank", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "ThisIsNotAWeakPasswfford1234$", "Bigger Bank", testSecurityQuestions, "", (Date.now())));
 }
 
 async function createNameValuePairs(): Promise<void>
@@ -199,7 +180,7 @@ export default async function createTestData()
 {
 	createGroups();
 	createFilters();
-	// createPasswords();
-	// await createNameValuePairs();
+	createPasswords();
+	await createNameValuePairs();
 	createLoginRecords();
 }
