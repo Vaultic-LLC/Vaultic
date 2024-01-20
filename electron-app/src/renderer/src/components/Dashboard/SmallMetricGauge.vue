@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="model.onClick"
-			:class="{ active: active }">
+			:class="{ active: active, pulse: pulse }">
 			<div class="title">
 				<h2>{{ amountOutOfTotal }}</h2>
 				<p>{{ model.title }}</p>
@@ -32,8 +32,8 @@ export default defineComponent({
 		const primaryColor: Ref<string> = ref(props.model.color);
 		const gauge: Ref<HTMLElement | null> = ref(null);
 		const smallMetricContainer: Ref<HTMLElement | null> = ref(null);
-
 		const active: ComputedRef<boolean> = computed(() => props.model.active);
+		const pulse: ComputedRef<boolean> = computed(() => props.model.pulse == true && props.model.filledAmount > 0);
 
 		let authenticated: Ref<boolean> = ref(stores.appStore.authenticated);
 		let fillAmount: ComputedRef<number> = computed(() => props.model.filledAmount / props.model.totalAmount * 100);
@@ -145,7 +145,8 @@ export default defineComponent({
 			amountOutOfTotal,
 			textColor,
 			options,
-			data
+			data,
+			pulse
 		}
 	}
 })
@@ -174,6 +175,10 @@ export default defineComponent({
 	box-shadow: 0 0 25px v-bind(primaryColor);
 }
 
+.smallMetricContainer2:not(.active).pulse {
+	animation: pulseMetricGauge 1s infinite;
+}
+
 .smallMetricContainer2:hover {
 	box-shadow: 0 0 25px v-bind(primaryColor);
 }
@@ -197,6 +202,20 @@ export default defineComponent({
 	width: 84%;
 	background-color: var(--app-color);
 	border-radius: inherit;
+}
+
+@keyframes pulseMetricGauge {
+	0% {
+		box-shadow: 0 0 0 v-bind(primaryColor);
+	}
+
+	50% {
+		box-shadow: 0 0 25px v-bind(primaryColor);
+	}
+
+	100% {
+		box-shadow: 0 0 0 v-bind(primaryColor);
+	}
 }
 
 @keyframes fadeIn {

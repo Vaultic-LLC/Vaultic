@@ -12,7 +12,7 @@
 		<div v-if="coverMainUI" class="mainUICover"></div>
 	</Transition>
 	<div id="mainUI" class="mainUI">
-		<SideDrawer />
+		<!-- <SideDrawer /> -->
 		<div class="center">
 			<ColorPaletteContainer />
 			<BreachedPasswords />
@@ -27,12 +27,15 @@
 		<div class="tempWidget" :style="{ right: '2%', top: '45%' }">
 			<FilterGroupGauges />
 		</div>
-		<div class="tempWidget" :style="{ top: '65%', left: '5%', width: '25%', height: '20%' }">
+		<div class="tempWidget" :style="{ top: '4%', left: '26%', width: '25%', height: '26%' }">
 			<PasswordStrengthProgressChart />
 		</div>
 		<div class="tempWidget" :style="{ top: '72%', right: '2%', width: '17%' }">
 			<LoginHistoryCalendar />
 		</div>
+		<LockIconCard class="tempWidget" :style="{ top: '86%', left: '6%', width: '6%', height: '11%' }" />
+		<SettingsIconCard class="tempWidget" :style="{ top: '86%', left: '15%', width: '6%', height: '11%' }" />
+		<AboutIconCard class="tempWidget" :style="{ top: '86%', left: '24%', width: '6%', height: '11%' }" />
 	</div>
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
@@ -56,6 +59,9 @@ import PasswordValueGauges from './components/Widgets/SmallMetricGauges/Combined
 import FilterGroupGauges from './components/Widgets/SmallMetricGauges/Combined/FilterGroupGauges.vue';
 import PasswordStrengthProgressChart from './components/Dashboard/PasswordStrengthProgressChart.vue';
 import LoginHistoryCalendar from './components/Widgets/LoginHistoryCalendar.vue';
+import SettingsIconCard from "./components/Widgets/IconCards/SettingsIconCard.vue"
+import LockIconCard from "./components/Widgets/IconCards/LockIconCard.vue"
+import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 
 import { SingleSelectorItemModel } from './Types/Models';
 import { stores } from './Objects/Stores';
@@ -80,7 +86,10 @@ export default defineComponent({
 		PasswordValueGauges,
 		FilterGroupGauges,
 		PasswordStrengthProgressChart,
-		LoginHistoryCalendar
+		LoginHistoryCalendar,
+		SettingsIconCard,
+		LockIconCard,
+		AboutIconCard
 	},
 	setup()
 	{
@@ -308,5 +317,13 @@ div {
 
 .tempWidget {
 	position: absolute;
+}
+
+.tempWidget.background {
+	background: var(--widget-background-color);
+	border-radius: 20px;
+	aspect-ratio: 1/1;
+	display: flex;
+	justify-content: center;
 }
 </style>

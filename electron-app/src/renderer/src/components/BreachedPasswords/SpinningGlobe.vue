@@ -1,7 +1,7 @@
 <template>
 	<div ref="container" class="spinningGlobeContainer">
 		<!-- <div class="globeIndent"></div> -->
-		<canvas ref="canvas" class="canvas" :style="{ 'width': '100%', 'height': '100%' }"></canvas>
+		<canvas ref="canvas" class="canvas" :style="{ 'width': '100%' }"></canvas>
 	</div>
 </template>
 
@@ -86,7 +86,7 @@ export default defineComponent({
 			dLight2.position.set(-200, 500, 200);
 			camera.add(dLight2);
 
-			camera.position.z = 275;
+			camera.position.z = 300;
 			camera.position.x = 0;
 			camera.position.y = 0;
 
@@ -172,16 +172,16 @@ export default defineComponent({
 					return currentColor.value;
 				})
 				.hexPolygonAltitude(0.1)
-			// .pathsData(gData)
-			// .pathColor(() => ['rgba(0,0,255,0.6)', 'rgba(255,0,0,0.6)'])
-			// .pathDashLength(0.01)
-			// .pathDashGap(0.004)
-			// .pathDashAnimateTime(100000);
-			// .arcsData(arcsData)
-			// .arcColor('color')
-			// .arcDashLength(() => Math.random())
-			// .arcDashGap(() => Math.random())
-			// .arcDashAnimateTime(() => Math.random() * 4000 + 500)
+				// .pathsData(gData)
+				// .pathColor(() => ['rgba(0,0,255,0.6)', 'rgba(255,0,0,0.6)'])
+				// .pathDashLength(0.01)
+				// .pathDashGap(0.004)
+				// .pathDashAnimateTime(100000);
+				.arcsData(arcsData)
+				.arcColor('color')
+				.arcDashLength(() => Math.random())
+				.arcDashGap(() => Math.random())
+				.arcDashAnimateTime(() => Math.random() * 4000 + 500)
 			// .polygonCapColor(feat => 'rgba(200, 0, 0, 0.6)')
 			// .polygonSideColor(() => 'rgba(0, 100, 0, 0.05)')
 			// .polygonsData(countries.features)
@@ -303,6 +303,7 @@ export default defineComponent({
 			TWEEN.update();
 
 			colorObject = hexToRgb(newValue);
+			Globe.atmosphereColor(mixHexes(newValue, "FFFFFF"))
 		});
 
 		return {

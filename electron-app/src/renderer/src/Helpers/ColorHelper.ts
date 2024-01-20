@@ -36,7 +36,7 @@ export function mixHexes(hex1: string, hex2: string, ratio: number = 0.5)
 	return rgb2hex(r, g, b);
 }
 
-export function hexToRgb(hex): RGBColor | null
+export function hexToRgb(hex: string): RGBColor | null
 {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	return result ? {
@@ -44,4 +44,15 @@ export function hexToRgb(hex): RGBColor | null
 		g: parseInt(result[2], 16),
 		b: parseInt(result[3], 16)
 	} : null;
+}
+
+function componentToHex(c: number)
+{
+	var hex = c.toString(16);
+	return hex.length == 1 ? "0" + hex : hex;
+}
+
+export function rgbToHex(r: number, g: number, b: number): string
+{
+	return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }

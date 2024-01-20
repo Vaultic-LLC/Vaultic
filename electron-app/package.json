@@ -31,6 +31,7 @@
 		"chart.js": "^4.4.0",
 		"chartjs-plugin-zoom": "^2.0.1",
 		"clipboardy": "^4.0.0",
+		"d3": "^7.8.5",
 		"electron-updater": "^6.1.1",
 		"three-globe": "^2.30.0",
 		"tippy.js": "^6.3.7",

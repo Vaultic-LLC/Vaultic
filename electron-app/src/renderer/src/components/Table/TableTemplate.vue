@@ -193,7 +193,7 @@ export default defineComponent({
 }
 
 .tableContainer.scrollbar::-webkit-scrollbar-track {
-	transition: 0.6s;
+	transition: 0.3s;
 	background: v-bind(scrollbarColor);
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
 	border-top-left-radius: 20px;
@@ -201,7 +201,7 @@ export default defineComponent({
 }
 
 .tableContainer.scrollbar::-webkit-scrollbar-thumb {
-	transition: 0.6s;
+	transition: 0.3s;
 	background: v-bind(primaryColor);
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
 	border-top-left-radius: 20px;
