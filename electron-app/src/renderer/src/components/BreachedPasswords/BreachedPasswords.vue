@@ -6,34 +6,14 @@
 				<span v-else>Scan</span>
 			</div>
 			<div class="breachedPasswordsContainer__title">
-				<div>
+				<h2>
 					Breached Passwords
-				</div>
+				</h2>
 			</div>
 			<div class="breachedPasswordsContainer__items">
-				<!-- <div class="breachedItemContainer spinningGlobe">
-					<SpinningGlobe />
-					<div class="breachedPasswordsContainer__scanner">
-					</div>
-				</div> -->
 				<div class="breachedPasswordsContainer__map">
 					<WorldMap :scan="scanning" />
 				</div>
-				<!-- <div class="breachedItemContainer breeachedPasswordTable">
-					<TableTemplate ref="tableRef" :color="color" class="shadow scrollbar" :scrollbar-size="1"
-						@scrolledToBottom="tableRowDatas.loadNextChunk()"
-						:style="{ 'position': 'relative', 'height': '100%' }" :rowGap="10">
-						<template #header>
-							<TableHeaderRow :model="passwordHeaders" :defaultActiveHeader="1"
-								:backgroundColor="'#121a20'" />
-						</template>
-						<template #body>
-							<TableRow v-for="(model, index) in tableRowDatas.visualValues" :key="model.id" :model="model"
-								:rowNumber="index" :allowPin="false" :allowDelete="false" :allowEdit="true"
-								class="shadow hover" :style="{ 'height': '70px' }" :color="color" />
-						</template>
-					</TableTemplate>
-				</div> -->
 				<div class="breachedPasswordsContainer__metric">
 					<SmallMetricGauge :model="metricModel" />
 				</div>
@@ -52,13 +32,10 @@ import TableRow from '../Table/Rows/TableRow.vue';
 import WorldMap from './WorldMap.vue';
 
 import { stores } from '../../Objects/Stores';
-import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { IGroupableSortedCollection, SortedCollection } from '@renderer/Objects/DataStructures/SortedCollections';
 import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
 import { DataType } from '@renderer/Types/Table';
-import { SmallMetricGaugeModel, SortableHeaderModel, TableRowData, emptyHeader } from '@renderer/Types/Models';
-import { v4 as uuidv4 } from 'uuid';
-import { createSortableHeaderModels } from '@renderer/Helpers/ModelHelper';
+import { SmallMetricGaugeModel, TableRowData } from '@renderer/Types/Models';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
 import { ShowToastFunctionKey } from '@renderer/Types/Keys';
@@ -85,45 +62,6 @@ export default defineComponent({
 		const showToastFunc: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const metricModel: Ref<SmallMetricGaugeModel> = ref(updateMetricModel())
-
-		const passwordActiveHeader: Ref<number> = ref(1);
-		const passwordHeaderDisplayFields: HeaderDisplayField[] = [
-			{
-				displayName: "Password For",
-				backingProperty: "passwordFor",
-				width: '200px'
-			},
-			{
-				displayName: "Login",
-				backingProperty: "login",
-				width: '200px'
-			}
-		];
-
-		const passwordHeaders: SortableHeaderModel[] = createSortableHeaderModels(true, passwordActiveHeader, passwordHeaderDisplayFields,
-			passwords, undefined, setModels);
-		passwordHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
-
-		function setModels()
-		{
-			const temp: TableRowData[] = passwords.calculatedValues.map(p =>
-			{
-				return {
-					id: uuidv4(),
-					values: [
-						{ value: p.passwordFor, copiable: false, width: '200px' },
-						{ value: p.login, copiable: true, width: '200px' }
-					]
-				}
-			});
-
-			tableRowDatas.value.setValues(temp);
-			if (tableRef.value)
-			{
-				// @ts-ignore
-				tableRef.value.scrollToTop();
-			}
-		}
 
 		function updateMetricModel()
 		{
@@ -193,20 +131,22 @@ export default defineComponent({
 		onMounted(() =>
 		{
 			passwords.updateValues(stores.encryptedDataStore.passwords.filter((_, i) => i < 4));
-			setModels();
 			startScan(false);
 		});
 
 		watch(() => stores.encryptedDataStore.passwords.length, () =>
 		{
 			passwords.updateValues(stores.encryptedDataStore.passwords.filter((_, i) => i < 4));
-			setModels();
+		});
+
+		watch(() => color.value, () =>
+		{
+			metricModel.value = updateMetricModel();
 		});
 
 		return {
 			color,
 			tableRef,
-			passwordHeaders,
 			tableRowDatas,
 			scanning,
 			metricModel,
@@ -220,9 +160,9 @@ export default defineComponent({
 	position: absolute;
 	padding-top: 10px;
 	top: 4%;
-	left: 53%;
+	left: 54%;
 	width: 25%;
-	height: 25.5%;
+	height: 24.5%;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -240,11 +180,8 @@ export default defineComponent({
 }
 
 .breachedPasswordsContainer__title {
-	font-size: 24px;
 	color: white;
 	height: 10%;
-	padding-top: 1%;
-	padding-bottom: 2%;
 }
 
 .breachedPasswordsContainer__items {

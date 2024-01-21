@@ -78,7 +78,7 @@ export const colorPalettes: ColorPalette[] = [
 		isCreated: true,
 		editable: false,
 		passwordsColor: {
-			primaryColor: "#a712ec",
+			primaryColor: "#bb29ff",
 			secondaryColorOne: "#6612ec",
 			secondaryColorTwo: "#2419bf"
 		},
@@ -141,29 +141,29 @@ export const colorPalettes: ColorPalette[] = [
 		sideDrawerColor: "#0c0f16",
 		metricDrawerColor: "#0f141a"
 	},
-	{
-		id: -4,
-		active: false,
-		isCreated: false,
-		editable: false,
-		passwordsColor: {
-			primaryColor: "",
-			secondaryColorOne: "",
-			secondaryColorTwo: ""
-		},
-		valuesColor: {
-			primaryColor: "",
-			secondaryColorOne: "",
-			secondaryColorTwo: ""
-		},
-		filtersColor: "",
-		groupsColor: "",
-		deleteColor: '',
-		backgroundColor: "#0f111d",
-		tableColor: "#161e29",
-		sideDrawerColor: "#0c0f16",
-		metricDrawerColor: "#0f141a"
-	},
+	// {
+	// 	id: -4,
+	// 	active: false,
+	// 	isCreated: true,
+	// 	editable: false,
+	// 	passwordsColor: {
+	// 		primaryColor: "#a712ec",
+	// 		secondaryColorOne: "#6612ec",
+	// 		secondaryColorTwo: "#2419bf"
+	// 	},
+	// 	valuesColor: {
+	// 		primaryColor: "#03C4A1",
+	// 		secondaryColorOne: "#03a7c4",
+	// 		secondaryColorTwo: "#03c460"
+	// 	},
+	// 	filtersColor: "#7752FE",
+	// 	groupsColor: "#19A7CE",
+	// 	deleteColor: 'red',
+	// 	backgroundColor: "#0f111d",
+	// 	tableColor: "#161e29",
+	// 	sideDrawerColor: "#0c0f16",
+	// 	metricDrawerColor: "#0f141a"
+	// },
 	{
 		id: -5,
 		active: false,
@@ -209,5 +209,51 @@ export const colorPalettes: ColorPalette[] = [
 		tableColor: "#161e29",
 		sideDrawerColor: "#0c0f16",
 		metricDrawerColor: "#0f141a"
-	}
+	},
+	{
+		id: -7,
+		active: false,
+		isCreated: false,
+		editable: false,
+		passwordsColor: {
+			primaryColor: "",
+			secondaryColorOne: "",
+			secondaryColorTwo: ""
+		},
+		valuesColor: {
+			primaryColor: "",
+			secondaryColorOne: "",
+			secondaryColorTwo: ""
+		},
+		filtersColor: "",
+		groupsColor: "",
+		deleteColor: '',
+		backgroundColor: "#0f111d",
+		tableColor: "#161e29",
+		sideDrawerColor: "#0c0f16",
+		metricDrawerColor: "#0f141a"
+	},
+	// {
+	// 	id: -8,
+	// 	active: false,
+	// 	isCreated: false,
+	// 	editable: false,
+	// 	passwordsColor: {
+	// 		primaryColor: "",
+	// 		secondaryColorOne: "",
+	// 		secondaryColorTwo: ""
+	// 	},
+	// 	valuesColor: {
+	// 		primaryColor: "",
+	// 		secondaryColorOne: "",
+	// 		secondaryColorTwo: ""
+	// 	},
+	// 	filtersColor: "",
+	// 	groupsColor: "",
+	// 	deleteColor: '',
+	// 	backgroundColor: "#0f111d",
+	// 	tableColor: "#161e29",
+	// 	sideDrawerColor: "#0c0f16",
+	// 	metricDrawerColor: "#0f141a"
+	// }
 ];

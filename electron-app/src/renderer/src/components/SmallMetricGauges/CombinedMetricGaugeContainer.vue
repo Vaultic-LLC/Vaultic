@@ -54,7 +54,7 @@ export default defineComponent({
 .combinedMetricGaugeContainer__metrics {
 	display: grid;
 	column-gap: 40px;
-	row-gap: 60px;
+	row-gap: 55px;
 }
 
 .combinedMetricGaugeContainer__atRiskTitle {

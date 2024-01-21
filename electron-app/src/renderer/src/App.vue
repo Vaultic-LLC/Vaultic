@@ -27,15 +27,18 @@
 		<div class="tempWidget" :style="{ right: '2%', top: '45%' }">
 			<FilterGroupGauges />
 		</div>
-		<div class="tempWidget" :style="{ top: '4%', left: '26%', width: '25%', height: '26%' }">
+		<div class="tempWidget" :style="{ top: '4%', left: '31%', width: '21%', height: '25%' }">
 			<PasswordStrengthProgressChart />
 		</div>
 		<div class="tempWidget" :style="{ top: '72%', right: '2%', width: '17%' }">
 			<LoginHistoryCalendar />
 		</div>
-		<LockIconCard class="tempWidget" :style="{ top: '86%', left: '6%', width: '6%', height: '11%' }" />
-		<SettingsIconCard class="tempWidget" :style="{ top: '86%', left: '15%', width: '6%', height: '11%' }" />
-		<AboutIconCard class="tempWidget" :style="{ top: '86%', left: '24%', width: '6%', height: '11%' }" />
+		<div class="iconWidgets" :style="{ top: '89%', left: '3%', width: '25%', height: '8%' }">
+			<LockIconCard :style="{ 'grid-row': '1', 'grid-column': 1 }" />
+			<SettingsIconCard :style="{ 'grid-row': '1', 'grid-column': 2 }" />
+			<LayoutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" />
+			<AboutIconCard :style="{ 'grid-row': '1', 'grid-column': 4 }" />
+		</div>
 	</div>
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
@@ -62,6 +65,8 @@ import LoginHistoryCalendar from './components/Widgets/LoginHistoryCalendar.vue'
 import SettingsIconCard from "./components/Widgets/IconCards/SettingsIconCard.vue"
 import LockIconCard from "./components/Widgets/IconCards/LockIconCard.vue"
 import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
+import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
+import SliderField from './components/InputFields/SliderField.vue';
 
 import { SingleSelectorItemModel } from './Types/Models';
 import { stores } from './Objects/Stores';
@@ -89,7 +94,9 @@ export default defineComponent({
 		LoginHistoryCalendar,
 		SettingsIconCard,
 		LockIconCard,
-		AboutIconCard
+		AboutIconCard,
+		LayoutIconCard,
+		SliderField
 	},
 	setup()
 	{
@@ -325,5 +332,12 @@ div {
 	aspect-ratio: 1/1;
 	display: flex;
 	justify-content: center;
+}
+
+.iconWidgets {
+	position: absolute;
+	background: var(--widget-background-color);
+	display: grid;
+	border-radius: 20px;
 }
 </style>

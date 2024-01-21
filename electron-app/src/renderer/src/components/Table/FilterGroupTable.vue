@@ -1,7 +1,7 @@
 <template>
 	<div id="filterGroupTableContainer">
 		<TableTemplate ref="tableRef" :rowGap="10" class="shadow scrollbar" id="filterTable" :color="color"
-			:scrollbar-size="1" :style="{ height: '32%', width: '25%', left: '5%', top: '42%' }"
+			:scrollbar-size="1" :style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :model="headerModels" :tabs="headerTabs">

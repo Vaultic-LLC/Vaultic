@@ -2,7 +2,7 @@
 	<div id="passwordValueTable">
 		<TableTemplate ref="tableRef" :rowGap="0" id="passwordTable" class="shadow scrollbar" :color="color"
 			:headerModels="headerModels" :scrollbar-size="1"
-			:style="{ height: '55%', width: '45%', left: '33%', top: '42%' }"
+			:style="{ height: '55%', width: '48%', left: '31%', top: '42%' }"
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :color="color" :model="headerModels" :tabs="headerTabs">

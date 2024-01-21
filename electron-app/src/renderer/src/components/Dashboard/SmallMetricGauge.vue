@@ -263,7 +263,7 @@ export default defineComponent({
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	color: rgba(255, 255, 255, 0.75);
-	transform: translateY(50px);
+	transform: translateY(40px);
 	transition: 0.2s;
 	user-select: none;
 }
