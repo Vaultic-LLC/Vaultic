@@ -3,7 +3,7 @@
 		:model="model" :rowNumber="rowNumber" :color="color" :allowPin="true" :allowEdit="true" :allowDelete="true"
 		:hideAtRisk="false" :clickable="true" :style="{ 'height': '100px' }">
 		<td class="groupCell">
-			<GroupIcon v-for="group in currentGroups" :key="group.id" :group="group" />
+			<GroupIcon v-for="(model) in groupIconModels" :key="model.toolTipText" :model="model" />
 		</td>
 	</TableRow>
 	<tr class="collapseRow">
@@ -18,6 +18,7 @@ import TableRow from "../Table/Rows/TableRow.vue"
 import { Group } from '../../Types/Table';
 import { stores } from '../../Objects/Stores';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
+import { GroupIconModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "CollapsibleTableRow",
@@ -38,7 +39,57 @@ export default defineComponent({
 		let resolveFunc: (key: string) => void;
 		let rejectFunc: () => void;
 
-		let currentGroups: ComputedRef<Group[]> = computed(() => stores.groupStore.groups.filter(g => props.groups.includes(g.id)));
+		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+
+		let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
+		{
+			const allGroups: Group[] = stores.groupStore.groups.filter(g => props.groups.includes(g.id));
+			if (allGroups.length <= 4)
+			{
+				return allGroups.map((g) =>
+				{
+					const groupIconModel: GroupIconModel =
+					{
+						iconDisplayText: g.name[0],
+						toolTipText: g.name,
+						color: g.color
+					}
+
+					return groupIconModel;
+				});
+			}
+
+			let tempGroupModels: GroupIconModel[] = [...allGroups.filter((_, i) => i < 3)].map((g) =>
+			{
+				const groupIconModel: GroupIconModel =
+				{
+					iconDisplayText: g.name[0],
+					toolTipText: g.name,
+					color: g.color
+				}
+
+				return groupIconModel;
+			});
+
+			let lastGroupModel: GroupIconModel =
+			{
+				iconDisplayText: `+${allGroups.length - 3}`,
+				toolTipText: '',
+				color: primaryColor.value
+			};
+
+			for (let i = 3; i < allGroups.length; i++)
+			{
+				lastGroupModel.toolTipText += `${allGroups[i].name}`;
+				if (i != allGroups.length - 1)
+				{
+					lastGroupModel.toolTipText += ", ";
+				}
+			}
+
+			tempGroupModels.push(lastGroupModel);
+			return tempGroupModels;
+		});
 
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
@@ -81,7 +132,7 @@ export default defineComponent({
 			reqAuth,
 			showCollapseRow,
 			stayOpen,
-			currentGroups,
+			groupIconModels,
 			authPromise,
 			toggleCollapseContent,
 			onAuthenticationSuccessful

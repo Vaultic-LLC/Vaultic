@@ -51,7 +51,7 @@ export default defineComponent({
 			requstAuthorization.value = true;
 		}
 
-		function onAuthorizationSuccessful(key: string)
+		function onAuthorizationSuccessful(_: string)
 		{
 			showUnlockIcon.value = false;
 		}

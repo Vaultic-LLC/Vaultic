@@ -35,9 +35,9 @@ export default defineComponent({
 					animation: 'scale',
 					theme: 'material',
 					placement: placement.value
-				})
+				});
 			}
-		})
+		});
 
 		return {
 			currentColorPalette,

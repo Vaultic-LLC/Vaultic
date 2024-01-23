@@ -1,5 +1,6 @@
 <template>
-	<tr class="tableRow" :class="{ clickable: clickable, pinned: isPinned }">
+	<tr class="tableRow"
+		:class="{ clickable: clickable, pinned: isPinned, zIndexing: zIndexing, deletingRow: deletingRow }">
 		<slot></slot>
 		<td v-for="rowValue in tableRowData.values" :key="rowValue.value">
 			<div class="rowValue" :style="{ 'width': rowValue.width }">
@@ -43,7 +44,7 @@ export default defineComponent({
 	{
 		AtRiskIndicator
 	},
-	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete", 'clickable', 'hideAtRisk'],
+	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete", 'clickable', 'hideAtRisk', 'zIndexing'],
 	setup(props)
 	{
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
@@ -55,6 +56,7 @@ export default defineComponent({
 		const animationDelay: Ref<string> = ref('');
 		setAnimationDelay(rowNumb.value);
 		const hideAtRiskCell: ComputedRef<boolean> = computed(() => props.hideAtRisk === true);
+		const deletingRow: Ref<boolean> = ref(false);
 
 		const showToastFunction: { (title: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
@@ -88,10 +90,14 @@ export default defineComponent({
 
 		function onDelete()
 		{
-			if (tableRowData.value.onDelete)
+			deletingRow.value = true;
+			setTimeout(() =>
 			{
-				tableRowData.value.onDelete();
-			}
+				if (tableRowData.value.onDelete)
+				{
+					tableRowData.value.onDelete();
+				}
+			}, 350);
 		}
 
 		function copyText(text: string)
@@ -108,6 +114,7 @@ export default defineComponent({
 			rowColor,
 			animationDelay,
 			hideAtRiskCell,
+			deletingRow,
 			onPin,
 			onEdit,
 			onDelete,
@@ -118,6 +125,7 @@ export default defineComponent({
 </script>
 <style>
 .tableRow {
+	position: relative;
 	width: 80%;
 	opacity: 0;
 	animation: fadeIn 1s linear forwards;
@@ -128,6 +136,10 @@ export default defineComponent({
 
 	border: 10px solid transparent;
 	/* background-color: #121a20; */
+}
+
+.tableRow.zIndexing {
+	z-index: calc(999999 - v-bind(rowNumber));
 }
 
 .tableRow.shadow.pinned {
@@ -153,6 +165,10 @@ export default defineComponent({
 		5px -5px 10px #1b2630;
 }
 
+.tableRow.deletingRow {
+	animation: 0.3s deleteRow linear;
+}
+
 @keyframes fadeIn {
 	0% {
 		opacity: 0;
@@ -170,6 +186,20 @@ export default defineComponent({
 
 	100% {
 		--angle: 360deg;
+	}
+}
+
+@keyframes deleteRow {
+	0% {
+		opacity: 1;
+	}
+
+	99% {
+		opacity: 0;
+	}
+
+	100% {
+		display: none;
 	}
 }
 
@@ -208,6 +238,7 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	overflow: hidden;
+	flex-wrap: wrap;
 }
 
 .tableRow .rowIcon {

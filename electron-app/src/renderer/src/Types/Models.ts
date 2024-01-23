@@ -114,3 +114,10 @@ export interface GridDefinition
 	columns: number;
 	columnWidth: string;
 }
+
+export interface GroupIconModel
+{
+	iconDisplayText: string;
+	toolTipText: string;
+	color: string;
+}

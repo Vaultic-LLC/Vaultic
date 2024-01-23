@@ -179,14 +179,4 @@ export default defineComponent({
 	border-radius: 16px;
 	z-index: 7;
 }
-
-@keyframes rotate {
-	0% {
-		transform: rotate(0deg);
-	}
-
-	100% {
-		transform: rotate(360deg);
-	}
-}
 </style>

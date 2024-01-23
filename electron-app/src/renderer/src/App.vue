@@ -269,7 +269,8 @@ export default defineComponent({
 </script>
 
 <style>
-@import './variables.css';
+@import './CSSConstants/variables.css';
+@import './CSSConstants/animations.css';
 
 .lockFade-enter-active,
 .lockFade-leave-active {

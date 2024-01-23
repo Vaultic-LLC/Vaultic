@@ -55,10 +55,10 @@ export default defineComponent({
 }
 
 .iconCardContainer__icon {
-	transition: 0.6s;
+	transition: 0.3s;
 	font-size: 48px;
-	color: v-bind(color);
 	transform: translateY(50%);
+	color: white;
 	/* background-image: v-bind(gradient);
 	background-clip: text;
 	-webkit-background-clip: text;
@@ -68,6 +68,7 @@ export default defineComponent({
 
 .iconCardContainer:hover .iconCardContainer__items .iconCardContainer__icon {
 	transform: translateY(0);
+	color: v-bind(color);
 }
 
 .iconCardContainer__text {

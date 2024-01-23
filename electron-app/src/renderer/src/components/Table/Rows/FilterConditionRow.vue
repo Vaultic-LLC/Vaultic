@@ -1,5 +1,5 @@
 <template>
-	<TableRow :rowNumber="rowNumber" :model="model" :color="color" :allowDelete="true">
+	<TableRow :rowNumber="rowNumber" :model="model" :color="color" :allowDelete="true" :zIndexing="true">
 		<td class="securityQuestion">
 			<PropertySelectorInputField :label="'Property'" :color="color" v-model="filterCondition.property"
 				:model="filterCondition.property" :displayFieldOptions="displayFieldOptions"

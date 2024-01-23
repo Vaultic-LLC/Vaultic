@@ -18,7 +18,11 @@
 	--values-pair-2: #03C4A1;
 
 	--widget-background-color: rgb(44 44 51 / 16%);
-	--widget-background-color: #2c2c3329;
+	--widget-background-colorHex: #2c2c3329;
+
+	--solid-widget-background-color: #18181c;
+
+	--input-field-label-color: #121218;
 
 	--test: #282525;
 }
