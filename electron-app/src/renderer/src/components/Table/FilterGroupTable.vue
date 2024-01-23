@@ -267,7 +267,7 @@ export default defineComponent({
 
 		function onFilterDeleteInitiated(filter: Filter)
 		{
-			deleteFilter.value = (key: string) =>
+			deleteFilter.value = (_: string) =>
 			{
 				stores.filterStore.deleteFilter(filter);
 			}
@@ -292,7 +292,7 @@ export default defineComponent({
 
 		function onGroupDeleteInitiated(group: Group)
 		{
-			deleteGroup.value = (key: string) =>
+			deleteGroup.value = (_: string) =>
 			{
 				stores.groupStore.deleteGroup(group);
 			}

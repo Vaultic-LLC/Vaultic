@@ -250,7 +250,7 @@ export default defineComponent({
 	color: v-bind(defaultInputTextColor);
 	pointer-events: none;
 	transform: translateY(1rem);
-	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	transition: var(--input-label-transition);
 }
 
 .textInputFieldContainer .textInputFieldInput:focus,

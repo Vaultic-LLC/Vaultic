@@ -107,7 +107,7 @@ export default function useSettingsStore(): SettingsStore
 		watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
 		{
 			setCurrentPrimaryColor(newValue);
-		})
+		});
 
 		setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 	}

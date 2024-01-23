@@ -13,11 +13,14 @@
 	</div>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, provide } from 'vue';
+import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
 import { DataType } from '../../Types/Table';
 import { ClosePopupFuncctionKey } from '../../Types/Keys';
 import { stores } from '../../Objects/Stores';
+import * as TWEEN from '@tweenjs/tween.js'
+import { RGBColor } from '@renderer/Types/Colors';
+import { hexToRgb } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: "ObjectPopup",
@@ -29,40 +32,109 @@ export default defineComponent({
 		const closePopupFunc: ComputedRef<(saved: boolean) => void> = computed(() => props.closePopup);
 		provide(ClosePopupFuncctionKey, closePopupFunc);
 
-		const primaryColor: ComputedRef<string> = computed(() =>
+		const previousPrimaryColor: Ref<string> = ref('');
+		const primaryColor: Ref<string> = ref('');
+
+		const previousSecondaryColorOne: Ref<string> = ref('');
+		const secondaryColorOne: Ref<string> = ref('');
+
+		const previousSecondaryColorTwo: Ref<string> = ref('');
+		const secondaryColorTwo: Ref<string> = ref('');
+
+		function transitionColors()
 		{
-			switch (stores.appStore.activePasswordValuesTable)
+			let startColorTransitionTime: number;
+
+			let currentPrimaryColor: string = '';
+			let currentSecondaryColorOne: string = '';
+			let currentSecondaryColorTwo: string = '';
+
+			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
-				case DataType.NameValuePairs:
-					return stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
-				case DataType.Passwords:
-				default:
-					return stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
+				currentPrimaryColor = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
+				currentSecondaryColorOne = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorOne;
+				currentSecondaryColorTwo = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorTwo;
 			}
+			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+			{
+				currentPrimaryColor = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
+				currentSecondaryColorOne = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorOne;
+				currentSecondaryColorTwo = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorTwo;
+			}
+
+			let primaryColorTween = getColorTween(previousPrimaryColor.value, currentPrimaryColor, primaryColor)
+			let secondaryColorOneTween = getColorTween(previousSecondaryColorOne.value, currentSecondaryColorOne, secondaryColorOne);
+			let secondaryColorTwoTween = getColorTween(previousSecondaryColorTwo.value, currentSecondaryColorTwo, secondaryColorTwo);
+
+			function animate(time)
+			{
+				if (!startColorTransitionTime)
+				{
+					startColorTransitionTime = time;
+				}
+
+				const elapsedTime = time - startColorTransitionTime;
+				if (elapsedTime < 1100)
+				{
+					primaryColorTween?.update(time)
+					secondaryColorOneTween?.update(time);
+					secondaryColorTwoTween?.update(time);
+
+					requestAnimationFrame(animate);
+				}
+			}
+
+			requestAnimationFrame(animate);
+
+			previousPrimaryColor.value = currentPrimaryColor;
+			previousSecondaryColorOne.value = currentSecondaryColorOne;
+			previousSecondaryColorTwo.value = currentSecondaryColorTwo;
+		}
+
+		function getColorTween(prevHex: string, newHex: string, localColorVariable: Ref<string>)
+		{
+			const previousColor: RGBColor | null = hexToRgb(prevHex);
+			const newColor: RGBColor | null = hexToRgb(newHex);
+
+			if (!previousColor || !newColor)
+			{
+				return null;
+			}
+
+			return new TWEEN.Tween(previousColor).to(newColor, 1000).onUpdate((object) =>
+			{
+				localColorVariable.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+			}).start();
+		}
+
+		watch(() => stores.appStore.activePasswordValuesTable, () =>
+		{
+			transitionColors();
 		});
 
-		const secondaryColorOne: ComputedRef<string> = computed(() =>
+		onMounted(() =>
 		{
-			switch (stores.appStore.activePasswordValuesTable)
-			{
-				case DataType.NameValuePairs:
-					return stores.settingsStore.currentColorPalette.valuesColor.secondaryColorOne;
-				case DataType.Passwords:
-				default:
-					return stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorOne;
-			}
-		});
+			previousPrimaryColor.value = stores.settingsStore.currentPrimaryColor.value;
+			primaryColor.value = stores.settingsStore.currentPrimaryColor.value;
 
-		const secondaryColorTwo: ComputedRef<string> = computed(() =>
-		{
-			switch (stores.appStore.activePasswordValuesTable)
+			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
-				case DataType.NameValuePairs:
-					return stores.settingsStore.currentColorPalette.valuesColor.secondaryColorTwo;
-				case DataType.Passwords:
-				default:
-					return stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorTwo;
+				previousSecondaryColorOne.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorOne;
+				secondaryColorOne.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorOne;
+
+				previousSecondaryColorTwo.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorTwo;
+				secondaryColorTwo.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorTwo;
 			}
+			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+			{
+				previousSecondaryColorOne.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorOne;
+				secondaryColorOne.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorOne;
+
+				previousSecondaryColorTwo.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorTwo;
+				secondaryColorTwo.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorTwo;
+			}
+
+			transitionColors();
 		});
 
 		return {
@@ -118,22 +190,22 @@ export default defineComponent({
 .objectyPopup::before {
 	content: "";
 	position: absolute;
-	width: 200%;
+	width: 120%;
 	height: 200%;
 	border-radius: inherit;
 	background-image: linear-gradient(0,
 			v-bind(primaryColor),
 			v-bind(secondaryColorOne),
 			v-bind(secondaryColorTwo));
-	animation: rotate 5s linear infinite;
+	animation: rotate 3s linear infinite;
 	z-index: 6;
 	transition: 0.3s;
 }
 
-.objectyPopup::after {
+/* .objectyPopup::after {
 	content: "";
 	position: absolute;
-	width: 200%;
+	width: 120%;
 	height: 200%;
 	border-radius: inherit;
 	background-image: linear-gradient(0,
@@ -144,7 +216,7 @@ export default defineComponent({
 	animation-delay: -1s;
 	z-index: 6;
 	transition: 0.3s;
-}
+} */
 
 .objectyPopup .closeIconContainer {
 	position: absolute;

@@ -94,7 +94,6 @@ export default defineComponent({
 	cursor: pointer;
 }
 
-
 .tableHeader__tableTabs__tab:nth-child(1) {
 	border-top-left-radius: 20px;
 }

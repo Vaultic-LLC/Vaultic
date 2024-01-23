@@ -23,6 +23,8 @@
 	--solid-widget-background-color: #18181c;
 
 	--input-field-label-color: #121218;
+	--input-label-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
 	--test: #282525;
+
 }

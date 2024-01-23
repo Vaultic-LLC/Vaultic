@@ -50,7 +50,7 @@ export default defineComponent({
 	{
 		const refreshKey: Ref<string> = ref("");
 		const settingsState: Ref<SettingsState> = ref(props.model);
-		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
+		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 
 		const gridDefinition: GridDefinition = {
 			rows: 10,

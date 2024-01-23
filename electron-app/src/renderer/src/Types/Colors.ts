@@ -85,7 +85,7 @@ export const colorPalettes: ColorPalette[] = [
 		valuesColor: {
 			primaryColor: "#03C4A1",
 			secondaryColorOne: "#03a7c4",
-			secondaryColorTwo: "#03c460"
+			secondaryColorTwo: "#0374c4"
 		},
 		filtersColor: "#7752FE",
 		groupsColor: "#19A7CE",

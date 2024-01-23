@@ -31,7 +31,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref } from "vue";
+import { defineComponent, ComputedRef, computed, Ref, ref, watch } from "vue";
 
 import SelectorButton from "../InputFields/SelectorButton.vue";
 
@@ -40,6 +40,10 @@ import { SelectorButtonModel } from "../../Types/Models";
 import { stores } from "../../Objects/Stores";
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import EditColorPalettePopup from "../ObjectPopups/EditPopups/EditColorPalettePopup.vue";
+import { getLinearGradientFromColor } from "@renderer/Helpers/ColorHelper";
+import * as TWEEN from '@tweenjs/tween.js'
+import { RGBColor } from '@renderer/Types/Colors';
+import { hexToRgb } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: "ColorPaletteDisplay",
@@ -53,7 +57,6 @@ export default defineComponent({
 	setup(props)
 	{
 		const editButton: Ref<HTMLElement | null> = ref(null);
-		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		const colorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[props.index]);
 
 		const primaryColor: ComputedRef<string> = computed(() => colorPalette.value.passwordsColor.primaryColor);
@@ -61,7 +64,9 @@ export default defineComponent({
 
 		const created: ComputedRef<boolean> = computed(() => colorPalette.value.isCreated);
 		const editable: ComputedRef<boolean> = computed(() => colorPalette.value.editable);
-		const addColor: ComputedRef<string> = computed(() => currentColorPalette.value.passwordsColor.primaryColor);
+
+		const addColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+		const addColorGradient: Ref<string> = ref(getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
 
 		const hoveringDisplay: Ref<boolean> = ref(false);
 		const hoveringIcon: Ref<boolean> = ref(false);
@@ -99,6 +104,41 @@ export default defineComponent({
 			showEditColorPalettePopup.value = true;
 		}
 
+		watch(() => stores.settingsStore.currentPrimaryColor.value, (newValue, oldValue): void =>
+		{
+			const previousColor: RGBColor | null = hexToRgb(oldValue);
+			const newColor: RGBColor | null = hexToRgb(newValue);
+
+			if (!previousColor || !newColor)
+			{
+				return;
+			}
+
+			const tween = new TWEEN.Tween(previousColor).to(newColor, 1000).onUpdate((object) =>
+			{
+				const rgb: string = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+				addColorGradient.value = getLinearGradientFromColor(rgb);
+			}).start();
+
+			let startColorTransitionTime: number;
+			function animate(time)
+			{
+				if (!startColorTransitionTime)
+				{
+					startColorTransitionTime = time;
+				}
+
+				const elapsedTime = time - startColorTransitionTime;
+				if (elapsedTime < 1100)
+				{
+					tween?.update(time)
+					requestAnimationFrame(animate);
+				}
+			}
+
+			requestAnimationFrame(animate);
+		});
+
 		return {
 			editButton,
 			selectorButtonModel,
@@ -107,6 +147,7 @@ export default defineComponent({
 			primaryColor,
 			valuesColor,
 			addColor,
+			addColorGradient,
 			showEditColorPalettePopup,
 			hoveringDisplay,
 			hoveringIcon,
@@ -178,8 +219,8 @@ export default defineComponent({
 	color: white;
 	font-size: 35px;
 	border-radius: 50%;
-	background-color: v-bind(addColor);
-	transition: 0.3s;
+	background: v-bind(addColorGradient);
+	transition: 0.6s;
 }
 
 .colorPaletteContainer.hover .addColorIconContainer {

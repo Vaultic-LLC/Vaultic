@@ -99,7 +99,7 @@ export default defineComponent({
 	position: absolute;
 	top: 30%;
 	left: 5%;
-	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	transition: var(--input-label-transition);
 	cursor: pointer;
 }
 
@@ -141,7 +141,7 @@ export default defineComponent({
 	position: absolute;
 	top: 30%;
 	left: 5%;
-	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	transition: var(--input-label-transition);
 }
 
 .dropDownContainer .dropDownSelect {
@@ -181,7 +181,7 @@ export default defineComponent({
 	display: block;
 	text-align: left;
 	padding-left: 10px;
-	transition: 0.3s;
+	transition: 0.15s;
 }
 
 .dropDownSelect.opened .dropDownSelectOption:last-child {
