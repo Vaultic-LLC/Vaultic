@@ -77,7 +77,7 @@ export default defineComponent({
 	width: v-bind('computedWidth');
 	border: 1.5px solid v-bind(color);
 	border-radius: 2rem;
-	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1), .3s;
+	transition: border 300ms cubic-bezier(0.4, 0, 0.2, 1), .3s;
 }
 
 .searchBarContainer .seachBarInput {

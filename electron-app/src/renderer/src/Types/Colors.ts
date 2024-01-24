@@ -6,6 +6,7 @@ export interface RGBColor
 	r: number;
 	g: number;
 	b: number;
+	alpha: number;
 }
 
 export interface TableColorScheme

@@ -7,6 +7,13 @@ export function getLinearGradientFromColor(color: string)
 		color-mix(in srgb, ${color}, #000 30%))`;
 }
 
+export function getLinearGradientFromColorAndPercent(color: string, percent: number)
+{
+	return `linear-gradient(90deg,
+		color-mix(in srgb, ${color}, #867E7E ${percent}%),
+		color-mix(in srgb, ${color}, #000 ${percent}%))`;
+}
+
 function hex2dec(hex: string)
 {
 	const matched = hex.replace('#', '').match(/.{2}/g)
@@ -42,7 +49,8 @@ export function hexToRgb(hex: string): RGBColor | null
 	return result ? {
 		r: parseInt(result[1], 16),
 		g: parseInt(result[2], 16),
-		b: parseInt(result[3], 16)
+		b: parseInt(result[3], 16),
+		alpha: 1
 	} : null;
 }
 

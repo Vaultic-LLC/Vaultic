@@ -1,12 +1,13 @@
 <template>
 	<div class="tableHeader">
 		<div class="tableHeader__tableTabs">
-			<div class="tableHeader__tableTabs__tab" v-for="(tab, index) in  headerTabs " :key="tab.id" :style="{
+			<!-- <div class="tableHeader__tableTabs__tab" v-for="(tab, index) in  headerTabs " :key="tab.id" :style="{
 				background: tab.active?.value ? (tab.backgroundColor?.value ?? '') : '',
 				boxShadow: hoveringTab == index ? `0 0 25px ${tab.color?.value}` : ''
 			}" @click="onTabClick(index)" @mouseover="onTabHover(index)" @mouseleave="onTabUnhover">
 				{{ tab.name }}
-			</div>
+			</div> -->
+			<TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
 		</div>
 		<div class="tableHeader__tableHeaderRow" :class="{ 'tableHeader__tableHeaderRow--noTabs': headerTabs.length == 0 }">
 			<div class="tableHeader__tableHeaderRow__headers">
@@ -24,6 +25,7 @@
 import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
 
 import TableHeaderCell from './TableHeaderCell.vue';
+import TableHeaderTab from './TableHeaderTab.vue';
 
 import { HeaderTabModel, SortableHeaderModel } from '../../../Types/Models';
 
@@ -32,6 +34,7 @@ export default defineComponent({
 	components:
 	{
 		TableHeaderCell,
+		TableHeaderTab
 	},
 	props: ["model", 'backgroundColor', 'tabs'],
 	setup(props)
