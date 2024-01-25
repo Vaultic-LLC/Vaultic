@@ -152,7 +152,11 @@ export default defineComponent({
 
 						ctx?.reset();
 
-						const pathGenerator = d3.geoPath(projection, ctx);
+						var proj = d3.geoNaturalEarth1()
+							.scale(width.value / 1.7 / Math.PI)
+							.translate([width.value / 2, height.value / 2])
+
+						const pathGenerator = d3.geoPath(proj, ctx);
 						ctx!.beginPath();
 						pathGenerator(countries);
 

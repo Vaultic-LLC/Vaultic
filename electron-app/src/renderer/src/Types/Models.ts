@@ -81,9 +81,8 @@ export interface HeaderTabModel
 {
 	id: string;
 	name: string;
-	active?: ComputedRef<boolean>;
-	color?: ComputedRef<string>;
-	backgroundColor?: ComputedRef<string>;
+	active: ComputedRef<boolean>;
+	color: ComputedRef<string>;
 	onClick?: () => void;
 }
 

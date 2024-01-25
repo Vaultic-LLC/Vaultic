@@ -4,7 +4,7 @@
 		<TextInputField :label="'Name'" :color="color" v-model="filterState.text"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
 		<FilterConditionInputField :border="true" :scrollbar="true" :color="color" :model="filterState.conditions"
-			:rowGap="20" :style="{ 'grid-row': '5 / span 3', 'grid-column': '2 / span 8' }"
+			:rowGap="20" :style="{ 'grid-row': '4 / span 8', 'grid-column': '2 / span 8' }"
 			:displayFieldOptions="displayFieldOptions" />
 	</ObjectView>
 </template>
@@ -44,7 +44,7 @@ export default defineComponent({
 
 		const gridDefinition: GridDefinition =
 		{
-			rows: 10,
+			rows: 12,
 			rowHeight: '50px',
 			columns: 11,
 			columnWidth: '100px'

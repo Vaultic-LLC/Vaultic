@@ -9,15 +9,11 @@
 					<template #controls>
 						<SearchBar v-if="activeTable == 0" v-model="currentSearchText" :color="color"
 							:labelBackground="'rgb(44 44 51 / 16%)'" />
-						<AddTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
+						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
 					</template>
 				</TableHeaderRow>
 			</template>
 			<template #body>
-				<!-- Empty table row so that our first table row doesn't get overlapped by the header -->
-				<!-- <tr>
-					<div :style="{ 'min-height': '10px' }"></div>
-				</tr> -->
 				<CollapsibleTableRow :shadow="true" v-slot="props"
 					v-for="(model, index) in collapsibleTableRowModels.visualValues" :key="model.id"
 					:groups="model.data.groups" :model="model" :rowNumber="index" :color="color">
@@ -57,7 +53,7 @@ import NameValuePairRow from './NameValuePair/NameValuePairRow.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
 import TableTemplate from './TableTemplate.vue';
 import CollapsibleTableRow from './CollapsibleTableRow.vue';
-import AddTableItemButton from './Controls/AddTableItemButton.vue';
+import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue';
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
@@ -73,7 +69,6 @@ import { stores } from '../../Objects/Stores/index';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
 import { v4 as uuidv4 } from 'uuid';
-import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: "PasswordValueTable",
@@ -81,7 +76,7 @@ export default defineComponent({
 	{
 		ObjectPopup,
 		TableTemplate,
-		AddTableItemButton,
+		AddDataTableItemButton,
 		TableHeaderRow,
 		CollapsibleTableRow,
 		PasswordRow,
@@ -132,7 +127,6 @@ export default defineComponent({
 				name: 'Passwords',
 				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
 				color: computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor),
-				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
 				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
 			},
 			{
@@ -140,7 +134,6 @@ export default defineComponent({
 				name: 'Values',
 				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
 				color: computed(() => stores.settingsStore.currentColorPalette.valuesColor.primaryColor),
-				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
 				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.NameValuePairs; }
 			}
 		];

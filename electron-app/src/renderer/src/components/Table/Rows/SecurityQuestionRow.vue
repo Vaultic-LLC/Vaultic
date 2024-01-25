@@ -1,5 +1,6 @@
 <template>
-	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="color" :allowDelete="!disabled" :hideAtRisk="true">
+	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="color" :allowDelete="!disabled" :hideAtRisk="true"
+		:animateDelete="true">
 		<td class="securityQuestionRowOne">
 			<EncryptedInputField :color="color" :label="'Question'" v-model="securityQuestion.question"
 				:initialLength="securityQuestion.questionLength" :isInitiallyEncrypted="isInitiallyEncrypted"

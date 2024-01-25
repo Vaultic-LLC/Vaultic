@@ -1,10 +1,6 @@
 <template>
 	<div class="addTableItem">
-		<div class="addTableItemButtonContainer">
-			<div class="addTableItemButton" @click="doShowEditControlsPopup">
-				<ion-icon class="addTableItemButtonIcon" name="add-outline"></ion-icon>
-			</div>
-		</div>
+		<AddButton :color="primaryColor" @click="doShowEditControlsPopup" />
 		<Teleport to="#body">
 			<Transition name="fade">
 				<ObjectPopup v-if="showEditControlsPopup" :closePopup="closePopup">
@@ -18,15 +14,17 @@
 <script lang="ts">
 import { defineComponent, Ref, ref, ComputedRef, computed } from 'vue';
 
+import AddButton from './AddButton.vue';
 import ObjectPopup from '../../../components/ObjectPopups/ObjectPopup.vue';
 import AddObjectPopup from "../../../components/ObjectPopups/AddObjectPopup.vue"
 
 export default defineComponent({
-	name: "AddTableItemButton",
+	name: "AddDataTableItemButton",
 	components:
 	{
 		ObjectPopup,
-		AddObjectPopup
+		AddObjectPopup,
+		AddButton
 	},
 	props: ['initalActiveContentOnClick', 'color'],
 	setup(props)

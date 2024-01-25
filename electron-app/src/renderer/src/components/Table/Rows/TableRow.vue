@@ -44,7 +44,8 @@ export default defineComponent({
 	{
 		AtRiskIndicator
 	},
-	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete", 'clickable', 'hideAtRisk', 'zIndexing'],
+	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete",
+		'clickable', 'hideAtRisk', 'zIndexing', 'animateDelete'],
 	setup(props)
 	{
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
@@ -90,14 +91,24 @@ export default defineComponent({
 
 		function onDelete()
 		{
-			deletingRow.value = true;
-			setTimeout(() =>
+			if (props.animateDelete == true)
+			{
+				deletingRow.value = true;
+				setTimeout(() =>
+				{
+					if (tableRowData.value.onDelete)
+					{
+						tableRowData.value.onDelete();
+					}
+				}, 350);
+			}
+			else
 			{
 				if (tableRowData.value.onDelete)
 				{
 					tableRowData.value.onDelete();
 				}
-			}, 350);
+			}
 		}
 
 		function copyText(text: string)

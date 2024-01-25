@@ -7,7 +7,7 @@
 				<TableHeaderRow :model="headerModels" :tabs="headerTabs">
 					<template #controls>
 						<SearchBar v-model="currentSearchText" :color="color" :width="'250px'" />
-						<AddTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
+						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
 					</template>
 				</TableHeaderRow>
 			</template>
@@ -45,9 +45,9 @@ import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import EditGroupPopup from '../ObjectPopups/EditPopups/EditGroupPopup.vue';
 import EditFilterPopup from '../ObjectPopups/EditPopups/EditFilterPopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
+import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 
 import { DataType, Filter, Group } from '../../Types/Table';
-import AddTableItemButton from './Controls/AddTableItemButton.vue';
 import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '../../Types/EncryptedData';
@@ -56,7 +56,6 @@ import { stores } from '../../Objects/Stores';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
 import { v4 as uuidv4 } from 'uuid';
-import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: 'FilterGroupTable',
@@ -65,7 +64,7 @@ export default defineComponent({
 		TableTemplate,
 		SelectableTableRow,
 		TableHeaderRow,
-		AddTableItemButton,
+		AddDataTableItemButton,
 		ObjectPopup,
 		EditGroupPopup,
 		EditFilterPopup,
@@ -135,7 +134,6 @@ export default defineComponent({
 				name: 'Filters',
 				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters),
 				color: computed(() => stores.settingsStore.currentColorPalette.filtersColor),
-				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
 				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Filters; }
 			},
 			{
@@ -143,7 +141,6 @@ export default defineComponent({
 				name: 'Groups',
 				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Groups),
 				color: computed(() => stores.settingsStore.currentColorPalette.groupsColor),
-				backgroundColor: computed(() => getLinearGradientFromColor(color.value)),
 				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Groups; }
 			}
 		];

@@ -39,7 +39,7 @@ export default defineComponent({
 	props: ["model", 'backgroundColor', 'tabs'],
 	setup(props)
 	{
-		const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() => props.model.filter(m => m.name !== ''));
+		const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() => props.model?.filter(m => m.name !== '') || []);
 		const headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.tabs ?? []);
 		const hoveringTab: Ref<number> = ref(-1);
 
