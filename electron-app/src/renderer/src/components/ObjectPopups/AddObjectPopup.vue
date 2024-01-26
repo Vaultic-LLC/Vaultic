@@ -6,12 +6,14 @@
 			:style="{ 'left': '20%', 'top': '10%', 'width': '60%', 'z-index': '10' }" />
 	</div>
 	<div class="actionControl">
-		<FilterView v-show="activeContent == 2 && activeTable == 0" :creating="true" :model="passwordFilterModel" />
-		<FilterView v-show="activeContent == 2 && activeTable == 1" :creating="true" :model="valueFilterModel" />
-		<GroupView v-show="activeContent == 3 && activeTable == 0" :creating="true" :model="passwordGroupModel" />
-		<GroupView v-show="activeContent == 3 && activeTable == 1" :creating="true" :model="valueGroupModel" />
-		<PasswordView v-show="activeContent < 2 && activeTable == 0" :creating="true" :model="passwordModel" />
-		<ValueView v-show="activeContent < 2 && activeTable == 1" :creating="true" :model="valueModel" />
+		<Transition name="addObjectFade" mode="out-in">
+			<FilterView v-if="activeContent == 2 && activeTable == 0" :creating="true" :model="passwordFilterModel" />
+			<FilterView v-else-if="activeContent == 2 && activeTable == 1" :creating="true" :model="valueFilterModel" />
+			<GroupView v-else-if="activeContent == 3 && activeTable == 0" :creating="true" :model="passwordGroupModel" />
+			<GroupView v-else-if="activeContent == 3 && activeTable == 1" :creating="true" :model="valueGroupModel" />
+			<PasswordView v-else-if="activeContent < 2 && activeTable == 0" :creating="true" :model="passwordModel" />
+			<ValueView v-else-if="activeContent < 2 && activeTable == 1" :creating="true" :model="valueModel" />
+		</Transition>
 	</div>
 </template>
 <script lang="ts">

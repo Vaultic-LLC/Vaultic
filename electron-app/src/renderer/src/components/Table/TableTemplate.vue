@@ -4,7 +4,8 @@
 			<slot name="header"></slot>
 		</div>
 		<div class="tableContainer scrollbar" ref="tableContainer"
-			:class="{ small: scrollbarSize == 0, medium: scrollbarSize == 1 }" @scroll="checkScrollHeight">
+			:class="{ small: scrollbarSize == 0, medium: scrollbarSize == 1, border: applyBorder }"
+			@scroll="checkScrollHeight">
 			<table class="tableContent">
 				<!-- Just used to force table row cell widths -->
 				<tr>
@@ -26,13 +27,14 @@ import { stores } from '../../Objects/Stores';
 export default defineComponent({
 	name: "TableTemplate",
 	emits: ['scrolledToBottom'],
-	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels'],
+	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border'],
 	setup(props, ctx)
 	{
 		const tableContainer: Ref<HTMLElement | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const rowGapValue: ComputedRef<string> = computed(() => `${props.rowGap}px`);
 		const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels);
+		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
 
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);
 		function calcScrollbarColor()
@@ -111,6 +113,7 @@ export default defineComponent({
 			scrollbarColor,
 			rowGapValue,
 			headers,
+			applyBorder,
 			checkScrollHeight,
 			scrollToTop
 		}
@@ -157,15 +160,9 @@ export default defineComponent({
 	border-bottom-right-radius: 20px;
 }
 
-.tableContainer.shadow {
-	/* background-color: #121a20;
-	box-shadow: 5px 5px 10px #070a0c,
-		-5px -5px 10px #1b2630; */
-	background-color: rgb(44 44 51 / 16%);
-}
-
 .tableContainer.border {
-	border: 3px solid v-bind(primaryColor);
+	border-bottom: 3px solid v-bind(color);
+	border-right: 3px solid v-bind(color);
 }
 
 .tableContent {

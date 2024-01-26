@@ -43,6 +43,7 @@ export interface TableRowValues
 	value: string;
 	copiable: boolean;
 	width: string;
+	margin?: boolean;
 }
 
 export interface SelectableTableRowData extends TableRowData

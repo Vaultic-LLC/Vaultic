@@ -333,16 +333,6 @@ export default defineComponent({
 </script>
 
 <style>
-.fade-enter-active,
-.fade-leave-active {
-	transition: opacity 0.3s linear;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-	opacity: 0;
-}
-
 .metricDrawer {
 	height: 100%;
 	width: 20%;

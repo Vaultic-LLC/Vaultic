@@ -145,17 +145,20 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '150px'
+				width: '150px',
+				clickable: true
 			},
 			{
 				displayName: "Password For",
 				backingProperty: "passwordFor",
-				width: '200px'
+				width: '200px',
+				clickable: true
 			},
 			{
 				displayName: "Login",
 				backingProperty: "login",
-				width: '250px'
+				width: '250px',
+				clickable: true
 			}
 		];
 
@@ -163,25 +166,28 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '150px'
+				width: '150px',
+				clickable: true
 			},
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '200px'
+				width: '200px',
+				clickable: true
 			},
 			{
 				displayName: "Type",
 				backingProperty: "valueType",
-				width: '250px'
+				width: '250px',
+				clickable: true
 			}
 		];
 
-		const passwordHeaders: SortableHeaderModel[] = createSortableHeaderModels(true, passwordActiveHeader, passwordHeaderDisplayFields,
+		const passwordHeaders: SortableHeaderModel[] = createSortableHeaderModels(passwordActiveHeader, passwordHeaderDisplayFields,
 			passwords, pinnedPasswords, setModels);
 		passwordHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
 
-		const valueHeaders: SortableHeaderModel[] = createSortableHeaderModels(true, valueActiveHeader, valueHeaderDisplayFields,
+		const valueHeaders: SortableHeaderModel[] = createSortableHeaderModels(valueActiveHeader, valueHeaderDisplayFields,
 			nameValuePairs, pinnedNameValuePairs, setModels);
 		valueHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
 

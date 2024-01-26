@@ -2,14 +2,25 @@
 	<ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
 		<TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
+			:style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
 		<ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
-		<SearchBar v-model="searchText" :color="groupColor"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '7 / span 3' }" />
-		<ObjectSelectorInputField :key="refreshObjects" :border="true" :scrollbar="true" :headerModels="tableHeaderModels"
-			:initalSelectedHeader="activeHeader" :models="tableRowDatas" :title="title" :color="groupColor" :maxHeight="300"
-			:style="{ 'grid-row': '5 / span 3', 'grid-column': '2 / span 8' }" />
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '4 / span 2' }" />
+		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
+			class="scrollbar border" :scrollbar-size="1" :color="groupColor" :border="true"
+			:headerModels="tableHeaderModels" @scrolledToBottom="tableRowDatas.loadNextChunk()">
+			<template #header>
+				<TableHeaderRow :color="groupColor" :border="true" :model="tableHeaderModels" :tabs="headerTabs">
+					<template #controls>
+						<SearchBar v-model="searchText" :color="groupColor" />
+					</template>
+				</TableHeaderRow>
+			</template>
+			<template #body>
+				<SelectableTableRow v-for="(trd, index) in tableRowDatas.visualValues" class="hover" :key="trd.id"
+					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
+					:style="{ width: '5%', 'height': '75px' }" :color="groupColor" />
+			</template>
+		</TableTemplate>
 	</ObjectView>
 </template>
 <script lang="ts">
@@ -19,9 +30,13 @@ import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
 import ObjectSelectorInputField from '../InputFields/ObjectSelectorInputField.vue';
+import SearchBar from '../Table/Controls/SearchBar.vue';
+import TableTemplate from '../Table/TableTemplate.vue';
+import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
+import SelectableTableRow from '../Table/SelectableTableRow.vue';
 
 import { DataType, Group } from '../../Types/Table';
-import { GridDefinition, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
 import { HeaderDisplayField, defaultGroup } from '../../Types/EncryptedData';
 import { v4 as uuidv4 } from 'uuid';
 import { stores } from '../../Objects/Stores';
@@ -30,7 +45,7 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
-import SearchBar from '../Table/Controls/SearchBar.vue';
+import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 
 export default defineComponent({
 	name: "GroupView",
@@ -40,7 +55,10 @@ export default defineComponent({
 		TextInputField,
 		ColorPickerInputField,
 		ObjectSelectorInputField,
-		SearchBar
+		SearchBar,
+		TableTemplate,
+		TableHeaderRow,
+		SelectableTableRow
 	},
 	props: ['creating', 'model'],
 	setup(props)
@@ -50,8 +68,13 @@ export default defineComponent({
 		const groupState: Ref<Group> = ref(props.model);
 		const groupColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.groupsColor);
 
+		const searchText: Ref<string> = ref('');
+
 		const title: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			'Passwords in Group' : 'Values in Group');
+
+		// @ts-ignore
+		const tableRowDatas: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
 
 		const passwordSortedCollection: SortedCollection<PasswordStore> = new SortedCollection(stores.encryptedDataStore.passwords, "passwordFor");
 		const valueSortedCollection: SortedCollection<NameValuePairStore> = new SortedCollection(stores.encryptedDataStore.nameValuePairs, "name");
@@ -62,15 +85,14 @@ export default defineComponent({
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
 		let tableHeaderModels: Ref<SortableHeaderModel[]> = ref([]);
-		let tableRowDatas: Ref<SelectableTableRowData[]> = ref([]);
-
-		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
+		let headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
+			passwordHeaderTab : valueHeaderTab);
 
 		const gridDefinition: GridDefinition =
 		{
-			rows: 10,
+			rows: 12,
 			rowHeight: '50px',
-			columns: 11,
+			columns: 15,
 			columnWidth: '100px'
 		};
 
@@ -79,21 +101,44 @@ export default defineComponent({
 		const activeHeader: ComputedRef<number> = computed(() => stores.appStore.activePasswordValuesTable ==
 			DataType.Passwords ? activePasswordHeader.value : activeValueHeader.value);
 
+		const passwordHeaderTab: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Passwords',
+				active: computed(() => true),
+				color: groupColor,
+				onClick: () => { }
+			}
+		];
+
+		const valueHeaderTab: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Values',
+				active: computed(() => true),
+				color: groupColor,
+				onClick: () => { }
+			}
+		];
+
 		const passwordHeaderDisplayFields: HeaderDisplayField[] = [
 			{
 				backingProperty: "",
-				displayName: "",
-				width: '50px',
+				displayName: "  ",
+				width: '100px',
+				clickable: false
 			},
 			{
 				backingProperty: "passwordFor",
 				displayName: "Password For",
 				width: '150px',
+				clickable: true
 			},
 			{
 				backingProperty: "login",
 				displayName: "Login",
-				width: '150px'
+				width: '150px',
+				clickable: true
 			}
 		];
 
@@ -101,12 +146,14 @@ export default defineComponent({
 			{
 				backingProperty: "",
 				displayName: "",
-				width: '50px'
+				width: '50px',
+				clickable: false
 			},
 			{
 				backingProperty: "name",
 				displayName: "Name",
-				width: '150px'
+				width: '150px',
+				clickable: true
 			}
 		];
 
@@ -115,12 +162,12 @@ export default defineComponent({
 			switch (stores.appStore.activePasswordValuesTable)
 			{
 				case DataType.NameValuePairs:
-					tableHeaderModels.value = createSortableHeaderModels<NameValuePairStore>(true,
+					tableHeaderModels.value = createSortableHeaderModels<NameValuePairStore>(
 						activeValueHeader, valueHeaderDisplayField, valueSortedCollection, undefined, setTableRows);
 					break;
 				case DataType.Passwords:
 				default:
-					tableHeaderModels.value = createSortableHeaderModels<PasswordStore>(true,
+					tableHeaderModels.value = createSortableHeaderModels<PasswordStore>(
 						activePasswordHeader, passwordHeaderDisplayFields, passwordSortedCollection, undefined, setTableRows);
 			}
 		}
@@ -130,7 +177,7 @@ export default defineComponent({
 			switch (stores.appStore.activePasswordValuesTable)
 			{
 				case DataType.NameValuePairs:
-					tableRowDatas.value = valueSortedCollection.calculatedValues.map(nvp =>
+					tableRowDatas.value.setValues(valueSortedCollection.calculatedValues.map(nvp =>
 					{
 						return {
 							id: uuidv4(),
@@ -154,11 +201,11 @@ export default defineComponent({
 								}
 							}
 						}
-					});
+					}));
 					break;
 				case DataType.Passwords:
 				default:
-					tableRowDatas.value = passwordSortedCollection.calculatedValues.map(p =>
+					tableRowDatas.value.setValues(passwordSortedCollection.calculatedValues.map(p =>
 					{
 						const model: SelectableTableRowData = {
 							id: uuidv4(),
@@ -188,7 +235,7 @@ export default defineComponent({
 							}
 						}
 						return model;
-					});
+					}));
 			}
 
 			refreshObjects.value = Date.now().toString();
@@ -258,7 +305,7 @@ export default defineComponent({
 			setTableRows();
 		});
 
-		watch(() => searchText.value.value, (newValue) =>
+		watch(() => searchText.value, (newValue) =>
 		{
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
@@ -283,6 +330,7 @@ export default defineComponent({
 			refreshObjects,
 			gridDefinition,
 			searchText,
+			headerTabs,
 			onSave
 		};
 	},

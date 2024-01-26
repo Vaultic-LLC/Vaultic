@@ -1,15 +1,12 @@
 <template>
 	<div class="tableHeader">
 		<div class="tableHeader__tableTabs">
-			<!-- <div class="tableHeader__tableTabs__tab" v-for="(tab, index) in  headerTabs " :key="tab.id" :style="{
-				background: tab.active?.value ? (tab.backgroundColor?.value ?? '') : '',
-				boxShadow: hoveringTab == index ? `0 0 25px ${tab.color?.value}` : ''
-			}" @click="onTabClick(index)" @mouseover="onTabHover(index)" @mouseleave="onTabUnhover">
-				{{ tab.name }}
-			</div> -->
 			<TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
 		</div>
-		<div class="tableHeader__tableHeaderRow" :class="{ 'tableHeader__tableHeaderRow--noTabs': headerTabs.length == 0 }">
+		<div class="tableHeader__tableHeaderRow" :class="{
+			'tableHeader__tableHeaderRow--noTabs': headerTabs.length == 0,
+			'tableHeader__tableHeaderRow--border': applyBorder
+		}">
 			<div class="tableHeader__tableHeaderRow__headers">
 				<TableHeaderCell v-for="( header ) in  headerModels " :key="header.id" :model="header"
 					:backgroundColor="backgroundColor" />
@@ -36,12 +33,13 @@ export default defineComponent({
 		TableHeaderCell,
 		TableHeaderTab
 	},
-	props: ["model", 'backgroundColor', 'tabs'],
+	props: ["model", 'backgroundColor', 'tabs', 'border', 'color'],
 	setup(props)
 	{
 		const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() => props.model?.filter(m => m.name !== '') || []);
 		const headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.tabs ?? []);
 		const hoveringTab: Ref<number> = ref(-1);
+		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
 
 		function onTabClick(index: number)
 		{
@@ -66,6 +64,7 @@ export default defineComponent({
 			headerModels,
 			headerTabs,
 			hoveringTab,
+			applyBorder,
 			onTabClick,
 			onTabHover,
 			onTabUnhover
@@ -82,8 +81,6 @@ export default defineComponent({
 
 .tableHeader__tableTabs {
 	display: flex;
-	justify-content: space-between;
-	width: 50%;
 	border-top-left-radius: 20px;
 }
 
@@ -92,9 +89,10 @@ export default defineComponent({
 	color: white;
 	font-size: 20px;
 	padding: 10px;
-	flex-grow: 1;
 	background: rgb(44 44 51 / 16%);
 	cursor: pointer;
+	min-width: 25%;
+	text-align: center;
 }
 
 .tableHeader__tableTabs__tab:nth-child(1) {
@@ -107,6 +105,7 @@ export default defineComponent({
 
 .tableHeader__tableHeaderRow {
 	width: 100%;
+	height: 70px;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -116,6 +115,11 @@ export default defineComponent({
 
 .tableHeader__tableHeaderRow--noTabs {
 	border-top-left-radius: 20px;
+}
+
+.tableHeader__tableHeaderRow--border {
+	border-right: 3px solid v-bind(color);
+	border-top: 3px solid v-bind(color);
 }
 
 .tableHeader__tableHeaderRow__headers {

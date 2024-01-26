@@ -9,7 +9,7 @@ import { PasswordStore } from "../Objects/Stores/PasswordStore";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
 import { NameValuePairStore } from "../Objects/Stores/NameValuePairStore";
 
-export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(clickable: boolean, activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
+export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
 	sortableCollection: SortedCollection<T>, pinnedCollection?: SortedCollection<T>, updateModels?: () => void): SortableHeaderModel[]
 {
 	return headerDisplayField.map((header, index) =>
@@ -20,11 +20,11 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 			isActive: computed(() => activeHeaderTracker.value == index),
 			name: header.displayName,
 			descending: true,
-			clickable: clickable,
+			clickable: header.clickable,
 			width: header.width,
 			onClick: function ()
 			{
-				if (!clickable)
+				if (!header.clickable)
 				{
 					return;
 				}
@@ -41,7 +41,7 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 		}
 
 		return sortableHeaderModel;
-	})
+	});
 }
 
 export function createPinnableSelectableTableRowModels<T extends { [key: string]: any } & IPinnable & IIdentifiable>(groupFilterType: DataType, passwordValueType: DataType,

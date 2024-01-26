@@ -1,7 +1,7 @@
 <template>
 	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }">
 		<div class="tableHeaderContent">
-			<span class="iconContainer"
+			<span v-if="showIcon" class="iconContainer"
 				:class="{ descending: descending, active: isActive, hover: hoveringIcon || hoveringText }"
 				@mouseover="hoveringIcon = true" @mouseleave="hoveringIcon = false">
 				<ion-icon class="sortIcon" name="arrow-up-outline"></ion-icon>
@@ -27,6 +27,7 @@ export default defineComponent({
 		const isActive: Ref<boolean> = ref(headerModel.value.isActive);
 		const descending: Ref<boolean> = ref(headerModel.value.descending ?? true)
 		const background: Ref<string> = ref(props.backgroundColor);
+		const showIcon: Ref<boolean> = ref(headerModel.value.clickable);
 
 		let hoveringIcon: Ref<boolean> = ref(false);
 		let hoveringText: Ref<boolean> = ref(false);
@@ -66,6 +67,7 @@ export default defineComponent({
 			hoveringIcon,
 			hoveringText,
 			background,
+			showIcon,
 			onClick
 		}
 	}

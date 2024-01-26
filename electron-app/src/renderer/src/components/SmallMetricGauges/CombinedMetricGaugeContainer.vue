@@ -31,16 +31,6 @@ export default defineComponent({
 })
 </script>
 <style>
-.fade-enter-active,
-.fade-leave-active {
-	transition: opacity 0.3s linear;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-	opacity: 0;
-}
-
 .combinedMetricGaugeContainer {
 	display: flex;
 	flex-direction: column;

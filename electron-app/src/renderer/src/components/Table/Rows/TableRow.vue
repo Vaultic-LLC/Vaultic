@@ -3,7 +3,8 @@
 		:class="{ clickable: clickable, pinned: isPinned, zIndexing: zIndexing, deletingRow: deletingRow }">
 		<slot></slot>
 		<td v-for="rowValue in tableRowData.values" :key="rowValue.value">
-			<div class="rowValue" :style="{ 'width': rowValue.width }">
+			<div class="rowValue"
+				:style="{ 'width': rowValue.width, 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
 				<div class="rowValueValue">
 					{{ rowValue.value }}
 				</div>
@@ -178,16 +179,6 @@ export default defineComponent({
 
 .tableRow.deletingRow {
 	animation: 0.3s deleteRow linear;
-}
-
-@keyframes fadeIn {
-	0% {
-		opacity: 0;
-	}
-
-	100% {
-		opacity: 1;
-	}
 }
 
 @keyframes rotate {

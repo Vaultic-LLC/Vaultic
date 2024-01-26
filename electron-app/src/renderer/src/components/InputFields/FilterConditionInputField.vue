@@ -1,14 +1,7 @@
 <template>
-	<!-- <ObjectInputField :border="border" :color="primaryColor" :title="'Filter Conditions'" :allowAdd="true" :onAdd="onAdd"
-		:maxHeight="250" :height="'400px'">
-		<template #body>
-			<FilterConditionRow v-for="( fc, index ) in  filterConditions " :key="fc.id" :rowNumber="index"
-				:color="primaryColor" :model="fc" :displayFieldOptions="displayFieldOptions" />
-		</template>
-	</ObjectInputField> -->
-	<TableTemplate :style="{ position: 'relative' }" class="scrollbar" :scrollbar-size="1" :color="color">
+	<TableTemplate :style="{ position: 'relative' }" class="scrollbar" :scrollbar-size="1" :color="color" :border="true">
 		<template #header>
-			<TableHeaderRow :color="color" :tabs="headerTabs">
+			<TableHeaderRow :color="color" :tabs="headerTabs" :border="true">
 				<template #controls>
 					<AddButton :color="color" @click="onAdd" />
 				</template>

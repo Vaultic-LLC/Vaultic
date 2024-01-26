@@ -2,25 +2,37 @@
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
 		<TextInputField :color="color" :label="'Name'" v-model="valuesState.name"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '1 / span 2' }" />
+			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
 		<EnumInputField :label="'Type'" :color="color" v-model="valuesState.valueType" :optionsEnum="NameValuePairType"
-			:fadeIn="true" :style="{ 'grid-row': '3 / span 2', 'grid-column': '1 / span 2', 'z-index': '9' }" />
+			:fadeIn="true" :style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2', 'z-index': '9' }" />
 		<div class="notifyIfWeakContainer" v-if="showNotifyIfWeak"
-			:style="{ 'grid-row': '4 / span 2', 'grid-column': '1 / span 2', 'margin-top': '10px', 'margin-left': '5px' }">
+			:style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'margin-top': '10px', 'margin-left': '5px' }">
 			<CheckboxInputField :label="'Notify if Weak'" :color="color" v-model="valuesState.notifyIfWeak" :fadeIn="true"
-				:style="{ 'grid-row': '4 / span 2', 'grid-column': '1 / span 2', 'z-index': '8' }" />
+				:style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
 			<ToolTip :color="color" :size="20" :fadeIn="true"
 				:message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
 		</div>
 		<EncryptedInputField :color="color" :label="'Value'" v-model="valuesState.value" :initialLength="initalLength"
 			:isInitiallyEncrypted="isInitiallyEncrypted" :showUnlock="true" :showCopy="true" :showRandom="true"
-			:style="{ 'grid-row': '5 / span 2', 'grid-column': '1 / span 2' }" @onDirty="valueIsDirty = true" />
+			:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" @onDirty="valueIsDirty = true" />
 		<TextAreaInputField :color="color" :label="'Additional Information'" v-model="valuesState.additionalInformation"
-			:style="{ 'grid-row': '8 / span 4', 'grid-column': '1 / span 4' }" />
-		<SearchBar v-model="searchText" :color="color" :style="{ 'grid-row': '5 / span 2', 'grid-column': '9 / span 3' }" />
-		<ObjectSelectorInputField :key="groupSelectorRefreshKey" :border="true" :scrollbar="true" :color="color"
-			:title="'Groups for Value'" :headerModels="groupHeaderModels" :models="groupModels"
-			:style="{ 'grid-row': '7 / span 4', 'grid-column': '6 / span 6' }" :min-height="250" />
+			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
+		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }"
+			class="scrollbar" :scrollbar-size="1" :color="color" :headerModels="groupHeaderModels" :border="true"
+			@scrolledToBottom="groupModels.loadNextChunk()">
+			<template #header>
+				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="groupTab" :border="true">
+					<template #controls>
+						<SearchBar v-model="searchText" :color="color" />
+					</template>
+				</TableHeaderRow>
+			</template>
+			<template #body>
+				<SelectableTableRow v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
+					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
+					:style="{ width: '5%', 'height': '75px' }" :color="color" />
+			</template>
+		</TableTemplate>
 	</ObjectView>
 </template>
 <script lang="ts">
@@ -33,9 +45,13 @@ import ObjectSelectorInputField from '../InputFields/ObjectSelectorInputField.vu
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
+import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import TableTemplate from '../Table/TableTemplate.vue';
+import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
+import ToolTip from '../ToolTip.vue';
 
 import { NameValuePair, defaultValue, NameValuePairType, HeaderDisplayField } from '../../Types/EncryptedData';
-import { GridDefinition, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
 import { v4 as uuidv4 } from 'uuid';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { stores } from '../../Objects/Stores';
@@ -44,7 +60,7 @@ import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
-import ToolTip from '../ToolTip.vue';
+import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 
 export default defineComponent({
 	name: "ValueView",
@@ -57,7 +73,10 @@ export default defineComponent({
 		EnumInputField,
 		CheckboxInputField,
 		SearchBar,
-		ToolTip
+		ToolTip,
+		TableTemplate,
+		TableHeaderRow,
+		SelectableTableRow
 	},
 	props: ['creating', 'model'],
 	setup(props)
@@ -69,7 +88,8 @@ export default defineComponent({
 
 		// @ts-ignore
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.valuesGroups, "name"));
-		const groupModels: Ref<SelectableTableRowData[]> = ref([]);
+		// @ts-ignore
+		const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
 		const initalLength: Ref<number> = ref((valuesState.value as NameValuePairStore).valueLength ?? 0);
 		const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
 		const valueIsDirty: Ref<boolean> = ref(false);
@@ -77,9 +97,9 @@ export default defineComponent({
 		const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.valueType == NameValuePairType.Passcode);
 
 		const gridDefinition: GridDefinition = {
-			rows: 10,
+			rows: 12,
 			rowHeight: '50px',
-			columns: 11,
+			columns: 15,
 			columnWidth: '100px'
 		}
 
@@ -93,23 +113,35 @@ export default defineComponent({
 		const groupHeaderDisplayFields: HeaderDisplayField[] = [
 			{
 				backingProperty: "",
-				displayName: "",
-				width: '50px',
+				displayName: " ",
+				width: '100px',
+				clickable: false
 			},
 			{
 				backingProperty: "name",
 				displayName: "Name",
-				width: '150px'
+				width: '150px',
+				clickable: true
 			},
 		];
 
+		const groupTab: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Groups',
+				active: computed(() => true),
+				color: color,
+				onClick: () => { }
+			}
+		];
+
 		// @ts-ignore
-		const groupHeaderModels: Ref<SortableHeaderModel[]> = ref(createSortableHeaderModels<Group>(true,
+		const groupHeaderModels: Ref<SortableHeaderModel[]> = ref(createSortableHeaderModels<Group>(
 			activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels));
 
 		function setGroupModels()
 		{
-			groupModels.value = groups.value.calculatedValues.map(g =>
+			groupModels.value.setValues(groups.value.calculatedValues.map(g =>
 			{
 				const model: SelectableTableRowData = {
 					id: uuidv4(),
@@ -134,7 +166,7 @@ export default defineComponent({
 					}
 				}
 				return model;
-			});
+			}));
 
 			groupSelectorRefreshKey.value = Date.now().toString();
 		}
@@ -150,6 +182,8 @@ export default defineComponent({
 					saveFaield = reject;
 				});
 			}
+
+			return Promise.reject();
 		}
 
 		function onAuthenticationSuccessful(key: string)
@@ -204,6 +238,7 @@ export default defineComponent({
 			NameValuePairType,
 			showNotifyIfWeak,
 			searchText,
+			groupTab,
 			onSave,
 			onAuthenticationSuccessful
 		};
@@ -214,7 +249,7 @@ export default defineComponent({
 <style>
 .notifyIfWeakContainer {
 	display: flex;
-	justify-content: center;
+	justify-content: flex-start;
 	align-items: flex-start;
 	column-gap: 10px;
 }

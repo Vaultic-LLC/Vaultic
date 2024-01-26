@@ -271,31 +271,7 @@ export default defineComponent({
 <style>
 @import './Constants/variables.css';
 @import './Constants/animations.css';
-
-.lockFade-enter-active,
-.lockFade-leave-active {
-	transition: opacity 1.5s ease-in;
-	/* z-index: 100; */
-}
-
-.lockFade-enter-from,
-.lockFade-leave-to {
-	opacity: 0;
-	/* z-index: 100; */
-}
-
-.appFade-enter-active {
-	transition: opacity 1.5s ease-in;
-}
-
-.appFade-leave-active {
-	transition: opacity 0.5s ease-in;
-}
-
-.appFade-enter-from,
-.appFade-leave-to {
-	opacity: 0;
-}
+@import './Constants/transitions.css';
 
 #app {
 	font-family: Avenir, Helvetica, Arial, sans-serif;

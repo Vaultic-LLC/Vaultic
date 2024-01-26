@@ -1,7 +1,8 @@
 <template>
 	<div id="filterGroupTableContainer">
 		<TableTemplate ref="tableRef" :rowGap="10" class="shadow scrollbar" id="filterTable" :color="color"
-			:scrollbar-size="1" :style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
+			:headerModels="headerModels" :scrollbar-size="1"
+			:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :model="headerModels" :tabs="headerTabs">
@@ -150,11 +151,13 @@ export default defineComponent({
 				displayName: "Active",
 				backingProperty: "isActive",
 				width: '100px',
+				clickable: true
 			},
 			{
 				displayName: "Name",
 				backingProperty: "text",
-				width: '100px'
+				width: '100px',
+				clickable: true
 			}
 		];
 
@@ -162,25 +165,26 @@ export default defineComponent({
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '100px'
+				width: '100px',
+				clickable: true
 			}
 		];
 
 		const activePasswordFilterHeader: Ref<number> = ref(1);
-		const passwordFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(true, activePasswordFilterHeader, filterHeaderDisplayField, currentFilters.value,
+		const passwordFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(activePasswordFilterHeader, filterHeaderDisplayField, currentFilters.value,
 			currentPinnedFilter.value, setTableRowDatas);
 		passwordFilterHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
 		const activeValueFilterHeader: Ref<number> = ref(1);
-		const valueFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(true, activeValueFilterHeader, filterHeaderDisplayField, currentFilters.value,
+		const valueFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(activeValueFilterHeader, filterHeaderDisplayField, currentFilters.value,
 			currentPinnedFilter.value, setTableRowDatas);
 		valueFilterHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
-		const passwordGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(true, ref(0), groupHeaderDisplayField,
+		const passwordGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(ref(0), groupHeaderDisplayField,
 			currentGroups.value, currentPinnedGroups.value, setTableRowDatas);
 		passwordGroupHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
-		const valueGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(true, ref(0), groupHeaderDisplayField,
+		const valueGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(ref(0), groupHeaderDisplayField,
 			currentGroups.value, currentPinnedGroups.value, setTableRowDatas);
 		valueGroupHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
@@ -212,7 +216,7 @@ export default defineComponent({
 			{
 				case DataType.Groups:
 					createPinnableSelectableTableRowModels<Group>(DataType.Groups, stores.appStore.activePasswordValuesTable, tableRowDatas,
-						currentGroups.value, currentPinnedGroups.value, (g: Group) => { return [{ value: g.name, copiable: false, width: '100px', }] },
+						currentGroups.value, currentPinnedGroups.value, (g: Group) => { return [{ value: g.name, copiable: false, width: '100px', margin: true }] },
 						false, "", false, undefined, onEditGroup,
 						onGroupDeleteInitiated);
 					break;

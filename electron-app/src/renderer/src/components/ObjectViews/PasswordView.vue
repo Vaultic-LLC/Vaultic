@@ -2,18 +2,18 @@
 	<ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
 		<TextInputField :color="color" :label="'Password For'" v-model="passwordState.passwordFor"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '1 /span 2' }" />
+			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
 		<TextInputField :color="color" :label="'Login'" v-model="passwordState.login"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '1 ; span 2' }" />
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
 		<EncryptedInputField :color="color" :label="'Password'" v-model="passwordState.password"
 			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true"
-			showCopy="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '1 / span 2' }"
+			showCopy="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			@onDirty="passwordIsDirty = true" />
 		<TextAreaInputField :color="color" :label="'Additional Information'" v-model="passwordState.additionalInformation"
-			:style="{ 'grid-row': '8 / span 4', 'grid-column': '1 / span 4' }" />
-		<SearchBar v-if="activeTab == 1" v-model="searchText" :color="color"
-			:style="{ 'grid-row': '4 / span 2', 'grid-column': '9 / span 3' }" />
-		<TabbedInputContainer :tabOneText="'Security Questions'" :tabTwoText="'Groups'" :color="color"
+			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
+		<!-- <SearchBar v-if="activeTab == 1" v-model="searchText" :color="color"
+			:style="{ 'grid-row': '4 / span 2', 'grid-column': '9 / span 3' }" /> -->
+		<!-- <TabbedInputContainer :tabOneText="'Security Questions'" :tabTwoText="'Groups'" :color="color"
 			:style="{ 'grid-row': '6 / span 4', 'grid-column': '6 / span 6' }" @onTabSelected="onTabSelected">
 			<template #tabOne>
 				<SecurityQuestionInputField ref="securityQuestionInputField" :border="true" :hideTitle="true"
@@ -25,7 +25,30 @@
 					:hideTitle="true" :headerModels="groupHeaderModels" :models="groupModels" :minHeight="310"
 					:maxHeight="300" />
 			</template>
-		</TabbedInputContainer>
+		</TabbedInputContainer> -->
+		<TableTemplate :color="color"
+			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
+			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" @scrolled-to-bottom="scrolledToBottom">
+			<template #header>
+				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="headerTabs" :border="true">
+					<template #controls>
+						<Transition name="fade" mode="out-in">
+							<AddButton v-if="activeTab == 0" :color="color" @click="onAddSecurityQuestion" />
+							<SearchBar v-else v-model="searchText" :color="color" />
+						</Transition>
+					</template>
+				</TableHeaderRow>
+			</template>
+			<template #body>
+				<SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions"
+					:key="sq.id" :rowNumber="index" :color="color" :model="sq" :disabled="false"
+					@onQuesitonDirty="onQuestionDirty(sq.id)" @onAnswerDirty="onAnswerDirty(sq.id)"
+					@onDelete="onDeleteSecurityQuestion(sq.id)" :isInitiallyEncrypted="sq.question != ''" />
+				<SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
+					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
+					:style="{ width: '5%', 'height': '75px' }" :color="color" />
+			</template>
+		</TableTemplate>
 	</ObjectView>
 </template>
 <script lang="ts">
@@ -38,17 +61,23 @@ import ObjectSelectorInputField from '../InputFields/ObjectSelectorInputField.vu
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
+import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import TableTemplate from '../Table/TableTemplate.vue';
+import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
+import AddButton from '../Table/Controls/AddButton.vue';
+import SecurityQuestionRow from '../Table/Rows/SecurityQuestionRow.vue';
 
-import { HeaderDisplayField, Password, SecurityQuestion, defaultPassword } from '../../Types/EncryptedData';
-import { GridDefinition, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
+import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
+import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
 import { v4 as uuidv4 } from 'uuid';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { stores } from '../../Objects/Stores';
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey, RequestAuthenticationFunctionKey } from '../../Types/Keys';
-import TabbedInputContainer from '../InputFields/TabbedInputContainer.vue';
 import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
+import idGenerator from '@renderer/Utilities/IdGenerator';
+import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 
 export default defineComponent({
 	name: "PasswordView",
@@ -59,8 +88,12 @@ export default defineComponent({
 		ObjectSelectorInputField,
 		EncryptedInputField,
 		TextAreaInputField,
-		TabbedInputContainer,
-		SearchBar
+		SearchBar,
+		TableTemplate,
+		TableHeaderRow,
+		AddButton,
+		SelectableTableRow,
+		SecurityQuestionRow
 	},
 	props: ['creating', 'model'],
 	setup(props)
@@ -69,12 +102,12 @@ export default defineComponent({
 		const refreshKey: Ref<string> = ref("");
 		const groupPickerRefreshKey: Ref<string> = ref("");
 		const passwordState: Ref<Password> = ref(props.model);
-		const securityQuestions: ComputedRef<SecurityQuestion[]> = computed(() => passwordState.value.securityQuestions);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
 
 		// @ts-ignore
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.passwordGroups, "name"));
-		const groupModels: Ref<SelectableTableRowData[]> = ref([]);
+		// @ts-ignore
+		const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
 		const initalLength: Ref<number> = ref((passwordState.value as PasswordStore).passwordLength ?? 0);
 		const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
 
@@ -83,7 +116,6 @@ export default defineComponent({
 		const dirtySecurityQuestionAnswers: Ref<string[]> = ref([]);
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-		const activeTab: Ref<number> = ref(0);
 
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
@@ -91,9 +123,9 @@ export default defineComponent({
 		provide(DirtySecurityQuestionAnswersKey, dirtySecurityQuestionAnswers);
 
 		const gridDefinition: GridDefinition = {
-			rows: 11,
+			rows: 13,
 			rowHeight: '50px',
-			columns: 11,
+			columns: 16,
 			columnWidth: '100px'
 		}
 
@@ -104,23 +136,56 @@ export default defineComponent({
 		const groupHeaderDisplayFields: HeaderDisplayField[] = [
 			{
 				backingProperty: "",
-				displayName: "",
-				width: '50px'
+				displayName: " ",
+				width: '100px',
+				clickable: true
 			},
 			{
 				backingProperty: "name",
 				displayName: "Name",
-				width: '150px'
+				width: '150px',
+				clickable: true
+			},
+		];
+
+		const activeTab: Ref<number> = ref(0);
+		const headerTabs: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Security Questions',
+				active: computed(() => activeTab.value == 0),
+				color: color,
+				onClick: () =>
+				{
+					groupHeaderModels.value = [];
+					activeTab.value = 0;
+				}
+			},
+			{
+				id: uuidv4(),
+				name: 'Groups',
+				active: computed(() => activeTab.value == 1),
+				color: color,
+				onClick: () =>
+				{
+					setGroupHeaderModels();
+					activeTab.value = 1;
+				}
 			},
 		];
 
 		// @ts-ignore
-		const groupHeaderModels: Ref<SortableHeaderModel[]> = ref(createSortableHeaderModels<Group>(true,
-			activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels));
+		const groupHeaderModels: Ref<SortableHeaderModel[]> = ref([]);
+
+		function setGroupHeaderModels()
+		{
+			groupHeaderModels.value = createSortableHeaderModels<Group>(
+				activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels);
+		}
 
 		function setGroupModels()
 		{
-			groupModels.value = groups.value.calculatedValues.map(g =>
+			groupModels.value.setValues(groups.value.calculatedValues.map(g =>
 			{
 				const model: SelectableTableRowData = {
 					id: uuidv4(),
@@ -145,7 +210,7 @@ export default defineComponent({
 					}
 				}
 				return model;
-			});
+			}));
 
 			groupPickerRefreshKey.value = Date.now().toString();
 		}
@@ -192,9 +257,56 @@ export default defineComponent({
 			saveFailed(false);
 		}
 
-		function onTabSelected(tab: number)
+		function onAddSecurityQuestion()
 		{
-			activeTab.value = tab;
+			passwordState.value.securityQuestions.push({
+				id: idGenerator.uniqueId(passwordState.value.securityQuestions),
+				question: '',
+				questionLength: 0,
+				answer: '',
+				answerLength: 0
+			});
+		}
+
+		function onQuestionDirty(id: string)
+		{
+			if (!dirtySecurityQuestionQuestions.value.includes(id))
+			{
+				dirtySecurityQuestionQuestions.value.push(id);
+			}
+		}
+
+		function onAnswerDirty(id: string)
+		{
+			if (!dirtySecurityQuestionAnswers.value.includes(id))
+			{
+				dirtySecurityQuestionAnswers.value.push(id);
+			}
+		}
+
+		function onDeleteSecurityQuestion(id: string)
+		{
+			passwordState.value.securityQuestions = passwordState.value.securityQuestions.filter(sq => sq.id != id);
+
+			if (dirtySecurityQuestionQuestions.value.includes(id))
+			{
+				dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(id), 1);
+			}
+
+			if (dirtySecurityQuestionAnswers.value.includes(id))
+			{
+				dirtySecurityQuestionAnswers.value.splice(dirtySecurityQuestionAnswers.value.indexOf(id), 1);
+			}
+		}
+
+		function scrolledToBottom()
+		{
+			if (activeTab.value == 0)
+			{
+				return;
+			}
+
+			groupModels.value.loadNextChunk();
 		}
 
 		onMounted(() =>
@@ -214,7 +326,6 @@ export default defineComponent({
 			groupHeaderModels,
 			groupModels,
 			passwordState,
-			securityQuestions,
 			refreshKey,
 			groupPickerRefreshKey,
 			initalLength,
@@ -223,10 +334,15 @@ export default defineComponent({
 			gridDefinition,
 			searchText,
 			activeTab,
+			headerTabs,
 			onAuthenticationSuccessful,
 			onAuthenticationCanceled,
 			onSave,
-			onTabSelected
+			onAddSecurityQuestion,
+			onQuestionDirty,
+			onAnswerDirty,
+			onDeleteSecurityQuestion,
+			scrolledToBottom
 		};
 	},
 })
