@@ -1,4 +1,5 @@
 import { DataType, Filter, Group } from "./Table";
+import { v4 as uuidv4 } from 'uuid';
 
 export interface IIdentifiable
 {
@@ -173,7 +174,7 @@ export function defaultPassword(): Password
 		login: '',
 		password: '',
 		securityQuestions: [{
-			id: "",
+			id: uuidv4(),
 			question: '',
 			questionLength: 0,
 			answer: '',
@@ -215,7 +216,7 @@ export function defaultFilter(type: DataType): Filter
 		isActive: false,
 		text: '',
 		conditions: [{
-			id: "",
+			id: uuidv4(),
 			property: '',
 			value: ''
 		}]

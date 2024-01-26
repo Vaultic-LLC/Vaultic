@@ -35,12 +35,13 @@ import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import cryptUtility from '../../Utilities/CryptUtility';
 import { stores } from '../../Objects/Stores';
 import clipboard from 'clipboardy';
+import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 
 export default defineComponent({
 	name: "EncryptedInputField",
 	emits: ["update:modelValue", "onDirty"],
 	props: ["modelValue", "label", "color", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
-		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width"],
+		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", 'isOnWidget'],
 	setup(props, ctx)
 	{
 		const input: Ref<HTMLElement | null> = ref(null);
@@ -50,6 +51,7 @@ export default defineComponent({
 
 		const height: ComputedRef<string> = computed(() => props.showRandom ? "100px" : "50px");
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "200px");
+		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
 		let invalid: Ref<boolean> = ref(false);
@@ -189,6 +191,7 @@ export default defineComponent({
 			defaultInputTextColor,
 			height,
 			computedWidth,
+			backgroundColor,
 			onAuthenticationSuccessful,
 			onInput,
 			unlock,
@@ -264,7 +267,7 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:valid~label:not(.validationMessage),
 .textInputFieldContainer .textInputFieldInput:disabled~label:not(.validationMessage) {
 	transform: translateY(-80%) scale(0.8);
-	background-color: var(--app-color);
+	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
 }

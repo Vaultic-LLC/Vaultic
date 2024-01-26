@@ -28,13 +28,16 @@
 		</TabbedInputContainer> -->
 		<TableTemplate :color="color"
 			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
-			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" @scrolled-to-bottom="scrolledToBottom">
+			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0"
+			@scrolled-to-bottom="scrolledToBottom">
 			<template #header>
 				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="headerTabs" :border="true">
 					<template #controls>
 						<Transition name="fade" mode="out-in">
 							<AddButton v-if="activeTab == 0" :color="color" @click="onAddSecurityQuestion" />
 							<SearchBar v-else v-model="searchText" :color="color" />
+							<!-- <div :style="{ 'margin-top': '20px' }">
+							</div> -->
 						</Transition>
 					</template>
 				</TableHeaderRow>

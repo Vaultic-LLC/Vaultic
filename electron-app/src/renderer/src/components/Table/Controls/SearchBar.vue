@@ -116,7 +116,7 @@ export default defineComponent({
 .searchBarContainer .seachBarInput:focus~label,
 .searchBarContainer .seachBarInput:valid~label {
 	transform: translateY(-80%) scale(0.8);
-	background-color: #121218;
+	background-color: #15151b;
 	padding: 0 .2em;
 	color: v-bind(color);
 	left: 10px;

@@ -24,3 +24,13 @@ export function widgetBackgroundHexString(): string
 {
 	return "#2c2c3329";
 }
+
+export function appHexColor(): string
+{
+	return "#0f111d"
+}
+
+export function widgetInputLabelBackgroundHexColor(): string
+{
+	return "#15151b";
+}

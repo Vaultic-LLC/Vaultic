@@ -83,9 +83,10 @@ export default defineComponent({
 	color: white;
 	font-size: 20px;
 	padding: 10px;
-	flex-grow: 1;
 	background: v-bind(backgroundGradient);
 	cursor: pointer;
+	min-width: 25%;
+	text-align: center;
 }
 
 .tableHeaderTab:not(.active):hover {

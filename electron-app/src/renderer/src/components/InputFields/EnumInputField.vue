@@ -20,18 +20,20 @@
 	</div>
 </template>
 <script lang="ts">
+import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 
 export default defineComponent({
 	name: "EnumInputField",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn'],
+	props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget'],
 	setup(props, ctx)
 	{
 		const refreshKey: Ref<string> = ref('');
 		let selectedValue: Ref<string> = ref(props.modelValue);
 		let opened: Ref<boolean> = ref(false);
 		let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value);
+		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		function onSelectorClick()
 		{
@@ -58,6 +60,7 @@ export default defineComponent({
 			opened,
 			active,
 			selectedValue,
+			backgroundColor,
 			onSelectorClick,
 			onOptionClick
 		}
@@ -105,7 +108,7 @@ export default defineComponent({
 
 .dropDownContainer.active .dropDownTitle .dropDownLabel {
 	transform: translateY(-150%) scale(0.8);
-	background-color: var(--input-field-label-color);
+	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
 }
@@ -175,7 +178,7 @@ export default defineComponent({
 
 .dropDownSelect .dropDownSelectOption {
 	display: none;
-	background-color: var(--solid-widget-background-color);
+	background-color: v-bind(backgroundColor);
 	transition: opacity 0.3s;
 	opacity: 0;
 }

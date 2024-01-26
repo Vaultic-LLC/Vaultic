@@ -84,28 +84,9 @@ export default defineComponent({
 	border-top-left-radius: 20px;
 }
 
-.tableHeader__tableTabs__tab {
-	transition: 0.3s;
-	color: white;
-	font-size: 20px;
-	padding: 10px;
-	background: rgb(44 44 51 / 16%);
-	cursor: pointer;
-	min-width: 25%;
-	text-align: center;
-}
-
-.tableHeader__tableTabs__tab:nth-child(1) {
-	border-top-left-radius: 20px;
-}
-
-.tableHeader__tableTabs__tab:last-child {
-	border-top-right-radius: 20px;
-}
-
 .tableHeader__tableHeaderRow {
 	width: 100%;
-	height: 70px;
+	height: 80px;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -118,6 +99,8 @@ export default defineComponent({
 }
 
 .tableHeader__tableHeaderRow--border {
+	/* for search bars and other inputs with labels */
+	padding-top: 10px;
 	border-right: 3px solid v-bind(color);
 	border-top: 3px solid v-bind(color);
 }

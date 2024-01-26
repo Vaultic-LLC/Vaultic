@@ -11,12 +11,12 @@
 		<TextInputField :color="color" :label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
 			:inputType="'number'" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			:additionalValidationFunction="enforceMinRandomPasswordLength" />
-		<CheckboxInputField :label="'Require Key when Saving Filter or Group'" :color="color"
+		<!-- <CheckboxInputField :label="'Require Key when Saving Filter or Group'" :color="color"
 			v-model="settingsState.requireMasterKeyOnFilterGrouopSave" :fadeIn="true"
 			:style="{ 'grid-row': '7 / span 1', 'grid-column': '2 / span 3', }" />
 		<CheckboxInputField :label="'Require Key when Deleting Filter or Group'" :color="color"
 			v-model="settingsState.requireMasterKeyOnFilterGroupDelete" :fadeIn="true"
-			:style="{ 'grid-row': '8 / span 1', 'grid-column': '2 / span 3', }" />
+			:style="{ 'grid-row': '8 / span 1', 'grid-column': '2 / span 3', }" /> -->
 		<!-- <CheckboxInputField :label="'Take picture on login'" :color="color" v-model="settingsState.takePictureOnLogin"
             :fadeIn="true" :style="{ 'grid-row': '4 / span 2', 'grid-column': '1 / span 2', }" /> -->
 	</ObjectView>

@@ -8,7 +8,7 @@
 			@scroll="checkScrollHeight">
 			<table class="tableContent">
 				<!-- Just used to force table row cell widths -->
-				<tr>
+				<tr v-if="headers.length > 0">
 					<th v-for="(header, index) in headers" :key="index" :style="{ width: header.width, height: 0 }"></th>
 				</tr>
 				<slot name="body">
@@ -33,7 +33,7 @@ export default defineComponent({
 		const tableContainer: Ref<HTMLElement | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const rowGapValue: ComputedRef<string> = computed(() => `${props.rowGap}px`);
-		const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels);
+		const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels ?? []);
 		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
 
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);

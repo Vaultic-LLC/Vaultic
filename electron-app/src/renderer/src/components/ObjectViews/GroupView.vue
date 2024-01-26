@@ -68,7 +68,7 @@ export default defineComponent({
 		const groupState: Ref<Group> = ref(props.model);
 		const groupColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.groupsColor);
 
-		const searchText: Ref<string> = ref('');
+		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
 		const title: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			'Passwords in Group' : 'Values in Group');
@@ -305,7 +305,7 @@ export default defineComponent({
 			setTableRows();
 		});
 
-		watch(() => searchText.value, (newValue) =>
+		watch(() => searchText.value.value, (newValue) =>
 		{
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{

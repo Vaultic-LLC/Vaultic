@@ -12,11 +12,12 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import { ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
+import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 
 export default defineComponent({
 	name: "TextInputField",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "inputType", "additionalValidationFunction"],
+	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "inputType", "additionalValidationFunction", "isOnWidget"],
 	setup(props)
 	{
 		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
@@ -26,6 +27,7 @@ export default defineComponent({
 		const invalid: Ref<boolean> = ref(false);
 		const invalidMessage: Ref<string> = ref('');
 		const additionalValidationFunction: Ref<{ (input: string): [boolean, string] } | undefined> = ref(props.additionalValidationFunction);
+		const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		function validate(): boolean
 		{
@@ -85,6 +87,7 @@ export default defineComponent({
 			defaultInputTextColor,
 			computedWidth,
 			type,
+			labelBackgroundColor,
 			validateType
 		}
 	}
@@ -146,7 +149,7 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:valid~label:not(.validationMessage),
 .textInputFieldContainer .textInputFieldInput:disabled~label:not(.validationMessage) {
 	transform: translateY(-80%) scale(0.8);
-	background-color: var(--app-color);
+	background-color: v-bind(labelBackgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
 	left: 10px;

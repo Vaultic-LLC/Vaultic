@@ -1,11 +1,11 @@
 <template>
 	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="color" :allowDelete="!disabled" :hideAtRisk="true"
 		:animateDelete="true">
-		<td class="securityQuestionRowOne">
+		<td class="securityQuestionCellOne">
 			<EncryptedInputField :color="color" :label="'Question'" v-model="securityQuestion.question"
 				:initialLength="securityQuestion.questionLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				@onDirty="$emit('onQuesitonDirty')" />
+				:isOnWidget="true" @onDirty="$emit('onQuesitonDirty')" />
 		</td>
 		<td class="gap">
 
@@ -14,7 +14,7 @@
 			<EncryptedInputField :color="color" :label="'Answer'" v-model="securityQuestion.answer"
 				:initialLength="securityQuestion.answerLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				@onDirty="$emit('onAnswerDirty')" />
+				:isOnWidget="true" @onDirty="$emit('onAnswerDirty')" />
 		</td>
 	</TableRow>
 </template>
@@ -49,7 +49,8 @@ export default defineComponent({
 					ctx.emit("onDelete", securityQuestion.value.id);
 				}
 			}
-		)
+		);
+
 		return {
 			securityQuestion,
 			tableRowData
@@ -61,5 +62,10 @@ export default defineComponent({
 <style>
 .gap {
 	width: 10px;
+}
+
+/* this will put padding around the whole row */
+.securityQuestionCellOne {
+	padding: 10px
 }
 </style>

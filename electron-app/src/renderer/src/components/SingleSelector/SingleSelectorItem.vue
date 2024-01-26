@@ -1,9 +1,11 @@
 <template>
 	<div class="tableSelectorButton" @click="selectorItem.onClick()"
 		:class="{ active: selectorItem.isActive.value, first: isFirst, last: isLast }">
-		<div class="tableSelectorButtonText">
-			{{ selectorItem.title.value }}
-		</div>
+		<Transition name="fade" mode="out-in">
+			<h2 class="tableSelectorButtonText">
+				{{ selectorItem.title.value }}
+			</h2>
+		</Transition>
 	</div>
 </template>
 
@@ -11,6 +13,7 @@
 import { ComputedRef, computed, defineComponent } from 'vue';
 
 import { SingleSelectorItemModel } from '../../Types/Models'
+import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: "TableSelector",
@@ -18,9 +21,11 @@ export default defineComponent({
 	setup(props)
 	{
 		const selectorItem: ComputedRef<SingleSelectorItemModel> = computed(() => props.item);
+		const backgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(selectorItem.value.color.value));
 
 		return {
 			selectorItem,
+			backgroundColor
 		}
 	}
 })
@@ -57,30 +62,30 @@ export default defineComponent({
 
 .tableSelectorButton.active {
 	transition: 0.6s;
-	background-color: v-bind('selectorItem.color.value');
+	background: v-bind(backgroundColor);
 }
 
 @keyframes tableSelectorOneHover {
 
 	0% {
-		border: 5px solid transparent;
+		/* border: 5px solid transparent; */
 		box-shadow: 0 0 0 v-bind('selectorItem.color.value');
 	}
 
 	100% {
-		border: 5px solid v-bind('selectorItem.color.value');
+		/* border: 5px solid v-bind('selectorItem.color.value'); */
 		box-shadow: 0 0 25px v-bind('selectorItem.color.value');
 	}
 }
 
 @keyframes tableSelectorOneNotHover {
 	0% {
-		border: 5px solid v-bind('selectorItem.color.value');
+		/* border: 5px solid v-bind('selectorItem.color.value'); */
 		box-shadow: 0 0 25px v-bind('selectorItem.color.value');
 	}
 
 	100% {
-		border: 5px solid transparent;
+		/* border: 5px solid transparent; */
 		box-shadow: 0 0 0 v-bind('selectorItem.color.value');
 	}
 }

@@ -21,19 +21,21 @@
 	</div>
 </template>
 <script lang="ts">
+import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 import { PropertySelectorDisplayFields, PropertyType } from '../../Types/EncryptedData';
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 export default defineComponent({
 	name: "PropertySelectorInputField",
 	emits: ["update:modelValue", "propertyTypeChanged"],
-	props: ["modelValue", "displayFieldOptions", "label", "color"],
+	props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget'],
 	setup(props, ctx)
 	{
 		let selectedValue: Ref<string> = ref(props.modelValue);
 		let opened: Ref<boolean> = ref(false);
 		let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value);
 		let selectedPropertyType: PropertyType = PropertyType.String;
+		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		function onSelectorClick()
 		{
@@ -63,6 +65,7 @@ export default defineComponent({
 			opened,
 			active,
 			selectedValue,
+			backgroundColor,
 			onSelectorClick,
 			onOptionClick
 		}
@@ -105,7 +108,7 @@ export default defineComponent({
 
 .dropDownContainer.active .dropDownTitle .dropDownLabel {
 	transform: translateY(-150%) scale(0.8);
-	background-color: var(--input-field-label-color);
+	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
 }
@@ -174,7 +177,7 @@ export default defineComponent({
 
 .dropDownSelect .dropDownSelectOption {
 	display: none;
-	background-color: var(--solid-widget-background-color);
+	background-color: var(backgroundColor);
 }
 
 .dropDownSelect.opened .dropDownSelectOption {

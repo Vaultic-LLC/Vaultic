@@ -1,5 +1,6 @@
 <template>
-	<TableTemplate :style="{ position: 'relative' }" class="scrollbar" :scrollbar-size="1" :color="color" :border="true">
+	<TableTemplate :style="{ position: 'relative' }" class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0"
+		:border="true">
 		<template #header>
 			<TableHeaderRow :color="color" :tabs="headerTabs" :border="true">
 				<template #controls>
@@ -9,7 +10,7 @@
 		</template>
 		<template #body>
 			<FilterConditionRow v-for="( fc, index ) in  filterConditions " :key="fc.id" :rowNumber="index"
-				:color="primaryColor" :model="fc" :displayFieldOptions="displayFieldOptions" />
+				:color="primaryColor" :model="fc" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc.id)" />
 		</template>
 	</TableTemplate>
 </template>
@@ -25,6 +26,7 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import { FilterCondition } from '../../Types/Table';
 import { v4 as uuidv4 } from 'uuid';
 import { HeaderTabModel } from '@renderer/Types/Models';
+import idGenerator from '@renderer/Utilities/IdGenerator';
 
 export default defineComponent({
 	name: "FilterConditionInputField",
@@ -55,17 +57,23 @@ export default defineComponent({
 		function onAdd()
 		{
 			filterConditions.value.push({
-				id: "",
+				id: idGenerator.uniqueId(filterConditions.value),
 				property: '',
 				value: ''
 			});
+		}
+
+		function onDelete(id: string)
+		{
+			filterConditions.value = filterConditions.value.filter(f => f.id != id);
 		}
 
 		return {
 			primaryColor,
 			filterConditions,
 			headerTabs,
-			onAdd
+			onAdd,
+			onDelete
 		}
 	}
 })

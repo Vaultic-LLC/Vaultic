@@ -1,6 +1,6 @@
 <template>
 	<div id="filterGroupTableContainer">
-		<TableTemplate ref="tableRef" :rowGap="10" class="shadow scrollbar" id="filterTable" :color="color"
+		<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
 			:headerModels="headerModels" :scrollbar-size="1"
 			:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
