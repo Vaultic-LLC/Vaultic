@@ -1,20 +1,20 @@
 <template>
 	<div class="strengthGraphContainer">
 		<div class="strengthGraphContainer__header">
-			<div class="strengthGraphContainer__resetButton" @click="updateKey">
+			<div class="strengthGraphContainer__resetButton" @click="updateData">
 				Reset
 			</div>
 			<h2 class="strengthGraphContainer__title">Security Over Time</h2>
 		</div>
 		<div ref="chartContainer" class="strengthGraphContainer__chart">
-			<Line :key="key" ref="chart" :data="data" :options="options" :style="{ width: width, height: height }">
+			<Line :key="key" ref="lineChart" :data="data" :options="options" :style="{ width: width, height: height }">
 			</Line>
 		</div>
 	</div>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, watch } from 'vue';
+import { Ref, defineComponent, onMounted, ref, watch, toRaw } from 'vue';
 
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
@@ -35,7 +35,7 @@ export default defineComponent({
 	{
 		const key: Ref<string> = ref('');
 		const chartContainer: Ref<HTMLElement | null> = ref(null);
-		const chart: Ref<HTMLCanvasElement | null> = ref(null);
+		const lineChart: Ref<any> = ref(null);
 
 		const color: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			stores.settingsStore.currentColorPalette.passwordsColor.primaryColor : stores.settingsStore.currentColorPalette.valuesColor.primaryColor);
@@ -55,23 +55,22 @@ export default defineComponent({
 		let options: Ref<any> = ref({});
 
 		const data: Ref<any> = ref({
-			labels: lableArray.value,
+			labels: toRaw(lableArray.value),
 			datasets: getDataset()
 		});
 
-		function updateKey()
+		function updateData()
 		{
-			setData();
 			setOptions();
-			key.value = Date.now().toString();
-		}
 
-		function setData()
-		{
-			data.value = {
-				labels: lableArray.value,
-				datasets: getDataset()
-			};
+			lineChart.value.chart.data.labels = toRaw(lableArray.value);
+			lineChart.value.chart.data.datasets[0].borderColor = color.value;
+			lineChart.value.chart.data.datasets[0].data = EMACalc(chartOneArray, 2);
+
+			lineChart.value.chart.data.datasets[1].borderColor = mixHexes(color.value, "888888");
+			lineChart.value.chart.data.datasets[1].data = target.value;
+
+			lineChart.value.chart.update();
 		}
 
 		function setOptions()
@@ -110,6 +109,7 @@ export default defineComponent({
 								enabled: false
 							},
 							mode: 'xy',
+							scaleMode: 'xy'
 						},
 						pan: {
 							enabled: true,
@@ -121,7 +121,7 @@ export default defineComponent({
 					x: {
 					},
 					y: {
-						max: max
+						max: max.value
 					}
 				}
 			};
@@ -163,7 +163,7 @@ export default defineComponent({
 						return gradient;
 					},
 					fill: true,
-					borderColor: color,
+					borderColor: color.value,
 					pointBackgroundColor: color.value,
 					pointRadius: 0,
 					// cubicInterpolationMode: 'monotone',
@@ -173,6 +173,7 @@ export default defineComponent({
 					label: "Target",
 					data: target,
 					borderColor: mixHexes(color.value, "888888"),
+					fill: false,
 					pointRadius: 0
 				}
 			]
@@ -220,31 +221,31 @@ export default defineComponent({
 					break;
 			}
 
-			updateKey();
+			updateData();
 		});
 
 		watch(() => stores.encryptedDataStore.currentAndSafePasswords.current.length, () =>
 		{
 			lableArray.value = [...stores.encryptedDataStore.currentAndSafePasswords.current];
-			updateKey();
+			updateData();
 		});
 
 		watch(() => stores.encryptedDataStore.currentAndSafePasswords.safe.length, () =>
 		{
 			chartOneArray = [...stores.encryptedDataStore.currentAndSafePasswords.safe];
-			updateKey();
+			updateData();
 		});
 
 		watch(() => stores.encryptedDataStore.currentAndSafeValues.current.length, () =>
 		{
 			lableArray.value = [...stores.encryptedDataStore.currentAndSafeValues.current];
-			updateKey();
+			updateData();
 		});
 
 		watch(() => stores.encryptedDataStore.currentAndSafeValues.safe.length, () =>
 		{
 			chartOneArray = [...stores.encryptedDataStore.currentAndSafeValues.safe];
-			updateKey();
+			updateData();
 		});
 
 		watch(() => stores.settingsStore.currentPrimaryColor.value, (newValue) =>
@@ -255,7 +256,7 @@ export default defineComponent({
 			}
 
 			color.value = newValue;
-			updateKey();
+			updateData();
 		});
 
 		onMounted(() =>
@@ -269,7 +270,7 @@ export default defineComponent({
 		setOptions();
 
 		return {
-			chart,
+			lineChart,
 			chartContainer,
 			key,
 			options,
@@ -277,7 +278,7 @@ export default defineComponent({
 			color,
 			height,
 			width,
-			updateKey
+			updateData
 		}
 	}
 })
