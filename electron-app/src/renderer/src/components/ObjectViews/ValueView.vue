@@ -19,6 +19,7 @@
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }"
 			class="scrollbar" :scrollbar-size="1" :color="color" :headerModels="groupHeaderModels" :border="true"
+			:emptyMessage="emptyMessage" :showEmptyMessage="groupModels.visualValues.length == 0"
 			@scrolledToBottom="groupModels.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="groupTab" :border="true">
@@ -56,7 +57,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { stores } from '../../Objects/Stores';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
-import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
@@ -109,6 +110,8 @@ export default defineComponent({
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
+		const emptyMessage: Ref<string> = ref(getObjectPopupEmptyTableMessage('Groups', "Value", "Group"));
+
 		const activeGroupHeader: Ref<number> = ref(1);
 		const groupHeaderDisplayFields: HeaderDisplayField[] = [
 			{
@@ -123,6 +126,12 @@ export default defineComponent({
 				width: '150px',
 				clickable: true
 			},
+			{
+				displayName: "Color",
+				backingProperty: "color",
+				width: "100px",
+				clickable: true
+			}
 		];
 
 		const groupTab: HeaderTabModel[] = [
@@ -136,21 +145,35 @@ export default defineComponent({
 		];
 
 		// @ts-ignore
-		const groupHeaderModels: Ref<SortableHeaderModel[]> = ref(createSortableHeaderModels<Group>(
-			activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels));
+		const groupHeaderModels: SortableHeaderModel[] = createSortableHeaderModels<Group>(
+			activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels);
 
 		function setGroupModels()
 		{
 			groupModels.value.setValues(groups.value.calculatedValues.map(g =>
 			{
-				const model: SelectableTableRowData = {
+				const values: any[] =
+					[
+						{
+							component: "TableRowTextValue",
+							value: g.name,
+							copiable: false,
+							width: '150px'
+						},
+						{
+							component: "TableRowColorValue",
+							color: g.color,
+							copiable: true,
+							width: '100px',
+							margin: false
+						}
+					];
+
+				const model: SelectableTableRowData =
+				{
 					id: uuidv4(),
 					key: g.id,
-					values: [{
-						value: g.name,
-						copiable: false,
-						width: '150px'
-					}],
+					values: values,
 					isActive: ref(valuesState.value.groups.includes(g.id)),
 					selectable: true,
 					onClick: function ()
@@ -239,6 +262,7 @@ export default defineComponent({
 			showNotifyIfWeak,
 			searchText,
 			groupTab,
+			emptyMessage,
 			onSave,
 			onAuthenticationSuccessful
 		};

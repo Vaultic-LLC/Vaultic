@@ -53,7 +53,7 @@ export default defineComponent({
 	display: grid;
 	flex-direction: column;
 	width: 20%;
-	height: 300px;
+	height: 27%;
 	top: 5%;
 	left: 2%;
 	/* column-gap: 50px; */

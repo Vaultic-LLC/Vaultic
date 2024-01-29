@@ -28,8 +28,8 @@
 		</TabbedInputContainer> -->
 		<TableTemplate :color="color"
 			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
-			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0"
-			@scrolled-to-bottom="scrolledToBottom">
+			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
+			:showEmptyMessage="showEmptyMessage" @scrolled-to-bottom="scrolledToBottom">
 			<template #header>
 				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="headerTabs" :border="true">
 					<template #controls>
@@ -76,7 +76,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { stores } from '../../Objects/Stores';
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey, RequestAuthenticationFunctionKey } from '../../Types/Keys';
-import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
 import idGenerator from '@renderer/Utilities/IdGenerator';
@@ -135,6 +135,20 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
+		const showEmptyMessage: ComputedRef<boolean> = computed(() =>
+			(activeTab.value == 0 && passwordState.value.securityQuestions.length == 0) ||
+			(activeTab.value == 1 && groupModels.value.visualValues.length == 0));
+
+		const emptyMessage: ComputedRef<string> = computed(() =>
+		{
+			if (activeTab.value == 0)
+			{
+				return getEmptyTableMessage("Security Questions");
+			}
+
+			return getObjectPopupEmptyTableMessage("Groups", "Password", "Group");
+		});
+
 		const activeGroupHeader: Ref<number> = ref(1);
 		const groupHeaderDisplayFields: HeaderDisplayField[] = [
 			{
@@ -149,6 +163,12 @@ export default defineComponent({
 				width: '150px',
 				clickable: true
 			},
+			{
+				displayName: "Color",
+				backingProperty: "color",
+				width: "100px",
+				clickable: true
+			}
 		];
 
 		const activeTab: Ref<number> = ref(0);
@@ -160,7 +180,6 @@ export default defineComponent({
 				color: color,
 				onClick: () =>
 				{
-					groupHeaderModels.value = [];
 					activeTab.value = 0;
 				}
 			},
@@ -171,33 +190,48 @@ export default defineComponent({
 				color: color,
 				onClick: () =>
 				{
-					setGroupHeaderModels();
 					activeTab.value = 1;
 				}
 			},
 		];
 
 		// @ts-ignore
-		const groupHeaderModels: Ref<SortableHeaderModel[]> = ref([]);
-
-		function setGroupHeaderModels()
+		const groupHeaderModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
 		{
-			groupHeaderModels.value = createSortableHeaderModels<Group>(
+			if (activeTab.value == 0)
+			{
+				return [];
+			}
+
+			return createSortableHeaderModels<Group>(
 				activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels);
-		}
+		});
 
 		function setGroupModels()
 		{
 			groupModels.value.setValues(groups.value.calculatedValues.map(g =>
 			{
+				const values: any[] =
+					[
+						{
+							component: "TableRowTextValue",
+							value: g.name,
+							copiable: false,
+							width: '150px'
+						},
+						{
+							component: "TableRowColorValue",
+							color: g.color,
+							copiable: true,
+							width: '100px',
+							margin: false
+						}
+					];
+
 				const model: SelectableTableRowData = {
 					id: uuidv4(),
 					key: g.id,
-					values: [{
-						value: g.name,
-						copiable: false,
-						width: '150px'
-					}],
+					values: values,
 					isActive: ref(passwordState.value.groups.includes(g.id)),
 					selectable: true,
 					onClick: function ()
@@ -338,6 +372,8 @@ export default defineComponent({
 			searchText,
 			activeTab,
 			headerTabs,
+			emptyMessage,
+			showEmptyMessage,
 			onAuthenticationSuccessful,
 			onAuthenticationCanceled,
 			onSave,

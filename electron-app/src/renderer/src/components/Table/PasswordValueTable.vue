@@ -1,7 +1,8 @@
 <template>
 	<div id="passwordValueTable">
 		<TableTemplate ref="tableRef" :rowGap="0" id="passwordTable" class="shadow scrollbar" :color="color"
-			:headerModels="headerModels" :scrollbar-size="1"
+			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
+			:showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0"
 			:style="{ height: '55%', width: '48%', left: '31%', top: '42%' }"
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #header>
@@ -64,7 +65,7 @@ import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { HeaderDisplayField, IFilterable, IGroupable, IIdentifiable } from '../../Types/EncryptedData';
 import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
-import { createCollapsibleTableRowModels, createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores/index';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
@@ -120,6 +121,34 @@ export default defineComponent({
 
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+
+		const emptyTableMessage: ComputedRef<string> = computed(() =>
+		{
+			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+			{
+				if (stores.filterStore.activePasswordFilters.length > 0)
+				{
+					return getNoValuesApplyToFilterMessage("Passwords");
+				}
+				else
+				{
+					return getEmptyTableMessage("Passwords");
+				}
+			}
+			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+			{
+				if (stores.filterStore.activePasswordFilters.length > 0)
+				{
+					return getNoValuesApplyToFilterMessage("Values");
+				}
+				else
+				{
+					return getEmptyTableMessage("Values");
+				}
+			}
+
+			return "";
+		});
 
 		const headerTabs: HeaderTabModel[] = [
 			{
@@ -190,7 +219,6 @@ export default defineComponent({
 		const valueHeaders: SortableHeaderModel[] = createSortableHeaderModels(valueActiveHeader, valueHeaderDisplayFields,
 			nameValuePairs, pinnedNameValuePairs, setModels);
 		valueHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
-
 
 		const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
 		{
@@ -288,10 +316,13 @@ export default defineComponent({
 						collapsibleTableRowModels, nameValuePairs, pinnedNameValuePairs,
 						(v: NameValuePairStore) =>
 						{
-							return [{ value: v.name, copiable: false, width: '150px' }, {
-								value: v.valueType ?? '', copiable: false, width:
-									'150px'
-							}]
+							return [
+								{
+									component: 'TableRowTextValue', value: v.name, copiable: false, width: '150px'
+								},
+								{
+									component: 'TableRowTextValue', value: v.valueType ?? '', copiable: false, width: '150px'
+								}]
 						}, onEditValue, onValueDeleteInitiated);
 					break;
 				case DataType.Passwords:
@@ -301,8 +332,13 @@ export default defineComponent({
 						collapsibleTableRowModels, passwords, pinnedPasswords,
 						(p: PasswordStore) =>
 						{
-							return [{ value: p.passwordFor, copiable: false, width: '150px', },
-							{ value: p.login, copiable: true, width: '250px' }]
+							return [
+								{
+									component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: '150px',
+								},
+								{
+									component: 'TableRowTextValue', value: p.login, copiable: true, width: '250px'
+								}]
 						},
 						onEditPassword, onPasswordDeleteInitiated);
 			}
@@ -475,6 +511,7 @@ export default defineComponent({
 			currentEditingValueModel,
 			currentSearchText,
 			headerTabs,
+			emptyTableMessage,
 			onEditPasswordPopupClose,
 			onEditValuePopupClose,
 			onDeletePasswordConfirmed,

@@ -6,7 +6,7 @@
 				<h2>{{ amountOutOfTotal }}</h2>
 				<p>{{ model.title }}</p>
 			</div>
-			<Doughnut :data="data" :options="options" />
+			<Doughnut ref="doughnutChart" :data="data" :options="options" />
 		</div>
 	</div>
 </template>
@@ -29,6 +29,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const key: Ref<string> = ref('');
+		const doughnutChart: Ref<any> = ref(null);
 		const primaryColor: Ref<string> = ref(props.model.color);
 		const gauge: Ref<HTMLElement | null> = ref(null);
 		const smallMetricContainer: Ref<HTMLElement | null> = ref(null);
@@ -42,7 +43,7 @@ export default defineComponent({
 
 		const options: any =
 		{
-			resposive: false,
+			resposive: true,
 			animation:
 			{
 				duration: 1000,
@@ -106,9 +107,17 @@ export default defineComponent({
 
 			});
 
-		function updateKey()
+		// function updateKey()
+		// {
+		// 	key.value = Date.now().toString();
+		// }
+
+		function updateData(data)
 		{
-			key.value = Date.now().toString();
+			doughnutChart.value.chart.data.datasets[0].data = data;
+			doughnutChart.value.chart.data.datasets[0].backgroundColor = [primaryColor.value, '#191919'];
+
+			doughnutChart.value.chart.update();
 		}
 
 		watch(() => stores.appStore.authenticated, (newValue) =>
@@ -131,10 +140,12 @@ export default defineComponent({
 
 			};
 
-			updateKey();
+			updateData([props.model.filledAmount, props.model.totalAmount - props.model.filledAmount])
+			//updateKey();
 		});
 
 		return {
+			doughnutChart,
 			key,
 			active,
 			smallMetricContainer,

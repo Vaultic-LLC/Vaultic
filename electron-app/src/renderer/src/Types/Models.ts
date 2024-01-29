@@ -31,19 +31,29 @@ export interface TableRowData
 {
 	id: string;
 	isPinned?: boolean;
-	values: TableRowValues[];
+	values: TableRowValue[];
 	atRiskMessage?: string;
 	onPin?: () => void;
 	onEdit?: () => void;
 	onDelete?: () => void;
 }
 
-export interface TableRowValues
+export interface TableRowValue
 {
-	value: string;
+	component: string;
 	copiable: boolean;
 	width: string;
 	margin?: boolean;
+}
+
+export interface TextTableRowValue extends TableRowValue
+{
+	value: string;
+}
+
+export interface ColorTableRowValue extends TableRowValue
+{
+	color: string;
 }
 
 export interface SelectableTableRowData extends TableRowData
@@ -72,7 +82,7 @@ export interface SortableHeaderModel
 	id: string;
 	isActive: Ref<boolean>;
 	name?: string;
-	descending?: boolean;
+	descending?: Ref<boolean>;
 	clickable: boolean;
 	width: string;
 	onClick: () => void;
@@ -93,7 +103,7 @@ export function emptyHeader(): SortableHeaderModel
 		id: uuidv4(),
 		isActive: ref(false),
 		name: '',
-		descending: false,
+		descending: ref(false),
 		clickable: false,
 		width: 'auto',
 		onClick: () => { }

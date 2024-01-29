@@ -2,30 +2,77 @@
 	<div class="tableSelectorButton" @click="selectorItem.onClick()"
 		:class="{ active: selectorItem.isActive.value, first: isFirst, last: isLast }">
 		<Transition name="fade" mode="out-in">
-			<h2 class="tableSelectorButtonText">
+			<div :key="key" class="tableSelectorButtonText">
 				{{ selectorItem.title.value }}
-			</h2>
+			</div>
 		</Transition>
 	</div>
 </template>
 
 <script lang="ts">
-import { ComputedRef, computed, defineComponent } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import { SingleSelectorItemModel } from '../../Types/Models'
-import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
+import { getLinearGradientFromColor, getLinearGradientFromColorAndPercent, hexToRgb } from '@renderer/Helpers/ColorHelper';
+import { widgetBackgroundHexString, widgetBackgroundRGBA } from '@renderer/Constants/Colors';
+import { RGBColor } from '@renderer/Types/Colors';
+import { tween } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
 	name: "TableSelector",
 	props: ["item", "isFirst", "isLast"],
 	setup(props)
 	{
+		const key: Ref<string> = ref('');
 		const selectorItem: ComputedRef<SingleSelectorItemModel> = computed(() => props.item);
-		const backgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(selectorItem.value.color.value));
+		const background: Ref<string> = ref('');
+
+		watch(() => selectorItem.value.isActive.value, (newValue) =>
+		{
+			let tweenTo: RGBColor | null = null;
+			let tweenFrom: RGBColor | null = null;
+
+			if (newValue)
+			{
+				tweenTo = hexToRgb(selectorItem.value.color.value);
+				tweenFrom = widgetBackgroundRGBA();
+				tween<RGBColor>(tweenFrom!, tweenTo!, 500, updateGradient);
+			}
+			else
+			{
+				tweenTo = widgetBackgroundRGBA();
+				tweenFrom = hexToRgb(selectorItem.value.color.value);
+				tween({ ...tweenFrom!, x: 30 }, { ...tweenTo!, x: 0 }, 500, updateToWidgetColor);
+			}
+
+			function updateGradient(clr: RGBColor)
+			{
+				background.value = getLinearGradientFromColor(`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`);
+			}
+
+			function updateToWidgetColor(clr: any)
+			{
+				background.value = getLinearGradientFromColorAndPercent(
+					`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`, clr.x);
+			}
+		});
+
+		onMounted(() =>
+		{
+			background.value = selectorItem.value.isActive.value ?
+				getLinearGradientFromColor(selectorItem.value.color.value) :
+				widgetBackgroundHexString()
+		});
+
+		watch(() => selectorItem.value.title.value, () =>
+		{
+			key.value = Date.now().toString();
+		});
 
 		return {
 			selectorItem,
-			backgroundColor
+			background,
+			key
 		}
 	}
 })
@@ -38,6 +85,10 @@ export default defineComponent({
 	position: relative;
 	overflow: hidden;
 	animation: tableSelectorOneNotHover .2s linear forwards;
+	background: v-bind(background);
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .tableSelectorButton.first {
@@ -51,18 +102,16 @@ export default defineComponent({
 }
 
 .tableSelectorButton .tableSelectorButtonText {
-	margin: auto;
+	transition: 0.3s;
 	color: white;
-	user-select: none;
+	font-size: 20px;
+	padding: 10px;
+	cursor: pointer;
+	text-align: center;
 }
 
 .tableSelectorButton:hover {
 	animation: tableSelectorOneHover .2s linear forwards;
-}
-
-.tableSelectorButton.active {
-	transition: 0.6s;
-	background: v-bind(backgroundColor);
 }
 
 @keyframes tableSelectorOneHover {

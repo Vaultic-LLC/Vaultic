@@ -30,11 +30,11 @@ export default defineComponent({
 	-webkit-appearance: none;
 	appearance: none;
 	width: 100%;
-	height: 25px;
-	background: #d3d3d3;
+	height: 10px;
+	border-radius: 20px;
+	background: #2c2c33;
 	outline: none;
 	opacity: 0.7;
-	-webkit-transition: .2s;
 	transition: opacity .2s;
 }
 
@@ -42,12 +42,17 @@ export default defineComponent({
 	opacity: 1;
 }
 
+.sliderContainer__slider:hover::-webkit-slider-thumb {
+	box-shadow: 0 0 25px v-bind(color);
+}
+
 .sliderContainer__slider::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	appearance: none;
 	width: 25px;
 	height: 25px;
-	background: #04AA6D;
+	border-radius: 50%;
+	background: v-bind(color);
 	cursor: pointer;
 }
 </style>

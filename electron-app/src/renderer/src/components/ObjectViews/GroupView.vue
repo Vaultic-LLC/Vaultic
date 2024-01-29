@@ -7,7 +7,8 @@
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '4 / span 2' }" />
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
 			class="scrollbar border" :scrollbar-size="1" :color="groupColor" :border="true"
-			:headerModels="tableHeaderModels" @scrolledToBottom="tableRowDatas.loadNextChunk()">
+			:headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
+			:showEmptyMessage="tableRowDatas.visualValues.length == 0" @scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :color="groupColor" :border="true" :model="tableHeaderModels" :tabs="headerTabs">
 					<template #controls>
@@ -36,11 +37,11 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import SelectableTableRow from '../Table/SelectableTableRow.vue';
 
 import { DataType, Group } from '../../Types/Table';
-import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
 import { HeaderDisplayField, defaultGroup } from '../../Types/EncryptedData';
 import { v4 as uuidv4 } from 'uuid';
 import { stores } from '../../Objects/Stores';
-import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
@@ -84,7 +85,34 @@ export default defineComponent({
 
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
-		let tableHeaderModels: Ref<SortableHeaderModel[]> = ref([]);
+		const emptyMessage: ComputedRef<string> = computed(() =>
+		{
+			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+			{
+				return getObjectPopupEmptyTableMessage("Passwords", "Group", "Password");
+			}
+			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+			{
+				return getObjectPopupEmptyTableMessage("Values", "Group", "Value");
+			}
+
+			return "";
+		})
+
+		let tableHeaderModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
+		{
+			switch (stores.appStore.activePasswordValuesTable)
+			{
+				case DataType.NameValuePairs:
+					return createSortableHeaderModels<NameValuePairStore>(
+						activeValueHeader, valueHeaderDisplayField, valueSortedCollection, undefined, setTableRows);
+				case DataType.Passwords:
+				default:
+					return createSortableHeaderModels<PasswordStore>(
+						activePasswordHeader, passwordHeaderDisplayFields, passwordSortedCollection, undefined, setTableRows);
+			}
+		});
+
 		let headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			passwordHeaderTab : valueHeaderTab);
 
@@ -144,9 +172,9 @@ export default defineComponent({
 
 		const valueHeaderDisplayField: HeaderDisplayField[] = [
 			{
-				backingProperty: "",
-				displayName: "",
-				width: '50px',
+				backingProperty: " ",
+				displayName: " ",
+				width: '100px',
 				clickable: false
 			},
 			{
@@ -154,23 +182,14 @@ export default defineComponent({
 				displayName: "Name",
 				width: '150px',
 				clickable: true
+			},
+			{
+				displayName: "Type",
+				backingProperty: "valueType",
+				width: '150px',
+				clickable: true
 			}
 		];
-
-		function setHeaderModels(): void
-		{
-			switch (stores.appStore.activePasswordValuesTable)
-			{
-				case DataType.NameValuePairs:
-					tableHeaderModels.value = createSortableHeaderModels<NameValuePairStore>(
-						activeValueHeader, valueHeaderDisplayField, valueSortedCollection, undefined, setTableRows);
-					break;
-				case DataType.Passwords:
-				default:
-					tableHeaderModels.value = createSortableHeaderModels<PasswordStore>(
-						activePasswordHeader, passwordHeaderDisplayFields, passwordSortedCollection, undefined, setTableRows);
-			}
-		}
 
 		function setTableRows(): void
 		{
@@ -179,14 +198,25 @@ export default defineComponent({
 				case DataType.NameValuePairs:
 					tableRowDatas.value.setValues(valueSortedCollection.calculatedValues.map(nvp =>
 					{
-						return {
-							id: uuidv4(),
-							key: nvp.id,
-							values: [{
+						const values: TextTableRowValue[] = [
+							{
+								component: "TableRowTextValue",
 								value: nvp.name,
 								copiable: false,
 								width: '150px'
-							}],
+							},
+							{
+								component: 'TableRowTextValue',
+								value: nvp.valueType ?? '',
+								copiable: false,
+								width: '150px'
+							}
+						]
+
+						return {
+							id: uuidv4(),
+							key: nvp.id,
+							values: values,
 							isActive: ref(groupState.value.nameValuePairs.includes(nvp.id)),
 							selectable: true,
 							onClick: function ()
@@ -207,19 +237,25 @@ export default defineComponent({
 				default:
 					tableRowDatas.value.setValues(passwordSortedCollection.calculatedValues.map(p =>
 					{
-						const model: SelectableTableRowData = {
-							id: uuidv4(),
-							key: p.id,
-							values: [{
+						const values: TextTableRowValue[] = [
+							{
+								component: "TableRowTextValue",
 								value: p.passwordFor,
 								copiable: false,
 								width: '150px'
 							},
 							{
+								component: "TableRowTextValue",
 								value: p.login,
 								copiable: false,
 								width: '150px'
-							}],
+							}
+						];
+
+						const model: SelectableTableRowData = {
+							id: uuidv4(),
+							key: p.id,
+							values: values,
 							isActive: ref(groupState.value.passwords.includes(p.id)),
 							selectable: true,
 							onClick: function ()
@@ -289,7 +325,6 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
-			setHeaderModels();
 			setTableRows();
 		});
 
@@ -301,7 +336,6 @@ export default defineComponent({
 
 		watch(() => stores.appStore.activePasswordValuesTable, () =>
 		{
-			setHeaderModels();
 			setTableRows();
 		});
 
@@ -331,6 +365,7 @@ export default defineComponent({
 			gridDefinition,
 			searchText,
 			headerTabs,
+			emptyMessage,
 			onSave
 		};
 	},

@@ -1,5 +1,6 @@
 <template>
-	<TableRow @click="onRowClicked" :rowNumber="rowNumber" :model="selectableTableRowData" :color="color" :clickable="true">
+	<TableRow @click="onRowClicked" :rowNumber="rowNumber" :model="selectableTableRowData" :color="color"
+		:clickable="selectable">
 		<td class="indicatorRow" v-if="selectable">
 			<SelectorButton :selectorButtonModel="selectorButtonModel" />
 		</td>

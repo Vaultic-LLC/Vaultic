@@ -1,0 +1,66 @@
+<template>
+	<td>
+		<div class="rowValue" :style="{ 'width': rowValue.width, 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
+			<slot></slot>
+			<div v-if="rowValue.copiable" class="copyIcon" @click.stop="copyText(rowValue.value)">
+				<ion-icon name="clipboard-outline"></ion-icon>
+			</div>
+		</div>
+	</td>
+</template>
+
+<script lang="ts">
+import { computed, ComputedRef, defineComponent, inject } from 'vue';
+
+import { TextTableRowValue } from '../../../Types/Models';
+import clipboard from 'clipboardy';
+import { ShowToastFunctionKey } from '../../../Types/Keys';
+
+export default defineComponent({
+	name: "TableRowValue",
+	props: ["model", "color"],
+	setup(props)
+	{
+		const rowValue: ComputedRef<TextTableRowValue> = computed(() => props.model);
+
+		const showToastFunction: { (title: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+
+		function copyText(text: string)
+		{
+			clipboard.write(text);
+			showToastFunction("Copied to Clipboard", true);
+		}
+
+		return {
+			rowValue,
+			copyText
+		};
+	},
+})
+</script>
+<style>
+.rowValue {
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	width: 100px;
+}
+
+.rowValue .rowValueValue {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.rowValue .copyIcon {
+	color: white;
+	transition: 0.3s;
+	font-size: 20px;
+	cursor: pointer;
+	transform: translate(50%, -50%);
+}
+
+.rowValue .copyIcon:hover {
+	color: v-bind(color);
+	transform: translate(50%, -50%) scale(1.1);
+}
+</style>

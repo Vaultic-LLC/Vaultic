@@ -1,7 +1,8 @@
 <template>
 	<div id="filterGroupTableContainer">
 		<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
-			:headerModels="headerModels" :scrollbar-size="1"
+			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
+			:showEmptyMessage="tableRowDatas.visualValues.length == 0"
 			:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
@@ -15,7 +16,7 @@
 			<template #body>
 				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues" :key="trd.id"
 					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': '70px' }" :color="color" :allowPin="true" :allowEdit="true"
+					:style="{ width: '5%', 'height': '100px' }" :color="color" :allowPin="true" :allowEdit="true"
 					:allowDelete="true" />
 			</template>
 		</TableTemplate>
@@ -52,7 +53,7 @@ import { DataType, Filter, Group } from '../../Types/Table';
 import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '../../Types/EncryptedData';
-import { createPinnableSelectableTableRowModels, createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
@@ -117,6 +118,11 @@ export default defineComponent({
 		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
+		const emptyTableMessage: ComputedRef<string> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
+			getEmptyTableMessage(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password Filters" : "Value Filters") :
+			getEmptyTableMessage(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password Groups" : "Value Groups")
+		);
+
 		const color: ComputedRef<string> = computed(() =>
 		{
 			switch (stores.appStore.activeFilterGroupsTable)
@@ -167,6 +173,12 @@ export default defineComponent({
 				backingProperty: "name",
 				width: '100px',
 				clickable: true
+			},
+			{
+				displayName: "Color",
+				backingProperty: "color",
+				width: "100px",
+				clickable: true
 			}
 		];
 
@@ -216,14 +228,19 @@ export default defineComponent({
 			{
 				case DataType.Groups:
 					createPinnableSelectableTableRowModels<Group>(DataType.Groups, stores.appStore.activePasswordValuesTable, tableRowDatas,
-						currentGroups.value, currentPinnedGroups.value, (g: Group) => { return [{ value: g.name, copiable: false, width: '100px', margin: true }] },
+						currentGroups.value, currentPinnedGroups.value, (g: Group) =>
+					{
+						return [{ component: 'TableRowTextValue', value: g.name, copiable: false, width: '100px', margin: true },
+						{ component: "TableRowColorValue", color: g.color, copiable: true, width: '100px', margin: false }]
+					},
 						false, "", false, undefined, onEditGroup,
 						onGroupDeleteInitiated);
 					break;
 				case DataType.Filters:
 				default:
 					createPinnableSelectableTableRowModels<Filter>(DataType.Filters, stores.appStore.activePasswordValuesTable,
-						tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) => { return [{ value: f.text, copiable: false, width: '100px' }] },
+						tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
+					{ return [{ component: 'TableRowTextValue', value: f.text, copiable: false, width: '100px' }] },
 						true, "isActive", true, (f: Filter) => stores.filterStore.toggleFilter(f.id), onEditFilter, onFilterDeleteInitiated);
 			}
 
@@ -411,6 +428,7 @@ export default defineComponent({
 			currentlyEditingFilterModel,
 			currentSearchText,
 			headerTabs,
+			emptyTableMessage,
 			onEditGroupPopupClosed,
 			onEditFilterPopupClosed,
 			onFilterDeleteConfirmed,

@@ -36,8 +36,8 @@
 		<div class="iconWidgets" :style="{ top: '89%', left: '3%', width: '25%', height: '8%' }">
 			<LockIconCard :style="{ 'grid-row': '1', 'grid-column': 1 }" />
 			<SettingsIconCard :style="{ 'grid-row': '1', 'grid-column': 2 }" />
-			<LayoutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" />
-			<AboutIconCard :style="{ 'grid-row': '1', 'grid-column': 4 }" />
+			<!-- <LayoutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" /> -->
+			<AboutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" />
 		</div>
 	</div>
 	<Transition name="fade" mode="out-in">
@@ -113,8 +113,8 @@ export default defineComponent({
 
 		const needsToSetupKey: Ref<boolean> = ref(false);
 		const requestAuth: Ref<boolean> = ref(false);
-		const onAuthSuccess: Ref<{ (key: string): void }> = ref((_: string) => { })
-		const onAuthCancel: Ref<{ (): void }> = ref(() => { })
+		const onAuthSuccess: Ref<{ (key: string): void }> = ref((_: string) => { });
+		const onAuthCancel: Ref<{ (): void }> = ref(() => { });
 
 		provide(ShowToastFunctionKey, showToastFunc);
 		provide(RequestAuthenticationFunctionKey, requestAuthentication)
@@ -306,9 +306,11 @@ div {
 .tempWidget.background {
 	background: var(--widget-background-color);
 	border-radius: 20px;
-	aspect-ratio: 1/1;
 	display: flex;
 	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	row-gap: 25px;
 }
 
 .iconWidgets {

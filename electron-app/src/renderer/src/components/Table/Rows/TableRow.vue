@@ -2,7 +2,9 @@
 	<tr class="tableRow"
 		:class="{ clickable: clickable, pinned: isPinned, zIndexing: zIndexing, deletingRow: deletingRow }">
 		<slot></slot>
-		<td v-for="rowValue in tableRowData.values" :key="rowValue.value">
+		<component v-for="(rowValue, index) in tableRowData.values" :key="index" :is="rowValue.component" :model="rowValue"
+			:color="color" />
+		<!-- <td v-for="(rowValue, index) in tableRowData.values" :key="index">
 			<div class="rowValue"
 				:style="{ 'width': rowValue.width, 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
 				<div class="rowValueValue">
@@ -12,7 +14,7 @@
 					<ion-icon name="clipboard-outline"></ion-icon>
 				</div>
 			</div>
-		</td>
+		</td> -->
 		<td v-if="allowPin || allowEdit || allowDelete" class="gapData"></td>
 		<td v-if="!hideAtRiskCell" :class="{ hideCell: !tableRowData.atRiskMessage }">
 			<AtRiskIndicator :message="tableRowData.atRiskMessage" />
@@ -32,8 +34,11 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, inject, Ref, ref } from 'vue';
 
-import { TableRowData } from '../../../Types/Models';
 import AtRiskIndicator from '../AtRiskIndicator.vue';
+import TableRowTextValue from './TableRowTextValue.vue';
+import TableRowColorValue from './TableRowColorValue.vue';
+
+import { TableRowData } from '../../../Types/Models';
 import { stores } from '../../../Objects/Stores/index';
 import { ColorPalette } from '../../..//Types/Colors';
 import clipboard from 'clipboardy';
@@ -43,7 +48,9 @@ export default defineComponent({
 	name: "TableRow",
 	components:
 	{
-		AtRiskIndicator
+		AtRiskIndicator,
+		TableRowTextValue,
+		TableRowColorValue
 	},
 	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete",
 		'clickable', 'hideAtRisk', 'zIndexing', 'animateDelete'],

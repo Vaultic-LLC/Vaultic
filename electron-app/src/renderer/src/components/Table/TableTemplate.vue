@@ -14,6 +14,15 @@
 				<slot name="body">
 				</slot>
 			</table>
+			<Transition name="fade" mode="out-in">
+				<div v-if="showEmptyMessage == true" class="tableContainer__emptyMessageContainer">
+					<Transition name="fade" mode="out-in">
+						<div :key="key" class="tableContainer__emptyMessage">
+							{{ emptyMessage }}
+						</div>
+					</Transition>
+				</div>
+			</Transition>
 		</div>
 	</div>
 </template>
@@ -27,9 +36,10 @@ import { stores } from '../../Objects/Stores';
 export default defineComponent({
 	name: "TableTemplate",
 	emits: ['scrolledToBottom'],
-	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border'],
+	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage'],
 	setup(props, ctx)
 	{
+		const key: Ref<string> = ref('');
 		const tableContainer: Ref<HTMLElement | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const rowGapValue: ComputedRef<string> = computed(() => `${props.rowGap}px`);
@@ -97,6 +107,16 @@ export default defineComponent({
 			}
 		});
 
+		watch(() => props.emptyMessage, () =>
+		{
+			key.value = Date.now().toString();
+		});
+
+		watch(() => props.showEmptyMessage, () =>
+		{
+			console.log('here');
+		})
+
 		onMounted(() =>
 		{
 			calcScrollbarColor();
@@ -108,6 +128,7 @@ export default defineComponent({
 		});
 
 		return {
+			key,
 			tableContainer,
 			primaryColor,
 			scrollbarColor,
@@ -203,5 +224,19 @@ export default defineComponent({
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;
+}
+
+.tableContainer__emptyMessageContainer {
+	position: absolute;
+	width: 80%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.tableContainer__emptyMessage {
+	color: grey;
+	font-size: 24px;
+	text-align: center;
 }
 </style>

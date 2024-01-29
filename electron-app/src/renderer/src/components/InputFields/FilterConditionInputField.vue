@@ -1,6 +1,6 @@
 <template>
 	<TableTemplate :style="{ position: 'relative' }" class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0"
-		:border="true">
+		:border="true" :emptyMessage="emptyMessage" :showEmptyMessage="filterConditions.length == 0">
 		<template #header>
 			<TableHeaderRow :color="color" :tabs="headerTabs" :border="true">
 				<template #controls>
@@ -27,6 +27,7 @@ import { FilterCondition } from '../../Types/Table';
 import { v4 as uuidv4 } from 'uuid';
 import { HeaderTabModel } from '@renderer/Types/Models';
 import idGenerator from '@renderer/Utilities/IdGenerator';
+import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
 
 export default defineComponent({
 	name: "FilterConditionInputField",
@@ -43,6 +44,8 @@ export default defineComponent({
 	{
 		let filterConditions: Ref<FilterCondition[]> = ref(props.model);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
+
+		const emptyMessage: Ref<string> = ref(getEmptyTableMessage("Filter Conditions"));
 
 		const headerTabs: HeaderTabModel[] = [
 			{
@@ -72,6 +75,7 @@ export default defineComponent({
 			primaryColor,
 			filterConditions,
 			headerTabs,
+			emptyMessage,
 			onAdd,
 			onDelete
 		}

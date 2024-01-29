@@ -8,7 +8,7 @@
 			'tableHeader__tableHeaderRow--border': applyBorder
 		}">
 			<div class="tableHeader__tableHeaderRow__headers">
-				<TableHeaderCell v-for="( header ) in  headerModels " :key="header.id" :model="header"
+				<TableHeaderCell v-for="( header, index ) in  headerModels " :key="index" :model="header"
 					:backgroundColor="backgroundColor" />
 			</div>
 			<div class="tableHeader__tableHeaderRow__controls">
