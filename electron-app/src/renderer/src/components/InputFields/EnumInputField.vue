@@ -1,6 +1,6 @@
 <template>
-	<div :key="refreshKey" class="dropDownContainer" tabindex="1" @click="onSelectorClick" @focusout="opened = false"
-		:class="{ active: active, opened: opened, shouldFadeIn: fadeIn }">
+	<div ref="container" :key="refreshKey" class="dropDownContainer" tabindex="1" @click="onSelectorClick"
+		@focusout="opened = false" :class="{ active: active, opened: opened, shouldFadeIn: fadeIn }">
 		<div class="dropDownTitle">
 			<label class="dropDownLabel">{{ label }}</label>
 			<div class="dropDownIcon" :class="{ opened: opened }">
@@ -20,8 +20,11 @@
 	</div>
 </template>
 <script lang="ts">
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
-import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
+import { ValidationFunctionsKey } from '@renderer/Types/Keys';
+import tippy from 'tippy.js';
 
 export default defineComponent({
 	name: "EnumInputField",
@@ -29,21 +32,43 @@ export default defineComponent({
 	props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget'],
 	setup(props, ctx)
 	{
+		const container: Ref<HTMLElement | null> = ref(null);
 		const refreshKey: Ref<string> = ref('');
 		let selectedValue: Ref<string> = ref(props.modelValue);
 		let opened: Ref<boolean> = ref(false);
 		let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value);
 		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
+		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
+		let tippyInstance: any = null;
+
 		function onSelectorClick()
 		{
 			opened.value = !opened.value;
+			tippyInstance.hide();
 		}
 
 		function onOptionClick(value: string)
 		{
 			selectedValue.value = value;
 			ctx.emit('update:modelValue', value)
+		}
+
+		function validate()
+		{
+			if (selectedValue.value == '' || selectedValue.value == undefined)
+			{
+				invalidate("Please select a value");
+				return false;
+			}
+
+			return true;
+		}
+
+		function invalidate(message: string)
+		{
+			tippyInstance.setContent(message);
+			tippyInstance.show();
 		}
 
 		watch(() => props.modelValue, (newValue) =>
@@ -53,7 +78,31 @@ export default defineComponent({
 				onOptionClick('');
 				refreshKey.value = Date.now().toString();
 			}
-		})
+		});
+
+		onMounted(() =>
+		{
+			if (!container.value)
+			{
+				return;
+			}
+
+			validationFunction?.value.push(validate);
+			tippyInstance = tippy(container.value, {
+				inertia: true,
+				animation: 'scale',
+				theme: 'material',
+				placement: "bottom-start",
+				trigger: 'manual',
+				hideOnClick: false
+			});
+		});
+
+		onUnmounted(() =>
+		{
+			tippyInstance.hide();
+			validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
+		});
 
 		return {
 			refreshKey,
@@ -61,6 +110,7 @@ export default defineComponent({
 			active,
 			selectedValue,
 			backgroundColor,
+			container,
 			onSelectorClick,
 			onOptionClick
 		}

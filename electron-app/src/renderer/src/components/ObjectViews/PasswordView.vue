@@ -7,7 +7,7 @@
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
 		<EncryptedInputField :color="color" :label="'Password'" v-model="passwordState.password"
 			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true"
-			showCopy="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
+			:required="true" showCopy="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			@onDirty="passwordIsDirty = true" />
 		<TextAreaInputField :color="color" :label="'Additional Information'" v-model="passwordState.additionalInformation"
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />

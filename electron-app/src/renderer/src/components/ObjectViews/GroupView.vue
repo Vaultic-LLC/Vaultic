@@ -8,7 +8,8 @@
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
 			class="scrollbar border" :scrollbar-size="1" :color="groupColor" :border="true"
 			:headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
-			:showEmptyMessage="tableRowDatas.visualValues.length == 0" @scrolledToBottom="tableRowDatas.loadNextChunk()">
+			:showEmptyMessage="mounted && tableRowDatas.visualValues.length == 0"
+			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :color="groupColor" :border="true" :model="tableHeaderModels" :tabs="headerTabs">
 					<template #controls>
@@ -65,6 +66,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const refreshKey: Ref<string> = ref("");
+		const mounted: Ref<boolean> = ref(false);
 		const refreshObjects: Ref<string> = ref("");
 		const groupState: Ref<Group> = ref(props.model);
 		const groupColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.groupsColor);
@@ -326,6 +328,7 @@ export default defineComponent({
 		onMounted(() =>
 		{
 			setTableRows();
+			mounted.value = true;
 		});
 
 		onUpdated(() =>
@@ -366,6 +369,7 @@ export default defineComponent({
 			searchText,
 			headerTabs,
 			emptyMessage,
+			mounted,
 			onSave
 		};
 	},

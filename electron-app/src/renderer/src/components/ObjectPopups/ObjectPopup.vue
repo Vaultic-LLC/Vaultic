@@ -1,9 +1,9 @@
 <template>
 	<div class="objectPopupContainer">
-		<div class="objectPopupGlass" @click.stop="closePopupFunc(false)">
+		<div class="objectPopupGlass" @click.stop="closePopup">
 		</div>
 		<div class="objectyPopup">
-			<div class="closeIconContainer" @click.stop="closePopupFunc(false)">
+			<div class="closeIconContainer" @click.stop="closePopup">
 				<ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
 			</div>
 			<div class="objectyPopupContent">
@@ -21,6 +21,7 @@ import { stores } from '../../Objects/Stores';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
+import { hideAll } from 'tippy.js';
 
 export default defineComponent({
 	name: "ObjectPopup",
@@ -107,6 +108,12 @@ export default defineComponent({
 			}).start();
 		}
 
+		function closePopup()
+		{
+			hideAll();
+			closePopupFunc.value(false);
+		}
+
 		watch(() => stores.appStore.activePasswordValuesTable, () =>
 		{
 			transitionColors();
@@ -141,8 +148,8 @@ export default defineComponent({
 			primaryColor,
 			secondaryColorOne,
 			secondaryColorTwo,
-			closePopupFunc,
-			showPopup
+			showPopup,
+			closePopup
 		};
 	}
 })

@@ -4,28 +4,17 @@
 		<slot></slot>
 		<component v-for="(rowValue, index) in tableRowData.values" :key="index" :is="rowValue.component" :model="rowValue"
 			:color="color" />
-		<!-- <td v-for="(rowValue, index) in tableRowData.values" :key="index">
-			<div class="rowValue"
-				:style="{ 'width': rowValue.width, 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
-				<div class="rowValueValue">
-					{{ rowValue.value }}
-				</div>
-				<div v-if="rowValue.copiable" class="copyIcon" @click.stop="copyText(rowValue.value)">
-					<ion-icon name="clipboard-outline"></ion-icon>
-				</div>
-			</div>
-		</td> -->
 		<td v-if="allowPin || allowEdit || allowDelete" class="gapData"></td>
-		<td v-if="!hideAtRiskCell" :class="{ hideCell: !tableRowData.atRiskMessage }">
+		<td v-if="!hideAtRiskCell" class="tableRowIconCell" :class="{ hideCell: !tableRowData.atRiskMessage }">
 			<AtRiskIndicator :message="tableRowData.atRiskMessage" />
 		</td>
-		<td v-if="allowPin" @click.stop="onPin" class="magnetCell">
+		<td v-if="allowPin" @click.stop="onPin" class="magnetCell tableRowIconCell">
 			<ion-icon class="rowIcon magnet" name="magnet-outline"></ion-icon>
 		</td>
-		<td v-if="allowEdit" @click.stop="onEdit">
+		<td v-if="allowEdit" @click.stop="onEdit" class="tableRowIconCell">
 			<ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
 		</td>
-		<td v-if="allowDelete" @click.stop="onDelete">
+		<td v-if="allowDelete" @click.stop="onDelete" class="tableRowIconCell">
 			<ion-icon class="rowIcon delete" name="trash-outline"></ion-icon>
 		</td>
 	</tr>
@@ -305,5 +294,10 @@ export default defineComponent({
 .rowValue .copyIcon:hover {
 	color: v-bind(primaryColor);
 	transform: translate(50%, -50%) scale(1.1);
+}
+
+.tableRow .tableRowIconCell {
+	text-align: center;
+	width: 10%
 }
 </style>

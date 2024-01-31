@@ -319,4 +319,13 @@ div {
 	display: grid;
 	border-radius: 20px;
 }
+
+.tippy-box[data-theme~='material'] {
+	text-align: center;
+}
+
+.tippy-box[data-theme~='material'][data-placement^='bottom-start']>.tippy-arrow {
+	left: 10px !important;
+	transform: translate(0, 0) !important;
+}
 </style>

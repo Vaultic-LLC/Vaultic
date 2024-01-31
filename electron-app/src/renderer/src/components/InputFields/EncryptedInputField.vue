@@ -1,11 +1,10 @@
 <template>
-	<div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
+	<div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
 		<div class="textInuptContainer">
 			<input tabindex="0" ref="input" required="false" class="textInputFieldInput" :type="inputType" name="text"
 				autocomplete="off" :value="inputText" @input="onInput(($event.target as HTMLInputElement).value)"
 				:disabled="isDisabled" :maxlength="200" />
 			<label class="textInputFieldLable">{{ label }}</label>
-			<label class="validationMessage" :class="{ show: invalid }">{{ invalidMessage }}</label>
 			<div class="icons">
 				<div v-if="isLocked && showUnlock">
 					<ion-icon class="encryptedInputIcon" name="lock-open-outline" @click="unlock"></ion-icon>
@@ -28,7 +27,7 @@
 	</div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { DecryptFunctionsKey, RequestAuthorizationKey, ShowToastFunctionKey, ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
@@ -36,6 +35,7 @@ import cryptUtility from '../../Utilities/CryptUtility';
 import { stores } from '../../Objects/Stores';
 import clipboard from 'clipboardy';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
+import tippy from 'tippy.js';
 
 export default defineComponent({
 	name: "EncryptedInputField",
@@ -44,18 +44,17 @@ export default defineComponent({
 		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", 'isOnWidget'],
 	setup(props, ctx)
 	{
+		const container: Ref<HTMLElement | null> = ref(null);
 		const input: Ref<HTMLElement | null> = ref(null);
 		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
 		const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
 
-		const height: ComputedRef<string> = computed(() => props.showRandom ? "100px" : "50px");
+		const height: ComputedRef<string> = computed(() => "50px");
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "200px");
 		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
-		let invalid: Ref<boolean> = ref(false);
-		const invalidMessage: Ref<string> = ref('');
 		let inputType: Ref<string> = ref("password");
 		let isHidden: Ref<boolean> = ref(true);
 
@@ -67,6 +66,8 @@ export default defineComponent({
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
+
+		let tippyInstance: any = null;
 
 		function unlock()
 		{
@@ -91,7 +92,6 @@ export default defineComponent({
 				}
 			}
 
-			invalid.value = false;
 			return true;
 		}
 
@@ -104,7 +104,9 @@ export default defineComponent({
 
 		function onInput(value: string)
 		{
+			tippyInstance.hide();
 			inputText.value = value;
+
 			ctx.emit("update:modelValue", value);
 			ctx.emit("onDirty");
 		}
@@ -162,14 +164,34 @@ export default defineComponent({
 
 		function invalidate(message: string)
 		{
-			invalid.value = true;
-			invalidMessage.value = message;
+			tippyInstance.setContent(message);
+			tippyInstance.show();
 		}
 
 		onMounted(() =>
 		{
+			if (!container.value)
+			{
+				return;
+			}
+
 			validationFunction?.value.push(validate);
 			decryptFunctions?.value.push(onAuthenticationSuccessful);
+
+			tippyInstance = tippy(container.value, {
+				inertia: true,
+				animation: 'scale',
+				theme: 'material',
+				placement: "bottom-start",
+				trigger: 'manual',
+				hideOnClick: false
+			});
+		});
+
+		onUnmounted(() =>
+		{
+			tippyInstance.hide();
+			validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
 		});
 
 		watch(() => props.modelValue, (newValue) =>
@@ -185,13 +207,12 @@ export default defineComponent({
 			inputType,
 			inputText,
 			shouldFadeIn,
-			invalid,
-			invalidMessage,
 			defaultInputColor,
 			defaultInputTextColor,
 			height,
 			computedWidth,
 			backgroundColor,
+			container,
 			onAuthenticationSuccessful,
 			onInput,
 			unlock,

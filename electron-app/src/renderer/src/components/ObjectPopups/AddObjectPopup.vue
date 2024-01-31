@@ -30,6 +30,7 @@ import { DataType, Filter, Group } from '../../Types/Table';
 import { NameValuePair, Password, defaultFilter, defaultGroup, defaultPassword, defaultValue } from '../../Types/EncryptedData';
 import { SingleSelectorItemModel } from '../../Types/Models';
 import { stores } from '../../Objects/Stores';
+import { hideAll } from 'tippy.js';
 
 export default defineComponent({
 	name: "AddObjectPopup",
@@ -126,6 +127,7 @@ export default defineComponent({
 
 		function updatePasswordsValuesTable(tableItem: number)
 		{
+			hideAll();
 			// we're on the add item tab, but it might not be for the right table, update it to make sure
 			if (activeContent.value <= 1)
 			{
@@ -137,6 +139,7 @@ export default defineComponent({
 
 		function filtersGroupsClicked(tableItem: number)
 		{
+			hideAll();
 			activeContent.value = tableItem;
 			stores.appStore.activeFilterGroupsTable = tableItem;
 		}

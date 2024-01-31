@@ -31,6 +31,11 @@ export default defineComponent({
 			}
 		}
 
+		function updateGradient(clr: RGBColor)
+		{
+			backgroundGradient.value = getLinearGradientFromColor(`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`);
+		}
+
 		watch(() => tabModel.value.active?.value, (newValue) =>
 		{
 			let tweenTo: RGBColor | null = null;
@@ -49,16 +54,27 @@ export default defineComponent({
 				tween({ ...tweenFrom!, x: 30 }, { ...tweenTo!, x: 0 }, 500, updateToWidgetColor);
 			}
 
-			function updateGradient(clr: RGBColor)
-			{
-				backgroundGradient.value = getLinearGradientFromColor(`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`);
-			}
 
 			function updateToWidgetColor(clr: any)
 			{
 				backgroundGradient.value = getLinearGradientFromColorAndPercent(
 					`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`, clr.x);
 			}
+		});
+
+		watch(() => tabModel.value.color.value, (newValue, oldValue) =>
+		{
+			hoverColor.value = newValue;
+
+			if (!tabModel.value.active.value)
+			{
+				return;
+			}
+
+			let tweenTo: RGBColor | null = hexToRgb(newValue);
+			let tweenFrom: RGBColor | null = hexToRgb(oldValue);
+
+			tween<RGBColor>(tweenFrom!, tweenTo!, 500, updateGradient);
 		});
 
 		onMounted(() =>

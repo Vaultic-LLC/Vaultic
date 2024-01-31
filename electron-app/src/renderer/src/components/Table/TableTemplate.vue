@@ -112,15 +112,10 @@ export default defineComponent({
 			key.value = Date.now().toString();
 		});
 
-		watch(() => props.showEmptyMessage, () =>
-		{
-			console.log('here');
-		})
-
 		onMounted(() =>
 		{
 			calcScrollbarColor();
-		})
+		});
 
 		onUpdated(() =>
 		{

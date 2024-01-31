@@ -17,6 +17,7 @@ import countries from "../../assets/Files/world.json";
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb, rgbToHex } from '@renderer/Helpers/ColorHelper';
+import { tween } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
 	name: "WorldMap",
@@ -201,6 +202,28 @@ export default defineComponent({
 				}, 2000)
 			}
 
+			function tweenColor(to: string, from: string)
+			{
+				let tweenTo: RGBColor | null = hexToRgb(to);
+				let tweenFrom: RGBColor | null = hexToRgb(from);
+
+				tween<RGBColor>(tweenFrom!, tweenTo!, 500, (object) =>
+				{
+					ctx?.reset();
+
+					var proj = d3.geoNaturalEarth1()
+						.scale(width.value / 1.7 / Math.PI)
+						.translate([width.value / 2, height.value / 2])
+
+					const pathGenerator = d3.geoPath(proj, ctx);
+					ctx!.beginPath();
+					pathGenerator(countries);
+
+					ctx!.fillStyle = getGradient(object);
+					ctx!.fill();
+				});
+			}
+
 			if (firstInit)
 			{
 				watch(() => props.scan, (newValue) =>
@@ -210,6 +233,11 @@ export default defineComponent({
 					{
 						startPulsing();
 					}
+				});
+
+				watch(() => color.value, (newValue, oldValue) =>
+				{
+					tweenColor(newValue, oldValue);
 				});
 			}
 
@@ -231,11 +259,6 @@ export default defineComponent({
 			firstInit = false;
 		});
 
-		// watch(() => stores.settingsStore.currentPrimaryColor.value, (_) =>
-		// {
-		// 	init();
-		// });
-
 		return {
 			color,
 			refreshKey,
@@ -253,10 +276,5 @@ export default defineComponent({
 	align-items: center;
 	width: 100%;
 	height: 100%;
-}
-
-.worldMapContainer__map {
-	/* width: inherit;
-	height: inherit; */
 }
 </style>

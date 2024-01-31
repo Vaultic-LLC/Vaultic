@@ -5,7 +5,7 @@
 			<EncryptedInputField :color="color" :label="'Question'" v-model="securityQuestion.question"
 				:initialLength="securityQuestion.questionLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				:isOnWidget="true" @onDirty="$emit('onQuesitonDirty')" />
+				:isOnWidget="true" :required="true" @onDirty="$emit('onQuesitonDirty')" />
 		</td>
 		<td class="gap">
 
@@ -14,7 +14,7 @@
 			<EncryptedInputField :color="color" :label="'Answer'" v-model="securityQuestion.answer"
 				:initialLength="securityQuestion.answerLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				:isOnWidget="true" @onDirty="$emit('onAnswerDirty')" />
+				:isOnWidget="true" :required="true" @onDirty="$emit('onAnswerDirty')" />
 		</td>
 	</TableRow>
 </template>

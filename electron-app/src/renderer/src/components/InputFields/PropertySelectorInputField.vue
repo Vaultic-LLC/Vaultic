@@ -1,6 +1,6 @@
 <template>
-	<div class="dropDownContainer" tabindex="1" @click="onSelectorClick" @focusout="opened = false"
-		:class="{ active: active, opened: opened }">
+	<div ref="container" class="dropDownContainer" tabindex="1" @click="onSelectorClick" @focusout="opened = false"
+		:class="{ active: active, opened: opened, shouldFadeIn: fadeIn }">
 		<div class="dropDownTitle">
 			<label class="dropDownLabel">{{ label }}</label>
 			<div class="dropDownIcon" :class="{ opened: opened }">
@@ -21,21 +21,28 @@
 	</div>
 </template>
 <script lang="ts">
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref } from 'vue';
+
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 import { PropertySelectorDisplayFields, PropertyType } from '../../Types/EncryptedData';
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { ValidationFunctionsKey } from '@renderer/Types/Keys';
+import tippy from 'tippy.js';
 
 export default defineComponent({
 	name: "PropertySelectorInputField",
 	emits: ["update:modelValue", "propertyTypeChanged"],
-	props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget'],
+	props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget', 'fadeIn'],
 	setup(props, ctx)
 	{
+		const container: Ref<HTMLElement | null> = ref(null);
 		let selectedValue: Ref<string> = ref(props.modelValue);
 		let opened: Ref<boolean> = ref(false);
 		let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value);
 		let selectedPropertyType: PropertyType = PropertyType.String;
 		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
+
+		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
+		let tippyInstance: any = null;
 
 		function onSelectorClick()
 		{
@@ -61,11 +68,53 @@ export default defineComponent({
 			}
 		}
 
+		function validate()
+		{
+			if (selectedValue.value == '' || selectedValue.value == undefined)
+			{
+				invalidate("Please select a value");
+				return false;
+			}
+
+			return true;
+		}
+
+		function invalidate(message: string)
+		{
+			tippyInstance.setContent(message);
+			tippyInstance.show();
+		}
+
+		onMounted(() =>
+		{
+			if (!container.value)
+			{
+				return;
+			}
+
+			validationFunction?.value.push(validate);
+			tippyInstance = tippy(container.value, {
+				inertia: true,
+				animation: 'scale',
+				theme: 'material',
+				placement: "bottom-start",
+				trigger: 'manual',
+				hideOnClick: false
+			});
+		});
+
+		onUnmounted(() =>
+		{
+			tippyInstance.hide();
+			validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
+		});
+
 		return {
 			opened,
 			active,
 			selectedValue,
 			backgroundColor,
+			container,
 			onSelectorClick,
 			onOptionClick
 		}
@@ -87,6 +136,11 @@ export default defineComponent({
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
 	cursor: pointer;
+}
+
+.dropDownContainer.shouldFadeIn {
+	opacity: 0;
+	animation: fadeIn 1s linear forwards;
 }
 
 .dropDownContainer.active {

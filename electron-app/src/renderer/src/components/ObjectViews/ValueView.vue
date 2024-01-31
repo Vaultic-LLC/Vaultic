@@ -14,12 +14,13 @@
 		</div>
 		<EncryptedInputField :color="color" :label="'Value'" v-model="valuesState.value" :initialLength="initalLength"
 			:isInitiallyEncrypted="isInitiallyEncrypted" :showUnlock="true" :showCopy="true" :showRandom="true"
-			:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" @onDirty="valueIsDirty = true" />
+			:required="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
+			@onDirty="valueIsDirty = true" />
 		<TextAreaInputField :color="color" :label="'Additional Information'" v-model="valuesState.additionalInformation"
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }"
 			class="scrollbar" :scrollbar-size="1" :color="color" :headerModels="groupHeaderModels" :border="true"
-			:emptyMessage="emptyMessage" :showEmptyMessage="groupModels.visualValues.length == 0"
+			:emptyMessage="emptyMessage" :showEmptyMessage="mounted && groupModels.visualValues.length == 0"
 			@scrolledToBottom="groupModels.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="groupTab" :border="true">
@@ -82,6 +83,7 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
+		const mounted: Ref<boolean> = ref(false);
 		const groupSelectorRefreshKey: Ref<string> = ref("");
 		const refreshKey: Ref<string> = ref("");
 		const valuesState: Ref<NameValuePair> = ref(props.model);
@@ -234,6 +236,7 @@ export default defineComponent({
 		onMounted(() =>
 		{
 			setGroupModels();
+			mounted.value = true;
 		});
 
 		watch(() => valuesState.value.valueType, (newValue) =>
@@ -263,6 +266,7 @@ export default defineComponent({
 			searchText,
 			groupTab,
 			emptyMessage,
+			mounted,
 			onSave,
 			onAuthenticationSuccessful
 		};

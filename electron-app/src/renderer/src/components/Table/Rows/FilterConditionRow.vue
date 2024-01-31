@@ -1,10 +1,10 @@
 <template>
 	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="color" :allowDelete="true" :zIndexing="true"
 		:animateDelete="true">
-		<td class="securityQuestion">
+		<td class="securityQuestionCellOne">
 			<PropertySelectorInputField :label="'Property'" :color="color" v-model="filterCondition.property"
 				:model="filterCondition.property" :displayFieldOptions="displayFieldOptions" :isOnWidget="true"
-				@propertyTypeChanged="onPropertyTypeChanged" />
+				:fadeIn="true" @propertyTypeChanged="onPropertyTypeChanged" />
 		</td>
 		<td>
 			<EnumInputField :label="'Condition Type'" :color="color" v-model="filterCondition.filterType"
@@ -14,7 +14,7 @@
 			<TextInputField v-if="inputType == 0" :label="'Value'" :color="color" v-model="filterCondition.value"
 				:fadeIn="true" :isOnWidget="true" />
 			<EnumInputField v-if="inputType == 1" :label="'Value'" :color="color" v-model="filterCondition.value"
-				:optionsEnum="inputEnumType" fadeIn="false" :isOnWidget="true" />
+				:optionsEnum="inputEnumType" fadeIn="true" :isOnWidget="true" />
 		</td>
 	</TableRow>
 </template>
@@ -96,4 +96,8 @@ export default defineComponent({
 });
 </script>
 
-<style></style>
+<style>
+.securityQuestionCellOne {
+	padding: 10px
+}
+</style>

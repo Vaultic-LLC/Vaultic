@@ -4,41 +4,25 @@
 			@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)" :disabled="disabled"
 			:maxlength="600" />
 		<label class="textInputFieldLable">{{ label }}</label>
-		<label class="validationMessage" :class="{ show: invalid }">Please enter a value</label>
 	</div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
-import { ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 
 export default defineComponent({
+
 	name: "TextAreaInputField",
 	emits: ["update:modelValue"],
 	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "height"],
 	setup(props)
 	{
-		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
 		let invalid: Ref<boolean> = ref(false);
 
 		const textAreaWidth: ComputedRef<string> = computed(() => (props.width ?? 400) + "px");
 		const textAreaHeight: ComputedRef<string> = computed(() => (props.height ?? 200) + "px")
-
-		function validate(): boolean
-		{
-			if (!props.modelValue)
-			{
-				invalid.value = true;
-				return false;
-			}
-
-			invalid.value = false;
-			return true;
-		}
-
-		onMounted(() => validationFunction?.value.push(validate));
 
 		return {
 			shouldFadeIn,

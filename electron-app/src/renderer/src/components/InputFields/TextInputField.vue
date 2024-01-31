@@ -1,10 +1,9 @@
 <template>
-	<div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
+	<div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
 		<input required="false" class="textInputFieldInput" type="text" name="text" autocomplete="off" :value="modelValue"
-			@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)" @keypress="validateType"
-			:disabled="disabled" :maxlength="200" />
+			@input="onInput(($event.target as HTMLInputElement).value)" @keypress="validateType" :disabled="disabled"
+			:maxlength="200" />
 		<label class="textInputFieldLable">{{ label }}</label>
-		<label class="validationMessage" :class="{ show: invalid }">{{ invalidMessage }}</label>
 	</div>
 </template>
 <script lang="ts">
@@ -13,21 +12,23 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 import { ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
+import tippy from 'tippy.js';
 
 export default defineComponent({
 	name: "TextInputField",
 	emits: ["update:modelValue"],
 	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "inputType", "additionalValidationFunction", "isOnWidget"],
-	setup(props)
+	setup(props, ctx)
 	{
+		const container: Ref<HTMLElement | null> = ref(null);
 		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
 		const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
 		const type: ComputedRef<string> = computed(() => props.inputType ? props.inputType : "text");
-		const invalid: Ref<boolean> = ref(false);
-		const invalidMessage: Ref<string> = ref('');
 		const additionalValidationFunction: Ref<{ (input: string): [boolean, string] } | undefined> = ref(props.additionalValidationFunction);
 		const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
+
+		let tippyInstance: any = null;
 
 		function validate(): boolean
 		{
@@ -47,14 +48,13 @@ export default defineComponent({
 				}
 			}
 
-			invalid.value = false;
 			return true;
 		}
 
 		function invalidate(message: string)
 		{
-			invalid.value = true;
-			invalidMessage.value = message;
+			tippyInstance.setContent(message);
+			tippyInstance.show();
 		}
 
 		function validateType(event: KeyboardEvent)
@@ -72,23 +72,46 @@ export default defineComponent({
 			return true;
 		}
 
-		onMounted(() => validationFunction?.value.push(validate));
+		function onInput(value: string)
+		{
+			tippyInstance.hide();
+			ctx.emit("update:modelValue", value);
+		}
+
+		onMounted(() =>
+		{
+			if (!container.value)
+			{
+				return;
+			}
+
+			validationFunction?.value.push(validate);
+			tippyInstance = tippy(container.value, {
+				inertia: true,
+				animation: 'scale',
+				theme: 'material',
+				placement: "bottom-start",
+				trigger: 'manual',
+				hideOnClick: false
+			});
+		});
 
 		onUnmounted(() =>
 		{
+			tippyInstance.hide();
 			validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
 		});
 
 		return {
 			shouldFadeIn,
-			invalid,
-			invalidMessage,
+			container,
 			defaultInputColor,
 			defaultInputTextColor,
 			computedWidth,
 			type,
 			labelBackgroundColor,
-			validateType
+			validateType,
+			onInput
 		}
 	}
 })
