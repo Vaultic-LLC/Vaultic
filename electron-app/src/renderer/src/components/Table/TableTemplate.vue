@@ -35,7 +35,7 @@ import { stores } from '../../Objects/Stores';
 import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
-import { tween } from '@renderer/Helpers/TweenHelper';
+import { tween, TweenObject, tweenTogether } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
 	name: "TableTemplate",
@@ -69,8 +69,7 @@ export default defineComponent({
 
 				if (tableContainer.value?.scrollHeight <= tableContainer.value?.clientHeight)
 				{
-					// TODO: This will need to tween as well
-					//scrollbarColor.value = primaryColor.value;
+					scrollbarColor.value = lastColor.value;
 					tween<RGBColor>(from!, to!, 500, (object) =>
 					{
 						scrollbarColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
@@ -78,10 +77,15 @@ export default defineComponent({
 				}
 				else
 				{
-					scrollbarColor.value = '#0f111d';
+					thumbColor.value = lastColor.value;
 					tween<RGBColor>(from!, to!, 500, (object) =>
 					{
 						thumbColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+					});
+
+					tween<RGBColor>(from!, hexToRgb('#0f111d')!, 500, (object) =>
+					{
+						scrollbarColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
 					});
 				}
 			}
