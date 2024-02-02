@@ -17,7 +17,7 @@ import 'tippy.js/animations/scale.css';
 
 export default defineComponent({
 	name: "TableRow",
-	props: ["message"],
+	props: ["message", 'color'],
 	setup(props)
 	{
 		const atRiskIcon: Ref<HTMLElement | null> = ref(null);
@@ -58,7 +58,7 @@ export default defineComponent({
 
 .atRiskContainer .atRiskIcon {
 	font-size: 28px;
-	color: red;
+	color: v-bind(color);
 	transition: 0.3s;
 }
 

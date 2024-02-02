@@ -73,6 +73,7 @@ import { stores } from './Objects/Stores';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
+import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 
 export default defineComponent({
 	name: 'App',
@@ -117,7 +118,9 @@ export default defineComponent({
 		const onAuthCancel: Ref<{ (): void }> = ref(() => { });
 
 		provide(ShowToastFunctionKey, showToastFunc);
-		provide(RequestAuthenticationFunctionKey, requestAuthentication)
+		provide(RequestAuthenticationFunctionKey, requestAuthentication);
+
+		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
 
 		const passwordTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
 		{
@@ -262,6 +265,7 @@ export default defineComponent({
 			onAuthCancel,
 			needsToSetupKey,
 			coverMainUI,
+			gradient
 			//cursor
 		}
 	}

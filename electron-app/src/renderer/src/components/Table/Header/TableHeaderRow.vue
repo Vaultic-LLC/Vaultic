@@ -33,13 +33,14 @@ export default defineComponent({
 		TableHeaderCell,
 		TableHeaderTab
 	},
-	props: ["model", 'backgroundColor', 'tabs', 'border', 'color'],
+	props: ["model", 'backgroundColor', 'tabs', 'border', 'color', 'height'],
 	setup(props)
 	{
 		const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() => props.model?.filter(m => m.name !== '') || []);
 		const headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.tabs ?? []);
 		const hoveringTab: Ref<number> = ref(-1);
 		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
+		const computedHeight: ComputedRef<string> = computed(() => (props.height ?? 80) + 'px');
 
 		function onTabClick(index: number)
 		{
@@ -65,6 +66,7 @@ export default defineComponent({
 			headerTabs,
 			hoveringTab,
 			applyBorder,
+			computedHeight,
 			onTabClick,
 			onTabHover,
 			onTabUnhover
@@ -86,7 +88,7 @@ export default defineComponent({
 
 .tableHeader__tableHeaderRow {
 	width: 100%;
-	height: 80px;
+	height: v-bind(computedHeight);
 	display: flex;
 	justify-content: space-between;
 	align-items: center;

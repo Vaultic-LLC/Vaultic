@@ -17,7 +17,6 @@ export interface SettingsState
 	requireMasterKeyOnFilterGroupDelete: boolean;
 	takePictureOnLogin: boolean;
 	multipleFilterBehavior: FilterStatus;
-	passwordValueTableRowSize: number;
 }
 
 export interface SettingsStore
@@ -34,7 +33,6 @@ export interface SettingsStore
 	requireMasterKeyOnFilterGrouopSave: boolean;
 	requireMasterKeyOnFilterGroupDelete: boolean;
 	multipleFilterBehavior: FilterStatus;
-	passwordValueTableRowSize: number;
 	init: (stores: Stores) => void;
 	loadData: (key: string) => void;
 	updateColorPalette: (colorPalette: ColorPalette) => void;
@@ -55,7 +53,6 @@ const settingsState: SettingsState = reactive(
 		requireMasterKeyOnFilterGroupDelete: true,
 		takePictureOnLogin: true,
 		multipleFilterBehavior: FilterStatus.Or,
-		passwordValueTableRowSize: 100
 	});
 
 export default function useSettingsStore(): SettingsStore
@@ -157,8 +154,6 @@ export default function useSettingsStore(): SettingsStore
 		get requireMasterKeyOnFilterGrouopSave() { return settingsState.requireMasterKeyOnFilterGrouopSave; },
 		get requireMasterKeyOnFilterGroupDelete() { return settingsState.requireMasterKeyOnFilterGroupDelete; },
 		get multipleFilterBehavior() { return settingsState.multipleFilterBehavior; },
-		get passwordValueTableRowSize() { return settingsState.passwordValueTableRowSize },
-		set passwordValueTableRowSize(value: number) { settingsState.passwordValueTableRowSize = value },
 		currentPrimaryColor,
 		init,
 		loadData,

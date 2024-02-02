@@ -20,8 +20,10 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Title, C
 import { Line } from "vue-chartjs"
 import { DataType } from '../../Types/Table';
 import { stores } from '../../Objects/Stores';
-import { mixHexes } from '@renderer/Helpers/ColorHelper';
+import { hexToRgb, mixHexes, rgbToHex } from '@renderer/Helpers/ColorHelper';
 import zoomPlugin from 'chartjs-plugin-zoom';
+import { tween } from '@renderer/Helpers/TweenHelper';
+import { RGBColor } from '@renderer/Types/Colors';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler, zoomPlugin)
 
@@ -64,13 +66,33 @@ export default defineComponent({
 			setOptions();
 
 			lineChart.value.chart.data.labels = toRaw(lableArray.value);
-			lineChart.value.chart.data.datasets[0].borderColor = color.value;
 			lineChart.value.chart.data.datasets[0].data = EMACalc(chartOneArray, 2);
 
-			lineChart.value.chart.data.datasets[1].borderColor = mixHexes(color.value, "888888");
 			lineChart.value.chart.data.datasets[1].data = target.value;
 
 			lineChart.value.chart.update();
+		}
+
+		function updateColors(newColor, oldColor)
+		{
+			const from: RGBColor | null = hexToRgb(oldColor);
+			const to: RGBColor | null = hexToRgb(newColor);
+
+			tween<RGBColor>(from!, to!, 500, (object) =>
+			{
+				object.r = Math.round(object.r);
+				object.g = Math.round(object.g);
+				object.b = Math.round(object.b);
+
+				const hexColor: string = rgbToHex(object.r, object.g, object.b);
+
+				lineChart.value.chart.data.datasets[0].borderColor = hexColor;
+				lineChart.value.chart.data.datasets[1].borderColor = mixHexes(hexColor, "888888");
+
+				lineChart.value.chart.data.datasets[0].backgroundColor = getGradient(lineChart.value.chart, hexColor);
+
+				lineChart.value.chart.update();
+			});
 		}
 
 		function setOptions()
@@ -86,7 +108,7 @@ export default defineComponent({
 				},
 				animation:
 				{
-					duration: 1000,
+					duration: 500,
 					easing: 'linear'
 				},
 				plugins:
@@ -136,31 +158,7 @@ export default defineComponent({
 					backgroundColor: function (context)
 					{
 						const chart = context.chart;
-						const { ctx, chartArea } = chart;
-
-						if (!chartArea)
-						{
-							// This case happens on initial chart load
-							return;
-						}
-
-						let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
-
-						// hex value already has opacity
-						if (color.value.length > 7)
-						{
-							gradient.addColorStop(0, color.value);
-							gradient.addColorStop(0.35, color.value);
-							gradient.addColorStop(1, color.value);
-						}
-						else
-						{
-							gradient.addColorStop(0, color.value + "88");
-							gradient.addColorStop(0.35, color.value + "44");
-							gradient.addColorStop(1, color.value + "00");
-						}
-
-						return gradient;
+						return getGradient(chart, color.value);
 					},
 					fill: true,
 					borderColor: color.value,
@@ -198,6 +196,31 @@ export default defineComponent({
 			key.value = Date.now().toString();
 		}
 
+		function getGradient(chart: any, hexColor: string)
+		{
+			const { ctx, chartArea } = chart;
+
+			if (!chartArea)
+			{
+				// This case happens on initial chart load
+				return;
+			}
+
+			let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
+
+			// hex value already has opacity, remove it
+			if (hexColor.length > 7)
+			{
+				hexColor = hexColor.substring(0, 5);
+			}
+
+			gradient.addColorStop(0, hexColor + "88");
+			gradient.addColorStop(0.35, hexColor + "44");
+			gradient.addColorStop(1, hexColor + "00");
+
+			return gradient;
+		}
+
 		watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
 		{
 			switch (newValue)
@@ -205,7 +228,7 @@ export default defineComponent({
 				case DataType.NameValuePairs:
 					lableArray.value = [...stores.encryptedDataStore.currentAndSafeValues.current];
 					chartOneArray = [...stores.encryptedDataStore.currentAndSafeValues.safe];
-					color.value = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
+					//color.value = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
 					table.value = "Value";
 					target.value = stores.encryptedDataStore.currentAndSafeValues.current.map(_ => stores.encryptedDataStore.nameValuePairs.length);
 					max.value = Math.max(...stores.encryptedDataStore.currentAndSafeValues.safe)
@@ -214,7 +237,7 @@ export default defineComponent({
 				default:
 					lableArray.value = [...stores.encryptedDataStore.currentAndSafePasswords.current];
 					chartOneArray = [...stores.encryptedDataStore.currentAndSafePasswords.safe];
-					color.value = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
+					//color.value = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
 					table.value = "Password";
 					target.value = stores.encryptedDataStore.currentAndSafePasswords.current.map(_ => stores.encryptedDataStore.passwords.length);
 					max.value = Math.max(...stores.encryptedDataStore.currentAndSafePasswords.safe)
@@ -248,7 +271,7 @@ export default defineComponent({
 			updateData();
 		});
 
-		watch(() => stores.settingsStore.currentPrimaryColor.value, (newValue) =>
+		watch(() => stores.settingsStore.currentPrimaryColor.value, (newValue, oldValue) =>
 		{
 			if (color.value == newValue)
 			{
@@ -256,7 +279,7 @@ export default defineComponent({
 			}
 
 			color.value = newValue;
-			updateData();
+			updateColors(newValue, oldValue);
 		});
 
 		onMounted(() =>

@@ -32,11 +32,15 @@ import { computed, ComputedRef, defineComponent, onMounted, onUpdated, Ref, ref,
 
 import { SortableHeaderModel } from '@renderer/Types/Models';
 import { stores } from '../../Objects/Stores';
+import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
+import { RGBColor } from '@renderer/Types/Colors';
+import { hexToRgb } from '@renderer/Helpers/ColorHelper';
+import { tween } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
 	name: "TableTemplate",
 	emits: ['scrolledToBottom'],
-	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage'],
+	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor'],
 	setup(props, ctx)
 	{
 		const key: Ref<string> = ref('');
@@ -45,8 +49,12 @@ export default defineComponent({
 		const rowGapValue: ComputedRef<string> = computed(() => `${props.rowGap}px`);
 		const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels ?? []);
 		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
+		const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
 
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);
+		let thumbColor: Ref<string> = ref(primaryColor.value);
+
+		let lastColor: Ref<string> = ref(primaryColor.value);
 		function calcScrollbarColor()
 		{
 			if (!primaryColor?.value)
@@ -56,15 +64,29 @@ export default defineComponent({
 
 			if (tableContainer.value?.scrollHeight && tableContainer.value.clientHeight)
 			{
+				const from: RGBColor | null = hexToRgb(lastColor.value);
+				const to: RGBColor | null = hexToRgb(primaryColor.value);
+
 				if (tableContainer.value?.scrollHeight <= tableContainer.value?.clientHeight)
 				{
-					scrollbarColor.value = primaryColor.value;
+					// TODO: This will need to tween as well
+					//scrollbarColor.value = primaryColor.value;
+					tween<RGBColor>(from!, to!, 500, (object) =>
+					{
+						scrollbarColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+					});
 				}
 				else
 				{
 					scrollbarColor.value = '#0f111d';
+					tween<RGBColor>(from!, to!, 500, (object) =>
+					{
+						thumbColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+					});
 				}
 			}
+
+			lastColor.value = primaryColor.value;
 		}
 
 		let lastCallTime: number = 0;
@@ -93,10 +115,10 @@ export default defineComponent({
 			}
 		}
 
-		watch(() => primaryColor.value, () =>
-		{
-			calcScrollbarColor();
-		});
+		// watch(() => primaryColor.value, (oldValue, newValue) =>
+		// {
+		// 	calcScrollbarColor(oldValue, newValue);
+		// });
 
 		// we want to resize after authenticating since we are going from hidden to visible
 		watch(() => stores.appStore.reloadMainUI, (newValue) =>
@@ -127,9 +149,11 @@ export default defineComponent({
 			tableContainer,
 			primaryColor,
 			scrollbarColor,
+			thumbColor,
 			rowGapValue,
 			headers,
 			applyBorder,
+			backgroundColor,
 			checkScrollHeight,
 			scrollToTop
 		}
@@ -160,8 +184,8 @@ export default defineComponent({
 	direction: rtl;
 	overflow-y: scroll;
 	width: 100%;
-	height: 90%;
-	background-color: rgb(44 44 51 / 16%);
+	height: 100%;
+	background-color: v-bind(backgroundColor);
 	border-bottom-left-radius: 20px;
 	border-bottom-right-radius: 20px;
 }
@@ -215,7 +239,7 @@ export default defineComponent({
 
 .tableContainer.scrollbar::-webkit-scrollbar-thumb {
 	transition: 0.3s;
-	background: v-bind(primaryColor);
+	background: v-bind(thumbColor);
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;

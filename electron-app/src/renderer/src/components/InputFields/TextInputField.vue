@@ -168,29 +168,13 @@ export default defineComponent({
 	border: 1.5px solid v-bind(color);
 }
 
-.textInputFieldContainer .textInputFieldInput:focus~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:valid~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:disabled~label:not(.validationMessage) {
+.textInputFieldContainer .textInputFieldInput:focus~label,
+.textInputFieldContainer .textInputFieldInput:valid~label,
+.textInputFieldContainer .textInputFieldInput:disabled~label {
 	transform: translateY(-80%) scale(0.8);
 	background-color: v-bind(labelBackgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
 	left: 10px;
-}
-
-.validationMessage {
-	color: red;
-	opacity: 0;
-	position: absolute;
-	width: 100%;
-	height: 25%;
-	bottom: 0;
-	left: 5%;
-	text-align: left;
-	transform: translateY(150%);
-}
-
-.validationMessage.show {
-	opacity: 1;
 }
 </style>

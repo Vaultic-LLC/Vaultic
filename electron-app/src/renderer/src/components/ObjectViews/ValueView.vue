@@ -12,11 +12,12 @@
 			<ToolTip :color="color" :size="20" :fadeIn="true"
 				:message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
 		</div>
-		<EncryptedInputField :color="color" :label="'Value'" v-model="valuesState.value" :initialLength="initalLength"
-			:isInitiallyEncrypted="isInitiallyEncrypted" :showUnlock="true" :showCopy="true" :showRandom="true"
-			:required="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
+		<EncryptedInputField :colorModel="colorModel" :label="'Value'" v-model="valuesState.value"
+			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showUnlock="true" :showCopy="true"
+			:showRandom="true" :required="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			@onDirty="valueIsDirty = true" />
-		<TextAreaInputField :color="color" :label="'Additional Information'" v-model="valuesState.additionalInformation"
+		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
+			v-model="valuesState.additionalInformation"
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }"
 			class="scrollbar" :scrollbar-size="1" :color="color" :headerModels="groupHeaderModels" :border="true"
@@ -53,7 +54,7 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import ToolTip from '../ToolTip.vue';
 
 import { NameValuePair, defaultValue, NameValuePairType, HeaderDisplayField } from '../../Types/EncryptedData';
-import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
 import { v4 as uuidv4 } from 'uuid';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { stores } from '../../Objects/Stores';
@@ -88,6 +89,7 @@ export default defineComponent({
 		const refreshKey: Ref<string> = ref("");
 		const valuesState: Ref<NameValuePair> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.valuesColor.primaryColor);
+		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
 		// @ts-ignore
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.valuesGroups, "name"));
@@ -267,6 +269,7 @@ export default defineComponent({
 			groupTab,
 			emptyMessage,
 			mounted,
+			colorModel,
 			onSave,
 			onAuthenticationSuccessful
 		};

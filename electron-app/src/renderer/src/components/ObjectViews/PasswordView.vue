@@ -5,27 +5,13 @@
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
 		<TextInputField :color="color" :label="'Login'" v-model="passwordState.login"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
-		<EncryptedInputField :color="color" :label="'Password'" v-model="passwordState.password"
+		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordState.password"
 			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true"
 			:required="true" showCopy="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			@onDirty="passwordIsDirty = true" />
-		<TextAreaInputField :color="color" :label="'Additional Information'" v-model="passwordState.additionalInformation"
+		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
+			v-model="passwordState.additionalInformation"
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
-		<!-- <SearchBar v-if="activeTab == 1" v-model="searchText" :color="color"
-			:style="{ 'grid-row': '4 / span 2', 'grid-column': '9 / span 3' }" /> -->
-		<!-- <TabbedInputContainer :tabOneText="'Security Questions'" :tabTwoText="'Groups'" :color="color"
-			:style="{ 'grid-row': '6 / span 4', 'grid-column': '6 / span 6' }" @onTabSelected="onTabSelected">
-			<template #tabOne>
-				<SecurityQuestionInputField ref="securityQuestionInputField" :border="true" :hideTitle="true"
-					:scrollbar="true" :color="color" :model="passwordState.securityQuestions" :isInitiallyEncrypted="true"
-					:rowGap="20" :minHeight="310" :maxHeight="180" :showUnlock="!creating" />
-			</template>
-			<template #tabTwo>
-				<ObjectSelectorInputField :key="groupPickerRefreshKey" :border="true" :scrollbar="true" :color="color"
-					:hideTitle="true" :headerModels="groupHeaderModels" :models="groupModels" :minHeight="310"
-					:maxHeight="300" />
-			</template>
-		</TabbedInputContainer> -->
 		<TableTemplate :color="color"
 			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
 			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
@@ -34,17 +20,18 @@
 				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="headerTabs" :border="true">
 					<template #controls>
 						<Transition name="fade" mode="out-in">
-							<AddButton v-if="activeTab == 0" :color="color" @click="onAddSecurityQuestion" />
+							<div v-if="activeTab == 0" class="passwordViewTableHeaderControls">
+								<UnlockButton v-if="locked" :color="color" @onAuthSuccessful="locked = false" />
+								<AddButton :color="color" @click="onAddSecurityQuestion" />
+							</div>
 							<SearchBar v-else v-model="searchText" :color="color" />
-							<!-- <div :style="{ 'margin-top': '20px' }">
-							</div> -->
 						</Transition>
 					</template>
 				</TableHeaderRow>
 			</template>
 			<template #body>
 				<SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions"
-					:key="sq.id" :rowNumber="index" :color="color" :model="sq" :disabled="false"
+					:key="sq.id" :rowNumber="index" :colorModel="colorModel" :model="sq" :disabled="false"
 					@onQuesitonDirty="onQuestionDirty(sq.id)" @onAnswerDirty="onAnswerDirty(sq.id)"
 					@onDelete="onDeleteSecurityQuestion(sq.id)" :isInitiallyEncrypted="sq.question != ''" />
 				<SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
@@ -69,9 +56,10 @@ import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import SecurityQuestionRow from '../Table/Rows/SecurityQuestionRow.vue';
+import UnlockButton from "../UnlockButton.vue"
 
 import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
-import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
 import { v4 as uuidv4 } from 'uuid';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { stores } from '../../Objects/Stores';
@@ -96,7 +84,8 @@ export default defineComponent({
 		TableHeaderRow,
 		AddButton,
 		SelectableTableRow,
-		SecurityQuestionRow
+		SecurityQuestionRow,
+		UnlockButton
 	},
 	props: ['creating', 'model'],
 	setup(props)
@@ -106,6 +95,7 @@ export default defineComponent({
 		const groupPickerRefreshKey: Ref<string> = ref("");
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
+		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
 		// @ts-ignore
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.passwordGroups, "name"));
@@ -117,6 +107,8 @@ export default defineComponent({
 		const passwordIsDirty: Ref<boolean> = ref(false);
 		const dirtySecurityQuestionQuestions: Ref<string[]> = ref([]);
 		const dirtySecurityQuestionAnswers: Ref<string[]> = ref([]);
+
+		const locked: Ref<boolean> = ref(!props.creating);
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
@@ -374,6 +366,8 @@ export default defineComponent({
 			headerTabs,
 			emptyMessage,
 			showEmptyMessage,
+			locked,
+			colorModel,
 			onAuthenticationSuccessful,
 			onAuthenticationCanceled,
 			onSave,
@@ -387,4 +381,12 @@ export default defineComponent({
 })
 </script>
 
-<style></style>
+<style>
+.passwordViewTableHeaderControls {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+	align-items: center;
+	column-gap: 25px;
+}
+</style>

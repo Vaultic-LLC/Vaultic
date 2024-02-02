@@ -1,5 +1,6 @@
 import { ComputedRef, Ref, ref } from "vue";
 import { v4 as uuidv4 } from 'uuid';
+import { defaultInputColor, defaultInputTextColor } from "./Colors";
 
 export interface SmallMetricGaugeModel
 {
@@ -94,6 +95,7 @@ export interface HeaderTabModel
 	name: string;
 	active: ComputedRef<boolean>;
 	color: ComputedRef<string>;
+	size?: 'small' | 'regular';
 	onClick?: () => void;
 }
 
@@ -130,4 +132,24 @@ export interface GroupIconModel
 	iconDisplayText: string;
 	toolTipText: string;
 	color: string;
+}
+
+export interface InputColorModel
+{
+	color: string;
+	textColor: string;
+	activeTextColor: string;
+	borderColor: string;
+	activeBorderColor: string;
+}
+
+export function defaultInputColorModel(color: string): InputColorModel
+{
+	return {
+		color: color,
+		textColor: defaultInputTextColor,
+		activeTextColor: color,
+		borderColor: defaultInputColor,
+		activeBorderColor: color
+	}
 }

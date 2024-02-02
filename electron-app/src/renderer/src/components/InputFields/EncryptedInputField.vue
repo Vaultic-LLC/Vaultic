@@ -36,11 +36,12 @@ import { stores } from '../../Objects/Stores';
 import clipboard from 'clipboardy';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 import tippy from 'tippy.js';
+import { InputColorModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "EncryptedInputField",
 	emits: ["update:modelValue", "onDirty"],
-	props: ["modelValue", "label", "color", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
+	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
 		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", 'isOnWidget'],
 	setup(props, ctx)
 	{
@@ -52,6 +53,7 @@ export default defineComponent({
 
 		const height: ComputedRef<string> = computed(() => "50px");
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "200px");
+		const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
 		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
@@ -213,6 +215,7 @@ export default defineComponent({
 			computedWidth,
 			backgroundColor,
 			container,
+			colorModel,
 			onAuthenticationSuccessful,
 			onInput,
 			unlock,
@@ -259,7 +262,7 @@ export default defineComponent({
 	width: inherit;
 	height: 50px;
 	left: 0;
-	border: solid 1.5px v-bind(defaultInputColor);
+	border: solid 1.5px v-bind('colorModel.borderColor');
 	color: white;
 	border-radius: 1rem;
 	background: none;
@@ -271,7 +274,7 @@ export default defineComponent({
 	position: absolute;
 	left: 5%;
 	top: 0;
-	color: v-bind(defaultInputTextColor);
+	color: v-bind('colorModel.textColor');
 	pointer-events: none;
 	transform: translateY(1rem);
 	transition: var(--input-label-transition);
@@ -281,16 +284,16 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:valid,
 .textInputFieldContainer .textInputFieldInput:disabled {
 	outline: none;
-	border: 1.5px solid v-bind(color);
+	border: 1.5px solid v-bind('colorModel.activeBorderColor');
 }
 
-.textInputFieldContainer .textInputFieldInput:focus~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:valid~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:disabled~label:not(.validationMessage) {
+.textInputFieldContainer .textInputFieldInput:focus~label,
+.textInputFieldContainer .textInputFieldInput:valid~label,
+.textInputFieldContainer .textInputFieldInput:disabled~label {
 	transform: translateY(-80%) scale(0.8);
 	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
-	color: v-bind(color);
+	color: v-bind('colorModel.activeTextColor');
 }
 
 .textInputFieldContainer .icons {
@@ -318,7 +321,7 @@ export default defineComponent({
 	left: 0;
 	margin-top: 10px;
 	margin-left: 5px;
-	border: solid 1.5px v-bind(defaultInputColor);
+	border: solid 1.5px v-bind('colorModel.borderColor');
 	border-radius: 0.5rem;
 	padding: 5px 10px 5px 10px;
 	transition: 0.2s;
@@ -326,7 +329,7 @@ export default defineComponent({
 }
 
 .textInputFieldContainer .randomize:hover {
-	border: solid 1.5px v-bind(color);
+	border: solid 1.5px v-bind('colorModel.activeBorderColor');
 	transform: scale(1.05);
 }
 
@@ -338,7 +341,7 @@ export default defineComponent({
 
 
 .textInputFieldContainer .randomize:hover span {
-	color: v-bind(color);
+	color: v-bind('colorModel.activeTextColor');
 }
 
 .encryptedInputIcon {
@@ -348,24 +351,7 @@ export default defineComponent({
 }
 
 .encryptedInputIcon:hover {
-	color: v-bind(color);
+	color: v-bind('colorModel.color');
 	transform: scale(1.05);
-}
-
-.validationMessage {
-	color: red;
-	opacity: 0;
-	position: absolute;
-	width: 100%;
-	height: 25%;
-	bottom: 0;
-	left: 5%;
-	text-align: left;
-	transform: translateY(150%);
-	transition: 0.3s;
-}
-
-.validationMessage.show {
-	opacity: 1;
 }
 </style>

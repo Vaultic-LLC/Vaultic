@@ -4,9 +4,10 @@
 		<slot></slot>
 		<component v-for="(rowValue, index) in tableRowData.values" :key="index" :is="rowValue.component" :model="rowValue"
 			:color="color" />
+		<td class="gapRow" :style="{ 'width': 'auto' }"></td>
 		<td v-if="allowPin || allowEdit || allowDelete" class="gapData"></td>
 		<td v-if="!hideAtRiskCell" class="tableRowIconCell" :class="{ hideCell: !tableRowData.atRiskMessage }">
-			<AtRiskIndicator :message="tableRowData.atRiskMessage" />
+			<AtRiskIndicator :color="color" :message="tableRowData.atRiskMessage" />
 		</td>
 		<td v-if="allowPin" @click.stop="onPin" class="magnetCell tableRowIconCell">
 			<ion-icon class="rowIcon magnet" name="magnet-outline"></ion-icon>
@@ -268,7 +269,7 @@ export default defineComponent({
 }
 
 .tableRow .rowIcon.delete:hover {
-	color: v-bind('currentColorPalette.deleteColor');
+	color: v-bind('color');
 }
 
 .rowValue {

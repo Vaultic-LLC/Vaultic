@@ -10,15 +10,17 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
+import { InputColorModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 
 	name: "TextAreaInputField",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "height"],
+	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "width", "height"],
 	setup(props)
 	{
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
+		const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
 		let invalid: Ref<boolean> = ref(false);
 
 		const textAreaWidth: ComputedRef<string> = computed(() => (props.width ?? 400) + "px");
@@ -30,7 +32,8 @@ export default defineComponent({
 			defaultInputColor,
 			defaultInputTextColor,
 			textAreaWidth,
-			textAreaHeight
+			textAreaHeight,
+			colorModel
 		}
 	}
 })
@@ -63,7 +66,7 @@ export default defineComponent({
 	width: inherit;
 	height: inherit;
 	left: 0;
-	border: solid 1.5px v-bind(defaultInputColor);
+	border: solid 1.5px v-bind('colorModel.borderColor');
 	color: white;
 	border-radius: 1rem;
 	background: none;
@@ -76,7 +79,7 @@ export default defineComponent({
 	position: absolute;
 	left: 10px;
 	top: 0;
-	color: v-bind(defaultInputTextColor);
+	color: v-bind('colorModel.textColor');
 	pointer-events: none;
 	transform: translateY(1rem);
 	transition: var(--input-label-transition);
@@ -85,32 +88,16 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:focus,
 .textInputFieldContainer .textInputFieldInput:valid {
 	outline: none;
-	border: 1.5px solid v-bind(color);
+	border: 1.5px solid v-bind('colorModel.activeBorderColor');
 }
 
-.textInputFieldContainer .textInputFieldInput:focus~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:valid~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:disabled~label:not(.validationMessage) {
+.textInputFieldContainer .textInputFieldInput:focus~label,
+.textInputFieldContainer .textInputFieldInput:valid~label,
+.textInputFieldContainer .textInputFieldInput:disabled~label {
 	transform: translateY(-80%) scale(0.8);
 	background-color: var(--app-color);
 	padding: 0 .2em;
-	color: v-bind(color);
+	color: v-bind('colorModel.activeTextColor');
 	left: 0px;
-}
-
-.validationMessage {
-	color: red;
-	opacity: 0;
-	position: absolute;
-	width: 100%;
-	height: 25%;
-	bottom: 0;
-	left: 5%;
-	text-align: left;
-	transform: translateY(150%);
-}
-
-.validationMessage.show {
-	opacity: 1;
 }
 </style>

@@ -18,7 +18,7 @@
 				<CollapsibleTableRow :shadow="true" v-slot="props"
 					v-for="(model, index) in collapsibleTableRowModels.visualValues" :key="model.id"
 					:groups="model.data.groups" :model="model" :rowNumber="index" :color="color">
-					<SlideInRow :isShowing="props.isShowing" :colspan="headerModels.length"
+					<SlideInRow :isShowing="props.isShowing" :colspan="headerModels.length + 1"
 						:defaultHeight="collapseRowDefaultHeight">
 						<component :is="rowComponent" :value="model.data"
 							:authenticationPromise="props.authenticationPromise" :color="color"

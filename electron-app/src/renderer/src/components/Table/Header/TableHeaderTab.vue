@@ -1,5 +1,6 @@
 <template>
-	<div class="tableHeaderTab" @click="onTabClick" :class="{ active: tabModel.active!.value }">
+	<div class="tableHeaderTab" @click="onTabClick"
+		:class="{ active: tabModel.active!.value, small: size == 'small', regular: size == 'regular' }">
 		{{ tabModel.name }}
 	</div>
 </template>
@@ -19,6 +20,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const tabModel: ComputedRef<HeaderTabModel> = computed(() => props.model);
+		const size: ComputedRef<string> = computed(() => tabModel.value.size ? tabModel.value.size : 'regular');
 		const backgroundGradient: Ref<string> = ref('');
 		const hoverColor: Ref<string> = ref('');
 
@@ -87,6 +89,7 @@ export default defineComponent({
 			tabModel,
 			backgroundGradient,
 			hoverColor,
+			size,
 			onTabClick
 		}
 	}
@@ -97,12 +100,20 @@ export default defineComponent({
 .tableHeaderTab {
 	transition: 0.3s;
 	color: white;
-	font-size: 20px;
-	padding: 10px;
 	background: v-bind(backgroundGradient);
 	cursor: pointer;
 	min-width: 25%;
 	text-align: center;
+}
+
+.tableHeaderTab.regular {
+	font-size: 20px;
+	padding: 10px;
+}
+
+.tableHeaderTab.small {
+	font-size: 16px;
+	padding: 4px;
 }
 
 .tableHeaderTab:not(.active):hover {
