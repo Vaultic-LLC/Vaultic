@@ -9,7 +9,7 @@
 		}">
 			<div class="tableHeader__tableHeaderRow__headers">
 				<TableHeaderCell v-for="( header, index ) in  headerModels " :key="index" :model="header"
-					:backgroundColor="backgroundColor" />
+					:backgroundColor="backgroundColor" :index="index" />
 			</div>
 			<div class="tableHeader__tableHeaderRow__controls">
 				<slot name="controls"></slot>
@@ -120,7 +120,7 @@ export default defineComponent({
 	padding-right: 2%;
 }
 
-.tableHeader__tableHeaderRow th:nth-child(1) {
+/* .tableHeader__tableHeaderRow__headers .tableHeaderCell:nth-child(1) {
 	padding-left: 20px;
-}
+} */
 </style>

@@ -1,15 +1,15 @@
 <template>
 	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }">
 		<Transition name="fade" mode="out-in">
-			<div :key="key" class="tableHeaderContent">
+			<div :key="key" class="tableHeaderContent" :style="{ 'padding-left': headerModel.padding ?? '0' }">
+				<span class="tableHeaderText" :class="{ hover: hoveringIcon || hoveringText }"
+					@mouseover="hoveringText = true" @mouseleave="hoveringText = false">{{
+						headerModel.name }}</span>
 				<span v-if="showIcon" class="iconContainer"
 					:class="{ descending: headerModel.descending?.value, active: headerModel.isActive.value, hover: hoveringIcon || hoveringText }"
 					@mouseover="hoveringIcon = true" @mouseleave="hoveringIcon = false">
 					<ion-icon class="sortIcon" name="arrow-up-outline"></ion-icon>
 				</span>
-				<span class="tableHeaderText" :class="{ hover: hoveringIcon || hoveringText }"
-					@mouseover="hoveringText = true" @mouseleave="hoveringText = false">{{
-						headerModel.name }}</span>
 			</div>
 		</Transition>
 	</div>
@@ -22,7 +22,7 @@ import { SortableHeaderModel } from '../../../Types/Models';
 
 export default defineComponent({
 	name: "TableHeaderCell",
-	props: ["model", "backgroundColor"],
+	props: ["model", "backgroundColor", 'index'],
 	setup(props)
 	{
 		const key: Ref<string> = ref('');
@@ -86,6 +86,10 @@ export default defineComponent({
 .tableHeaderContent {
 	display: flex;
 	align-items: center;
+}
+
+.tableHeaderContent.padding {
+	padding-left: 25px;
 }
 
 .tableHeaderText {

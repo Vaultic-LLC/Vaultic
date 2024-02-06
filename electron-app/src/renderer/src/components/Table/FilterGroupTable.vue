@@ -157,6 +157,7 @@ export default defineComponent({
 				displayName: "Active",
 				backingProperty: "isActive",
 				width: '100px',
+				padding: '12px',
 				clickable: true
 			},
 			{
@@ -172,6 +173,7 @@ export default defineComponent({
 				displayName: "Name",
 				backingProperty: "name",
 				width: '100px',
+				padding: '12px',
 				clickable: true
 			},
 			{

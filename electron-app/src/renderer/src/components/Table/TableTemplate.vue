@@ -28,14 +28,14 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, onUpdated, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, onUpdated, Ref, ref, watch } from 'vue';
 
 import { SortableHeaderModel } from '@renderer/Types/Models';
 import { stores } from '../../Objects/Stores';
 import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
-import { tween, TweenObject, tweenTogether } from '@renderer/Helpers/TweenHelper';
+import { tween } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
 	name: "TableTemplate",
@@ -55,6 +55,7 @@ export default defineComponent({
 		let thumbColor: Ref<string> = ref(primaryColor.value);
 
 		let lastColor: Ref<string> = ref(primaryColor.value);
+		let lastScrollHeight: number = Number.MAX_VALUE;
 		function calcScrollbarColor()
 		{
 			if (!primaryColor?.value)
@@ -77,17 +78,32 @@ export default defineComponent({
 				}
 				else
 				{
-					thumbColor.value = lastColor.value;
-					tween<RGBColor>(from!, to!, 500, (object) =>
+					if (primaryColor.value != lastColor.value || tableContainer.value?.scrollHeight < lastScrollHeight ||
+						tableContainer.value?.scrollHeight > lastScrollHeight)
 					{
-						thumbColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
-					});
+						thumbColor.value = lastColor.value;
+						tween<RGBColor>(from!, to!, 500, (object) =>
+						{
+							thumbColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+						});
 
-					tween<RGBColor>(from!, hexToRgb('#0f111d')!, 500, (object) =>
-					{
-						scrollbarColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
-					});
+						// only transition the scrollbar if there was no thumb aka if it took up the full track, otherwise it'll
+						// flash the from color
+						if (primaryColor.value != lastColor.value && tableContainer.value?.clientHeight == lastScrollHeight)
+						{
+							tween<RGBColor>(from!, hexToRgb('#0f111d')!, 500, (object) =>
+							{
+								scrollbarColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+							});
+						}
+						else
+						{
+							scrollbarColor.value = '#0f111d';
+						}
+					}
 				}
+
+				lastScrollHeight = tableContainer.value?.scrollHeight;
 			}
 
 			lastColor.value = primaryColor.value;
@@ -119,11 +135,6 @@ export default defineComponent({
 			}
 		}
 
-		// watch(() => primaryColor.value, (oldValue, newValue) =>
-		// {
-		// 	calcScrollbarColor(oldValue, newValue);
-		// });
-
 		// we want to resize after authenticating since we are going from hidden to visible
 		watch(() => stores.appStore.reloadMainUI, (newValue) =>
 		{
@@ -136,11 +147,6 @@ export default defineComponent({
 		watch(() => props.emptyMessage, () =>
 		{
 			key.value = Date.now().toString();
-		});
-
-		onMounted(() =>
-		{
-			calcScrollbarColor();
 		});
 
 		onUpdated(() =>

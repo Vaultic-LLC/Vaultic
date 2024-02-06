@@ -86,6 +86,7 @@ export interface SortableHeaderModel
 	descending?: Ref<boolean>;
 	clickable: boolean;
 	width: string;
+	padding?: string;
 	onClick: () => void;
 }
 
@@ -108,6 +109,7 @@ export function emptyHeader(): SortableHeaderModel
 		descending: ref(false),
 		clickable: false,
 		width: 'auto',
+		padding: '0',
 		onClick: () => { }
 	}
 }

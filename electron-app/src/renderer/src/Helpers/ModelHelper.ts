@@ -22,6 +22,7 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 			descending: ref(true),
 			clickable: header.clickable,
 			width: header.width,
+			padding: header.padding,
 			onClick: function ()
 			{
 				if (!header.clickable)

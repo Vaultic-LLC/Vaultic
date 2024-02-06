@@ -35,7 +35,18 @@ function createPasswords()
 	const marysGroup: Group = stores.groupStore.groups.filter(g => g.name == "Mary's")[0];
 	const bankGroup: Group = stores.groupStore.groups.filter(g => g.name == "Banks")[0];
 
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, "", (Date.now())));
+	const additionalInfo: string = "afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;" +
+		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;";
+
+
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, additionalInfo, (Date.now())));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "ThisisMypassword123]pasdf", "FTMO", testSecurityQuestions, "", (Date.now())));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisisMypssword123]pofo", "Gmail", testSecurityQuestions, "", Date.now()));
 	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));

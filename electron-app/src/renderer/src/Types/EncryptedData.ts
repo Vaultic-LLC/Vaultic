@@ -31,6 +31,7 @@ export interface HeaderDisplayField extends DisplayField
 {
 	width: string;
 	clickable: boolean;
+	padding?: string;
 }
 
 export enum PropertyType

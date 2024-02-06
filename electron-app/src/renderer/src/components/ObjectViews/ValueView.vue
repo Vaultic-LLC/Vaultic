@@ -19,9 +19,10 @@
 		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
 			v-model="valuesState.additionalInformation"
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
-		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }"
-			class="scrollbar" :scrollbar-size="1" :color="color" :headerModels="groupHeaderModels" :border="true"
-			:emptyMessage="emptyMessage" :showEmptyMessage="mounted && groupModels.visualValues.length == 0"
+		<TableTemplate ref="tableRef"
+			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
+			:scrollbar-size="1" :color="color" :headerModels="groupHeaderModels" :border="true" :emptyMessage="emptyMessage"
+			:showEmptyMessage="mounted && groupModels.visualValues.length == 0"
 			@scrolledToBottom="groupModels.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="groupTab" :border="true">
@@ -84,8 +85,8 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
+		const tableRef: Ref<HTMLElement | null> = ref(null);
 		const mounted: Ref<boolean> = ref(false);
-		const groupSelectorRefreshKey: Ref<string> = ref("");
 		const refreshKey: Ref<string> = ref("");
 		const valuesState: Ref<NameValuePair> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.valuesColor.primaryColor);
@@ -195,7 +196,11 @@ export default defineComponent({
 				return model;
 			}));
 
-			groupSelectorRefreshKey.value = Date.now().toString();
+			if (tableRef.value)
+			{
+				// @ts-ignore
+				tableRef.value.scrollToTop();
+			}
 		}
 
 		function onSave()
@@ -261,7 +266,6 @@ export default defineComponent({
 			color,
 			valuesState,
 			refreshKey,
-			groupSelectorRefreshKey,
 			gridDefinition,
 			NameValuePairType,
 			showNotifyIfWeak,
@@ -270,6 +274,7 @@ export default defineComponent({
 			emptyMessage,
 			mounted,
 			colorModel,
+			tableRef,
 			onSave,
 			onAuthenticationSuccessful
 		};

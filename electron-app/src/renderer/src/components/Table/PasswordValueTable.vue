@@ -175,6 +175,7 @@ export default defineComponent({
 				displayName: "Groups",
 				backingProperty: "groups",
 				width: '150px',
+				padding: '25px',
 				clickable: true
 			},
 			{
@@ -196,6 +197,7 @@ export default defineComponent({
 				displayName: "Groups",
 				backingProperty: "groups",
 				width: '150px',
+				padding: '25px',
 				clickable: true
 			},
 			{

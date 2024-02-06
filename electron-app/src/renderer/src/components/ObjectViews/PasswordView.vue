@@ -12,7 +12,7 @@
 		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
 			v-model="passwordState.additionalInformation"
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
-		<TableTemplate :color="color"
+		<TableTemplate ref="tableRef" :color="color"
 			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
 			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
 			:showEmptyMessage="showEmptyMessage" @scrolled-to-bottom="scrolledToBottom">
@@ -90,9 +90,9 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
+		const tableRef: Ref<HTMLElement | null> = ref(null);
 		const securityQuestionInputField: Ref<null> = ref(null);
 		const refreshKey: Ref<string> = ref("");
-		const groupPickerRefreshKey: Ref<string> = ref("");
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
@@ -241,7 +241,11 @@ export default defineComponent({
 				return model;
 			}));
 
-			groupPickerRefreshKey.value = Date.now().toString();
+			if (tableRef.value)
+			{
+				// @ts-ignore
+				tableRef.value.scrollToTop();
+			}
 		}
 
 		function onSave()
@@ -356,7 +360,6 @@ export default defineComponent({
 			groupModels,
 			passwordState,
 			refreshKey,
-			groupPickerRefreshKey,
 			initalLength,
 			isInitiallyEncrypted,
 			passwordIsDirty,
@@ -368,6 +371,7 @@ export default defineComponent({
 			showEmptyMessage,
 			locked,
 			colorModel,
+			tableRef,
 			onAuthenticationSuccessful,
 			onAuthenticationCanceled,
 			onSave,

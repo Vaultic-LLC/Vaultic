@@ -5,7 +5,8 @@
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
 		<ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '4 / span 2' }" />
-		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
+		<TableTemplate ref="tableRef"
+			:style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
 			class="scrollbar border" :scrollbar-size="1" :color="groupColor" :border="true"
 			:headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
 			:showEmptyMessage="mounted && tableRowDatas.visualValues.length == 0"
@@ -66,8 +67,8 @@ export default defineComponent({
 	setup(props)
 	{
 		const refreshKey: Ref<string> = ref("");
+		const tableRef: Ref<HTMLElement | null> = ref(null);
 		const mounted: Ref<boolean> = ref(false);
-		const refreshObjects: Ref<string> = ref("");
 		const groupState: Ref<Group> = ref(props.model);
 		const groupColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.groupsColor);
 
@@ -276,7 +277,11 @@ export default defineComponent({
 					}));
 			}
 
-			refreshObjects.value = Date.now().toString();
+			if (tableRef.value)
+			{
+				// @ts-ignore
+				tableRef.value.scrollToTop();
+			}
 		}
 
 		function onSave()
@@ -334,7 +339,6 @@ export default defineComponent({
 		onUpdated(() =>
 		{
 			setTableRows();
-			refreshObjects.value = Date.now().toString();
 		});
 
 		watch(() => stores.appStore.activePasswordValuesTable, () =>
@@ -364,12 +368,12 @@ export default defineComponent({
 			activeHeader,
 			tableRowDatas,
 			refreshKey,
-			refreshObjects,
 			gridDefinition,
 			searchText,
 			headerTabs,
 			emptyMessage,
 			mounted,
+			tableRef,
 			onSave
 		};
 	},
