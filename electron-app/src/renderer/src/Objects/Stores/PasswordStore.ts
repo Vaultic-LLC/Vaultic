@@ -37,7 +37,7 @@ export interface PasswordStore
 		updatedSecurityQuestionQuestions: string[], updatedSecurityQuestionAnswers: string[]) => void;
 }
 
-export default function usePasswordStore(key: string, password: Password): PasswordStore
+export default function usePasswordStore(key: string, password: Password, encrypted: boolean = false): PasswordStore
 {
 	const passwordState: PasswordState = reactive({
 		...password,
@@ -129,12 +129,16 @@ export default function usePasswordStore(key: string, password: Password): Passw
 		}
 	}
 
-	// these can't be computed refs since we want to keep the password encrypted. Calculate them when we're creating the
-	// store or when we're updating
-	checkIsWeak();
-	checkContainsUsername();
-	encryptPassword(key);
-	encryptSecurityQuestions(key);
+	// reading in previous state, values are already encrypted and shouldn't need any updating
+	if (!encrypted)
+	{
+		// these can't be computed refs since we want to keep the password encrypted. Calculate them when we're creating the
+		// store or when we're updating
+		checkIsWeak();
+		checkContainsUsername();
+		encryptPassword(key);
+		encryptSecurityQuestions(key);
+	}
 
 	stores.filterStore.addFiltersToNewValue(stores.filterStore.passwordFilters, passwordState, "passwords");
 

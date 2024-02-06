@@ -16,7 +16,7 @@ import * as d3 from "d3";
 import countries from "../../assets/Files/world.json";
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '@renderer/Types/Colors';
-import { hexToRgb, rgbToHex } from '@renderer/Helpers/ColorHelper';
+import { hexToRgb, rgbToHex, toSolidHex } from '@renderer/Helpers/ColorHelper';
 import { tween } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
@@ -133,7 +133,7 @@ export default defineComponent({
 
 				let hex: string = rgbToHex(Math.round(newColor.r), Math.round(newColor.g), Math.round(newColor.b));
 
-				gradient.addColorStop(0, hex);
+				gradient.addColorStop(0, `rgba(${newColor.r}, ${newColor.g}, ${newColor.b}, ${newColor.alpha})`);
 				gradient.addColorStop(1, hex + "11");
 
 				return gradient;
@@ -188,12 +188,14 @@ export default defineComponent({
 					{
 						let gradient = ctx!.createLinearGradient(0, height.value / 2, width.value + 10, height.value / 2);
 
+						let tempClr: string = toSolidHex(color.value);
+
 						// TODO: This needs to end the same as the other gradient
-						gradient.addColorStop(0, color.value);
-						gradient.addColorStop(Math.max(x - 0.01, 0), color.value + "11");
-						gradient.addColorStop(Math.max(x - 0.01, 0), color.value);
-						gradient.addColorStop(Math.min(x + 0.01, 1), color.value);
-						gradient.addColorStop(1, color.value + "11");
+						gradient.addColorStop(0, tempClr);
+						gradient.addColorStop(Math.max(x - 0.01, 0), tempClr + "11");
+						gradient.addColorStop(Math.max(x - 0.01, 0), tempClr);
+						gradient.addColorStop(Math.min(x + 0.01, 1), tempClr);
+						gradient.addColorStop(1, tempClr + "11");
 
 						return gradient;
 					}

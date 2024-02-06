@@ -56,9 +56,9 @@ export default function useAppStore(): AppStore
 
 	function resetSessionTime()
 	{
-		// clearTimeout(autoLockTimeoutID);
-		// autoLockTimeoutID = setTimeout(() => appState.authenticated = false,
-		// 	stores.settingsStore.autoLockNumberTime);
+		clearTimeout(autoLockTimeoutID);
+		autoLockTimeoutID = setTimeout(() => appState.authenticated = false,
+			stores.settingsStore.autoLockNumberTime);
 	}
 
 	function recordLogin(dateTime: number)
@@ -74,11 +74,6 @@ export default function useAppStore(): AppStore
 			displayTime: new Date(dateTime).toLocaleString()
 		});
 	}
-
-	// watch(() => appState.sessionTimeLeft, (newValue) =>
-	// {
-
-	// });
 
 	return {
 		get isWindows() { return appState.isWindows; },

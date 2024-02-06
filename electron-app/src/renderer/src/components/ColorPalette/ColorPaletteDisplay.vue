@@ -116,7 +116,7 @@ export default defineComponent({
 
 			const tween = new TWEEN.Tween(previousColor).to(newColor, 1000).onUpdate((object) =>
 			{
-				const rgb: string = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+				const rgb: string = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
 				addColorGradient.value = getLinearGradientFromColor(rgb);
 			}).start();
 

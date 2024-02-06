@@ -73,7 +73,7 @@ export default defineComponent({
 					scrollbarColor.value = lastColor.value;
 					tween<RGBColor>(from!, to!, 500, (object) =>
 					{
-						scrollbarColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+						scrollbarColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
 					});
 				}
 				else
@@ -84,7 +84,7 @@ export default defineComponent({
 						thumbColor.value = lastColor.value;
 						tween<RGBColor>(from!, to!, 500, (object) =>
 						{
-							thumbColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+							thumbColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
 						});
 
 						// only transition the scrollbar if there was no thumb aka if it took up the full track, otherwise it'll
@@ -93,7 +93,7 @@ export default defineComponent({
 						{
 							tween<RGBColor>(from!, hexToRgb('#0f111d')!, 500, (object) =>
 							{
-								scrollbarColor.value = `rgb(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)})`;
+								scrollbarColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
 							});
 						}
 						else

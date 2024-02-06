@@ -378,7 +378,7 @@ export default defineComponent({
 
 			if (saved)
 			{
-				setModels();
+				init();
 			}
 		}
 

@@ -88,12 +88,21 @@ export default defineComponent({
 		const hasSpecialCharacter: Ref<boolean> = ref(false);
 		const matchesKey: Ref<boolean> = ref(false);
 
+		let lastAuthAttempt: number = 0;
 		async function onEnter()
 		{
 			if (unlocked.value)
 			{
 				return;
 			}
+
+			if (Date.now() - lastAuthAttempt < 1000)
+			{
+				jiggleContainer();
+				return;
+			}
+
+			lastAuthAttempt = Date.now();
 
 			if (needsToSetupKey.value && (!greaterThanTwentyCharacters.value ||
 				!containesUpperAndLowerCase.value ||

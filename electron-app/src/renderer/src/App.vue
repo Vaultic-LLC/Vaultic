@@ -217,12 +217,6 @@ export default defineComponent({
 		{
 			document.getElementById('body')?.addEventListener('mouseover', (_) =>
 			{
-				// if (cursor.value)
-				// {
-				// 	cursor.value.style.left = e.clientX + "px";
-				// 	cursor.value.style.top = e.clientY + "px";
-				// }
-
 				if (Date.now() - lastMouseover < threshold)
 				{
 					return;
@@ -244,6 +238,7 @@ export default defineComponent({
 			{
 				setTimeout(() => coverMainUI.value = false, 500);
 			}
+
 		});
 
 		let clr = "#0f111d";
@@ -265,7 +260,7 @@ export default defineComponent({
 			onAuthCancel,
 			needsToSetupKey,
 			coverMainUI,
-			gradient
+			gradient,
 			//cursor
 		}
 	}
@@ -286,6 +281,9 @@ export default defineComponent({
 }
 
 body {
+	font-family: Avenir, Helvetica, Arial, sans-serif !important;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 	background-color: #0f111d;
 	overflow: hidden;
 }

@@ -1,6 +1,6 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import child_process from 'child_process';
-import fs, { stat } from "fs"
+import fs from "fs"
 import os from "os"
 
 export interface API

@@ -87,6 +87,19 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
+			if (props.modelValue)
+			{
+				const property = (props.displayFieldOptions as PropertySelectorDisplayFields[]).filter(p => p.backingProperty == props.modelValue);
+				if (property.length != 1)
+				{
+					selectedValue.value = "";
+				}
+				else
+				{
+					selectedValue.value = property[0].displayName;
+				}
+			}
+
 			if (!container.value)
 			{
 				return;

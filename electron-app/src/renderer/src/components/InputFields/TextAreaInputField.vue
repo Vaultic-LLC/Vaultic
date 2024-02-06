@@ -208,6 +208,9 @@ export default defineComponent({
 	padding: 5px;
 	overflow: hidden;
 	border: solid 1.5px v-bind('colorModel.borderColor');
+	font-family: Avenir, Helvetica, Arial, sans-serif !important;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 .textAreaInputFieldContainer__label {

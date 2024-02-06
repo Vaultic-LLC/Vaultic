@@ -276,7 +276,7 @@ export default defineComponent({
 			else
 			{
 				//@ts-ignore
-				passwordState.value.securityQuestions = securityQuestionInputField.value.securityQuestions;
+				// passwordState.value.securityQuestions = securityQuestionInputField.value.securityQuestions;
 				stores.encryptedDataStore.updatePassword(
 					passwordState.value, passwordIsDirty.value, dirtySecurityQuestionQuestions.value,
 					dirtySecurityQuestionAnswers.value, key);

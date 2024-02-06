@@ -20,7 +20,7 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Title, C
 import { Line } from "vue-chartjs"
 import { DataType } from '../../Types/Table';
 import { stores } from '../../Objects/Stores';
-import { hexToRgb, mixHexes, rgbToHex } from '@renderer/Helpers/ColorHelper';
+import { hexToRgb, mixHexes, rgbToHex, toSolidHex } from '@renderer/Helpers/ColorHelper';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { tween } from '@renderer/Helpers/TweenHelper';
 import { RGBColor } from '@renderer/Types/Colors';
@@ -63,7 +63,8 @@ export default defineComponent({
 
 		function updateData()
 		{
-			setOptions();
+			setOptions(1000);
+			lineChart.value.chart.update();
 
 			lineChart.value.chart.data.labels = toRaw(lableArray.value);
 			lineChart.value.chart.data.datasets[0].data = EMACalc(chartOneArray, 2);
@@ -73,10 +74,12 @@ export default defineComponent({
 			lineChart.value.chart.update();
 		}
 
-		function updateColors(newColor, oldColor)
+		function updateColors(newColor: string, oldColor: string, length: number)
 		{
 			const from: RGBColor | null = hexToRgb(oldColor);
 			const to: RGBColor | null = hexToRgb(newColor);
+
+			setOptions(length);
 
 			tween<RGBColor>(from!, to!, 500, (object) =>
 			{
@@ -86,7 +89,7 @@ export default defineComponent({
 
 				const hexColor: string = rgbToHex(object.r, object.g, object.b);
 
-				lineChart.value.chart.data.datasets[0].borderColor = hexColor;
+				lineChart.value.chart.data.datasets[0].borderColor = `rgba(${object.r}, ${object.g}, ${object.b}, ${object.alpha})`;
 				lineChart.value.chart.data.datasets[1].borderColor = mixHexes(hexColor, "888888");
 
 				lineChart.value.chart.data.datasets[0].backgroundColor = getGradient(lineChart.value.chart, hexColor);
@@ -95,7 +98,7 @@ export default defineComponent({
 			});
 		}
 
-		function setOptions()
+		function setOptions(animationTime: number)
 		{
 			options.value = {
 				responsive: true,
@@ -108,7 +111,7 @@ export default defineComponent({
 				},
 				animation:
 				{
-					duration: 500,
+					duration: animationTime,
 					easing: 'linear'
 				},
 				plugins:
@@ -209,10 +212,7 @@ export default defineComponent({
 			let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
 
 			// hex value already has opacity, remove it
-			if (hexColor.length > 7)
-			{
-				hexColor = hexColor.substring(0, 5);
-			}
+			hexColor = toSolidHex(hexColor);
 
 			gradient.addColorStop(0, hexColor + "88");
 			gradient.addColorStop(0.35, hexColor + "44");
@@ -271,15 +271,25 @@ export default defineComponent({
 			updateData();
 		});
 
-		watch(() => stores.settingsStore.currentPrimaryColor.value, (newValue, oldValue) =>
+		watch(() => stores.settingsStore.currentColorPalette, (newValue, oldValue) =>
 		{
-			if (color.value == newValue)
+			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
-				return;
+				updateColors(newValue.passwordsColor.primaryColor, oldValue.passwordsColor.primaryColor, 0);
+				color.value = newValue.passwordsColor.primaryColor;
 			}
+			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+			{
+				updateColors(newValue.valuesColor.primaryColor, oldValue.valuesColor.primaryColor, 0);
+				color.value = newValue.valuesColor.primaryColor;
+			}
+			// if (color.value == newValue)
+			// {
+			// 	return;
+			// }
 
-			color.value = newValue;
-			updateColors(newValue, oldValue);
+			// color.value = newValue;
+			// updateColors(newValue, oldValue);
 		});
 
 		onMounted(() =>
@@ -290,7 +300,7 @@ export default defineComponent({
 			}
 		});
 
-		setOptions();
+		setOptions(1000);
 
 		return {
 			lineChart,

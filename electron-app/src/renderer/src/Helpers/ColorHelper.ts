@@ -34,6 +34,9 @@ function rgb2hex(r: number, g: number, b: number)
 
 export function mixHexes(hex1: string, hex2: string, ratio: number = 0.5)
 {
+	hex1 = toSolidHex(hex1);
+	hex2 = toSolidHex(hex2);
+
 	if (ratio > 1 || ratio < 0) throw new Error('Invalid ratio');
 	const [r1, g1, b1] = hex2dec(hex1);
 	const [r2, g2, b2] = hex2dec(hex2);
@@ -45,13 +48,29 @@ export function mixHexes(hex1: string, hex2: string, ratio: number = 0.5)
 
 export function hexToRgb(hex: string): RGBColor | null
 {
-	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	return result ? {
-		r: parseInt(result[1], 16),
-		g: parseInt(result[2], 16),
-		b: parseInt(result[3], 16),
-		alpha: 1
-	} : null;
+	// hex = toSolidHex(hex);
+	if (hex.length == 9)
+	{
+		var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result ? {
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+			b: parseInt(result[3], 16),
+			alpha: parseInt(result[4], 16) / 255
+		} : null;
+	}
+	else if (hex.length == 7)
+	{
+		var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result ? {
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+			b: parseInt(result[3], 16),
+			alpha: 1
+		} : null;
+	}
+
+	return null;
 }
 
 function componentToHex(c: number)
@@ -63,4 +82,14 @@ function componentToHex(c: number)
 export function rgbToHex(r: number, g: number, b: number): string
 {
 	return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+export function toSolidHex(hex: string): string
+{
+	if (hex.length > 7)
+	{
+		return hex.substring(0, 7);
+	}
+
+	return hex;
 }

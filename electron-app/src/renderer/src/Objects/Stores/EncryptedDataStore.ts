@@ -9,6 +9,7 @@ import { DataType, Filter, Group } from "../../Types/Table";
 import idGenerator from "../../Utilities/IdGenerator";
 import { Dictionary } from "../../Types/DataStructures";
 import { Stores, stores } from ".";
+import useNameValuePairStore from "./NameValuePairStore";
 
 interface EncryptedDataState
 {
@@ -108,17 +109,38 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 				throw ('Unable to read data file');
 			}
 
-			if (calculateHash(key, data.passwords, 'password') == data.passwordHash)
+			if (data.passwordHash)
 			{
-				Object.assign(encryptedDataState, data);
-				encryptedDataState.loadedFile = true;
-
-				return true;
+				if (calculateHash(key, data.passwords, 'password') == data.passwordHash)
+				{
+					assignState(data);
+					return true;
+				}
+			}
+			else if (data.valueHash)
+			{
+				if (calculateHash(key, data.nameValuePairs, 'value') == data.valueHash)
+				{
+					assignState(data);
+					return true;
+				}
 			}
 		}
 		catch (e: any)
 		{
 			return false;
+		}
+
+		function assignState(state: EncryptedDataState)
+		{
+			Object.assign(encryptedDataState, state);
+			encryptedDataState.loadedFile = true;
+
+			encryptedDataState.passwords = [];
+			encryptedDataState.nameValuePairs = [];
+
+			state.passwords.forEach(p => encryptedDataState.passwords.push(usePasswordStore(key, p, true)));
+			state.nameValuePairs.forEach(nvp => encryptedDataState.nameValuePairs.push(useNameValuePairStore(key, nvp, true)));
 		}
 
 		return false;
