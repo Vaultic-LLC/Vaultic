@@ -5,7 +5,8 @@
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
 		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
-		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain"
+		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain" :showToolTip="true"
+			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is www.facebook.com'"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2' }" />
 		<TextInputField :color="color" :label="'Login'" v-model="passwordState.login"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }" />
@@ -61,6 +62,7 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import SecurityQuestionRow from '../Table/Rows/SecurityQuestionRow.vue';
 import UnlockButton from "../UnlockButton.vue"
+import ToolTip from '../ToolTip.vue';
 
 import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
@@ -89,7 +91,8 @@ export default defineComponent({
 		AddButton,
 		SelectableTableRow,
 		SecurityQuestionRow,
-		UnlockButton
+		UnlockButton,
+		ToolTip
 	},
 	props: ['creating', 'model'],
 	setup(props)
@@ -396,5 +399,10 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	column-gap: 25px;
+}
+
+.domainContainer {
+	display: flex;
+	flex-direction: row;
 }
 </style>

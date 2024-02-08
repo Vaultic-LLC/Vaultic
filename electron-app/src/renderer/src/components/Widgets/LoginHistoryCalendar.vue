@@ -3,12 +3,14 @@
 		<h2 class="calendarWidgetContainer__title">
 			Recent Logins
 		</h2>
-		<Calendar transparent expanded borderless :isDark="true" :color="'gray'" :attributes="attributes" />
+		<div :key="refreshKey">
+			<Calendar transparent expanded borderless :isDark="true" :color="'gray'" :attributes="attributes" />
+		</div>
 	</div>
 </template>
 
 <script lang="ts">
-import { ComputedRef, computed, defineComponent } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import { Calendar } from 'v-calendar';
 
@@ -24,20 +26,40 @@ export default defineComponent({
 	setup()
 	{
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+		const refreshKey: Ref<string> = ref('');
+		const visibility: Ref<string> = ref('click');
+
 		const attributes = computed(() => stores.appStore.loginHistory.map(l =>
 		{
 			return {
+				key: l.datetime,
 				dates: [l.datetime],
 				dot: true,
 				popover: {
 					label: new Date(l.datetime).toLocaleTimeString(),
+					visibility: visibility.value
 				},
 			}
 		}));
 
+		watch(() => attributes.value, () =>
+		{
+			refreshKey.value = Date.now.toString();
+		});
+
+		onMounted(() =>
+		{
+			setTimeout(() =>
+			{
+				visibility.value = "hover"
+				refreshKey.value = Date.now.toString();
+			}, 5000);
+		});
+
 		return {
 			attributes,
-			color
+			color,
+			refreshKey
 		}
 	}
 })
@@ -83,5 +105,15 @@ export default defineComponent({
 
 .vc-dark {
 	--vc-focus-ring: 0 0 0 2px v-bind(color);
+}
+
+.vc-dots {
+	flex-wrap: wrap;
+	row-gap: 2px;
+}
+
+.vc-day-layer {
+	bottom: auto;
+	top: 80%;
 }
 </style>

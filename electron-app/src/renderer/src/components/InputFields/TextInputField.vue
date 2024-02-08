@@ -4,6 +4,9 @@
 			@input="onInput(($event.target as HTMLInputElement).value)" @keypress="validateType" :disabled="disabled"
 			:maxlength="200" />
 		<label class="textInputFieldLable">{{ label }}</label>
+		<div v-if="showToolTip" class="textInputFieldContainer__tooltipContainer">
+			<ToolTip :color="color" :message="toolTipMessage" />
+		</div>
 	</div>
 </template>
 <script lang="ts">
@@ -13,23 +16,34 @@ import { ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 import tippy from 'tippy.js';
+import ToolTip from '../ToolTip.vue';
 
 export default defineComponent({
 	name: "TextInputField",
+	components:
+	{
+		ToolTip
+	},
 	emits: ["update:modelValue"],
-	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "inputType", "additionalValidationFunction", "isOnWidget"],
+	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "inputType", "additionalValidationFunction",
+		"isOnWidget", "showToolTip", 'toolTipMessage'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
-		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
+		const validationFunction: Ref<{
+			(): boolean;
+		}[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
 		const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
 		const type: ComputedRef<string> = computed(() => props.inputType ? props.inputType : "text");
-		const additionalValidationFunction: Ref<{ (input: string): [boolean, string] } | undefined> = ref(props.additionalValidationFunction);
+		const additionalValidationFunction: Ref<{
+			(input: string): [
+				boolean,
+				string
+			];
+		} | undefined> = ref(props.additionalValidationFunction);
 		const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
-
 		let tippyInstance: any = null;
-
 		function validate(): boolean
 		{
 			if (!props.modelValue)
@@ -37,7 +51,6 @@ export default defineComponent({
 				invalidate("Pleas enter a value");
 				return false;
 			}
-
 			if (additionalValidationFunction.value)
 			{
 				const [isVaild, invalidMesage] = additionalValidationFunction.value(props.modelValue);
@@ -47,16 +60,13 @@ export default defineComponent({
 					return false;
 				}
 			}
-
 			return true;
 		}
-
 		function invalidate(message: string)
 		{
 			tippyInstance.setContent(message);
 			tippyInstance.show();
 		}
-
 		function validateType(event: KeyboardEvent)
 		{
 			if (type.value === "number")
@@ -68,23 +78,19 @@ export default defineComponent({
 					return false;
 				}
 			}
-
 			return true;
 		}
-
 		function onInput(value: string)
 		{
 			tippyInstance.hide();
 			ctx.emit("update:modelValue", value);
 		}
-
 		onMounted(() =>
 		{
 			if (!container.value)
 			{
 				return;
 			}
-
 			validationFunction?.value.push(validate);
 			tippyInstance = tippy(container.value, {
 				inertia: true,
@@ -95,13 +101,11 @@ export default defineComponent({
 				hideOnClick: false
 			});
 		});
-
 		onUnmounted(() =>
 		{
 			tippyInstance.hide();
 			validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
 		});
-
 		return {
 			shouldFadeIn,
 			container,
@@ -112,7 +116,7 @@ export default defineComponent({
 			labelBackgroundColor,
 			validateType,
 			onInput
-		}
+		};
 	}
 })
 </script>
@@ -176,5 +180,12 @@ export default defineComponent({
 	padding: 0 .2em;
 	color: v-bind(color);
 	left: 10px;
+}
+
+.textInputFieldContainer__tooltipContainer {
+	position: absolute;
+	top: 0;
+	right: -20%;
+	transform: translateY(35%);
 }
 </style>
