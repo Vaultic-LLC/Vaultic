@@ -3,15 +3,19 @@
 		:gridDefinition="gridDefinition">
 		<TextInputField :color="color" :label="'Password For'" v-model="passwordState.passwordFor"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
-		<TextInputField :color="color" :label="'Login'" v-model="passwordState.login"
+		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
+		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain"
+			:style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2' }" />
+		<TextInputField :color="color" :label="'Login'" v-model="passwordState.login"
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }" />
 		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordState.password"
 			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true"
 			:required="true" showCopy="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			@onDirty="passwordIsDirty = true" />
 		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
-			v-model="passwordState.additionalInformation"
-			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
+			v-model="passwordState.additionalInformation" :width="500"
+			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 5' }" />
 		<TableTemplate ref="tableRef" :color="color"
 			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
 			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"

@@ -56,7 +56,7 @@ export default defineComponent({
 		{
 			if (!newValue)
 			{
-				valueValue.value = props.value.value;
+				valueValue.value = value.value.value;
 			}
 		});
 

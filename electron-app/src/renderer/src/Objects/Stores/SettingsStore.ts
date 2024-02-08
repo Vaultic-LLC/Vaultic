@@ -17,6 +17,7 @@ export interface SettingsState
 	requireMasterKeyOnFilterGroupDelete: boolean;
 	takePictureOnLogin: boolean;
 	multipleFilterBehavior: FilterStatus;
+	oldPasswordDays: number;
 }
 
 export interface SettingsStore
@@ -33,6 +34,7 @@ export interface SettingsStore
 	requireMasterKeyOnFilterGrouopSave: boolean;
 	requireMasterKeyOnFilterGroupDelete: boolean;
 	multipleFilterBehavior: FilterStatus;
+	oldPasswordDays: number;
 	init: (stores: Stores) => void;
 	loadData: (key: string) => void;
 	updateColorPalette: (colorPalette: ColorPalette) => void;
@@ -53,6 +55,7 @@ const settingsState: SettingsState = reactive(
 		requireMasterKeyOnFilterGroupDelete: true,
 		takePictureOnLogin: true,
 		multipleFilterBehavior: FilterStatus.Or,
+		oldPasswordDays: 30
 	});
 
 export default function useSettingsStore(): SettingsStore
@@ -154,6 +157,8 @@ export default function useSettingsStore(): SettingsStore
 		get requireMasterKeyOnFilterGrouopSave() { return settingsState.requireMasterKeyOnFilterGrouopSave; },
 		get requireMasterKeyOnFilterGroupDelete() { return settingsState.requireMasterKeyOnFilterGroupDelete; },
 		get multipleFilterBehavior() { return settingsState.multipleFilterBehavior; },
+		get oldPasswordDays() { return settingsState.oldPasswordDays; },
+		set oldPasswordDays(value: number) { settingsState.oldPasswordDays = value; },
 		currentPrimaryColor,
 		init,
 		loadData,

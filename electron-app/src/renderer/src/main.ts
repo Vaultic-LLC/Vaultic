@@ -27,7 +27,7 @@ Coloris({
 	]
 });
 
-await createTestData();
+//await createTestData();
 
 const app = createApp(App)
 app.use(setupCalendar, {});

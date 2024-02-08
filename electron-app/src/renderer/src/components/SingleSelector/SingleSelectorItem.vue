@@ -45,17 +45,17 @@ export default defineComponent({
 				tween({ ...tweenFrom!, x: 30 }, { ...tweenTo!, x: 0 }, 500, updateToWidgetColor);
 			}
 
-			function updateGradient(clr: RGBColor)
-			{
-				background.value = getLinearGradientFromColor(`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`);
-			}
-
 			function updateToWidgetColor(clr: any)
 			{
 				background.value = getLinearGradientFromColorAndPercent(
 					`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`, clr.x);
 			}
 		});
+
+		function updateGradient(clr: RGBColor)
+		{
+			background.value = getLinearGradientFromColor(`rgba(${Math.round(clr.r)}, ${Math.round(clr.g)}, ${Math.round(clr.b)}, ${clr.alpha})`);
+		}
 
 		onMounted(() =>
 		{
@@ -67,6 +67,16 @@ export default defineComponent({
 		watch(() => selectorItem.value.title.value, () =>
 		{
 			key.value = Date.now().toString();
+		});
+
+		watch(() => selectorItem.value.color.value, (newValue, oldValue) =>
+		{
+			if (selectorItem.value.isActive.value)
+			{
+				let tweenTo: RGBColor | null = hexToRgb(newValue);
+				let tweenFrom: RGBColor | null = hexToRgb(oldValue);
+				tween<RGBColor>(tweenFrom!, tweenTo!, 500, updateGradient);
+			}
 		});
 
 		return {

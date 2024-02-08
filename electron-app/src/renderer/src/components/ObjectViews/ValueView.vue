@@ -17,8 +17,8 @@
 			:showRandom="true" :required="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			@onDirty="valueIsDirty = true" />
 		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
-			v-model="valuesState.additionalInformation"
-			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 4' }" />
+			v-model="valuesState.additionalInformation" :width="500"
+			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 5' }" />
 		<TableTemplate ref="tableRef"
 			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
 			:scrollbar-size="1" :color="color" :headerModels="groupHeaderModels" :border="true" :emptyMessage="emptyMessage"

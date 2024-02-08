@@ -1,7 +1,7 @@
 <template>
 	<div class="strengthGraphContainer">
 		<div class="strengthGraphContainer__header">
-			<div class="strengthGraphContainer__resetButton" @click="updateData">
+			<div class="strengthGraphContainer__resetButton" @click="reset">
 				Reset
 			</div>
 			<h2 class="strengthGraphContainer__title">Security Over Time</h2>
@@ -61,9 +61,9 @@ export default defineComponent({
 			datasets: getDataset()
 		});
 
-		function updateData()
+		function updateData(newColor?: string, oldColor?: string)
 		{
-			setOptions(1000);
+			lineChart.value.chart.options.animation.duration = 1000;
 			lineChart.value.chart.update();
 
 			lineChart.value.chart.data.labels = toRaw(lableArray.value);
@@ -71,7 +71,16 @@ export default defineComponent({
 
 			lineChart.value.chart.data.datasets[1].data = target.value;
 
-			lineChart.value.chart.update();
+			lineChart.value.chart.options.scales.y.max = max.value;
+
+			if (newColor && oldColor)
+			{
+				updateColors(newColor, oldColor, 500);
+			}
+			else
+			{
+				lineChart.value.chart.update();
+			}
 		}
 
 		function updateColors(newColor: string, oldColor: string, length: number)
@@ -79,7 +88,8 @@ export default defineComponent({
 			const from: RGBColor | null = hexToRgb(oldColor);
 			const to: RGBColor | null = hexToRgb(newColor);
 
-			setOptions(length);
+			lineChart.value.chart.options.animation.duration = length;
+			lineChart.value.chart.update();
 
 			tween<RGBColor>(from!, to!, 500, (object) =>
 			{
@@ -98,6 +108,7 @@ export default defineComponent({
 			});
 		}
 
+		// should only be called when first loading. Otherwise just update the options through the line chart
 		function setOptions(animationTime: number)
 		{
 			options.value = {
@@ -221,14 +232,20 @@ export default defineComponent({
 			return gradient;
 		}
 
+		function reset()
+		{
+			setOptions(500);
+		}
+
 		watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
 		{
+			let newColor: string = "";
 			switch (newValue)
 			{
 				case DataType.NameValuePairs:
 					lableArray.value = [...stores.encryptedDataStore.currentAndSafeValues.current];
 					chartOneArray = [...stores.encryptedDataStore.currentAndSafeValues.safe];
-					//color.value = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
+					newColor = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
 					table.value = "Value";
 					target.value = stores.encryptedDataStore.currentAndSafeValues.current.map(_ => stores.encryptedDataStore.nameValuePairs.length);
 					max.value = Math.max(...stores.encryptedDataStore.currentAndSafeValues.safe)
@@ -237,14 +254,15 @@ export default defineComponent({
 				default:
 					lableArray.value = [...stores.encryptedDataStore.currentAndSafePasswords.current];
 					chartOneArray = [...stores.encryptedDataStore.currentAndSafePasswords.safe];
-					//color.value = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
+					newColor = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
 					table.value = "Password";
 					target.value = stores.encryptedDataStore.currentAndSafePasswords.current.map(_ => stores.encryptedDataStore.passwords.length);
 					max.value = Math.max(...stores.encryptedDataStore.currentAndSafePasswords.safe)
 					break;
 			}
 
-			updateData();
+			updateData(newColor, color.value);
+			color.value = newColor;
 		});
 
 		watch(() => stores.encryptedDataStore.currentAndSafePasswords.current.length, () =>
@@ -311,7 +329,8 @@ export default defineComponent({
 			color,
 			height,
 			width,
-			updateData
+			updateData,
+			reset
 		}
 	}
 })

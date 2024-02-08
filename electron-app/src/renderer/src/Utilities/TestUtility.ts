@@ -7,7 +7,7 @@ const key: string = "TestKey";
 
 function createPasswords()
 {
-	const createPassword = (id: string, filters: string[], groups: string[], login: string, password: string, passwordFor: string,
+	const createPassword = (id: string, filters: string[], groups: string[], login: string, domain: string, email: string, password: string, passwordFor: string,
 		securityQuestions: SecurityQuestion[], additionalInformation: string, lastModifiedTime: number, isDuplicate: boolean = false): Password =>
 	{
 		return {
@@ -15,13 +15,19 @@ function createPasswords()
 			filters,
 			groups,
 			login,
+			domain,
+			email,
 			password,
 			passwordFor,
 			securityQuestions,
 			additionalInformation,
 			lastModifiedTime,
 			isDuplicate,
-			isPinned: false
+			isPinned: false,
+			isWeak: false,
+			isWeakMessage: '',
+			containsLogin: false,
+			passwordLength: 0,
 		}
 	};
 
@@ -46,24 +52,24 @@ function createPasswords()
 		"afhsdlhf sisl;kf asd;sdifh asdl;asdl; fasdl;fsdi; hasd;klg hasdkl;gh sad;h gasdl;hg sd;shl;fh asd kl; hasdlghas;";
 
 
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, additionalInfo, (Date.now())));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "ThisisMypassword123]pasdf", "FTMO", testSecurityQuestions, "", (Date.now())));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisisMypssword123]pofo", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword123$", "FTMO", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "Weak", "Youtube", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "ThisisMypassword123]pooff", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "ThisisMypassword123]pooff", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, "", (Date.now())));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "ThisisMypassword123]pasdf", "FTMO", testSecurityQuestions, "", (Date.now())));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisisMypssword123]pofo", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword1234$23424", "Gmail", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIsNotAWeakPassword1234$ffffff$", "FTMO", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "ThisIssdfNotAWeakPassword1234$", "Youtube", testSecurityQuestions, "", Date.now()));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "ThisIssdfNotAWeakPassword1234$", "Big Bank", testSecurityQuestions, "", (Date.now())));
-	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "ThisIsNotAWeakPasswfford1234$", "Bigger Bank", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "www.gmail.com", "John@gmail.com", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, additionalInfo, (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "www.ftmo.com", "Maryp@gmail.com", "ThisisMypassword123]pasdf", "FTMO", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.gmail.com", "John@gmail.com", "ThisisMypssword123]pofo", "Gmail", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "www.randomWebsite.com", "John@gmail.com", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.gmail.com", "John@gmail.com", "ThisIsNotAWeakPassword123$", "Gmail", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.ftmo.com", "John@gmail.com", "ThisIsNotAWeakPassword123$", "FTMO", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.youtube.com", "John@gmail.com", "Weak", "Youtube", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "www.valleycommunities.com", "mary@gmail.com", "ThisisMypassword123]pooff", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "www.valleycommunities.com", "mary@gmail.com", "ThisisMypassword123]pooff", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns", "www.gmail.com", "John@gmail.com", "ThisisMypassword123]poo", "Gmail", testSecurityQuestions, additionalInfo, (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id], "MaryP", "www.ftmo.com", "Maryp@gmail.com", "ThisisMypassword123]pasdf", "FTMO", testSecurityQuestions, "", (Date.now())));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.gmail.com", "John@gmail.com", "ThisisMypssword123]pofo", "Gmail", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "jSmith", "www.randomWebsite.com", "John@gmail.com", "ThisIsNotAWeakPassword1234$", "Random website", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.gmail.com", "John@gmail.com", "ThisIsNotAWeakPassword123$", "Gmail", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.ftmo.com", "John@gmail.com", "ThisIsNotAWeakPassword123$", "FTMO", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [johnsGroup.id], "Johns123@gmail.com", "www.youtube.com", "John@gmail.com", "Weak", "Youtube", testSecurityQuestions, "", Date.now()));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [bankGroup.id], "MaryP", "www.valleycommunities.com", "mary@gmail.com", "ThisisMypassword123]pooff", "Big Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addPassword(key, createPassword("", [], [marysGroup.id, bankGroup.id], "MaryP", "www.valleycommunities.com", "mary@gmail.com", "ThisisMypassword123]pooff", "Bigger Bank", testSecurityQuestions, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
 }
 
 async function createNameValuePairs(): Promise<void>
@@ -81,7 +87,10 @@ async function createNameValuePairs(): Promise<void>
 			additionalInformation,
 			lastModifiedTime,
 			isDuplicate,
-			isPinned: false
+			isPinned: false,
+			isWeak: false,
+			isWeakMessage: '',
+			valueLength: 0
 		}
 	};
 
@@ -90,17 +99,17 @@ async function createNameValuePairs(): Promise<void>
 	const codesGroup: Group = stores.groupStore.groups.filter(g => g.name == "Codes")[0];
 	const phoneCodesGroup: Group = stores.groupStore.groups.filter(g => g.name == "Phone Codes")[0];
 
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Safe", "65-23-12", NameValuePairType.Safe, "Entering the last number can be kind of finicky. You need to jiggle it a bit in order to get it to work.", (Date.now())));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [phoneCodesGroup.id], "Phone Code", "123415", NameValuePairType.Passcode, "", (Date.now())));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Bank Verbal Code", "I Like Spaghetti", NameValuePairType.Verbal, "", (Date.now())));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [codesGroup.id], "Garage Code", "5134", NameValuePairType.Passcode, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [codesGroup.id], "Car Code", "5134", NameValuePairType.Passcode, "", Date.now()));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Secret Phrase", "The cow jumps over the moon", NameValuePairType.Verbal, "", Date.now()));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [codesGroup.id], "Computer Code", "2652235", NameValuePairType.Passcode, "", Date.now()));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Knock", "Knock Knock ---- Knock Knock Knock", NameValuePairType.Verbal, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Favorite Food", "Pizza", NameValuePairType.Verbal, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "SSN", "123-45-6789", NameValuePairType.Information, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
-	await stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Stuff", "This is a secret", NameValuePairType.Other, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Safe", "65-23-12", NameValuePairType.Safe, "Entering the last number can be kind of finicky. You need to jiggle it a bit in order to get it to work.", (Date.now())));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [phoneCodesGroup.id], "Phone Code", "123415", NameValuePairType.Passcode, "", (Date.now())));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Bank Verbal Code", "I Like Spaghetti", NameValuePairType.Verbal, "", (Date.now())));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [codesGroup.id], "Garage Code", "5134", NameValuePairType.Passcode, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [codesGroup.id], "Car Code", "5134", NameValuePairType.Passcode, "", Date.now()));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Secret Phrase", "The cow jumps over the moon", NameValuePairType.Verbal, "", Date.now()));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [codesGroup.id], "Computer Code", "2652235", NameValuePairType.Passcode, "", Date.now()));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Knock", "Knock Knock ---- Knock Knock Knock", NameValuePairType.Verbal, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Favorite Food", "Pizza", NameValuePairType.Verbal, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "SSN", "123-45-6789", NameValuePairType.Information, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
+	stores.encryptedDataStore.addNameValuePair(key, createNameValuePair("", [], [], "Stuff", "This is a secret", NameValuePairType.Other, "", (Date.now() - thirtyOneDaysAsMiliSeconds)));
 }
 
 function createFilters()

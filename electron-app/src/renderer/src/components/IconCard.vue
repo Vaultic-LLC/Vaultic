@@ -17,7 +17,10 @@ export default defineComponent({
 	props: ['icon', 'text'],
 	setup()
 	{
-		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+		const color: ComputedRef<string> = computed(() =>
+		{
+			return stores.settingsStore.currentPrimaryColor.value
+		});
 		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(color.value));
 		const mixedColor: ComputedRef<string> = computed(() => mixHexes(color.value, "#FFFFFF"));
 		return {

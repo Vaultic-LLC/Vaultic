@@ -11,6 +11,9 @@
 		<TextInputField :color="color" :label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
 			:inputType="'number'" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			:additionalValidationFunction="enforceMinRandomPasswordLength" />
+		<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
+			:inputType="'number'" :style="{ 'grid-row': '7 / span 2', 'grid-column': '2 / span 2' }"
+			:additionalValidationFunction="enforceOldPasswordDays" />
 		<!-- <CheckboxInputField :label="'Require Key when Saving Filter or Group'" :color="color"
 			v-model="settingsState.requireMasterKeyOnFilterGrouopSave" :fadeIn="true"
 			:style="{ 'grid-row': '7 / span 1', 'grid-column': '2 / span 3', }" />
@@ -99,6 +102,22 @@ export default defineComponent({
 			return [Number.parseInt(input) >= 20, "Value must be greater than or equal to 20"];
 		}
 
+		function enforceOldPasswordDays(input: string): [boolean, string]
+		{
+			const numb: number = Number.parseInt(input);
+			if (!numb)
+			{
+				return [false, "Not a valid number"];
+			}
+
+			if (numb < 30 || numb > 365)
+			{
+				return [false, "Value must be between 30 and 365 days"];
+			}
+
+			return [true, ""];
+		}
+
 		return {
 			color,
 			settingsState,
@@ -109,7 +128,8 @@ export default defineComponent({
 			onSave,
 			onAuthenticationSuccessful,
 			enforceMinLoginRecords,
-			enforceMinRandomPasswordLength
+			enforceMinRandomPasswordLength,
+			enforceOldPasswordDays
 		};
 	},
 })

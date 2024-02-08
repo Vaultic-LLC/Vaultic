@@ -4,45 +4,18 @@ import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
 import { isWeak } from "../../Helpers/EncryptedDataHelper";
 
-interface NameValuePairState extends NameValuePair
+export interface NameValuePairStore extends NameValuePair
 {
-	[key: string]: any;
-	valueLength: number;
-	isWeak: boolean;
-	isWeakMessage: string;
-}
-
-export interface NameValuePairStore
-{
-	[key: string]: any;
-	id: string;
-	name: string;
-	value: string;
-	valueType?: NameValuePairType;
-	notifyIfWeak: boolean;
-	additionalInformation: string;
-	lastModifiedTime: number;
-	filters: string[];
-	groups: string[];
 	isOld: boolean;
-	isDuplicate: boolean;
-	isWeak: boolean;
-	isWeakMessage: string;
 	isSafe: boolean;
-	isPinned: boolean;
-	valueLength: number;
 	updateValue: (key: string, value: NameValuePair, valueWasUpdated: boolean) => void;
 }
 
 export default function useNameValuePairStore(key: string, nameValuePair: NameValuePair, encrypted: boolean = false): NameValuePairStore
 {
-	const nameValuePairState: NameValuePairState = reactive(
+	const nameValuePairState: NameValuePair = reactive(
 		{
 			...nameValuePair,
-			isDuplicate: false,
-			valueLength: nameValuePair.value.length,
-			isWeak: false,
-			isWeakMessage: ''
 		});
 
 	const isOld: ComputedRef<boolean> = computed(() =>
@@ -50,7 +23,7 @@ export default function useNameValuePairStore(key: string, nameValuePair: NameVa
 		const today = Date.now();
 		const differenceInDays = (today - nameValuePairState.lastModifiedTime) / 1000 / 86400;
 
-		return differenceInDays >= 30;
+		return differenceInDays >= stores.settingsStore.oldPasswordDays;
 	});
 
 	const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !nameValuePairState.isDuplicate && !nameValuePairState.isWeak)
@@ -110,6 +83,7 @@ export default function useNameValuePairStore(key: string, nameValuePair: NameVa
 	// reading in previous state, values are already encrypted and shouldn't need any updating
 	if (!encrypted)
 	{
+		nameValuePairState.valueLength = nameValuePairState.value.length;
 		checkIsWeak();
 		encryptedValue(key);
 	}

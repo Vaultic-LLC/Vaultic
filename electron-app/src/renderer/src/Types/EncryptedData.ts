@@ -54,6 +54,16 @@ export const PasswordProperties: PropertySelectorDisplayFields[] = [
 		type: PropertyType.String,
 	},
 	{
+		backingProperty: "domain",
+		displayName: "Domain",
+		type: PropertyType.String,
+	},
+	{
+		backingProperty: "email",
+		displayName: "Email",
+		type: PropertyType.String,
+	},
+	{
 		backingProperty: "login",
 		displayName: "Login",
 		type: PropertyType.String,
@@ -72,12 +82,19 @@ export const PasswordProperties: PropertySelectorDisplayFields[] = [
 
 export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable
 {
-	passwordFor: string;
+	[key: string]: any;
 	login: string;
+	domain: string;
+	email: string;
 	password: string;
+	passwordFor: string;
 	securityQuestions: SecurityQuestion[];
 	additionalInformation: string;
 	lastModifiedTime: number;
+	isWeak: boolean;
+	isWeakMessage: string;
+	containsLogin: boolean;
+	passwordLength: number;
 	isDuplicate: boolean;
 }
 
@@ -124,6 +141,7 @@ export const ValueProperties: PropertySelectorDisplayFields[] = [
 
 export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, IPinnable
 {
+	[key: string]: any;
 	name: string;
 	value: string;
 	valueType?: NameValuePairType;
@@ -131,6 +149,9 @@ export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, I
 	additionalInformation: string;
 	lastModifiedTime: number;
 	isDuplicate: boolean;
+	isWeak: boolean;
+	isWeakMessage: string;
+	valueLength: number;
 }
 
 export interface CurrentAndSafeStructure
@@ -173,7 +194,10 @@ export function defaultPassword(): Password
 		id: "",
 		passwordFor: '',
 		login: '',
+		domain: '',
+		email: '',
 		password: '',
+		passwordLength: 0,
 		securityQuestions: [{
 			id: uuidv4(),
 			question: '',
@@ -185,6 +209,9 @@ export function defaultPassword(): Password
 		lastModifiedTime: 0,
 		isDuplicate: false,
 		isPinned: false,
+		isWeak: false,
+		isWeakMessage: '',
+		containsLogin: false,
 		filters: [],
 		groups: [],
 	}
@@ -202,7 +229,10 @@ export function defaultValue(): NameValuePair
 		isDuplicate: false,
 		isPinned: false,
 		filters: [],
-		groups: []
+		groups: [],
+		isWeak: false,
+		isWeakMessage: '',
+		valueLength: 0
 	}
 }
 

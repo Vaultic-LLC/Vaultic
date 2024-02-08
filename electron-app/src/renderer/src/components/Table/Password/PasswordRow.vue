@@ -13,8 +13,6 @@
 			:emptyMessage="emptyMessage" :showEmptyMessage="securityQuestions.length == 0"
 			:backgroundColor="backgroundColor">
 			<template #header>
-				<!-- <TableHeaderRow :color="textColor" :tabs="headerTabs" :border="true" :height="5">
-				</TableHeaderRow> -->
 			</template>
 			<template #body>
 				<SecurityQuestionRow v-for="(sq, index) in securityQuestions" :key="sq.id" :rowNumber="index"
@@ -101,8 +99,8 @@ export default defineComponent({
 		{
 			if (!newValue)
 			{
-				passwordValue.value = props.value.password;
-				securityQuestions.value = props.value.securityQuestions;
+				passwordValue.value = password.value.password;
+				securityQuestions.value = password.value.securityQuestions;
 			}
 		});
 

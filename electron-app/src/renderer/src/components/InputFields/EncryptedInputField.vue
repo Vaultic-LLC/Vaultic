@@ -348,6 +348,7 @@ export default defineComponent({
 	color: white;
 	font-size: 24px;
 	transition: 0.3s;
+	cursor: pointer;
 }
 
 .encryptedInputIcon:hover {

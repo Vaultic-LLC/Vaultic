@@ -261,7 +261,7 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 			case AtRiskType.Old:
 				stores.encryptedDataStore.oldPasswords.value.forEach(p =>
 				{
-					addAtRiskValues("This Password hasn't been updated in 30 days", stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
+					addAtRiskValues(`This Password hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
 				});
 				break;
 			case AtRiskType.Duplicate:
@@ -292,7 +292,7 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 			case AtRiskType.Old:
 				stores.encryptedDataStore.oldNameValuePairs.value.forEach(v =>
 				{
-					addAtRiskValues("This Value hasn't been updated in 30 days", stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+					addAtRiskValues(`This Value hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
 				break;
 			case AtRiskType.Duplicate:
@@ -314,7 +314,6 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 					const valueStore: NameValuePairStore = stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
 					addAtRiskValues(valueStore.isWeakMessage, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
-
 		}
 	}
 

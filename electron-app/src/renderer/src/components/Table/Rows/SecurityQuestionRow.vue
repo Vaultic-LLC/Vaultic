@@ -5,7 +5,7 @@
 			<EncryptedInputField :colorModel="colorModel" :label="'Question'" v-model="securityQuestion.question"
 				:initialLength="securityQuestion.questionLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				:isOnWidget="true" :required="true" @onDirty="$emit('onQuesitonDirty')" />
+				:isOnWidget="true" :required="true" :width="fieldWidth" @onDirty="$emit('onQuesitonDirty')" />
 		</td>
 		<td class="gap">
 		</td>
@@ -13,7 +13,7 @@
 			<EncryptedInputField :colorModel="colorModel" :label="'Answer'" v-model="securityQuestion.answer"
 				:initialLength="securityQuestion.answerLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				:isOnWidget="true" :required="true" @onDirty="$emit('onAnswerDirty')" />
+				:isOnWidget="true" :required="true" :width="fieldWidth" @onDirty="$emit('onAnswerDirty')" />
 		</td>
 	</TableRow>
 </template>
@@ -35,7 +35,7 @@ export default defineComponent({
 		EncryptedInputField
 	},
 	emits: ["onQuesitonDirty", "onAnswerDirty", "onDelete"],
-	props: ["model", "colorModel", "rowNumber", "disabled", "isInitiallyEncrypted"],
+	props: ["model", "colorModel", "rowNumber", "disabled", "isInitiallyEncrypted", 'fieldWidth'],
 	setup(props, ctx)
 	{
 		const securityQuestion: Ref<SecurityQuestion> = ref(props.model);
