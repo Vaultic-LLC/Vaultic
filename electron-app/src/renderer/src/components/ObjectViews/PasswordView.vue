@@ -73,7 +73,7 @@ import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey, Req
 import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
-import idGenerator from '@renderer/Utilities/IdGenerator';
+import generator from '@renderer/Utilities/Generator';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 
 export default defineComponent({
@@ -119,7 +119,7 @@ export default defineComponent({
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
 		provide(DirtySecurityQuestionQuestionsKey, dirtySecurityQuestionQuestions);
 		provide(DirtySecurityQuestionAnswersKey, dirtySecurityQuestionAnswers);
@@ -259,7 +259,7 @@ export default defineComponent({
 		{
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onAuthenticationSuccessful, onAuthenticationCanceled);
+				requestAuthFunc(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 				return new Promise((resolve, reject) =>
 				{
 					saveSucceeded = resolve;
@@ -300,7 +300,7 @@ export default defineComponent({
 		function onAddSecurityQuestion()
 		{
 			passwordState.value.securityQuestions.push({
-				id: idGenerator.uniqueId(passwordState.value.securityQuestions),
+				id: generator.uniqueId(passwordState.value.securityQuestions),
 				question: '',
 				questionLength: 0,
 				answer: '',

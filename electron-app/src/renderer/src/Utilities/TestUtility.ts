@@ -1,7 +1,7 @@
 import { stores } from "../Objects/Stores";
 import { NameValuePair, NameValuePairType, Password, SecurityQuestion } from "../Types/EncryptedData";
 import { Filter, FilterConditionType, DataType, FilterCondition, Group } from "../Types/Table";
-import idGenerator from "./IdGenerator";
+import generator from "./Generator";
 
 const key: string = "TestKey";
 
@@ -33,8 +33,8 @@ function createPasswords()
 
 	const thirtyOneDaysAsMiliSeconds: number = 1000 * 86400 * 31;
 	const testSecurityQuestions: SecurityQuestion[] = [
-		{ id: idGenerator.uniqueId([]), question: "Who are You", questionLength: 11, answer: "Me", answerLength: 2 },
-		{ id: idGenerator.uniqueId([]), question: "What color is the sky", questionLength: 21, answer: "red", answerLength: 3 }
+		{ id: generator.uniqueId([]), question: "Who are You", questionLength: 11, answer: "Me", answerLength: 2 },
+		{ id: generator.uniqueId([]), question: "What color is the sky", questionLength: 21, answer: "red", answerLength: 3 }
 	];
 
 	const johnsGroup: Group = stores.groupStore.groups.filter(g => g.name == "Johns")[0];
@@ -118,6 +118,7 @@ function createFilters()
 	{
 		return {
 			id,
+			key: '',
 			passwords: [],
 			nameValuePairs: [],
 			isPinned: false,
@@ -128,28 +129,28 @@ function createFilters()
 		}
 	}
 
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Gmail Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "Gmail" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "FTMO Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "FTMO" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "A Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "A" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Johns Passwords", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "j" },
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Gmail Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "Gmail" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "FTMO Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "FTMO" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "A Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "A" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Johns Passwords", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "j" },
 	{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "Smith" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Marys Passwords", [{ "id": "", property: "login", filterType: FilterConditionType.Contains, value: "Mary" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "M For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "M" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Email Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "@" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, ".Com Logins", [{ id: "", property: "login", filterType: FilterConditionType.EndsWith, value: ".com" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "B For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "B" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Gmail Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "Gmail" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "FTMO Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "FTMO" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "A Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "A" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Johns Passwords", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "j" },
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Marys Passwords", [{ "id": "", property: "login", filterType: FilterConditionType.Contains, value: "Mary" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "M For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "M" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Email Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "@" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, ".Com Logins", [{ id: "", property: "login", filterType: FilterConditionType.EndsWith, value: ".com" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "B For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "B" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Gmail Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "Gmail" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "FTMO Accounts", [{ id: "", property: "passwordFor", filterType: FilterConditionType.EqualTo, value: "FTMO" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "A Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "A" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Johns Passwords", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "j" },
 	{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "Smith" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Marys Passwords", [{ "id": "", property: "login", filterType: FilterConditionType.Contains, value: "Mary" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "M For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "M" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "Email Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "@" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, ".Com Logins", [{ id: "", property: "login", filterType: FilterConditionType.EndsWith, value: ".com" }]));
-	stores.filterStore.addFilter(createFilter("", DataType.Passwords, false, "B For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "B" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Marys Passwords", [{ "id": "", property: "login", filterType: FilterConditionType.Contains, value: "Mary" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "M For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "M" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "Email Logins", [{ id: "", property: "login", filterType: FilterConditionType.Contains, value: "@" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, ".Com Logins", [{ id: "", property: "login", filterType: FilterConditionType.EndsWith, value: ".com" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.Passwords, false, "B For", [{ id: "", property: "passwordFor", filterType: FilterConditionType.Contains, value: "B" }]));
 
-	stores.filterStore.addFilter(createFilter("", DataType.NameValuePairs, false, "Safe", [{ id: "", property: "name", filterType: FilterConditionType.EqualTo, value: "Safe" }]));
+	stores.filterStore.addFilter(key, createFilter("", DataType.NameValuePairs, false, "Safe", [{ id: "", property: "name", filterType: FilterConditionType.EqualTo, value: "Safe" }]));
 }
 
 function createGroups()
@@ -158,6 +159,7 @@ function createGroups()
 	{
 		return {
 			id,
+			key: '',
 			passwords: [],
 			nameValuePairs: [],
 			isPinned: false,
@@ -167,33 +169,33 @@ function createGroups()
 		}
 	};
 
-	stores.groupStore.addGroup(createGroup("", DataType.Passwords, "Banks", "#ffa801"));
-	stores.groupStore.addGroup(createGroup("", DataType.Passwords, "PWords", "#ffa801"));
-	stores.groupStore.addGroup(createGroup("", DataType.Passwords, "Johns", "#00f56e"));
-	stores.groupStore.addGroup(createGroup("", DataType.Passwords, "Mary's", "#ff0de3"));
+	stores.groupStore.addGroup(key, createGroup("", DataType.Passwords, "Banks", "#ffa801"));
+	stores.groupStore.addGroup(key, createGroup("", DataType.Passwords, "PWords", "#ffa801"));
+	stores.groupStore.addGroup(key, createGroup("", DataType.Passwords, "Johns", "#00f56e"));
+	stores.groupStore.addGroup(key, createGroup("", DataType.Passwords, "Mary's", "#ff0de3"));
 
-	stores.groupStore.addGroup(createGroup("", DataType.NameValuePairs, "Codes", "#ffa801"));
-	stores.groupStore.addGroup(createGroup("", DataType.NameValuePairs, "Phone Codes", "#3339ef"));
+	stores.groupStore.addGroup(key, createGroup("", DataType.NameValuePairs, "Codes", "#ffa801"));
+	stores.groupStore.addGroup(key, createGroup("", DataType.NameValuePairs, "Phone Codes", "#3339ef"));
 }
 
 function createLoginRecords()
 {
 	const secondsInADay: number = 1000 * 86400;
 
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 10));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 8));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 5));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 3));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 2));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 1));
-	stores.appStore.recordLogin(Date.now());
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 10));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 8));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 5));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 3));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 2));
-	stores.appStore.recordLogin(Date.now() - (secondsInADay * 1));
-	stores.appStore.recordLogin(Date.now());
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 10));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 8));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 5));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 3));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 2));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 1));
+	stores.appStore.recordLogin(key, Date.now());
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 10));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 8));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 5));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 3));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 2));
+	stores.appStore.recordLogin(key, Date.now() - (secondsInADay * 1));
+	stores.appStore.recordLogin(key, Date.now());
 }
 
 export default async function createTestData()

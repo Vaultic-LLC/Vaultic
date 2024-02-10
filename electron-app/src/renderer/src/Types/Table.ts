@@ -17,6 +17,7 @@ export enum FilterStatus
 export interface Filter extends IIdentifiable, IPinnable
 {
 	[key: string]: any;
+	key: string;
 	passwords: string[];
 	nameValuePairs: string[];
 	type: DataType;
@@ -48,6 +49,7 @@ export enum FilterConditionType
 export interface Group extends IIdentifiable, IPinnable
 {
 	[key: string]: any;
+	key: string;
 	passwords: string[];
 	nameValuePairs: string[];
 	type: DataType;

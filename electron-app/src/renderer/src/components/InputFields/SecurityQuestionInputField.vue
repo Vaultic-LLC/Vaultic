@@ -16,7 +16,7 @@ import ObjectInputField from './ObjectInputField.vue';
 
 import { SecurityQuestion } from '../../Types/EncryptedData';
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Types/Keys';
-import idGenerator from '../../Utilities/IdGenerator';
+import generator from '../../Utilities/Generator';
 
 export default defineComponent({
 	name: "SecurityQuestionInputField",
@@ -37,7 +37,7 @@ export default defineComponent({
 		function onAdd()
 		{
 			securityQuestions.value.push({
-				id: idGenerator.uniqueId(securityQuestions.value),
+				id: generator.uniqueId(securityQuestions.value),
 				question: '',
 				questionLength: 0,
 				answer: '',

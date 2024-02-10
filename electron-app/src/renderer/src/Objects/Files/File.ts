@@ -15,6 +15,34 @@ export default class Files
 		return window.api.fileExistsAndHasData(this.path);
 	}
 
+	public empty(): void
+	{
+		let unlocked: boolean = false;
+		try
+		{
+			window.api.unlockFile(this.path);
+			unlocked = true;
+
+			window.api.writeFile("", this.path);
+			window.api.lockFile(this.path);
+
+			unlocked = false;
+		}
+		catch (e)
+		{
+			console.log(e);
+		}
+
+		if (unlocked)
+		{
+			try
+			{
+				window.api.lockFile(this.path);
+			}
+			catch { }
+		}
+	}
+
 	public write<T>(key: string, data: T): void
 	{
 		let unlocked: boolean = false;

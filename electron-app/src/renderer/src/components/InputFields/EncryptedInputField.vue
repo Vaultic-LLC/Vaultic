@@ -37,6 +37,7 @@ import clipboard from 'clipboardy';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 import tippy from 'tippy.js';
 import { InputColorModel } from '@renderer/Types/Models';
+import generator from '@renderer/Utilities/Generator';
 
 export default defineComponent({
 	name: "EncryptedInputField",
@@ -129,25 +130,7 @@ export default defineComponent({
 
 		function generateRandomValue()
 		{
-			let validRandomPassword: boolean = false;
-			let validPasswordTest = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
-			let randomPassword: string = "";
-
-			const possibleCharacters: string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+\\-=[\\]{};':\"\\|,.<>/?"
-			const possibleCharactersLength: number = possibleCharacters.length;
-
-			while (!validRandomPassword)
-			{
-				randomPassword = "";
-
-				let randomValues: Uint8Array = new Uint8Array(stores.settingsStore.randomValueLength);
-				crypto.getRandomValues(randomValues);
-
-				randomValues.forEach(v => randomPassword += possibleCharacters[v % possibleCharactersLength]);
-				validRandomPassword = validPasswordTest.test(randomPassword);
-			}
-
-			onInput(randomPassword);
+			onInput(generator.randomValue(stores.settingsStore.randomValueLength));
 		}
 
 		function copyValue()

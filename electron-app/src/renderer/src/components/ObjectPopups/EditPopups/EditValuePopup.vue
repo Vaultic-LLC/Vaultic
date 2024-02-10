@@ -39,6 +39,7 @@ export default defineComponent({
 	color: white;
 	animation: fadeIn 1s linear forwards;
 	margin: 5%;
+	margin-left: 11%;
 	font-size: 25px;
 }
 

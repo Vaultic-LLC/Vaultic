@@ -6,9 +6,9 @@ import hashUtility from "../../Utilities/HashUtility";
 import usePasswordStore, { PasswordStore } from "./PasswordStore";
 import useNameValuePair, { NameValuePairStore } from "./NameValuePairStore";
 import { DataType, Filter, Group } from "../../Types/Table";
-import idGenerator from "../../Utilities/IdGenerator";
+import generator from "../../Utilities/Generator";
 import { Dictionary } from "../../Types/DataStructures";
-import { Stores, stores } from ".";
+import { AuthenticationStore, Stores, stores } from ".";
 import useNameValuePairStore from "./NameValuePairStore";
 
 interface EncryptedDataState
@@ -28,9 +28,8 @@ interface EncryptedDataState
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
 }
 
-export interface EncryptedDataStore
+export interface EncryptedDataStore extends AuthenticationStore
 {
-	canAuthenticateKey: boolean;
 	passwords: PasswordStore[];
 	unpinnedPasswords: PasswordStore[];
 	nameValuePairs: NameValuePairStore[];
@@ -51,8 +50,9 @@ export interface EncryptedDataStore
 	activeAtRiskPasswords: Dictionary<AtRiskType[]>;
 	activeAtRiskValueType: AtRiskType;
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
+	canAuthenticateKey: () => boolean;
 	init: (stores: Stores) => void;
-	checkKey: (key: string) => Promise<boolean>;
+	checkKey: (key: string) => boolean;
 	addPassword: (key: string, password: Password) => boolean;
 	updatePassword: (password: Password, passwordWasUpdated: boolean,
 		updatedSecurityQuestionQuestions: string[],
@@ -68,27 +68,54 @@ export interface EncryptedDataStore
 }
 
 const dataFile: File = new File("data");
-
-const defaultState: EncryptedDataState = {
-	loadedFile: false,
-	passwords: [],
-	nameValuePairs: [],
-	passwordHash: "",
-	valueHash: "",
-	duplicatePasswords: {},
-	duplicateNameValuePairs: {},
-	currentAndSafePasswords: { current: [], safe: [] },
-	currentAndSafeValues: { current: [], safe: [] },
-	activeAtRiskPasswordType: AtRiskType.None,
-	activeAtRiskPasswords: {},
-	activeAtRiskValueType: AtRiskType.None,
-	activeAtRiskValues: {}
-}
-
-const encryptedDataState: EncryptedDataState = reactive(defaultState);
+let encryptedDataState: EncryptedDataState;
 
 export default function useEncryptedDataStore(): EncryptedDataStore
 {
+	encryptedDataState = reactive(defaultState());
+
+	// -- Generic Store Methods
+	function defaultState(): EncryptedDataState
+	{
+		return {
+			loadedFile: false,
+			passwords: [],
+			nameValuePairs: [],
+			passwordHash: "",
+			valueHash: "",
+			duplicatePasswords: {},
+			duplicateNameValuePairs: {},
+			currentAndSafePasswords: { current: [], safe: [] },
+			currentAndSafeValues: { current: [], safe: [] },
+			activeAtRiskPasswordType: AtRiskType.None,
+			activeAtRiskPasswords: {},
+			activeAtRiskValueType: AtRiskType.None,
+			activeAtRiskValues: {}
+		};
+	}
+
+	function canAuthenticateKey()
+	{
+		return dataFile.exists();
+	}
+
+	function writeState(key: string)
+	{
+		if (encryptedDataState.passwords.length == 0 && encryptedDataState.nameValuePairs.length == 0)
+		{
+			dataFile.empty();
+		}
+		else
+		{
+			dataFile.write(key, encryptedDataState);
+		}
+	}
+
+	function resetToDefault()
+	{
+		Object.assign(encryptedDataState, defaultState());
+	}
+
 	// --- Private Helper Methods ---
 	function calculateHash<T extends { [key: string]: string }>(key: string, values: T[], property: string)
 	{
@@ -98,8 +125,13 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		return hashUtility.hash(runningPasswords);
 	}
 
-	async function loadDataFileState(key: string): Promise<boolean>
+	function readState(key: string): boolean
 	{
+		if (encryptedDataState.loadedFile)
+		{
+			return true;
+		}
+
 		// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
 		try
 		{
@@ -176,20 +208,6 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		}
 
 		return false;
-	}
-
-	function writeState(key: string)
-	{
-		if (encryptedDataState.passwords.length == 0 && encryptedDataState.nameValuePairs.length == 0)
-		{
-			dataFile.write(key, "");
-		}
-		else
-		{
-			dataFile.write(key, encryptedDataState);
-		}
-
-		checkIfCanAuthenticate();
 	}
 
 	function updateDuplicatePasswordOrValueIndex<T extends IIdentifiable & (PasswordStore | NameValuePairStore)>
@@ -281,13 +299,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		delete duplicateValues[value.id];
 	}
 
-	function checkIfCanAuthenticate()
-	{
-		canAuthenticateKey.value = dataFile.exists();
-	}
-
 	// --- Public ---
-	const canAuthenticateKey: Ref<boolean> = ref(false);
 	const oldPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.isOld).map(p => p.id));
 	const weakPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.isWeak).map(p => p.id));
 	const containsLoginPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.containsLogin).map(p => p.id));
@@ -305,13 +317,13 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	const unpinnedPasswords: ComputedRef<PasswordStore[]> = computed(() => encryptedDataState.passwords.filter(p => !p.isPinned));
 	const unpinnedValues: ComputedRef<NameValuePairStore[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => !nvp.isPinned));
 
-	function init(stores: Stores)
+	function init(_: Stores)
 	{
 	}
 
-	async function checkKey(key: string): Promise<boolean>
+	function checkKey(key: string): boolean
 	{
-		if (!canAuthenticateKey.value)
+		if (!canAuthenticateKey())
 		{
 			return true;
 		}
@@ -329,7 +341,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		}
 		else
 		{
-			return await loadDataFileState(key);
+			return readState(key);
 		}
 
 		return false;
@@ -342,7 +354,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			return false;
 		}
 
-		password.id = idGenerator.uniqueId(encryptedDataState.passwords);
+		password.id = generator.uniqueId(encryptedDataState.passwords);
 
 		const passwordStore: PasswordStore = usePasswordStore(key, password);
 		encryptedDataState.passwords.push(passwordStore);
@@ -424,7 +436,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			return false;
 		}
 
-		nameValuePair.id = idGenerator.uniqueId(encryptedDataState.nameValuePairs);
+		nameValuePair.id = generator.uniqueId(encryptedDataState.nameValuePairs);
 
 		const nameValuePairStore: NameValuePairStore = useNameValuePair(key, nameValuePair);
 		encryptedDataState.nameValuePairs.push(nameValuePairStore);
@@ -612,10 +624,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		}
 	}
 
-	checkIfCanAuthenticate();
-
 	return {
-		get canAuthenticateKey() { return canAuthenticateKey.value; },
 		get passwords() { return encryptedDataState.passwords; },
 		get unpinnedPasswords() { return unpinnedPasswords.value; },
 		get nameValuePairs() { return encryptedDataState.nameValuePairs; },
@@ -636,7 +645,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		get activeAtRiskPasswords() { return encryptedDataState.activeAtRiskPasswords; },
 		get activeAtRiskValueType() { return encryptedDataState.activeAtRiskValueType; },
 		get activeAtRiskValues() { return encryptedDataState.activeAtRiskValues; },
+		canAuthenticateKey,
 		init,
+		readState,
+		resetToDefault,
 		checkKey,
 		addPassword,
 		updatePassword,

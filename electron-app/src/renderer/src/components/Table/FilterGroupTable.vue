@@ -115,7 +115,7 @@ export default defineComponent({
 		let deleteFilter: Ref<(key: string) => void> = ref((_: string) => { });
 		let deleteGroup: Ref<(key: string) => void> = ref((_: string) => { });
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const emptyTableMessage: ComputedRef<string> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
@@ -156,7 +156,7 @@ export default defineComponent({
 			{
 				displayName: "Active",
 				backingProperty: "isActive",
-				width: '100px',
+				width: '112px',
 				padding: '12px',
 				clickable: true
 			},
@@ -172,7 +172,7 @@ export default defineComponent({
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '100px',
+				width: '112px',
 				padding: '12px',
 				clickable: true
 			},
@@ -287,20 +287,14 @@ export default defineComponent({
 
 		function onFilterDeleteInitiated(filter: Filter)
 		{
-			deleteFilter.value = (_: string) =>
+			deleteFilter.value = (key: string) =>
 			{
-				stores.filterStore.deleteFilter(filter);
-			}
-
-			if (!stores.encryptedDataStore.canAuthenticateKey || !stores.settingsStore.requireMasterKeyOnFilterGroupDelete)
-			{
-				onFilterDeleteConfirmed("");
-				return;
+				stores.filterStore.deleteFilter(key, filter);
 			}
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onFilterDeleteConfirmed, () => { });
+				requestAuthFunc(color.value, onFilterDeleteConfirmed, () => { });
 			}
 		}
 
@@ -312,20 +306,14 @@ export default defineComponent({
 
 		function onGroupDeleteInitiated(group: Group)
 		{
-			deleteGroup.value = (_: string) =>
+			deleteGroup.value = (key: string) =>
 			{
-				stores.groupStore.deleteGroup(group);
-			}
-
-			if (!stores.encryptedDataStore.canAuthenticateKey || !stores.settingsStore.requireMasterKeyOnFilterGroupDelete)
-			{
-				onGroupDeleteConfirmed("");
-				return;
+				stores.groupStore.deleteGroup(key, group);
 			}
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onGroupDeleteConfirmed, () => { });
+				requestAuthFunc(color.value, onGroupDeleteConfirmed, () => { });
 			}
 		}
 

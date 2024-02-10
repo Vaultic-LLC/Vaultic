@@ -109,7 +109,7 @@ export default defineComponent({
 			columnWidth: '100px'
 		}
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
 
@@ -207,7 +207,7 @@ export default defineComponent({
 		{
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onAuthenticationSuccessful, onAuthenticationCanceled);
+				requestAuthFunc(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 				return new Promise((resolve, reject) =>
 				{
 					saveSucceeded = resolve;

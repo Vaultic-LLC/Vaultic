@@ -13,9 +13,13 @@
 
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+
+import CongratsRibbon from '../SmallMetricGauges/CongratsRibbon.vue';
 import { Doughnut } from 'vue-chartjs'
+
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { stores } from '../../Objects/Stores';
+import { mixHexes } from '@renderer/Helpers/ColorHelper';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -24,7 +28,8 @@ export default defineComponent({
 	props: ['model'],
 	components:
 	{
-		Doughnut
+		Doughnut,
+		CongratsRibbon
 	},
 	setup(props)
 	{
@@ -37,7 +42,7 @@ export default defineComponent({
 		const pulse: ComputedRef<boolean> = computed(() => props.model.pulse == true && props.model.filledAmount > 0);
 
 		let authenticated: Ref<boolean> = ref(stores.appStore.authenticated);
-		let fillAmount: ComputedRef<number> = computed(() => props.model.filledAmount / props.model.totalAmount * 100);
+		let fillAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 0 : props.model.filledAmount / props.model.totalAmount * 100);
 		let amountOutOfTotal: ComputedRef<string> = computed(() => `${props.model.filledAmount} / ${props.model.totalAmount}`);
 		const textColor: Ref<string> = computed(() => fillAmount.value == 0 ? "white" : "white");
 
@@ -67,7 +72,7 @@ export default defineComponent({
 				labels: [props.model.title, ""],
 				datasets: [
 					{
-						data: [props.model.filledAmount, props.model.totalAmount - props.model.filledAmount],
+						data: [props.model.filledAmount, Math.max(props.model.totalAmount - props.model.filledAmount, 1)],
 						//backgroundColor: [primaryColor.value, '#191919'],
 						backgroundColor: function (context)
 						{
@@ -80,10 +85,12 @@ export default defineComponent({
 								return;
 							}
 
-							let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
-							// gradient.addColorStop(0, mixHexes(primaryColor.value, '#363131'));
-							// gradient.addColorStop(fillAmount.value / 100 / 2, primaryColor.value);
-							// gradient.addColorStop(fillAmount.value / 100, mixHexes(primaryColor.value, '#363131'));
+							// let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
+							const x = chartArea.width / 2;
+							let gradient = ctx.createRadialGradient(x, x, 0, x, x, x);
+							gradient.addColorStop(0, mixHexes(primaryColor.value, '#867E7E'));
+							//gradient.addColorStop(fillAmount.value / 100 / 2, primaryColor.value);
+							//gradient.addColorStop(fillAmount.value / 100, mixHexes(primaryColor.value, '#363131'));
 							gradient.addColorStop(1, primaryColor.value);
 							// hex value already has opacity
 							// if (primaryColor.value.length > 7)
@@ -106,11 +113,6 @@ export default defineComponent({
 				]
 
 			});
-
-		// function updateKey()
-		// {
-		// 	key.value = Date.now().toString();
-		// }
 
 		function updateData(data)
 		{
@@ -141,7 +143,6 @@ export default defineComponent({
 			};
 
 			updateData([props.model.filledAmount, props.model.totalAmount - props.model.filledAmount])
-			//updateKey();
 		});
 
 		return {
@@ -277,6 +278,11 @@ export default defineComponent({
 	transform: translateY(40px);
 	transition: 0.2s;
 	user-select: none;
+}
+
+.smallMetricContainer2__checkmark {
+	color: v-bind(primaryColor);
+	font-size: 50px;
 }
 
 /* .smallMetricContainer2:hover .title p {

@@ -3,9 +3,6 @@
 		:gridDefinition="gridDefinition">
 		<TextInputField :label="'Name'" :color="color" v-model="filterState.text"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
-		<!-- <FilterConditionInputField :border="true" :scrollbar="true" :color="color" :model="filterState.conditions"
-			:rowGap="20" :style="{ 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
-			:displayFieldOptions="displayFieldOptions" /> -->
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
 			class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0" :border="true" :emptyMessage="emptyMessage"
 			:showEmptyMessage="filterState.conditions.length == 0 ?? true">
@@ -39,7 +36,7 @@ import { DisplayField, PasswordProperties, ValueProperties, defaultFilter } from
 import { stores } from '../../Objects/Stores';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
-import idGenerator from '@renderer/Utilities/IdGenerator';
+import generator from '@renderer/Utilities/Generator';
 import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -66,7 +63,7 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const emptyMessage: Ref<string> = ref(getEmptyTableMessage("Filter Conditions"));
 
 		const gridDefinition: GridDefinition =
@@ -89,15 +86,9 @@ export default defineComponent({
 
 		function onSave()
 		{
-			if (!stores.settingsStore.requireMasterKeyOnFilterGrouopSave)
-			{
-				doSave();
-				return Promise.resolve(true);
-			}
-
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(doSave, onAuthCancelled);
+				requestAuthFunc(color.value, doSave, onAuthCancelled);
 				return new Promise((resolve, reject) =>
 				{
 					saveSucceeded = resolve;
@@ -108,18 +99,18 @@ export default defineComponent({
 			return Promise.reject();
 		}
 
-		function doSave()
+		function doSave(key: string)
 		{
 			if (props.creating)
 			{
-				stores.filterStore.addFilter(filterState.value);
+				stores.filterStore.addFilter(key, filterState.value);
 
 				filterState.value = defaultFilter(filterState.value.type);
 				refreshKey.value = Date.now().toString();
 			}
 			else
 			{
-				stores.filterStore.updateFilter(filterState.value);
+				stores.filterStore.updateFilter(key, filterState.value);
 			}
 
 			if (saveSucceeded)
@@ -137,7 +128,7 @@ export default defineComponent({
 		{
 			filterState.value.conditions.push(
 				{
-					id: idGenerator.uniqueId(filterState.value.conditions),
+					id: generator.uniqueId(filterState.value.conditions),
 					property: '',
 					value: ''
 				});

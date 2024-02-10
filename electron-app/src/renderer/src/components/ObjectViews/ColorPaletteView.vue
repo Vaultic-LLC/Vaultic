@@ -27,7 +27,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, watch } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, watch, inject } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
@@ -36,6 +36,7 @@ import ToolTip from '../ToolTip.vue';
 import { stores } from '../../Objects/Stores';
 import { GridDefinition } from '../../Types/Models';
 import { ColorPalette } from '../../Types/Colors';
+import { RequestAuthenticationFunctionKey } from '@renderer/Types/Keys';
 
 export default defineComponent({
 	name: "ColorPaletteView",
@@ -50,6 +51,12 @@ export default defineComponent({
 		const refreshKey: Ref<string> = ref("");
 		const colorPaletteState: Ref<ColorPalette> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => '#d0d0d0');
+		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+
+		let saveSucceeded: (value: boolean) => void;
+		let saveFailed: (value: boolean) => void;
+
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
 		const gridDefinition: GridDefinition =
 		{
@@ -59,15 +66,36 @@ export default defineComponent({
 			columnWidth: '100px'
 		};
 
+
 		function onSave()
+		{
+			if (requestAuthFunc)
+			{
+				requestAuthFunc(primaryColor.value, doSave, onAuthCancelled);
+				return new Promise((resolve, reject) =>
+				{
+					saveSucceeded = resolve;
+					saveFailed = reject;
+				});
+			}
+
+			return Promise.reject();
+		}
+
+		function doSave(key: string)
 		{
 			colorPaletteState.value.isCreated = true;
 			colorPaletteState.value.editable = true;
 
-			stores.settingsStore.updateColorPalette(colorPaletteState.value);
+			stores.settingsStore.updateColorPalette(key, colorPaletteState.value);
 			refreshKey.value = Date.now().toString();
 
 			return Promise.resolve(true);
+		}
+
+		function onAuthCancelled()
+		{
+			saveFailed(false);
 		}
 
 		watch(() => props.model, (newValue) =>

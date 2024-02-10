@@ -30,20 +30,14 @@ export default defineComponent({
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
-		const validationFunction: Ref<{
-			(): boolean;
-		}[]> | undefined = inject(ValidationFunctionsKey, ref([]));
+		const validationFunction: Ref<{ (): boolean; }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
 		const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
 		const type: ComputedRef<string> = computed(() => props.inputType ? props.inputType : "text");
-		const additionalValidationFunction: Ref<{
-			(input: string): [
-				boolean,
-				string
-			];
-		} | undefined> = ref(props.additionalValidationFunction);
+		const additionalValidationFunction: Ref<{ (input: string): [boolean, string]; } | undefined> = ref(props.additionalValidationFunction);
 		const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 		let tippyInstance: any = null;
+
 		function validate(): boolean
 		{
 			if (!props.modelValue)
@@ -62,11 +56,13 @@ export default defineComponent({
 			}
 			return true;
 		}
+
 		function invalidate(message: string)
 		{
 			tippyInstance.setContent(message);
 			tippyInstance.show();
 		}
+
 		function validateType(event: KeyboardEvent)
 		{
 			if (type.value === "number")
@@ -80,11 +76,13 @@ export default defineComponent({
 			}
 			return true;
 		}
+
 		function onInput(value: string)
 		{
 			tippyInstance.hide();
 			ctx.emit("update:modelValue", value);
 		}
+
 		onMounted(() =>
 		{
 			if (!container.value)
@@ -101,11 +99,13 @@ export default defineComponent({
 				hideOnClick: false
 			});
 		});
+
 		onUnmounted(() =>
 		{
 			tippyInstance.hide();
 			validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
 		});
+
 		return {
 			shouldFadeIn,
 			container,

@@ -2,7 +2,7 @@
 	<div class="requestAuthContainer">
 		<div class="requestAuthGlass" @click="onCancel"></div>
 		<AuthenticationPopup @onAuthenticationSuccessful="onAuthSuccessful" :rubberbandOnUnlock="false" :showPulsing="false"
-			:allowCancel="true" @onCanceled="onCancel" :setupKey="needsToSetupKey" :title="title" />
+			:allowCancel="true" @onCanceled="onCancel" :setupKey="needsToSetupKey" :title="title" :color="color" />
 	</div>
 </template>
 
@@ -18,7 +18,7 @@ export default defineComponent({
 	{
 		AuthenticationPopup
 	},
-	props: ["authenticationSuccessful", "authenticationCanceled", "setupKey"],
+	props: ["authenticationSuccessful", "authenticationCanceled", "setupKey", "color"],
 	setup(props)
 	{
 		const needsToSetupKey: ComputedRef<boolean> = computed(() => props.setupKey ?? false);

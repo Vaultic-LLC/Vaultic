@@ -119,7 +119,7 @@ export default defineComponent({
 		const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			passwordSearchText : valueSearchText);
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const emptyTableMessage: ComputedRef<string> = computed(() =>
@@ -174,7 +174,7 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '150px',
+				width: '175px',
 				padding: '25px',
 				clickable: true
 			},
@@ -196,7 +196,7 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '150px',
+				width: '175px',
 				padding: '25px',
 				clickable: true
 			},
@@ -401,7 +401,7 @@ export default defineComponent({
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onDeletePasswordConfirmed, () => { });
+				requestAuthFunc(color.value, onDeletePasswordConfirmed, () => { });
 			}
 		}
 
@@ -420,7 +420,7 @@ export default defineComponent({
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onDeleteValueConfirmed, () => { });
+				requestAuthFunc(color.value, onDeleteValueConfirmed, () => { });
 			}
 		}
 

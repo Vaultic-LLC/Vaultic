@@ -86,7 +86,7 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
 		const emptyMessage: ComputedRef<string> = computed(() =>
 		{
@@ -286,15 +286,9 @@ export default defineComponent({
 
 		function onSave()
 		{
-			if (!stores.settingsStore.requireMasterKeyOnFilterGrouopSave)
-			{
-				doSave();
-				return Promise.resolve(true);
-			}
-
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(doSave, onAuthCanceld);
+				requestAuthFunc(groupColor.value, doSave, onAuthCanceld);
 				return new Promise((resolve, reject) =>
 				{
 					saveSucceeded = resolve;
@@ -305,18 +299,18 @@ export default defineComponent({
 			return Promise.reject(false);
 		}
 
-		function doSave()
+		function doSave(key: string)
 		{
 			if (props.creating)
 			{
-				stores.groupStore.addGroup(groupState.value);
+				stores.groupStore.addGroup(key, groupState.value);
 				groupState.value = defaultGroup(groupState.value.type);
 				setTableRows();
 				refreshKey.value = Date.now().toString();
 			}
 			else
 			{
-				stores.groupStore.updateGroup(groupState.value);
+				stores.groupStore.updateGroup(key, groupState.value);
 			}
 
 			if (saveSucceeded)

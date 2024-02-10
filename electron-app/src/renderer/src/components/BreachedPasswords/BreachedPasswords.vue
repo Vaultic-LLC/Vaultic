@@ -160,7 +160,7 @@ export default defineComponent({
 	position: absolute;
 	padding-top: 10px;
 	top: 4%;
-	left: 54%;
+	left: 31%;
 	width: 25%;
 	height: 24.5%;
 	display: flex;

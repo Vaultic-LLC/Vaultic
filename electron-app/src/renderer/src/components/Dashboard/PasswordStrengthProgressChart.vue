@@ -7,14 +7,19 @@
 			<h2 class="strengthGraphContainer__title">Security Over Time</h2>
 		</div>
 		<div ref="chartContainer" class="strengthGraphContainer__chart">
-			<Line :key="key" ref="lineChart" :data="data" :options="options" :style="{ width: width, height: height }">
+			<Transition name="fade" mode="out-in">
+				<div :key="key" v-if="showNoData" class="strengthGraphContainer__noData">
+					{{ noDataMessage }}
+				</div>
+			</Transition>
+			<Line ref="lineChart" :data="data" :options="options" :style="{ width: width, height: height }">
 			</Line>
 		</div>
 	</div>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, watch, toRaw } from 'vue';
+import { Ref, defineComponent, onMounted, ref, watch, toRaw, ComputedRef, computed } from 'vue';
 
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
@@ -55,6 +60,9 @@ export default defineComponent({
 		const resizeObserver: ResizeObserver = new ResizeObserver(() => resizeChart());
 
 		let options: Ref<any> = ref({});
+
+		const showNoData: ComputedRef<boolean> = computed(() => chartOneArray.length == 0);
+		const noDataMessage: ComputedRef<string> = computed(() => `No data. Add a ${stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password" : "Value"} to get started.`);
 
 		const data: Ref<any> = ref({
 			labels: toRaw(lableArray.value),
@@ -310,6 +318,11 @@ export default defineComponent({
 			// updateColors(newValue, oldValue);
 		});
 
+		watch(() => noDataMessage.value, () =>
+		{
+			key.value = Date.now().toString();
+		});
+
 		onMounted(() =>
 		{
 			if (chartContainer.value)
@@ -329,6 +342,8 @@ export default defineComponent({
 			color,
 			height,
 			width,
+			showNoData,
+			noDataMessage,
 			updateData,
 			reset
 		}
@@ -384,5 +399,16 @@ export default defineComponent({
 	width: 100%;
 	display: flex;
 	justify-content: center;
+}
+
+.strengthGraphContainer__noData {
+	position: absolute;
+	color: gray;
+	text-align: center;
+	font-size: 24px;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 60%;
 }
 </style>

@@ -26,7 +26,7 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import { FilterCondition } from '../../Types/Table';
 import { v4 as uuidv4 } from 'uuid';
 import { HeaderTabModel } from '@renderer/Types/Models';
-import idGenerator from '@renderer/Utilities/IdGenerator';
+import generator from '@renderer/Utilities/Generator';
 import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
 
 export default defineComponent({
@@ -60,7 +60,7 @@ export default defineComponent({
 		function onAdd()
 		{
 			filterConditions.value.push({
-				id: idGenerator.uniqueId(filterConditions.value),
+				id: generator.uniqueId(filterConditions.value),
 				property: '',
 				value: ''
 			});

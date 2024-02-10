@@ -60,7 +60,7 @@ export default defineComponent({
 		CheckboxInputField
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
-	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey"],
+	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color"],
 	setup(props, ctx)
 	{
 		const encryptedInputField: Ref<null> = ref(null);
@@ -68,7 +68,7 @@ export default defineComponent({
 		const key: Ref<string> = ref("");
 		const reEnterKey: Ref<string> = ref("");
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
-		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const authTitle: ComputedRef<string> = computed(() => props.title ? props.title : "Please enter your Key");
 		const unlocked: Ref<boolean> = ref(false);
 		const unlockFailed: Ref<boolean> = ref(false);
@@ -115,7 +115,7 @@ export default defineComponent({
 
 			// show loading indicator
 
-			const isValid: boolean = await stores.encryptedDataStore.checkKey(key.value);
+			const isValid: boolean = stores.checkKey(key.value);
 
 			// hide loading indicator
 

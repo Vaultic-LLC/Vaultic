@@ -1,6 +1,6 @@
 <template>
 	<TableRow class="hover" :class="{ shadow: shadow, isOpen: showCollapseRow || stayOpen }" @click="toggleCollapseContent"
-		:model="model" :rowNumber="rowNumber" :color="color" :allowPin="true" :allowEdit="true" :allowDelete="true"
+		:model="model" :rowNumber="rowNumber" :color="primaryColor" :allowPin="true" :allowEdit="true" :allowDelete="true"
 		:hideAtRisk="false" :clickable="true" :style="{ 'height': '100px' }">
 		<td class="groupCell">
 			<GroupIcon v-for="(model) in groupIconModels" :key="model.toolTipText" :model="model" />
@@ -39,7 +39,7 @@ export default defineComponent({
 		let resolveFunc: (key: string) => void;
 		let rejectFunc: () => void;
 
-		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+		const primaryColor: ComputedRef<string> = computed(() => props.color);
 
 		let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
 		{
@@ -91,7 +91,7 @@ export default defineComponent({
 			return tempGroupModels;
 		});
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 
 		function toggleCollapseContent()
 		{
@@ -105,7 +105,7 @@ export default defineComponent({
 			// reqAuth.value = true;
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onAuthenticationSuccessful, onAuthenticationCanceld);
+				requestAuthFunc(primaryColor.value, onAuthenticationSuccessful, onAuthenticationCanceld);
 				authPromise.value = new Promise((resolve, reject) =>
 				{
 					resolveFunc = resolve;
@@ -134,6 +134,7 @@ export default defineComponent({
 			stayOpen,
 			groupIconModels,
 			authPromise,
+			primaryColor,
 			toggleCollapseContent,
 			onAuthenticationSuccessful
 		};

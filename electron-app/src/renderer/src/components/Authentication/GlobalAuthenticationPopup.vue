@@ -2,7 +2,7 @@
 	<div class="globalAuthContainer">
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup @onAuthenticationSuccessful="authenticationSuccessful" :rubberbandOnUnlock="true"
-			:showPulsing="true" />
+			:showPulsing="true" :color="primaryColor" />
 	</div>
 </template>
 
@@ -23,14 +23,16 @@ export default defineComponent({
 
 		const unlocked: Ref<boolean> = ref(false);
 
-		function authenticationSuccessful()
+		function authenticationSuccessful(key: string)
 		{
+			stores.loadStoreData(key);
+
 			unlocked.value = true;
 			setTimeout(() =>
 			{
 				stores.appStore.authenticated = true;
 				setTimeout(() => stores.appStore.reloadMainUI = true, 100);
-				stores.appStore.recordLogin(Date.now());
+				stores.appStore.recordLogin(key, Date.now());
 			}, 1000);
 		}
 

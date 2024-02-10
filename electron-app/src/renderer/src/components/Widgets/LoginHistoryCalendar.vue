@@ -3,18 +3,16 @@
 		<h2 class="calendarWidgetContainer__title">
 			Recent Logins
 		</h2>
-		<div :key="refreshKey">
-			<Calendar transparent expanded borderless :isDark="true" :color="'gray'" :attributes="attributes" />
-		</div>
+		<Calendar transparent expanded borderless :isDark="true" :color="'gray'" :attributes="attributes" />
 	</div>
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { ComputedRef, computed, defineComponent } from 'vue';
 
-import { Calendar } from 'v-calendar';
+import { Calendar } from 'v-calendar-tw';
 
-import 'v-calendar/style.css';
+import 'v-calendar-tw/style.css';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
@@ -26,8 +24,6 @@ export default defineComponent({
 	setup()
 	{
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
-		const refreshKey: Ref<string> = ref('');
-		const visibility: Ref<string> = ref('click');
 
 		const attributes = computed(() => stores.appStore.loginHistory.map(l =>
 		{
@@ -37,29 +33,14 @@ export default defineComponent({
 				dot: true,
 				popover: {
 					label: new Date(l.datetime).toLocaleTimeString(),
-					visibility: visibility.value
+					visibility: "hover"
 				},
 			}
 		}));
 
-		watch(() => attributes.value, () =>
-		{
-			refreshKey.value = Date.now.toString();
-		});
-
-		onMounted(() =>
-		{
-			setTimeout(() =>
-			{
-				visibility.value = "hover"
-				refreshKey.value = Date.now.toString();
-			}, 5000);
-		});
-
 		return {
 			attributes,
-			color,
-			refreshKey
+			color
 		}
 	}
 })

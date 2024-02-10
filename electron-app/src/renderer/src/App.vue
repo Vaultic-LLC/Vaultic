@@ -6,7 +6,7 @@
 	</Teleport>
 	<Transition name="fade">
 		<RequestedAuthenticationPopup v-if="requestAuth" :authenticationSuccessful="onAuthSuccess"
-			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" />
+			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" :color="requestAuthColor" />
 	</Transition>
 	<Transition name="appFade">
 		<div v-if="coverMainUI" class="mainUICover"></div>
@@ -27,7 +27,7 @@
 		<div class="tempWidget" :style="{ right: '2%', top: '45%' }">
 			<FilterGroupGauges />
 		</div>
-		<div class="tempWidget" :style="{ top: '4%', left: '31%', width: '21%', height: '25%' }">
+		<div class="tempWidget" :style="{ top: '4%', left: '58%', width: '21%', height: '25%' }">
 			<PasswordStrengthProgressChart />
 		</div>
 		<div class="tempWidget" :style="{ top: '72%', right: '2%', width: '17%' }">
@@ -112,6 +112,7 @@ export default defineComponent({
 		const toastText: Ref<string> = ref('');
 		const toastSuccess: Ref<boolean> = ref(false);
 
+		const requestAuthColor: Ref<string> = ref('');
 		const needsToSetupKey: Ref<boolean> = ref(false);
 		const requestAuth: Ref<boolean> = ref(false);
 		const onAuthSuccess: Ref<{ (key: string): void }> = ref((_: string) => { });
@@ -183,11 +184,11 @@ export default defineComponent({
 			setTimeout(() => showToast.value = false, 2000);
 		}
 
-		function requestAuthentication(onSuccess: (key: string) => void, onCancel: () => void)
+		function requestAuthentication(color: string, onSuccess: (key: string) => void, onCancel: () => void)
 		{
-			// TODO: Check if we need to create a key and show a different popup / popup with differnt
-			// wording
-			if (!stores.encryptedDataStore.canAuthenticateKey)
+			requestAuthColor.value = color;
+
+			if (!stores.canAuthenticateKey())
 			{
 				needsToSetupKey.value = true;
 			}
@@ -255,6 +256,7 @@ export default defineComponent({
 			showToast,
 			toastText,
 			toastSuccess,
+			requestAuthColor,
 			requestAuth,
 			onAuthSuccess,
 			onAuthCancel,

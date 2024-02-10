@@ -1,13 +1,18 @@
-import idGenerator from "../../Utilities/IdGenerator";
+import generator from "../../Utilities/Generator";
 import { Filter, DataType, FilterCondition, FilterConditionType, Group } from "../../Types/Table";
 import { ComputedRef, computed, reactive } from "vue";
-import { stores } from ".";
+import { AuthenticationStore, stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
 import { AtRiskType, IFilterable, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
+import File from "../Files/File"
+import cryptUtility from "@renderer/Utilities/CryptUtility";
+import hashUtility from "@renderer/Utilities/HashUtility";
 
 interface FilterState
 {
-	filters: Filter[]
+	loadedFile: boolean;
+	filterHash: string;
+	filters: Filter[];
 	activeAtRiskPasswordFilterType: AtRiskType;
 	activeAtRiskValueFilterType: AtRiskType;
 	emptyPasswordFilters: string[];
@@ -16,7 +21,7 @@ interface FilterState
 	duplicateValueFilters: Dictionary<string[]>;
 }
 
-export interface FilterStore
+export interface FilterStore extends AuthenticationStore
 {
 	passwordFilters: Filter[];
 	activePasswordFilters: Filter[];
@@ -30,30 +35,116 @@ export interface FilterStore
 	duplicatePasswordFiltersLength: number;
 	duplicateValueFilters: Dictionary<string[]>;
 	duplicateValueFiltersLength: number;
-	addFilter(filter: Filter): void;
+	checkKey: (key: string) => boolean;
+	addFilter(key: string, filter: Filter): void;
 	toggleFilter(id: string): boolean | undefined;
-	updateFilter(updatedFilter: Filter): void;
+	updateFilter(key: string, updatedFilter: Filter): void;
+	deleteFilter: (key: string, filter: Filter) => void;
 	addFiltersToNewValue: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(filters: Filter[], value: T, valuesProperty: string) => void;
 	syncFiltersForValues: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(filters: Filter[], arr: T[], valuesProperty: string) => void;
 	recalcGroupFilters: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(filters: Filter[], arr: T[], valuesProperty: string) => void;
 	removeValueFromFilers: <T extends { [index: string]: string | number } & IFilterable & IIdentifiable>(dataType: DataType, value: T) => void;
-	deleteFilter: (filter: Filter) => void;
 	toggleAtRiskType: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
-const filterState: FilterState = reactive(
-	{
-		filters: [],
-		activeAtRiskPasswordFilterType: AtRiskType.None,
-		activeAtRiskValueFilterType: AtRiskType.None,
-		emptyPasswordFilters: [],
-		emptyValueFilters: [],
-		duplicatePasswordFilters: {},
-		duplicateValueFilters: {}
-	});
+const filterFile: File = new File("filters");
+let filterState: FilterState;
 
 export default function useFilterStore(): FilterStore
 {
+	filterState = reactive(defaultState());
+
+	// --- Generic Store methods ---
+	function defaultState(): FilterState
+	{
+		return {
+			loadedFile: false,
+			filterHash: '',
+			filters: [],
+			activeAtRiskPasswordFilterType: AtRiskType.None,
+			activeAtRiskValueFilterType: AtRiskType.None,
+			emptyPasswordFilters: [],
+			emptyValueFilters: [],
+			duplicatePasswordFilters: {},
+			duplicateValueFilters: {}
+		};
+	}
+
+	function readState(key: string): boolean
+	{
+		if (filterState.loadedFile)
+		{
+			return true;
+		}
+
+		const [succeeded, state] = filterFile.read<FilterState>(key);
+		if (succeeded)
+		{
+			state.loadedFile = true;
+			Object.assign(filterState, state);
+		}
+
+		return succeeded;
+	}
+
+	function writeState(key: string)
+	{
+		if (filterState.filters.length == 0)
+		{
+			filterFile.empty();
+			return;
+		}
+
+		filterFile.write<FilterState>(key, filterState);
+	}
+
+	function resetToDefault()
+	{
+		Object.assign(filterState, defaultState());
+	}
+
+	function canAuthenticateKey()
+	{
+		return filterFile.exists();
+	}
+
+	function checkKey(key: string): boolean
+	{
+		if (!readState(key))
+		{
+			return false;
+		}
+
+		let runningKeys: string = "";
+		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
+
+		return hashUtility.hash(runningKeys) === filterState.filterHash;
+	}
+
+	function getHash(key: string)
+	{
+		let runningKeys: string = "";
+		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
+
+		return hashUtility.hash(runningKeys)
+	}
+
+	function updateHash(key: string, filter: Filter | undefined = undefined)
+	{
+		let runningKeys: string = "";
+		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
+
+		if (filterState.filterHash === "" || filterState.filterHash === hashUtility.hash(runningKeys))
+		{
+			if (filter && filter.key)
+			{
+				runningKeys += filter.key;
+			}
+
+			filterState.filterHash = hashUtility.hash(runningKeys);
+		}
+	}
+
 	// --- Private ---
 	// TODO: Test w/ multiple conditions
 	function filterAppliesToValue<T extends { [index: string]: string | number } & IFilterable & IGroupable>(conditions: FilterCondition[], value: T): boolean
@@ -261,14 +352,17 @@ export default function useFilterStore(): FilterStore
 			// TODO Write State to file
 			return filterState.filters[filterIndex].isActive;
 		}
+
+		return undefined;
 	}
 
-	function addFilter(filter: Filter)
+	function addFilter(key: string, filter: Filter)
 	{
-		filter.id = idGenerator.uniqueId(filterState.filters);
+		filter.id = generator.uniqueId(filterState.filters);
+		filter.key = generator.randomValue(30);
+
 		filterState.filters.push(filter);
 
-		// add filter to current password / values
 		if (filter.type == DataType.Passwords)
 		{
 			syncFiltersForValues([filter], stores.encryptedDataStore.passwords, "passwords");
@@ -292,10 +386,15 @@ export default function useFilterStore(): FilterStore
 				filterState.duplicateValueFilters[filter.id] = duplicateFilters;
 			}
 		}
+
+		updateHash(key, filter);
+		filter.key = cryptUtility.encrypt(key, filter.key);
+
+		writeState(key);
 	}
 
 	// TODO: test
-	function updateFilter(updatedFilter: Filter)
+	function updateFilter(key: string, updatedFilter: Filter)
 	{
 		Object.assign(filterState.filters.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
 		switch (updatedFilter.type)
@@ -311,6 +410,36 @@ export default function useFilterStore(): FilterStore
 				checkAddRemoveDuplicateFilters(updatedFilter, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
 				break;
 		}
+
+		writeState(key);
+	}
+
+	function deleteFilter(key: string, filter: Filter)
+	{
+		filterState.filters.splice(filterState.filters.indexOf(filter), 1);
+		stores.encryptedDataStore.removeFilterFromValues(filter);
+
+		if (filter.type == DataType.Passwords)
+		{
+			if (filterState.emptyPasswordFilters.includes(filter.id))
+			{
+				filterState.emptyPasswordFilters.splice(filterState.emptyPasswordFilters.indexOf(filter.id), 1);
+			}
+
+			removeDuplicateFilter(filter, filterState.duplicatePasswordFilters);
+		}
+		else if (filter.type == DataType.NameValuePairs)
+		{
+			if (filterState.emptyValueFilters.includes(filter.id))
+			{
+				filterState.emptyValueFilters.splice(filterState.emptyValueFilters.indexOf(filter.id), 1);
+			}
+
+			removeDuplicateFilter(filter, filterState.duplicateValueFilters);
+		}
+
+		filterState.filterHash = getHash(key);
+		writeState(key);
 	}
 
 	// used when adding password / value
@@ -475,31 +604,6 @@ export default function useFilterStore(): FilterStore
 		}
 	}
 
-	function deleteFilter(filter: Filter)
-	{
-		filterState.filters.splice(filterState.filters.indexOf(filter), 1);
-		stores.encryptedDataStore.removeFilterFromValues(filter);
-
-		if (filter.type == DataType.Passwords)
-		{
-			if (filterState.emptyPasswordFilters.includes(filter.id))
-			{
-				filterState.emptyPasswordFilters.splice(filterState.emptyPasswordFilters.indexOf(filter.id), 1);
-			}
-
-			removeDuplicateFilter(filter, filterState.duplicatePasswordFilters);
-		}
-		else if (filter.type == DataType.NameValuePairs)
-		{
-			if (filterState.emptyValueFilters.includes(filter.id))
-			{
-				filterState.emptyValueFilters.splice(filterState.emptyValueFilters.indexOf(filter.id), 1);
-			}
-
-			removeDuplicateFilter(filter, filterState.duplicateValueFilters);
-		}
-	}
-
 	function toggleAtRiskType(dataType: DataType, atRiskType: AtRiskType)
 	{
 		if (dataType == DataType.Passwords)
@@ -537,6 +641,10 @@ export default function useFilterStore(): FilterStore
 		get duplicatePasswordFiltersLength() { return duplicatePasswordFiltersLength.value; },
 		get duplicateValueFilters() { return filterState.duplicateValueFilters; },
 		get duplicateValueFiltersLength() { return duplicateValueFiltersLength.value; },
+		canAuthenticateKey,
+		checkKey,
+		readState,
+		resetToDefault,
 		addFilter,
 		toggleFilter,
 		updateFilter,

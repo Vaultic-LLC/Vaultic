@@ -36,7 +36,7 @@
 		"three-globe": "^2.30.0",
 		"tippy.js": "^6.3.7",
 		"uuid": "^9.0.1",
-		"v-calendar": "github:TylerWanta/v-calendar",
+		"v-calendar-tw": "3.2.0",
 		"vite-plugin-commonjs-externals": "^0.1.4",
 		"vite-plugin-node-polyfills": "^0.19.0",
 		"vue-chartjs": "^5.2.0"
