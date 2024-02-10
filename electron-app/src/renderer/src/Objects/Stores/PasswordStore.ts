@@ -4,48 +4,18 @@ import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
 import { isWeak } from "../../Helpers/EncryptedDataHelper";
 
-interface PasswordState extends Password
+export interface PasswordStore extends Password
 {
-	[key: string]: any;
-	isWeak: boolean;
-	isWeakMessage: string;
-	containsLogin: boolean;
-	passwordLength: number;
-}
-
-export interface PasswordStore
-{
-	[key: string]: any;
-	id: string;
-	login: string;
-	password: string;
-	passwordFor: string;
-	securityQuestions: SecurityQuestion[];
-	additionalInformation: string;
-	lastModifiedTime: number;
-	filters: string[];
-	groups: string[];
 	isOld: boolean;
-	isWeak: boolean;
-	isWeakMessage: string;
-	containsLogin: boolean;
-	passwordLength: number;
-	isDuplicate: boolean;
 	isSafe: boolean;
-	isPinned: boolean;
 	updatePassword: (key: string, newPassword: Password, passwordWasUpdated: boolean,
 		updatedSecurityQuestionQuestions: string[], updatedSecurityQuestionAnswers: string[]) => void;
 }
 
-export default function usePasswordStore(key: string, password: Password): PasswordStore
+export default function usePasswordStore(key: string, password: Password, encrypted: boolean = false): PasswordStore
 {
-	const passwordState: PasswordState = reactive({
-		...password,
-		isWeak: false,
-		isWeakMessage: "",
-		containsLogin: false,
-		isDuplicate: false,
-		passwordLength: password.password.length,
+	const passwordState: Password = reactive({
+		...password
 	});
 
 	const isOld: ComputedRef<boolean> = computed(() =>
@@ -53,7 +23,7 @@ export default function usePasswordStore(key: string, password: Password): Passw
 		const today = Date.now();
 		const differenceInDays = (today - passwordState.lastModifiedTime) / 1000 / 86400;
 
-		return differenceInDays >= 30;
+		return differenceInDays >= stores.settingsStore.oldPasswordDays;
 	});
 
 	const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !passwordState.isWeak && !passwordState.containsLogin && !passwordState.isDuplicate);
@@ -129,18 +99,25 @@ export default function usePasswordStore(key: string, password: Password): Passw
 		}
 	}
 
-	// these can't be computed refs since we want to keep the password encrypted. Calculate them when we're creating the
-	// store or when we're updating
-	checkIsWeak();
-	checkContainsUsername();
-	encryptPassword(key);
-	encryptSecurityQuestions(key);
+	// reading in previous state, values are already encrypted and shouldn't need any updating
+	if (!encrypted)
+	{
+		// these can't be computed refs since we want to keep the password encrypted. Calculate them when we're creating the
+		// store or when we're updating
+		passwordState.passwordLength = password.password.length;
+		checkIsWeak();
+		checkContainsUsername();
+		encryptPassword(key);
+		encryptSecurityQuestions(key);
+	}
 
 	stores.filterStore.addFiltersToNewValue(stores.filterStore.passwordFilters, passwordState, "passwords");
 
 	return {
 		get id() { return passwordState.id; },
 		get login() { return passwordState.login; },
+		get domain() { return passwordState.domain; },
+		get email() { return passwordState.email; },
 		get password() { return passwordState.password; },
 		get passwordFor() { return passwordState.passwordFor; },
 		get securityQuestions() { return passwordState.securityQuestions; },

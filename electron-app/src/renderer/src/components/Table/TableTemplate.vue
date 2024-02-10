@@ -1,29 +1,61 @@
 <template>
-	<div class="tableContainer" ref="tableContainer" :class="{ small: scrollbarSize == 0, medium: scrollbarSize == 1 }"
-		@scroll="checkScrollHeight">
-		<table class="tableContent">
+	<div class="tableTemplate">
+		<div class="tableTemplate__header">
 			<slot name="header"></slot>
-			<slot name="body">
-			</slot>
-		</table>
+		</div>
+		<div class="tableContainer scrollbar" ref="tableContainer"
+			:class="{ small: scrollbarSize == 0, medium: scrollbarSize == 1, border: applyBorder }"
+			@scroll="checkScrollHeight">
+			<table class="tableContent">
+				<!-- Just used to force table row cell widths -->
+				<tr v-if="headers.length > 0">
+					<th v-for="(header, index) in headers" :key="index" :style="{ width: header.width, height: 0 }"></th>
+				</tr>
+				<slot name="body">
+				</slot>
+			</table>
+			<Transition name="fade" mode="out-in">
+				<div v-if="showEmptyMessage == true" class="tableContainer__emptyMessageContainer">
+					<Transition name="fade" mode="out-in">
+						<div :key="key" class="tableContainer__emptyMessage">
+							{{ emptyMessage }}
+						</div>
+					</Transition>
+				</div>
+			</Transition>
+		</div>
 	</div>
 </template>
 
 <script lang="ts">
+import { computed, ComputedRef, defineComponent, onUpdated, Ref, ref, watch } from 'vue';
+
+import { SortableHeaderModel } from '@renderer/Types/Models';
 import { stores } from '../../Objects/Stores';
-import { computed, ComputedRef, defineComponent, onMounted, onUpdated, Ref, ref, watch } from 'vue';
+import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
+import { RGBColor } from '@renderer/Types/Colors';
+import { hexToRgb } from '@renderer/Helpers/ColorHelper';
+import { tween } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
 	name: "TableTemplate",
 	emits: ['scrolledToBottom'],
-	props: ['color', 'scrollbarSize', 'rowGap'],
+	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor'],
 	setup(props, ctx)
 	{
+		const key: Ref<string> = ref('');
 		const tableContainer: Ref<HTMLElement | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const rowGapValue: ComputedRef<string> = computed(() => `${props.rowGap}px`);
+		const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels ?? []);
+		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
+		const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
 
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);
+		let thumbColor: Ref<string> = ref(primaryColor.value);
+
+		let lastColor: Ref<string> = ref(primaryColor.value);
+		let lastScrollHeight: number = Number.MAX_VALUE;
 		function calcScrollbarColor()
 		{
 			if (!primaryColor?.value)
@@ -33,15 +65,48 @@ export default defineComponent({
 
 			if (tableContainer.value?.scrollHeight && tableContainer.value.clientHeight)
 			{
+				const from: RGBColor | null = hexToRgb(lastColor.value);
+				const to: RGBColor | null = hexToRgb(primaryColor.value);
+
 				if (tableContainer.value?.scrollHeight <= tableContainer.value?.clientHeight)
 				{
-					scrollbarColor.value = primaryColor.value;
+					scrollbarColor.value = lastColor.value;
+					tween<RGBColor>(from!, to!, 500, (object) =>
+					{
+						scrollbarColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
+					});
 				}
 				else
 				{
-					scrollbarColor.value = '#0f111d';
+					if (primaryColor.value != lastColor.value || tableContainer.value?.scrollHeight < lastScrollHeight ||
+						tableContainer.value?.scrollHeight > lastScrollHeight)
+					{
+						thumbColor.value = lastColor.value;
+						tween<RGBColor>(from!, to!, 500, (object) =>
+						{
+							thumbColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
+						});
+
+						// only transition the scrollbar if there was no thumb aka if it took up the full track, otherwise it'll
+						// flash the from color
+						if (primaryColor.value != lastColor.value && tableContainer.value?.clientHeight == lastScrollHeight)
+						{
+							tween<RGBColor>(from!, hexToRgb('#0f111d')!, 500, (object) =>
+							{
+								scrollbarColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
+							});
+						}
+						else
+						{
+							scrollbarColor.value = '#0f111d';
+						}
+					}
 				}
+
+				lastScrollHeight = tableContainer.value?.scrollHeight;
 			}
+
+			lastColor.value = primaryColor.value;
 		}
 
 		let lastCallTime: number = 0;
@@ -70,11 +135,6 @@ export default defineComponent({
 			}
 		}
 
-		watch(() => primaryColor.value, () =>
-		{
-			calcScrollbarColor();
-		});
-
 		// we want to resize after authenticating since we are going from hidden to visible
 		watch(() => stores.appStore.reloadMainUI, (newValue) =>
 		{
@@ -84,10 +144,10 @@ export default defineComponent({
 			}
 		});
 
-		onMounted(() =>
+		watch(() => props.emptyMessage, () =>
 		{
-			calcScrollbarColor();
-		})
+			key.value = Date.now().toString();
+		});
 
 		onUpdated(() =>
 		{
@@ -95,10 +155,15 @@ export default defineComponent({
 		});
 
 		return {
+			key,
 			tableContainer,
 			primaryColor,
 			scrollbarColor,
+			thumbColor,
 			rowGapValue,
+			headers,
+			applyBorder,
+			backgroundColor,
 			checkScrollHeight,
 			scrollToTop
 		}
@@ -107,35 +172,47 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.tableContainer {
+.tableTemplate {
 	position: absolute;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	border-top-right-radius: 20px;
+	border-top-left-radius: 20px;
+}
+
+.tableTemplate__header {
+	width: calc(100% - 10px);
+	border-top-right-radius: 20px;
+	border-top-left-radius: 20px;
+}
+
+.tableContainer {
 	overflow-x: hidden;
-	border-radius: 20px;
 	margin-left: auto;
 	margin-right: 1.1%;
-
 	direction: rtl;
-
 	overflow-y: scroll;
-	/* background: linear-gradient(145deg, #121a20, #0f161b); */
+	width: 100%;
+	height: 100%;
+	background-color: v-bind(backgroundColor);
+	border-bottom-left-radius: 20px;
+	border-bottom-right-radius: 20px;
 }
 
 .tableContainer.small {
-	border-radius: 10px;
+	border-bottom-left-radius: 10px;
+	border-bottom-right-radius: 10px;
 }
 
 .tableContainer.medium {
-	border-radius: 20px;
-}
-
-.tableContainer.shadow {
-	background-color: #121a20;
-	box-shadow: 5px 5px 10px #070a0c,
-		-5px -5px 10px #1b2630;
+	border-bottom-left-radius: 20px;
+	border-bottom-right-radius: 20px;
 }
 
 .tableContainer.border {
-	border: 3px solid v-bind(primaryColor);
+	border-bottom: 3px solid v-bind(color);
+	border-right: 3px solid v-bind(color);
 }
 
 .tableContent {
@@ -163,7 +240,7 @@ export default defineComponent({
 }
 
 .tableContainer.scrollbar::-webkit-scrollbar-track {
-	transition: 0.6s;
+	transition: 0.3s;
 	background: v-bind(scrollbarColor);
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
 	border-top-left-radius: 20px;
@@ -171,10 +248,24 @@ export default defineComponent({
 }
 
 .tableContainer.scrollbar::-webkit-scrollbar-thumb {
-	transition: 0.6s;
-	background: v-bind(primaryColor);
+	transition: 0.3s;
+	background: v-bind(thumbColor);
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;
+}
+
+.tableContainer__emptyMessageContainer {
+	position: absolute;
+	width: 80%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.tableContainer__emptyMessage {
+	color: grey;
+	font-size: 24px;
+	text-align: center;
 }
 </style>

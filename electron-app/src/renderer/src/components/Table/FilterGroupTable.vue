@@ -1,19 +1,22 @@
 <template>
 	<div id="filterGroupTableContainer">
-		<AddTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd"
-			:style="{ position: 'absolute', top: '35%', left: '23%' }" />
-		<SearchBar v-model="currentSearchText" :color="color" :width="'100px'"
-			:style="{ position: 'absolute', top: '35%', left: '17%' }" />
-		<TableTemplate ref="tableRef" :rowGap="10" class="shadow scrollbar" id="filterTable" :color="color"
-			:scrollbar-size="1" :style="{ height: '25%', width: '20%', left: '5%', top: '42%' }"
+		<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
+			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
+			:showEmptyMessage="tableRowDatas.visualValues.length == 0"
+			:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
-				<TableHeaderRow :model="headerModels" :backgroundColor="'#121a20'" />
+				<TableHeaderRow :model="headerModels" :tabs="headerTabs">
+					<template #controls>
+						<SearchBar v-model="currentSearchText" :color="color" :width="'250px'" />
+						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
+					</template>
+				</TableHeaderRow>
 			</template>
 			<template #body>
 				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues" :key="trd.id"
 					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': '70px' }" :color="color" :allowPin="true" :allowEdit="true"
+					:style="{ width: '5%', 'height': '100px' }" :color="color" :allowPin="true" :allowEdit="true"
 					:allowDelete="true" />
 			</template>
 		</TableTemplate>
@@ -44,16 +47,17 @@ import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import EditGroupPopup from '../ObjectPopups/EditPopups/EditGroupPopup.vue';
 import EditFilterPopup from '../ObjectPopups/EditPopups/EditFilterPopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
+import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 
 import { DataType, Filter, Group } from '../../Types/Table';
-import AddTableItemButton from './Controls/AddTableItemButton.vue';
-import { SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
+import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '../../Types/EncryptedData';
-import { createPinnableSelectableTableRowModels, createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
+import { v4 as uuidv4 } from 'uuid';
 
 export default defineComponent({
 	name: 'FilterGroupTable',
@@ -62,7 +66,7 @@ export default defineComponent({
 		TableTemplate,
 		SelectableTableRow,
 		TableHeaderRow,
-		AddTableItemButton,
+		AddDataTableItemButton,
 		ObjectPopup,
 		EditGroupPopup,
 		EditFilterPopup,
@@ -108,22 +112,59 @@ export default defineComponent({
 		const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
 			filterSearchText : groupSearchText);
 
-		let deleteFilter: Ref<(key: string) => void> = ref((key: string) => { });
-		let deleteGroup: Ref<(key: string) => void> = ref((key: string) => { });
+		let deleteFilter: Ref<(key: string) => void> = ref((_: string) => { });
+		let deleteGroup: Ref<(key: string) => void> = ref((_: string) => { });
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+
+		const emptyTableMessage: ComputedRef<string> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
+			getEmptyTableMessage(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password Filters" : "Value Filters") :
+			getEmptyTableMessage(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password Groups" : "Value Groups")
+		);
+
+		const color: ComputedRef<string> = computed(() =>
+		{
+			switch (stores.appStore.activeFilterGroupsTable)
+			{
+				case DataType.Groups:
+					return stores.settingsStore.currentColorPalette.groupsColor;
+				case DataType.Filters:
+				default:
+					return stores.settingsStore.currentColorPalette.filtersColor;
+			}
+		});
+
+		const headerTabs: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Filters',
+				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters),
+				color: computed(() => stores.settingsStore.currentColorPalette.filtersColor),
+				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Filters; }
+			},
+			{
+				id: uuidv4(),
+				name: 'Groups',
+				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Groups),
+				color: computed(() => stores.settingsStore.currentColorPalette.groupsColor),
+				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Groups; }
+			}
+		];
 
 		const filterHeaderDisplayField: HeaderDisplayField[] = [
 			{
 				displayName: "Active",
 				backingProperty: "isActive",
-				width: '50px',
+				width: '112px',
+				padding: '12px',
+				clickable: true
 			},
 			{
 				displayName: "Name",
 				backingProperty: "text",
-				width: '100px'
+				width: '100px',
+				clickable: true
 			}
 		];
 
@@ -131,25 +172,33 @@ export default defineComponent({
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '100px'
+				width: '112px',
+				padding: '12px',
+				clickable: true
+			},
+			{
+				displayName: "Color",
+				backingProperty: "color",
+				width: "100px",
+				clickable: true
 			}
 		];
 
 		const activePasswordFilterHeader: Ref<number> = ref(1);
-		const passwordFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(true, activePasswordFilterHeader, filterHeaderDisplayField, currentFilters.value,
+		const passwordFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(activePasswordFilterHeader, filterHeaderDisplayField, currentFilters.value,
 			currentPinnedFilter.value, setTableRowDatas);
 		passwordFilterHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
 		const activeValueFilterHeader: Ref<number> = ref(1);
-		const valueFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(true, activeValueFilterHeader, filterHeaderDisplayField, currentFilters.value,
+		const valueFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(activeValueFilterHeader, filterHeaderDisplayField, currentFilters.value,
 			currentPinnedFilter.value, setTableRowDatas);
 		valueFilterHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
-		const passwordGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(true, ref(0), groupHeaderDisplayField,
+		const passwordGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(ref(0), groupHeaderDisplayField,
 			currentGroups.value, currentPinnedGroups.value, setTableRowDatas);
 		passwordGroupHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
-		const valueGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(true, ref(0), groupHeaderDisplayField,
+		const valueGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(ref(0), groupHeaderDisplayField,
 			currentGroups.value, currentPinnedGroups.value, setTableRowDatas);
 		valueGroupHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
 
@@ -175,32 +224,25 @@ export default defineComponent({
 			}
 		});
 
-		const color: ComputedRef<string> = computed(() =>
-		{
-			switch (stores.appStore.activeFilterGroupsTable)
-			{
-				case DataType.Groups:
-					return stores.settingsStore.currentColorPalette.groupsColor;
-				case DataType.Filters:
-				default:
-					return stores.settingsStore.currentColorPalette.filtersColor;
-			}
-		})
-
 		function setTableRowDatas()
 		{
 			switch (stores.appStore.activeFilterGroupsTable)
 			{
 				case DataType.Groups:
 					createPinnableSelectableTableRowModels<Group>(DataType.Groups, stores.appStore.activePasswordValuesTable, tableRowDatas,
-						currentGroups.value, currentPinnedGroups.value, (g: Group) => { return [{ value: g.name, copiable: false, width: '100px', }] },
+						currentGroups.value, currentPinnedGroups.value, (g: Group) =>
+					{
+						return [{ component: 'TableRowTextValue', value: g.name, copiable: false, width: '100px', margin: true },
+						{ component: "TableRowColorValue", color: g.color, copiable: true, width: '100px', margin: false }]
+					},
 						false, "", false, undefined, onEditGroup,
 						onGroupDeleteInitiated);
 					break;
 				case DataType.Filters:
 				default:
 					createPinnableSelectableTableRowModels<Filter>(DataType.Filters, stores.appStore.activePasswordValuesTable,
-						tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) => { return [{ value: f.text, copiable: false, width: '100px' }] },
+						tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
+					{ return [{ component: 'TableRowTextValue', value: f.text, copiable: false, width: '100px' }] },
 						true, "isActive", true, (f: Filter) => stores.filterStore.toggleFilter(f.id), onEditFilter, onFilterDeleteInitiated);
 			}
 
@@ -247,18 +289,12 @@ export default defineComponent({
 		{
 			deleteFilter.value = (key: string) =>
 			{
-				stores.filterStore.deleteFilter(filter);
-			}
-
-			if (!stores.encryptedDataStore.canAuthenticateKey || !stores.settingsStore.requireMasterKeyOnFilterGroupDelete)
-			{
-				onFilterDeleteConfirmed("");
-				return;
+				stores.filterStore.deleteFilter(key, filter);
 			}
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onFilterDeleteConfirmed, () => { });
+				requestAuthFunc(color.value, onFilterDeleteConfirmed, () => { });
 			}
 		}
 
@@ -272,18 +308,12 @@ export default defineComponent({
 		{
 			deleteGroup.value = (key: string) =>
 			{
-				stores.groupStore.deleteGroup(group);
-			}
-
-			if (!stores.encryptedDataStore.canAuthenticateKey || !stores.settingsStore.requireMasterKeyOnFilterGroupDelete)
-			{
-				onGroupDeleteConfirmed("");
-				return;
+				stores.groupStore.deleteGroup(key, group);
 			}
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onGroupDeleteConfirmed, () => { });
+				requestAuthFunc(color.value, onGroupDeleteConfirmed, () => { });
 			}
 		}
 
@@ -387,6 +417,8 @@ export default defineComponent({
 			showEditFilterPopup,
 			currentlyEditingFilterModel,
 			currentSearchText,
+			headerTabs,
+			emptyTableMessage,
 			onEditGroupPopupClosed,
 			onEditFilterPopupClosed,
 			onFilterDeleteConfirmed,

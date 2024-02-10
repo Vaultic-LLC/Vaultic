@@ -1,19 +1,19 @@
 <template>
-	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="color" :allowDelete="!disabled" :hideAtRisk="true">
-		<td class="securityQuestionRowOne">
-			<EncryptedInputField :color="color" :label="'Question'" v-model="securityQuestion.question"
+	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="colorModel.color" :allowDelete="!disabled"
+		:hideAtRisk="true" :animateDelete="true">
+		<td class="securityQuestionCellOne">
+			<EncryptedInputField :colorModel="colorModel" :label="'Question'" v-model="securityQuestion.question"
 				:initialLength="securityQuestion.questionLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				@onDirty="$emit('onQuesitonDirty')" />
+				:isOnWidget="true" :required="true" :width="fieldWidth" @onDirty="$emit('onQuesitonDirty')" />
 		</td>
 		<td class="gap">
-
 		</td>
 		<td>
-			<EncryptedInputField :color="color" :label="'Answer'" v-model="securityQuestion.answer"
+			<EncryptedInputField :colorModel="colorModel" :label="'Answer'" v-model="securityQuestion.answer"
 				:initialLength="securityQuestion.answerLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
-				@onDirty="$emit('onAnswerDirty')" />
+				:isOnWidget="true" :required="true" :width="fieldWidth" @onDirty="$emit('onAnswerDirty')" />
 		</td>
 	</TableRow>
 </template>
@@ -35,7 +35,7 @@ export default defineComponent({
 		EncryptedInputField
 	},
 	emits: ["onQuesitonDirty", "onAnswerDirty", "onDelete"],
-	props: ["model", "color", "rowNumber", "disabled", "isInitiallyEncrypted"],
+	props: ["model", "colorModel", "rowNumber", "disabled", "isInitiallyEncrypted", 'fieldWidth'],
 	setup(props, ctx)
 	{
 		const securityQuestion: Ref<SecurityQuestion> = ref(props.model);
@@ -48,7 +48,8 @@ export default defineComponent({
 					ctx.emit("onDelete", securityQuestion.value.id);
 				}
 			}
-		)
+		);
+
 		return {
 			securityQuestion,
 			tableRowData
@@ -60,5 +61,10 @@ export default defineComponent({
 <style>
 .gap {
 	width: 10px;
+}
+
+/* this will put padding around the whole row */
+.securityQuestionCellOne {
+	padding: 10px
 }
 </style>

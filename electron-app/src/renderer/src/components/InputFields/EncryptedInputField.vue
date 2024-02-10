@@ -1,11 +1,10 @@
 <template>
-	<div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
+	<div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
 		<div class="textInuptContainer">
 			<input tabindex="0" ref="input" required="false" class="textInputFieldInput" :type="inputType" name="text"
 				autocomplete="off" :value="inputText" @input="onInput(($event.target as HTMLInputElement).value)"
 				:disabled="isDisabled" :maxlength="200" />
 			<label class="textInputFieldLable">{{ label }}</label>
-			<label class="validationMessage" :class="{ show: invalid }">{{ invalidMessage }}</label>
 			<div class="icons">
 				<div v-if="isLocked && showUnlock">
 					<ion-icon class="encryptedInputIcon" name="lock-open-outline" @click="unlock"></ion-icon>
@@ -28,32 +27,37 @@
 	</div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { DecryptFunctionsKey, RequestAuthorizationKey, ShowToastFunctionKey, ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import cryptUtility from '../../Utilities/CryptUtility';
 import { stores } from '../../Objects/Stores';
 import clipboard from 'clipboardy';
+import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
+import tippy from 'tippy.js';
+import { InputColorModel } from '@renderer/Types/Models';
+import generator from '@renderer/Utilities/Generator';
 
 export default defineComponent({
 	name: "EncryptedInputField",
 	emits: ["update:modelValue", "onDirty"],
-	props: ["modelValue", "label", "color", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
-		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width"],
+	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
+		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", 'isOnWidget'],
 	setup(props, ctx)
 	{
+		const container: Ref<HTMLElement | null> = ref(null);
 		const input: Ref<HTMLElement | null> = ref(null);
 		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
 		const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
 
-		const height: ComputedRef<string> = computed(() => props.showRandom ? "100px" : "50px");
+		const height: ComputedRef<string> = computed(() => "50px");
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "200px");
+		const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
+		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
-		let invalid: Ref<boolean> = ref(false);
-		const invalidMessage: Ref<string> = ref('');
 		let inputType: Ref<string> = ref("password");
 		let isHidden: Ref<boolean> = ref(true);
 
@@ -65,6 +69,8 @@ export default defineComponent({
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
+
+		let tippyInstance: any = null;
 
 		function unlock()
 		{
@@ -89,7 +95,6 @@ export default defineComponent({
 				}
 			}
 
-			invalid.value = false;
 			return true;
 		}
 
@@ -102,7 +107,9 @@ export default defineComponent({
 
 		function onInput(value: string)
 		{
+			tippyInstance.hide();
 			inputText.value = value;
+
 			ctx.emit("update:modelValue", value);
 			ctx.emit("onDirty");
 		}
@@ -123,25 +130,7 @@ export default defineComponent({
 
 		function generateRandomValue()
 		{
-			let validRandomPassword: boolean = false;
-			let validPasswordTest = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
-			let randomPassword: string = "";
-
-			const possibleCharacters: string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+\\-=[\\]{};':\"\\|,.<>/?"
-			const possibleCharactersLength: number = possibleCharacters.length;
-
-			while (!validRandomPassword)
-			{
-				randomPassword = "";
-
-				let randomValues: Uint8Array = new Uint8Array(stores.settingsStore.randomValueLength);
-				crypto.getRandomValues(randomValues);
-
-				randomValues.forEach(v => randomPassword += possibleCharacters[v % possibleCharactersLength]);
-				validRandomPassword = validPasswordTest.test(randomPassword);
-			}
-
-			onInput(randomPassword);
+			onInput(generator.randomValue(stores.settingsStore.randomValueLength));
 		}
 
 		function copyValue()
@@ -160,14 +149,34 @@ export default defineComponent({
 
 		function invalidate(message: string)
 		{
-			invalid.value = true;
-			invalidMessage.value = message;
+			tippyInstance.setContent(message);
+			tippyInstance.show();
 		}
 
 		onMounted(() =>
 		{
+			if (!container.value)
+			{
+				return;
+			}
+
 			validationFunction?.value.push(validate);
 			decryptFunctions?.value.push(onAuthenticationSuccessful);
+
+			tippyInstance = tippy(container.value, {
+				inertia: true,
+				animation: 'scale',
+				theme: 'material',
+				placement: "bottom-start",
+				trigger: 'manual',
+				hideOnClick: false
+			});
+		});
+
+		onUnmounted(() =>
+		{
+			tippyInstance.hide();
+			validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
 		});
 
 		watch(() => props.modelValue, (newValue) =>
@@ -183,12 +192,13 @@ export default defineComponent({
 			inputType,
 			inputText,
 			shouldFadeIn,
-			invalid,
-			invalidMessage,
 			defaultInputColor,
 			defaultInputTextColor,
 			height,
 			computedWidth,
+			backgroundColor,
+			container,
+			colorModel,
 			onAuthenticationSuccessful,
 			onInput,
 			unlock,
@@ -235,7 +245,7 @@ export default defineComponent({
 	width: inherit;
 	height: 50px;
 	left: 0;
-	border: solid 1.5px v-bind(defaultInputColor);
+	border: solid 1.5px v-bind('colorModel.borderColor');
 	color: white;
 	border-radius: 1rem;
 	background: none;
@@ -247,26 +257,26 @@ export default defineComponent({
 	position: absolute;
 	left: 5%;
 	top: 0;
-	color: v-bind(defaultInputTextColor);
+	color: v-bind('colorModel.textColor');
 	pointer-events: none;
 	transform: translateY(1rem);
-	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+	transition: var(--input-label-transition);
 }
 
 .textInputFieldContainer .textInputFieldInput:focus,
 .textInputFieldContainer .textInputFieldInput:valid,
 .textInputFieldContainer .textInputFieldInput:disabled {
 	outline: none;
-	border: 1.5px solid v-bind(color);
+	border: 1.5px solid v-bind('colorModel.activeBorderColor');
 }
 
-.textInputFieldContainer .textInputFieldInput:focus~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:valid~label:not(.validationMessage),
-.textInputFieldContainer .textInputFieldInput:disabled~label:not(.validationMessage) {
+.textInputFieldContainer .textInputFieldInput:focus~label,
+.textInputFieldContainer .textInputFieldInput:valid~label,
+.textInputFieldContainer .textInputFieldInput:disabled~label {
 	transform: translateY(-80%) scale(0.8);
-	background-color: var(--app-color);
+	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
-	color: v-bind(color);
+	color: v-bind('colorModel.activeTextColor');
 }
 
 .textInputFieldContainer .icons {
@@ -294,7 +304,7 @@ export default defineComponent({
 	left: 0;
 	margin-top: 10px;
 	margin-left: 5px;
-	border: solid 1.5px v-bind(defaultInputColor);
+	border: solid 1.5px v-bind('colorModel.borderColor');
 	border-radius: 0.5rem;
 	padding: 5px 10px 5px 10px;
 	transition: 0.2s;
@@ -302,7 +312,7 @@ export default defineComponent({
 }
 
 .textInputFieldContainer .randomize:hover {
-	border: solid 1.5px v-bind(color);
+	border: solid 1.5px v-bind('colorModel.activeBorderColor');
 	transform: scale(1.05);
 }
 
@@ -314,34 +324,18 @@ export default defineComponent({
 
 
 .textInputFieldContainer .randomize:hover span {
-	color: v-bind(color);
+	color: v-bind('colorModel.activeTextColor');
 }
 
 .encryptedInputIcon {
 	color: white;
 	font-size: 24px;
 	transition: 0.3s;
+	cursor: pointer;
 }
 
 .encryptedInputIcon:hover {
-	color: v-bind(color);
+	color: v-bind('colorModel.color');
 	transform: scale(1.05);
-}
-
-.validationMessage {
-	color: red;
-	opacity: 0;
-	position: absolute;
-	width: 100%;
-	height: 25%;
-	bottom: 0;
-	left: 5%;
-	text-align: left;
-	transform: translateY(150%);
-	transition: 0.3s;
-}
-
-.validationMessage.show {
-	opacity: 1;
 }
 </style>

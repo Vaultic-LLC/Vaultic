@@ -1,0 +1,30 @@
+:root {
+	/* --app-color: #131520; */
+	--app-color: #0f111d;
+
+	/* --password-color: #5d62fb; */
+	--password-color: #FB2576;
+	--password-color2: #a712ec;
+	--password-color3: #530101;
+	/* --values-color: #05c46b; */
+	--values-color: #3339ef;
+	--group-color: #ffa801;
+	/* --group-color: #FB2576; */
+
+	--password-pair-1: #FF1E56;
+	--values-pair-1: #FFAC41;
+
+	--password-pair-2: #bb29ff;
+	--values-pair-2: #03C4A1;
+
+	--widget-background-color: rgb(44 44 51 / 16%);
+	--widget-background-colorHex: #2c2c3329;
+
+	--solid-widget-background-color: #18181c;
+
+	--input-field-label-color: #15151b;
+	--input-label-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+	--test: #282525;
+
+}

@@ -1,9 +1,9 @@
 <template>
 	<div class="nameValuePairRowContainer">
-		<EncryptedInputField :color="textColor" :label="'Value'" v-model="valueValue" :showCopy="true"
-			:style="{ 'grid-row': '2', 'grid-column': '1 / span 2' }" :disabled="true" />
-		<TextAreaInputField :color="textColor" :label="'Additional Information'"
-			v-model="nameValuePair.additionalInformation" :style="{ 'grid-row': '5 / span 2', 'grid-column': '1 / span 3' }"
+		<EncryptedInputField :colorModel="colorModel" :label="'Value'" v-model="valueValue" :showCopy="true"
+			:style="{ 'grid-row': '2', 'grid-column': '2 / span 2' }" :disabled="true" />
+		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
+			v-model="nameValuePair.additionalInformation" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 3' }"
 			:disabled="true" :height="150" :width="300" />
 	</div>
 </template>
@@ -16,6 +16,8 @@ import EncryptedInputField from '../../../components/InputFields/EncryptedInputF
 
 import cryptUtility from '../../../Utilities/CryptUtility';
 import { NameValuePairStore } from '../../../Objects/Stores/NameValuePairStore';
+import { defaultInputColor } from '@renderer/Types/Colors';
+import { InputColorModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "NameValuePairRow",
@@ -27,9 +29,17 @@ export default defineComponent({
 	props: ["value", "authenticationPromise", "color", "isShowing"],
 	setup(props)
 	{
-		const textColor: string = "white";
+		const textColor: string = defaultInputColor;
 		const value: ComputedRef<NameValuePairStore> = computed(() => JSON.parse(JSON.stringify(props.value)));
 		let valueValue: Ref<string> = ref(value.value.value);
+
+		const colorModel: Ref<InputColorModel> = ref({
+			color: '',
+			textColor: defaultInputColor,
+			activeTextColor: defaultInputColor,
+			borderColor: "rgba(118, 118, 118, 0.3)",
+			activeBorderColor: "rgba(118, 118, 118, 0.3)"
+		});
 
 		watch(() => props.authenticationPromise as Promise<string>, (newValue) =>
 		{
@@ -46,14 +56,15 @@ export default defineComponent({
 		{
 			if (!newValue)
 			{
-				valueValue.value = props.value.value;
+				valueValue.value = value.value.value;
 			}
 		});
 
 		return {
 			nameValuePair: props.value,
 			valueValue,
-			textColor
+			textColor,
+			colorModel
 		}
 	}
 })

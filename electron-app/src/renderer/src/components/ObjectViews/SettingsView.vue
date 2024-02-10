@@ -11,12 +11,15 @@
 		<TextInputField :color="color" :label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
 			:inputType="'number'" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			:additionalValidationFunction="enforceMinRandomPasswordLength" />
-		<CheckboxInputField :label="'Require Key when Saving Filter or Group'" :color="color"
+		<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
+			:inputType="'number'" :style="{ 'grid-row': '7 / span 2', 'grid-column': '2 / span 2' }"
+			:additionalValidationFunction="enforceOldPasswordDays" />
+		<!-- <CheckboxInputField :label="'Require Key when Saving Filter or Group'" :color="color"
 			v-model="settingsState.requireMasterKeyOnFilterGrouopSave" :fadeIn="true"
 			:style="{ 'grid-row': '7 / span 1', 'grid-column': '2 / span 3', }" />
 		<CheckboxInputField :label="'Require Key when Deleting Filter or Group'" :color="color"
 			v-model="settingsState.requireMasterKeyOnFilterGroupDelete" :fadeIn="true"
-			:style="{ 'grid-row': '8 / span 1', 'grid-column': '2 / span 3', }" />
+			:style="{ 'grid-row': '8 / span 1', 'grid-column': '2 / span 3', }" /> -->
 		<!-- <CheckboxInputField :label="'Take picture on login'" :color="color" v-model="settingsState.takePictureOnLogin"
             :fadeIn="true" :style="{ 'grid-row': '4 / span 2', 'grid-column': '1 / span 2', }" /> -->
 	</ObjectView>
@@ -35,7 +38,6 @@ import { stores } from '../../Objects/Stores';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import { SettingsState } from '../../Objects/Stores/SettingsStore';
 import { FilterStatus } from '../../Types/Table';
-import { promiseHooks } from 'v8';
 
 export default defineComponent({
 	name: "ValueView",
@@ -51,7 +53,7 @@ export default defineComponent({
 	{
 		const refreshKey: Ref<string> = ref("");
 		const settingsState: Ref<SettingsState> = ref(props.model);
-		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
+		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 
 		const gridDefinition: GridDefinition = {
 			rows: 10,
@@ -60,7 +62,7 @@ export default defineComponent({
 			columnWidth: '100px'
 		}
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
 
@@ -68,7 +70,7 @@ export default defineComponent({
 		{
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onAuthenticationSuccessful, onAuthenticationCanceled);
+				requestAuthFunc(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 				return new Promise((resolve, reject) =>
 				{
 					saveSucceeded = resolve;
@@ -81,7 +83,7 @@ export default defineComponent({
 
 		function onAuthenticationSuccessful(key: string)
 		{
-			stores.settingsStore.updateSettings(settingsState.value);
+			stores.settingsStore.updateSettings(key, settingsState.value);
 			saveSucceeded(true);
 		}
 
@@ -89,20 +91,6 @@ export default defineComponent({
 		{
 			saveFaield(false);
 		}
-
-		// function enforceMaxInactiveLockTime(input: string): [boolean, string]
-		// {
-		//     const num: number = Number.parseInt(input);
-		//     if (num < 0)
-		//     {
-		//         return [false, "Value must be greater than 0"];
-		//     }
-		//     else if (num >= 30
-		//     {
-
-		//     }
-		//     return [Number.parseInt(input) <= 30]
-		// }
 
 		function enforceMinLoginRecords(input: string): [boolean, string]
 		{
@@ -112,6 +100,22 @@ export default defineComponent({
 		function enforceMinRandomPasswordLength(input: string): [boolean, string]
 		{
 			return [Number.parseInt(input) >= 20, "Value must be greater than or equal to 20"];
+		}
+
+		function enforceOldPasswordDays(input: string): [boolean, string]
+		{
+			const numb: number = Number.parseInt(input);
+			if (!numb)
+			{
+				return [false, "Not a valid number"];
+			}
+
+			if (numb < 30 || numb > 365)
+			{
+				return [false, "Value must be between 30 and 365 days"];
+			}
+
+			return [true, ""];
 		}
 
 		return {
@@ -124,7 +128,8 @@ export default defineComponent({
 			onSave,
 			onAuthenticationSuccessful,
 			enforceMinLoginRecords,
-			enforceMinRandomPasswordLength
+			enforceMinRandomPasswordLength,
+			enforceOldPasswordDays
 		};
 	},
 })

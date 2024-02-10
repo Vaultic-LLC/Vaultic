@@ -1,5 +1,5 @@
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
-import { CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowValues } from "../Types/Models";
+import { CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowValue } from "../Types/Models";
 import { Ref, computed, ref } from "vue";
 import { v4 as uuidv4 } from 'uuid';
 import { AtRiskType, HeaderDisplayField, IIdentifiable, IPinnable } from "../Types/EncryptedData";
@@ -9,7 +9,7 @@ import { PasswordStore } from "../Objects/Stores/PasswordStore";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
 import { NameValuePairStore } from "../Objects/Stores/NameValuePairStore";
 
-export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(clickable: boolean, activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
+export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
 	sortableCollection: SortedCollection<T>, pinnedCollection?: SortedCollection<T>, updateModels?: () => void): SortableHeaderModel[]
 {
 	return headerDisplayField.map((header, index) =>
@@ -19,19 +19,34 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 			id: uuidv4(),
 			isActive: computed(() => activeHeaderTracker.value == index),
 			name: header.displayName,
-			descending: true,
-			clickable: clickable,
+			descending: ref(true),
+			clickable: header.clickable,
 			width: header.width,
+			padding: header.padding,
 			onClick: function ()
 			{
-				if (!clickable)
+				if (!header.clickable)
 				{
 					return;
 				}
 
+				if (!this.descending)
+				{
+					return;
+				}
+
+				if (this.isActive.value)
+				{
+					this.descending.value = !this.descending.value;
+				}
+				else
+				{
+					this.descending.value = true;
+				}
+
 				activeHeaderTracker.value = index;
-				sortableCollection.updateSort(header.backingProperty, this.descending == true);
-				pinnedCollection?.updateSort(header.backingProperty, this.descending == true);
+				sortableCollection.updateSort(header.backingProperty, this.descending.value == true);
+				pinnedCollection?.updateSort(header.backingProperty, this.descending.value == true);
 
 				if (updateModels)
 				{
@@ -41,12 +56,12 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 		}
 
 		return sortableHeaderModel;
-	})
+	});
 }
 
 export function createPinnableSelectableTableRowModels<T extends { [key: string]: any } & IPinnable & IIdentifiable>(groupFilterType: DataType, passwordValueType: DataType,
 	selectableTableRowModels: Ref<InfiniteScrollCollection<SelectableTableRowData>>, sortedCollection: SortedCollection<T>, pinnedCollection: SortedCollection<T>,
-	getValues: (value: T) => TableRowValues[], selectable: boolean, isActiveProp: string, sortOnClick: boolean, onClick?: (value: T) => void, onEdit?: (value: T) => void, onDelete?: (value: T) => void)
+	getValues: (value: T) => TableRowValue[], selectable: boolean, isActiveProp: string, sortOnClick: boolean, onClick?: (value: T) => void, onEdit?: (value: T) => void, onDelete?: (value: T) => void)
 {
 	selectableTableRowModels.value.setValues([]);
 	const temp: SelectableTableRowData[] = [];
@@ -234,7 +249,7 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 
 export function createCollapsibleTableRowModels<T extends { [key: string]: any } & IIdentifiable & IPinnable>(
 	dataType: DataType, collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>>, sortedCollection: SortedCollection<T>,
-	pinnedCollection: SortedCollection<T>, getValues: (value: T) => TableRowValues[], onEdit: (value: T) => void, onDelete: (value: T) => void)
+	pinnedCollection: SortedCollection<T>, getValues: (value: T) => TableRowValue[], onEdit: (value: T) => void, onDelete: (value: T) => void)
 {
 	collapsibleTableRowModels.value.setValues([]);
 	const temp: CollapsibleTableRowModel[] = [];
@@ -246,7 +261,7 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 			case AtRiskType.Old:
 				stores.encryptedDataStore.oldPasswords.value.forEach(p =>
 				{
-					addAtRiskValues("This Password hasn't been updated in 30 days", stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
+					addAtRiskValues(`This Password hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
 				});
 				break;
 			case AtRiskType.Duplicate:
@@ -277,7 +292,7 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 			case AtRiskType.Old:
 				stores.encryptedDataStore.oldNameValuePairs.value.forEach(v =>
 				{
-					addAtRiskValues("This Value hasn't been updated in 30 days", stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+					addAtRiskValues(`This Value hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
 				break;
 			case AtRiskType.Duplicate:
@@ -299,7 +314,6 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 					const valueStore: NameValuePairStore = stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
 					addAtRiskValues(valueStore.isWeakMessage, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
-
 		}
 	}
 
@@ -406,4 +420,19 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 			}
 		}
 	}
+}
+
+export function getEmptyTableMessage(dataName: string)
+{
+	return `You currently don't have any ${dataName}. Click '+' to add one`
+}
+
+export function getNoValuesApplyToFilterMessage(dataName: string)
+{
+	return `There are no ${dataName} that apply to all active filters. Please try deactivating some filters or add more ${dataName}`
+}
+
+export function getObjectPopupEmptyTableMessage(emptyDataName: string, currentDataName: string, tab: string)
+{
+	return `You don't have any ${emptyDataName} to add to this ${currentDataName}. Click on the 'Add ${tab}' tab to add one`;
 }

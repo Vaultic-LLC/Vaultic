@@ -1,25 +1,24 @@
 import { ColorPalette, colorPalettes, emptyColorPalette } from "../../Types/Colors";
 import { ComputedRef, Ref, computed, reactive, ref, watch } from "vue";
-import { Stores, stores } from ".";
+import { Store, Stores, stores } from ".";
 import { DataType, FilterStatus } from "../../Types/Table";
 import { AutoLockTime } from "../../Types/Settings";
+import File from "../Files/File"
 
 export interface SettingsState
 {
+	loadedFile: boolean;
 	readonly rowChunkAmount: number;
 	colorPalettes: ColorPalette[];
 	currentColorPalette: ColorPalette;
 	autoLockTime: AutoLockTime;
 	loginRecordsToStore: number;
 	randomValueLength: number;
-	requireMasterKeyOnFilterGrouopSave: boolean;
-	requireMasterKeyOnFilterGroupDelete: boolean;
-	animationSpeed: number;
-	takePictureOnLogin: boolean;
 	multipleFilterBehavior: FilterStatus;
+	oldPasswordDays: number;
 }
 
-export interface SettingsStore
+export interface SettingsStore extends Store
 {
 	state: SettingsState;
 	rowChunkAmount: number;
@@ -30,31 +29,22 @@ export interface SettingsStore
 	autoLockNumberTime: number;
 	loginRecordsToStore: number;
 	randomValueLength: number;
-	requireMasterKeyOnFilterGrouopSave: boolean;
-	requireMasterKeyOnFilterGroupDelete: boolean;
 	multipleFilterBehavior: FilterStatus;
+	oldPasswordDays: number;
 	init: (stores: Stores) => void;
-	updateColorPalette: (colorPalette: ColorPalette) => void;
-	updateSettings: (newState: SettingsState) => void;
+	readState: (key: string) => boolean;
+	resetToDefault: () => void;
+	updateColorPalette: (key: string, colorPalette: ColorPalette) => void;
+	updateSettings: (key: string, newState: SettingsState) => void;
 }
 
-const settingsState: SettingsState = reactive(
-	{
-		rowChunkAmount: 10,
-		colorPalettes: colorPalettes,
-		currentColorPalette: colorPalettes[0],
-		autoLockTime: AutoLockTime.OneMinute,
-		loginRecordsToStore: 25,
-		randomValueLength: 20,
-		requireMasterKeyOnFilterGrouopSave: true,
-		requireMasterKeyOnFilterGroupDelete: true,
-		animationSpeed: 0,
-		takePictureOnLogin: true,
-		multipleFilterBehavior: FilterStatus.Or
-	});
+const settingsFile: File = new File("settings");
+let settingsState: SettingsState;
 
 export default function useSettingsStore(): SettingsStore
 {
+	settingsState = reactive(defaultState());
+
 	const currentPrimaryColor: Ref<string> = ref('');
 	const autoLockNumberTime: ComputedRef<number> = computed(() =>
 	{
@@ -72,7 +62,49 @@ export default function useSettingsStore(): SettingsStore
 		}
 	});
 
-	function updateColorPalette(colorPalette: ColorPalette)
+	function defaultState(): SettingsState
+	{
+		return {
+			loadedFile: false,
+			rowChunkAmount: 10,
+			colorPalettes: colorPalettes,
+			currentColorPalette: colorPalettes[0],
+			autoLockTime: AutoLockTime.OneMinute,
+			loginRecordsToStore: 25,
+			randomValueLength: 20,
+			multipleFilterBehavior: FilterStatus.Or,
+			oldPasswordDays: 30
+		};
+	}
+
+	function readState(key: string)
+	{
+		if (settingsState.loadedFile)
+		{
+			return true;
+		}
+
+		const [succeeded, state] = settingsFile.read<SettingsState>(key);
+		if (succeeded)
+		{
+			state.loadedFile = true;
+			Object.assign(settingsState, state);
+		}
+
+		return succeeded;
+	}
+
+	function writeState(key: string)
+	{
+		settingsFile.write(key, settingsState);
+	}
+
+	function resetToDefault()
+	{
+		Object.assign(settingsState, defaultState());
+	}
+
+	function updateColorPalette(key: string, colorPalette: ColorPalette)
 	{
 		const oldColorPalette: ColorPalette[] = settingsState.colorPalettes.filter(cp => cp.id == colorPalette.id);
 		if (oldColorPalette.length != 1)
@@ -88,11 +120,13 @@ export default function useSettingsStore(): SettingsStore
 
 			setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 		}
+
+		writeState(key);
 	}
 
 	function init(stores: Stores)
 	{
-		watch(() => settingsState.currentColorPalette, (newValue) =>
+		watch(() => settingsState.currentColorPalette, () =>
 		{
 			setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 		});
@@ -100,7 +134,7 @@ export default function useSettingsStore(): SettingsStore
 		watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
 		{
 			setCurrentPrimaryColor(newValue);
-		})
+		});
 
 		setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 	}
@@ -118,9 +152,10 @@ export default function useSettingsStore(): SettingsStore
 		}
 	}
 
-	function updateSettings(newState: SettingsState)
+	function updateSettings(key: string, newState: SettingsState)
 	{
 		Object.assign(settingsState, newState);
+		writeState(key);
 	}
 
 	return {
@@ -134,11 +169,13 @@ export default function useSettingsStore(): SettingsStore
 		get loginRecordsToStore() { return settingsState.loginRecordsToStore; },
 		set loginRecordsToStore(value: number) { settingsState.loginRecordsToStore = value; },
 		get randomValueLength() { return settingsState.randomValueLength; },
-		get requireMasterKeyOnFilterGrouopSave() { return settingsState.requireMasterKeyOnFilterGrouopSave; },
-		get requireMasterKeyOnFilterGroupDelete() { return settingsState.requireMasterKeyOnFilterGroupDelete; },
 		get multipleFilterBehavior() { return settingsState.multipleFilterBehavior; },
+		get oldPasswordDays() { return settingsState.oldPasswordDays; },
+		set oldPasswordDays(value: number) { settingsState.oldPasswordDays = value; },
 		currentPrimaryColor,
 		init,
+		readState,
+		resetToDefault,
 		updateColorPalette,
 		updateSettings
 	};

@@ -35,9 +35,9 @@ export default defineComponent({
 					animation: 'scale',
 					theme: 'material',
 					placement: placement.value
-				})
+				});
 			}
-		})
+		});
 
 		return {
 			currentColorPalette,
@@ -54,7 +54,6 @@ export default defineComponent({
 
 .toolTipContainer {
 	position: relative;
-	grid-template-rows: repeat(2, auto);
 	display: flex;
 	align-items: center;
 	justify-content: center;

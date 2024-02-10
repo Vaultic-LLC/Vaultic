@@ -4,7 +4,7 @@
 			:class="{ unlocked: unlocked, unlockFailed: unlockFailed, rubberband: rubberbandOnUnlock }">
 			<div class="authenticationPopupContent">
 				<div class="title">{{ authTitle }}</div>
-				<EncryptedInputField ref="encryptedInputField" class="key" :label="'Key'" :color="primaryColor"
+				<EncryptedInputField ref="encryptedInputField" class="key" :label="'Key'" :colorModel="colorModel"
 					v-model="key" :required="true" :width="'75%'" />
 				<div class="keyRequirements" v-if="needsToSetupKey">
 					<CheckboxInputField class="greaterThanTwentyCharacters" :label="'At Least 20 Characters'"
@@ -23,7 +23,7 @@
 				<!-- <div class="helpCreateStrongKey">
                 </div> -->
 				<EncryptedInputField v-if="needsToSetupKey" ref="confirmEncryptedInputField" :label="'Confirm Key'"
-					:color="primaryColor" v-model="reEnterKey" :width="'75%'" />
+					:colorModel="colorModel" v-model="reEnterKey" :width="'75%'" />
 				<CheckboxInputField v-if="needsToSetupKey" class="matchesKey" :label="'Matches Key'" :color="primaryColor"
 					v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
 			</div>
@@ -50,6 +50,7 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import { ColorPalette } from '../../Types/Colors';
 import { containsNumber, containsSpecialCharacter, containsUppercaseAndLowercaseNumber, isWeak } from '../../Helpers/EncryptedDataHelper';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
+import { defaultInputColorModel, InputColorModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "AuthenticationPopup",
@@ -59,7 +60,7 @@ export default defineComponent({
 		CheckboxInputField
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
-	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey"],
+	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color"],
 	setup(props, ctx)
 	{
 		const encryptedInputField: Ref<null> = ref(null);
@@ -67,12 +68,13 @@ export default defineComponent({
 		const key: Ref<string> = ref("");
 		const reEnterKey: Ref<string> = ref("");
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
-		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const authTitle: ComputedRef<string> = computed(() => props.title ? props.title : "Please enter your Key");
 		const unlocked: Ref<boolean> = ref(false);
 		const unlockFailed: Ref<boolean> = ref(false);
 		const unlockAnimDelay: Ref<string> = ref(props.rubberbandOnUnlock ? '0.7s' : '0s');
 		const startPulsing: Ref<boolean> = ref(false);
+		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(primaryColor.value));
 
 		const needsToSetupKey: ComputedRef<boolean> = computed(() => props.setupKey ?? false);
 		const computedWidth: ComputedRef<string> = computed(() => props.setupKey ? "25%" : "15%");
@@ -86,12 +88,21 @@ export default defineComponent({
 		const hasSpecialCharacter: Ref<boolean> = ref(false);
 		const matchesKey: Ref<boolean> = ref(false);
 
+		let lastAuthAttempt: number = 0;
 		async function onEnter()
 		{
 			if (unlocked.value)
 			{
 				return;
 			}
+
+			if (Date.now() - lastAuthAttempt < 1000)
+			{
+				jiggleContainer();
+				return;
+			}
+
+			lastAuthAttempt = Date.now();
 
 			if (needsToSetupKey.value && (!greaterThanTwentyCharacters.value ||
 				!containesUpperAndLowerCase.value ||
@@ -104,7 +115,7 @@ export default defineComponent({
 
 			// show loading indicator
 
-			const isValid: boolean = await stores.encryptedDataStore.checkKey(key.value);
+			const isValid: boolean = stores.checkKey(key.value);
 
 			// hide loading indicator
 
@@ -214,6 +225,7 @@ export default defineComponent({
 			computedHeight,
 			buttonBottom,
 			contentTop,
+			colorModel,
 			onEnter,
 			onCancel,
 			enforceStringKey,

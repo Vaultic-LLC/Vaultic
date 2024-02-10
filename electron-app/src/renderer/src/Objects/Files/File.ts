@@ -15,6 +15,34 @@ export default class Files
 		return window.api.fileExistsAndHasData(this.path);
 	}
 
+	public empty(): void
+	{
+		let unlocked: boolean = false;
+		try
+		{
+			window.api.unlockFile(this.path);
+			unlocked = true;
+
+			window.api.writeFile("", this.path);
+			window.api.lockFile(this.path);
+
+			unlocked = false;
+		}
+		catch (e)
+		{
+			console.log(e);
+		}
+
+		if (unlocked)
+		{
+			try
+			{
+				window.api.lockFile(this.path);
+			}
+			catch { }
+		}
+	}
+
 	public write<T>(key: string, data: T): void
 	{
 		let unlocked: boolean = false;
@@ -45,7 +73,7 @@ export default class Files
 		}
 	}
 
-	public read<T>(key: string): T
+	public read<T>(key: string): [boolean, T]
 	{
 		let unlocked: boolean = false;
 		try
@@ -59,7 +87,8 @@ export default class Files
 			window.api.lockFile(this.path);
 			unlocked = false;
 
-			return JSON.parse(decryptedData) as T;
+			let obj: T = JSON.parse(decryptedData) as T;
+			return [true, obj];
 		}
 		catch (e)
 		{
@@ -75,7 +104,7 @@ export default class Files
 			catch { }
 		}
 
-		return {} as T;
+		return [false, {} as T];
 	}
 }
 

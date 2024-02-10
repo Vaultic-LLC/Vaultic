@@ -1,5 +1,6 @@
 <template>
-	<TableRow @click="onRowClicked" :rowNumber="rowNumber" :model="selectableTableRowData" :color="color" :clickable="true">
+	<TableRow @click="onRowClicked" :rowNumber="rowNumber" :model="selectableTableRowData" :color="color"
+		:clickable="selectable">
 		<td class="indicatorRow" v-if="selectable">
 			<SelectorButton :selectorButtonModel="selectorButtonModel" />
 		</td>
@@ -63,32 +64,4 @@ export default defineComponent({
 });
 </script>
 
-<style>
-/* .selectableTableRow {
-    height: 50px;
-}
-
-.indicatorRow {
-    width: 50px;
-    padding-right: 10px;
-    padding-left: 10px;
-}
-
-.indicatorRow .rowIndicator {
-    width: 30px;
-    height: 30px;
-    background-color: var(--app-color);
-    border: 2px solid v-bind(primaryColor);
-    border-radius: 25px;
-}
-
-.indicatorRow .rowIndicator.active {
-    background-color: v-bind(primaryColor);
-    box-shadow: 0 0 10px v-bind(primaryColor);
-}
-
-.rowText {
-    color: white;
-    text-align: left;
-} */
-</style>
+<style></style>

@@ -1,19 +1,25 @@
 <template>
-	<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="model.onClick"
-		:class="{ active: active }">
-		<div class="title">
-			<h2>{{ amountOutOfTotal }}</h2>
-			<p>{{ model.title }}</p>
+	<div>
+		<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="model.onClick"
+			:class="{ active: active, pulse: pulse }">
+			<div class="title">
+				<h2>{{ amountOutOfTotal }}</h2>
+				<p>{{ model.title }}</p>
+			</div>
+			<Doughnut ref="doughnutChart" :data="data" :options="options" />
 		</div>
-		<Doughnut :data="data" :options="options" />
 	</div>
 </template>
 
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+
+import CongratsRibbon from '../SmallMetricGauges/CongratsRibbon.vue';
 import { Doughnut } from 'vue-chartjs'
+
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { stores } from '../../Objects/Stores';
+import { mixHexes } from '@renderer/Helpers/ColorHelper';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -22,26 +28,27 @@ export default defineComponent({
 	props: ['model'],
 	components:
 	{
-		Doughnut
+		Doughnut,
+		CongratsRibbon
 	},
 	setup(props)
 	{
 		const key: Ref<string> = ref('');
+		const doughnutChart: Ref<any> = ref(null);
 		const primaryColor: Ref<string> = ref(props.model.color);
 		const gauge: Ref<HTMLElement | null> = ref(null);
 		const smallMetricContainer: Ref<HTMLElement | null> = ref(null);
-
 		const active: ComputedRef<boolean> = computed(() => props.model.active);
+		const pulse: ComputedRef<boolean> = computed(() => props.model.pulse == true && props.model.filledAmount > 0);
 
 		let authenticated: Ref<boolean> = ref(stores.appStore.authenticated);
-		let fillAmount: ComputedRef<number> = computed(() => props.model.filledAmount / props.model.totalAmount * 100);
+		let fillAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 0 : props.model.filledAmount / props.model.totalAmount * 100);
 		let amountOutOfTotal: ComputedRef<string> = computed(() => `${props.model.filledAmount} / ${props.model.totalAmount}`);
-
 		const textColor: Ref<string> = computed(() => fillAmount.value == 0 ? "white" : "white");
 
 		const options: any =
 		{
-			resposive: false,
+			resposive: true,
 			animation:
 			{
 				duration: 1000,
@@ -65,17 +72,54 @@ export default defineComponent({
 				labels: [props.model.title, ""],
 				datasets: [
 					{
-						data: [props.model.filledAmount, props.model.totalAmount - props.model.filledAmount],
-						backgroundColor: [primaryColor.value, '#191919'],
+						data: [props.model.filledAmount, Math.max(props.model.totalAmount - props.model.filledAmount, 1)],
+						//backgroundColor: [primaryColor.value, '#191919'],
+						backgroundColor: function (context)
+						{
+							const chart = context.chart;
+							const { ctx, chartArea } = chart;
+
+							if (!chartArea)
+							{
+								// This case happens on initial chart load
+								return;
+							}
+
+							// let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
+							const x = chartArea.width / 2;
+							let gradient = ctx.createRadialGradient(x, x, 0, x, x, x);
+							gradient.addColorStop(0, mixHexes(primaryColor.value, '#867E7E'));
+							//gradient.addColorStop(fillAmount.value / 100 / 2, primaryColor.value);
+							//gradient.addColorStop(fillAmount.value / 100, mixHexes(primaryColor.value, '#363131'));
+							gradient.addColorStop(1, primaryColor.value);
+							// hex value already has opacity
+							// if (primaryColor.value.length > 7)
+							// {
+							// 	gradient.addColorStop(0, primaryColor.value);
+							// 	gradient.addColorStop(0.35, primaryColor.value);
+							// 	gradient.addColorStop(1, primaryColor.value);
+							// }
+							// else
+							// {
+							// 	gradient.addColorStop(0, primaryColor.value + "88");
+							// 	gradient.addColorStop(0.35, primaryColor.value + "44");
+							// 	gradient.addColorStop(1, primaryColor.value + "00");
+							// }
+
+							return [gradient, '#191919'];
+						},
 						borderColor: 'transparent',
 					}
 				]
 
 			});
 
-		function updateKey()
+		function updateData(data)
 		{
-			key.value = Date.now().toString();
+			doughnutChart.value.chart.data.datasets[0].data = data;
+			doughnutChart.value.chart.data.datasets[0].backgroundColor = [primaryColor.value, '#191919'];
+
+			doughnutChart.value.chart.update();
 		}
 
 		watch(() => stores.appStore.authenticated, (newValue) =>
@@ -98,10 +142,11 @@ export default defineComponent({
 
 			};
 
-			updateKey();
+			updateData([props.model.filledAmount, props.model.totalAmount - props.model.filledAmount])
 		});
 
 		return {
+			doughnutChart,
 			key,
 			active,
 			smallMetricContainer,
@@ -112,7 +157,8 @@ export default defineComponent({
 			amountOutOfTotal,
 			textColor,
 			options,
-			data
+			data,
+			pulse
 		}
 	}
 })
@@ -141,6 +187,10 @@ export default defineComponent({
 	box-shadow: 0 0 25px v-bind(primaryColor);
 }
 
+.smallMetricContainer2:not(.active).pulse {
+	animation: pulseMetricGauge 1s infinite;
+}
+
 .smallMetricContainer2:hover {
 	box-shadow: 0 0 25px v-bind(primaryColor);
 }
@@ -164,6 +214,20 @@ export default defineComponent({
 	width: 84%;
 	background-color: var(--app-color);
 	border-radius: inherit;
+}
+
+@keyframes pulseMetricGauge {
+	0% {
+		box-shadow: 0 0 0 v-bind(primaryColor);
+	}
+
+	50% {
+		box-shadow: 0 0 25px v-bind(primaryColor);
+	}
+
+	100% {
+		box-shadow: 0 0 0 v-bind(primaryColor);
+	}
 }
 
 @keyframes fadeIn {
@@ -211,9 +275,14 @@ export default defineComponent({
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	color: rgba(255, 255, 255, 0.75);
-	transform: translateY(50px);
+	transform: translateY(40px);
 	transition: 0.2s;
 	user-select: none;
+}
+
+.smallMetricContainer2__checkmark {
+	color: v-bind(primaryColor);
+	font-size: 50px;
 }
 
 /* .smallMetricContainer2:hover .title p {

@@ -1,23 +1,24 @@
 <template>
 	<div id="passwordValueTable">
-		<AddTableItemButton :color="color" :initalActiveContentOnClick="activeTable"
-			:style="{ position: 'absolute', top: '35%', left: '71%' }" />
-		<SearchBar v-model="currentSearchText" :color="color" :style="{ position: 'absolute', top: '35%', left: '50%' }" />
 		<TableTemplate ref="tableRef" :rowGap="0" id="passwordTable" class="shadow scrollbar" :color="color"
-			:scrollbar-size="1" :style="{ height: '55%', width: '45%', left: '28%', top: '42%' }"
+			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
+			:showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0"
+			:style="{ height: '55%', width: '48%', left: '31%', top: '42%' }"
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #header>
-				<TableHeaderRow :model="headerModels" :defaultActiveHeader="1" :backgroundColor="'#121a20'" />
+				<TableHeaderRow :color="color" :model="headerModels" :tabs="headerTabs">
+					<template #controls>
+						<SearchBar v-if="activeTable == 0" v-model="currentSearchText" :color="color"
+							:labelBackground="'rgb(44 44 51 / 16%)'" />
+						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
+					</template>
+				</TableHeaderRow>
 			</template>
 			<template #body>
-				<!-- Empty table row so that our first table row doesn't get overlapped by the header -->
-				<tr>
-					<div :style="{ 'min-height': '10px' }"></div>
-				</tr>
 				<CollapsibleTableRow :shadow="true" v-slot="props"
 					v-for="(model, index) in collapsibleTableRowModels.visualValues" :key="model.id"
 					:groups="model.data.groups" :model="model" :rowNumber="index" :color="color">
-					<SlideInRow :isShowing="props.isShowing" :colspan="headerModels.length"
+					<SlideInRow :isShowing="props.isShowing" :colspan="headerModels.length + 1"
 						:defaultHeight="collapseRowDefaultHeight">
 						<component :is="rowComponent" :value="model.data"
 							:authenticationPromise="props.authenticationPromise" :color="color"
@@ -53,7 +54,7 @@ import NameValuePairRow from './NameValuePair/NameValuePairRow.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
 import TableTemplate from './TableTemplate.vue';
 import CollapsibleTableRow from './CollapsibleTableRow.vue';
-import AddTableItemButton from './Controls/AddTableItemButton.vue';
+import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue';
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
@@ -62,12 +63,13 @@ import { DataType, Filter, FilterStatus } from '../../Types/Table';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { HeaderDisplayField, IFilterable, IGroupable, IIdentifiable } from '../../Types/EncryptedData';
-import { CollapsibleTableRowModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
+import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
-import { createCollapsibleTableRowModels, createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores/index';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
+import { v4 as uuidv4 } from 'uuid';
 
 export default defineComponent({
 	name: "PasswordValueTable",
@@ -75,7 +77,7 @@ export default defineComponent({
 	{
 		ObjectPopup,
 		TableTemplate,
-		AddTableItemButton,
+		AddDataTableItemButton,
 		TableHeaderRow,
 		CollapsibleTableRow,
 		PasswordRow,
@@ -109,16 +111,61 @@ export default defineComponent({
 		let showEditValuePopup: Ref<boolean> = ref(false);
 		let currentEditingValueModel: Ref<NameValuePairStore | any> = ref({});
 
-		let deletePassword: Ref<(key: string) => void> = ref((key: string) => { });
-		let deleteValue: Ref<(key: string) => void> = ref((key: string) => { });
+		let deletePassword: Ref<(key: string) => void> = ref((_: string) => { });
+		let deleteValue: Ref<(key: string) => void> = ref((_: string) => { });
 
 		const passwordSearchText: Ref<string> = ref('');
 		const valueSearchText: Ref<string> = ref('');
 		const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			passwordSearchText : valueSearchText);
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+
+		const emptyTableMessage: ComputedRef<string> = computed(() =>
+		{
+			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+			{
+				if (stores.filterStore.activePasswordFilters.length > 0)
+				{
+					return getNoValuesApplyToFilterMessage("Passwords");
+				}
+				else
+				{
+					return getEmptyTableMessage("Passwords");
+				}
+			}
+			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+			{
+				if (stores.filterStore.activePasswordFilters.length > 0)
+				{
+					return getNoValuesApplyToFilterMessage("Values");
+				}
+				else
+				{
+					return getEmptyTableMessage("Values");
+				}
+			}
+
+			return "";
+		});
+
+		const headerTabs: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Passwords',
+				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
+				color: computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor),
+				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
+			},
+			{
+				id: uuidv4(),
+				name: 'Values',
+				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
+				color: computed(() => stores.settingsStore.currentColorPalette.valuesColor.primaryColor),
+				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.NameValuePairs; }
+			}
+		];
 
 		const passwordActiveHeader: Ref<number> = ref(1);
 		const valueActiveHeader: Ref<number> = ref(1);
@@ -127,17 +174,21 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '150px'
+				width: '175px',
+				padding: '25px',
+				clickable: true
 			},
 			{
 				displayName: "Password For",
 				backingProperty: "passwordFor",
-				width: '200px'
+				width: '200px',
+				clickable: true
 			},
 			{
 				displayName: "Login",
 				backingProperty: "login",
-				width: '200px'
+				width: '250px',
+				clickable: true
 			}
 		];
 
@@ -145,28 +196,31 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '150px'
+				width: '175px',
+				padding: '25px',
+				clickable: true
 			},
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '200px'
+				width: '200px',
+				clickable: true
 			},
 			{
 				displayName: "Type",
 				backingProperty: "valueType",
-				width: '200px'
+				width: '250px',
+				clickable: true
 			}
 		];
 
-		const passwordHeaders: SortableHeaderModel[] = createSortableHeaderModels(true, passwordActiveHeader, passwordHeaderDisplayFields,
+		const passwordHeaders: SortableHeaderModel[] = createSortableHeaderModels(passwordActiveHeader, passwordHeaderDisplayFields,
 			passwords, pinnedPasswords, setModels);
 		passwordHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
 
-		const valueHeaders: SortableHeaderModel[] = createSortableHeaderModels(true, valueActiveHeader, valueHeaderDisplayFields,
+		const valueHeaders: SortableHeaderModel[] = createSortableHeaderModels(valueActiveHeader, valueHeaderDisplayFields,
 			nameValuePairs, pinnedNameValuePairs, setModels);
 		valueHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
-
 
 		const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
 		{
@@ -264,10 +318,13 @@ export default defineComponent({
 						collapsibleTableRowModels, nameValuePairs, pinnedNameValuePairs,
 						(v: NameValuePairStore) =>
 						{
-							return [{ value: v.name, copiable: false, width: '150px' }, {
-								value: v.valueType ?? '', copiable: false, width:
-									'150px'
-							}]
+							return [
+								{
+									component: 'TableRowTextValue', value: v.name, copiable: false, width: '150px'
+								},
+								{
+									component: 'TableRowTextValue', value: v.valueType ?? '', copiable: false, width: '150px'
+								}]
 						}, onEditValue, onValueDeleteInitiated);
 					break;
 				case DataType.Passwords:
@@ -277,8 +334,13 @@ export default defineComponent({
 						collapsibleTableRowModels, passwords, pinnedPasswords,
 						(p: PasswordStore) =>
 						{
-							return [{ value: p.passwordFor, copiable: false, width: '150px', },
-							{ value: p.login, copiable: true, width: '150px' }]
+							return [
+								{
+									component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: '150px',
+								},
+								{
+									component: 'TableRowTextValue', value: p.login, copiable: true, width: '250px'
+								}]
 						},
 						onEditPassword, onPasswordDeleteInitiated);
 			}
@@ -316,7 +378,7 @@ export default defineComponent({
 
 			if (saved)
 			{
-				setModels();
+				init();
 			}
 		}
 
@@ -339,7 +401,7 @@ export default defineComponent({
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onDeletePasswordConfirmed, () => { });
+				requestAuthFunc(color.value, onDeletePasswordConfirmed, () => { });
 			}
 		}
 
@@ -358,7 +420,7 @@ export default defineComponent({
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onDeleteValueConfirmed, () => { });
+				requestAuthFunc(color.value, onDeleteValueConfirmed, () => { });
 			}
 		}
 
@@ -432,7 +494,7 @@ export default defineComponent({
 			setModels();
 		});
 
-		watch(() => stores.settingsStore.multipleFilterBehavior, (newValue) =>
+		watch(() => stores.settingsStore.multipleFilterBehavior, () =>
 		{
 			init();
 		});
@@ -450,6 +512,8 @@ export default defineComponent({
 			showEditValuePopup,
 			currentEditingValueModel,
 			currentSearchText,
+			headerTabs,
+			emptyTableMessage,
 			onEditPasswordPopupClose,
 			onEditValuePopupClose,
 			onDeletePasswordConfirmed,

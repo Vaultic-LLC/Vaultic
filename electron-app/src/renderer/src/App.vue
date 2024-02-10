@@ -6,27 +6,39 @@
 	</Teleport>
 	<Transition name="fade">
 		<RequestedAuthenticationPopup v-if="requestAuth" :authenticationSuccessful="onAuthSuccess"
-			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" />
+			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" :color="requestAuthColor" />
 	</Transition>
 	<Transition name="appFade">
 		<div v-if="coverMainUI" class="mainUICover"></div>
 	</Transition>
-	<div>
-		<SideDrawer />
-		<div id="mainUI">
+	<div id="mainUI" class="mainUI">
+		<!-- <SideDrawer /> -->
+		<div class="center">
 			<ColorPaletteContainer />
-			<TableSelector :singleSelectorItems="[filtersTableControl, groupsTableControl]"
-				:style="{ 'left': '5%', 'top': '30%', 'width': '10%' }" />
-			<TableSelector :singleSelectorItems="[passwordTableControl, valuesTableControl]"
-				:style="{ 'left': '28%', 'top': '30%', 'width': '20%' }" />
+			<BreachedPasswords />
 			<div id="tables">
 				<FilterGroupTable />
-				<LoginHistoryTable />
 				<PasswordValueTable />
 			</div>
-			<div class="footer" />
 		</div>
-		<MetricDrawer />
+		<div class="tempWidget" :style="{ right: '2%', top: '4%' }">
+			<PasswordValueGauges />
+		</div>
+		<div class="tempWidget" :style="{ right: '2%', top: '45%' }">
+			<FilterGroupGauges />
+		</div>
+		<div class="tempWidget" :style="{ top: '4%', left: '58%', width: '21%', height: '25%' }">
+			<PasswordStrengthProgressChart />
+		</div>
+		<div class="tempWidget" :style="{ top: '72%', right: '2%', width: '17%' }">
+			<LoginHistoryCalendar />
+		</div>
+		<div class="iconWidgets" :style="{ top: '89%', left: '3%', width: '25%', height: '8%' }">
+			<LockIconCard :style="{ 'grid-row': '1', 'grid-column': 1 }" />
+			<SettingsIconCard :style="{ 'grid-row': '1', 'grid-column': 2 }" />
+			<!-- <LayoutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" /> -->
+			<AboutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" />
+		</div>
 	</div>
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
@@ -43,15 +55,25 @@ import FilterGroupTable from './components/Table/FilterGroupTable.vue';
 import GlobalAuthenticationPopup from './components/Authentication/GlobalAuthenticationPopup.vue';
 import PasswordValueTable from './components/Table/PasswordValueTable.vue';
 import ColorPaletteContainer from './components/ColorPalette/ColorPaletteContainer.vue';
-import LoginHistoryTable from './components/Table/LoginHistoryTable.vue';
 import ToastPopup from './components/ToastPopup.vue';
 import RequestedAuthenticationPopup from './components/Authentication/RequestedAuthenticationPopup.vue';
+import BreachedPasswords from "./components/BreachedPasswords/BreachedPasswords.vue"
+import PasswordValueGauges from './components/Widgets/SmallMetricGauges/Combined/PasswordValueGauges.vue';
+import FilterGroupGauges from './components/Widgets/SmallMetricGauges/Combined/FilterGroupGauges.vue';
+import PasswordStrengthProgressChart from './components/Dashboard/PasswordStrengthProgressChart.vue';
+import LoginHistoryCalendar from './components/Widgets/LoginHistoryCalendar.vue';
+import SettingsIconCard from "./components/Widgets/IconCards/SettingsIconCard.vue"
+import LockIconCard from "./components/Widgets/IconCards/LockIconCard.vue"
+import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
+import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
+import SliderField from './components/InputFields/SliderField.vue';
 
 import { SingleSelectorItemModel } from './Types/Models';
 import { stores } from './Objects/Stores';
 import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
+import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 
 export default defineComponent({
 	name: 'App',
@@ -64,29 +86,42 @@ export default defineComponent({
 		GlobalAuthenticationPopup,
 		PasswordValueTable,
 		ColorPaletteContainer,
-		LoginHistoryTable,
 		ToastPopup,
-		RequestedAuthenticationPopup
+		RequestedAuthenticationPopup,
+		BreachedPasswords,
+		PasswordValueGauges,
+		FilterGroupGauges,
+		PasswordStrengthProgressChart,
+		LoginHistoryCalendar,
+		SettingsIconCard,
+		LockIconCard,
+		AboutIconCard,
+		LayoutIconCard,
+		SliderField
 	},
 	setup()
 	{
+		// const cursor: Ref<HTMLElement | null> = ref(null);
 		const needsAuthentication: Ref<boolean> = ref(stores.appStore.needsAuthentication);
 		const coverMainUI: Ref<boolean> = ref(stores.appStore.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
-		let backgroundClr: Ref<string> = ref('#0f111d');
+		//let backgroundClr: Ref<string> = ref('#0f111d');
 
 		const showToast: Ref<boolean> = ref(false);
 		const toastText: Ref<string> = ref('');
 		const toastSuccess: Ref<boolean> = ref(false);
 
+		const requestAuthColor: Ref<string> = ref('');
 		const needsToSetupKey: Ref<boolean> = ref(false);
 		const requestAuth: Ref<boolean> = ref(false);
-		const onAuthSuccess: Ref<{ (key: string): void }> = ref((key: string) => { })
-		const onAuthCancel: Ref<{ (): void }> = ref(() => { })
+		const onAuthSuccess: Ref<{ (key: string): void }> = ref((_: string) => { });
+		const onAuthCancel: Ref<{ (): void }> = ref(() => { });
 
 		provide(ShowToastFunctionKey, showToastFunc);
-		provide(RequestAuthenticationFunctionKey, requestAuthentication)
+		provide(RequestAuthenticationFunctionKey, requestAuthentication);
+
+		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
 
 		const passwordTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
 		{
@@ -149,11 +184,11 @@ export default defineComponent({
 			setTimeout(() => showToast.value = false, 2000);
 		}
 
-		function requestAuthentication(onSuccess: (key: string) => void, onCancel: () => void)
+		function requestAuthentication(color: string, onSuccess: (key: string) => void, onCancel: () => void)
 		{
-			// TODO: Check if we need to create a key and show a different popup / popup with differnt
-			// wording
-			if (!stores.encryptedDataStore.canAuthenticateKey)
+			requestAuthColor.value = color;
+
+			if (!stores.canAuthenticateKey())
 			{
 				needsToSetupKey.value = true;
 			}
@@ -181,7 +216,7 @@ export default defineComponent({
 		const threshold: number = 1000;
 		onMounted(() =>
 		{
-			document.getElementById('body')?.addEventListener('mouseover', () =>
+			document.getElementById('body')?.addEventListener('mouseover', (_) =>
 			{
 				if (Date.now() - lastMouseover < threshold)
 				{
@@ -204,6 +239,7 @@ export default defineComponent({
 			{
 				setTimeout(() => coverMainUI.value = false, 500);
 			}
+
 		});
 
 		let clr = "#0f111d";
@@ -220,43 +256,23 @@ export default defineComponent({
 			showToast,
 			toastText,
 			toastSuccess,
+			requestAuthColor,
 			requestAuth,
 			onAuthSuccess,
 			onAuthCancel,
 			needsToSetupKey,
-			coverMainUI
+			coverMainUI,
+			gradient,
+			//cursor
 		}
 	}
 });
 </script>
 
 <style>
-@import './variables.css';
-
-.lockFade-enter-active,
-.lockFade-leave-active {
-	transition: opacity 1.5s ease-in;
-	/* z-index: 100; */
-}
-
-.lockFade-enter-from,
-.lockFade-leave-to {
-	opacity: 0;
-	/* z-index: 100; */
-}
-
-.appFade-enter-active {
-	transition: opacity 1.5s ease-in;
-}
-
-.appFade-leave-active {
-	transition: opacity 0.5s ease-in;
-}
-
-.appFade-enter-from,
-.appFade-leave-to {
-	opacity: 0;
-}
+@import './Constants/variables.css';
+@import './Constants/animations.css';
+@import './Constants/transitions.css';
 
 #app {
 	font-family: Avenir, Helvetica, Arial, sans-serif;
@@ -267,12 +283,11 @@ export default defineComponent({
 }
 
 body {
+	font-family: Avenir, Helvetica, Arial, sans-serif !important;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 	background-color: #0f111d;
 	overflow: hidden;
-}
-
-.footer {
-	height: 50px;
 }
 
 h2,
@@ -286,5 +301,35 @@ div {
 	height: 100%;
 	background-color: black;
 	z-index: 90;
+}
+
+.tempWidget {
+	position: absolute;
+}
+
+.tempWidget.background {
+	background: var(--widget-background-color);
+	border-radius: 20px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	row-gap: 25px;
+}
+
+.iconWidgets {
+	position: absolute;
+	background: var(--widget-background-color);
+	display: grid;
+	border-radius: 20px;
+}
+
+.tippy-box[data-theme~='material'] {
+	text-align: center;
+}
+
+.tippy-box[data-theme~='material'][data-placement^='bottom-start']>.tippy-arrow {
+	left: 10px !important;
+	transform: translate(0, 0) !important;
 }
 </style>

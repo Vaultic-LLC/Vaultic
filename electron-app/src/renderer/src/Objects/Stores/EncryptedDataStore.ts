@@ -1,14 +1,15 @@
 import { Password, NameValuePair, CurrentAndSafeStructure, IIdentifiable, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
-import { ComputedRef, Ref, computed, reactive, ref } from "vue";
+import { ComputedRef, computed, reactive } from "vue";
 import File from "../Files/File"
 import cryptUtility from "../../Utilities/CryptUtility";
 import hashUtility from "../../Utilities/HashUtility";
 import usePasswordStore, { PasswordStore } from "./PasswordStore";
 import useNameValuePair, { NameValuePairStore } from "./NameValuePairStore";
 import { DataType, Filter, Group } from "../../Types/Table";
-import idGenerator from "../../Utilities/IdGenerator";
+import generator from "../../Utilities/Generator";
 import { Dictionary } from "../../Types/DataStructures";
-import { Stores, stores } from ".";
+import { AuthenticationStore, Stores, stores } from ".";
+import useNameValuePairStore from "./NameValuePairStore";
 
 interface EncryptedDataState
 {
@@ -27,9 +28,8 @@ interface EncryptedDataState
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
 }
 
-export interface EncryptedDataStore
+export interface EncryptedDataStore extends AuthenticationStore
 {
-	canAuthenticateKey: boolean;
 	passwords: PasswordStore[];
 	unpinnedPasswords: PasswordStore[];
 	nameValuePairs: NameValuePairStore[];
@@ -50,8 +50,9 @@ export interface EncryptedDataStore
 	activeAtRiskPasswords: Dictionary<AtRiskType[]>;
 	activeAtRiskValueType: AtRiskType;
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
+	canAuthenticateKey: () => boolean;
 	init: (stores: Stores) => void;
-	checkKey: (key: string) => Promise<boolean>;
+	checkKey: (key: string) => boolean;
 	addPassword: (key: string, password: Password) => boolean;
 	updatePassword: (password: Password, passwordWasUpdated: boolean,
 		updatedSecurityQuestionQuestions: string[],
@@ -67,27 +68,54 @@ export interface EncryptedDataStore
 }
 
 const dataFile: File = new File("data");
-
-const defaultState: EncryptedDataState = {
-	loadedFile: false,
-	passwords: [],
-	nameValuePairs: [],
-	passwordHash: "",
-	valueHash: "",
-	duplicatePasswords: {},
-	duplicateNameValuePairs: {},
-	currentAndSafePasswords: { current: [], safe: [] },
-	currentAndSafeValues: { current: [], safe: [] },
-	activeAtRiskPasswordType: AtRiskType.None,
-	activeAtRiskPasswords: {},
-	activeAtRiskValueType: AtRiskType.None,
-	activeAtRiskValues: {}
-}
-
-const encryptedDataState: EncryptedDataState = reactive(defaultState);
+let encryptedDataState: EncryptedDataState;
 
 export default function useEncryptedDataStore(): EncryptedDataStore
 {
+	encryptedDataState = reactive(defaultState());
+
+	// -- Generic Store Methods
+	function defaultState(): EncryptedDataState
+	{
+		return {
+			loadedFile: false,
+			passwords: [],
+			nameValuePairs: [],
+			passwordHash: "",
+			valueHash: "",
+			duplicatePasswords: {},
+			duplicateNameValuePairs: {},
+			currentAndSafePasswords: { current: [], safe: [] },
+			currentAndSafeValues: { current: [], safe: [] },
+			activeAtRiskPasswordType: AtRiskType.None,
+			activeAtRiskPasswords: {},
+			activeAtRiskValueType: AtRiskType.None,
+			activeAtRiskValues: {}
+		};
+	}
+
+	function canAuthenticateKey()
+	{
+		return dataFile.exists();
+	}
+
+	function writeState(key: string)
+	{
+		if (encryptedDataState.passwords.length == 0 && encryptedDataState.nameValuePairs.length == 0)
+		{
+			dataFile.empty();
+		}
+		else
+		{
+			dataFile.write(key, encryptedDataState);
+		}
+	}
+
+	function resetToDefault()
+	{
+		Object.assign(encryptedDataState, defaultState());
+	}
+
 	// --- Private Helper Methods ---
 	function calculateHash<T extends { [key: string]: string }>(key: string, values: T[], property: string)
 	{
@@ -97,23 +125,54 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		return hashUtility.hash(runningPasswords);
 	}
 
-	async function loadDataFileState(key: string): Promise<boolean>
+	function readState(key: string): boolean
 	{
+		if (encryptedDataState.loadedFile)
+		{
+			return true;
+		}
+
 		// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
 		try
 		{
-			const data: EncryptedDataState = await dataFile.read<EncryptedDataState>(key);
-			if (calculateHash(key, data.passwords, 'password') == data.passwordHash)
+			const [success, data]: [boolean, EncryptedDataState] = dataFile.read<EncryptedDataState>(key);
+			if (!success)
 			{
-				Object.assign(encryptedDataState, data);
-				encryptedDataState.loadedFile = true;
+				throw ('Unable to read data file');
+			}
 
-				return true;
+			if (data.passwordHash)
+			{
+				if (calculateHash(key, data.passwords, 'password') == data.passwordHash)
+				{
+					assignState(data);
+					return true;
+				}
+			}
+			else if (data.valueHash)
+			{
+				if (calculateHash(key, data.nameValuePairs, 'value') == data.valueHash)
+				{
+					assignState(data);
+					return true;
+				}
 			}
 		}
 		catch (e: any)
 		{
 			return false;
+		}
+
+		function assignState(state: EncryptedDataState)
+		{
+			Object.assign(encryptedDataState, state);
+			encryptedDataState.loadedFile = true;
+
+			encryptedDataState.passwords = [];
+			encryptedDataState.nameValuePairs = [];
+
+			state.passwords.forEach(p => encryptedDataState.passwords.push(usePasswordStore(key, p, true)));
+			state.nameValuePairs.forEach(nvp => encryptedDataState.nameValuePairs.push(useNameValuePairStore(key, nvp, true)));
 		}
 
 		return false;
@@ -149,20 +208,6 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		}
 
 		return false;
-	}
-
-	function writeState(key: string)
-	{
-		if (encryptedDataState.passwords.length == 0 && encryptedDataState.nameValuePairs.length == 0)
-		{
-			dataFile.write(key, "");
-		}
-		else
-		{
-			dataFile.write(key, encryptedDataState);
-		}
-
-		checkIfCanAuthenticate();
 	}
 
 	function updateDuplicatePasswordOrValueIndex<T extends IIdentifiable & (PasswordStore | NameValuePairStore)>
@@ -254,13 +299,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		delete duplicateValues[value.id];
 	}
 
-	function checkIfCanAuthenticate()
-	{
-		canAuthenticateKey.value = dataFile.exists();
-	}
-
 	// --- Public ---
-	const canAuthenticateKey: Ref<boolean> = ref(false);
 	const oldPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.isOld).map(p => p.id));
 	const weakPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.isWeak).map(p => p.id));
 	const containsLoginPasswords: ComputedRef<string[]> = computed(() => encryptedDataState.passwords.filter(p => p.containsLogin).map(p => p.id));
@@ -278,13 +317,13 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	const unpinnedPasswords: ComputedRef<PasswordStore[]> = computed(() => encryptedDataState.passwords.filter(p => !p.isPinned));
 	const unpinnedValues: ComputedRef<NameValuePairStore[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => !nvp.isPinned));
 
-	function init(stores: Stores)
+	function init(_: Stores)
 	{
 	}
 
-	async function checkKey(key: string): Promise<boolean>
+	function checkKey(key: string): boolean
 	{
-		if (!canAuthenticateKey.value)
+		if (!canAuthenticateKey())
 		{
 			return true;
 		}
@@ -302,7 +341,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		}
 		else
 		{
-			return await loadDataFileState(key);
+			return readState(key);
 		}
 
 		return false;
@@ -315,14 +354,15 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			return false;
 		}
 
-		password.id = idGenerator.uniqueId(encryptedDataState.passwords);
+		password.id = generator.uniqueId(encryptedDataState.passwords);
 
 		const passwordStore: PasswordStore = usePasswordStore(key, password);
 		encryptedDataState.passwords.push(passwordStore);
 
 		updateDuplicatePasswordOrValueIndex(key, passwordStore, "password", encryptedDataState.passwords, encryptedDataState.duplicatePasswords);
 
-		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
+		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.Passwords, password);
@@ -356,12 +396,15 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		if (passwordWasUpdated)
 		{
 			updateDuplicatePasswordOrValueIndex(key, currentPassword[0], "password", encryptedDataState.passwords, encryptedDataState.duplicatePasswords);
+
+			encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
+				encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
+			encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.Passwords, addedGroups, removedGroups, password.id);
 		stores.filterStore.syncFiltersForValues(stores.filterStore.passwordFilters, [password as PasswordStore], "passwords");
 
-		// TODO: Figure out how to upate current and safe password counts so graph displays nice
 
 		writeState(key);
 	}
@@ -373,8 +416,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		encryptedDataState.passwords.splice(encryptedDataState.passwords.indexOf(password), 1);
 
-		// TODO: is this correct?
-		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
+		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
 		encryptedDataState.passwordHash = calculateHash(key, encryptedDataState.passwords, "password");
@@ -382,6 +425,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.Passwords, password);
 		stores.filterStore.removeValueFromFilers(DataType.Passwords, password);
+
+		writeState(key);
 	}
 
 	function addNameValuePair(key: string, nameValuePair: NameValuePair): boolean
@@ -391,14 +436,15 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			return false;
 		}
 
-		nameValuePair.id = idGenerator.uniqueId(encryptedDataState.nameValuePairs);
+		nameValuePair.id = generator.uniqueId(encryptedDataState.nameValuePairs);
 
 		const nameValuePairStore: NameValuePairStore = useNameValuePair(key, nameValuePair);
 		encryptedDataState.nameValuePairs.push(nameValuePairStore);
 
 		updateDuplicatePasswordOrValueIndex(key, nameValuePairStore, "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
 
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
+		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.NameValuePairs, nameValuePair);
@@ -430,6 +476,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		if (valueWasUpdated)
 		{
 			updateDuplicatePasswordOrValueIndex(key, currentValue[0], "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
+
+			encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
+				encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
+			encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
@@ -445,8 +495,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		encryptedDataState.nameValuePairs.splice(encryptedDataState.nameValuePairs.indexOf(nameValuePair), 1);
 
-		// TODO: is this correct?
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
+		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
+			encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
 		encryptedDataState.valueHash = calculateHash(key, encryptedDataState.nameValuePairs, "value");
@@ -454,6 +504,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.NameValuePairs, nameValuePair);
 		stores.filterStore.removeValueFromFilers(DataType.NameValuePairs, nameValuePair);
+
+		writeState(key);
 	}
 
 	function addRemoveGroupsFromPasswordValue(addedValues: string[], removedValues: string[], group: Group)
@@ -572,10 +624,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		}
 	}
 
-	checkIfCanAuthenticate();
-
 	return {
-		get canAuthenticateKey() { return canAuthenticateKey.value; },
 		get passwords() { return encryptedDataState.passwords; },
 		get unpinnedPasswords() { return unpinnedPasswords.value; },
 		get nameValuePairs() { return encryptedDataState.nameValuePairs; },
@@ -596,7 +645,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		get activeAtRiskPasswords() { return encryptedDataState.activeAtRiskPasswords; },
 		get activeAtRiskValueType() { return encryptedDataState.activeAtRiskValueType; },
 		get activeAtRiskValues() { return encryptedDataState.activeAtRiskValues; },
+		canAuthenticateKey,
 		init,
+		readState,
+		resetToDefault,
 		checkKey,
 		addPassword,
 		updatePassword,

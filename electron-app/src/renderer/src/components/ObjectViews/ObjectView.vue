@@ -25,7 +25,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const objectViewForm: Ref<HTMLElement | null> = ref(null);
-
+		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const buttonText: Ref<string> = ref(props.creating ? "Create" : "Save and Close");
 		const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
 		const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
@@ -41,7 +41,7 @@ export default defineComponent({
 		provide(DecryptFunctionsKey, decryptFunctions);
 		provide(RequestAuthorizationKey, requestAuthorization);
 
-		const requestAuthFunc: { (onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
 		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const buttonStyles = reactive({
@@ -113,7 +113,7 @@ export default defineComponent({
 
 			if (requestAuthFunc)
 			{
-				requestAuthFunc(onAuthenticationSuccessful, authenticationCancelled);
+				requestAuthFunc(primaryColor.value, onAuthenticationSuccessful, authenticationCancelled);
 			}
 
 			requestAuthorization.value = false;

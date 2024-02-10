@@ -1,16 +1,18 @@
 <template>
-	<th class="tableHeader" @click="onClick()" :class="{ clickable: headerModel.clickable }">
-		<div class="tableHeaderContent">
-			<span class="iconContainer"
-				:class="{ descending: descending, active: isActive, hover: hoveringIcon || hoveringText }"
-				@mouseover="hoveringIcon = true" @mouseleave="hoveringIcon = false">
-				<ion-icon class="sortIcon" name="arrow-up-outline"></ion-icon>
-			</span>
-			<span class="tableHeaderText" :class="{ hover: hoveringIcon || hoveringText }" @mouseover="hoveringText = true"
-				@mouseleave="hoveringText = false">{{
-					headerModel.name }}</span>
-		</div>
-	</th>
+	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }">
+		<Transition name="fade" mode="out-in">
+			<div :key="key" class="tableHeaderContent" :style="{ 'padding-left': headerModel.padding ?? '0' }">
+				<span class="tableHeaderText" :class="{ hover: hoveringIcon || hoveringText }"
+					@mouseover="hoveringText = true" @mouseleave="hoveringText = false">{{
+						headerModel.name }}</span>
+				<span v-if="showIcon" class="iconContainer"
+					:class="{ descending: headerModel.descending?.value, active: headerModel.isActive.value, hover: hoveringIcon || hoveringText }"
+					@mouseover="hoveringIcon = true" @mouseleave="hoveringIcon = false">
+					<ion-icon class="sortIcon" name="arrow-up-outline"></ion-icon>
+				</span>
+			</div>
+		</Transition>
+	</div>
 </template>
 
 <script lang="ts">
@@ -20,52 +22,34 @@ import { SortableHeaderModel } from '../../../Types/Models';
 
 export default defineComponent({
 	name: "TableHeaderCell",
-	props: ["model", "backgroundColor"],
+	props: ["model", "backgroundColor", 'index'],
 	setup(props)
 	{
+		const key: Ref<string> = ref('');
 		const headerModel: ComputedRef<SortableHeaderModel> = computed(() => props.model);
-		const isActive: Ref<boolean> = ref(headerModel.value.isActive);
-		const descending: Ref<boolean> = ref(headerModel.value.descending ?? true)
 		const background: Ref<string> = ref(props.backgroundColor);
+		const showIcon: Ref<boolean> = ref(headerModel.value.clickable);
 
 		let hoveringIcon: Ref<boolean> = ref(false);
 		let hoveringText: Ref<boolean> = ref(false);
 
-		watch(() => headerModel.value.isActive, (newValue) =>
+		watch(() => headerModel.value.name, () =>
 		{
-			if (typeof newValue !== "boolean")
-			{
-				isActive.value = newValue.value;
-			}
-			else
-			{
-				isActive.value = (newValue as boolean);
-			}
+			key.value = Date.now().toString();
 		});
 
 		function onClick()
 		{
-			if (!headerModel.value.clickable)
-			{
-				return;
-			}
-
-			if (isActive.value)
-			{
-				headerModel.value.descending = !headerModel.value.descending
-				descending.value = headerModel.value.descending;
-			}
-
 			headerModel.value.onClick();
 		}
 
 		return {
+			key,
 			headerModel,
-			isActive,
-			descending,
 			hoveringIcon,
 			hoveringText,
 			background,
+			showIcon,
 			onClick
 		}
 	}
@@ -73,7 +57,7 @@ export default defineComponent({
 </script>
 
 <style>
-.tableHeader {
+.tableHeaderCell {
 	top: 0;
 	position: sticky;
 	color: white;
@@ -84,7 +68,7 @@ export default defineComponent({
 	transition: 0.6s;
 	animation: fadeIn 1s linear forwards;
 	z-index: 1;
-	background-color: v-bind(background);
+	/* background-color: v-bind(background); */
 	opacity: 1;
 	width: v-bind('headerModel.width');
 }
@@ -104,12 +88,16 @@ export default defineComponent({
 	align-items: center;
 }
 
+.tableHeaderContent.padding {
+	padding-left: 25px;
+}
+
 .tableHeaderText {
 	opacity: 1;
 	transform: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 
-.tableHeader.clickable .tableHeaderContent .tableHeaderText {
+.tableHeaderCell.clickable .tableHeaderContent .tableHeaderText {
 	cursor: pointer;
 }
 
@@ -133,9 +121,8 @@ export default defineComponent({
 }
 
 .tableHeaderText.hover,
-.tableHeader.clickable .tableHeaderContent .iconContainer.hover,
-.tableHeader.clickable .tableHeaderContent .iconContainer.active.hover {
+.tableHeaderCell.clickable .tableHeaderContent .iconContainer.hover,
+.tableHeaderCell.clickable .tableHeaderContent .iconContainer.active.hover {
 	opacity: 0.7;
-
 }
 </style>

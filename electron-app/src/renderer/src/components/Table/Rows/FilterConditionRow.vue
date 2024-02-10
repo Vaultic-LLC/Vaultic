@@ -1,19 +1,20 @@
 <template>
-	<TableRow :rowNumber="rowNumber" :model="model" :color="color" :allowDelete="true">
-		<td class="securityQuestion">
+	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="color" :allowDelete="true" :zIndexing="true"
+		:animateDelete="true">
+		<td class="securityQuestionCellOne">
 			<PropertySelectorInputField :label="'Property'" :color="color" v-model="filterCondition.property"
-				:model="filterCondition.property" :displayFieldOptions="displayFieldOptions"
-				@propertyTypeChanged="onPropertyTypeChanged" />
+				:model="filterCondition.property" :displayFieldOptions="displayFieldOptions" :isOnWidget="true"
+				:fadeIn="true" @propertyTypeChanged="onPropertyTypeChanged" />
 		</td>
 		<td>
 			<EnumInputField :label="'Condition Type'" :color="color" v-model="filterCondition.filterType"
-				:optionsEnum="filterConditionType" fadeIn="true" />
+				:optionsEnum="filterConditionType" fadeIn="true" :isOnWidget="true" />
 		</td>
 		<td>
 			<TextInputField v-if="inputType == 0" :label="'Value'" :color="color" v-model="filterCondition.value"
-				:fadeIn="true" />
+				:fadeIn="true" :isOnWidget="true" />
 			<EnumInputField v-if="inputType == 1" :label="'Value'" :color="color" v-model="filterCondition.value"
-				:optionsEnum="inputEnumType" fadeIn="false" />
+				:optionsEnum="inputEnumType" fadeIn="true" :isOnWidget="true" />
 		</td>
 	</TableRow>
 </template>
@@ -28,6 +29,7 @@ import EnumInputField from '../../../components/InputFields/EnumInputField.vue';
 
 import { FilterCondition, FilterConditionType, EqualFilterConditionType } from '../../../Types/Table';
 import { PropertyType } from '../../../Types/EncryptedData';
+import { TableRowData } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: 'FilterConditionRow',
@@ -38,8 +40,9 @@ export default defineComponent({
 		PropertySelectorInputField,
 		EnumInputField
 	},
+	emits: ['onDelete'],
 	props: ["model", "color", "rowNumber", 'displayFieldOptions'],
-	setup(props)
+	setup(props, ctx)
 	{
 		const filterCondition: ComputedRef<FilterCondition> = computed(() => props.model);
 		const inputType: Ref<PropertyType> = ref(PropertyType.String);
@@ -70,15 +73,31 @@ export default defineComponent({
 			}
 		}
 
+		const tableRowData: Ref<TableRowData> = ref(
+			{
+				id: '',
+				values: [],
+				onDelete: function ()
+				{
+					ctx.emit("onDelete", filterCondition.value.id);
+				}
+			}
+		);
+
 		return {
 			filterCondition,
 			filterConditionType,
 			inputType,
 			inputEnumType,
+			tableRowData,
 			onPropertyTypeChanged
 		}
 	}
 });
 </script>
 
-<style></style>
+<style>
+.securityQuestionCellOne {
+	padding: 10px
+}
+</style>

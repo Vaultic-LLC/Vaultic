@@ -1,28 +1,44 @@
 <template>
-	<div class="groupIcon" @mouseenter="text = currentGroup.name" @mouseleave="text = currentGroup.name[0]">
+	<div ref="groupIcon" class="groupIcon" @mouseenter="" @mouseleave="">
 		<span class="groupText">
-			{{ text }}
+			{{ groupModel.iconDisplayText }}
 		</span>
 	</div>
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
-import { Group } from '../../Types/Table';
+import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
+
+import tippy from 'tippy.js';
+import 'tippy.js/dist/tippy.css'; // optional for styling
+import 'tippy.js/animations/scale.css';
+import { GroupIconModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "GroupIcon",
-	props: ["group"],
+	props: ["model", "displayOverride"],
 	setup(props)
 	{
-		let currentGroup: ComputedRef<Group> = computed(() => props.group);
-		let groupColor: ComputedRef<string> = computed(() => currentGroup.value.color);
-		let text: Ref<string> = ref(currentGroup.value.name[0]);
+		const groupIcon: Ref<HTMLElement | null> = ref(null);
+		let groupModel: ComputedRef<GroupIconModel> = computed(() => props.model);
+
+		onMounted(() =>
+		{
+			if (groupIcon.value)
+			{
+				tippy(groupIcon.value, {
+					content: groupModel.value.toolTipText,
+					inertia: true,
+					animation: 'scale',
+					theme: 'material',
+					placement: 'top'
+				});
+			}
+		});
 
 		return {
-			currentGroup,
-			groupColor,
-			text
+			groupIcon,
+			groupModel
 		}
 	},
 })
@@ -37,12 +53,12 @@ export default defineComponent({
 	align-items: center;
 	margin: 5px;
 	transition: 0.5s;
-	background-color: v-bind(groupColor);
-	box-shadow: 0 0 10px v-bind(groupColor);
+	background: v-bind('groupModel.color');
+	box-shadow: 0 0 10px v-bind('groupModel.color');
 }
 
 .groupIcon:hover {
-	transform: scale(1.5);
+	transform: scale(1.1);
 }
 
 .groupText {

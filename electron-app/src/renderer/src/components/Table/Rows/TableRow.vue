@@ -1,27 +1,21 @@
 <template>
-	<tr class="tableRow" :class="{ clickable: clickable, pinned: isPinned }">
+	<tr class="tableRow"
+		:class="{ clickable: clickable, pinned: isPinned, zIndexing: zIndexing, deletingRow: deletingRow }">
 		<slot></slot>
-		<td v-for="rowValue in tableRowData.values" :key="rowValue.value">
-			<div class="rowValue" :style="{ 'width': rowValue.width }">
-				<div class="rowValueValue">
-					{{ rowValue.value }}
-				</div>
-				<div v-if="rowValue.copiable" class="copyIcon" @click.stop="copyText(rowValue.value)">
-					<ion-icon name="clipboard-outline"></ion-icon>
-				</div>
-			</div>
-		</td>
+		<component v-for="(rowValue, index) in tableRowData.values" :key="index" :is="rowValue.component" :model="rowValue"
+			:color="color" />
+		<td class="gapRow" :style="{ 'width': 'auto' }"></td>
 		<td v-if="allowPin || allowEdit || allowDelete" class="gapData"></td>
-		<td v-if="!hideAtRiskCell" :class="{ hideCell: !tableRowData.atRiskMessage }">
-			<AtRiskIndicator :message="tableRowData.atRiskMessage" />
+		<td v-if="!hideAtRiskCell" class="tableRowIconCell" :class="{ hideCell: !tableRowData.atRiskMessage }">
+			<AtRiskIndicator :color="color" :message="tableRowData.atRiskMessage" />
 		</td>
-		<td v-if="allowPin" @click.stop="onPin" class="magnetCell">
+		<td v-if="allowPin" @click.stop="onPin" class="magnetCell tableRowIconCell">
 			<ion-icon class="rowIcon magnet" name="magnet-outline"></ion-icon>
 		</td>
-		<td v-if="allowEdit" @click.stop="onEdit">
+		<td v-if="allowEdit" @click.stop="onEdit" class="tableRowIconCell">
 			<ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
 		</td>
-		<td v-if="allowDelete" @click.stop="onDelete">
+		<td v-if="allowDelete" @click.stop="onDelete" class="tableRowIconCell">
 			<ion-icon class="rowIcon delete" name="trash-outline"></ion-icon>
 		</td>
 	</tr>
@@ -30,8 +24,11 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, inject, Ref, ref } from 'vue';
 
-import { TableRowData } from '../../../Types/Models';
 import AtRiskIndicator from '../AtRiskIndicator.vue';
+import TableRowTextValue from './TableRowTextValue.vue';
+import TableRowColorValue from './TableRowColorValue.vue';
+
+import { TableRowData } from '../../../Types/Models';
 import { stores } from '../../../Objects/Stores/index';
 import { ColorPalette } from '../../..//Types/Colors';
 import clipboard from 'clipboardy';
@@ -41,9 +38,12 @@ export default defineComponent({
 	name: "TableRow",
 	components:
 	{
-		AtRiskIndicator
+		AtRiskIndicator,
+		TableRowTextValue,
+		TableRowColorValue
 	},
-	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete", 'clickable', 'hideAtRisk'],
+	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete",
+		'clickable', 'hideAtRisk', 'zIndexing', 'animateDelete'],
 	setup(props)
 	{
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
@@ -55,6 +55,7 @@ export default defineComponent({
 		const animationDelay: Ref<string> = ref('');
 		setAnimationDelay(rowNumb.value);
 		const hideAtRiskCell: ComputedRef<boolean> = computed(() => props.hideAtRisk === true);
+		const deletingRow: Ref<boolean> = ref(false);
 
 		const showToastFunction: { (title: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
@@ -75,7 +76,7 @@ export default defineComponent({
 			}
 
 			// reset animation delay in case the table is re rendered (filter, sorting, etc.)
-			setTimeout(() => setAnimationDelay(rowNumb.value), 1000);
+			setTimeout(() => setAnimationDelay(rowNumb.value), 800);
 		}
 
 		function onEdit()
@@ -88,9 +89,23 @@ export default defineComponent({
 
 		function onDelete()
 		{
-			if (tableRowData.value.onDelete)
+			if (props.animateDelete == true)
 			{
-				tableRowData.value.onDelete();
+				deletingRow.value = true;
+				setTimeout(() =>
+				{
+					if (tableRowData.value.onDelete)
+					{
+						tableRowData.value.onDelete();
+					}
+				}, 350);
+			}
+			else
+			{
+				if (tableRowData.value.onDelete)
+				{
+					tableRowData.value.onDelete();
+				}
 			}
 		}
 
@@ -108,6 +123,7 @@ export default defineComponent({
 			rowColor,
 			animationDelay,
 			hideAtRiskCell,
+			deletingRow,
 			onPin,
 			onEdit,
 			onDelete,
@@ -118,16 +134,21 @@ export default defineComponent({
 </script>
 <style>
 .tableRow {
+	position: relative;
 	width: 80%;
 	opacity: 0;
 	animation: fadeIn 1s linear forwards;
 	animation-delay: v-bind(animationDelay);
 	border-top-right-radius: 20px;
 	border-bottom-right-radius: 20px;
-	transition: box-shadow 0.5s linear forwards;
+	transition: box-shadow 0.3s;
 
 	border: 10px solid transparent;
 	/* background-color: #121a20; */
+}
+
+.tableRow.zIndexing {
+	z-index: calc(999999 - v-bind(rowNumber));
 }
 
 .tableRow.shadow.pinned {
@@ -140,9 +161,10 @@ export default defineComponent({
 }
 
 .tableRow.shadow {
-	transition: box-shadow 0.5s linear forwards;
-	box-shadow: -5px 5px 10px #070a0c,
-		5px -5px 10px #1b2630;
+	transition: 0.3s;
+	/* box-shadow: -5px 5px 10px #070a0c,
+		5px -5px 10px #1b2630; */
+	/* background: rgb(44 44 51 / 16%); */
 }
 
 .tableRow.isOpen {
@@ -152,14 +174,8 @@ export default defineComponent({
 		5px -5px 10px #1b2630;
 }
 
-@keyframes fadeIn {
-	0% {
-		opacity: 0;
-	}
-
-	100% {
-		opacity: 1;
-	}
+.tableRow.deletingRow {
+	animation: 0.3s deleteRow linear;
 }
 
 @keyframes rotate {
@@ -172,11 +188,25 @@ export default defineComponent({
 	}
 }
 
+@keyframes deleteRow {
+	0% {
+		opacity: 1;
+	}
+
+	99% {
+		opacity: 0;
+	}
+
+	100% {
+		display: none;
+	}
+}
+
 .tableRow.hover:hover {
-	transition: 0.2s;
+	transition: 0.3s;
 	border: 10px solid v-bind(primaryColor);
 	box-shadow: 0 0px 10px v-bind(primaryColor);
-	transform: scale(1.01, 1.1);
+	/* transform: scale(1.01, 1.1); */
 	/* animation: rowHover 2s linear forwards; */
 }
 
@@ -207,6 +237,7 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	overflow: hidden;
+	flex-wrap: wrap;
 }
 
 .tableRow .rowIcon {
@@ -238,7 +269,7 @@ export default defineComponent({
 }
 
 .tableRow .rowIcon.delete:hover {
-	color: v-bind('currentColorPalette.deleteColor');
+	color: v-bind('color');
 }
 
 .rowValue {
@@ -264,5 +295,10 @@ export default defineComponent({
 .rowValue .copyIcon:hover {
 	color: v-bind(primaryColor);
 	transform: translate(50%, -50%) scale(1.1);
+}
+
+.tableRow .tableRowIconCell {
+	text-align: center;
+	width: 10%
 }
 </style>

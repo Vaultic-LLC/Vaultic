@@ -1,19 +1,36 @@
 <template>
-	<div id="passwordStrenghtProgressContainer" :key="key">
-		<h2>Security Over Time</h2>
-		<Line :data="data" :options="options">
-		</Line>
+	<div class="strengthGraphContainer">
+		<div class="strengthGraphContainer__header">
+			<div class="strengthGraphContainer__resetButton" @click="reset">
+				Reset
+			</div>
+			<h2 class="strengthGraphContainer__title">Security Over Time</h2>
+		</div>
+		<div ref="chartContainer" class="strengthGraphContainer__chart">
+			<Transition name="fade" mode="out-in">
+				<div :key="key" v-if="showNoData" class="strengthGraphContainer__noData">
+					{{ noDataMessage }}
+				</div>
+			</Transition>
+			<Line ref="lineChart" :data="data" :options="options" :style="{ width: width, height: height }">
+			</Line>
+		</div>
 	</div>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref, watch } from 'vue';
-import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale } from "chart.js"
+import { Ref, defineComponent, onMounted, ref, watch, toRaw, ComputedRef, computed } from 'vue';
+
+import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
 import { DataType } from '../../Types/Table';
 import { stores } from '../../Objects/Stores';
+import { hexToRgb, mixHexes, rgbToHex, toSolidHex } from '@renderer/Helpers/ColorHelper';
+import zoomPlugin from 'chartjs-plugin-zoom';
+import { tween } from '@renderer/Helpers/TweenHelper';
+import { RGBColor } from '@renderer/Types/Colors';
 
-Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale)
+Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler, zoomPlugin)
 
 export default defineComponent({
 	name: "PasswordStrengthProgressChart",
@@ -24,6 +41,8 @@ export default defineComponent({
 	setup()
 	{
 		const key: Ref<string> = ref('');
+		const chartContainer: Ref<HTMLElement | null> = ref(null);
+		const lineChart: Ref<any> = ref(null);
 
 		const color: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			stores.settingsStore.currentColorPalette.passwordsColor.primaryColor : stores.settingsStore.currentColorPalette.valuesColor.primaryColor);
@@ -32,122 +51,364 @@ export default defineComponent({
 		let chartOneArray: number[] = [...stores.encryptedDataStore.currentAndSafePasswords.safe];
 
 		let table: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values")
+		let target: Ref<number[]> = ref(stores.encryptedDataStore.currentAndSafePasswords.current.map(_ => stores.encryptedDataStore.passwords.length));
+		let max: Ref<number> = ref(Math.max(...stores.encryptedDataStore.currentAndSafePasswords.safe));
 
-		function updateKey()
+		const height: Ref<string> = ref('100%');
+		const width: Ref<string> = ref('100%');
+
+		const resizeObserver: ResizeObserver = new ResizeObserver(() => resizeChart());
+
+		let options: Ref<any> = ref({});
+
+		const showNoData: ComputedRef<boolean> = computed(() => chartOneArray.length == 0);
+		const noDataMessage: ComputedRef<string> = computed(() => `No data. Add a ${stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password" : "Value"} to get started.`);
+
+		const data: Ref<any> = ref({
+			labels: toRaw(lableArray.value),
+			datasets: getDataset()
+		});
+
+		function updateData(newColor?: string, oldColor?: string)
 		{
-			data.value = {
-				labels: lableArray.value,
-				datasets: [
-					{
-						label: 'Secure ' + table.value,
-						data: chartOneArray,
-						borderColor: color,
-						cubicInterpolationMode: 'monotone',
-						tension: 0.4
-					}
-				]
-			};
+			lineChart.value.chart.options.animation.duration = 1000;
+			lineChart.value.chart.update();
 
+			lineChart.value.chart.data.labels = toRaw(lableArray.value);
+			lineChart.value.chart.data.datasets[0].data = EMACalc(chartOneArray, 2);
+
+			lineChart.value.chart.data.datasets[1].data = target.value;
+
+			lineChart.value.chart.options.scales.y.max = max.value;
+
+			if (newColor && oldColor)
+			{
+				updateColors(newColor, oldColor, 500);
+			}
+			else
+			{
+				lineChart.value.chart.update();
+			}
+		}
+
+		function updateColors(newColor: string, oldColor: string, length: number)
+		{
+			const from: RGBColor | null = hexToRgb(oldColor);
+			const to: RGBColor | null = hexToRgb(newColor);
+
+			lineChart.value.chart.options.animation.duration = length;
+			lineChart.value.chart.update();
+
+			tween<RGBColor>(from!, to!, 500, (object) =>
+			{
+				object.r = Math.round(object.r);
+				object.g = Math.round(object.g);
+				object.b = Math.round(object.b);
+
+				const hexColor: string = rgbToHex(object.r, object.g, object.b);
+
+				lineChart.value.chart.data.datasets[0].borderColor = `rgba(${object.r}, ${object.g}, ${object.b}, ${object.alpha})`;
+				lineChart.value.chart.data.datasets[1].borderColor = mixHexes(hexColor, "888888");
+
+				lineChart.value.chart.data.datasets[0].backgroundColor = getGradient(lineChart.value.chart, hexColor);
+
+				lineChart.value.chart.update();
+			});
+		}
+
+		// should only be called when first loading. Otherwise just update the options through the line chart
+		function setOptions(animationTime: number)
+		{
+			options.value = {
+				responsive: true,
+				elements:
+				{
+					point:
+					{
+						radius: 0
+					}
+				},
+				animation:
+				{
+					duration: animationTime,
+					easing: 'linear'
+				},
+				plugins:
+				{
+					legend: {
+						onClick: function (e)
+						{
+							e.stopPropagation();
+						}
+					},
+					zoom: {
+						zoom: {
+							wheel: {
+								enabled: true,
+							},
+							pinch: {
+								enabled: false
+							},
+							drag: {
+								enabled: false
+							},
+							mode: 'xy',
+							scaleMode: 'xy'
+						},
+						pan: {
+							enabled: true,
+							scaleMode: 'xy'
+						}
+					}
+				},
+				scales: {
+					x: {
+					},
+					y: {
+						max: max.value
+					}
+				}
+			};
+		}
+
+		function getDataset()
+		{
+			return [
+				{
+					label: table.value + ' Security Rating',
+					data: EMACalc(chartOneArray, 2),
+					backgroundColor: function (context)
+					{
+						const chart = context.chart;
+						return getGradient(chart, color.value);
+					},
+					fill: true,
+					borderColor: color.value,
+					pointBackgroundColor: color.value,
+					pointRadius: 0,
+					// cubicInterpolationMode: 'monotone',
+					tension: 0.3
+				},
+				{
+					label: "Target",
+					data: target,
+					borderColor: mixHexes(color.value, "888888"),
+					fill: false,
+					pointRadius: 0
+				}
+			]
+		}
+
+		function EMACalc(mArray, mRange): number[]
+		{
+			var k = 2 / (mRange + 1);
+			// first item is just the same as the first item in the input
+			let emaArray = [mArray[0]];
+			// for the rest of the items, they are computed with the previous one
+			for (var i = 1; i < mArray.length; i++)
+			{
+				emaArray.push(mArray[i] * k + emaArray[i - 1] * (1 - k));
+			}
+
+			return emaArray;
+		}
+
+		function resizeChart()
+		{
 			key.value = Date.now().toString();
+		}
+
+		function getGradient(chart: any, hexColor: string)
+		{
+			const { ctx, chartArea } = chart;
+
+			if (!chartArea)
+			{
+				// This case happens on initial chart load
+				return;
+			}
+
+			let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
+
+			// hex value already has opacity, remove it
+			hexColor = toSolidHex(hexColor);
+
+			gradient.addColorStop(0, hexColor + "88");
+			gradient.addColorStop(0.35, hexColor + "44");
+			gradient.addColorStop(1, hexColor + "00");
+
+			return gradient;
+		}
+
+		function reset()
+		{
+			setOptions(500);
 		}
 
 		watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
 		{
+			let newColor: string = "";
 			switch (newValue)
 			{
 				case DataType.NameValuePairs:
 					lableArray.value = [...stores.encryptedDataStore.currentAndSafeValues.current];
 					chartOneArray = [...stores.encryptedDataStore.currentAndSafeValues.safe];
-					color.value = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
-					table.value = "Values";
+					newColor = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
+					table.value = "Value";
+					target.value = stores.encryptedDataStore.currentAndSafeValues.current.map(_ => stores.encryptedDataStore.nameValuePairs.length);
+					max.value = Math.max(...stores.encryptedDataStore.currentAndSafeValues.safe)
 					break;
 				case DataType.Passwords:
 				default:
 					lableArray.value = [...stores.encryptedDataStore.currentAndSafePasswords.current];
 					chartOneArray = [...stores.encryptedDataStore.currentAndSafePasswords.safe];
-					color.value = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
-					table.value = "Passwords";
+					newColor = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
+					table.value = "Password";
+					target.value = stores.encryptedDataStore.currentAndSafePasswords.current.map(_ => stores.encryptedDataStore.passwords.length);
+					max.value = Math.max(...stores.encryptedDataStore.currentAndSafePasswords.safe)
 					break;
 			}
 
-			updateKey();
+			updateData(newColor, color.value);
+			color.value = newColor;
 		});
 
-		watch(() => stores.encryptedDataStore.currentAndSafePasswords.current.length, (newValue) =>
+		watch(() => stores.encryptedDataStore.currentAndSafePasswords.current.length, () =>
 		{
 			lableArray.value = [...stores.encryptedDataStore.currentAndSafePasswords.current];
-			updateKey();
+			updateData();
 		});
 
-		watch(() => stores.encryptedDataStore.currentAndSafePasswords.safe.length, (newValue) =>
+		watch(() => stores.encryptedDataStore.currentAndSafePasswords.safe.length, () =>
 		{
 			chartOneArray = [...stores.encryptedDataStore.currentAndSafePasswords.safe];
-			updateKey();
+			updateData();
 		});
 
-		watch(() => stores.encryptedDataStore.currentAndSafeValues.current.length, (newValue) =>
+		watch(() => stores.encryptedDataStore.currentAndSafeValues.current.length, () =>
 		{
 			lableArray.value = [...stores.encryptedDataStore.currentAndSafeValues.current];
-			updateKey();
+			updateData();
 		});
 
-		watch(() => stores.encryptedDataStore.currentAndSafeValues.safe.length, (newValue) =>
+		watch(() => stores.encryptedDataStore.currentAndSafeValues.safe.length, () =>
 		{
 			chartOneArray = [...stores.encryptedDataStore.currentAndSafeValues.safe];
-			updateKey();
+			updateData();
 		});
 
-		watch(() => stores.settingsStore.currentPrimaryColor.value, (newValue) =>
+		watch(() => stores.settingsStore.currentColorPalette, (newValue, oldValue) =>
 		{
-			color.value = newValue;
-			updateKey();
+			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+			{
+				updateColors(newValue.passwordsColor.primaryColor, oldValue.passwordsColor.primaryColor, 0);
+				color.value = newValue.passwordsColor.primaryColor;
+			}
+			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+			{
+				updateColors(newValue.valuesColor.primaryColor, oldValue.valuesColor.primaryColor, 0);
+				color.value = newValue.valuesColor.primaryColor;
+			}
+			// if (color.value == newValue)
+			// {
+			// 	return;
+			// }
+
+			// color.value = newValue;
+			// updateColors(newValue, oldValue);
 		});
 
-		const options: any = {
-			responsive: true,
-			elements:
-			{
-				point:
-				{
-					radius: 0
-				}
-			},
-			animation:
-			{
-				duration: 1000,
-				easing: 'linear'
-			},
-		};
-
-		const data: Ref<any> = ref({
-			labels: lableArray.value,
-			datasets: [
-				{
-					label: 'Secure ' + table.value,
-					data: chartOneArray,
-					borderColor: color,
-					cubicInterpolationMode: 'monotone',
-					tension: 0.4
-				}
-			]
+		watch(() => noDataMessage.value, () =>
+		{
+			key.value = Date.now().toString();
 		});
+
+		onMounted(() =>
+		{
+			if (chartContainer.value)
+			{
+				resizeObserver.observe(chartContainer.value)
+			}
+		});
+
+		setOptions(1000);
 
 		return {
+			lineChart,
+			chartContainer,
 			key,
 			options,
-			data
+			data,
+			color,
+			height,
+			width,
+			showNoData,
+			noDataMessage,
+			updateData,
+			reset
 		}
 	}
 })
 </script>
 
 <style>
-#passwordStrenghtProgressContainer {
-	margin: 10px;
+.strengthGraphContainer {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	border-radius: 20px;
+	background: rgb(44 44 51 / 16%);
+	/* margin: 10px;
 	margin-top: 50px;
+	padding-top: 1%; */
 }
 
-#passwordStrenghtProgressContainer h2 {
+.strengthGraphContainer__header {
+	display: flex;
+	justify-content: center;
+}
+
+.strengthGraphContainer__resetButton {
+	position: absolute;
+	top: 5%;
+	left: 5%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 5px;
+	width: 10%;
+	height: 25px;
 	color: white;
+	border-radius: 20px;
+	border: 2px solid v-bind(color);
+	transition: 0.3s;
+}
+
+.strengthGraphContainer__resetButton:hover {
+	box-shadow: 0 0 25px v-bind(color);
+}
+
+.strengthGraphContainer__title {
+	width: 75%;
+	color: white;
+}
+
+.strengthGraphContainer__chart {
+	position: relative;
+	height: 80%;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+}
+
+.strengthGraphContainer__noData {
+	position: absolute;
+	color: gray;
+	text-align: center;
+	font-size: 24px;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 60%;
 }
 </style>
