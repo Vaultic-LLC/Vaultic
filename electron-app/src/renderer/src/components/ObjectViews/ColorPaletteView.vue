@@ -90,7 +90,7 @@ export default defineComponent({
 			stores.settingsStore.updateColorPalette(key, colorPaletteState.value);
 			refreshKey.value = Date.now().toString();
 
-			return Promise.resolve(true);
+			saveSucceeded(true);
 		}
 
 		function onAuthCancelled()
