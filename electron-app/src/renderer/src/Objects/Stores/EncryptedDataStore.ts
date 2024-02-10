@@ -1,5 +1,5 @@
 import { Password, NameValuePair, CurrentAndSafeStructure, IIdentifiable, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
-import { ComputedRef, Ref, computed, reactive, ref } from "vue";
+import { ComputedRef, computed, reactive } from "vue";
 import File from "../Files/File"
 import cryptUtility from "../../Utilities/CryptUtility";
 import hashUtility from "../../Utilities/HashUtility";
