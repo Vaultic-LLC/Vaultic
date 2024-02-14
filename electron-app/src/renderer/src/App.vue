@@ -1,15 +1,12 @@
 <template>
 	<Teleport to="#body">
 		<Transition name="lockFade" mode="out-in">
-			<GlobalAuthenticationPopup v-if="needsAuthentication" />
+			<GlobalAuthenticationPopup v-if="needsAuthentication" @onAuthenticationSuccessful="onGlobalAuthSuccessful" />
 		</Transition>
 	</Teleport>
 	<Transition name="fade">
 		<RequestedAuthenticationPopup v-if="requestAuth" :authenticationSuccessful="onAuthSuccess"
 			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" :color="requestAuthColor" />
-	</Transition>
-	<Transition name="appFade">
-		<div v-if="coverMainUI" class="mainUICover"></div>
 	</Transition>
 	<div id="mainUI" class="mainUI">
 		<!-- <SideDrawer /> -->
@@ -41,7 +38,7 @@
 		</div>
 	</div>
 	<Transition name="fade" mode="out-in">
-		<ToastPopup v-if="showToast" :text="toastText" :success="toastSuccess" />
+		<ToastPopup v-if="showToast" :color="toastColor" :text="toastText" :success="toastSuccess" />
 	</Transition>
 </template>
 
@@ -103,11 +100,11 @@ export default defineComponent({
 	{
 		// const cursor: Ref<HTMLElement | null> = ref(null);
 		const needsAuthentication: Ref<boolean> = ref(stores.appStore.needsAuthentication);
-		const coverMainUI: Ref<boolean> = ref(stores.appStore.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
 		//let backgroundClr: Ref<string> = ref('#0f111d');
 
+		const toastColor: Ref<string> = ref('');
 		const showToast: Ref<boolean> = ref(false);
 		const toastText: Ref<string> = ref('');
 		const toastSuccess: Ref<boolean> = ref(false);
@@ -175,8 +172,9 @@ export default defineComponent({
 			}
 		});
 
-		function showToastFunc(title: string, success: boolean)
+		function showToastFunc(color: string, title: string, success: boolean)
 		{
+			toastColor.value = color;
 			toastText.value = title;
 			toastSuccess.value = success;
 			showToast.value = true;
@@ -212,6 +210,11 @@ export default defineComponent({
 			requestAuth.value = true;
 		}
 
+		function onGlobalAuthSuccessful()
+		{
+			stores.appStore.authenticated = true;
+		}
+
 		let lastMouseover: number = 0;
 		const threshold: number = 1000;
 		onMounted(() =>
@@ -231,15 +234,6 @@ export default defineComponent({
 		watch(() => stores.appStore.needsAuthentication, (newValue) =>
 		{
 			needsAuthentication.value = newValue;
-			if (newValue)
-			{
-				coverMainUI.value = true;
-			}
-			else
-			{
-				setTimeout(() => coverMainUI.value = false, 500);
-			}
-
 		});
 
 		let clr = "#0f111d";
@@ -253,6 +247,7 @@ export default defineComponent({
 			filtersTableControl,
 			groupsTableControl,
 			color,
+			toastColor,
 			showToast,
 			toastText,
 			toastSuccess,
@@ -261,9 +256,8 @@ export default defineComponent({
 			onAuthSuccess,
 			onAuthCancel,
 			needsToSetupKey,
-			coverMainUI,
 			gradient,
-			//cursor
+			onGlobalAuthSuccessful
 		}
 	}
 });
@@ -293,14 +287,6 @@ body {
 h2,
 div {
 	user-select: none;
-}
-
-.mainUICover {
-	position: fixed;
-	width: 100%;
-	height: 100%;
-	background-color: black;
-	z-index: 90;
 }
 
 .tempWidget {

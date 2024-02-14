@@ -47,6 +47,19 @@ export function tween<T extends Record<string, any>>(from: T, to: T, length: num
 	});
 }
 
+export function tweenInfinite<T extends Record<string, any>>(from: T, to: T, length: number, group: TWEEN.Group, onUpdate: (obj: T) => void)
+{
+	new TWEEN.Tween(from, group).to(to, length).onUpdate(onUpdate).repeat(Infinity).yoyo(true).start();
+
+	function animate(time)
+	{
+		group.update(time);
+		requestAnimationFrame(animate);
+	}
+
+	requestAnimationFrame(animate);
+}
+
 export function tweenTogether(...objects: TweenObject<any>[])
 {
 	const tweenGroup = new TWEEN.Group();

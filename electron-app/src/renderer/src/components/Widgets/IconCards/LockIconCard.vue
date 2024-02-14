@@ -1,5 +1,5 @@
 <template>
-    <IconCard :icon="'lock-closed-outline'" :text="'Lock'" @click="lockApp" />
+	<IconCard :icon="'lock-closed-outline'" :text="'Lock'" @click="lockApp" />
 </template>
 
 <script lang="ts">
@@ -9,22 +9,22 @@ import IconCard from "../../IconCard.vue"
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
-    name: "LockIconCard",
-    components:
-    {
-        IconCard
-    },
-    setup()
-    {
-        function lockApp()
-        {
-            stores.appStore.authenticated = false;
-        }
+	name: "LockIconCard",
+	components:
+	{
+		IconCard
+	},
+	setup()
+	{
+		function lockApp()
+		{
+			stores.resetStoresToDefault();
+		}
 
-        return {
-            lockApp
-        }
-    }
+		return {
+			lockApp
+		}
+	}
 })
 </script>
 <style></style>

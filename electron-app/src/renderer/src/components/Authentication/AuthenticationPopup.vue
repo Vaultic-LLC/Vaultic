@@ -27,9 +27,23 @@
 				<CheckboxInputField v-if="needsToSetupKey" class="matchesKey" :label="'Matches Key'" :color="primaryColor"
 					v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
 			</div>
+			<Transition name="fade">
+				<LoadingIndicator v-if="disabled" :color="primaryColor" />
+				<!-- <div v-if="disabled" :style="{ width: '70%', 'height': '20px', 'margin-top': '50px' }">
+				</div> -->
+				<!-- <div v-if="disabled" class="authPopupContainer__loadingIndicator">
+					<div class="authPopupContainer__dot"></div>
+					<div class="authPopupContainer__dot"></div>
+					<div class="authPopupContainer__dot"></div>
+					<div class="authPopupContainer__dot"></div>
+					<div class="authPopupContainer__dot"></div>
+				</div> -->
+			</Transition>
 			<div class="authenticationPopupButtons">
-				<button class="button" @click="onEnter">Enter</button>
-				<button v-if="allowCancel" class="button" @click="onCancel">Cancel</button>
+				<button ref="enterButton" class="authenticationPopupButtons__button" :class="{ disabled: disabled }"
+					@click="onEnter">Enter</button>
+				<button v-if="allowCancel" class="authenticationPopupButtons__button" :disabled="disabled"
+					@click="onCancel">Cancel</button>
 			</div>
 		</div>
 		<div v-if="showPulsing" class="pulsingCircles" :class="{ unlocked: unlocked }">
@@ -44,12 +58,15 @@
 </template>
 
 <script lang="ts">
-import { stores } from '../../Objects/Stores';
 import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, watch } from 'vue';
+
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
+import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
+import LoadingIndicator from './LoadingIndicator.vue';
+
+import { stores } from '../../Objects/Stores';
 import { ColorPalette } from '../../Types/Colors';
 import { containsNumber, containsSpecialCharacter, containsUppercaseAndLowercaseNumber, isWeak } from '../../Helpers/EncryptedDataHelper';
-import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import { defaultInputColorModel, InputColorModel } from '@renderer/Types/Models';
 
 export default defineComponent({
@@ -57,7 +74,8 @@ export default defineComponent({
 	components:
 	{
 		EncryptedInputField,
-		CheckboxInputField
+		CheckboxInputField,
+		LoadingIndicator
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
 	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color"],
@@ -65,6 +83,9 @@ export default defineComponent({
 	{
 		const encryptedInputField: Ref<null> = ref(null);
 		const confirmEncryptedInputField: Ref<null> = ref(null);
+		const enterButton: Ref<HTMLElement | null> = ref(null);
+		const loadingIndicator: Ref<null> = ref(null);
+
 		const key: Ref<string> = ref("");
 		const reEnterKey: Ref<string> = ref("");
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
@@ -75,6 +96,7 @@ export default defineComponent({
 		const unlockAnimDelay: Ref<string> = ref(props.rubberbandOnUnlock ? '0.7s' : '0s');
 		const startPulsing: Ref<boolean> = ref(false);
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(primaryColor.value));
+		const disabled: Ref<boolean> = ref(false);
 
 		const needsToSetupKey: ComputedRef<boolean> = computed(() => props.setupKey ?? false);
 		const computedWidth: ComputedRef<string> = computed(() => props.setupKey ? "25%" : "15%");
@@ -89,15 +111,18 @@ export default defineComponent({
 		const matchesKey: Ref<boolean> = ref(false);
 
 		let lastAuthAttempt: number = 0;
-		async function onEnter()
+		function onEnter()
 		{
-			if (unlocked.value)
+			if (unlocked.value || disabled.value)
 			{
 				return;
 			}
 
+			disabled.value = true;
+			enterButton.value?.classList.add('disabled');
 			if (Date.now() - lastAuthAttempt < 1000)
 			{
+				disabled.value = false;
 				jiggleContainer();
 				return;
 			}
@@ -109,35 +134,38 @@ export default defineComponent({
 				!hasNumber.value ||
 				!hasSpecialCharacter.value))
 			{
+				disabled.value = false;
 				jiggleContainer();
 				return;
 			}
 
-			// show loading indicator
-
-			const isValid: boolean = stores.checkKey(key.value);
-
-			// hide loading indicator
-
-			if (!isValid)
+			stores.checkKey(key.value).then((isValid: boolean) =>
 			{
-				jiggleContainer();
-				if (encryptedInputField.value)
+				if (!isValid)
 				{
-					// @ts-ignore
-					encryptedInputField.value.focus();
+					disabled.value = false;
+					jiggleContainer();
+					if (encryptedInputField.value)
+					{
+						// @ts-ignore
+						encryptedInputField.value.focus();
+					}
 				}
-			}
-			else
-			{
-				unlocked.value = true;
-				ctx.emit("onAuthenticationSuccessful", key.value);
-			}
+				else
+				{
+					ctx.emit("onAuthenticationSuccessful", key.value);
+				}
+			});
 		}
 
 		function onCancel()
 		{
 			ctx.emit("onCanceled");
+		}
+
+		function playUnlockAnimation()
+		{
+			unlocked.value = true;
 		}
 
 		function onkeyUp(e: KeyboardEvent)
@@ -204,6 +232,8 @@ export default defineComponent({
 		});
 
 		return {
+			loadingIndicator,
+			enterButton,
 			encryptedInputField,
 			confirmEncryptedInputField,
 			key,
@@ -226,10 +256,12 @@ export default defineComponent({
 			buttonBottom,
 			contentTop,
 			colorModel,
+			disabled,
 			onEnter,
 			onCancel,
 			enforceStringKey,
-			enforceKeysMatch
+			enforceKeysMatch,
+			playUnlockAnimation
 		}
 	}
 })
@@ -338,7 +370,7 @@ export default defineComponent({
 	column-gap: 50px;
 }
 
-.authenticationPopupButtons .button {
+.authenticationPopupButtons__button {
 	width: 100px;
 	height: 35px;
 	background-color: var(--app-color);
@@ -350,8 +382,15 @@ export default defineComponent({
 	animation: fadeIn 1s linear forwards;
 }
 
-.authenticationPopupButtons .button:hover {
+.authenticationPopupButtons__button:hover {
 	box-shadow: 0 0 25px v-bind('primaryColor');
+}
+
+.authenticationPopupButtons__button:disabled,
+.authenticationPopupButtons__button.disabled {
+	box-shadow: 0 0 0 0;
+	border: 2px solid gray;
+	color: gray;
 }
 
 .authenticationPopup.unlocked.rubberband {

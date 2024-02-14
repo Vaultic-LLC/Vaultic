@@ -66,7 +66,7 @@ export default defineComponent({
 
 		let inputText: Ref<string> = ref(props.initialLength > 0 ? "*".repeat(props.initialLength) : props.modelValue);
 
-		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
 
@@ -136,7 +136,7 @@ export default defineComponent({
 		function copyValue()
 		{
 			clipboard.write(inputText.value);
-			showToastFunction("Copied to Clipboard", true);
+			showToastFunction(colorModel.value.color, "Copied to Clipboard", true);
 		}
 
 		function focus()

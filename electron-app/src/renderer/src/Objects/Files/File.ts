@@ -73,38 +73,46 @@ export default class Files
 		}
 	}
 
-	public read<T>(key: string): [boolean, T]
+	public read<T>(key: string): Promise<T>
 	{
-		let unlocked: boolean = false;
-		try
+		return new Promise((resolve, reject) =>
 		{
-			window.api.unlockFile(this.path);
-			unlocked = true;
+			if (!window.api.fileExistsAndHasData(this.path))
+			{
+				return reject();
+			}
 
-			const data: string = window.api.readFile(this.path);
-			const decryptedData: string = cryptUtility.decrypt(key, data);
-
-			window.api.lockFile(this.path);
-			unlocked = false;
-
-			let obj: T = JSON.parse(decryptedData) as T;
-			return [true, obj];
-		}
-		catch (e)
-		{
-			console.log(e);
-		}
-
-		if (unlocked)
-		{
+			let unlocked: boolean = false;
 			try
 			{
-				window.api.lockFile(this.path);
-			}
-			catch { }
-		}
+				window.api.unlockFile(this.path);
+				unlocked = true;
 
-		return [false, {} as T];
+				const data: string = window.api.readFile(this.path);
+				const decryptedData: string = cryptUtility.decrypt(key, data);
+
+				window.api.lockFile(this.path);
+				unlocked = false;
+
+				let obj: T = JSON.parse(decryptedData) as T;
+				resolve(obj);
+			}
+			catch (e)
+			{
+				console.log(e);
+			}
+
+			if (unlocked)
+			{
+				try
+				{
+					window.api.lockFile(this.path);
+				}
+				catch { }
+			}
+
+			return reject();
+		});
 	}
 }
 

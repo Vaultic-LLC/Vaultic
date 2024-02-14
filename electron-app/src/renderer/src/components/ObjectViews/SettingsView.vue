@@ -14,12 +14,11 @@
 		<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
 			:inputType="'number'" :style="{ 'grid-row': '7 / span 2', 'grid-column': '2 / span 2' }"
 			:additionalValidationFunction="enforceOldPasswordDays" />
-		<!-- <CheckboxInputField :label="'Require Key when Saving Filter or Group'" :color="color"
-			v-model="settingsState.requireMasterKeyOnFilterGrouopSave" :fadeIn="true"
-			:style="{ 'grid-row': '7 / span 1', 'grid-column': '2 / span 3', }" />
-		<CheckboxInputField :label="'Require Key when Deleting Filter or Group'" :color="color"
-			v-model="settingsState.requireMasterKeyOnFilterGroupDelete" :fadeIn="true"
-			:style="{ 'grid-row': '8 / span 1', 'grid-column': '2 / span 3', }" /> -->
+		<TextInputField :color="color" :label="'% Filled Metric for Pulse'"
+			v-model.number="settingsState.percentMetricForPulse" :inputType="'number'"
+			:style="{ 'grid-row': '7 / span 2', 'grid-column': '5 / span 2' }"
+			:additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
+			:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breeched Passwords.'" />
 		<!-- <CheckboxInputField :label="'Take picture on login'" :color="color" v-model="settingsState.takePictureOnLogin"
             :fadeIn="true" :style="{ 'grid-row': '4 / span 2', 'grid-column': '1 / span 2', }" /> -->
 	</ObjectView>
@@ -118,6 +117,22 @@ export default defineComponent({
 			return [true, ""];
 		}
 
+		function enforcePercentMetricForPulse(input: string): [boolean, string]
+		{
+			const numb: number = Number.parseInt(input);
+			if (!numb)
+			{
+				return [false, "Not a valid number"];
+			}
+
+			if (numb < 1 || numb > 100)
+			{
+				return [false, "Value must be between 1 and 100"];
+			}
+
+			return [true, ""];
+		}
+
 		return {
 			color,
 			settingsState,
@@ -129,7 +144,8 @@ export default defineComponent({
 			onAuthenticationSuccessful,
 			enforceMinLoginRecords,
 			enforceMinRandomPasswordLength,
-			enforceOldPasswordDays
+			enforceOldPasswordDays,
+			enforcePercentMetricForPulse
 		};
 	},
 })

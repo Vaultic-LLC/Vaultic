@@ -16,6 +16,7 @@ export interface SettingsState
 	randomValueLength: number;
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
+	percentMetricForPulse: number;
 }
 
 export interface SettingsStore extends Store
@@ -31,8 +32,9 @@ export interface SettingsStore extends Store
 	randomValueLength: number;
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
+	percentMetricForPulse: number;
 	init: (stores: Stores) => void;
-	readState: (key: string) => boolean;
+	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
 	updateColorPalette: (key: string, colorPalette: ColorPalette) => void;
 	updateSettings: (key: string, newState: SettingsState) => void;
@@ -73,25 +75,31 @@ export default function useSettingsStore(): SettingsStore
 			loginRecordsToStore: 25,
 			randomValueLength: 20,
 			multipleFilterBehavior: FilterStatus.Or,
-			oldPasswordDays: 30
+			oldPasswordDays: 30,
+			percentMetricForPulse: 1
 		};
 	}
 
-	function readState(key: string)
+	async function readState(key: string): Promise<boolean>
 	{
-		if (settingsState.loadedFile)
+		return new Promise((resolve, _) =>
 		{
-			return true;
-		}
+			if (settingsState.loadedFile)
+			{
+				resolve(true);
+			}
 
-		const [succeeded, state] = settingsFile.read<SettingsState>(key);
-		if (succeeded)
-		{
-			state.loadedFile = true;
-			Object.assign(settingsState, state);
-		}
+			settingsFile.read<SettingsState>(key).then((state: SettingsState) =>
+			{
+				state.loadedFile = true;
+				Object.assign(settingsState, state);
 
-		return succeeded;
+				resolve(true);
+			}).catch(() =>
+			{
+				resolve(false);
+			});
+		});
 	}
 
 	function writeState(key: string)
@@ -167,11 +175,10 @@ export default function useSettingsStore(): SettingsStore
 		get autoLockTime() { return settingsState.autoLockTime; },
 		get autoLockNumberTime() { return autoLockNumberTime.value; },
 		get loginRecordsToStore() { return settingsState.loginRecordsToStore; },
-		set loginRecordsToStore(value: number) { settingsState.loginRecordsToStore = value; },
 		get randomValueLength() { return settingsState.randomValueLength; },
 		get multipleFilterBehavior() { return settingsState.multipleFilterBehavior; },
 		get oldPasswordDays() { return settingsState.oldPasswordDays; },
-		set oldPasswordDays(value: number) { settingsState.oldPasswordDays = value; },
+		get percentMetricForPulse() { return settingsState.percentMetricForPulse; },
 		currentPrimaryColor,
 		init,
 		readState,

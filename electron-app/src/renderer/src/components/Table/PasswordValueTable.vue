@@ -120,7 +120,7 @@ export default defineComponent({
 			passwordSearchText : valueSearchText);
 
 		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
-		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const emptyTableMessage: ComputedRef<string> = computed(() =>
 		{
@@ -408,7 +408,7 @@ export default defineComponent({
 		function onDeletePasswordConfirmed(key: string)
 		{
 			deletePassword.value(key);
-			showToastFunction("Password Deleted Successfully", true);
+			showToastFunction(color.value, "Password Deleted Successfully", true);
 		}
 
 		function onValueDeleteInitiated(value: NameValuePairStore)
@@ -427,7 +427,7 @@ export default defineComponent({
 		function onDeleteValueConfirmed(key: string)
 		{
 			deleteValue.value(key);
-			showToastFunction("Value Deleted Successfully", true);
+			showToastFunction(color.value, "Value Deleted Successfully", true);
 		}
 
 		onMounted(() =>

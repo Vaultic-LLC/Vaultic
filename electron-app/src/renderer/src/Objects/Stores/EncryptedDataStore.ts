@@ -52,7 +52,6 @@ export interface EncryptedDataStore extends AuthenticationStore
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
 	canAuthenticateKey: () => boolean;
 	init: (stores: Stores) => void;
-	checkKey: (key: string) => boolean;
 	addPassword: (key: string, password: Password) => boolean;
 	updatePassword: (password: Password, passwordWasUpdated: boolean,
 		updatedSecurityQuestionQuestions: string[],
@@ -125,43 +124,45 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		return hashUtility.hash(runningPasswords);
 	}
 
-	function readState(key: string): boolean
+	async function readState(key: string): Promise<boolean>
 	{
-		if (encryptedDataState.loadedFile)
+		return new Promise((resolve, _) =>
 		{
-			return true;
-		}
-
-		// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
-		try
-		{
-			const [success, data]: [boolean, EncryptedDataState] = dataFile.read<EncryptedDataState>(key);
-			if (!success)
+			if (encryptedDataState.loadedFile)
 			{
-				throw ('Unable to read data file');
+				resolve(true);
 			}
-
-			if (data.passwordHash)
+			// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
+			try
 			{
-				if (calculateHash(key, data.passwords, 'password') == data.passwordHash)
+				dataFile.read<EncryptedDataState>(key).then((data: EncryptedDataState) =>
 				{
-					assignState(data);
-					return true;
-				}
-			}
-			else if (data.valueHash)
-			{
-				if (calculateHash(key, data.nameValuePairs, 'value') == data.valueHash)
+					if (data.passwordHash)
+					{
+						if (calculateHash(key, data.passwords, 'password') == cryptUtility.decrypt(key, data.passwordHash))
+						{
+							assignState(data);
+							resolve(true);
+						}
+					}
+					else if (data.valueHash)
+					{
+						if (calculateHash(key, data.nameValuePairs, 'value') == cryptUtility.decrypt(key, data.valueHash))
+						{
+							assignState(data);
+							resolve(true);
+						}
+					}
+				}).catch(() =>
 				{
-					assignState(data);
-					return true;
-				}
+					resolve(false);
+				});
 			}
-		}
-		catch (e: any)
-		{
-			return false;
-		}
+			catch (e: any)
+			{
+				resolve(false);
+			}
+		});
 
 		function assignState(state: EncryptedDataState)
 		{
@@ -174,8 +175,6 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			state.passwords.forEach(p => encryptedDataState.passwords.push(usePasswordStore(key, p, true)));
 			state.nameValuePairs.forEach(nvp => encryptedDataState.nameValuePairs.push(useNameValuePairStore(key, nvp, true)));
 		}
-
-		return false;
 	}
 
 	function checkKeyUpdatePasswordHash(key: string, newPassword: string): boolean
@@ -183,10 +182,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		let runningPasswords: string = "";
 		encryptedDataState.passwords.forEach(p => runningPasswords += cryptUtility.decrypt(key, p.password));
 
-		if (encryptedDataState.passwordHash === "" || hashUtility.hash(runningPasswords) == encryptedDataState.passwordHash)
+		if (encryptedDataState.passwordHash === "" || hashUtility.hash(runningPasswords) == cryptUtility.decrypt(key, encryptedDataState.passwordHash))
 		{
 			runningPasswords += newPassword;
-			encryptedDataState.passwordHash = hashUtility.hash(runningPasswords);
+			encryptedDataState.passwordHash = cryptUtility.encrypt(key, hashUtility.hash(runningPasswords));
 
 			return true;
 		}
@@ -199,10 +198,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		let runningValues: string = "";
 		encryptedDataState.nameValuePairs.forEach(nvp => runningValues += cryptUtility.decrypt(key, nvp.value));
 
-		if (encryptedDataState.valueHash === "" || hashUtility.hash(runningValues) == encryptedDataState.valueHash)
+		if (encryptedDataState.valueHash === "" || hashUtility.hash(runningValues) == cryptUtility.decrypt(key, encryptedDataState.valueHash))
 		{
 			runningValues += newValue;
-			encryptedDataState.valueHash = hashUtility.hash(runningValues);
+			encryptedDataState.valueHash = cryptUtility.encrypt(key, hashUtility.hash(runningValues));
 
 			return true;
 		}
@@ -321,7 +320,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	{
 	}
 
-	function checkKey(key: string): boolean
+	async function checkKey(key: string): Promise<boolean>
 	{
 		if (!canAuthenticateKey())
 		{
@@ -332,16 +331,16 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		{
 			if (encryptedDataState.passwordHash)
 			{
-				return calculateHash(key, encryptedDataState.passwords, "password") == encryptedDataState.passwordHash;
+				return calculateHash(key, encryptedDataState.passwords, "password") == cryptUtility.decrypt(key, encryptedDataState.passwordHash);
 			}
 			else if (encryptedDataState.valueHash)
 			{
-				return calculateHash(key, encryptedDataState.nameValuePairs, "value") == encryptedDataState.valueHash;
+				return calculateHash(key, encryptedDataState.nameValuePairs, "value") == cryptUtility.decrypt(key, encryptedDataState.valueHash);
 			}
 		}
 		else
 		{
-			return readState(key);
+			return await readState(key);
 		}
 
 		return false;
@@ -420,7 +419,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
-		encryptedDataState.passwordHash = calculateHash(key, encryptedDataState.passwords, "password");
+		encryptedDataState.passwordHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
 
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.Passwords, password);
@@ -499,7 +498,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
-		encryptedDataState.valueHash = calculateHash(key, encryptedDataState.nameValuePairs, "value");
+		encryptedDataState.valueHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
 
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.NameValuePairs, nameValuePair);

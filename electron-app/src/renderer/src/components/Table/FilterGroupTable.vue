@@ -116,7 +116,7 @@ export default defineComponent({
 		let deleteGroup: Ref<(key: string) => void> = ref((_: string) => { });
 
 		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
-		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const emptyTableMessage: ComputedRef<string> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
 			getEmptyTableMessage(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password Filters" : "Value Filters") :
@@ -301,7 +301,7 @@ export default defineComponent({
 		function onFilterDeleteConfirmed(key: string)
 		{
 			deleteFilter.value(key);
-			showToastFunction("Filter Deleted Sucessfully", true);
+			showToastFunction(color.value, "Filter Deleted Sucessfully", true);
 		}
 
 		function onGroupDeleteInitiated(group: Group)
@@ -320,7 +320,7 @@ export default defineComponent({
 		function onGroupDeleteConfirmed(key: string)
 		{
 			deleteGroup.value(key);
-			showToastFunction("Group Deleted Sucessfully", true);
+			showToastFunction(color.value, "Group Deleted Sucessfully", true);
 		}
 
 		onMounted(() =>

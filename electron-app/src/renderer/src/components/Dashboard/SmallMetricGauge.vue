@@ -12,7 +12,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import CongratsRibbon from '../SmallMetricGauges/CongratsRibbon.vue';
 import { Doughnut } from 'vue-chartjs'
@@ -20,6 +20,7 @@ import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { stores } from '../../Objects/Stores';
 import { mixHexes } from '@renderer/Helpers/ColorHelper';
+import animationHelper from '@renderer/Helpers/animationHelper';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -39,9 +40,17 @@ export default defineComponent({
 		const gauge: Ref<HTMLElement | null> = ref(null);
 		const smallMetricContainer: Ref<HTMLElement | null> = ref(null);
 		const active: ComputedRef<boolean> = computed(() => props.model.active);
-		const pulse: ComputedRef<boolean> = computed(() => props.model.pulse == true && props.model.filledAmount > 0);
+		const pulse: ComputedRef<boolean> = computed(() =>
+		{
+			if (props.model.pulse === false)
+			{
+				return false;
+			}
 
-		let authenticated: Ref<boolean> = ref(stores.appStore.authenticated);
+			return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= stores.settingsStore.percentMetricForPulse);
+		});
+
+		const totalAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 1 : props.model.totalAmount);
 		let fillAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 0 : props.model.filledAmount / props.model.totalAmount * 100);
 		let amountOutOfTotal: ComputedRef<string> = computed(() => `${props.model.filledAmount} / ${props.model.totalAmount}`);
 		const textColor: Ref<string> = computed(() => fillAmount.value == 0 ? "white" : "white");
@@ -72,7 +81,7 @@ export default defineComponent({
 				labels: [props.model.title, ""],
 				datasets: [
 					{
-						data: [props.model.filledAmount, Math.max(props.model.totalAmount - props.model.filledAmount, 1)],
+						data: [props.model.filledAmount, totalAmount.value - props.model.filledAmount],
 						//backgroundColor: [primaryColor.value, '#191919'],
 						backgroundColor: function (context)
 						{
@@ -122,11 +131,6 @@ export default defineComponent({
 			doughnutChart.value.chart.update();
 		}
 
-		watch(() => stores.appStore.authenticated, (newValue) =>
-		{
-			authenticated.value = newValue;
-		});
-
 		watch(() => props.model.color, (newValue) =>
 		{
 			primaryColor.value = newValue;
@@ -145,6 +149,22 @@ export default defineComponent({
 			updateData([props.model.filledAmount, props.model.totalAmount - props.model.filledAmount])
 		});
 
+		watch(() => pulse.value, (newValue) =>
+		{
+			if (newValue)
+			{
+				animationHelper.syncAnimations('pulseMetricGauge');
+			}
+		});
+
+		onMounted(() =>
+		{
+			if (pulse.value)
+			{
+				animationHelper.syncAnimations('pulseMetricGauge');
+			}
+		});
+
 		return {
 			doughnutChart,
 			key,
@@ -152,7 +172,6 @@ export default defineComponent({
 			smallMetricContainer,
 			gauge,
 			primaryColor,
-			authenticated,
 			fillAmount,
 			amountOutOfTotal,
 			textColor,

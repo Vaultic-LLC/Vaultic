@@ -20,6 +20,19 @@ dataDirectory += "\\FuzzysStore";
 
 function readFile(file: string): string
 {
+	// return new Promise<string>((resolve, reject) =>
+	// {
+	// 	fs.readFile(dataDirectory + "\\" + file, { encoding: 'utf8' }, (err, data) =>
+	// 	{
+	// 		if (err != null)
+	// 		{
+	// 			reject(err);
+	// 		}
+
+	// 		resolve(data);
+	// 	});
+	// })
+
 	return fs.readFileSync(dataDirectory + "\\" + file, { encoding: 'utf8' });
 }
 

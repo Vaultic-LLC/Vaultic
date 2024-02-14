@@ -35,7 +35,6 @@ export interface FilterStore extends AuthenticationStore
 	duplicatePasswordFiltersLength: number;
 	duplicateValueFilters: Dictionary<string[]>;
 	duplicateValueFiltersLength: number;
-	checkKey: (key: string) => boolean;
 	addFilter(key: string, filter: Filter): void;
 	toggleFilter(id: string): boolean | undefined;
 	updateFilter(key: string, updatedFilter: Filter): void;
@@ -70,21 +69,26 @@ export default function useFilterStore(): FilterStore
 		};
 	}
 
-	function readState(key: string): boolean
+	function readState(key: string): Promise<boolean>
 	{
-		if (filterState.loadedFile)
+		return new Promise((resolve, _) =>
 		{
-			return true;
-		}
+			if (filterState.loadedFile)
+			{
+				resolve(true);
+			}
 
-		const [succeeded, state] = filterFile.read<FilterState>(key);
-		if (succeeded)
-		{
-			state.loadedFile = true;
-			Object.assign(filterState, state);
-		}
+			filterFile.read<FilterState>(key).then((state: FilterState) =>
+			{
+				state.loadedFile = true;
+				Object.assign(filterState, state);
 
-		return succeeded;
+				resolve(true);
+			}).catch(() =>
+			{
+				resolve(false);
+			});
+		});
 	}
 
 	function writeState(key: string)
@@ -108,9 +112,9 @@ export default function useFilterStore(): FilterStore
 		return filterFile.exists();
 	}
 
-	function checkKey(key: string): boolean
+	async function checkKey(key: string): Promise<boolean>
 	{
-		if (!readState(key))
+		if (!await readState(key))
 		{
 			return false;
 		}
@@ -118,7 +122,7 @@ export default function useFilterStore(): FilterStore
 		let runningKeys: string = "";
 		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
 
-		return hashUtility.hash(runningKeys) === filterState.filterHash;
+		return hashUtility.hash(runningKeys) === cryptUtility.decrypt(key, filterState.filterHash);
 	}
 
 	function getHash(key: string)
@@ -134,14 +138,14 @@ export default function useFilterStore(): FilterStore
 		let runningKeys: string = "";
 		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
 
-		if (filterState.filterHash === "" || filterState.filterHash === hashUtility.hash(runningKeys))
+		if (filterState.filterHash === "" || cryptUtility.decrypt(key, filterState.filterHash) === hashUtility.hash(runningKeys))
 		{
 			if (filter && filter.key)
 			{
 				runningKeys += filter.key;
 			}
 
-			filterState.filterHash = hashUtility.hash(runningKeys);
+			filterState.filterHash = cryptUtility.encrypt(key, hashUtility.hash(runningKeys));
 		}
 	}
 
@@ -438,7 +442,7 @@ export default function useFilterStore(): FilterStore
 			removeDuplicateFilter(filter, filterState.duplicateValueFilters);
 		}
 
-		filterState.filterHash = getHash(key);
+		filterState.filterHash = cryptUtility.encrypt(key, getHash(key));
 		writeState(key);
 	}
 

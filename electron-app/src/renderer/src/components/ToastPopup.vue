@@ -11,24 +11,20 @@
 </template>
 
 <script lang="ts">
-import { stores } from "../Objects/Stores/index"
-import { ColorPalette } from '../Types/Colors';
 import { ComputedRef, computed, defineComponent } from 'vue';
 
 export default defineComponent({
 	name: 'ToastPopup',
-	props: ['text', 'success'],
+	props: ['color', 'text', 'success'],
 	setup(props)
 	{
-		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
-		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
+		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const toastText: ComputedRef<string> = computed(() => props.text);
 		const isSuccess: ComputedRef<boolean> = computed(() => props.success);
 
 		return {
 			toastText,
 			isSuccess,
-			currentColorPalette,
 			primaryColor
 		}
 	}
@@ -64,7 +60,7 @@ export default defineComponent({
 }
 
 .toastContainerIcons .toastIcon.error {
-	color: v-bind('currentColorPalette.deleteColor');
+	color: v-bind('primaryColor');
 }
 
 .toastContainer .toastContainterText {

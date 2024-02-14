@@ -22,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, inject, Ref, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
 
 import AtRiskIndicator from '../AtRiskIndicator.vue';
 import TableRowTextValue from './TableRowTextValue.vue';
@@ -31,8 +31,6 @@ import TableRowColorValue from './TableRowColorValue.vue';
 import { TableRowData } from '../../../Types/Models';
 import { stores } from '../../../Objects/Stores/index';
 import { ColorPalette } from '../../..//Types/Colors';
-import clipboard from 'clipboardy';
-import { ShowToastFunctionKey } from '../../../Types/Keys';
 
 export default defineComponent({
 	name: "TableRow",
@@ -56,8 +54,6 @@ export default defineComponent({
 		setAnimationDelay(rowNumb.value);
 		const hideAtRiskCell: ComputedRef<boolean> = computed(() => props.hideAtRisk === true);
 		const deletingRow: Ref<boolean> = ref(false);
-
-		const showToastFunction: { (title: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		function setAnimationDelay(numb: number)
 		{
@@ -109,12 +105,6 @@ export default defineComponent({
 			}
 		}
 
-		function copyText(text: string)
-		{
-			clipboard.write(text);
-			showToastFunction("Copied to Clipboard", true);
-		}
-
 		return {
 			currentColorPalette,
 			tableRowData,
@@ -127,7 +117,6 @@ export default defineComponent({
 			onPin,
 			onEdit,
 			onDelete,
-			copyText
 		};
 	},
 })

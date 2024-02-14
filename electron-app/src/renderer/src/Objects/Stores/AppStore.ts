@@ -28,7 +28,7 @@ export interface AppStore extends Store
 	loginHistory: LoginRecord[];
 	needsAuthentication: boolean;
 	init: (stores: Stores) => void;
-	readState: (key: string) => boolean;
+	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
 	recordLogin: (key: string, dateTime: number) => void;
 	resetSessionTime: () => void;
@@ -72,21 +72,30 @@ export default function useAppStore(): AppStore
 		});
 	}
 
-	function readState(key: string)
+	function readState(key: string): Promise<boolean>
 	{
-		if (appState.loadedFile)
+		return new Promise((resolve, _) =>
 		{
-			return true;
-		}
+			if (appState.loadedFile)
+			{
+				resolve(true);
+			}
 
-		const [succeeded, state] = appFile.read<AppState>(key);
-		if (succeeded)
-		{
-			state.loadedFile = true;
-			Object.assign(appState, state);
-		}
+			appFile.read<AppState>(key).then((obj: AppState) =>
+			{
+				obj.loadedFile = true;
 
-		return succeeded;
+				// set to false so we don't read in a previous 'true' value. This should get set properly
+				// after all the stores are read in
+				obj.authenticated = false;
+				Object.assign(appState, obj);
+
+				resolve(true);
+			}).catch(() =>
+			{
+				resolve(false);
+			});
+		})
 	}
 
 	function writeState(key: string)

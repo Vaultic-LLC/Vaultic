@@ -59,7 +59,7 @@ export default defineComponent({
 		const tableRowDatas: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection());
 		const scanning: Ref<boolean> = ref(false);
 
-		const showToastFunc: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const showToastFunc: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const metricModel: Ref<SmallMetricGaugeModel> = ref(updateMetricModel())
 
@@ -89,7 +89,7 @@ export default defineComponent({
 				totalAmount: stores.encryptedDataStore.passwords.length,
 				color: color.value,
 				active: false,
-				pulse: true,
+				pulse: false,
 				onClick: function ()
 				{
 					//
@@ -116,7 +116,7 @@ export default defineComponent({
 
 				if (notifyComplete)
 				{
-					showToastFunc("Scan Complete", true);
+					showToastFunc(color.value, "Scan Complete", true);
 				}
 			});
 		}
@@ -134,9 +134,13 @@ export default defineComponent({
 			startScan(false);
 		});
 
-		watch(() => stores.encryptedDataStore.passwords.length, () =>
+		watch(() => stores.encryptedDataStore.passwords.length, (newValue, oldValue) =>
 		{
 			passwords.updateValues(stores.encryptedDataStore.passwords.filter((_, i) => i < 4));
+			if (newValue > oldValue)
+			{
+				startScan(false);
+			}
 		});
 
 		watch(() => color.value, () =>

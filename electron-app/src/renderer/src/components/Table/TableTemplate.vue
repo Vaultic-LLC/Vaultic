@@ -136,13 +136,13 @@ export default defineComponent({
 		}
 
 		// we want to resize after authenticating since we are going from hidden to visible
-		watch(() => stores.appStore.reloadMainUI, (newValue) =>
-		{
-			if (newValue)
-			{
-				calcScrollbarColor();
-			}
-		});
+		// watch(() => stores.appStore.reloadMainUI, (newValue) =>
+		// {
+		// 	if (newValue)
+		// 	{
+		// 		calcScrollbarColor();
+		// 	}
+		// });
 
 		watch(() => props.emptyMessage, () =>
 		{

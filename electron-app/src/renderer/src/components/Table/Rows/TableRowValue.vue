@@ -22,17 +22,19 @@ export default defineComponent({
 	setup(props)
 	{
 		const rowValue: ComputedRef<TextTableRowValue> = computed(() => props.model);
+		const primaryColor: ComputedRef<string> = computed(() => props.color);
 
-		const showToastFunction: { (title: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const showToastFunction: { (color: string, title: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		function copyText(text: string)
 		{
 			clipboard.write(text);
-			showToastFunction("Copied to Clipboard", true);
+			showToastFunction(primaryColor.value, "Copied to Clipboard", true);
 		}
 
 		return {
 			rowValue,
+			primaryColor,
 			copyText
 		};
 	},
@@ -60,7 +62,7 @@ export default defineComponent({
 }
 
 .rowValue .copyIcon:hover {
-	color: v-bind(color);
+	color: v-bind(primaryColor);
 	transform: translate(50%, -50%) scale(1.1);
 }
 </style>

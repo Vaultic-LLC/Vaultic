@@ -1,13 +1,15 @@
 <template>
-	<div class="globalAuthContainer">
+	<div class="globalAuthContainer" :class="{ unlocked: unlocked }">
+		<div class="mainUICover"></div>
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
-		<AuthenticationPopup @onAuthenticationSuccessful="authenticationSuccessful" :rubberbandOnUnlock="true"
-			:showPulsing="true" :color="primaryColor" />
+		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
+			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" />
 	</div>
 </template>
 
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+
 import AuthenticationPopup from "./AuthenticationPopup.vue"
 import { stores } from '../../Objects/Stores';
 
@@ -17,29 +19,34 @@ export default defineComponent({
 	{
 		AuthenticationPopup
 	},
-	setup()
+	emits: ['onAuthenticationSuccessful'],
+	setup(_, ctx)
 	{
+		const authPopup: Ref<null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
-
 		const unlocked: Ref<boolean> = ref(false);
 
-		function authenticationSuccessful(key: string)
+		async function authenticationSuccessful(key: string)
 		{
-			stores.loadStoreData(key);
-
-			unlocked.value = true;
-			setTimeout(() =>
+			stores.loadStoreData(key).then(() =>
 			{
-				stores.appStore.authenticated = true;
-				setTimeout(() => stores.appStore.reloadMainUI = true, 100);
 				stores.appStore.recordLogin(key, Date.now());
-			}, 1000);
+				//@ts-ignore
+				authPopup.value?.playUnlockAnimation();
+				unlocked.value = true;
+
+				setTimeout(() =>
+				{
+					ctx.emit('onAuthenticationSuccessful');
+				}, 2500);
+			});
 		}
 
 		return {
 			unlocked,
 			primaryColor,
-			authenticationSuccessful
+			authPopup,
+			authenticationSuccessful,
 		}
 	}
 })
@@ -52,6 +59,28 @@ export default defineComponent({
 	z-index: 90;
 	top: 0;
 	left: 0;
+}
+
+.globalAuthContainer.unlocked {
+	animation-delay: 1.5s;
+	animation-duration: 1.5s;
+	animation-name: fadeOut;
+	animation-direction: linear;
+}
+
+.mainUICover {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: rgba(17, 15, 15, 1);
+	z-index: 89;
+}
+
+.globalAuthContainer.unlocked .mainUICover {
+	animation-delay: 1.5s;
+	animation-duration: 1.5s;
+	animation-name: fadeOut;
+	animation-direction: linear;
 }
 
 .globalAuthGlass {

@@ -69,21 +69,26 @@ export default function useGroupStore(): GroupStore
 		}
 	}
 
-	function readState(key: string): boolean
+	function readState(key: string): Promise<boolean>
 	{
-		if (groupState.loadedFile)
+		return new Promise((resolve, _) =>
 		{
-			return true;
-		}
+			if (groupState.loadedFile)
+			{
+				resolve(true);
+			}
 
-		const [succeeded, state] = groupFile.read<GroupState>(key);
-		if (succeeded)
-		{
-			state.loadedFile = true;
-			Object.assign(groupState, state);
-		}
+			groupFile.read<GroupState>(key).then((state: GroupState) =>
+			{
+				state.loadedFile = true;
+				Object.assign(groupState, state);
 
-		return succeeded;
+				resolve(true);
+			}).catch(() =>
+			{
+				resolve(false);
+			});
+		})
 	}
 
 	function writeState(key: string)
@@ -107,9 +112,9 @@ export default function useGroupStore(): GroupStore
 		return groupFile.exists();
 	}
 
-	function checkKey(key: string): boolean
+	async function checkKey(key: string): Promise<boolean>
 	{
-		if (!readState(key))
+		if (!await readState(key))
 		{
 			return false;
 		}
@@ -117,7 +122,7 @@ export default function useGroupStore(): GroupStore
 		let runningKeys: string = "";
 		groupState.groups.forEach(g => runningKeys += cryptUtility.decrypt(key, g.key));
 
-		return hashUtility.hash(runningKeys) === groupState.groupHash;
+		return hashUtility.hash(runningKeys) === cryptUtility.decrypt(key, groupState.groupHash);
 	}
 
 	function getHash(key: string): string
@@ -133,14 +138,14 @@ export default function useGroupStore(): GroupStore
 		let runningKeys: string = "";
 		groupState.groups.forEach(g => runningKeys += cryptUtility.decrypt(key, g.key));
 
-		if (groupState.groupHash === "" || groupState.groupHash === hashUtility.hash(runningKeys))
+		if (groupState.groupHash === "" || cryptUtility.decrypt(key, groupState.groupHash) === hashUtility.hash(runningKeys))
 		{
 			if (group && group.key)
 			{
 				runningKeys += group.key;
 			}
 
-			groupState.groupHash = hashUtility.hash(runningKeys);
+			groupState.groupHash = cryptUtility.encrypt(key, hashUtility.hash(runningKeys));
 		}
 	}
 
@@ -411,7 +416,7 @@ export default function useGroupStore(): GroupStore
 			removeDuplicateGroup(group, groupState.duplicateValueGroups);
 		}
 
-		groupState.groupHash = getHash(key);
+		groupState.groupHash = cryptUtility.encrypt(key, getHash(key));
 		writeState(key);
 	}
 

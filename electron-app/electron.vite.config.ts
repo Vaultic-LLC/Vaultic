@@ -26,5 +26,16 @@ export default defineConfig({
 			}),
 			nodePolyfills()
 		],
+		build: {
+			rollupOptions: {
+				output:
+				{
+					format: 'es',
+					strict: false,
+					entryFileNames: "[name].js",
+					dir: 'dist/'
+				}
+			}
+		},
 	},
 })

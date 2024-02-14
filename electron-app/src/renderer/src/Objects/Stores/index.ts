@@ -6,14 +6,14 @@ import useSettingsStore, { SettingsStore } from "./SettingsStore";
 
 export interface Store
 {
-	readState: (key: string) => boolean;
+	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
 }
 
 export interface AuthenticationStore extends Store
 {
 	canAuthenticateKey: () => boolean; // checks if file exists
-	checkKey: (key: string) => boolean; // checks if key is valid
+	checkKey: (key: string) => Promise<boolean>; // checks if key is valid
 }
 
 export interface Stores
@@ -24,8 +24,8 @@ export interface Stores
 	groupStore: GroupStore;
 	filterStore: FilterStore;
 	canAuthenticateKey: () => boolean;
-	checkKey: (key: string) => boolean;
-	loadStoreData: (key: string) => void;
+	checkKey: (key: string) => Promise<boolean>;
+	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
 }
 
@@ -54,34 +54,37 @@ function canAuthenticateKey(): boolean
 		stores.groupStore.canAuthenticateKey();
 }
 
-function checkKey(key: string): boolean
+async function checkKey(key: string): Promise<boolean>
 {
 	if (stores.encryptedDataStore.canAuthenticateKey())
 	{
-		return stores.encryptedDataStore.checkKey(key);
+		return await stores.encryptedDataStore.checkKey(key);
 	}
 
 	if (stores.filterStore.canAuthenticateKey())
 	{
-		return stores.filterStore.checkKey(key);
+		return await stores.filterStore.checkKey(key);
 	}
 
 	if (stores.groupStore.canAuthenticateKey())
 	{
-		return stores.groupStore.checkKey(key);
+		return await stores.groupStore.checkKey(key);
 	}
 
 	// no master key has been setup yet, anything goes
 	return true;
 }
 
-function loadStoreData(key: string): void
+function loadStoreData(key: string): Promise<any>
 {
-	stores.settingsStore.readState(key);
-	stores.appStore.readState(key);
-	stores.encryptedDataStore.readState(key);
-	stores.filterStore.readState(key);
-	stores.groupStore.readState(key);
+	return Promise.all(
+		[
+			stores.settingsStore.readState(key),
+			stores.appStore.readState(key),
+			stores.encryptedDataStore.readState(key),
+			stores.filterStore.readState(key),
+			stores.groupStore.readState(key)
+		]);
 }
 
 function resetStoresToDefault()

@@ -42,7 +42,7 @@ export default defineComponent({
 		provide(RequestAuthorizationKey, requestAuthorization);
 
 		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
-		const showToastFunction: { (toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const buttonStyles = reactive({
 			border: `2px solid ${props.color}`,
@@ -63,7 +63,7 @@ export default defineComponent({
 						closePopupFunction.value(true);
 					}
 
-					showToastFunction("Saved Successfully", true);
+					showToastFunction(primaryColor.value, "Saved Successfully", true);
 				}).catch(() =>
 				{
 					// cancelled
@@ -85,7 +85,7 @@ export default defineComponent({
 						closePopupFunction.value(true);
 					}
 
-					showToastFunction("Saved Successfully", true);
+					showToastFunction(primaryColor.value, "Saved Successfully", true);
 				}).catch(() =>
 				{
 					// cancelled

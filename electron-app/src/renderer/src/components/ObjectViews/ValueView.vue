@@ -222,6 +222,7 @@ export default defineComponent({
 		{
 			if (props.creating)
 			{
+				valuesState.value.lastModifiedTime = Date.now();
 				stores.encryptedDataStore.addNameValuePair(key, valuesState.value);
 
 				valuesState.value = defaultValue();
