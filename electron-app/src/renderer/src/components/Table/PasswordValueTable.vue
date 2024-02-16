@@ -45,7 +45,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import SlideInRow from './Rows/SlideInRow.vue';
@@ -68,8 +68,8 @@ import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedC
 import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores/index';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
-import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
 import { v4 as uuidv4 } from 'uuid';
+import { useRequestAuthFunction, useLoadingIndicator, useToastFunction } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "PasswordValueTable",
@@ -111,16 +111,17 @@ export default defineComponent({
 		let showEditValuePopup: Ref<boolean> = ref(false);
 		let currentEditingValueModel: Ref<NameValuePairStore | any> = ref({});
 
-		let deletePassword: Ref<(key: string) => void> = ref((_: string) => { });
-		let deleteValue: Ref<(key: string) => void> = ref((_: string) => { });
+		let deletePassword: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
+		let deleteValue: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
 
 		const passwordSearchText: Ref<string> = ref('');
 		const valueSearchText: Ref<string> = ref('');
 		const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			passwordSearchText : valueSearchText);
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
-		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
+		const showToastFunction = useToastFunction();
 
 		const emptyTableMessage: ComputedRef<string> = computed(() =>
 		{
@@ -394,9 +395,9 @@ export default defineComponent({
 
 		function onPasswordDeleteInitiated(password: PasswordStore)
 		{
-			deletePassword.value = (key: string) =>
+			deletePassword.value = async (key: string) =>
 			{
-				stores.encryptedDataStore.deletePassword(key, password);
+				await stores.encryptedDataStore.deletePassword(key, password);
 			};
 
 			if (requestAuthFunc)
@@ -405,17 +406,20 @@ export default defineComponent({
 			}
 		}
 
-		function onDeletePasswordConfirmed(key: string)
+		async function onDeletePasswordConfirmed(key: string)
 		{
-			deletePassword.value(key);
+			showLoadingIndicator(color.value, "Deleting Password");
+			await deletePassword.value(key);
+			hideLoadingIndicator();
+
 			showToastFunction(color.value, "Password Deleted Successfully", true);
 		}
 
 		function onValueDeleteInitiated(value: NameValuePairStore)
 		{
-			deleteValue.value = (key: string) =>
+			deleteValue.value = async (key: string) =>
 			{
-				stores.encryptedDataStore.deleteNameValuePair(key, value);
+				await stores.encryptedDataStore.deleteNameValuePair(key, value);
 			};
 
 			if (requestAuthFunc)
@@ -424,9 +428,12 @@ export default defineComponent({
 			}
 		}
 
-		function onDeleteValueConfirmed(key: string)
+		async function onDeleteValueConfirmed(key: string)
 		{
-			deleteValue.value(key);
+			showLoadingIndicator(color.value, "Deleting Value");
+			await deleteValue.value(key);
+			hideLoadingIndicator();
+
 			showToastFunction(color.value, "Value Deleted Successfully", true);
 		}
 

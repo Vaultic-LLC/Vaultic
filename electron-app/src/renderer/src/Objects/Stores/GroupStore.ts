@@ -37,9 +37,9 @@ export interface GroupStore extends AuthenticationStore
 	duplicateValueGroupLength: number;
 	sortedPasswordsGroups: Group[];
 	sortedValuesGroups: Group[];
-	addGroup: (key: string, value: Group) => void;
-	updateGroup: (key: string, updatedGroup: Group) => void;
-	deleteGroup: (key: string, group: Group) => void;
+	addGroup: (key: string, value: Group) => Promise<void>;
+	updateGroup: (key: string, updatedGroup: Group) => Promise<void>;
+	deleteGroup: (key: string, group: Group) => Promise<void>;
 	syncGroupsAfterPasswordOrValueWasAdded: <T extends IGroupable & IIdentifiable>(dataType: DataType, value: T) => void;
 	syncGroupsAfterPasswordOrValueWasUpdated: (dataType: DataType, addedGroups: string[], removedGroups: string[], valueId: string) => void;
 	removeValueFromGroups: <T extends IGroupable & IIdentifiable>(dataType: DataType, value: T) => void;
@@ -91,15 +91,14 @@ export default function useGroupStore(): GroupStore
 		})
 	}
 
-	function writeState(key: string)
+	function writeState(key: string): Promise<void>
 	{
 		if (groupState.groups.length == 0)
 		{
-			groupFile.empty();
-			return;
+			return groupFile.empty();
 		}
 
-		groupFile.write<GroupState>(key, groupState);
+		return groupFile.write<GroupState>(key, groupState);
 	}
 
 	function resetToDefault()
@@ -280,7 +279,7 @@ export default function useGroupStore(): GroupStore
 	const duplicatePasswordGroupsLength: ComputedRef<number> = computed(() => Object.keys(groupState.duplicatePasswordGroups).length);
 	const duplicateValuesGroupsLength: ComputedRef<number> = computed(() => Object.keys(groupState.duplicateValueGroups).length);
 
-	function addGroup(key: string, group: Group)
+	async function addGroup(key: string, group: Group): Promise<void>
 	{
 		group.id = generator.uniqueId(groupState.groups);
 		group.key = generator.randomValue(30);
@@ -344,11 +343,10 @@ export default function useGroupStore(): GroupStore
 		updateHash(key, group);
 		group.key = cryptUtility.encrypt(key, group.key);
 
-		writeState(key);
+		await writeState(key);
 	}
 
-	// TODO: Test
-	function updateGroup(key: string, updatedGroup: Group)
+	async function updateGroup(key: string, updatedGroup: Group): Promise<void>
 	{
 		if (updatedGroup.type == DataType.Passwords)
 		{
@@ -399,10 +397,10 @@ export default function useGroupStore(): GroupStore
 			}
 		}
 
-		writeState(key);
+		await writeState(key);
 	}
 
-	function deleteGroup(key: string, group: Group)
+	async function deleteGroup(key: string, group: Group): Promise<void>
 	{
 		groupState.groups.splice(groupState.groups.indexOf(group), 1);
 		stores.encryptedDataStore.removeGroupFromValues(group);
@@ -427,7 +425,7 @@ export default function useGroupStore(): GroupStore
 		}
 
 		groupState.groupHash = cryptUtility.encrypt(key, getHash(key));
-		writeState(key);
+		await writeState(key);
 	}
 
 	// called when adding password or value

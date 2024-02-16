@@ -27,7 +27,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUpdated, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, onUpdated, ref, watch } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -47,8 +47,8 @@ import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
-import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
+import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "GroupView",
@@ -86,7 +86,8 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
 
 		const emptyMessage: ComputedRef<string> = computed(() =>
 		{
@@ -299,20 +300,22 @@ export default defineComponent({
 			return Promise.reject(false);
 		}
 
-		function doSave(key: string)
+		async function doSave(key: string)
 		{
+			showLoadingIndicator(groupColor.value, "Saving Group");
 			if (props.creating)
 			{
-				stores.groupStore.addGroup(key, groupState.value);
+				await stores.groupStore.addGroup(key, groupState.value);
 				groupState.value = defaultGroup(groupState.value.type);
 				setTableRows();
 				refreshKey.value = Date.now().toString();
 			}
 			else
 			{
-				stores.groupStore.updateGroup(key, groupState.value);
+				await stores.groupStore.updateGroup(key, groupState.value);
 			}
 
+			hideLoadingIndicator();
 			if (saveSucceeded)
 			{
 				saveSucceeded(true);

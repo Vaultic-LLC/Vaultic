@@ -15,16 +15,16 @@ export default class Files
 		return await window.api.fileExistsAndHasData(this.path);
 	}
 
-	public empty(): void
+	public async empty(): Promise<void>
 	{
 		let unlocked: boolean = false;
 		try
 		{
-			window.api.unlockFile(this.path);
+			await window.api.unlockFile(this.path);
 			unlocked = true;
 
-			window.api.writeFile("", this.path);
-			window.api.lockFile(this.path);
+			await window.api.writeFile("", this.path);
+			await window.api.lockFile(this.path);
 
 			unlocked = false;
 		}
@@ -37,7 +37,7 @@ export default class Files
 		{
 			try
 			{
-				window.api.lockFile(this.path);
+				await window.api.lockFile(this.path);
 			}
 			catch { }
 		}

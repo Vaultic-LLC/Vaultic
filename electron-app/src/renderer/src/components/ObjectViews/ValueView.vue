@@ -40,7 +40,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch, inject } from 'vue';
+import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -63,8 +63,8 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
-import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
+import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "ValueView",
@@ -109,7 +109,9 @@ export default defineComponent({
 			columnWidth: '100px'
 		}
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
+
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
 
@@ -218,21 +220,23 @@ export default defineComponent({
 			return Promise.reject();
 		}
 
-		function onAuthenticationSuccessful(key: string)
+		async function onAuthenticationSuccessful(key: string)
 		{
+			showLoadingIndicator(color.value, "Saving Value");
 			if (props.creating)
 			{
 				valuesState.value.lastModifiedTime = Date.now();
-				stores.encryptedDataStore.addNameValuePair(key, valuesState.value);
+				await stores.encryptedDataStore.addNameValuePair(key, valuesState.value);
 
 				valuesState.value = defaultValue();
 				refreshKey.value = Date.now().toString();
 			}
 			else
 			{
-				stores.encryptedDataStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key);
+				await stores.encryptedDataStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key);
 			}
 
+			hideLoadingIndicator();
 			saveSucceeded(true);
 		}
 

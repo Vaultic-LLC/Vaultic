@@ -38,7 +38,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import TableTemplate from './TableTemplate.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
@@ -56,8 +56,8 @@ import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
-import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from '../../Types/Keys';
 import { v4 as uuidv4 } from 'uuid';
+import { useRequestAuthFunction, useLoadingIndicator, useToastFunction } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: 'FilterGroupTable',
@@ -112,11 +112,12 @@ export default defineComponent({
 		const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
 			filterSearchText : groupSearchText);
 
-		let deleteFilter: Ref<(key: string) => void> = ref((_: string) => { });
-		let deleteGroup: Ref<(key: string) => void> = ref((_: string) => { });
+		let deleteFilter: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
+		let deleteGroup: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
-		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
+		const showToastFunction = useToastFunction();
 
 		const emptyTableMessage: ComputedRef<string> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
 			getEmptyTableMessage(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password Filters" : "Value Filters") :
@@ -287,9 +288,9 @@ export default defineComponent({
 
 		function onFilterDeleteInitiated(filter: Filter)
 		{
-			deleteFilter.value = (key: string) =>
+			deleteFilter.value = async (key: string) =>
 			{
-				stores.filterStore.deleteFilter(key, filter);
+				await stores.filterStore.deleteFilter(key, filter);
 			}
 
 			if (requestAuthFunc)
@@ -298,17 +299,20 @@ export default defineComponent({
 			}
 		}
 
-		function onFilterDeleteConfirmed(key: string)
+		async function onFilterDeleteConfirmed(key: string)
 		{
-			deleteFilter.value(key);
+			showLoadingIndicator(color.value, "Deleting Filter");
+			await deleteFilter.value(key);
+			hideLoadingIndicator();
+
 			showToastFunction(color.value, "Filter Deleted Sucessfully", true);
 		}
 
 		function onGroupDeleteInitiated(group: Group)
 		{
-			deleteGroup.value = (key: string) =>
+			deleteGroup.value = async (key: string) =>
 			{
-				stores.groupStore.deleteGroup(key, group);
+				await stores.groupStore.deleteGroup(key, group);
 			}
 
 			if (requestAuthFunc)
@@ -317,9 +321,12 @@ export default defineComponent({
 			}
 		}
 
-		function onGroupDeleteConfirmed(key: string)
+		async function onGroupDeleteConfirmed(key: string)
 		{
-			deleteGroup.value(key);
+			showLoadingIndicator(color.value, "Deleting Group");
+			await deleteGroup.value(key);
+			hideLoadingIndicator();
+
 			showToastFunction(color.value, "Group Deleted Sucessfully", true);
 		}
 

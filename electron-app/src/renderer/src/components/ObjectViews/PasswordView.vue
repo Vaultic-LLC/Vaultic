@@ -47,7 +47,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, provide, inject, watch } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, provide, watch } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -69,12 +69,13 @@ import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData
 import { v4 as uuidv4 } from 'uuid';
 import { PasswordStore } from '../../Objects/Stores/PasswordStore';
 import { stores } from '../../Objects/Stores';
-import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey, RequestAuthenticationFunctionKey } from '../../Types/Keys';
+import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Types/Keys';
 import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
 import generator from '@renderer/Utilities/Generator';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
+import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "PasswordView",
@@ -119,7 +120,8 @@ export default defineComponent({
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
 
 		provide(DirtySecurityQuestionQuestionsKey, dirtySecurityQuestionQuestions);
 		provide(DirtySecurityQuestionAnswersKey, dirtySecurityQuestionAnswers);
@@ -270,12 +272,13 @@ export default defineComponent({
 			return Promise.reject();
 		}
 
-		function onAuthenticationSuccessful(key: string)
+		async function onAuthenticationSuccessful(key: string)
 		{
+			showLoadingIndicator(color.value, "Saving Password");
 			if (props.creating)
 			{
 				passwordState.value.lastModifiedTime = Date.now();
-				stores.encryptedDataStore.addPassword(key, passwordState.value);
+				await stores.encryptedDataStore.addPassword(key, passwordState.value);
 
 				passwordState.value = defaultPassword();
 				refreshKey.value = Date.now().toString();
@@ -284,11 +287,12 @@ export default defineComponent({
 			{
 				//@ts-ignore
 				// passwordState.value.securityQuestions = securityQuestionInputField.value.securityQuestions;
-				stores.encryptedDataStore.updatePassword(
+				await stores.encryptedDataStore.updatePassword(
 					passwordState.value, passwordIsDirty.value, dirtySecurityQuestionQuestions.value,
 					dirtySecurityQuestionAnswers.value, key);
 			}
 
+			hideLoadingIndicator();
 			saveSucceeded(true);
 		}
 

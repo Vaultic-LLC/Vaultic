@@ -35,10 +35,10 @@ export interface FilterStore extends AuthenticationStore
 	duplicatePasswordFiltersLength: number;
 	duplicateValueFilters: Dictionary<string[]>;
 	duplicateValueFiltersLength: number;
-	addFilter(key: string, filter: Filter): void;
+	addFilter(key: string, filter: Filter): Promise<void>;
 	toggleFilter(id: string): boolean | undefined;
-	updateFilter(key: string, updatedFilter: Filter): void;
-	deleteFilter: (key: string, filter: Filter) => void;
+	updateFilter(key: string, updatedFilter: Filter): Promise<void>;
+	deleteFilter: (key: string, filter: Filter) => Promise<void>;
 	addFiltersToNewValue: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(filters: Filter[], value: T, valuesProperty: string) => void;
 	syncFiltersForValues: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(filters: Filter[], arr: T[], valuesProperty: string) => void;
 	recalcGroupFilters: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(filters: Filter[], arr: T[], valuesProperty: string) => void;
@@ -91,15 +91,14 @@ export default function useFilterStore(): FilterStore
 		});
 	}
 
-	function writeState(key: string)
+	function writeState(key: string): Promise<void>
 	{
 		if (filterState.filters.length == 0)
 		{
-			filterFile.empty();
-			return;
+			return filterFile.empty();
 		}
 
-		filterFile.write<FilterState>(key, filterState);
+		return filterFile.write<FilterState>(key, filterState);
 	}
 
 	function resetToDefault()
@@ -370,7 +369,7 @@ export default function useFilterStore(): FilterStore
 		return undefined;
 	}
 
-	function addFilter(key: string, filter: Filter)
+	async function addFilter(key: string, filter: Filter): Promise<void>
 	{
 		filter.id = generator.uniqueId(filterState.filters);
 		filter.key = generator.randomValue(30);
@@ -404,11 +403,11 @@ export default function useFilterStore(): FilterStore
 		updateHash(key, filter);
 		filter.key = cryptUtility.encrypt(key, filter.key);
 
-		writeState(key);
+		await writeState(key);
 	}
 
 	// TODO: test
-	function updateFilter(key: string, updatedFilter: Filter)
+	async function updateFilter(key: string, updatedFilter: Filter): Promise<void>
 	{
 		Object.assign(filterState.filters.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
 		switch (updatedFilter.type)
@@ -425,10 +424,10 @@ export default function useFilterStore(): FilterStore
 				break;
 		}
 
-		writeState(key);
+		await writeState(key);
 	}
 
-	function deleteFilter(key: string, filter: Filter)
+	async function deleteFilter(key: string, filter: Filter): Promise<void>
 	{
 		filterState.filters.splice(filterState.filters.indexOf(filter), 1);
 		stores.encryptedDataStore.removeFilterFromValues(filter);
@@ -453,7 +452,7 @@ export default function useFilterStore(): FilterStore
 		}
 
 		filterState.filterHash = cryptUtility.encrypt(key, getHash(key));
-		writeState(key);
+		await writeState(key);
 	}
 
 	// used when adding password / value

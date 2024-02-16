@@ -51,15 +51,15 @@ export interface EncryptedDataStore extends AuthenticationStore
 	activeAtRiskValueType: AtRiskType;
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
 	init: (stores: Stores) => void;
-	addPassword: (key: string, password: Password) => boolean;
+	addPassword: (key: string, password: Password) => Promise<boolean>;
 	updatePassword: (password: Password, passwordWasUpdated: boolean,
 		updatedSecurityQuestionQuestions: string[],
-		updatedSecurityQuestionAnswers: string[], key: string) => void;
-	addNameValuePair: (key: string, nameValuePair: NameValuePair) => boolean;
-	updateNameValuePair: (nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string) => void;
+		updatedSecurityQuestionAnswers: string[], key: string) => Promise<void>;
+	addNameValuePair: (key: string, nameValuePair: NameValuePair) => Promise<boolean>;
+	updateNameValuePair: (nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string) => Promise<void>;
 	addRemoveGroupsFromPasswordValue: (addedValues: string[], removedValues: string[], group: Group) => void;
-	deletePassword: (key: string, password: PasswordStore) => void;
-	deleteNameValuePair: (key: string, nameValuePair: NameValuePairStore) => void;
+	deletePassword: (key: string, password: PasswordStore) => Promise<void>;
+	deleteNameValuePair: (key: string, nameValuePair: NameValuePairStore) => Promise<void>;
 	removeFilterFromValues: (filter: Filter) => void;
 	removeGroupFromValues: (group: Group) => void;
 	toggleAtRiskModels: (dataType: DataType, atRiskType: AtRiskType) => void;
@@ -102,15 +102,17 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		return encryptedDataState.passwordHash != "" || encryptedDataState.valueHash != "";
 	}
 
-	function writeState(key: string)
+	function writeState(key: string): Promise<void>
 	{
 		if (encryptedDataState.passwords.length == 0 && encryptedDataState.nameValuePairs.length == 0)
 		{
-			dataFile.empty();
+			// TODO: error handling
+			return dataFile.empty();
 		}
 		else
 		{
-			dataFile.write(key, encryptedDataState);
+			// TODO: error handling
+			return dataFile.write(key, encryptedDataState);
 		}
 	}
 
@@ -157,6 +159,9 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 							resolve(true);
 						}
 					}
+
+					// this happens when an exception is thrown while trying to parse / read in file
+					resolve(false);
 				}).catch(() =>
 				{
 					resolve(false);
@@ -364,7 +369,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		return false;
 	}
 
-	function addPassword(key: string, password: Password): boolean
+	async function addPassword(key: string, password: Password): Promise<boolean>
 	{
 		if (!checkKeyUpdatePasswordHash(key, password.password))
 		{
@@ -384,12 +389,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.Passwords, password);
 
-		writeState(key);
+		await writeState(key);
 		return true;
 	}
 
-	function updatePassword(password: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
-		updatedSecurityQuestionAnswers: string[], key: string): void
+	async function updatePassword(password: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
+		updatedSecurityQuestionAnswers: string[], key: string): Promise<void>
 	{
 		if (passwordWasUpdated && !checkKeyUpdatePasswordHash(key, password.password))
 		{
@@ -422,11 +427,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.Passwords, addedGroups, removedGroups, password.id);
 		stores.filterStore.syncFiltersForValues(stores.filterStore.passwordFilters, [password as PasswordStore], "passwords");
 
-
-		writeState(key);
+		await writeState(key);
 	}
 
-	function deletePassword(key: string, password: PasswordStore)
+	async function deletePassword(key: string, password: PasswordStore): Promise<void>
 	{
 		// empty the password so we can just run it through the duplicate logic since no other passwords should be empty
 		removeValueFromDuplicates(password, encryptedDataState.duplicatePasswords);
@@ -443,10 +447,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		stores.groupStore.removeValueFromGroups(DataType.Passwords, password);
 		stores.filterStore.removeValueFromFilers(DataType.Passwords, password);
 
-		writeState(key);
+		await writeState(key);
 	}
 
-	function addNameValuePair(key: string, nameValuePair: NameValuePair): boolean
+	async function addNameValuePair(key: string, nameValuePair: NameValuePair): Promise<boolean>
 	{
 		if (!checkKeyUpdateValueHash(key, nameValuePair.value))
 		{
@@ -466,11 +470,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.NameValuePairs, nameValuePair);
 
-		writeState(key);
+		await writeState(key);
 		return true;
 	}
 
-	function updateNameValuePair(nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string): void
+	async function updateNameValuePair(nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string): Promise<void>
 	{
 		if (valueWasUpdated && !checkKeyUpdateValueHash(key, nameValuePair.value))
 		{
@@ -502,10 +506,10 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
 		stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [nameValuePair as NameValuePairStore], "nameValuePairs");
 
-		writeState(key);
+		await writeState(key);
 	}
 
-	function deleteNameValuePair(key: string, nameValuePair: NameValuePairStore)
+	async function deleteNameValuePair(key: string, nameValuePair: NameValuePairStore): Promise<void>
 	{
 		// empty the password so we can just run it through the duplicate logic since no other passwords should be empty
 		removeValueFromDuplicates(nameValuePair, encryptedDataState.duplicateNameValuePairs);
@@ -522,7 +526,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		stores.groupStore.removeValueFromGroups(DataType.NameValuePairs, nameValuePair);
 		stores.filterStore.removeValueFromFilers(DataType.NameValuePairs, nameValuePair);
 
-		writeState(key);
+		await writeState(key);
 	}
 
 	function addRemoveGroupsFromPasswordValue(addedValues: string[], removedValues: string[], group: Group)

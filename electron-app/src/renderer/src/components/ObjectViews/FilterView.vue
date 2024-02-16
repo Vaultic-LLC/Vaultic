@@ -21,7 +21,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, inject } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -35,10 +35,10 @@ import { DataType, Filter } from '../../Types/Table';
 import { DisplayField, PasswordProperties, ValueProperties, defaultFilter } from '../../Types/EncryptedData';
 import { stores } from '../../Objects/Stores';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
-import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import generator from '@renderer/Utilities/Generator';
 import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
 import { v4 as uuidv4 } from 'uuid';
+import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "FilterView",
@@ -63,7 +63,9 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
+
 		const emptyMessage: Ref<string> = ref(getEmptyTableMessage("Filter Conditions"));
 
 		const gridDefinition: GridDefinition =
@@ -99,20 +101,22 @@ export default defineComponent({
 			return Promise.reject();
 		}
 
-		function doSave(key: string)
+		async function doSave(key: string)
 		{
+			showLoadingIndicator(color.value, "Saving Filter");
 			if (props.creating)
 			{
-				stores.filterStore.addFilter(key, filterState.value);
+				await stores.filterStore.addFilter(key, filterState.value);
 
 				filterState.value = defaultFilter(filterState.value.type);
 				refreshKey.value = Date.now().toString();
 			}
 			else
 			{
-				stores.filterStore.updateFilter(key, filterState.value);
+				await stores.filterStore.updateFilter(key, filterState.value);
 			}
 
+			hideLoadingIndicator();
 			if (saveSucceeded)
 			{
 				saveSucceeded(true);
