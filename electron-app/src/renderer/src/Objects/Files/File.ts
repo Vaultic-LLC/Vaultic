@@ -10,9 +10,9 @@ export default class Files
 		this.path = `${fileName}.json`
 	}
 
-	public exists(): boolean
+	public async exists(): Promise<boolean>
 	{
-		return window.api.fileExistsAndHasData(this.path);
+		return await window.api.fileExistsAndHasData(this.path);
 	}
 
 	public empty(): void
@@ -43,19 +43,19 @@ export default class Files
 		}
 	}
 
-	public write<T>(key: string, data: T): void
+	public async write<T>(key: string, data: T): Promise<void>
 	{
 		let unlocked: boolean = false;
 		try
 		{
-			window.api.unlockFile(this.path);
+			await window.api.unlockFile(this.path);
 			unlocked = true;
 
 			const jsonData: string = JSON.stringify(data);
 			const encryptedData: string = cryptUtility.encrypt(key, jsonData);
-			window.api.writeFile(encryptedData, this.path);
+			await window.api.writeFile(encryptedData, this.path);
 
-			window.api.lockFile(this.path);
+			await window.api.lockFile(this.path);
 			unlocked = false;
 		}
 		catch (e)
@@ -67,52 +67,49 @@ export default class Files
 		{
 			try
 			{
-				window.api.lockFile(this.path);
+				await window.api.lockFile(this.path);
 			}
 			catch { }
 		}
 	}
 
-	public read<T>(key: string): Promise<T>
+	public async read<T>(key: string): Promise<T>
 	{
-		return new Promise((resolve, reject) =>
+		if (!await window.api.fileExistsAndHasData(this.path))
 		{
-			if (!window.api.fileExistsAndHasData(this.path))
-			{
-				return reject();
-			}
+			return {} as T;
+		}
 
-			let unlocked: boolean = false;
+		let unlocked: boolean = false;
+		try
+		{
+			await window.api.unlockFile(this.path);
+			unlocked = true;
+
+			const data: string = await window.api.readFile(this.path);
+			const decryptedData: string = cryptUtility.decrypt(key, data);
+
+			await window.api.lockFile(this.path);
+			unlocked = false;
+
+			let obj: T = JSON.parse(decryptedData) as T;
+			return obj;
+		}
+		catch (e)
+		{
+			console.log(e);
+		}
+
+		if (unlocked)
+		{
 			try
 			{
-				window.api.unlockFile(this.path);
-				unlocked = true;
-
-				const data: string = window.api.readFile(this.path);
-				const decryptedData: string = cryptUtility.decrypt(key, data);
-
-				window.api.lockFile(this.path);
-				unlocked = false;
-
-				let obj: T = JSON.parse(decryptedData) as T;
-				resolve(obj);
+				await window.api.lockFile(this.path);
 			}
-			catch (e)
-			{
-				console.log(e);
-			}
+			catch { }
+		}
 
-			if (unlocked)
-			{
-				try
-				{
-					window.api.lockFile(this.path);
-				}
-				catch { }
-			}
-
-			return reject();
-		});
+		return {} as T;
 	}
 }
 

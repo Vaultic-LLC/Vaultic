@@ -107,12 +107,17 @@ export default function useGroupStore(): GroupStore
 		Object.assign(groupState, defaultState());
 	}
 
-	function canAuthenticateKey()
+	function canAuthenticateKeyBeforeEntry(): Promise<boolean>
 	{
 		return groupFile.exists();
 	}
 
-	async function checkKey(key: string): Promise<boolean>
+	function canAuthenticateKeyAfterEntry(): boolean
+	{
+		return groupState.groupHash != "";
+	}
+
+	async function checkKeyBeforeEntry(key: string): Promise<boolean>
 	{
 		if (!await readState(key))
 		{
@@ -123,6 +128,11 @@ export default function useGroupStore(): GroupStore
 		groupState.groups.forEach(g => runningKeys += cryptUtility.decrypt(key, g.key));
 
 		return hashUtility.hash(runningKeys) === cryptUtility.decrypt(key, groupState.groupHash);
+	}
+
+	function checkKeyAfterEntry(key: string): boolean
+	{
+		return getHash(key) == cryptUtility.decrypt(key, groupState.groupHash);
 	}
 
 	function getHash(key: string): string
@@ -596,8 +606,10 @@ export default function useGroupStore(): GroupStore
 		get duplicateValueGroupLength() { return duplicateValuesGroupsLength.value; },
 		get sortedPasswordsGroups() { return sortedPasswordsGroups.value; },
 		get sortedValuesGroups() { return sortedValuesGroups.value },
-		canAuthenticateKey,
-		checkKey,
+		canAuthenticateKeyBeforeEntry,
+		canAuthenticateKeyAfterEntry,
+		checkKeyBeforeEntry,
+		checkKeyAfterEntry,
 		readState,
 		resetToDefault,
 		addGroup,

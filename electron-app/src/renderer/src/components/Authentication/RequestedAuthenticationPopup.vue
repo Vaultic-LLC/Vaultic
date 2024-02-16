@@ -11,7 +11,6 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import AuthenticationPopup from "./AuthenticationPopup.vue"
-import { stores } from '../../Objects/Stores';
 
 export default defineComponent({
 	name: "RequestedAuthenticationPopup",
@@ -28,11 +27,6 @@ export default defineComponent({
 
 		function onAuthSuccessful(key: string)
 		{
-			if (needsToSetupKey.value)
-			{
-				stores.appStore.authenticated = true;
-			}
-
 			if (authPopup.value)
 			{
 				//@ts-ignore

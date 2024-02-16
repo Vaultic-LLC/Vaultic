@@ -40,6 +40,9 @@
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :color="toastColor" :text="toastText" :success="toastSuccess" />
 	</Transition>
+	<Transition name="fade" mode="out-in">
+		<LoadingPopup v-if="showLoadingIndicator" :color="loadingColor" :text="loadingText" />
+	</Transition>
 </template>
 
 <script lang="ts">
@@ -64,10 +67,11 @@ import LockIconCard from "./components/Widgets/IconCards/LockIconCard.vue"
 import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import SliderField from './components/InputFields/SliderField.vue';
+import LoadingPopup from './components/Loading/LoadingPopup.vue';
 
 import { SingleSelectorItemModel } from './Types/Models';
 import { stores } from './Objects/Stores';
-import { RequestAuthenticationFunctionKey, ShowToastFunctionKey } from './Types/Keys';
+import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
@@ -94,12 +98,13 @@ export default defineComponent({
 		LockIconCard,
 		AboutIconCard,
 		LayoutIconCard,
-		SliderField
+		SliderField,
+		LoadingPopup
 	},
 	setup()
 	{
 		// const cursor: Ref<HTMLElement | null> = ref(null);
-		const needsAuthentication: Ref<boolean> = ref(stores.appStore.needsAuthentication);
+		const needsAuthentication: Ref<boolean> = ref(stores.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
 		//let backgroundClr: Ref<string> = ref('#0f111d');
@@ -115,8 +120,14 @@ export default defineComponent({
 		const onAuthSuccess: Ref<{ (key: string): void }> = ref((_: string) => { });
 		const onAuthCancel: Ref<{ (): void }> = ref(() => { });
 
+		const loadingColor: Ref<string> = ref('');
+		const loadingText: Ref<string> = ref('');
+		const showLoadingIndicator: Ref<boolean> = ref(false);
+
 		provide(ShowToastFunctionKey, showToastFunc);
 		provide(RequestAuthenticationFunctionKey, requestAuthentication);
+		provide(ShowLoadingIndicatorFunctionKey, showLoadingIndicatorFunc);
+		provide(HideLoadingIndicatorFunctionKey, hideLoadingIndicatorFunc);
 
 		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
 
@@ -182,11 +193,23 @@ export default defineComponent({
 			setTimeout(() => showToast.value = false, 2000);
 		}
 
+		function showLoadingIndicatorFunc(color: string, text: string)
+		{
+			loadingColor.value = color;
+			loadingText.value = text;
+			showLoadingIndicator.value = true;
+		}
+
+		function hideLoadingIndicatorFunc()
+		{
+			showLoadingIndicator.value = false;
+		}
+
 		function requestAuthentication(color: string, onSuccess: (key: string) => void, onCancel: () => void)
 		{
 			requestAuthColor.value = color;
 
-			if (!stores.canAuthenticateKey())
+			if (!stores.canAuthenticateKeyAfterEntry())
 			{
 				needsToSetupKey.value = true;
 			}
@@ -212,12 +235,12 @@ export default defineComponent({
 
 		function onGlobalAuthSuccessful()
 		{
-			stores.appStore.authenticated = true;
+			stores.needsAuthentication = false;
 		}
 
 		let lastMouseover: number = 0;
 		const threshold: number = 1000;
-		onMounted(() =>
+		onMounted(async () =>
 		{
 			document.getElementById('body')?.addEventListener('mouseover', (_) =>
 			{
@@ -231,7 +254,7 @@ export default defineComponent({
 			});
 		});
 
-		watch(() => stores.appStore.needsAuthentication, (newValue) =>
+		watch(() => stores.needsAuthentication, (newValue) =>
 		{
 			needsAuthentication.value = newValue;
 		});
@@ -257,6 +280,9 @@ export default defineComponent({
 			onAuthCancel,
 			needsToSetupKey,
 			gradient,
+			loadingColor,
+			loadingText,
+			showLoadingIndicator,
 			onGlobalAuthSuccessful
 		}
 	}

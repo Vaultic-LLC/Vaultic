@@ -3,7 +3,7 @@
 		<div class="mainUICover"></div>
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
-			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" />
+			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true" />
 	</div>
 </template>
 
@@ -28,9 +28,10 @@ export default defineComponent({
 
 		async function authenticationSuccessful(key: string)
 		{
-			stores.loadStoreData(key).then(() =>
+			stores.loadStoreData(key).then(async () =>
 			{
-				stores.appStore.recordLogin(key, Date.now());
+				await stores.appStore.recordLogin(key, Date.now());
+
 				//@ts-ignore
 				authPopup.value?.playUnlockAnimation();
 				unlocked.value = true;

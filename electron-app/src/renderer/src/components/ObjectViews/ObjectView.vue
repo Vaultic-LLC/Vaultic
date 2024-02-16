@@ -1,7 +1,7 @@
 <template>
 	<div class="objectViewContainer">
 		<div class="objectViewForm" :style="{
-			'color': 'red', 'grid-template-rows': `repeat(${gridDef.rows}, ${gridDef.rowHeight})`,
+			'grid-template-rows': `repeat(${gridDef.rows}, ${gridDef.rowHeight})`,
 			'grid-template-columns': `repeat(${gridDef.columns}, ${gridDef.columnWidth})`
 		}">
 			<slot></slot>

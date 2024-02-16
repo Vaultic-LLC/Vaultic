@@ -24,7 +24,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, Ref, ref, inject } from 'vue';
+import { ComputedRef, defineComponent, computed, Ref, ref } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -34,9 +34,9 @@ import EnumInputField from '../InputFields/EnumInputField.vue';
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
 import { stores } from '../../Objects/Stores';
-import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import { SettingsState } from '../../Objects/Stores/SettingsStore';
 import { FilterStatus } from '../../Types/Table';
+import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "ValueView",
@@ -61,7 +61,9 @@ export default defineComponent({
 			columnWidth: '100px'
 		}
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
+
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
 
@@ -80,9 +82,12 @@ export default defineComponent({
 			return Promise.reject();
 		}
 
-		function onAuthenticationSuccessful(key: string)
+		async function onAuthenticationSuccessful(key: string)
 		{
-			stores.settingsStore.updateSettings(key, settingsState.value);
+			showLoadingIndicator(color.value, "Saving Settings");
+			await stores.settingsStore.updateSettings(key, settingsState.value);
+			hideLoadingIndicator();
+
 			saveSucceeded(true);
 		}
 

@@ -36,8 +36,8 @@ export interface SettingsStore extends Store
 	init: (stores: Stores) => void;
 	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
-	updateColorPalette: (key: string, colorPalette: ColorPalette) => void;
-	updateSettings: (key: string, newState: SettingsState) => void;
+	updateColorPalette: (key: string, colorPalette: ColorPalette) => Promise<void>;
+	updateSettings: (key: string, newState: SettingsState) => Promise<void>;
 }
 
 const settingsFile: File = new File("settings");
@@ -97,14 +97,15 @@ export default function useSettingsStore(): SettingsStore
 				resolve(true);
 			}).catch(() =>
 			{
+				// TODO Handle Error
 				resolve(false);
 			});
 		});
 	}
 
-	function writeState(key: string)
+	function writeState(key: string): Promise<void>
 	{
-		settingsFile.write(key, settingsState);
+		return settingsFile.write(key, settingsState);
 	}
 
 	function resetToDefault()
@@ -112,12 +113,13 @@ export default function useSettingsStore(): SettingsStore
 		Object.assign(settingsState, defaultState());
 	}
 
-	function updateColorPalette(key: string, colorPalette: ColorPalette)
+	function updateColorPalette(key: string, colorPalette: ColorPalette): Promise<void>
 	{
 		const oldColorPalette: ColorPalette[] = settingsState.colorPalettes.filter(cp => cp.id == colorPalette.id);
 		if (oldColorPalette.length != 1)
 		{
-			return;
+			// TODO: Handle Error
+			return Promise.resolve();
 		}
 
 		Object.assign(oldColorPalette[0], colorPalette);
@@ -129,7 +131,7 @@ export default function useSettingsStore(): SettingsStore
 			setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 		}
 
-		writeState(key);
+		return writeState(key);
 	}
 
 	function init(stores: Stores)
@@ -160,10 +162,10 @@ export default function useSettingsStore(): SettingsStore
 		}
 	}
 
-	function updateSettings(key: string, newState: SettingsState)
+	function updateSettings(key: string, newState: SettingsState): Promise<void>
 	{
 		Object.assign(settingsState, newState);
-		writeState(key);
+		return writeState(key);
 	}
 
 	return {

@@ -107,12 +107,17 @@ export default function useFilterStore(): FilterStore
 		Object.assign(filterState, defaultState());
 	}
 
-	function canAuthenticateKey()
+	async function canAuthenticateKeyBeforeEntry()
 	{
-		return filterFile.exists();
+		return await filterFile.exists();
 	}
 
-	async function checkKey(key: string): Promise<boolean>
+	function canAuthenticateKeyAfterEntry()
+	{
+		return filterState.filterHash != "";
+	}
+
+	async function checkKeyBeforeEntry(key: string): Promise<boolean>
 	{
 		if (!await readState(key))
 		{
@@ -123,6 +128,11 @@ export default function useFilterStore(): FilterStore
 		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
 
 		return hashUtility.hash(runningKeys) === cryptUtility.decrypt(key, filterState.filterHash);
+	}
+
+	function checkKeyAfterEntry(key: string): boolean
+	{
+		return getHash(key) == cryptUtility.decrypt(key, filterState.filterHash);
 	}
 
 	function getHash(key: string)
@@ -645,8 +655,10 @@ export default function useFilterStore(): FilterStore
 		get duplicatePasswordFiltersLength() { return duplicatePasswordFiltersLength.value; },
 		get duplicateValueFilters() { return filterState.duplicateValueFilters; },
 		get duplicateValueFiltersLength() { return duplicateValueFiltersLength.value; },
-		canAuthenticateKey,
-		checkKey,
+		canAuthenticateKeyBeforeEntry,
+		canAuthenticateKeyAfterEntry,
+		checkKeyBeforeEntry,
+		checkKeyAfterEntry,
 		readState,
 		resetToDefault,
 		addFilter,

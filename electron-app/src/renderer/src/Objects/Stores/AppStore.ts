@@ -1,4 +1,4 @@
-import { ComputedRef, computed, reactive } from "vue";
+import { reactive } from "vue";
 import { DataType } from "../../Types/Table";
 import { LoginRecord } from "../../Types/EncryptedData";
 import { Stores, stores, Store } from ".";
@@ -26,11 +26,10 @@ export interface AppStore extends Store
 	activePasswordValuesTable: DataType;
 	activeFilterGroupsTable: DataType;
 	loginHistory: LoginRecord[];
-	needsAuthentication: boolean;
 	init: (stores: Stores) => void;
 	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
-	recordLogin: (key: string, dateTime: number) => void;
+	recordLogin: (key: string, dateTime: number) => Promise<void>;
 	resetSessionTime: () => void;
 }
 
@@ -41,7 +40,6 @@ export default function useAppStore(): AppStore
 {
 	appState = reactive(defaultState());
 
-	let needsAuthentication: ComputedRef<boolean> = computed(() => true);
 	let autoLockTimeoutID: NodeJS.Timeout;
 
 	function defaultState(): AppState
@@ -58,18 +56,8 @@ export default function useAppStore(): AppStore
 		};
 	}
 
-	function init(stores: Stores)
+	function init(_: Stores)
 	{
-		// TODO: Update to include all stores
-		needsAuthentication = computed(() =>
-		{
-			if (!stores.canAuthenticateKey())
-			{
-				return false;
-			}
-
-			return !appState.authenticated;
-		});
 	}
 
 	function readState(key: string): Promise<boolean>
@@ -98,9 +86,9 @@ export default function useAppStore(): AppStore
 		})
 	}
 
-	function writeState(key: string)
+	function writeState(key: string): Promise<void>
 	{
-		appFile.write(key, appState);
+		return appFile.write(key, appState);
 	}
 
 	function resetToDefault()
@@ -117,7 +105,7 @@ export default function useAppStore(): AppStore
 		}, stores.settingsStore.autoLockNumberTime);
 	}
 
-	function recordLogin(key: string, dateTime: number)
+	function recordLogin(key: string, dateTime: number): Promise<void>
 	{
 		if (appState.loginHistory.length >= stores.settingsStore.loginRecordsToStore)
 		{
@@ -130,13 +118,12 @@ export default function useAppStore(): AppStore
 			displayTime: new Date(dateTime).toLocaleString()
 		});
 
-		writeState(key);
+		return writeState(key);
 	}
 
 	return {
 		get isWindows() { return appState.isWindows; },
 		get lastUpdated() { return appState.lastUpdated; },
-		get needsAuthentication() { return needsAuthentication.value; },
 		get authenticated() { return appState.authenticated; },
 		set authenticated(value: boolean) { appState.authenticated = value; },
 		get reloadMainUI() { return appState.reloadMainUI; },

@@ -27,7 +27,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, watch, inject } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, watch } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
@@ -36,7 +36,7 @@ import ToolTip from '../ToolTip.vue';
 import { stores } from '../../Objects/Stores';
 import { GridDefinition } from '../../Types/Models';
 import { ColorPalette } from '../../Types/Colors';
-import { RequestAuthenticationFunctionKey } from '@renderer/Types/Keys';
+import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "ColorPaletteView",
@@ -56,7 +56,8 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
+		const requestAuthFunc = useRequestAuthFunction();
+		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
 
 		const gridDefinition: GridDefinition =
 		{
@@ -82,14 +83,17 @@ export default defineComponent({
 			return Promise.reject();
 		}
 
-		function doSave(key: string)
+		async function doSave(key: string)
 		{
+			showLoadingIndicator(primaryColor.value, "Saving Color Palette");
 			colorPaletteState.value.isCreated = true;
 			colorPaletteState.value.editable = true;
 
-			stores.settingsStore.updateColorPalette(key, colorPaletteState.value);
+			await stores.settingsStore.updateColorPalette(key, colorPaletteState.value);
+
 			refreshKey.value = Date.now().toString();
 
+			hideLoadingIndicator();
 			saveSucceeded(true);
 		}
 

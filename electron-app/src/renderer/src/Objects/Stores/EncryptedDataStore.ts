@@ -50,7 +50,6 @@ export interface EncryptedDataStore extends AuthenticationStore
 	activeAtRiskPasswords: Dictionary<AtRiskType[]>;
 	activeAtRiskValueType: AtRiskType;
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
-	canAuthenticateKey: () => boolean;
 	init: (stores: Stores) => void;
 	addPassword: (key: string, password: Password) => boolean;
 	updatePassword: (password: Password, passwordWasUpdated: boolean,
@@ -93,9 +92,14 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		};
 	}
 
-	function canAuthenticateKey()
+	function canAuthenticateKeyBeforeEntry(): Promise<boolean>
 	{
 		return dataFile.exists();
+	}
+
+	function canAuthenticateKeyAfterEntry(): boolean
+	{
+		return encryptedDataState.passwordHash != "" || encryptedDataState.valueHash != "";
 	}
 
 	function writeState(key: string)
@@ -320,9 +324,9 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	{
 	}
 
-	async function checkKey(key: string): Promise<boolean>
+	async function checkKeyBeforeEntry(key: string): Promise<boolean>
 	{
-		if (!canAuthenticateKey())
+		if (!await canAuthenticateKeyBeforeEntry())
 		{
 			return true;
 		}
@@ -341,6 +345,20 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		else
 		{
 			return await readState(key);
+		}
+
+		return false;
+	}
+
+	function checkKeyAfterEntry(key: string): boolean
+	{
+		if (encryptedDataState.passwordHash)
+		{
+			return calculateHash(key, encryptedDataState.passwords, "password") == cryptUtility.decrypt(key, encryptedDataState.passwordHash);
+		}
+		else if (encryptedDataState.valueHash)
+		{
+			return calculateHash(key, encryptedDataState.nameValuePairs, "value") == cryptUtility.decrypt(key, encryptedDataState.valueHash);
 		}
 
 		return false;
@@ -644,11 +662,13 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		get activeAtRiskPasswords() { return encryptedDataState.activeAtRiskPasswords; },
 		get activeAtRiskValueType() { return encryptedDataState.activeAtRiskValueType; },
 		get activeAtRiskValues() { return encryptedDataState.activeAtRiskValues; },
-		canAuthenticateKey,
+		canAuthenticateKeyBeforeEntry,
+		canAuthenticateKeyAfterEntry,
 		init,
 		readState,
 		resetToDefault,
-		checkKey,
+		checkKeyBeforeEntry,
+		checkKeyAfterEntry,
 		addPassword,
 		updatePassword,
 		addNameValuePair,

@@ -28,16 +28,8 @@
 					v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
 			</div>
 			<Transition name="fade">
-				<LoadingIndicator v-if="disabled" :color="primaryColor" />
-				<!-- <div v-if="disabled" :style="{ width: '70%', 'height': '20px', 'margin-top': '50px' }">
-				</div> -->
-				<!-- <div v-if="disabled" class="authPopupContainer__loadingIndicator">
-					<div class="authPopupContainer__dot"></div>
-					<div class="authPopupContainer__dot"></div>
-					<div class="authPopupContainer__dot"></div>
-					<div class="authPopupContainer__dot"></div>
-					<div class="authPopupContainer__dot"></div>
-				</div> -->
+				<!-- TODO: Move this down when setting up key -->
+				<LoadingIndicator v-if="disabled && !unlocked" :color="primaryColor" />
 			</Transition>
 			<div class="authenticationPopupButtons">
 				<button ref="enterButton" class="authenticationPopupButtons__button" :class="{ disabled: disabled }"
@@ -62,7 +54,7 @@ import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, re
 
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
-import LoadingIndicator from './LoadingIndicator.vue';
+import LoadingIndicator from '../Loading/LoadingIndicator.vue';
 
 import { stores } from '../../Objects/Stores';
 import { ColorPalette } from '../../Types/Colors';
@@ -78,7 +70,7 @@ export default defineComponent({
 		LoadingIndicator
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
-	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color"],
+	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color", "beforeEntry"],
 	setup(props, ctx)
 	{
 		const encryptedInputField: Ref<null> = ref(null);
@@ -120,42 +112,57 @@ export default defineComponent({
 
 			disabled.value = true;
 			enterButton.value?.classList.add('disabled');
-			if (Date.now() - lastAuthAttempt < 1000)
+			setTimeout(() =>
 			{
-				disabled.value = false;
-				jiggleContainer();
-				return;
-			}
-
-			lastAuthAttempt = Date.now();
-
-			if (needsToSetupKey.value && (!greaterThanTwentyCharacters.value ||
-				!containesUpperAndLowerCase.value ||
-				!hasNumber.value ||
-				!hasSpecialCharacter.value))
-			{
-				disabled.value = false;
-				jiggleContainer();
-				return;
-			}
-
-			stores.checkKey(key.value).then((isValid: boolean) =>
-			{
-				if (!isValid)
+				if (Date.now() - lastAuthAttempt < 1000)
 				{
 					disabled.value = false;
 					jiggleContainer();
-					if (encryptedInputField.value)
+					return;
+				}
+
+				lastAuthAttempt = Date.now();
+
+				if (needsToSetupKey.value && (!greaterThanTwentyCharacters.value ||
+					!containesUpperAndLowerCase.value ||
+					!hasNumber.value ||
+					!hasSpecialCharacter.value))
+				{
+					disabled.value = false;
+					jiggleContainer();
+					return;
+				}
+
+				if (props.beforeEntry === true)
+				{
+					stores.checkKeyBeforeEntry(key.value).then((isValid: boolean) =>
 					{
-						// @ts-ignore
-						encryptedInputField.value.focus();
-					}
+						handleKeyIsValid(isValid);
+					});
 				}
 				else
 				{
-					ctx.emit("onAuthenticationSuccessful", key.value);
+					handleKeyIsValid(stores.checkKeyAfterEntry(key.value));
 				}
-			});
+			}, 1500)
+		}
+
+		function handleKeyIsValid(isValid: boolean)
+		{
+			if (!isValid)
+			{
+				disabled.value = false;
+				jiggleContainer();
+				if (encryptedInputField.value)
+				{
+					// @ts-ignore
+					encryptedInputField.value.focus();
+				}
+			}
+			else
+			{
+				ctx.emit("onAuthenticationSuccessful", key.value);
+			}
 		}
 
 		function onCancel()

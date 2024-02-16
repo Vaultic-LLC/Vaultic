@@ -1,3 +1,4 @@
+import { reactive } from "vue";
 import useAppStore, { AppStore } from "./AppStore";
 import useEncryptedDataStore, { EncryptedDataStore } from "./EncryptedDataStore";
 import useFilterStore, { FilterStore } from "./FilterStore";
@@ -12,34 +13,51 @@ export interface Store
 
 export interface AuthenticationStore extends Store
 {
-	canAuthenticateKey: () => boolean; // checks if file exists
-	checkKey: (key: string) => Promise<boolean>; // checks if key is valid
+	canAuthenticateKeyBeforeEntry: () => Promise<boolean>; 		// checks if file exists
+	canAuthenticateKeyAfterEntry: () => boolean; 				// checks if the store has data.
+	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
+	checkKeyAfterEntry: (key: string) => boolean;
 }
 
+interface StoreState
+{
+	needsAuthentication: boolean;
+}
+
+const storeState: StoreState = reactive({ needsAuthentication: true });
 export interface Stores
 {
+	needsAuthentication: boolean;
 	settingsStore: SettingsStore;
 	appStore: AppStore;
 	encryptedDataStore: EncryptedDataStore;
 	groupStore: GroupStore;
 	filterStore: FilterStore;
-	canAuthenticateKey: () => boolean;
-	checkKey: (key: string) => Promise<boolean>;
+	canAuthenticateKeyBeforeEntry: () => Promise<boolean>;
+	canAuthenticateKeyAfterEntry: () => boolean;
+	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
+	checkKeyAfterEntry: (key: string) => boolean;
 	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
+	init: () => Promise<void>;
 }
 
 export const stores: Stores =
 {
+	get needsAuthentication() { return storeState.needsAuthentication },
+	set needsAuthentication(value: boolean) { storeState.needsAuthentication = value },
 	settingsStore: useSettingsStore(),
 	appStore: useAppStore(),
 	encryptedDataStore: useEncryptedDataStore(),
 	groupStore: useGroupStore(),
 	filterStore: useFilterStore(),
-	canAuthenticateKey,
-	checkKey,
+	canAuthenticateKeyBeforeEntry,
+	canAuthenticateKeyAfterEntry,
+	checkKeyBeforeEntry,
+	checkKeyAfterEntry,
 	loadStoreData,
-	resetStoresToDefault
+	resetStoresToDefault,
+	init
 }
 
 // additional setup that requires another store. Prevents circular dependencies
@@ -47,28 +65,68 @@ stores.encryptedDataStore.init(stores);
 stores.settingsStore.init(stores);
 stores.appStore.init(stores);
 
-function canAuthenticateKey(): boolean
+async function init(): Promise<void>
 {
-	return stores.encryptedDataStore.canAuthenticateKey() ||
-		stores.filterStore.canAuthenticateKey() ||
-		stores.groupStore.canAuthenticateKey();
+	return checkNeedsAuthenticating();
 }
 
-async function checkKey(key: string): Promise<boolean>
+async function checkNeedsAuthenticating(): Promise<void>
 {
-	if (stores.encryptedDataStore.canAuthenticateKey())
+	stores.needsAuthentication = await canAuthenticateKeyBeforeEntry();
+}
+
+function canAuthenticateKeyBeforeEntry(): Promise<any>
+{
+	return Promise.all([
+		stores.encryptedDataStore.canAuthenticateKeyBeforeEntry(),
+		stores.filterStore.canAuthenticateKeyBeforeEntry(),
+		stores.groupStore.canAuthenticateKeyBeforeEntry()
+	]);
+}
+
+function canAuthenticateKeyAfterEntry(): boolean
+{
+	return stores.encryptedDataStore.canAuthenticateKeyAfterEntry() ||
+		stores.filterStore.canAuthenticateKeyAfterEntry() ||
+		stores.groupStore.canAuthenticateKeyAfterEntry();
+}
+
+async function checkKeyBeforeEntry(key: string): Promise<boolean>
+{
+	if (await stores.encryptedDataStore.canAuthenticateKeyBeforeEntry())
 	{
-		return await stores.encryptedDataStore.checkKey(key);
+		return await stores.encryptedDataStore.checkKeyBeforeEntry(key);
 	}
 
-	if (stores.filterStore.canAuthenticateKey())
+	if (await stores.filterStore.canAuthenticateKeyBeforeEntry())
 	{
-		return await stores.filterStore.checkKey(key);
+		return await stores.filterStore.checkKeyBeforeEntry(key);
 	}
 
-	if (stores.groupStore.canAuthenticateKey())
+	if (await stores.groupStore.canAuthenticateKeyBeforeEntry())
 	{
-		return await stores.groupStore.checkKey(key);
+		return await stores.groupStore.checkKeyBeforeEntry(key);
+	}
+
+	// no master key has been setup yet, anything goes
+	return true;
+}
+
+function checkKeyAfterEntry(key: string): boolean
+{
+	if (stores.encryptedDataStore.canAuthenticateKeyAfterEntry())
+	{
+		return stores.encryptedDataStore.checkKeyAfterEntry(key);
+	}
+
+	if (stores.filterStore.canAuthenticateKeyAfterEntry())
+	{
+		return stores.filterStore.checkKeyAfterEntry(key);
+	}
+
+	if (stores.groupStore.canAuthenticateKeyAfterEntry())
+	{
+		return stores.groupStore.checkKeyAfterEntry(key);
 	}
 
 	// no master key has been setup yet, anything goes
@@ -94,4 +152,5 @@ function resetStoresToDefault()
 	stores.encryptedDataStore.resetToDefault();
 	stores.filterStore.resetToDefault();
 	stores.groupStore.resetToDefault();
+	checkNeedsAuthenticating();
 }

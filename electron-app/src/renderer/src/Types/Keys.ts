@@ -14,3 +14,6 @@ export const DirtySecurityQuestionAnswersKey = "DirtySecurityQuestionAnswersKey"
 export const ShowToastFunctionKey = "ShowToastFunctionKey";
 
 export const RequestAuthenticationFunctionKey = "RequestAuthenticaitonFunctionKey";
+
+export const ShowLoadingIndicatorFunctionKey = "ShowLoadingIndicatorFunctionKey";
+export const HideLoadingIndicatorFunctionKey = "HideLoadingIndicatorFunctionKey";
