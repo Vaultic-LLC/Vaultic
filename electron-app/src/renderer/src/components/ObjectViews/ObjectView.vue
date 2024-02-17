@@ -7,9 +7,10 @@
 			<slot></slot>
 		</div>
 		<div class="createButtons">
-			<button @click="onSave" class="createButton" :style="buttonStyles">{{ buttonText }}</button>
-			<button v-if="creating" @click="onSaveAndClose" class="createButton" :style="buttonStyles">Create and
-				Close</button>
+			<button @click="onSave" :disabled="disabled" class="createButton" :style="buttonStyles">{{ buttonText
+			}}</button>
+			<button v-if="creating" @click="onSaveAndClose" :disabled="disabled" class="createButton"
+				:style="buttonStyles">Create and Close</button>
 		</div>
 	</div>
 </template>
@@ -29,6 +30,7 @@ export default defineComponent({
 		const buttonText: Ref<string> = ref(props.creating ? "Create" : "Save and Close");
 		const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
 		const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
+		const disabled: Ref<boolean> = ref(false);
 
 		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
 		const showAuthPopup: Ref<boolean> = ref(false);
@@ -51,6 +53,7 @@ export default defineComponent({
 
 		function onSave()
 		{
+			disabled.value = true;
 			let allValid: boolean = true;
 			validationFunctions.value.forEach(f => allValid = f() && allValid);
 
@@ -69,10 +72,13 @@ export default defineComponent({
 					// cancelled
 				});
 			}
+
+			disabled.value = false;
 		}
 
 		function onSaveAndClose()
 		{
+			disabled.value = true;
 			let allValid: boolean = true;
 			validationFunctions.value.forEach(f => allValid = f() && allValid);
 
@@ -91,6 +97,8 @@ export default defineComponent({
 					// cancelled
 				});
 			}
+
+			disabled.value = false;
 		}
 
 		function onAuthenticationSuccessful(key: string)
@@ -125,6 +133,7 @@ export default defineComponent({
 			gridDef,
 			showAuthPopup,
 			buttonStyles,
+			disabled,
 			onAuthenticationSuccessful,
 			authenticationCancelled,
 			onSave,
@@ -174,5 +183,12 @@ export default defineComponent({
 
 .objectViewContainer .createButtons .createButton:hover {
 	box-shadow: 0 0 25px var(--hover-color);
+}
+
+.objectViewContainer .createButtons .createButton:disabled,
+.objectViewContainer .createButtons .createButton.disabled {
+	box-shadow: 0 0 0 0;
+	border: 2px solid gray;
+	color: gray;
 }
 </style>

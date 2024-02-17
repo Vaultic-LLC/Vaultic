@@ -25,18 +25,27 @@ export default defineComponent({
 	{
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 
-		const attributes = computed(() => stores.appStore.loginHistory.map(l =>
+		const attributes = computed(() =>
 		{
-			return {
-				key: l.datetime,
-				dates: [l.datetime],
-				dot: true,
-				popover: {
-					label: new Date(l.datetime).toLocaleTimeString(),
-					visibility: "hover"
-				},
-			}
-		}));
+			let attr: any[] = [];
+			Object.keys(stores.appStore.loginHistory).forEach(day =>
+			{
+				attr.push(...stores.appStore.loginHistory[day].map((l) =>
+				{
+					return {
+						key: l,
+						dates: [l],
+						dot: true,
+						popover: {
+							label: new Date(l).toLocaleTimeString(),
+							visibility: "hover"
+						},
+					}
+				}));
+			});
+
+			return attr;
+		});
 
 		return {
 			attributes,

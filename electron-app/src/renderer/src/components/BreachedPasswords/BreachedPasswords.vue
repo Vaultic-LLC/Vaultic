@@ -131,7 +131,11 @@ export default defineComponent({
 		onMounted(() =>
 		{
 			passwords.updateValues(stores.encryptedDataStore.passwords.filter((_, i) => i < 4));
-			startScan(false);
+
+			if (passwords.values.length > 0)
+			{
+				startScan(false);
+			}
 		});
 
 		watch(() => stores.encryptedDataStore.passwords.length, (newValue, oldValue) =>
@@ -139,7 +143,10 @@ export default defineComponent({
 			passwords.updateValues(stores.encryptedDataStore.passwords.filter((_, i) => i < 4));
 			if (newValue > oldValue)
 			{
-				startScan(false);
+				if (passwords.values.length > 0)
+				{
+					startScan(false);
+				}
 			}
 		});
 

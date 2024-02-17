@@ -28,6 +28,8 @@ interface EncryptedDataState
 	activeAtRiskValues: Dictionary<AtRiskType[]>;
 }
 
+type EncryptedDataStoreEvent = "onPasswordChange" | "onValueChange";
+
 export interface EncryptedDataStore extends AuthenticationStore
 {
 	passwords: PasswordStore[];
@@ -63,6 +65,8 @@ export interface EncryptedDataStore extends AuthenticationStore
 	removeFilterFromValues: (filter: Filter) => void;
 	removeGroupFromValues: (group: Group) => void;
 	toggleAtRiskModels: (dataType: DataType, atRiskType: AtRiskType) => void;
+	addEvent: (event: EncryptedDataStoreEvent, callback: () => void) => void;
+	removeEvent: (event: EncryptedDataStoreEvent, callback: () => void) => void;
 }
 
 const dataFile: File = new File("data");
@@ -71,6 +75,7 @@ let encryptedDataState: EncryptedDataState;
 export default function useEncryptedDataStore(): EncryptedDataStore
 {
 	encryptedDataState = reactive(defaultState());
+	const events: Dictionary<{ (): void }[]> = {};
 
 	// -- Generic Store Methods
 	function defaultState(): EncryptedDataState
@@ -383,20 +388,21 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		updateDuplicatePasswordOrValueIndex(key, passwordStore, "password", encryptedDataState.passwords, encryptedDataState.duplicatePasswords);
 
-		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
-			encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
+		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.Passwords, password);
 
 		await writeState(key);
+		events["onPasswordChange"]?.forEach(c => c());
+
 		return true;
 	}
 
 	async function updatePassword(password: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
 		updatedSecurityQuestionAnswers: string[], key: string): Promise<void>
 	{
-		if (passwordWasUpdated && !checkKeyUpdatePasswordHash(key, password.password))
+		if (passwordWasUpdated && !checkKeyAfterEntry(key))
 		{
 			return;
 		}
@@ -419,15 +425,17 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		{
 			updateDuplicatePasswordOrValueIndex(key, currentPassword[0], "password", encryptedDataState.passwords, encryptedDataState.duplicatePasswords);
 
-			encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
-				encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
+			encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
 			encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
+
+			encryptedDataState.passwordHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.Passwords, addedGroups, removedGroups, password.id);
 		stores.filterStore.syncFiltersForValues(stores.filterStore.passwordFilters, [password as PasswordStore], "passwords");
 
 		await writeState(key);
+		events["onPasswordChange"]?.forEach(c => c());
 	}
 
 	async function deletePassword(key: string, password: PasswordStore): Promise<void>
@@ -437,8 +445,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		encryptedDataState.passwords.splice(encryptedDataState.passwords.indexOf(password), 1);
 
-		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.currentAndSafePasswords.current.length == 0 ? 0 :
-			encryptedDataState.currentAndSafePasswords.current[encryptedDataState.currentAndSafePasswords.current.length - 1] + 1);
+		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
 		encryptedDataState.passwordHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
@@ -448,6 +455,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		stores.filterStore.removeValueFromFilers(DataType.Passwords, password);
 
 		await writeState(key);
+		events["onPasswordChange"]?.forEach(c => c());
 	}
 
 	async function addNameValuePair(key: string, nameValuePair: NameValuePair): Promise<boolean>
@@ -464,19 +472,20 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		updateDuplicatePasswordOrValueIndex(key, nameValuePairStore, "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
 
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
-			encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
+		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.NameValuePairs, nameValuePair);
 
 		await writeState(key);
+		events["onValueChange"]?.forEach(c => c());
+
 		return true;
 	}
 
 	async function updateNameValuePair(nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string): Promise<void>
 	{
-		if (valueWasUpdated && !checkKeyUpdateValueHash(key, nameValuePair.value))
+		if (valueWasUpdated && !checkKeyAfterEntry(key))
 		{
 			return;
 		}
@@ -498,15 +507,17 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		{
 			updateDuplicatePasswordOrValueIndex(key, currentValue[0], "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
 
-			encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
-				encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
+			encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
 			encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
+
+			encryptedDataState.valueHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
 		stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [nameValuePair as NameValuePairStore], "nameValuePairs");
 
 		await writeState(key);
+		events["onValueChange"]?.forEach(c => c());
 	}
 
 	async function deleteNameValuePair(key: string, nameValuePair: NameValuePairStore): Promise<void>
@@ -516,8 +527,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		encryptedDataState.nameValuePairs.splice(encryptedDataState.nameValuePairs.indexOf(nameValuePair), 1);
 
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.currentAndSafeValues.current.length == 0 ? 0 :
-			encryptedDataState.currentAndSafeValues.current[encryptedDataState.currentAndSafeValues.current.length - 1] + 1);
+		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
 		encryptedDataState.valueHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
@@ -527,6 +537,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		stores.filterStore.removeValueFromFilers(DataType.NameValuePairs, nameValuePair);
 
 		await writeState(key);
+		events["onValueChange"]?.forEach(c => c());
 	}
 
 	function addRemoveGroupsFromPasswordValue(addedValues: string[], removedValues: string[], group: Group)
@@ -645,6 +656,27 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		}
 	}
 
+	function addEvent(event: EncryptedDataStoreEvent, callback: () => void)
+	{
+		if (events[event])
+		{
+			events[event].push(callback);
+			return;
+		}
+
+		events[event] = [callback];
+	}
+
+	function removeEvent(event: EncryptedDataStoreEvent, callback: () => void)
+	{
+		if (!events[event])
+		{
+			return;
+		}
+
+		events[event] = events[event].filter(c => c != callback);
+	}
+
 	return {
 		get passwords() { return encryptedDataState.passwords; },
 		get unpinnedPasswords() { return unpinnedPasswords.value; },
@@ -682,6 +714,8 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		deleteNameValuePair,
 		removeFilterFromValues,
 		removeGroupFromValues,
-		toggleAtRiskModels
+		toggleAtRiskModels,
+		addEvent,
+		removeEvent
 	};
 }

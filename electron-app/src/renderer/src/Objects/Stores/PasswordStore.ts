@@ -38,10 +38,7 @@ export default function usePasswordStore(key: string, password: Password, encryp
 
 	function checkContainsUsername()
 	{
-		if (passwordState.password.includes(passwordState.login))
-		{
-			passwordState.containsLogin = true;
-		}
+		passwordState.containsLogin = passwordState.password.includes(passwordState.login);
 	}
 
 	function encryptPassword(key: string)
@@ -74,6 +71,12 @@ export default function usePasswordStore(key: string, password: Password, encryp
 			passwordState.passwordLength = passwordState.password.length;
 
 			checkIsWeak();
+			checkContainsUsername();
+			encryptPassword(key);
+		}
+		else
+		{
+			passwordState.password = cryptUtility.decrypt(key, passwordState.password);
 			checkContainsUsername();
 			encryptPassword(key);
 		}

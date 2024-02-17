@@ -1,9 +1,8 @@
 import { reactive } from "vue";
 import { DataType } from "../../Types/Table";
-import { LoginRecord } from "../../Types/EncryptedData";
 import { Stores, stores, Store } from ".";
-import generator from "../../Utilities/Generator";
 import File from "../Files/File"
+import { Dictionary } from "@renderer/Types/DataStructures";
 
 interface AppState
 {
@@ -14,7 +13,7 @@ interface AppState
 	reloadMainUI: boolean;
 	activePasswordValuesTable: DataType;
 	activeFilterGroupsTable: DataType;
-	loginHistory: LoginRecord[];
+	loginHistory: Dictionary<number[]>,
 }
 
 export interface AppStore extends Store
@@ -25,7 +24,7 @@ export interface AppStore extends Store
 	reloadMainUI: boolean;
 	activePasswordValuesTable: DataType;
 	activeFilterGroupsTable: DataType;
-	loginHistory: LoginRecord[];
+	loginHistory: Dictionary<number[]>;
 	init: (stores: Stores) => void;
 	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
@@ -52,7 +51,7 @@ export default function useAppStore(): AppStore
 			reloadMainUI: false,
 			activePasswordValuesTable: DataType.Passwords,
 			activeFilterGroupsTable: DataType.Filters,
-			loginHistory: [],
+			loginHistory: {},
 		};
 	}
 
@@ -69,7 +68,7 @@ export default function useAppStore(): AppStore
 				resolve(true);
 			}
 
-			appFile.read<AppState>(key).then((obj: AppState) =>
+			appFile.read<AppState>(key).then(async (obj: AppState) =>
 			{
 				obj.loadedFile = true;
 
@@ -77,6 +76,7 @@ export default function useAppStore(): AppStore
 				// after all the stores are read in
 				obj.authenticated = false;
 				Object.assign(appState, obj);
+				await checkRemoveOldLoginRecords(key);
 
 				resolve(true);
 			}).catch(() =>
@@ -84,6 +84,27 @@ export default function useAppStore(): AppStore
 				resolve(false);
 			});
 		})
+	}
+
+	async function checkRemoveOldLoginRecords(key: string)
+	{
+		let removedLogin: boolean = false;
+		const daysToStoreLoginsAsMiliseconds: number = stores.settingsStore.numberOfDaysToStoreLoginRecords * 24 * 60 * 60 * 1000;
+
+		Object.keys(appState.loginHistory).forEach((s) =>
+		{
+			const date: number = Date.parse(s);
+			if (date - Date.now() > daysToStoreLoginsAsMiliseconds)
+			{
+				removedLogin = true;
+				delete appState.loginHistory[s];
+			}
+		});
+
+		if (removedLogin)
+		{
+			await writeState(key);
+		}
 	}
 
 	function writeState(key: string): Promise<void>
@@ -107,16 +128,22 @@ export default function useAppStore(): AppStore
 
 	function recordLogin(key: string, dateTime: number): Promise<void>
 	{
-		if (appState.loginHistory.length >= stores.settingsStore.loginRecordsToStore)
-		{
-			appState.loginHistory.pop();
-		}
+		const dateObj: Date = new Date(dateTime);
+		const loginHistoryKey: string = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
 
-		appState.loginHistory.unshift({
-			id: generator.uniqueId(appState.loginHistory),
-			datetime: dateTime,
-			displayTime: new Date(dateTime).toLocaleString()
-		});
+		if (!appState.loginHistory[loginHistoryKey])
+		{
+			appState.loginHistory[loginHistoryKey] = [dateTime];
+		}
+		else if (appState.loginHistory[loginHistoryKey].length < stores.settingsStore.loginRecordsToStorePerDay)
+		{
+			appState.loginHistory[loginHistoryKey].unshift(dateTime);
+		}
+		else
+		{
+			appState.loginHistory[loginHistoryKey].pop();
+			appState.loginHistory[loginHistoryKey].unshift(dateTime);
+		}
 
 		return writeState(key);
 	}

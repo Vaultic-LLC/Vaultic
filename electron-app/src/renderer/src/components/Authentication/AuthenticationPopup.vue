@@ -112,39 +112,36 @@ export default defineComponent({
 
 			disabled.value = true;
 			enterButton.value?.classList.add('disabled');
-			setTimeout(() =>
+			if (Date.now() - lastAuthAttempt < 1000)
 			{
-				if (Date.now() - lastAuthAttempt < 1000)
-				{
-					disabled.value = false;
-					jiggleContainer();
-					return;
-				}
+				disabled.value = false;
+				jiggleContainer();
+				return;
+			}
 
-				lastAuthAttempt = Date.now();
+			lastAuthAttempt = Date.now();
 
-				if (needsToSetupKey.value && (!greaterThanTwentyCharacters.value ||
-					!containesUpperAndLowerCase.value ||
-					!hasNumber.value ||
-					!hasSpecialCharacter.value))
-				{
-					disabled.value = false;
-					jiggleContainer();
-					return;
-				}
+			if (needsToSetupKey.value && (!greaterThanTwentyCharacters.value ||
+				!containesUpperAndLowerCase.value ||
+				!hasNumber.value ||
+				!hasSpecialCharacter.value))
+			{
+				disabled.value = false;
+				jiggleContainer();
+				return;
+			}
 
-				if (props.beforeEntry === true)
+			if (props.beforeEntry === true)
+			{
+				stores.checkKeyBeforeEntry(key.value).then((isValid: boolean) =>
 				{
-					stores.checkKeyBeforeEntry(key.value).then((isValid: boolean) =>
-					{
-						handleKeyIsValid(isValid);
-					});
-				}
-				else
-				{
-					handleKeyIsValid(stores.checkKeyAfterEntry(key.value));
-				}
-			}, 1500)
+					handleKeyIsValid(isValid);
+				});
+			}
+			else
+			{
+				handleKeyIsValid(stores.checkKeyAfterEntry(key.value));
+			}
 		}
 
 		function handleKeyIsValid(isValid: boolean)

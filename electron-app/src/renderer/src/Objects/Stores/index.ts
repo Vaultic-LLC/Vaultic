@@ -33,7 +33,7 @@ export interface Stores
 	encryptedDataStore: EncryptedDataStore;
 	groupStore: GroupStore;
 	filterStore: FilterStore;
-	canAuthenticateKeyBeforeEntry: () => Promise<boolean>;
+	canAuthenticateKeyBeforeEntry: () => Promise<[boolean, boolean, boolean]>;
 	canAuthenticateKeyAfterEntry: () => boolean;
 	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
 	checkKeyAfterEntry: (key: string) => boolean;
@@ -72,10 +72,10 @@ async function init(): Promise<void>
 
 async function checkNeedsAuthenticating(): Promise<void>
 {
-	stores.needsAuthentication = await canAuthenticateKeyBeforeEntry();
+	stores.needsAuthentication = (await canAuthenticateKeyBeforeEntry()).some((v) => v);
 }
 
-function canAuthenticateKeyBeforeEntry(): Promise<any>
+function canAuthenticateKeyBeforeEntry(): Promise<[boolean, boolean, boolean]>
 {
 	return Promise.all([
 		stores.encryptedDataStore.canAuthenticateKeyBeforeEntry(),

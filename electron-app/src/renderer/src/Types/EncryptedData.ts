@@ -160,13 +160,6 @@ export interface CurrentAndSafeStructure
 	safe: number[];
 }
 
-export interface LoginRecord extends IIdentifiable
-{
-	[key: string]: any;
-	datetime: number;
-	displayTime: string;
-}
-
 export enum AtRiskType
 {
 	Old,
@@ -240,6 +233,7 @@ export function defaultFilter(type: DataType): Filter
 {
 	return {
 		id: "",
+		key: '',
 		passwords: [],
 		nameValuePairs: [],
 		isPinned: false,
@@ -258,6 +252,7 @@ export function defaultGroup(type: DataType): Group
 {
 	return {
 		id: "",
+		key: "",
 		passwords: [],
 		nameValuePairs: [],
 		isPinned: false,

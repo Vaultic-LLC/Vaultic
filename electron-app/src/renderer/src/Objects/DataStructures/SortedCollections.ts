@@ -88,6 +88,7 @@ export class SortedCollection<T extends { [key: string]: string } & IIdentifiabl
 	remove(id: string)
 	{
 		this.values = this.values.filter(v => v.id != id);
+		this.calculatedValues = this.calculatedValues.filter(v => v.id != id);
 	}
 
 	search(search: string)

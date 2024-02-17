@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="model.onClick"
+		<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="onClick"
 			:class="{ active: active, pulse: pulse }">
 			<div class="title">
 				<h2>{{ amountOutOfTotal }}</h2>
@@ -42,7 +42,7 @@ export default defineComponent({
 		const active: ComputedRef<boolean> = computed(() => props.model.active);
 		const pulse: ComputedRef<boolean> = computed(() =>
 		{
-			if (props.model.pulse === false)
+			if (props.model.pulse === false || active.value)
 			{
 				return false;
 			}
@@ -131,6 +131,14 @@ export default defineComponent({
 			doughnutChart.value.chart.update();
 		}
 
+		async function onClick()
+		{
+			props.model.onClick();
+
+			// use a timeout so the animation actually starts. Otherwise it won't be found
+			setTimeout(() => animationHelper.syncAnimations('pulseMetricGauge'), 100);
+		}
+
 		watch(() => props.model.color, (newValue) =>
 		{
 			primaryColor.value = newValue;
@@ -177,7 +185,8 @@ export default defineComponent({
 			textColor,
 			options,
 			data,
-			pulse
+			pulse,
+			onClick
 		}
 	}
 })
@@ -206,7 +215,7 @@ export default defineComponent({
 	box-shadow: 0 0 25px v-bind(primaryColor);
 }
 
-.smallMetricContainer2:not(.active).pulse {
+.smallMetricContainer2.pulse {
 	animation: pulseMetricGauge 1s infinite;
 }
 

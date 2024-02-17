@@ -12,7 +12,8 @@ export interface SettingsState
 	colorPalettes: ColorPalette[];
 	currentColorPalette: ColorPalette;
 	autoLockTime: AutoLockTime;
-	loginRecordsToStore: number;
+	loginRecordsToStorePerDay: number;
+	numberOfDaysToStoreLoginRecords: number;
 	randomValueLength: number;
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
@@ -28,7 +29,8 @@ export interface SettingsStore extends Store
 	currentPrimaryColor: Ref<string>;
 	autoLockTime: AutoLockTime;
 	autoLockNumberTime: number;
-	loginRecordsToStore: number;
+	loginRecordsToStorePerDay: number;
+	numberOfDaysToStoreLoginRecords: number;
 	randomValueLength: number;
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
@@ -72,7 +74,8 @@ export default function useSettingsStore(): SettingsStore
 			colorPalettes: colorPalettes,
 			currentColorPalette: colorPalettes[0],
 			autoLockTime: AutoLockTime.OneMinute,
-			loginRecordsToStore: 25,
+			loginRecordsToStorePerDay: 15,
+			numberOfDaysToStoreLoginRecords: 30,
 			randomValueLength: 20,
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
@@ -176,7 +179,8 @@ export default function useSettingsStore(): SettingsStore
 		set currentColorPalette(value: ColorPalette) { settingsState.currentColorPalette = value; },
 		get autoLockTime() { return settingsState.autoLockTime; },
 		get autoLockNumberTime() { return autoLockNumberTime.value; },
-		get loginRecordsToStore() { return settingsState.loginRecordsToStore; },
+		get loginRecordsToStorePerDay() { return settingsState.loginRecordsToStorePerDay; },
+		get numberOfDaysToStoreLoginRecords() { return settingsState.numberOfDaysToStoreLoginRecords },
 		get randomValueLength() { return settingsState.randomValueLength; },
 		get multipleFilterBehavior() { return settingsState.multipleFilterBehavior; },
 		get oldPasswordDays() { return settingsState.oldPasswordDays; },

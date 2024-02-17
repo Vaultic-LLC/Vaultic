@@ -5,9 +5,14 @@
 			:optionsEnum="AutoLockTime" fadeIn="true" :style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
 		<EnumInputField :label="'Multiple Filter Behavior'" :color="color" v-model="settingsState.multipleFilterBehavior"
 			:optionsEnum="FilterStatus" fadeIn="true" :style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2' }" />
-		<TextInputField :color="color" :label="'Login Records to Store'" v-model="settingsState.loginRecordsToStore"
-			:inputType="'number'" :style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }"
-			:additionalValidationFunction="enforceMinLoginRecords" />
+		<TextInputField :color="color" :label="'Login Records to Store Per Day'"
+			v-model="settingsState.loginRecordsToStorePerDay" :inputType="'number'"
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }"
+			:additionalValidationFunction="enforceLoginRecordsPerDay" />
+		<TextInputField :color="color" :label="'Days to Store Login Records'"
+			v-model="settingsState.numberOfDaysToStoreLoginRecords" :inputType="'number'"
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }"
+			:additionalValidationFunction="enforceDaysToStoreLoginRecords" />
 		<TextInputField :color="color" :label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
 			:inputType="'number'" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
 			:additionalValidationFunction="enforceMinRandomPasswordLength" />
@@ -96,9 +101,46 @@ export default defineComponent({
 			saveFaield(false);
 		}
 
-		function enforceMinLoginRecords(input: string): [boolean, string]
+		function enforceLoginRecordsPerDay(input: string): [boolean, string]
 		{
-			return [Number.parseInt(input) >= 10, "Value must be greater than or equal to 10"];
+			const numb: number = Number.parseInt(input);
+			if (!numb)
+			{
+				return [false, "Not a valid number"];
+			}
+
+			if (numb < 3)
+			{
+				return [false, "Value must be greater than 3"];
+			}
+
+			if (numb > 20)
+			{
+				return [false, "Value must be less than 20"];
+			}
+
+			return [true, ""];
+		}
+
+		function enforceDaysToStoreLoginRecords(input: string): [boolean, string]
+		{
+			const numb: number = Number.parseInt(input);
+			if (!numb)
+			{
+				return [false, "Not a valid number"];
+			}
+
+			if (numb < 7)
+			{
+				return [false, "Value must be greater than 7"];
+			}
+
+			if (numb > 365)
+			{
+				return [false, "Value must be less than 365"];
+			}
+
+			return [true, ""];
 		}
 
 		function enforceMinRandomPasswordLength(input: string): [boolean, string]
@@ -147,10 +189,11 @@ export default defineComponent({
 			FilterStatus,
 			onSave,
 			onAuthenticationSuccessful,
-			enforceMinLoginRecords,
+			enforceLoginRecordsPerDay,
 			enforceMinRandomPasswordLength,
 			enforceOldPasswordDays,
-			enforcePercentMetricForPulse
+			enforcePercentMetricForPulse,
+			enforceDaysToStoreLoginRecords
 		};
 	},
 })

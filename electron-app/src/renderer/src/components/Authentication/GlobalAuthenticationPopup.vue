@@ -31,6 +31,7 @@ export default defineComponent({
 			stores.loadStoreData(key).then(async () =>
 			{
 				await stores.appStore.recordLogin(key, Date.now());
+				stores.appStore.authenticated = true;
 
 				//@ts-ignore
 				authPopup.value?.playUnlockAnimation();
