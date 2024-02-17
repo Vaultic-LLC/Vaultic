@@ -179,9 +179,12 @@ export default defineComponent({
 	transition: 0.3s;
 	font-size: 20px;
 	animation: fadeIn 1s linear forwards;
+
+	outline: none;
 }
 
-.objectViewContainer .createButtons .createButton:hover {
+.objectViewContainer .createButtons .createButton:hover,
+.objectViewContainer .createButtons .createButton:focus {
 	box-shadow: 0 0 25px var(--hover-color);
 }
 

@@ -1,5 +1,5 @@
 <template>
-	<div ref="container" class="colorPickerInputFieldContainer" :class="{ active: active }">
+	<div ref="container" :tabindex="0" class="colorPickerInputFieldContainer" :class="{ active: active }">
 		<input class="colorPicker" type="text" data-coloris v-model="pickedColor"
 			@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)" @open="onOpen"
 			@close="opened = false" />

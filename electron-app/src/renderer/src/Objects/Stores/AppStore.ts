@@ -3,6 +3,7 @@ import { DataType } from "../../Types/Table";
 import { Stores, stores, Store } from ".";
 import File from "../Files/File"
 import { Dictionary } from "@renderer/Types/DataStructures";
+import { hideAll } from 'tippy.js';
 
 interface AppState
 {
@@ -122,6 +123,7 @@ export default function useAppStore(): AppStore
 		clearTimeout(autoLockTimeoutID);
 		autoLockTimeoutID = setTimeout(() =>
 		{
+			hideAll();
 			stores.resetStoresToDefault();
 		}, stores.settingsStore.autoLockNumberTime);
 	}

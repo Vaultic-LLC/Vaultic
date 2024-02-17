@@ -1,20 +1,22 @@
 <template>
-	<div ref="container" class="dropDownContainer" tabindex="1" @click="onSelectorClick" @focusout="opened = false"
-		:class="{ active: active, opened: opened, shouldFadeIn: fadeIn }">
+	<div ref="container" class="dropDownContainer" :tabindex="0" @click="onSelectorClick" @focus="focused = true"
+		@blur="unFocus" :class="{ active: active, opened: opened, shouldFadeIn: fadeIn }" @keyup.up="onKeyUp"
+		@keyup.down="onKeyDown" @keyup.enter="onEnter">
 		<div class="dropDownTitle">
 			<label class="dropDownLabel">{{ label }}</label>
 			<div class="dropDownIcon" :class="{ opened: opened }">
 				<ion-icon :style="{ visibility: 'unset' }" :class="{ active: active }"
 					name="chevron-down-circle-outline"></ion-icon>
-				<!-- <ion-icon v-else :class="{ active: active }" name="chevron-up-circle-outline"></ion-icon> -->
 			</div>
 			<label class="selectedItemText" :class="{ hasValue: selectedValue != '' }"> {{ selectedValue }}</label>
 		</div>
 		<div class="dropDownSelect" :class="{ opened: opened }">
-			<option class="dropDownSelectOption" @click="onOptionClick({ displayName: '', backingProperty: '', type: 0 })">
+			<option class="dropDownSelectOption" :class="{ active: focusedIndex == -1 }" @mouseover="focusedIndex = -1"
+				@click="onOptionClick({ displayName: '', backingProperty: '', type: 0 })">
 			</option>
-			<option class="dropDownSelectOption" v-for="(df, index) in displayFieldOptions" :key="index"
-				@click="onOptionClick(df)">
+			<option class="dropDownSelectOption" :class="{ active: focusedIndex == index }"
+				v-for="(df, index) in displayFieldOptions" :key="index" @click="onOptionClick(df)"
+				@mouseover="focusedIndex = index">
 				{{ df.displayName }}</option>
 		</div>
 		<input class="dropDownInput" type="text" />
@@ -37,12 +39,16 @@ export default defineComponent({
 		const container: Ref<HTMLElement | null> = ref(null);
 		let selectedValue: Ref<string> = ref(props.modelValue);
 		let opened: Ref<boolean> = ref(false);
-		let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value);
+		let focused: Ref<boolean> = ref(false);
+		let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value || focused.value);
 		let selectedPropertyType: PropertyType = PropertyType.String;
 		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
 		const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		let tippyInstance: any = null;
+
+		const displayFieldCount: Ref<number> = ref(Object.keys(props.displayFieldOptions).length - 1);
+		const focusedIndex: Ref<number> = ref(-1);
 
 		function onSelectorClick()
 		{
@@ -68,6 +74,23 @@ export default defineComponent({
 			}
 		}
 
+		function onEnter()
+		{
+			if (!opened.value)
+			{
+				opened.value = true;
+			}
+			else
+			{
+				opened.value = false;
+				onOptionClick(props.displayFieldOptions[focusedIndex.value]);
+				if (selectedValue.value == "")
+				{
+					focused.value = false;
+				}
+			}
+		}
+
 		function validate()
 		{
 			if (selectedValue.value == '' || selectedValue.value == undefined)
@@ -83,6 +106,23 @@ export default defineComponent({
 		{
 			tippyInstance.setContent(message);
 			tippyInstance.show();
+		}
+
+		function onKeyUp()
+		{
+			focusedIndex.value = Math.max(-1, focusedIndex.value - 1);
+		}
+
+		function onKeyDown()
+		{
+			focusedIndex.value = Math.min(displayFieldCount.value, focusedIndex.value + 1)
+		}
+
+
+		function unFocus()
+		{
+			opened.value = false;
+			focused.value = false;
 		}
 
 		onMounted(() =>
@@ -128,8 +168,15 @@ export default defineComponent({
 			selectedValue,
 			backgroundColor,
 			container,
+			focusedIndex,
+			displayFieldCount,
+			focused,
 			onSelectorClick,
-			onOptionClick
+			onOptionClick,
+			onKeyUp,
+			onKeyDown,
+			unFocus,
+			onEnter
 		}
 	}
 })
@@ -149,6 +196,7 @@ export default defineComponent({
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
 	cursor: pointer;
+	outline: none;
 }
 
 .dropDownContainer.shouldFadeIn {
@@ -259,7 +307,8 @@ export default defineComponent({
 	border-bottom-right-radius: 1rem;
 }
 
-.dropDownSelect.opened .dropDownSelectOption:hover {
+.dropDownSelect.opened .dropDownSelectOption:hover,
+.dropDownSelect.opened .dropDownSelectOption.active {
 	background-color: grey;
 }
 

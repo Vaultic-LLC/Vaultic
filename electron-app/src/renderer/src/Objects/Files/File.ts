@@ -92,7 +92,6 @@ export default class Files
 			await window.api.lockFile(this.path);
 			unlocked = false;
 
-			console.log(decryptedData);
 			let obj: T = JSON.parse(decryptedData) as T;
 			return obj;
 		}
