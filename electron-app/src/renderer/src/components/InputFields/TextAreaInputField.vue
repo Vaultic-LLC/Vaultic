@@ -256,7 +256,7 @@ export default defineComponent({
 	position: absolute;
 	width: 100%;
 	left: -5%;
-	background: v-bind('colorModel.color');
+	background: v-bind('colorModel.activeBorderColor');
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;
 	transition: 0.3s;

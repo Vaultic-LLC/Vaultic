@@ -74,7 +74,7 @@ export default function useSettingsStore(): SettingsStore
 			colorPalettes: colorPalettes,
 			currentColorPalette: colorPalettes[0],
 			autoLockTime: AutoLockTime.OneMinute,
-			loginRecordsToStorePerDay: 15,
+			loginRecordsToStorePerDay: 14,
 			numberOfDaysToStoreLoginRecords: 30,
 			randomValueLength: 20,
 			multipleFilterBehavior: FilterStatus.Or,

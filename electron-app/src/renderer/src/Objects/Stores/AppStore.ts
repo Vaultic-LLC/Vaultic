@@ -166,6 +166,6 @@ export default function useAppStore(): AppStore
 		recordLogin,
 		resetSessionTime,
 		readState,
-		resetToDefault
+		resetToDefault,
 	};
 }

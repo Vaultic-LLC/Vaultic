@@ -104,7 +104,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 	function canAuthenticateKeyAfterEntry(): boolean
 	{
-		return encryptedDataState.passwordHash != "" || encryptedDataState.valueHash != "";
+		return encryptedDataState.passwords.length > 0 || encryptedDataState.nameValuePairs.length > 0;
 	}
 
 	function writeState(key: string): Promise<void>

@@ -1,8 +1,7 @@
 <template>
-	<div ref="container" :tabindex="0" class="colorPickerInputFieldContainer" :class="{ active: active }">
-		<input class="colorPicker" type="text" data-coloris v-model="pickedColor"
-			@input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)" @open="onOpen"
-			@close="opened = false" />
+	<div ref="container" class="colorPickerInputFieldContainer" :class="{ active: active }">
+		<input ref="input" class="colorPicker" :tabindex="0" type="text" data-coloris v-model="pickedColor"
+			@input="onColorSelected(($event.target as HTMLInputElement).value)" @open="onOpen" @close="opened = false" />
 		<label class="colorPickerLabel">{{ label }}</label>
 		<div class="pickedColor"></div>
 	</div>
@@ -12,14 +11,17 @@ import { Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref } f
 
 import { ValidationFunctionsKey } from '@renderer/Types/Keys';
 import tippy from 'tippy.js';
+import Coloris from '@melloware/coloris';
 
 export default defineComponent({
 	name: "ColorPickerInputField",
 	emits: ["update:modelValue"],
 	props: ['modelValue', 'color', 'label'],
-	setup(props)
+	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
+		const input: Ref<HTMLElement | null> = ref(null);
+
 		const defaultColor: string = "";
 		let pickedColor: Ref<string> = ref(props.modelValue);
 		let opened: Ref<boolean> = ref(false);
@@ -51,6 +53,22 @@ export default defineComponent({
 			opened.value = true;
 		}
 
+		function onFocus()
+		{
+			input.value?.click();
+		}
+
+		function onUnFocus()
+		{
+			//Coloris.close();
+		}
+
+		function onColorSelected(color: string)
+		{
+			ctx.emit('update:modelValue', color);
+			Coloris.close();
+		}
+
 		onMounted(() =>
 		{
 			if (!container.value)
@@ -79,8 +97,12 @@ export default defineComponent({
 			pickedColor,
 			active,
 			container,
+			input,
 			opened,
-			onOpen
+			onOpen,
+			onFocus,
+			onUnFocus,
+			onColorSelected
 		}
 	}
 })

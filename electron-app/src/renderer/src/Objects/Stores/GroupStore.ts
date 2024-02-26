@@ -113,7 +113,7 @@ export default function useGroupStore(): GroupStore
 
 	function canAuthenticateKeyAfterEntry(): boolean
 	{
-		return groupState.groupHash != "";
+		return groupState.groups.length > 0;
 	}
 
 	async function checkKeyBeforeEntry(key: string): Promise<boolean>

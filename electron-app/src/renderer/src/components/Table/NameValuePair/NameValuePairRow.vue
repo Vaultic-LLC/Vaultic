@@ -34,7 +34,7 @@ export default defineComponent({
 		let valueValue: Ref<string> = ref(value.value.value);
 
 		const colorModel: Ref<InputColorModel> = ref({
-			color: '',
+			color: props.color,
 			textColor: defaultInputColor,
 			activeTextColor: defaultInputColor,
 			borderColor: "rgba(118, 118, 118, 0.3)",

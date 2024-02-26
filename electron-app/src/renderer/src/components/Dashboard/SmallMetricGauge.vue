@@ -155,6 +155,7 @@ export default defineComponent({
 			};
 
 			updateData([props.model.filledAmount, props.model.totalAmount - props.model.filledAmount])
+			animationHelper.syncAnimations('pulseMetricGauge');
 		});
 
 		watch(() => pulse.value, (newValue) =>

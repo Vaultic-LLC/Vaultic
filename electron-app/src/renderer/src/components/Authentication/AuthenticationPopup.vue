@@ -70,7 +70,7 @@ export default defineComponent({
 		LoadingIndicator
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
-	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color", "beforeEntry"],
+	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color", "beforeEntry", "focusOnShow"],
 	setup(props, ctx)
 	{
 		const encryptedInputField: Ref<null> = ref(null);
@@ -228,6 +228,12 @@ export default defineComponent({
 		{
 			setTimeout(() => startPulsing.value = true, 5000);
 			window.addEventListener("keyup", onkeyUp);
+
+			if (props.focusOnShow == true && encryptedInputField.value)
+			{
+				// @ts-ignore
+				encryptedInputField.value.focus();
+			}
 		});
 
 		onUnmounted(() =>
@@ -384,9 +390,11 @@ export default defineComponent({
 	transition: 0.3s;
 	font-size: 20px;
 	animation: fadeIn 1s linear forwards;
+	outline: none;
 }
 
-.authenticationPopupButtons__button:hover {
+.authenticationPopupButtons__button:hover,
+.authenticationPopupButtons__button:focus {
 	box-shadow: 0 0 25px v-bind('primaryColor');
 }
 

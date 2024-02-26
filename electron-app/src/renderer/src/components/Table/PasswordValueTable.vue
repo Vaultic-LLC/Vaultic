@@ -186,7 +186,7 @@ export default defineComponent({
 				clickable: true
 			},
 			{
-				displayName: "Login",
+				displayName: "Username",
 				backingProperty: "login",
 				width: '250px',
 				clickable: true

@@ -13,6 +13,7 @@ Coloris({
 	closeButton: true,
 	theme: 'default',
 	themeMode: 'dark',
+	focusInput: true,
 	swatches: [
 		'#a712ec',
 		'#7752FE"',

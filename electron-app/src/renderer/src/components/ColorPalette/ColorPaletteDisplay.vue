@@ -61,7 +61,9 @@ export default defineComponent({
 
 		const primaryColor: ComputedRef<string> = computed(() => colorPalette.value.passwordsColor.primaryColor);
 		const valuesColor: ComputedRef<string> = computed(() => colorPalette.value.valuesColor.primaryColor);
+
 		const editIconBackgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(primaryColor.value));
+		const valueBackgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(valuesColor.value));
 
 		const created: ComputedRef<boolean> = computed(() => colorPalette.value.isCreated);
 		const editable: ComputedRef<boolean> = computed(() => colorPalette.value.editable);
@@ -153,6 +155,7 @@ export default defineComponent({
 			hoveringDisplay,
 			hoveringIcon,
 			editIconBackgroundColor,
+			valueBackgroundColor,
 			onPaletteSelected,
 			onEditColorPalettePopupClosed,
 			onEdit
@@ -237,7 +240,7 @@ export default defineComponent({
 }
 
 .colorPaletteContainer .passwordColor {
-	background-color: v-bind(primaryColor);
+	background: v-bind(editIconBackgroundColor);
 	width: 30px;
 	height: 30px;
 	border-top-left-radius: 20px;
@@ -245,7 +248,7 @@ export default defineComponent({
 }
 
 .colorPaletteContainer .valuesColor {
-	background-color: v-bind(valuesColor);
+	background: v-bind(valueBackgroundColor);
 	width: 30px;
 	height: 30px;
 	border-top-right-radius: 20px;

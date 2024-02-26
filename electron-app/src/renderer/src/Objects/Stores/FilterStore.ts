@@ -113,7 +113,7 @@ export default function useFilterStore(): FilterStore
 
 	function canAuthenticateKeyAfterEntry()
 	{
-		return filterState.filterHash != "";
+		return filterState.filters.length > 0;
 	}
 
 	async function checkKeyBeforeEntry(key: string): Promise<boolean>

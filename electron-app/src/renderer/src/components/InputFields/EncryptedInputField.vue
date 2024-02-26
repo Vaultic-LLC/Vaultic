@@ -335,7 +335,7 @@ export default defineComponent({
 }
 
 .encryptedInputIcon:hover {
-	color: v-bind('colorModel.color');
+	color: v-bind('colorModel.activeBorderColor');
 	transform: scale(1.05);
 }
 </style>

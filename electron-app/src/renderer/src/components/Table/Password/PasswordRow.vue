@@ -54,7 +54,7 @@ export default defineComponent({
 		const textColor: string = "rgba(118, 118, 118, 0.3)";
 		const backgroundColor: string = "transparent";
 		const colorModel: Ref<InputColorModel> = ref({
-			color: "rgba(118, 118, 118, 0.3)",
+			color: props.color,
 			textColor: defaultInputColor,
 			activeTextColor: defaultInputColor,
 			borderColor: "rgba(118, 118, 118, 0.3)",

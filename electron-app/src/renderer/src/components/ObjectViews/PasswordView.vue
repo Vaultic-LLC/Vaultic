@@ -3,12 +3,12 @@
 		:gridDefinition="gridDefinition">
 		<TextInputField :color="color" :label="'Password For'" v-model="passwordState.passwordFor"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
-		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
 		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain" :showToolTip="true"
 			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is www.facebook.com'"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2' }" />
-		<TextInputField :color="color" :label="'Login'" v-model="passwordState.login"
+		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
+		<TextInputField :color="color" :label="'Username'" v-model="passwordState.login"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }" />
 		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordState.password"
 			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true"

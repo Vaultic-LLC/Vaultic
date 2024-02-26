@@ -125,11 +125,6 @@ export default defineComponent({
 			focusedItem.value = Object.values<string>(props.optionsEnum)[focusedIndex.value];
 		}
 
-		watch(() => focusedItem.value, (newValue) =>
-		{
-			console.log(newValue);
-		})
-
 		watch(() => props.modelValue, (newValue) =>
 		{
 			if (newValue === undefined)

@@ -168,7 +168,7 @@ export default defineComponent({
 			},
 			{
 				backingProperty: "login",
-				displayName: "Login",
+				displayName: "Username",
 				width: '150px',
 				clickable: true
 			}

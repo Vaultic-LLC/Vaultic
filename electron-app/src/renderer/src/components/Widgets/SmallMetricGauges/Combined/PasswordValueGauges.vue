@@ -144,7 +144,7 @@ export default defineComponent({
 					models.push(
 						{
 							key: `pcl${stores.encryptedDataStore.containsLoginPasswords.value.length}${stores.encryptedDataStore.passwords.length}`,
-							title: 'Contains Login',
+							title: 'Contains Username',
 							filledAmount: stores.encryptedDataStore.containsLoginPasswords.value.length,
 							totalAmount: stores.encryptedDataStore.passwords.length,
 							color: stores.settingsStore.currentColorPalette.passwordsColor.primaryColor,
