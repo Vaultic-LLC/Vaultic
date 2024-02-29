@@ -29,14 +29,13 @@ import TableTemplate from '../TableTemplate.vue';
 import TableHeaderRow from '../Header/TableHeaderRow.vue';
 import SecurityQuestionRow from '../Rows/SecurityQuestionRow.vue';
 
-import cryptUtility from '../../../Utilities/CryptUtility';
 import TextAreaInputField from '../../../components/InputFields/TextAreaInputField.vue';
 import EncryptedInputField from '../../../components/InputFields/EncryptedInputField.vue';
 import { SecurityQuestion } from '../../../Types/EncryptedData';
-import { PasswordStore } from '../../../Objects/Stores/PasswordStore';
 import { v4 as uuidv4 } from 'uuid';
 import { HeaderTabModel, InputColorModel } from '@renderer/Types/Models';
 import { defaultInputColor } from '@renderer/Types/Colors';
+import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
 
 export default defineComponent({
 	name: "PasswordRow",
@@ -83,11 +82,11 @@ export default defineComponent({
 		{
 			newValue?.then((key: string) =>
 			{
-				passwordValue.value = cryptUtility.decrypt(key, passwordValue.value);
+				passwordValue.value = window.api.utilities.crypt.decrypt(key, passwordValue.value);
 				securityQuestions.value.forEach(sq =>
 				{
-					sq.question = cryptUtility.decrypt(key, sq.question);
-					sq.answer = cryptUtility.decrypt(key, sq.answer);
+					sq.question = window.api.utilities.crypt.decrypt(key, sq.question);
+					sq.answer = window.api.utilities.crypt.decrypt(key, sq.answer);
 				});
 			}).catch(() =>
 			{

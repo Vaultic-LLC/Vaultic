@@ -11,7 +11,7 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import AuthenticationPopup from "./AuthenticationPopup.vue"
-import { stores } from '../../Objects/Stores';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "GlobalAuthenticationPopup",

@@ -1,8 +1,8 @@
-import { stores } from "../Objects/Stores";
-import { NameValuePairStore } from "../Objects/Stores/NameValuePairStore";
-import { PasswordStore } from "../Objects/Stores/PasswordStore";
+import { PasswordStore } from "@renderer/Objects/Stores/PasswordStore";
 import { IGroupable } from "../Types/EncryptedData";
 import { Group } from "../Types/Table";
+import { stores } from "@renderer/Objects/Stores";
+import { NameValuePairStore } from "@renderer/Objects/Stores/NameValuePairStore";
 
 class SortUtility
 {

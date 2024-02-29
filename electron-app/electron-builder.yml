@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: electron-app
+productName: Vaultic
 directories:
   buildResources: build
 files:
@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: electron-app
+  executableName: Vaultic
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

@@ -1,8 +1,6 @@
 import { NameValuePair, NameValuePairType } from "../../Types/EncryptedData";
-import cryptUtility from "../../Utilities/CryptUtility";
 import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
-import { isWeak } from "../../Helpers/EncryptedDataHelper";
 
 export interface NameValuePairStore extends NameValuePair
 {
@@ -49,7 +47,7 @@ export default function useNameValuePairStore(key: string, nameValuePair: NameVa
 		}
 		else if (nameValuePairState.valueType == NameValuePairType.Passcode)
 		{
-			const [weak, isWeakMessage] = isWeak(nameValuePairState.value, "Passcode");
+			const [weak, isWeakMessage] = window.api.helpers.validation.isWeak(nameValuePairState.value, "Passcode");
 
 			nameValuePairState.isWeak = weak;
 			nameValuePairState.isWeakMessage = isWeakMessage;
@@ -58,7 +56,7 @@ export default function useNameValuePairStore(key: string, nameValuePair: NameVa
 
 	function encryptedValue(key: string)
 	{
-		nameValuePairState.value = cryptUtility.encrypt(key, nameValuePairState.value);
+		nameValuePairState.value = window.api.utilities.crypt.encrypt(key, nameValuePairState.value);
 	}
 
 	function updateValue(key: string, value: NameValuePair, valueWasUpdated: boolean)

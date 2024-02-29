@@ -29,8 +29,8 @@ import { ColorPalette } from '../../Types/Colors';
 import { DataType, Filter, Group } from '../../Types/Table';
 import { NameValuePair, Password, defaultFilter, defaultGroup, defaultPassword, defaultValue } from '../../Types/EncryptedData';
 import { SingleSelectorItemModel } from '../../Types/Models';
-import { stores } from '../../Objects/Stores';
 import { hideAll } from 'tippy.js';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "AddObjectPopup",

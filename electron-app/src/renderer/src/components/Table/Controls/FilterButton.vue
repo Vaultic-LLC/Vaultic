@@ -9,7 +9,7 @@
 <script lang="ts">
 import { Ref, defineComponent, ref, inject } from 'vue';
 import { PrimaryColorKey, SecondaryColorOneKey, SecondaryColorTwoKey } from '../../../Types/Keys';
-import { stores } from '../../../Objects/Stores/index';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "FilterButton",

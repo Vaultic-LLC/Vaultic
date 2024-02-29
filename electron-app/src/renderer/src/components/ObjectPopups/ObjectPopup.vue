@@ -17,11 +17,11 @@ import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMou
 
 import { DataType } from '../../Types/Table';
 import { ClosePopupFuncctionKey } from '../../Types/Keys';
-import { stores } from '../../Objects/Stores';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
 import { hideAll } from 'tippy.js';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",

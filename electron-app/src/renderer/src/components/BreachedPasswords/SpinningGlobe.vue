@@ -8,7 +8,6 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
-import { stores } from '../../Objects/Stores';
 import ThreeGlobe from "three-globe";
 import { WebGLRenderer, Scene } from "three";
 import
@@ -22,24 +21,21 @@ import
 	// DirectionalLightHelper,
 	// CameraHelper,
 	PointLight,
-	SphereGeometry,
+	// SphereGeometry,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { createGlowMesh } from "three-glow-mesh";
+// import { createGlowMesh } from "three-glow-mesh";
 import countries from "../../assets/Files/globe-data-min.json";
 // import travelHistory from "./files/my-flights.json";
 // import airportHistory from "./files/my-airports.json";
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb, mixHexes } from '@renderer/Helpers/ColorHelper';
-import GlobalAuthenticationPopup from '../Authentication/GlobalAuthenticationPopup.vue';
-
+import { stores } from '@renderer/Objects/Stores';
 
 var renderer, camera, scene, controls;
-let mouseX = 0;
-let mouseY = 0;
-let windowHalfX = window.innerWidth / 2;
-let windowHalfY = window.innerHeight / 2;
+// let windowHalfX = window.innerWidth / 2;
+// let windowHalfY = window.innerHeight / 2;
 var Globe;
 
 export default defineComponent({
@@ -126,26 +122,26 @@ export default defineComponent({
 		// SECTION Globe
 		function initGlobe()
 		{
-			const N_PATHS = 10;
-			const MAX_POINTS_PER_LINE = 10000;
-			const MAX_STEP_DEG = 1;
-			const MAX_STEP_ALT = 0.015;
-			const gData = [...Array(N_PATHS).keys()].map(() =>
-			{
-				let lat = (Math.random() - 0.5) * 90;
-				let lng = (Math.random() - 0.5) * 360;
-				let alt = 0;
+			// const N_PATHS = 10;
+			// const MAX_POINTS_PER_LINE = 10000;
+			// const MAX_STEP_DEG = 1;
+			// const MAX_STEP_ALT = 0.015;
+			// const gData = [...Array(N_PATHS).keys()].map(() =>
+			// {
+			// 	let lat = (Math.random() - 0.5) * 90;
+			// 	let lng = (Math.random() - 0.5) * 360;
+			// 	let alt = 0;
 
-				return [[lat, lng, alt], ...[...Array(Math.round(Math.random() * MAX_POINTS_PER_LINE)).keys()].map(() =>
-				{
-					lat += (Math.random() * 2 - 1) * MAX_STEP_DEG;
-					lng += (Math.random() * 2 - 1) * MAX_STEP_DEG;
-					alt += (Math.random() * 2 - 1) * MAX_STEP_ALT;
-					alt = Math.max(0, alt);
+			// 	return [[lat, lng, alt], ...[...Array(Math.round(Math.random() * MAX_POINTS_PER_LINE)).keys()].map(() =>
+			// 	{
+			// 		lat += (Math.random() * 2 - 1) * MAX_STEP_DEG;
+			// 		lng += (Math.random() * 2 - 1) * MAX_STEP_DEG;
+			// 		alt += (Math.random() * 2 - 1) * MAX_STEP_ALT;
+			// 		alt = Math.max(0, alt);
 
-					return [lat, lng, alt];
-				})];
-			});
+			// 		return [lat, lng, alt];
+			// 	})];
+			// });
 
 			const N = 20;
 			const arcsData = [...Array(N).keys()].map(() => ({
@@ -167,7 +163,7 @@ export default defineComponent({
 				.showAtmosphere(true)
 				.atmosphereColor(mixHexes(currentColor.value, "FFFFFF"))
 				.atmosphereAltitude(0.3)
-				.hexPolygonColor((e) =>
+				.hexPolygonColor(() =>
 				{
 					return currentColor.value;
 				})
@@ -242,10 +238,10 @@ export default defineComponent({
 			scene.add(Globe);
 		}
 
-		function onMouseMove(event)
+		function onMouseMove()
 		{
-			mouseX = event.clientX - windowHalfX;
-			mouseY = event.clientY - windowHalfY;
+			// mouseX = event.clientX - windowHalfX;
+			// mouseY = event.clientY - windowHalfY;
 			// console.log("x: " + mouseX + " y: " + mouseY);
 		}
 
@@ -253,8 +249,8 @@ export default defineComponent({
 		{
 			camera.aspect = window.innerWidth / window.innerHeight;
 			camera.updateProjectionMatrix();
-			windowHalfX = window.innerWidth / 1.5;
-			windowHalfY = window.innerHeight / 1.5;
+			// windowHalfX = window.innerWidth / 1.5;
+			// windowHalfY = window.innerHeight / 1.5;
 			//renderer.setSize(window.innerWidth, window.innerHeight);
 		}
 

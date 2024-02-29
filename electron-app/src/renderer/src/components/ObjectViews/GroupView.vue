@@ -42,13 +42,13 @@ import { DataType, Group } from '../../Types/Table';
 import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
 import { HeaderDisplayField, defaultGroup } from '../../Types/EncryptedData';
 import { v4 as uuidv4 } from 'uuid';
-import { stores } from '../../Objects/Stores';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { PasswordStore } from '../../Objects/Stores/PasswordStore';
-import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
+import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
+import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
 
 export default defineComponent({
 	name: "GroupView",

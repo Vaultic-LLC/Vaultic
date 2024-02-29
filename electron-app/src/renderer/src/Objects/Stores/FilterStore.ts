@@ -1,12 +1,10 @@
-import generator from "../../Utilities/Generator";
 import { Filter, DataType, FilterCondition, FilterConditionType, Group } from "../../Types/Table";
 import { ComputedRef, computed, reactive } from "vue";
 import { AuthenticationStore, stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
 import { AtRiskType, IFilterable, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
-import File from "../Files/File"
-import cryptUtility from "@renderer/Utilities/CryptUtility";
-import hashUtility from "@renderer/Utilities/HashUtility";
+import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
+import fileHelper from "@renderer/Helpers/fileHelper";
 
 interface FilterState
 {
@@ -46,7 +44,6 @@ export interface FilterStore extends AuthenticationStore
 	toggleAtRiskType: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
-const filterFile: File = new File("filters");
 let filterState: FilterState;
 
 export default function useFilterStore(): FilterStore
@@ -78,7 +75,7 @@ export default function useFilterStore(): FilterStore
 				resolve(true);
 			}
 
-			filterFile.read<FilterState>(key).then((state: FilterState) =>
+			fileHelper.read<FilterState>(key, window.api.files.filter).then((state: FilterState) =>
 			{
 				state.loadedFile = true;
 				Object.assign(filterState, state);
@@ -95,10 +92,10 @@ export default function useFilterStore(): FilterStore
 	{
 		if (filterState.filters.length == 0)
 		{
-			return filterFile.empty();
+			return window.api.files.filter.empty();
 		}
 
-		return filterFile.write<FilterState>(key, filterState);
+		return fileHelper.write<FilterState>(key, filterState, window.api.files.filter);
 	}
 
 	function resetToDefault()
@@ -108,7 +105,7 @@ export default function useFilterStore(): FilterStore
 
 	async function canAuthenticateKeyBeforeEntry()
 	{
-		return await filterFile.exists();
+		return await window.api.files.filter.exists();
 	}
 
 	function canAuthenticateKeyAfterEntry()
@@ -124,37 +121,37 @@ export default function useFilterStore(): FilterStore
 		}
 
 		let runningKeys: string = "";
-		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
+		filterState.filters.forEach(f => runningKeys += window.api.utilities.crypt.decrypt(key, f.key));
 
-		return hashUtility.hash(runningKeys) === cryptUtility.decrypt(key, filterState.filterHash);
+		return window.api.utilities.hash.hash(runningKeys) === window.api.utilities.crypt.decrypt(key, filterState.filterHash);
 	}
 
 	function checkKeyAfterEntry(key: string): boolean
 	{
-		return getHash(key) == cryptUtility.decrypt(key, filterState.filterHash);
+		return getHash(key) == window.api.utilities.crypt.decrypt(key, filterState.filterHash);
 	}
 
 	function getHash(key: string)
 	{
 		let runningKeys: string = "";
-		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
+		filterState.filters.forEach(f => runningKeys += window.api.utilities.crypt.decrypt(key, f.key));
 
-		return hashUtility.hash(runningKeys)
+		return window.api.utilities.hash.hash(runningKeys)
 	}
 
 	function updateHash(key: string, filter: Filter | undefined = undefined)
 	{
 		let runningKeys: string = "";
-		filterState.filters.forEach(f => runningKeys += cryptUtility.decrypt(key, f.key));
+		filterState.filters.forEach(f => runningKeys += window.api.utilities.crypt.decrypt(key, f.key));
 
-		if (filterState.filterHash === "" || cryptUtility.decrypt(key, filterState.filterHash) === hashUtility.hash(runningKeys))
+		if (filterState.filterHash === "" || window.api.utilities.crypt.decrypt(key, filterState.filterHash) === window.api.utilities.hash.hash(runningKeys))
 		{
 			if (filter && filter.key)
 			{
 				runningKeys += filter.key;
 			}
 
-			filterState.filterHash = cryptUtility.encrypt(key, hashUtility.hash(runningKeys));
+			filterState.filterHash = window.api.utilities.crypt.encrypt(key, window.api.utilities.hash.hash(runningKeys));
 		}
 	}
 
@@ -212,7 +209,9 @@ export default function useFilterStore(): FilterStore
 						return false;
 				}
 			}
-		})
+
+			return false;
+		});
 
 		return allFilterConditionsApply;
 	}
@@ -371,8 +370,8 @@ export default function useFilterStore(): FilterStore
 
 	async function addFilter(key: string, filter: Filter): Promise<void>
 	{
-		filter.id = generator.uniqueId(filterState.filters);
-		filter.key = generator.randomValue(30);
+		filter.id = generateUniqueID(filterState.filters);
+		filter.key = window.api.utilities.generator.randomValue(30);
 
 		filterState.filters.push(filter);
 
@@ -401,7 +400,7 @@ export default function useFilterStore(): FilterStore
 		}
 
 		updateHash(key, filter);
-		filter.key = cryptUtility.encrypt(key, filter.key);
+		filter.key = window.api.utilities.crypt.encrypt(key, filter.key);
 
 		await writeState(key);
 	}
@@ -451,7 +450,7 @@ export default function useFilterStore(): FilterStore
 			removeDuplicateFilter(filter, filterState.duplicateValueFilters);
 		}
 
-		filterState.filterHash = cryptUtility.encrypt(key, getHash(key));
+		filterState.filterHash = window.api.utilities.crypt.encrypt(key, getHash(key));
 		await writeState(key);
 	}
 

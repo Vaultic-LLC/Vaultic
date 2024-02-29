@@ -29,8 +29,8 @@ import TableRowTextValue from './TableRowTextValue.vue';
 import TableRowColorValue from './TableRowColorValue.vue';
 
 import { TableRowData } from '../../../Types/Models';
-import { stores } from '../../../Objects/Stores/index';
 import { ColorPalette } from '../../..//Types/Colors';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "TableRow",

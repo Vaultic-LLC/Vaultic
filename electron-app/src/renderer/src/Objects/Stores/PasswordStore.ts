@@ -1,8 +1,6 @@
 import { Password, SecurityQuestion } from "../../Types/EncryptedData";
-import cryptUtility from "../../Utilities/CryptUtility";
 import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
-import { isWeak } from "../../Helpers/EncryptedDataHelper";
 
 export interface PasswordStore extends Password
 {
@@ -30,7 +28,7 @@ export default function usePasswordStore(key: string, password: Password, encryp
 
 	function checkIsWeak()
 	{
-		const [weak, isWeakMessage] = isWeak(passwordState.password, "Password");
+		const [weak, isWeakMessage] = window.api.helpers.validation.isWeak(passwordState.password, "Password");
 
 		passwordState.isWeak = weak;
 		passwordState.isWeakMessage = isWeakMessage;
@@ -43,7 +41,7 @@ export default function usePasswordStore(key: string, password: Password, encryp
 
 	function encryptPassword(key: string)
 	{
-		passwordState.password = cryptUtility.encrypt(key, passwordState.password);
+		passwordState.password = window.api.utilities.crypt.encrypt(key, passwordState.password);
 	}
 
 	function encryptSecurityQuestions(key: string)
@@ -54,8 +52,8 @@ export default function usePasswordStore(key: string, password: Password, encryp
 				...sq,
 				questionLength: sq.question.length,
 				answerLength: sq.answer.length,
-				question: cryptUtility.encrypt(key, sq.question),
-				answer: cryptUtility.encrypt(key, sq.answer)
+				question: window.api.utilities.crypt.encrypt(key, sq.question),
+				answer: window.api.utilities.crypt.encrypt(key, sq.answer)
 			}
 		});
 	}
@@ -76,7 +74,7 @@ export default function usePasswordStore(key: string, password: Password, encryp
 		}
 		else
 		{
-			passwordState.password = cryptUtility.decrypt(key, passwordState.password);
+			passwordState.password = window.api.utilities.crypt.decrypt(key, passwordState.password);
 			checkContainsUsername();
 			encryptPassword(key);
 		}
@@ -87,7 +85,7 @@ export default function usePasswordStore(key: string, password: Password, encryp
 			{
 				const sequrityQuestions: SecurityQuestion = passwordState.securityQuestions.filter(sq => sq.id == id)[0];
 				sequrityQuestions.questionLength = sequrityQuestions.question.length;
-				sequrityQuestions.question = cryptUtility.encrypt(key, sequrityQuestions.question);
+				sequrityQuestions.question = window.api.utilities.crypt.encrypt(key, sequrityQuestions.question);
 			});
 		}
 
@@ -97,7 +95,7 @@ export default function usePasswordStore(key: string, password: Password, encryp
 			{
 				const sequrityQuestions: SecurityQuestion = passwordState.securityQuestions.filter(sq => sq.id == id)[0];
 				sequrityQuestions.answerLength = sequrityQuestions.answer.length;
-				sequrityQuestions.answer = cryptUtility.encrypt(key, sequrityQuestions.answer);
+				sequrityQuestions.answer = window.api.utilities.crypt.encrypt(key, sequrityQuestions.answer);
 			});
 		}
 	}

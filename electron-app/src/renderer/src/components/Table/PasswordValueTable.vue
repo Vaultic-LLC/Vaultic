@@ -60,16 +60,16 @@ import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
 
 import { DataType, Filter, FilterStatus } from '../../Types/Table';
-import { PasswordStore } from '../../Objects/Stores/PasswordStore';
-import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
 import { HeaderDisplayField, IFilterable, IGroupable, IIdentifiable } from '../../Types/EncryptedData';
 import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
-import { stores } from '../../Objects/Stores/index';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { v4 as uuidv4 } from 'uuid';
 import { useRequestAuthFunction, useLoadingIndicator, useToastFunction } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
+import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
+import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
 
 export default defineComponent({
 	name: "PasswordValueTable",

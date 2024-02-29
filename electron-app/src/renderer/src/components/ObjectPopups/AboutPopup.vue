@@ -58,9 +58,9 @@ import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import TableSelector from '../TableSelector.vue';
 
-import { stores } from '@renderer/Objects/Stores';
 import { SingleSelectorItemModel } from '@renderer/Types/Models';
 import { defaultInputTextColor } from '@renderer/Types/Colors';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "AboutPopup",

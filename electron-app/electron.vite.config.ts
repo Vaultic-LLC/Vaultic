@@ -1,14 +1,13 @@
 import { resolve } from 'path'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { defineConfig, externalizeDepsPlugin, bytecodePlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
 	main: {
-		plugins: [externalizeDepsPlugin()]
+		plugins: [externalizeDepsPlugin(), bytecodePlugin()]
 	},
 	preload: {
-		plugins: [externalizeDepsPlugin()]
+		plugins: [externalizeDepsPlugin(), bytecodePlugin({ protectedStrings: ['akljffoifiohop2p23t2jfio3jfio12oijoi;j3io;ojijLJG:SJGfoi;gSHOIF:ioh2o1th1o2hSHFIOS:Hoi;hfo2h908t1ht81hoihIhoih1hpFKLJFHSJKLFhsdkjlfSFsdp[fl[,{SDF,oisf;JSDf;ji;h12KLDFn'] })]
 	},
 	renderer: {
 		resolve: {
@@ -23,19 +22,7 @@ export default defineConfig({
 						isCustomElement: tag => tag.startsWith('ion-')
 					}
 				}
-			}),
-			nodePolyfills()
-		],
-		build: {
-			rollupOptions: {
-				output:
-				{
-					format: 'es',
-					strict: false,
-					entryFileNames: "[name].js",
-					dir: 'dist/'
-				}
-			}
-		},
+			})
+		]
 	},
 })

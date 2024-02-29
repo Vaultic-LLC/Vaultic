@@ -13,7 +13,7 @@ import PasswordView from "../../ObjectViews/PasswordView.vue";
 
 import { Password } from '../../../Types/EncryptedData';
 import { SingleSelectorItemModel } from '../../../Types/Models';
-import { stores } from '../../../Objects/Stores';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "EditPasswordPopup",

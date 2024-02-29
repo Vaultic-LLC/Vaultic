@@ -15,7 +15,7 @@ import SelectorButton from './SelectorButton.vue';
 
 import { SelectorButtonModel } from '../../Types/Models';
 import { Group } from '../../Types/Table';
-import { stores } from '../../Objects/Stores';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "GroupsInputField",

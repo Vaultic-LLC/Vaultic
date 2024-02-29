@@ -31,14 +31,14 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import TableRow from '../Table/Rows/TableRow.vue';
 import WorldMap from './WorldMap.vue';
 
-import { stores } from '../../Objects/Stores';
 import { IGroupableSortedCollection, SortedCollection } from '@renderer/Objects/DataStructures/SortedCollections';
-import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
 import { DataType } from '@renderer/Types/Table';
 import { SmallMetricGaugeModel, TableRowData } from '@renderer/Types/Models';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
 import { ShowToastFunctionKey } from '@renderer/Types/Keys';
+import { stores } from '@renderer/Objects/Stores';
+import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
 
 export default defineComponent({
 	name: "BreachedPasswords",

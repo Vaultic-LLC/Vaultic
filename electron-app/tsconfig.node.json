@@ -3,7 +3,13 @@
 	"include": [
 		"electron.vite.config.*",
 		"src/main/*",
-		"src/preload/*"
+		"src/preload/*",
+		"src/preload/Objects/API.ts",
+		"src/preload/Objects/Server.ts",
+		"src/preload/Objects/DeviceInfo.ts",
+		"src/preload/Objects/Files/*",
+		"src/preload/Utilities/*",
+		"src/preload/Helpers/*",
 	],
 	"compilerOptions": {
 		"composite": true,

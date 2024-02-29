@@ -9,7 +9,6 @@
 			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" :color="requestAuthColor" />
 	</Transition>
 	<div id="mainUI" class="mainUI">
-		<!-- <SideDrawer /> -->
 		<div class="center">
 			<ColorPaletteContainer />
 			<BreachedPasswords />
@@ -48,7 +47,6 @@
 <script lang="ts">
 import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide, watch } from 'vue';
 
-import SideDrawer from './components/SideDrawer.vue';
 import MetricDrawer from "./components/MetricDrawer.vue"
 import TableSelector from "./components/TableSelector.vue"
 import FilterGroupTable from './components/Table/FilterGroupTable.vue';
@@ -70,17 +68,16 @@ import SliderField from './components/InputFields/SliderField.vue';
 import LoadingPopup from './components/Loading/LoadingPopup.vue';
 
 import { SingleSelectorItemModel } from './Types/Models';
-import { stores } from './Objects/Stores';
 import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
+import { stores } from './Objects/Stores';
 
 export default defineComponent({
 	name: 'App',
 	components:
 	{
-		SideDrawer,
 		MetricDrawer,
 		TableSelector,
 		FilterGroupTable,

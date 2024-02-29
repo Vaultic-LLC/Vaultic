@@ -4,10 +4,10 @@ import { Ref, computed, ref } from "vue";
 import { v4 as uuidv4 } from 'uuid';
 import { AtRiskType, HeaderDisplayField, IIdentifiable, IPinnable } from "../Types/EncryptedData";
 import { DataType, Filter } from "../Types/Table";
-import { stores } from "../Objects/Stores";
-import { PasswordStore } from "../Objects/Stores/PasswordStore";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
-import { NameValuePairStore } from "../Objects/Stores/NameValuePairStore";
+import { stores } from "@renderer/Objects/Stores";
+import { NameValuePairStore } from "@renderer/Objects/Stores/NameValuePairStore";
+import { PasswordStore } from "@renderer/Objects/Stores/PasswordStore";
 
 export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
 	sortableCollection: SortedCollection<T>, pinnedCollection?: SortedCollection<T>, updateModels?: () => void): SortableHeaderModel[]

@@ -3,10 +3,8 @@ import { DataType, Group } from "../../Types/Table";
 import { AtRiskType, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
 import { AuthenticationStore, stores } from ".";
-import File from "../Files/File"
-import cryptUtility from "@renderer/Utilities/CryptUtility";
-import hashUtility from "@renderer/Utilities/HashUtility";
-import generator from "../../Utilities/Generator";
+import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
+import fileHelper from "@renderer/Helpers/fileHelper";
 
 interface GroupState
 {
@@ -46,7 +44,6 @@ export interface GroupStore extends AuthenticationStore
 	toggleAtRiskType: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
-const groupFile: File = new File("groups");
 let groupState: GroupState
 
 export default function useGroupStore(): GroupStore
@@ -78,7 +75,7 @@ export default function useGroupStore(): GroupStore
 				resolve(true);
 			}
 
-			groupFile.read<GroupState>(key).then((state: GroupState) =>
+			fileHelper.read<GroupState>(key, window.api.files.group).then((state: GroupState) =>
 			{
 				state.loadedFile = true;
 				Object.assign(groupState, state);
@@ -95,10 +92,10 @@ export default function useGroupStore(): GroupStore
 	{
 		if (groupState.groups.length == 0)
 		{
-			return groupFile.empty();
+			return window.api.files.group.empty();
 		}
 
-		return groupFile.write<GroupState>(key, groupState);
+		return fileHelper.write<GroupState>(key, groupState, window.api.files.group);
 	}
 
 	function resetToDefault()
@@ -108,7 +105,7 @@ export default function useGroupStore(): GroupStore
 
 	function canAuthenticateKeyBeforeEntry(): Promise<boolean>
 	{
-		return groupFile.exists();
+		return window.api.files.group.exists();
 	}
 
 	function canAuthenticateKeyAfterEntry(): boolean
@@ -124,37 +121,37 @@ export default function useGroupStore(): GroupStore
 		}
 
 		let runningKeys: string = "";
-		groupState.groups.forEach(g => runningKeys += cryptUtility.decrypt(key, g.key));
+		groupState.groups.forEach(g => runningKeys += window.api.utilities.crypt.decrypt(key, g.key));
 
-		return hashUtility.hash(runningKeys) === cryptUtility.decrypt(key, groupState.groupHash);
+		return window.api.utilities.hash.hash(runningKeys) === window.api.utilities.crypt.decrypt(key, groupState.groupHash);
 	}
 
 	function checkKeyAfterEntry(key: string): boolean
 	{
-		return getHash(key) == cryptUtility.decrypt(key, groupState.groupHash);
+		return getHash(key) == window.api.utilities.crypt.decrypt(key, groupState.groupHash);
 	}
 
 	function getHash(key: string): string
 	{
 		let runningKeys: string = "";
-		groupState.groups.forEach(g => runningKeys += cryptUtility.decrypt(key, g.key));
+		groupState.groups.forEach(g => runningKeys += window.api.utilities.crypt.decrypt(key, g.key));
 
-		return hashUtility.hash(runningKeys);
+		return window.api.utilities.hash.hash(runningKeys);
 	}
 
 	function updateHash(key: string, group: Group | undefined = undefined)
 	{
 		let runningKeys: string = "";
-		groupState.groups.forEach(g => runningKeys += cryptUtility.decrypt(key, g.key));
+		groupState.groups.forEach(g => runningKeys += window.api.utilities.crypt.decrypt(key, g.key));
 
-		if (groupState.groupHash === "" || cryptUtility.decrypt(key, groupState.groupHash) === hashUtility.hash(runningKeys))
+		if (groupState.groupHash === "" || window.api.utilities.crypt.decrypt(key, groupState.groupHash) === window.api.utilities.hash.hash(runningKeys))
 		{
 			if (group && group.key)
 			{
 				runningKeys += group.key;
 			}
 
-			groupState.groupHash = cryptUtility.encrypt(key, hashUtility.hash(runningKeys));
+			groupState.groupHash = window.api.utilities.crypt.encrypt(key, window.api.utilities.hash.hash(runningKeys));
 		}
 	}
 
@@ -281,8 +278,8 @@ export default function useGroupStore(): GroupStore
 
 	async function addGroup(key: string, group: Group): Promise<void>
 	{
-		group.id = generator.uniqueId(groupState.groups);
-		group.key = generator.randomValue(30);
+		group.id = generateUniqueID(groupState.groups);
+		group.key = window.api.utilities.generator.randomValue(30);
 
 		groupState.groups.push(group);
 		groupState.groupsById[group.id] = group;
@@ -341,7 +338,7 @@ export default function useGroupStore(): GroupStore
 		}
 
 		updateHash(key, group);
-		group.key = cryptUtility.encrypt(key, group.key);
+		group.key = window.api.utilities.crypt.encrypt(key, group.key);
 
 		await writeState(key);
 	}
@@ -424,7 +421,7 @@ export default function useGroupStore(): GroupStore
 			removeDuplicateGroup(group, groupState.duplicateValueGroups);
 		}
 
-		groupState.groupHash = cryptUtility.encrypt(key, getHash(key));
+		groupState.groupHash = window.api.utilities.crypt.encrypt(key, getHash(key));
 		await writeState(key);
 	}
 

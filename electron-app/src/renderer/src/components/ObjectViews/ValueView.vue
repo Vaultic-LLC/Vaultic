@@ -57,14 +57,14 @@ import ToolTip from '../ToolTip.vue';
 import { NameValuePair, defaultValue, NameValuePairType, HeaderDisplayField } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
 import { v4 as uuidv4 } from 'uuid';
-import { NameValuePairStore } from '../../Objects/Stores/NameValuePairStore';
-import { stores } from '../../Objects/Stores';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
+import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
 
 export default defineComponent({
 	name: "ValueView",

@@ -14,10 +14,9 @@ import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 import TextAreaInputField from '../../../components/InputFields/TextAreaInputField.vue';
 import EncryptedInputField from '../../../components/InputFields/EncryptedInputField.vue';
 
-import cryptUtility from '../../../Utilities/CryptUtility';
-import { NameValuePairStore } from '../../../Objects/Stores/NameValuePairStore';
 import { defaultInputColor } from '@renderer/Types/Colors';
 import { InputColorModel } from '@renderer/Types/Models';
+import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
 
 export default defineComponent({
 	name: "NameValuePairRow",
@@ -45,7 +44,7 @@ export default defineComponent({
 		{
 			newValue?.then((key: string) =>
 			{
-				valueValue.value = cryptUtility.decrypt(key, valueValue.value);
+				valueValue.value = window.api.utilities.crypt.decrypt(key, valueValue.value);
 			}).catch(() =>
 			{
 				// auth was cancelled

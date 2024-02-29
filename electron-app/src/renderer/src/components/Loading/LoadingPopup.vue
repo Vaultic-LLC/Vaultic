@@ -2,14 +2,14 @@
 	<div class="loadingPopupContainer">
 		<div class="loadingPopupContainer__glass"></div>
 		<div class="loadingPopupContainer__popup">
-			<div class="loadingPopupContainer__text"> {{ text }}</div>
-			<LoadingIndicator :color="color" />
+			<div class="loadingPopupContainer__text"> {{ textToUse }}</div>
+			<LoadingIndicator :color="primaryColor" />
 		</div>
 	</div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { ComputedRef, computed, defineComponent } from 'vue';
 
 import LoadingIndicator from './LoadingIndicator.vue';
 
@@ -20,10 +20,14 @@ export default defineComponent({
 		LoadingIndicator
 	},
 	props: ['color', 'text'],
-	setup()
+	setup(props)
 	{
-		return {
+		const primaryColor: ComputedRef<string> = computed(() => props.color ? props.color : "#bb29ff");
+		const textToUse: ComputedRef<string> = computed(() => props.text ? props.text : "Loading...");
 
+		return {
+			primaryColor,
+			textToUse
 		}
 	}
 })
@@ -40,7 +44,7 @@ export default defineComponent({
 
 .loadingPopupContainer__popup {
 	background-color: var(--app-color);
-	border: 2px solid v-bind(color);
+	border: 2px solid v-bind(primaryColor);
 	position: fixed;
 	width: 10%;
 	aspect-ratio: 1 / 0.75;

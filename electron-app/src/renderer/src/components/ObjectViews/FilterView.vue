@@ -33,12 +33,12 @@ import FilterConditionRow from '../Table/Rows/FilterConditionRow.vue';
 
 import { DataType, Filter } from '../../Types/Table';
 import { DisplayField, PasswordProperties, ValueProperties, defaultFilter } from '../../Types/EncryptedData';
-import { stores } from '../../Objects/Stores';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
-import generator from '@renderer/Utilities/Generator';
 import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
 import { v4 as uuidv4 } from 'uuid';
 import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
+import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
 
 export default defineComponent({
 	name: "FilterView",
@@ -132,7 +132,7 @@ export default defineComponent({
 		{
 			filterState.value.conditions.push(
 				{
-					id: generator.uniqueId(filterState.value.conditions),
+					id: generateUniqueID(filterState.value.conditions),
 					property: '',
 					value: ''
 				});

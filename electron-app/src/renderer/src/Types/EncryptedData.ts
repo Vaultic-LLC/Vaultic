@@ -261,3 +261,11 @@ export function defaultGroup(type: DataType): Group
 		color: ''
 	}
 }
+
+export interface DataFile
+{
+	exists: () => Promise<boolean>;
+	empty: () => Promise<void>;
+	write: (data: string) => Promise<void>;
+	read: () => Promise<string>;
+}

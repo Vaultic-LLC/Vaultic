@@ -18,9 +18,9 @@ import CongratsRibbon from '../SmallMetricGauges/CongratsRibbon.vue';
 import { Doughnut } from 'vue-chartjs'
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
-import { stores } from '../../Objects/Stores';
 import { mixHexes } from '@renderer/Helpers/ColorHelper';
 import animationHelper from '@renderer/Helpers/animationHelper';
+import { stores } from '@renderer/Objects/Stores';
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 

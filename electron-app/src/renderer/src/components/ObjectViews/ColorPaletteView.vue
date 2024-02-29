@@ -33,10 +33,10 @@ import ObjectView from "./ObjectView.vue"
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
 import ToolTip from '../ToolTip.vue';
 
-import { stores } from '../../Objects/Stores';
 import { GridDefinition } from '../../Types/Models';
 import { ColorPalette } from '../../Types/Colors';
 import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ColorPaletteView",

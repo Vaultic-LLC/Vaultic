@@ -32,8 +32,8 @@ import PasswordValueGauges from "./Widgets/SmallMetricGauges/Combined/PasswordVa
 
 import { DataType } from '../Types/Table';
 import { SmallMetricGaugeModel } from '../Types/Models';
-import { stores } from '../Objects/Stores';
 import { AtRiskType } from "../Types/EncryptedData";
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "MetricDrawer",

@@ -9,8 +9,8 @@
 <script lang="ts">
 import { defineComponent, ref, Ref } from 'vue';
 
-import { SettingsState } from '../../../Objects/Stores/SettingsStore';
 import SettingsView from '../../../components/ObjectViews/SettingsView.vue';
+import { SettingsState } from '@renderer/Objects/Stores/SettingsStore';
 
 export default defineComponent({
 	name: "EditSettingsPopup",

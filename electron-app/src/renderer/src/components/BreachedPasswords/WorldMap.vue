@@ -11,13 +11,13 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
-import { stores } from '../../Objects/Stores';
 import * as d3 from "d3";
 import countries from "../../assets/Files/world.json";
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb, rgbToHex, toSolidHex } from '@renderer/Helpers/ColorHelper';
 import { tween } from '@renderer/Helpers/TweenHelper';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "WorldMap",

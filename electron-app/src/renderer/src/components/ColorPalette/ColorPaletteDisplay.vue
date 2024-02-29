@@ -37,13 +37,13 @@ import SelectorButton from "../InputFields/SelectorButton.vue";
 
 import { ColorPalette } from "../../Types/Colors";
 import { SelectorButtonModel } from "../../Types/Models";
-import { stores } from "../../Objects/Stores";
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import EditColorPalettePopup from "../ObjectPopups/EditPopups/EditColorPalettePopup.vue";
 import { getLinearGradientFromColor } from "@renderer/Helpers/ColorHelper";
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
+import { stores } from "@renderer/Objects/Stores";
 
 export default defineComponent({
 	name: "ColorPaletteDisplay",

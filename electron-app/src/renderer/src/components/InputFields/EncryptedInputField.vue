@@ -31,13 +31,11 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import { DecryptFunctionsKey, RequestAuthorizationKey, ShowToastFunctionKey, ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
-import cryptUtility from '../../Utilities/CryptUtility';
-import { stores } from '../../Objects/Stores';
 import clipboard from 'clipboardy';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 import tippy from 'tippy.js';
 import { InputColorModel } from '@renderer/Types/Models';
-import generator from '@renderer/Utilities/Generator';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "EncryptedInputField",
@@ -100,7 +98,7 @@ export default defineComponent({
 
 		function onAuthenticationSuccessful(key: string)
 		{
-			inputText.value = cryptUtility.decrypt(key, props.modelValue);
+			inputText.value = window.api.utilities.crypt.decrypt(key, props.modelValue);
 			isLocked.value = false;
 			isDisabled.value = false;
 		}
@@ -130,7 +128,7 @@ export default defineComponent({
 
 		function generateRandomValue()
 		{
-			onInput(generator.randomValue(stores.settingsStore.randomValueLength));
+			onInput(window.api.utilities.generator.randomValue(stores.settingsStore.randomValueLength));
 		}
 
 		function copyValue()

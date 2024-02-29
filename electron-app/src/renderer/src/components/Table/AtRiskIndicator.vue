@@ -10,10 +10,10 @@
 import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
 
 import { ColorPalette } from '../../Types/Colors';
-import { stores } from '../../Objects/Stores/index';
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import 'tippy.js/animations/scale.css';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "TableRow",

@@ -67,15 +67,14 @@ import ToolTip from '../ToolTip.vue';
 import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
 import { v4 as uuidv4 } from 'uuid';
-import { PasswordStore } from '../../Objects/Stores/PasswordStore';
-import { stores } from '../../Objects/Stores';
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Types/Keys';
 import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
-import generator from '@renderer/Utilities/Generator';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
+import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
 
 export default defineComponent({
 	name: "PasswordView",
@@ -109,7 +108,7 @@ export default defineComponent({
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.passwordGroups, "name"));
 		// @ts-ignore
 		const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
-		const initalLength: Ref<number> = ref((passwordState.value as PasswordStore).passwordLength ?? 0);
+		const initalLength: Ref<number> = ref(passwordState.value.passwordLength ?? 0);
 		const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
 
 		const passwordIsDirty: Ref<boolean> = ref(false);
@@ -304,7 +303,7 @@ export default defineComponent({
 		function onAddSecurityQuestion()
 		{
 			passwordState.value.securityQuestions.push({
-				id: generator.uniqueId(passwordState.value.securityQuestions),
+				id: generateUniqueID(passwordState.value.securityQuestions),
 				question: '',
 				questionLength: 0,
 				answer: '',

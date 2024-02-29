@@ -1,9 +1,9 @@
 import { reactive } from "vue";
-import { DataType } from "../../Types/Table";
+import { DataType } from "../../Types/Table"
 import { Stores, stores, Store } from ".";
-import File from "../Files/File"
-import { Dictionary } from "@renderer/Types/DataStructures";
+import { Dictionary } from "../../Types/DataStructures";
 import { hideAll } from 'tippy.js';
+import fileHelper from "@renderer/Helpers/fileHelper";
 
 interface AppState
 {
@@ -33,20 +33,16 @@ export interface AppStore extends Store
 	resetSessionTime: () => void;
 }
 
-const appFile: File = new File("app");
-let appState: AppState;
-
 export default function useAppStore(): AppStore
 {
-	appState = reactive(defaultState());
-
+	let appState = reactive(defaultState());
 	let autoLockTimeoutID: NodeJS.Timeout;
 
 	function defaultState(): AppState
 	{
 		return {
 			loadedFile: false,
-			isWindows: window.api.platform === "win32",
+			isWindows: window.api.device.platform === "win32",
 			lastUpdated: 0,
 			authenticated: false,
 			reloadMainUI: false,
@@ -69,7 +65,7 @@ export default function useAppStore(): AppStore
 				resolve(true);
 			}
 
-			appFile.read<AppState>(key).then(async (obj: AppState) =>
+			fileHelper.read<AppState>(key, window.api.files.app).then(async (obj: AppState) =>
 			{
 				obj.loadedFile = true;
 
@@ -110,7 +106,7 @@ export default function useAppStore(): AppStore
 
 	function writeState(key: string): Promise<void>
 	{
-		return appFile.write(key, appState);
+		return fileHelper.write<AppState>(key, appState, window.api.files.app);
 	}
 
 	function resetToDefault()

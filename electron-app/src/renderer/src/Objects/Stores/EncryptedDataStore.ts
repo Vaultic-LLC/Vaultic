@@ -1,15 +1,14 @@
 import { Password, NameValuePair, CurrentAndSafeStructure, IIdentifiable, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
-import File from "../Files/File"
-import cryptUtility from "../../Utilities/CryptUtility";
-import hashUtility from "../../Utilities/HashUtility";
 import usePasswordStore, { PasswordStore } from "./PasswordStore";
 import useNameValuePair, { NameValuePairStore } from "./NameValuePairStore";
 import { DataType, Filter, Group } from "../../Types/Table";
-import generator from "../../Utilities/Generator";
 import { Dictionary } from "../../Types/DataStructures";
 import { AuthenticationStore, Stores, stores } from ".";
 import useNameValuePairStore from "./NameValuePairStore";
+import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
+import fileHelper from "@renderer/Helpers/fileHelper";
+
 
 interface EncryptedDataState
 {
@@ -69,7 +68,6 @@ export interface EncryptedDataStore extends AuthenticationStore
 	removeEvent: (event: EncryptedDataStoreEvent, callback: () => void) => void;
 }
 
-const dataFile: File = new File("data");
 let encryptedDataState: EncryptedDataState;
 
 export default function useEncryptedDataStore(): EncryptedDataStore
@@ -99,7 +97,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 	function canAuthenticateKeyBeforeEntry(): Promise<boolean>
 	{
-		return dataFile.exists();
+		return window.api.files.encryptedData.exists();
 	}
 
 	function canAuthenticateKeyAfterEntry(): boolean
@@ -112,12 +110,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		if (encryptedDataState.passwords.length == 0 && encryptedDataState.nameValuePairs.length == 0)
 		{
 			// TODO: error handling
-			return dataFile.empty();
+			return window.api.files.encryptedData.empty();
 		}
 		else
 		{
 			// TODO: error handling
-			return dataFile.write(key, encryptedDataState);
+			return fileHelper.write(key, encryptedDataState, window.api.files.encryptedData);
 		}
 	}
 
@@ -130,9 +128,9 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	function calculateHash<T extends { [key: string]: string }>(key: string, values: T[], property: string)
 	{
 		let runningPasswords: string = "";
-		values.forEach(v => runningPasswords += cryptUtility.decrypt(key, v[property]));
+		values.forEach(v => runningPasswords += window.api.utilities.crypt.decrypt(key, v[property]));
 
-		return hashUtility.hash(runningPasswords);
+		return window.api.utilities.hash.hash(runningPasswords);
 	}
 
 	async function readState(key: string): Promise<boolean>
@@ -146,11 +144,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
 			try
 			{
-				dataFile.read<EncryptedDataState>(key).then((data: EncryptedDataState) =>
+				fileHelper.read<EncryptedDataState>(key, window.api.files.encryptedData).then((data: EncryptedDataState) =>
 				{
 					if (data.passwordHash)
 					{
-						if (calculateHash(key, data.passwords, 'password') == cryptUtility.decrypt(key, data.passwordHash))
+						if (calculateHash(key, data.passwords, 'password') == window.api.utilities.crypt.decrypt(key, data.passwordHash))
 						{
 							assignState(data);
 							resolve(true);
@@ -158,7 +156,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 					}
 					else if (data.valueHash)
 					{
-						if (calculateHash(key, data.nameValuePairs, 'value') == cryptUtility.decrypt(key, data.valueHash))
+						if (calculateHash(key, data.nameValuePairs, 'value') == window.api.utilities.crypt.decrypt(key, data.valueHash))
 						{
 							assignState(data);
 							resolve(true);
@@ -194,12 +192,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	function checkKeyUpdatePasswordHash(key: string, newPassword: string): boolean
 	{
 		let runningPasswords: string = "";
-		encryptedDataState.passwords.forEach(p => runningPasswords += cryptUtility.decrypt(key, p.password));
+		encryptedDataState.passwords.forEach(p => runningPasswords += window.api.utilities.crypt.decrypt(key, p.password));
 
-		if (encryptedDataState.passwordHash === "" || hashUtility.hash(runningPasswords) == cryptUtility.decrypt(key, encryptedDataState.passwordHash))
+		if (encryptedDataState.passwordHash === "" || window.api.utilities.hash.hash(runningPasswords) == window.api.utilities.crypt.decrypt(key, encryptedDataState.passwordHash))
 		{
 			runningPasswords += newPassword;
-			encryptedDataState.passwordHash = cryptUtility.encrypt(key, hashUtility.hash(runningPasswords));
+			encryptedDataState.passwordHash = window.api.utilities.crypt.encrypt(key, window.api.utilities.hash.hash(runningPasswords));
 
 			return true;
 		}
@@ -210,12 +208,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	function checkKeyUpdateValueHash(key: string, newValue: string): boolean
 	{
 		let runningValues: string = "";
-		encryptedDataState.nameValuePairs.forEach(nvp => runningValues += cryptUtility.decrypt(key, nvp.value));
+		encryptedDataState.nameValuePairs.forEach(nvp => runningValues += window.api.utilities.crypt.decrypt(key, nvp.value));
 
-		if (encryptedDataState.valueHash === "" || hashUtility.hash(runningValues) == cryptUtility.decrypt(key, encryptedDataState.valueHash))
+		if (encryptedDataState.valueHash === "" || window.api.utilities.hash.hash(runningValues) == window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash))
 		{
 			runningValues += newValue;
-			encryptedDataState.valueHash = cryptUtility.encrypt(key, hashUtility.hash(runningValues));
+			encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, window.api.utilities.hash.hash(runningValues));
 
 			return true;
 		}
@@ -227,7 +225,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		(key: string, value: T, property: string, allValues: T[], duplicateValues: Dictionary<string[]>)
 	{
 		const potentialDupllicates: T[] = allValues.filter(v => v.id != value.id);
-		const decryptedValue: string = cryptUtility.decrypt(key, value[property]);
+		const decryptedValue: string = window.api.utilities.crypt.decrypt(key, value[property]);
 
 		if (!duplicateValues[value.id])
 		{
@@ -241,7 +239,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 				duplicateValues[d.id] = [];
 			}
 
-			const potentialDuplicateDecryptedValue: string = cryptUtility.decrypt(key, d[property]);
+			const potentialDuplicateDecryptedValue: string = window.api.utilities.crypt.decrypt(key, d[property]);
 			if (decryptedValue == potentialDuplicateDecryptedValue)
 			{
 				if (!duplicateValues[value.id].includes(d.id))
@@ -345,11 +343,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		{
 			if (encryptedDataState.passwordHash)
 			{
-				return calculateHash(key, encryptedDataState.passwords, "password") == cryptUtility.decrypt(key, encryptedDataState.passwordHash);
+				return calculateHash(key, encryptedDataState.passwords, "password") == window.api.utilities.crypt.decrypt(key, encryptedDataState.passwordHash);
 			}
 			else if (encryptedDataState.valueHash)
 			{
-				return calculateHash(key, encryptedDataState.nameValuePairs, "value") == cryptUtility.decrypt(key, encryptedDataState.valueHash);
+				return calculateHash(key, encryptedDataState.nameValuePairs, "value") == window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash);
 			}
 		}
 		else
@@ -364,11 +362,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	{
 		if (encryptedDataState.passwordHash)
 		{
-			return calculateHash(key, encryptedDataState.passwords, "password") == cryptUtility.decrypt(key, encryptedDataState.passwordHash);
+			return calculateHash(key, encryptedDataState.passwords, "password") == window.api.utilities.crypt.decrypt(key, encryptedDataState.passwordHash);
 		}
 		else if (encryptedDataState.valueHash)
 		{
-			return calculateHash(key, encryptedDataState.nameValuePairs, "value") == cryptUtility.decrypt(key, encryptedDataState.valueHash);
+			return calculateHash(key, encryptedDataState.nameValuePairs, "value") == window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash);
 		}
 
 		return false;
@@ -381,7 +379,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			return false;
 		}
 
-		password.id = generator.uniqueId(encryptedDataState.passwords);
+		password.id = generateUniqueID(encryptedDataState.passwords);
 
 		const passwordStore: PasswordStore = usePasswordStore(key, password);
 		encryptedDataState.passwords.push(passwordStore);
@@ -428,7 +426,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
 			encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
-			encryptedDataState.passwordHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
+			encryptedDataState.passwordHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.Passwords, addedGroups, removedGroups, password.id);
@@ -448,7 +446,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
-		encryptedDataState.passwordHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
+		encryptedDataState.passwordHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
 
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.Passwords, password);
@@ -465,7 +463,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			return false;
 		}
 
-		nameValuePair.id = generator.uniqueId(encryptedDataState.nameValuePairs);
+		nameValuePair.id = generateUniqueID(encryptedDataState.nameValuePairs);
 
 		const nameValuePairStore: NameValuePairStore = useNameValuePair(key, nameValuePair);
 		encryptedDataState.nameValuePairs.push(nameValuePairStore);
@@ -510,7 +508,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
 			encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
-			encryptedDataState.valueHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
+			encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
 		}
 
 		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
@@ -530,7 +528,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
-		encryptedDataState.valueHash = cryptUtility.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
+		encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
 
 		// remove from groups and filters
 		stores.groupStore.removeValueFromGroups(DataType.NameValuePairs, nameValuePair);

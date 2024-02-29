@@ -24,11 +24,11 @@ import { Ref, defineComponent, onMounted, ref, watch, toRaw, ComputedRef, comput
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
 import { DataType } from '../../Types/Table';
-import { stores } from '../../Objects/Stores';
 import { hexToRgb, mixHexes, rgbToHex, toSolidHex } from '@renderer/Helpers/ColorHelper';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { tween } from '@renderer/Helpers/TweenHelper';
 import { RGBColor } from '@renderer/Types/Colors';
+import { stores } from '@renderer/Objects/Stores';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler, zoomPlugin)
 

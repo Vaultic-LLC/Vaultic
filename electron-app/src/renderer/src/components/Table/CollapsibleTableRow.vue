@@ -16,9 +16,9 @@ import { computed, ComputedRef, defineComponent, inject, Ref, ref } from 'vue';
 import GroupIcon from './GroupIcon.vue';
 import TableRow from "../Table/Rows/TableRow.vue"
 import { Group } from '../../Types/Table';
-import { stores } from '../../Objects/Stores';
 import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import { GroupIconModel } from '@renderer/Types/Models';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "CollapsibleTableRow",

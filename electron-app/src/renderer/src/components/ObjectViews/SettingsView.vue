@@ -38,10 +38,10 @@ import EnumInputField from '../InputFields/EnumInputField.vue';
 
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
-import { stores } from '../../Objects/Stores';
-import { SettingsState } from '../../Objects/Stores/SettingsStore';
 import { FilterStatus } from '../../Types/Table';
 import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
+import { SettingsState } from '@renderer/Objects/Stores/SettingsStore';
 
 export default defineComponent({
 	name: "ValueView",

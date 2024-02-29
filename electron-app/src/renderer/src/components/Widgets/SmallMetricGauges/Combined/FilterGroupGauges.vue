@@ -13,8 +13,8 @@ import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 import EmptyFilterGroupGauge from '../Single/EmptyFilterGroupGauge.vue';
 import DuplicateFilterGroupGauge from '../Single/DuplicateFilterGroupGauge.vue';
 import CombinedMetricGaugeContainer from '../../../SmallMetricGauges/CombinedMetricGaugeContainer.vue';
-import { stores } from '@renderer/Objects/Stores';
 import { DataType } from '@renderer/Types/Table';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "FilterGroupGauges",

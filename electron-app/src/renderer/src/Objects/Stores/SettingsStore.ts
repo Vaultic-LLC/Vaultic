@@ -3,7 +3,7 @@ import { ComputedRef, Ref, computed, reactive, ref, watch } from "vue";
 import { Store, Stores, stores } from ".";
 import { DataType, FilterStatus } from "../../Types/Table";
 import { AutoLockTime } from "../../Types/Settings";
-import File from "../Files/File"
+import fileHelper from "@renderer/Helpers/fileHelper";
 
 export interface SettingsState
 {
@@ -42,7 +42,6 @@ export interface SettingsStore extends Store
 	updateSettings: (key: string, newState: SettingsState) => Promise<void>;
 }
 
-const settingsFile: File = new File("settings");
 let settingsState: SettingsState;
 
 export default function useSettingsStore(): SettingsStore
@@ -92,7 +91,7 @@ export default function useSettingsStore(): SettingsStore
 				resolve(true);
 			}
 
-			settingsFile.read<SettingsState>(key).then((state: SettingsState) =>
+			fileHelper.read<SettingsState>(key, window.api.files.settings).then((state: SettingsState) =>
 			{
 				state.loadedFile = true;
 				Object.assign(settingsState, state);
@@ -108,7 +107,7 @@ export default function useSettingsStore(): SettingsStore
 
 	function writeState(key: string): Promise<void>
 	{
-		return settingsFile.write(key, settingsState);
+		return fileHelper.write(key, settingsState, window.api.files.settings);
 	}
 
 	function resetToDefault()

@@ -23,7 +23,7 @@ import { defineComponent, ComputedRef, computed, ref, Ref } from 'vue';
 import ColorPaletteView from '../../../components/ObjectViews/ColorPaletteView.vue';
 
 import { ColorPalette } from '../../../Types/Colors';
-import { stores } from '../../../Objects/Stores';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "EditColorPalettePopup",

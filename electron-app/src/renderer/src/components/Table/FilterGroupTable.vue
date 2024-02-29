@@ -54,10 +54,10 @@ import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeade
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
-import { stores } from '../../Objects/Stores';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { v4 as uuidv4 } from 'uuid';
 import { useRequestAuthFunction, useLoadingIndicator, useToastFunction } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: 'FilterGroupTable',

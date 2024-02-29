@@ -56,10 +56,9 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import LoadingIndicator from '../Loading/LoadingIndicator.vue';
 
-import { stores } from '../../Objects/Stores';
 import { ColorPalette } from '../../Types/Colors';
-import { containsNumber, containsSpecialCharacter, containsUppercaseAndLowercaseNumber, isWeak } from '../../Helpers/EncryptedDataHelper';
 import { defaultInputColorModel, InputColorModel } from '@renderer/Types/Models';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "AuthenticationPopup",
@@ -189,7 +188,7 @@ export default defineComponent({
 
 		function enforceStringKey(key: string): [boolean, string]
 		{
-			const [valueIsWeak, isWeakMessage] = isWeak(key, "Key");
+			const [valueIsWeak, isWeakMessage] = window.api.helpers.validation.isWeak(key, "Key");
 			return [!valueIsWeak, isWeakMessage];
 		}
 
@@ -206,9 +205,9 @@ export default defineComponent({
 			}
 
 			greaterThanTwentyCharacters.value = newValue.length >= 20;
-			containesUpperAndLowerCase.value = containsUppercaseAndLowercaseNumber(newValue);
-			hasNumber.value = containsNumber(newValue);
-			hasSpecialCharacter.value = containsSpecialCharacter(newValue);
+			containesUpperAndLowerCase.value = window.api.helpers.validation.containsUppercaseAndLowercaseNumber(newValue);
+			hasNumber.value = window.api.helpers.validation.containsNumber(newValue);
+			hasSpecialCharacter.value = window.api.helpers.validation.containsSpecialCharacter(newValue);
 		});
 
 		watch(() => reEnterKey.value, (newValue) =>

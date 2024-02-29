@@ -1,7 +1,7 @@
-import { stores } from "../Objects/Stores";
+import { stores } from "@renderer/Objects/Stores";
 import { NameValuePair, NameValuePairType, Password, SecurityQuestion } from "../Types/EncryptedData";
 import { Filter, FilterConditionType, DataType, FilterCondition, Group } from "../Types/Table";
-import generator from "./Generator";
+import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
 
 const key: string = "TestKey";
 
@@ -33,8 +33,8 @@ function createPasswords()
 
 	const thirtyOneDaysAsMiliSeconds: number = 1000 * 86400 * 31;
 	const testSecurityQuestions: SecurityQuestion[] = [
-		{ id: generator.uniqueId([]), question: "Who are You", questionLength: 11, answer: "Me", answerLength: 2 },
-		{ id: generator.uniqueId([]), question: "What color is the sky", questionLength: 21, answer: "red", answerLength: 3 }
+		{ id: generateUniqueID([]), question: "Who are You", questionLength: 11, answer: "Me", answerLength: 2 },
+		{ id: generateUniqueID([]), question: "What color is the sky", questionLength: 21, answer: "red", answerLength: 3 }
 	];
 
 	const johnsGroup: Group = stores.groupStore.groups.filter(g => g.name == "Johns")[0];

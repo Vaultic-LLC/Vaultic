@@ -15,7 +15,7 @@
 import { ComputedRef, computed, defineComponent } from "vue";
 import { ColorPalette } from '../../Types/Colors';
 import ColorPaletteDisplay from "./ColorPaletteDisplay.vue";
-import { stores } from "../../Objects/Stores";
+import { stores } from "@renderer/Objects/Stores";
 
 export default defineComponent({
 	name: "ColorPaletteContainer",
