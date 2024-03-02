@@ -1,4 +1,5 @@
 import { createHash } from "crypto"
+import currentLicense from "../Objects/License";
 
 export interface HashUtility
 {
@@ -7,6 +8,11 @@ export interface HashUtility
 
 function hash(value: string): string
 {
+	if (!currentLicense.isValid())
+	{
+		return "";
+	}
+
 	return createHash('sha256').update(value).digest('base64');
 }
 

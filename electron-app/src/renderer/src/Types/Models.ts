@@ -1,6 +1,7 @@
 import { ComputedRef, Ref, ref } from "vue";
 import { v4 as uuidv4 } from 'uuid';
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
+import { Device } from "./AccountSetup";
 
 export interface SmallMetricGaugeModel
 {
@@ -154,4 +155,23 @@ export function defaultInputColorModel(color: string): InputColorModel
 		borderColor: defaultInputColor,
 		activeBorderColor: color
 	}
+}
+
+export enum AccountSetupView
+{
+	NotSet,
+	IncorrectDevice,
+	UsernamePassword,
+	CreateAccount,
+	MFA,
+	SetupPayment,
+	UpdatePayment,
+	ReActivate
+}
+
+export interface AccountSetupModel
+{
+	currentView: AccountSetupView;
+	updateDevicesLeft?: number;
+	devices?: Device[];
 }

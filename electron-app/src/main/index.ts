@@ -37,7 +37,7 @@ function createWindow(): void
 	}
 	else
 	{
-		mainWindow.loadFile(join(__dirname, '../index.html'))
+		mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
 	}
 }
 

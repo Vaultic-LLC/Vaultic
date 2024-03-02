@@ -1,5 +1,10 @@
 <template>
 	<Teleport to="#body">
+		<Transition name="fade" mode="out-in">
+			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" />
+		</Transition>
+	</Teleport>
+	<Teleport to="#body">
 		<Transition name="lockFade" mode="out-in">
 			<GlobalAuthenticationPopup v-if="needsAuthentication" @onAuthenticationSuccessful="onGlobalAuthSuccessful" />
 		</Transition>
@@ -66,13 +71,15 @@ import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import SliderField from './components/InputFields/SliderField.vue';
 import LoadingPopup from './components/Loading/LoadingPopup.vue';
+import AccountSetupPopup from "./components/Account/AccountSetupPopup.vue"
 
-import { SingleSelectorItemModel } from './Types/Models';
+import { AccountSetupModel, AccountSetupView, SingleSelectorItemModel } from './Types/Models';
 import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import { stores } from './Objects/Stores';
+import { LicenseResponse, LicenseStatus } from './Types/AccountSetup';
 
 export default defineComponent({
 	name: 'App',
@@ -96,10 +103,13 @@ export default defineComponent({
 		AboutIconCard,
 		LayoutIconCard,
 		SliderField,
-		LoadingPopup
+		LoadingPopup,
+		AccountSetupPopup
 	},
 	setup()
 	{
+		const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.NotSet });
+
 		// const cursor: Ref<HTMLElement | null> = ref(null);
 		const needsAuthentication: Ref<boolean> = ref(stores.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
@@ -237,8 +247,11 @@ export default defineComponent({
 
 		let lastMouseover: number = 0;
 		const threshold: number = 1000;
+
 		onMounted(async () =>
 		{
+			showLoadingIndicatorFunc(stores.settingsStore.currentPrimaryColor.value, "Checking License");
+
 			document.getElementById('body')?.addEventListener('mouseover', (_) =>
 			{
 				if (Date.now() - lastMouseover < threshold)
@@ -249,6 +262,9 @@ export default defineComponent({
 				stores.appStore.resetSessionTime();
 				lastMouseover = Date.now();
 			});
+
+			await checkLicense();
+			hideLoadingIndicatorFunc();
 		});
 
 		watch(() => stores.needsAuthentication, (newValue) =>
@@ -256,8 +272,73 @@ export default defineComponent({
 			needsAuthentication.value = newValue;
 		});
 
+		async function checkLicense()
+		{
+			const response = await window.api.helpers.license.checkLicense();
+			if (response.Success)
+			{
+				onAccountSetupSuccess();
+			}
+			else
+			{
+				handleFailedLicenseResponse(response);
+			}
+		}
+
+		function onAccountSetupSuccess()
+		{
+			accountSetupModel.value.currentView = AccountSetupView.NotSet;
+
+			setInterval(async () =>
+			{
+				if (window.api.helpers.license.currentLicenseStatus() != 1)
+				{
+					const response = await window.api.helpers.license.checkLicense();
+					if (!response.Success)
+					{
+						handleFailedLicenseResponse(response);
+					}
+				}
+
+			}, 600000);
+		}
+
+		function handleFailedLicenseResponse(response: LicenseResponse)
+		{
+			if (response.LicenseIsExpired)
+			{
+				accountSetupModel.value.currentView = AccountSetupView.UpdatePayment;
+			}
+			else if (response.IncorrectDevice)
+			{
+				accountSetupModel.value.currentView = AccountSetupView.IncorrectDevice;
+				accountSetupModel.value.updateDevicesLeft = response.DeviceUpdatesLeft;
+				accountSetupModel.value.devices = response.Devices;
+			}
+			else if (response.UnknownLicense)
+			{
+				accountSetupModel.value.currentView = AccountSetupView.UsernamePassword;
+			}
+			else if (response.LicenseStatus != undefined)
+			{
+				if (response.LicenseStatus == LicenseStatus.NotActivated)
+				{
+					accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
+				}
+				else if (response.LicenseStatus == LicenseStatus.Inactive)
+				{
+					accountSetupModel.value.currentView = AccountSetupView.UpdatePayment;
+				}
+				else if (response.LicenseStatus == LicenseStatus.Cancelled)
+				{
+					accountSetupModel.value.currentView = AccountSetupView.ReActivate;
+				}
+			}
+		}
+
 		let clr = "#0f111d";
 		return {
+			accountSetupModel,
 			needsAuthentication,
 			backgroundColor,
 			currentColorPalette,
@@ -305,6 +386,7 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 	background-color: #0f111d;
 	overflow: hidden;
+	text-align: center;
 }
 
 h2,

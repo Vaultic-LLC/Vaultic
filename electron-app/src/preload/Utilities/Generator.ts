@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import currentLicense from '../Objects/License';
 
 export interface GeneratorUtility
 {
@@ -8,11 +9,21 @@ export interface GeneratorUtility
 
 function uniqueId(): string
 {
+	if (!currentLicense.isValid())
+	{
+		return "";
+	}
+
 	return uuidv4();
 }
 
 function randomValue(length: number): string
 {
+	if (!currentLicense.isValid())
+	{
+		return "";
+	}
+
 	let validRandomPassword: boolean = false;
 	let validPasswordTest = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
 	let randomPassword: string = "";

@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import hashUtility from "./HashUtility";
+import currentLicense from "../Objects/License";
 
 export interface CryptUtility
 {
@@ -13,6 +14,11 @@ const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
 
 function encrypt(key: string, value: string): string
 {
+	if (!currentLicense.isValid())
+	{
+		return "";
+	}
+
 	const hashedKey: string = hashUtility.hash(key);
 	const keyBytes = Buffer.from(hashedKey, 'base64')
 
@@ -29,6 +35,11 @@ function encrypt(key: string, value: string): string
 // string is the result of an incorect key or not
 function decrypt(key: string, value: string): string
 {
+	if (!currentLicense.isValid())
+	{
+		return "";
+	}
+
 	try
 	{
 		const cipher: Buffer = Buffer.from(value, "base64");

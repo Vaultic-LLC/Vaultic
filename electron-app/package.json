@@ -2,7 +2,7 @@
 	"name": "vaultic",
 	"version": "1.0.0",
 	"description": "A Password Manager",
-	"main": "./out/main/index.js",
+	"main": "./dist/main/index.js",
 	"author": "Vaultic LLC",
 	"homepage": "https://www.electronjs.org",
 	"scripts": {

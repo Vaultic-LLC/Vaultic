@@ -25,10 +25,12 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",
-	props: ["show", "closePopup"],
+	props: ["show", "closePopup", "height", "width"],
 	setup(props)
 	{
 		const showPopup: ComputedRef<boolean> = computed(() => props.show);
+		const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : '80%');
+		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : '70%');
 
 		const closePopupFunc: ComputedRef<(saved: boolean) => void> = computed(() => props.closePopup);
 		provide(ClosePopupFuncctionKey, closePopupFunc);
@@ -149,6 +151,8 @@ export default defineComponent({
 			secondaryColorOne,
 			secondaryColorTwo,
 			showPopup,
+			computedHeight,
+			computedWidth,
 			closePopup
 		};
 	}
@@ -176,8 +180,8 @@ export default defineComponent({
 }
 
 .objectyPopup {
-	height: 80%;
-	width: 70%;
+	height: v-bind(computedHeight);
+	width: v-bind(computedWidth);
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
@@ -208,22 +212,6 @@ export default defineComponent({
 	z-index: 6;
 	transition: 0.3s;
 }
-
-/* .objectyPopup::after {
-	content: "";
-	position: absolute;
-	width: 120%;
-	height: 200%;
-	border-radius: inherit;
-	background-image: linear-gradient(0,
-			v-bind(primaryColor),
-			v-bind(secondaryColorOne),
-			v-bind(secondaryColorTwo));
-	animation: rotate 5s linear infinite;
-	animation-delay: -1s;
-	z-index: 6;
-	transition: 0.3s;
-} */
 
 .objectyPopup .closeIconContainer {
 	position: absolute;

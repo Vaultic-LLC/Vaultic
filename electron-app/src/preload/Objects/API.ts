@@ -1,10 +1,13 @@
-import { DeviceInfo, getDeviceInfo } from './DeviceInfo';
-import userVaulticServer, { VaulticServer } from "./Server";
+import { getDeviceInfo } from './DeviceInfo';
+import vaulticServer, { VaulticServer } from "./VaulticServer";
 import cryptUtility, { CryptUtility } from '../Utilities/CryptUtility';
 import validationHelper, { ValidationHelper } from '../Helpers/ValidationHelper';
 import hashUtility, { HashUtility } from '../Utilities/HashUtility';
 import generatorUtility, { GeneratorUtility } from '../Utilities/Generator';
 import files, { Files } from './Files/Files';
+import license, { LicenseStatus } from "./License";
+import licenseHelper, { LicenseHelper } from '../Helpers/LicenseHelper';
+import { DeviceInfo } from '../Types/Device';
 
 export interface Utilities
 {
@@ -16,6 +19,7 @@ export interface Utilities
 export interface Helpers
 {
 	validation: ValidationHelper;
+	license: LicenseHelper;
 }
 
 export interface API
@@ -29,7 +33,7 @@ export interface API
 
 const api: API = {
 	device: getDeviceInfo(),
-	server: userVaulticServer(),
+	server: vaulticServer,	// TODO: Is this needed? yes, but only certain endpoints. Don't expose the whole server if we don't need to
 	files: files,
 	utilities:
 	{
@@ -39,8 +43,19 @@ const api: API = {
 	},
 	helpers:
 	{
-		validation: validationHelper
+		validation: validationHelper,
+		license: licenseHelper
 	}
+}
+
+export async function initAPI(): Promise<API>
+{
+	setTimeout(() =>
+	{
+		license.status = LicenseStatus.Active;
+	}, 5000);
+
+	return api;
 }
 
 export default api;
