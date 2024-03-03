@@ -2,7 +2,7 @@
 	"name": "vaultic",
 	"version": "1.0.0",
 	"description": "A Password Manager",
-	"main": "./dist/main/index.js",
+	"main": "./out/main/index.js",
 	"author": "Vaultic LLC",
 	"homepage": "https://www.electronjs.org",
 	"scripts": {
@@ -13,7 +13,7 @@
 		"typecheck": "npm run typecheck:node && npm run typecheck:web",
 		"start": "electron-vite preview",
 		"dev": "electron-vite dev",
-		"build": "npm run typecheck && electron-vite build",
+		"build": "electron-vite build",
 		"postinstall": "electron-builder install-app-deps",
 		"build:win": "npm run build && electron-builder --win --config",
 		"build:mac": "npm run build && electron-builder --mac --config",

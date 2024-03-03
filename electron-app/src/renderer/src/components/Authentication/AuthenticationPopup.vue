@@ -32,10 +32,10 @@
 				<LoadingIndicator v-if="disabled && !unlocked" :color="primaryColor" />
 			</Transition>
 			<div class="authenticationPopupButtons">
-				<button ref="enterButton" class="authenticationPopupButtons__button" :class="{ disabled: disabled }"
-					@click="onEnter">Enter</button>
-				<button v-if="allowCancel" class="authenticationPopupButtons__button" :disabled="disabled"
-					@click="onCancel">Cancel</button>
+				<PopupButton :color="color" :text="'Enter'" :disabled="disabled" :width="'100px'" :height="'35px'"
+					:fontSize="'20px'" @onClick="onEnter"></PopupButton>
+				<PopupButton v-if="allowCancel" :color="color" :text="'Cancel'" :disabled="disabled" :width="'100px'"
+					:height="'35px'" :fontSize="'20px'" @onClick="onCancel"></PopupButton>
 			</div>
 		</div>
 		<div v-if="showPulsing" class="pulsingCircles" :class="{ unlocked: unlocked }">
@@ -55,6 +55,7 @@ import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, re
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import LoadingIndicator from '../Loading/LoadingIndicator.vue';
+import PopupButton from '../InputFields/PopupButton.vue';
 
 import { ColorPalette } from '../../Types/Colors';
 import { defaultInputColorModel, InputColorModel } from '@renderer/Types/Models';
@@ -66,7 +67,8 @@ export default defineComponent({
 	{
 		EncryptedInputField,
 		CheckboxInputField,
-		LoadingIndicator
+		LoadingIndicator,
+		PopupButton
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
 	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color", "beforeEntry", "focusOnShow"],
@@ -74,7 +76,6 @@ export default defineComponent({
 	{
 		const encryptedInputField: Ref<null> = ref(null);
 		const confirmEncryptedInputField: Ref<null> = ref(null);
-		const enterButton: Ref<HTMLElement | null> = ref(null);
 		const loadingIndicator: Ref<null> = ref(null);
 
 		const key: Ref<string> = ref("");
@@ -110,7 +111,6 @@ export default defineComponent({
 			}
 
 			disabled.value = true;
-			enterButton.value?.classList.add('disabled');
 			if (Date.now() - lastAuthAttempt < 1000)
 			{
 				disabled.value = false;
@@ -242,7 +242,6 @@ export default defineComponent({
 
 		return {
 			loadingIndicator,
-			enterButton,
 			encryptedInputField,
 			confirmEncryptedInputField,
 			key,
@@ -377,31 +376,6 @@ export default defineComponent({
 	align-items: center;
 	justify-content: space-between;
 	column-gap: 50px;
-}
-
-.authenticationPopupButtons__button {
-	width: 100px;
-	height: 35px;
-	background-color: var(--app-color);
-	color: white;
-	border-radius: 10px;
-	border: 2px solid v-bind('primaryColor');
-	transition: 0.3s;
-	font-size: 20px;
-	animation: fadeIn 1s linear forwards;
-	outline: none;
-}
-
-.authenticationPopupButtons__button:hover,
-.authenticationPopupButtons__button:focus {
-	box-shadow: 0 0 25px v-bind('primaryColor');
-}
-
-.authenticationPopupButtons__button:disabled,
-.authenticationPopupButtons__button.disabled {
-	box-shadow: 0 0 0 0;
-	border: 2px solid gray;
-	color: gray;
 }
 
 .authenticationPopup.unlocked.rubberband {

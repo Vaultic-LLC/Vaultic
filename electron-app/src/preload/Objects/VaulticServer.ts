@@ -29,7 +29,7 @@ async function checkLicense(license: string): Promise<CheckLicenseResponse>
 	if (!license)
 	{
 		await new Promise((resolve) => setTimeout(resolve, 5000));
-		return { Success: true };
+		return { Success: true, Key: 'TestKey', Expiration: '2024-04-01' };
 		return { Success: false };
 	}
 

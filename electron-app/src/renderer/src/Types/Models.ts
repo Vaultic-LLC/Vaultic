@@ -161,7 +161,7 @@ export enum AccountSetupView
 {
 	NotSet,
 	IncorrectDevice,
-	UsernamePassword,
+	SignIn,
 	CreateAccount,
 	MFA,
 	SetupPayment,

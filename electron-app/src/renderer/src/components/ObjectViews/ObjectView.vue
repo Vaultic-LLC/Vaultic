@@ -7,18 +7,19 @@
 			<slot></slot>
 		</div>
 		<div class="createButtons">
-			<button @click="onSave" :disabled="disabled" class="createButton" :style="buttonStyles">{{ buttonText
-			}}</button>
-			<button v-if="creating" @click="onSaveAndClose" :disabled="disabled" class="createButton"
-				:style="buttonStyles">Create and Close</button>
+			<PopupButton :color="color" :text="buttonText" :disabled="disabled" :fontSize="'20px'" :width="'200px'"
+				:height="'50px'" @onClick="onSave" />
+			<PopupButton :color="color" :text="'Create and Close'" :disabled="disabled" :fontSize="'20px'" :width="'200px'"
+				:height="'50px'" @onClick="onSaveAndClose" />
 		</div>
 	</div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, provide, reactive, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, provide, ref, watch } from 'vue';
 
 import { ClosePopupFuncctionKey, ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey, ShowToastFunctionKey, RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import { GridDefinition } from '../../Types/Models';
+import PopupButton from '../InputFields/PopupButton.vue';
 
 export default defineComponent({
 	name: "ObjectView",
@@ -31,29 +32,27 @@ export default defineComponent({
 		const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
 		const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
 		const disabled: Ref<boolean> = ref(false);
-
 		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
 		const showAuthPopup: Ref<boolean> = ref(false);
 
-		let validationFunctions: Ref<{ (): boolean }[]> = ref([]);
-		let decryptFunctions: Ref<{ (key: string): void }[]> = ref([]);
-		const requestAuthorization: Ref<boolean> = ref(false);
+		let validationFunctions: Ref<{ (): boolean; }[]> = ref([]);
+		let decryptFunctions: Ref<{ (key: string): void; }[]> = ref([]);
 
+		const requestAuthorization: Ref<boolean> = ref(false);
 		provide(ValidationFunctionsKey, validationFunctions);
 		provide(DecryptFunctionsKey, decryptFunctions);
 		provide(RequestAuthorizationKey, requestAuthorization);
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
-		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
+		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void; } | undefined =
+			inject(RequestAuthenticationFunctionKey);
 
-		const buttonStyles = reactive({
-			border: `2px solid ${props.color}`,
-			'--hover-color': props.color
-		});
+		const showToastFunction: { (color: string, toastText: string, success: boolean): void; } =
+			inject(ShowToastFunctionKey, () => { });
 
 		function onSave()
 		{
 			disabled.value = true;
+
 			let allValid: boolean = true;
 			validationFunctions.value.forEach(f => allValid = f() && allValid);
 
@@ -79,6 +78,7 @@ export default defineComponent({
 		function onSaveAndClose()
 		{
 			disabled.value = true;
+
 			let allValid: boolean = true;
 			validationFunctions.value.forEach(f => allValid = f() && allValid);
 
@@ -132,7 +132,6 @@ export default defineComponent({
 			objectViewForm,
 			gridDef,
 			showAuthPopup,
-			buttonStyles,
 			disabled,
 			onAuthenticationSuccessful,
 			authenticationCancelled,
@@ -140,6 +139,7 @@ export default defineComponent({
 			onSaveAndClose
 		};
 	},
+	components: { PopupButton }
 })
 </script>
 
@@ -168,30 +168,5 @@ export default defineComponent({
 	align-items: center;
 	justify-content: space-between;
 	column-gap: 50px;
-}
-
-.objectViewContainer .createButtons .createButton {
-	width: 200px;
-	height: 50px;
-	background-color: var(--app-color);
-	color: white;
-	border-radius: 10px;
-	transition: 0.3s;
-	font-size: 20px;
-	animation: fadeIn 1s linear forwards;
-
-	outline: none;
-}
-
-.objectViewContainer .createButtons .createButton:hover,
-.objectViewContainer .createButtons .createButton:focus {
-	box-shadow: 0 0 25px var(--hover-color);
-}
-
-.objectViewContainer .createButtons .createButton:disabled,
-.objectViewContainer .createButtons .createButton.disabled {
-	box-shadow: 0 0 0 0;
-	border: 2px solid gray;
-	color: gray;
 }
 </style>

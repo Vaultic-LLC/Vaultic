@@ -20,7 +20,6 @@ function getComputerName()
 }
 
 const deviceName = getComputerName() ?? "";
-console.log("getComputerName", getComputerName());
 
 export function getDeviceInfo(): DeviceInfo
 {

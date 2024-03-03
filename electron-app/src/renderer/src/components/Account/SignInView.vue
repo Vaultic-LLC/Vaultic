@@ -1,29 +1,38 @@
 <template>
 	<div class="usernamePasswordViewContainer">
-		<div>
+		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
+			:gridDefinition="gridDefinition" @onSubmit="onSubmit">
 			<TextInputField :color="color" :label="'Username'" v-model="username"
-				:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
+				:style="{ 'grid-row': '1 / span 2', 'grid-column': '1 / span 2' }" />
 			<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
-				:isInitiallyEncrypted="false" :showRandom="true" :showUnlock="true" :required="true" showCopy="true"
-				:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" />
-			<div>Don't have an account? <button @click="moveToCreateAccount">Create One</button></div>
-			<button @click="onSubmit">Submit</button>
-		</div>
+				:isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true" :showCopy="false"
+				:style="{ 'grid-row': '3 / span 2', 'grid-column': '1 / span 2' }" />
+			<div class="usernamePasswordViewContainer__createAccountLink"
+				:style="{ 'grid-row': '5', 'grid-column': '1 / span 3' }">Don't have an account?
+				<button class="usernamePasswordViewContainer__createAccountLinkButton" @click="moveToCreateAccount">
+					Create One
+				</button>
+			</div>
+		</AccountSetupView>
 	</div>
 </template>
 
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+
+import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
-import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
+
+import { GridDefinition, InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
 
 export default defineComponent({
-	name: "UsernamePasswordView",
+	name: "SignInView",
 	components:
 	{
 		TextInputField,
-		EncryptedInputField
+		EncryptedInputField,
+		AccountSetupView
 	},
 	emits: ['onMoveToCreateAccount', 'onSuccess'],
 	props: ['color'],
@@ -33,6 +42,12 @@ export default defineComponent({
 		const password: Ref<string> = ref('');
 
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
+		const gridDefinition: GridDefinition = {
+			rows: 5,
+			rowHeight: '50px',
+			columns: 3,
+			columnWidth: '100px'
+		}
 
 		function moveToCreateAccount()
 		{
@@ -65,6 +80,7 @@ export default defineComponent({
 			username,
 			password,
 			colorModel,
+			gridDefinition,
 			moveToCreateAccount,
 			onSubmit
 		};
@@ -72,4 +88,22 @@ export default defineComponent({
 })
 </script>
 
-<style></style>
+<style>
+.usernamePasswordViewContainer__createAccountLink {
+	color: white;
+	font-size: 17px;
+}
+
+.usernamePasswordViewContainer__createAccountLinkButton {
+	background-color: var(--app-color);
+	color: v-bind(color);
+	text-decoration: underline;
+	border: none;
+	cursor: pointer;
+	font-size: 17px;
+}
+
+.usernamePasswordViewContainer__createAccountLinkButton:hover {
+	opacity: 0.8;
+}
+</style>

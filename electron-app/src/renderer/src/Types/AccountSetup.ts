@@ -15,7 +15,6 @@ export interface Device
 	MacAddress: string;
 }
 
-
 export interface LicenseResponse
 {
 	Success: boolean;

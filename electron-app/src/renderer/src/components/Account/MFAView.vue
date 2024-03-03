@@ -5,7 +5,7 @@
 				<div>Download app</div>
 				<div>scan code</div>
 				<div>enter code</div>
-				<img src="qrCode" />
+				<img src="" />
 			</div>
 			<TextInputField :color="color" :label="'Code'" v-model="mfaCode"
 				:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />

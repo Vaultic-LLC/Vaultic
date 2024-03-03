@@ -1,7 +1,10 @@
 <template>
+	<Transition name="fade" mode="out-in">
+		<LoadingPopup v-if="showLoadingIndicator" :color="loadingColor" :text="loadingText" />
+	</Transition>
 	<Teleport to="#body">
 		<Transition name="fade" mode="out-in">
-			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" />
+			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" :model="accountSetupModel" />
 		</Transition>
 	</Teleport>
 	<Teleport to="#body">
@@ -43,9 +46,6 @@
 	</div>
 	<Transition name="fade" mode="out-in">
 		<ToastPopup v-if="showToast" :color="toastColor" :text="toastText" :success="toastSuccess" />
-	</Transition>
-	<Transition name="fade" mode="out-in">
-		<LoadingPopup v-if="showLoadingIndicator" :color="loadingColor" :text="loadingText" />
 	</Transition>
 </template>
 
@@ -317,7 +317,7 @@ export default defineComponent({
 			}
 			else if (response.UnknownLicense)
 			{
-				accountSetupModel.value.currentView = AccountSetupView.UsernamePassword;
+				accountSetupModel.value.currentView = AccountSetupView.SignIn;
 			}
 			else if (response.LicenseStatus != undefined)
 			{
@@ -333,6 +333,10 @@ export default defineComponent({
 				{
 					accountSetupModel.value.currentView = AccountSetupView.ReActivate;
 				}
+			}
+			else
+			{
+				// unknown error, should check connection or reach out to customer service
 			}
 		}
 

@@ -48,14 +48,4 @@ const api: API = {
 	}
 }
 
-export async function initAPI(): Promise<API>
-{
-	setTimeout(() =>
-	{
-		license.status = LicenseStatus.Active;
-	}, 5000);
-
-	return api;
-}
-
 export default api;

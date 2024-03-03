@@ -3,7 +3,7 @@
 		<div class="objectPopupGlass" @click.stop="closePopup">
 		</div>
 		<div class="objectyPopup">
-			<div class="closeIconContainer" @click.stop="closePopup">
+			<div v-if="preventClose" class="closeIconContainer" @click.stop="closePopup">
 				<ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
 			</div>
 			<div class="objectyPopupContent">
@@ -25,7 +25,7 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",
-	props: ["show", "closePopup", "height", "width"],
+	props: ["show", "closePopup", "height", "width", 'preventClose'],
 	setup(props)
 	{
 		const showPopup: ComputedRef<boolean> = computed(() => props.show);
@@ -112,6 +112,11 @@ export default defineComponent({
 
 		function closePopup()
 		{
+			if (props.preventClose)
+			{
+				return;
+			}
+
 			hideAll();
 			closePopupFunc.value(false);
 		}
@@ -201,7 +206,7 @@ export default defineComponent({
 .objectyPopup::before {
 	content: "";
 	position: absolute;
-	width: 120%;
+	width: 150%;
 	height: 200%;
 	border-radius: inherit;
 	background-image: linear-gradient(0,

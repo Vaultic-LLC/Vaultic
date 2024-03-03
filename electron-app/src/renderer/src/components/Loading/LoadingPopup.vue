@@ -39,7 +39,7 @@ export default defineComponent({
 	left: 100%;
 	top: 0;
 	left: 0;
-	z-index: 90;
+	z-index: 200;
 }
 
 .loadingPopupContainer__popup {
