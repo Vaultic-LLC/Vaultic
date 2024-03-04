@@ -10,7 +10,7 @@ export interface PasswordStore extends Password
 		updatedSecurityQuestionQuestions: string[], updatedSecurityQuestionAnswers: string[]) => void;
 }
 
-export default function usePasswordStore(key: string, password: Password, encrypted: boolean = false): PasswordStore
+export default async function usePasswordStore(key: string, password: Password, encrypted: boolean = false): Promise<PasswordStore>
 {
 	const passwordState: Password = reactive({
 		...password
@@ -100,7 +100,7 @@ export default function usePasswordStore(key: string, password: Password, encryp
 		}
 	}
 
-	// reading in previous state, values are already encrypted and shouldn't need any updating
+	// creating new password
 	if (!encrypted)
 	{
 		// these can't be computed refs since we want to keep the password encrypted. Calculate them when we're creating the
@@ -110,9 +110,10 @@ export default function usePasswordStore(key: string, password: Password, encryp
 		checkContainsUsername();
 		encryptPassword(key);
 		encryptSecurityQuestions(key);
+
+		await stores.filterStore.addFiltersToNewValue(key, stores.filterStore.passwordFilters, passwordState, "passwords");
 	}
 
-	stores.filterStore.addFiltersToNewValue(stores.filterStore.passwordFilters, passwordState, "passwords");
 
 	return {
 		get id() { return passwordState.id; },

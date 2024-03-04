@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, onMounted, onUnmounted } from "vue";
 
 export default defineComponent({
 	name: "PopupButton",
@@ -17,6 +17,22 @@ export default defineComponent({
 		{
 			ctx.emit('onClick');
 		}
+
+		function onKeyUp(e: KeyboardEvent)
+		{
+			if (e.key === 'Enter')
+			{
+				e.stopPropagation();
+				onClick();
+			}
+		}
+
+		onMounted(() =>
+		{
+			window.addEventListener("keyup", onKeyUp);
+		});
+
+		onUnmounted(() => window.removeEventListener("keyup", onKeyUp));
 
 		return {
 			onClick

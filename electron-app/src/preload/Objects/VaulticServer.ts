@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { getDeviceInfo } from './DeviceInfo';
 import { CheckLicenseResponse, CreateAccountResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from '../Types/Responses';
+import currentLicense from './License';
+import cryptUtility from '../Utilities/CryptUtility';
 
 export interface VaulticServer
 {
@@ -10,7 +12,9 @@ export interface VaulticServer
 	generateMFA: () => Promise<GenerateMFAResponse>;
 	createAccount: (firstName: string, lastName: string, email: string, username: string, password: string,
 		mfaKey: string, mfaCode: string, createdTime: number) => Promise<CreateAccountResponse>;
-	validateMFACode(username: string, password: string, mfaCode: string): Promise<ValidateMFACodeResponse>
+	validateMFACode(username: string, password: string, mfaCode: string): Promise<ValidateMFACodeResponse>;
+	syncUserData: (key: string, appData: string, settingsData: string, passwordsValueData: string, filterData: string, groupData: string) => Promise<any>;
+	getUserData: () => Promise<any>;
 }
 
 const apiKey = "akljffoifiohop2p23t2jfio3jfio12oijoi;j3io;ojijLJG:SJGfoi;gSHOIF:ioh2o1th1o2hSHFIOS:Hoi;hfo2h908t1ht81hoihIhoih1hpFKLJFHSJKLFhsdkjlfSFsdp[fl[,{SDF,oisf;JSDf;ji;h12KLDFn"
@@ -148,6 +152,47 @@ async function validateMFACode(username: string, password: string, mfaCode: stri
 	return { Success: false };
 }
 
+async function syncUserData(key: string, appData: string, settingsData: string, passwordsValueData: string, filterData: string, groupData: string)
+{
+	try
+	{
+		const response = await axiosInstance.post('Account/SyncUserData',
+			{
+				License: currentLicense.key,
+				AppData: cryptUtility.encrypt(key, appData),
+				SettingsData: cryptUtility.encrypt(key, settingsData),
+				PasswordsValueData: cryptUtility.encrypt(key, passwordsValueData),
+				FilterData: cryptUtility.encrypt(key, filterData),
+				GroupData: cryptUtility.encrypt(key, groupData)
+			});
+
+		// update  license
+		const responseObj: any = JSON.parse(response.data);
+		return responseObj;
+	}
+	catch { }
+
+	return { Success: false };
+}
+
+async function getUserData(): Promise<any>
+{
+	try
+	{
+		const response = await axiosInstance.post('Account/GetUserData',
+			{
+				License: currentLicense.key,
+			});
+
+		// update  license
+		const responseObj: any = JSON.parse(response.data);
+		return responseObj;
+	}
+	catch { }
+
+	return { Success: false };
+}
+
 const vaulticServer: VaulticServer =
 {
 	checkLicense,
@@ -155,7 +200,9 @@ const vaulticServer: VaulticServer =
 	validateEmailAndUsername,
 	generateMFA,
 	createAccount,
-	validateMFACode
+	validateMFACode,
+	syncUserData,
+	getUserData,
 };
 
 export default vaulticServer;

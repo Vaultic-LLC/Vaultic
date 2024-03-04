@@ -1,4 +1,4 @@
-import { ComputedRef, computed, reactive } from "vue";
+import { ComputedRef, Ref, computed, reactive, ref } from "vue";
 import { DataType, Group } from "../../Types/Table";
 import { AtRiskType, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
@@ -12,8 +12,6 @@ interface GroupState
 	groupHash: string;
 	groups: Group[];
 	groupsById: Dictionary<Group>;
-	activeAtRiskPasswordGroupType: AtRiskType;
-	activeAtRiskValueGroupType: AtRiskType;
 	emptyPasswordGroups: string[];
 	emptyValueGroups: string[];
 	duplicatePasswordGroups: Dictionary<string[]>;
@@ -38,9 +36,9 @@ export interface GroupStore extends AuthenticationStore
 	addGroup: (key: string, value: Group) => Promise<void>;
 	updateGroup: (key: string, updatedGroup: Group) => Promise<void>;
 	deleteGroup: (key: string, group: Group) => Promise<void>;
-	syncGroupsAfterPasswordOrValueWasAdded: <T extends IGroupable & IIdentifiable>(dataType: DataType, value: T) => void;
-	syncGroupsAfterPasswordOrValueWasUpdated: (dataType: DataType, addedGroups: string[], removedGroups: string[], valueId: string) => void;
-	removeValueFromGroups: <T extends IGroupable & IIdentifiable>(dataType: DataType, value: T) => void;
+	syncGroupsAfterPasswordOrValueWasAdded: <T extends IGroupable & IIdentifiable>(key: string, dataType: DataType, value: T) => Promise<void>;
+	syncGroupsAfterPasswordOrValueWasUpdated: (key: string, dataType: DataType, addedGroups: string[], removedGroups: string[], valueId: string) => Promise<void>;
+	removeValueFromGroups: <T extends IGroupable & IIdentifiable>(key: string, dataType: DataType, value: T) => Promise<void>;
 	toggleAtRiskType: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
@@ -57,13 +55,16 @@ export default function useGroupStore(): GroupStore
 			groupHash: '',
 			groups: [],
 			groupsById: {},
-			activeAtRiskPasswordGroupType: AtRiskType.None,
-			activeAtRiskValueGroupType: AtRiskType.None,
 			emptyPasswordGroups: [],
 			emptyValueGroups: [],
 			duplicatePasswordGroups: {},
 			duplicateValueGroups: {},
 		}
+	}
+
+	function toString()
+	{
+		return JSON.stringify(groupState);
 	}
 
 	function readState(key: string): Promise<boolean>
@@ -276,6 +277,9 @@ export default function useGroupStore(): GroupStore
 	const duplicatePasswordGroupsLength: ComputedRef<number> = computed(() => Object.keys(groupState.duplicatePasswordGroups).length);
 	const duplicateValuesGroupsLength: ComputedRef<number> = computed(() => Object.keys(groupState.duplicateValueGroups).length);
 
+	const activeAtRiskPasswordGroupType: Ref<AtRiskType> = ref(AtRiskType.None);
+	const activeAtRiskValueGroupType: Ref<AtRiskType> = ref(AtRiskType.None);
+
 	async function addGroup(key: string, group: Group): Promise<void>
 	{
 		group.id = generateUniqueID(groupState.groups);
@@ -341,6 +345,7 @@ export default function useGroupStore(): GroupStore
 		group.key = window.api.utilities.crypt.encrypt(key, group.key);
 
 		await writeState(key);
+		stores.syncToServer(key);
 	}
 
 	async function updateGroup(key: string, updatedGroup: Group): Promise<void>
@@ -350,12 +355,12 @@ export default function useGroupStore(): GroupStore
 			const addedPasswords: string[] = updatedGroup.passwords.filter(p => !groupState.groupsById[updatedGroup.id].passwords.includes(p))
 			const removedPasswords: string[] = groupState.groupsById[updatedGroup.id].passwords.filter(p => !updatedGroup.passwords.includes(p));
 
-			stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(addedPasswords, removedPasswords, updatedGroup);
+			await stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(key, addedPasswords, removedPasswords, updatedGroup);
 
 			Object.assign(groupState.groupsById[updatedGroup.id], updatedGroup);
 			Object.assign(groupState.groups.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
-			stores.filterStore.recalcGroupFilters(stores.filterStore.passwordFilters, stores.encryptedDataStore.passwords, "passwords");
+			await stores.filterStore.recalcGroupFilters(key, stores.filterStore.passwordFilters, stores.encryptedDataStore.passwords, "passwords");
 
 			checkAddRemoveFromEmptyGroups(stores.encryptedDataStore.passwords, groupState.emptyPasswordGroups);
 			checkAddRemoveDuplicateGroup(updatedGroup, "passwords", passwordGroups.value, groupState.duplicatePasswordGroups);
@@ -365,12 +370,12 @@ export default function useGroupStore(): GroupStore
 			const addedValues: string[] = updatedGroup.nameValuePairs.filter(p => !groupState.groupsById[updatedGroup.id].nameValuePairs.includes(p))
 			const removedValues: string[] = groupState.groupsById[updatedGroup.id].nameValuePairs.filter(p => !updatedGroup.nameValuePairs.includes(p));
 
-			stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(addedValues, removedValues, updatedGroup);
+			await stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(key, addedValues, removedValues, updatedGroup);
 
 			Object.assign(groupState.groupsById[updatedGroup.id], updatedGroup);
 			Object.assign(groupState.groups.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
-			stores.filterStore.recalcGroupFilters(stores.filterStore.nameValuePairFilters, stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
+			await stores.filterStore.recalcGroupFilters(key, stores.filterStore.nameValuePairFilters, stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
 
 			checkAddRemoveFromEmptyGroups(stores.encryptedDataStore.nameValuePairs, groupState.emptyValueGroups);
 			checkAddRemoveDuplicateGroup(updatedGroup, "nameValuePairs", valuesGroups.value, groupState.duplicateValueGroups);
@@ -395,12 +400,13 @@ export default function useGroupStore(): GroupStore
 		}
 
 		await writeState(key);
+		stores.syncToServer(key);
 	}
 
 	async function deleteGroup(key: string, group: Group): Promise<void>
 	{
 		groupState.groups.splice(groupState.groups.indexOf(group), 1);
-		stores.encryptedDataStore.removeGroupFromValues(group);
+		await stores.encryptedDataStore.removeGroupFromValues(key, group);
 
 		if (group.type == DataType.Passwords)
 		{
@@ -423,10 +429,11 @@ export default function useGroupStore(): GroupStore
 
 		groupState.groupHash = window.api.utilities.crypt.encrypt(key, getHash(key));
 		await writeState(key);
+		stores.syncToServer(key);
 	}
 
 	// called when adding password or value
-	function syncGroupsAfterPasswordOrValueWasAdded<T extends IGroupable & IIdentifiable>(dataType: DataType, value: T)
+	function syncGroupsAfterPasswordOrValueWasAdded<T extends IGroupable & IIdentifiable>(key: string, dataType: DataType, value: T): Promise<void>
 	{
 		let emptyGroups: string[];
 		let duplicateGroups: Dictionary<string[]>;
@@ -460,9 +467,11 @@ export default function useGroupStore(): GroupStore
 
 			checkAddRemoveDuplicateGroup(currentGroup, groupValue, allGroups, duplicateGroups);
 		});
+
+		return writeState(key);
 	}
 
-	function syncGroupsAfterPasswordOrValueWasUpdated(dataType: DataType, addedGroups: string[], removedGroups: string[], valueId: string)
+	function syncGroupsAfterPasswordOrValueWasUpdated(key: string, dataType: DataType, addedGroups: string[], removedGroups: string[], valueId: string): Promise<void>
 	{
 		let emptyGroups: string[];
 		let duplicateGroups: Dictionary<string[]>;
@@ -525,9 +534,11 @@ export default function useGroupStore(): GroupStore
 
 			checkAddRemoveDuplicateGroup(group, groupValue, allGroups, duplicateGroups);
 		}
+
+		return writeState(key);
 	}
 
-	function removeValueFromGroups<T extends IGroupable & IIdentifiable>(dataType: DataType, value: T)
+	function removeValueFromGroups<T extends IGroupable & IIdentifiable>(key: string, dataType: DataType, value: T): Promise<void>
 	{
 		if (dataType == DataType.Passwords)
 		{
@@ -561,37 +572,39 @@ export default function useGroupStore(): GroupStore
 				}
 			});
 		}
+
+		return writeState(key);
 	}
 
 	function toggleAtRiskType(dataType: DataType, atRiskType: AtRiskType)
 	{
 		if (dataType == DataType.Passwords)
 		{
-			if (groupState.activeAtRiskPasswordGroupType != atRiskType)
+			if (activeAtRiskPasswordGroupType.value != atRiskType)
 			{
-				groupState.activeAtRiskPasswordGroupType = atRiskType;
+				activeAtRiskPasswordGroupType.value = atRiskType;
 				return;
 			}
 
-			groupState.activeAtRiskPasswordGroupType = AtRiskType.None;
+			activeAtRiskPasswordGroupType.value = AtRiskType.None;
 		}
 		else if (dataType == DataType.NameValuePairs)
 		{
-			if (groupState.activeAtRiskValueGroupType != atRiskType)
+			if (activeAtRiskValueGroupType.value != atRiskType)
 			{
-				groupState.activeAtRiskValueGroupType = atRiskType;
+				activeAtRiskValueGroupType.value = atRiskType;
 				return;
 			}
 
-			groupState.activeAtRiskValueGroupType = AtRiskType.None;
+			activeAtRiskValueGroupType.value = AtRiskType.None;
 		}
 	}
 
 	return {
 		get groups() { return groupState.groups; },
 		get passwordGroups() { return passwordGroups.value; },
-		get activeAtRiskPasswordGroupType() { return groupState.activeAtRiskPasswordGroupType; },
-		get activeAtRiskValueGroupType() { return groupState.activeAtRiskValueGroupType; },
+		get activeAtRiskPasswordGroupType() { return activeAtRiskPasswordGroupType.value; },
+		get activeAtRiskValueGroupType() { return activeAtRiskValueGroupType.value; },
 		get emptyPasswordGroups() { return groupState.emptyPasswordGroups; },
 		get duplicatePasswordGroups() { return groupState.duplicatePasswordGroups; },
 		get duplicatePasswordGroupLength() { return duplicatePasswordGroupsLength.value; },
@@ -603,6 +616,7 @@ export default function useGroupStore(): GroupStore
 		get sortedValuesGroups() { return sortedValuesGroups.value },
 		canAuthenticateKeyBeforeEntry,
 		canAuthenticateKeyAfterEntry,
+		toString,
 		checkKeyBeforeEntry,
 		checkKeyAfterEntry,
 		readState,

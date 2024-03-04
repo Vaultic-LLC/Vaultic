@@ -5,8 +5,8 @@
 		</div>
 		<div class="accountSetupViewContainer__content" :class="{ flex: displayGrid == false, grid: displayGrid == true }"
 			:style="{
-				'grid-template-rows': `repeat(${gridDef.rows}, ${gridDef.rowHeight})`,
-				'grid-template-columns': `repeat(${gridDef.columns}, ${gridDef.columnWidth})`
+				'grid-template-rows': `repeat(${gridDef?.rows}, ${gridDef?.rowHeight})`,
+				'grid-template-columns': `repeat(${gridDef?.columns}, ${gridDef?.columnWidth})`
 			}">
 			<slot></slot>
 		</div>

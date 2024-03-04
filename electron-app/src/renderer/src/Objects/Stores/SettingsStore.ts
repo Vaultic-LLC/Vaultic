@@ -18,6 +18,8 @@ export interface SettingsState
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
 	percentMetricForPulse: number;
+	enableSyncing: boolean;
+	automaticSyncing: boolean;
 }
 
 export interface SettingsStore extends Store
@@ -35,6 +37,8 @@ export interface SettingsStore extends Store
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
 	percentMetricForPulse: number;
+	enableSyncing: boolean;
+	automaticSyncing: boolean;
 	init: (stores: Stores) => void;
 	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
@@ -78,8 +82,15 @@ export default function useSettingsStore(): SettingsStore
 			randomValueLength: 20,
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
-			percentMetricForPulse: 1
+			percentMetricForPulse: 1,
+			enableSyncing: true,
+			automaticSyncing: true
 		};
+	}
+
+	function toString()
+	{
+		return JSON.stringify(settingsState);
 	}
 
 	async function readState(key: string): Promise<boolean>
@@ -115,7 +126,7 @@ export default function useSettingsStore(): SettingsStore
 		Object.assign(settingsState, defaultState());
 	}
 
-	function updateColorPalette(key: string, colorPalette: ColorPalette): Promise<void>
+	async function updateColorPalette(key: string, colorPalette: ColorPalette): Promise<void>
 	{
 		const oldColorPalette: ColorPalette[] = settingsState.colorPalettes.filter(cp => cp.id == colorPalette.id);
 		if (oldColorPalette.length != 1)
@@ -133,7 +144,8 @@ export default function useSettingsStore(): SettingsStore
 			setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 		}
 
-		return writeState(key);
+		await writeState(key);
+		stores.syncToServer(key);
 	}
 
 	function init(stores: Stores)
@@ -164,10 +176,11 @@ export default function useSettingsStore(): SettingsStore
 		}
 	}
 
-	function updateSettings(key: string, newState: SettingsState): Promise<void>
+	async function updateSettings(key: string, newState: SettingsState): Promise<void>
 	{
 		Object.assign(settingsState, newState);
-		return writeState(key);
+		await writeState(key);
+		stores.syncToServer(key);
 	}
 
 	return {
@@ -184,8 +197,11 @@ export default function useSettingsStore(): SettingsStore
 		get multipleFilterBehavior() { return settingsState.multipleFilterBehavior; },
 		get oldPasswordDays() { return settingsState.oldPasswordDays; },
 		get percentMetricForPulse() { return settingsState.percentMetricForPulse; },
+		get enableSyncing() { return settingsState.enableSyncing; },
+		get automaticSyncing() { return settingsState.automaticSyncing; },
 		currentPrimaryColor,
 		init,
+		toString,
 		readState,
 		resetToDefault,
 		updateColorPalette,

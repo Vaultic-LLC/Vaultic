@@ -39,6 +39,7 @@
 		"electron-updater": "^6.1.1",
 		"getmac": "^6.6.0",
 		"promise-worker": "^2.0.1",
+		"qrcode": "^1.5.3",
 		"three-globe": "^2.30.0",
 		"tippy.js": "^6.3.7",
 		"uuid": "^9.0.1",

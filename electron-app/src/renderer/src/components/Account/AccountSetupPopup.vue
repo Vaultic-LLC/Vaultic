@@ -16,7 +16,7 @@
 					<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
 						:color="primaryColor" @onSuccess="onCreateAccoutViewSucceeded" />
 					<MFAView v-else-if="accountSetupModel.currentView == AccountSetupView.MFA" :creating="creatingAccount"
-						:accont="account" :color="primaryColor" @onSuccess="onMFAViewSucceeded" />
+						:account="account" :color="primaryColor" @onSuccess="onMFAViewSucceeded" />
 					<PaymentInfoView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
 						accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
 						accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor" />
@@ -87,6 +87,8 @@ export default defineComponent({
 		function onCreateAccoutViewSucceeded(firstName: string, lastName: string, email: string,
 			username: string, password: string, mfaKey: string, createdTime: number)
 		{
+			navigationStack.value.shift();
+
 			account.value.firstName = firstName;
 			account.value.lastName = lastName;
 			account.value.email = email;

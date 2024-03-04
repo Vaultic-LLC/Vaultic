@@ -1,7 +1,7 @@
 <template>
 	<div class="usernamePasswordViewContainer">
 		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
-			:gridDefinition="gridDefinition" @onSubmit="onSubmit">
+			@onSubmit="onSubmit">
 			<TextInputField :color="color" :label="'Username'" v-model="username"
 				:style="{ 'grid-row': '1 / span 2', 'grid-column': '1 / span 2' }" />
 			<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
@@ -24,7 +24,7 @@ import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 
-import { GridDefinition, InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
+import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "SignInView",
@@ -42,12 +42,6 @@ export default defineComponent({
 		const password: Ref<string> = ref('');
 
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
-		const gridDefinition: GridDefinition = {
-			rows: 5,
-			rowHeight: '50px',
-			columns: 3,
-			columnWidth: '100px'
-		}
 
 		function moveToCreateAccount()
 		{
@@ -80,7 +74,6 @@ export default defineComponent({
 			username,
 			password,
 			colorModel,
-			gridDefinition,
 			moveToCreateAccount,
 			onSubmit
 		};

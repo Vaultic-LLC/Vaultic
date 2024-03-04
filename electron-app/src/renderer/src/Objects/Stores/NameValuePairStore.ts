@@ -9,7 +9,7 @@ export interface NameValuePairStore extends NameValuePair
 	updateValue: (key: string, value: NameValuePair, valueWasUpdated: boolean) => void;
 }
 
-export default function useNameValuePairStore(key: string, nameValuePair: NameValuePair, encrypted: boolean = false): NameValuePairStore
+export default async function useNameValuePairStore(key: string, nameValuePair: NameValuePair, encrypted: boolean = false): Promise<NameValuePairStore>
 {
 	const nameValuePairState: NameValuePair = reactive(
 		{
@@ -78,15 +78,15 @@ export default function useNameValuePairStore(key: string, nameValuePair: NameVa
 		}
 	}
 
-	// reading in previous state, values are already encrypted and shouldn't need any updating
+	// creating new value
 	if (!encrypted)
 	{
 		nameValuePairState.valueLength = nameValuePairState.value.length;
 		checkIsWeak();
 		encryptedValue(key);
-	}
 
-	stores.filterStore.addFiltersToNewValue(stores.filterStore.nameValuePairFilters, nameValuePairState, "nameValuePairs");
+		await stores.filterStore.addFiltersToNewValue(key, stores.filterStore.nameValuePairFilters, nameValuePairState, "nameValuePairs");
+	}
 
 	return {
 		get id() { return nameValuePairState.id; },

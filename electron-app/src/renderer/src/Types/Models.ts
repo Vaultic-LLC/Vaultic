@@ -13,6 +13,7 @@ export interface SmallMetricGaugeModel
 	style?: { [style: string]: string; };
 	active: boolean;
 	pulse?: boolean;
+	pulseColor?: string;
 	onClick: () => void;
 }
 

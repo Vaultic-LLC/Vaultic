@@ -9,7 +9,7 @@ interface AppState
 {
 	loadedFile: boolean;
 	readonly isWindows: boolean;
-	lastUpdated: number;        // used to keep in sync if storing on google drive / other location
+	userDataVersion: number;
 	authenticated: boolean;
 	reloadMainUI: boolean;
 	activePasswordValuesTable: DataType;
@@ -20,7 +20,7 @@ interface AppState
 export interface AppStore extends Store
 {
 	readonly isWindows: boolean;
-	lastUpdated: number;        // used to keep in sync if storing on google drive / other location
+	userDataVersion: number;
 	authenticated: boolean;
 	reloadMainUI: boolean;
 	activePasswordValuesTable: DataType;
@@ -31,6 +31,7 @@ export interface AppStore extends Store
 	resetToDefault: () => void;
 	recordLogin: (key: string, dateTime: number) => Promise<void>;
 	resetSessionTime: () => void;
+	incrementUserDataVersion: (key: string) => Promise<void>;
 }
 
 export default function useAppStore(): AppStore
@@ -43,7 +44,7 @@ export default function useAppStore(): AppStore
 		return {
 			loadedFile: false,
 			isWindows: window.api.device.platform === "win32",
-			lastUpdated: 0,
+			userDataVersion: 0,
 			authenticated: false,
 			reloadMainUI: false,
 			activePasswordValuesTable: DataType.Passwords,
@@ -54,6 +55,11 @@ export default function useAppStore(): AppStore
 
 	function init(_: Stores)
 	{
+	}
+
+	function toString()
+	{
+		return JSON.stringify(appState);
 	}
 
 	function readState(key: string): Promise<boolean>
@@ -101,11 +107,13 @@ export default function useAppStore(): AppStore
 		if (removedLogin)
 		{
 			await writeState(key);
+			stores.syncToServer(key, false);
 		}
 	}
 
 	function writeState(key: string): Promise<void>
 	{
+		appState.userDataVersion += 1;
 		return fileHelper.write<AppState>(key, appState, window.api.files.app);
 	}
 
@@ -124,7 +132,7 @@ export default function useAppStore(): AppStore
 		}, stores.settingsStore.autoLockNumberTime);
 	}
 
-	function recordLogin(key: string, dateTime: number): Promise<void>
+	async function recordLogin(key: string, dateTime: number): Promise<void>
 	{
 		const dateObj: Date = new Date(dateTime);
 		const loginHistoryKey: string = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
@@ -143,12 +151,19 @@ export default function useAppStore(): AppStore
 			appState.loginHistory[loginHistoryKey].unshift(dateTime);
 		}
 
-		return writeState(key);
+		await writeState(key);
+		stores.syncToServer(key, false);
+	}
+
+	async function incrementUserDataVersion(key: string)
+	{
+		appState.userDataVersion += 1;
+		await writeState(key);
 	}
 
 	return {
 		get isWindows() { return appState.isWindows; },
-		get lastUpdated() { return appState.lastUpdated; },
+		get userDataVersion() { return appState.userDataVersion; },
 		get authenticated() { return appState.authenticated; },
 		set authenticated(value: boolean) { appState.authenticated = value; },
 		get reloadMainUI() { return appState.reloadMainUI; },
@@ -159,9 +174,11 @@ export default function useAppStore(): AppStore
 		set activeFilterGroupsTable(value: DataType) { appState.activeFilterGroupsTable = value; },
 		get loginHistory() { return appState.loginHistory; },
 		init,
+		toString,
 		recordLogin,
 		resetSessionTime,
 		readState,
 		resetToDefault,
+		incrementUserDataVersion
 	};
 }

@@ -73,6 +73,7 @@ export default defineComponent({
 				color: color.value,
 				active: false,
 				pulse: true,
+				pulseColor: color.value,
 				onClick: function ()
 				{
 					//
@@ -89,7 +90,8 @@ export default defineComponent({
 				totalAmount: stores.encryptedDataStore.passwords.length,
 				color: color.value,
 				active: false,
-				pulse: false,
+				pulse: true,
+				pulseColor: 'transparent',
 				onClick: function ()
 				{
 					//

@@ -50,7 +50,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, Ref, ref, watch } from 'vue';
 
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
@@ -171,15 +171,6 @@ export default defineComponent({
 			unlocked.value = true;
 		}
 
-		function onkeyUp(e: KeyboardEvent)
-		{
-			if (e.key === 'Enter')
-			{
-				e.stopPropagation();
-				onEnter();
-			}
-		}
-
 		function jiggleContainer()
 		{
 			unlockFailed.value = true;
@@ -226,18 +217,12 @@ export default defineComponent({
 		onMounted(() =>
 		{
 			setTimeout(() => startPulsing.value = true, 5000);
-			window.addEventListener("keyup", onkeyUp);
 
 			if (props.focusOnShow == true && encryptedInputField.value)
 			{
 				// @ts-ignore
 				encryptedInputField.value.focus();
 			}
-		});
-
-		onUnmounted(() =>
-		{
-			window.removeEventListener("keyup", onkeyUp);
 		});
 
 		return {

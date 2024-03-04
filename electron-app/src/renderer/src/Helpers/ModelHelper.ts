@@ -280,7 +280,7 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 			case AtRiskType.ContainsLogin:
 				stores.encryptedDataStore.containsLoginPasswords.value.forEach(p =>
 				{
-					addAtRiskValues("This Password contains its Login", stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
+					addAtRiskValues("This Password contains its Username", stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
 				});
 				break;
 		}

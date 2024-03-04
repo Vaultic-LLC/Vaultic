@@ -1,5 +1,5 @@
 import { Password, NameValuePair, CurrentAndSafeStructure, IIdentifiable, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
-import { ComputedRef, computed, reactive } from "vue";
+import { ComputedRef, Ref, computed, reactive, ref } from "vue";
 import usePasswordStore, { PasswordStore } from "./PasswordStore";
 import useNameValuePair, { NameValuePairStore } from "./NameValuePairStore";
 import { DataType, Filter, Group } from "../../Types/Table";
@@ -8,7 +8,6 @@ import { AuthenticationStore, Stores, stores } from ".";
 import useNameValuePairStore from "./NameValuePairStore";
 import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
 import fileHelper from "@renderer/Helpers/fileHelper";
-
 
 interface EncryptedDataState
 {
@@ -21,10 +20,6 @@ interface EncryptedDataState
 	duplicateNameValuePairs: Dictionary<string[]>;
 	currentAndSafePasswords: CurrentAndSafeStructure;
 	currentAndSafeValues: CurrentAndSafeStructure;
-	activeAtRiskPasswordType: AtRiskType;
-	activeAtRiskPasswords: Dictionary<AtRiskType[]>;
-	activeAtRiskValueType: AtRiskType;
-	activeAtRiskValues: Dictionary<AtRiskType[]>;
 }
 
 type EncryptedDataStoreEvent = "onPasswordChange" | "onValueChange";
@@ -48,9 +43,7 @@ export interface EncryptedDataStore extends AuthenticationStore
 	currentAndSafePasswords: CurrentAndSafeStructure;
 	currentAndSafeValues: CurrentAndSafeStructure;
 	activeAtRiskPasswordType: AtRiskType;
-	activeAtRiskPasswords: Dictionary<AtRiskType[]>;
 	activeAtRiskValueType: AtRiskType;
-	activeAtRiskValues: Dictionary<AtRiskType[]>;
 	init: (stores: Stores) => void;
 	addPassword: (key: string, password: Password) => Promise<boolean>;
 	updatePassword: (password: Password, passwordWasUpdated: boolean,
@@ -58,11 +51,11 @@ export interface EncryptedDataStore extends AuthenticationStore
 		updatedSecurityQuestionAnswers: string[], key: string) => Promise<void>;
 	addNameValuePair: (key: string, nameValuePair: NameValuePair) => Promise<boolean>;
 	updateNameValuePair: (nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string) => Promise<void>;
-	addRemoveGroupsFromPasswordValue: (addedValues: string[], removedValues: string[], group: Group) => void;
 	deletePassword: (key: string, password: PasswordStore) => Promise<void>;
 	deleteNameValuePair: (key: string, nameValuePair: NameValuePairStore) => Promise<void>;
-	removeFilterFromValues: (filter: Filter) => void;
-	removeGroupFromValues: (group: Group) => void;
+	addRemoveGroupsFromPasswordValue: (key: string, addedValues: string[], removedValues: string[], group: Group) => Promise<void>;
+	removeFilterFromValues: (key: string, filter: Filter) => Promise<void>;
+	removeGroupFromValues: (key: string, group: Group) => Promise<void>;
 	toggleAtRiskModels: (dataType: DataType, atRiskType: AtRiskType) => void;
 	addEvent: (event: EncryptedDataStoreEvent, callback: () => void) => void;
 	removeEvent: (event: EncryptedDataStoreEvent, callback: () => void) => void;
@@ -88,11 +81,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			duplicateNameValuePairs: {},
 			currentAndSafePasswords: { current: [], safe: [] },
 			currentAndSafeValues: { current: [], safe: [] },
-			activeAtRiskPasswordType: AtRiskType.None,
-			activeAtRiskPasswords: {},
-			activeAtRiskValueType: AtRiskType.None,
-			activeAtRiskValues: {}
 		};
+	}
+
+	function toString()
+	{
+		return JSON.stringify(encryptedDataState);
 	}
 
 	function canAuthenticateKeyBeforeEntry(): Promise<boolean>
@@ -144,13 +138,13 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
 			try
 			{
-				fileHelper.read<EncryptedDataState>(key, window.api.files.encryptedData).then((data: EncryptedDataState) =>
+				fileHelper.read<EncryptedDataState>(key, window.api.files.encryptedData).then(async (data: EncryptedDataState) =>
 				{
 					if (data.passwordHash)
 					{
 						if (calculateHash(key, data.passwords, 'password') == window.api.utilities.crypt.decrypt(key, data.passwordHash))
 						{
-							assignState(data);
+							await assignState(data);
 							resolve(true);
 						}
 					}
@@ -158,7 +152,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 					{
 						if (calculateHash(key, data.nameValuePairs, 'value') == window.api.utilities.crypt.decrypt(key, data.valueHash))
 						{
-							assignState(data);
+							await assignState(data);
 							resolve(true);
 						}
 					}
@@ -176,7 +170,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			}
 		});
 
-		function assignState(state: EncryptedDataState)
+		async function assignState(state: EncryptedDataState): Promise<void>
 		{
 			Object.assign(encryptedDataState, state);
 			encryptedDataState.loadedFile = true;
@@ -184,8 +178,17 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.passwords = [];
 			encryptedDataState.nameValuePairs = [];
 
-			state.passwords.forEach(p => encryptedDataState.passwords.push(usePasswordStore(key, p, true)));
-			state.nameValuePairs.forEach(nvp => encryptedDataState.nameValuePairs.push(useNameValuePairStore(key, nvp, true)));
+			state.passwords.forEach(async p =>
+			{
+				const ps: PasswordStore = await usePasswordStore(key, p, true);
+				encryptedDataState.passwords.push(ps);
+			});
+
+			state.nameValuePairs.forEach(async nvp =>
+			{
+				const vs: NameValuePairStore = await useNameValuePairStore(key, nvp, true);
+				encryptedDataState.nameValuePairs.push(vs);
+			});
 		}
 	}
 
@@ -328,6 +331,9 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 	const unpinnedPasswords: ComputedRef<PasswordStore[]> = computed(() => encryptedDataState.passwords.filter(p => !p.isPinned));
 	const unpinnedValues: ComputedRef<NameValuePairStore[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => !nvp.isPinned));
 
+	const activeAtRiskPasswordType: Ref<AtRiskType> = ref(AtRiskType.None);
+	const activeAtRiskValueType: Ref<AtRiskType> = ref(AtRiskType.None);
+
 	function init(_: Stores)
 	{
 	}
@@ -381,7 +387,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		password.id = generateUniqueID(encryptedDataState.passwords);
 
-		const passwordStore: PasswordStore = usePasswordStore(key, password);
+		const passwordStore: PasswordStore = await usePasswordStore(key, password);
 		encryptedDataState.passwords.push(passwordStore);
 
 		updateDuplicatePasswordOrValueIndex(key, passwordStore, "password", encryptedDataState.passwords, encryptedDataState.duplicatePasswords);
@@ -389,10 +395,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		encryptedDataState.currentAndSafePasswords.current.push(encryptedDataState.passwords.length);
 		encryptedDataState.currentAndSafePasswords.safe.push(safePasswords.value.length);
 
-		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.Passwords, password);
+		await stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(key, DataType.Passwords, password);
 
 		await writeState(key);
 		events["onPasswordChange"]?.forEach(c => c());
+		stores.syncToServer(key);
 
 		return true;
 	}
@@ -429,11 +436,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.passwordHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
 		}
 
-		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.Passwords, addedGroups, removedGroups, password.id);
-		stores.filterStore.syncFiltersForValues(stores.filterStore.passwordFilters, [password as PasswordStore], "passwords");
+		await stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(key, DataType.Passwords, addedGroups, removedGroups, password.id);
+		await stores.filterStore.syncFiltersForValues(key, stores.filterStore.passwordFilters, [password as PasswordStore], "passwords", true);
 
 		await writeState(key);
 		events["onPasswordChange"]?.forEach(c => c());
+		stores.syncToServer(key);
 	}
 
 	async function deletePassword(key: string, password: PasswordStore): Promise<void>
@@ -449,11 +457,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		encryptedDataState.passwordHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.passwords, "password"));
 
 		// remove from groups and filters
-		stores.groupStore.removeValueFromGroups(DataType.Passwords, password);
-		stores.filterStore.removeValueFromFilers(DataType.Passwords, password);
+		await stores.groupStore.removeValueFromGroups(key, DataType.Passwords, password);
+		await stores.filterStore.removeValueFromFilers(key, DataType.Passwords, password);
 
 		await writeState(key);
 		events["onPasswordChange"]?.forEach(c => c());
+		stores.syncToServer(key);
 	}
 
 	async function addNameValuePair(key: string, nameValuePair: NameValuePair): Promise<boolean>
@@ -465,7 +474,7 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 
 		nameValuePair.id = generateUniqueID(encryptedDataState.nameValuePairs);
 
-		const nameValuePairStore: NameValuePairStore = useNameValuePair(key, nameValuePair);
+		const nameValuePairStore: NameValuePairStore = await useNameValuePair(key, nameValuePair);
 		encryptedDataState.nameValuePairs.push(nameValuePairStore);
 
 		updateDuplicatePasswordOrValueIndex(key, nameValuePairStore, "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
@@ -473,10 +482,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
 		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
 
-		stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(DataType.NameValuePairs, nameValuePair);
+		await stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(key, DataType.NameValuePairs, nameValuePair);
 
 		await writeState(key);
 		events["onValueChange"]?.forEach(c => c());
+		stores.syncToServer(key);
 
 		return true;
 	}
@@ -511,11 +521,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 			encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
 		}
 
-		stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
-		stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [nameValuePair as NameValuePairStore], "nameValuePairs");
+		await stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(key, DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
+		await stores.filterStore.syncFiltersForValues(key, stores.filterStore.nameValuePairFilters, [nameValuePair as NameValuePairStore], "nameValuePairs", true);
 
 		await writeState(key);
 		events["onValueChange"]?.forEach(c => c());
+		stores.syncToServer(key);
 	}
 
 	async function deleteNameValuePair(key: string, nameValuePair: NameValuePairStore): Promise<void>
@@ -531,14 +542,15 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
 
 		// remove from groups and filters
-		stores.groupStore.removeValueFromGroups(DataType.NameValuePairs, nameValuePair);
-		stores.filterStore.removeValueFromFilers(DataType.NameValuePairs, nameValuePair);
+		await stores.groupStore.removeValueFromGroups(key, DataType.NameValuePairs, nameValuePair);
+		await stores.filterStore.removeValueFromFilers(key, DataType.NameValuePairs, nameValuePair);
 
 		await writeState(key);
 		events["onValueChange"]?.forEach(c => c());
+		stores.syncToServer(key);
 	}
 
-	function addRemoveGroupsFromPasswordValue(addedValues: string[], removedValues: string[], group: Group)
+	function addRemoveGroupsFromPasswordValue(key: string, addedValues: string[], removedValues: string[], group: Group): Promise<void>
 	{
 		if (group.type == DataType.Passwords)
 		{
@@ -580,9 +592,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 				}
 			});
 		}
+
+		return writeState(key);
 	}
 
-	function removeFilterFromValues(filter: Filter)
+	function removeFilterFromValues(key: string, filter: Filter): Promise<void>
 	{
 		if (filter.type == DataType.Passwords)
 		{
@@ -604,9 +618,11 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 				}
 			});
 		}
+
+		return writeState(key);
 	}
 
-	function removeGroupFromValues(group: Group)
+	function removeGroupFromValues(key: string, group: Group): Promise<void>
 	{
 		if (group.type == DataType.Passwords)
 		{
@@ -628,29 +644,31 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 				}
 			});
 		}
+
+		return writeState(key);
 	}
 
 	function toggleAtRiskModels(dataType: DataType, atRiskType: AtRiskType)
 	{
 		if (dataType == DataType.Passwords)
 		{
-			if (encryptedDataState.activeAtRiskPasswordType != atRiskType)
+			if (activeAtRiskPasswordType.value != atRiskType)
 			{
-				encryptedDataState.activeAtRiskPasswordType = atRiskType;
+				activeAtRiskPasswordType.value = atRiskType;
 				return;
 			}
 
-			encryptedDataState.activeAtRiskPasswordType = AtRiskType.None;
+			activeAtRiskPasswordType.value = AtRiskType.None;
 		}
 		else if (dataType == DataType.NameValuePairs)
 		{
-			if (encryptedDataState.activeAtRiskValueType != atRiskType)
+			if (activeAtRiskValueType.value != atRiskType)
 			{
-				encryptedDataState.activeAtRiskValueType = atRiskType;
+				activeAtRiskValueType.value = atRiskType;
 				return;
 			}
 
-			encryptedDataState.activeAtRiskValueType = AtRiskType.None;
+			activeAtRiskValueType.value = AtRiskType.None;
 		}
 	}
 
@@ -692,13 +710,12 @@ export default function useEncryptedDataStore(): EncryptedDataStore
 		weakPasscodeValues,
 		get currentAndSafePasswords() { return encryptedDataState.currentAndSafePasswords; },
 		get currentAndSafeValues() { return encryptedDataState.currentAndSafeValues; },
-		get activeAtRiskPasswordType() { return encryptedDataState.activeAtRiskPasswordType; },
-		get activeAtRiskPasswords() { return encryptedDataState.activeAtRiskPasswords; },
-		get activeAtRiskValueType() { return encryptedDataState.activeAtRiskValueType; },
-		get activeAtRiskValues() { return encryptedDataState.activeAtRiskValues; },
+		get activeAtRiskPasswordType() { return activeAtRiskPasswordType.value; },
+		get activeAtRiskValueType() { return activeAtRiskValueType.value; },
 		canAuthenticateKeyBeforeEntry,
 		canAuthenticateKeyAfterEntry,
 		init,
+		toString,
 		readState,
 		resetToDefault,
 		checkKeyBeforeEntry,

@@ -40,6 +40,7 @@ export default defineComponent({
 		const gauge: Ref<HTMLElement | null> = ref(null);
 		const smallMetricContainer: Ref<HTMLElement | null> = ref(null);
 		const active: ComputedRef<boolean> = computed(() => props.model.active);
+		const pulseColor: ComputedRef<string> = computed(() => props.model.pulseColor ? props.model.pulseColor : props.model.color);
 		const pulse: ComputedRef<boolean> = computed(() =>
 		{
 			if (props.model.pulse === false || active.value)
@@ -187,6 +188,7 @@ export default defineComponent({
 			options,
 			data,
 			pulse,
+			pulseColor,
 			onClick
 		}
 	}
@@ -247,15 +249,15 @@ export default defineComponent({
 
 @keyframes pulseMetricGauge {
 	0% {
-		box-shadow: 0 0 0 v-bind(primaryColor);
+		box-shadow: 0 0 0 v-bind(pulseColor);
 	}
 
 	50% {
-		box-shadow: 0 0 25px v-bind(primaryColor);
+		box-shadow: 0 0 25px v-bind(pulseColor);
 	}
 
 	100% {
-		box-shadow: 0 0 0 v-bind(primaryColor);
+		box-shadow: 0 0 0 v-bind(pulseColor);
 	}
 }
 

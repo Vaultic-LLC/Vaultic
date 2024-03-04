@@ -9,6 +9,7 @@ export interface Store
 {
 	readState: (key: string) => Promise<boolean>;
 	resetToDefault: () => void;
+	toString: () => string;
 }
 
 export interface AuthenticationStore extends Store
@@ -40,30 +41,8 @@ export interface Stores
 	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
 	init: () => Promise<void>;
+	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
 }
-
-export const stores: Stores =
-{
-	get needsAuthentication() { return storeState.needsAuthentication },
-	set needsAuthentication(value: boolean) { storeState.needsAuthentication = value },
-	settingsStore: useSettingsStore(),
-	appStore: useAppStore(),
-	encryptedDataStore: useEncryptedDataStore(),
-	groupStore: useGroupStore(),
-	filterStore: useFilterStore(),
-	canAuthenticateKeyBeforeEntry,
-	canAuthenticateKeyAfterEntry,
-	checkKeyBeforeEntry,
-	checkKeyAfterEntry,
-	loadStoreData,
-	resetStoresToDefault,
-	init
-}
-
-// additional setup that requires another store. Prevents circular dependencies
-stores.encryptedDataStore.init(stores);
-stores.settingsStore.init(stores);
-stores.appStore.init(stores);
 
 async function init(): Promise<void>
 {
@@ -133,16 +112,46 @@ function checkKeyAfterEntry(key: string): boolean
 	return true;
 }
 
-function loadStoreData(key: string): Promise<any>
+async function loadStoreData(key: string): Promise<any>
 {
-	return Promise.all(
+	const result = await Promise.all(
 		[
-			stores.settingsStore.readState(key),
 			stores.appStore.readState(key),
+			stores.settingsStore.readState(key),
 			stores.encryptedDataStore.readState(key),
 			stores.filterStore.readState(key),
 			stores.groupStore.readState(key)
 		]);
+
+	// Only need to check from server if reading in failed. the server can never be newer than the file
+	if (result.some(r => !r))
+	{
+		if (stores.settingsStore.enableSyncing)
+		{
+			const response = await window.api.server.getUserData();
+
+			if (!result[0])
+			{
+				// override app state
+			}
+			else if (!result[1])
+			{
+				// override settings stase
+			}
+			else if (!result[2])
+			{
+				// override encrypted data state
+			}
+			else if (!result[3])
+			{
+				// override filter state
+			}
+			else if (!result[4])
+			{
+				// orverride group state
+			}
+		}
+	}
 }
 
 function resetStoresToDefault()
@@ -154,3 +163,43 @@ function resetStoresToDefault()
 	stores.groupStore.resetToDefault();
 	checkNeedsAuthenticating();
 }
+
+async function syncToServer(key: string, incrementUserDataVersion: boolean = true): Promise<void>
+{
+	if (!stores.settingsStore.enableSyncing)
+	{
+		return;
+	}
+
+	if (incrementUserDataVersion)
+	{
+		await stores.appStore.incrementUserDataVersion(key);
+	}
+
+	window.api.server.syncUserData(key, stores.appStore.toString(), stores.settingsStore.toString(), stores.encryptedDataStore.toString(),
+		stores.filterStore.toString(), stores.groupStore.toString());
+}
+
+export const stores: Stores =
+{
+	get needsAuthentication() { return storeState.needsAuthentication },
+	set needsAuthentication(value: boolean) { storeState.needsAuthentication = value },
+	settingsStore: useSettingsStore(),
+	appStore: useAppStore(),
+	encryptedDataStore: useEncryptedDataStore(),
+	groupStore: useGroupStore(),
+	filterStore: useFilterStore(),
+	canAuthenticateKeyBeforeEntry,
+	canAuthenticateKeyAfterEntry,
+	checkKeyBeforeEntry,
+	checkKeyAfterEntry,
+	loadStoreData,
+	resetStoresToDefault,
+	init,
+	syncToServer
+}
+
+// additional setup that requires another store. Prevents circular dependencies
+stores.encryptedDataStore.init(stores);
+stores.settingsStore.init(stores);
+stores.appStore.init(stores);
