@@ -1,7 +1,7 @@
 import { LicenseStatus } from "../Objects/License"
 import { Device } from "./Device";
 
-interface BaseResponse
+export interface BaseResponse
 {
 	Success: boolean;
 	UnknownError?: boolean;

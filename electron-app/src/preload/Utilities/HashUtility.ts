@@ -6,6 +6,13 @@ export interface HashUtility
 	hash: (value: string) => string;
 }
 
+const salt: string = "a;lfasl;fjklavnaklsfhsadkfhsaklfsaflasdknvasdklfwefhw;IFKSNVKLASDJNVH234]21O51[2[2112[24215";
+
+export function internalHash(value: string): string
+{
+	return createHash('sha256').update(salt + value).digest('base64');
+}
+
 function hash(value: string): string
 {
 	if (!currentLicense.isValid())
@@ -13,7 +20,7 @@ function hash(value: string): string
 		return "";
 	}
 
-	return createHash('sha256').update(value).digest('base64');
+	return internalHash(value);
 }
 
 const hashUtility: HashUtility = {

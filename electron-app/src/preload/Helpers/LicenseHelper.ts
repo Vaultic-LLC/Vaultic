@@ -63,8 +63,8 @@ async function checkLicense(): Promise<CheckLicenseResponse>
 		currentLicense.status = LicenseStatus.Unknown;
 	}
 
-	currentLicense.status = LicenseStatus.Active;
-	return { Success: true };
+	// currentLicense.status = LicenseStatus.Active;
+	// return { Success: true };
 
 	return {
 		Success: false,

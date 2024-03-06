@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { getDeviceInfo } from './DeviceInfo';
-import { CheckLicenseResponse, CreateAccountResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from '../Types/Responses';
-import currentLicense from './License';
-import cryptUtility from '../Utilities/CryptUtility';
+import { BaseResponse, CheckLicenseResponse, CreateAccountResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from '../Types/Responses';
+import currentLicense, { LicenseStatus } from './License';
+import cryptUtility, { internalEncrypt } from '../Utilities/CryptUtility';
 
 export interface VaulticServer
 {
@@ -17,180 +17,129 @@ export interface VaulticServer
 	getUserData: () => Promise<any>;
 }
 
-const apiKey = "akljffoifiohop2p23t2jfio3jfio12oijoi;j3io;ojijLJG:SJGfoi;gSHOIF:ioh2o1th1o2hSHFIOS:Hoi;hfo2h908t1ht81hoihIhoih1hpFKLJFHSJKLFhsdkjlfSFsdp[fl[,{SDF,oisf;JSDf;ji;h12KLDFn"
+const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
+const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321";
+const apiKeyHeader = "X-AK";
 
 const axiosInstance = axios.create({
-	baseURL: 'https://some-domain.com/api/',
+	baseURL: 'https://localhost:7007/',
 	timeout: 20000,
-	data: {
-		APIKey: apiKey,
-		MacAddress: getDeviceInfo().mac
-	}
+	headers: { 'X-M': getDeviceInfo().mac }
 });
+
+function getAPIKey()
+{
+	const date = new Date();
+	const string = `${apiKeyPrefix}${date.getUTCMonth()}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
+
+	const encrypt = internalEncrypt(APIKeyEncryptionKey, string, false);
+
+	return encrypt;
+}
+
+async function post<T extends BaseResponse>(serverPath: string, data: any): Promise<T | BaseResponse>
+{
+	try
+	{
+		const response = await axiosInstance.post(serverPath, data, { headers: { apiKeyHeader: getAPIKey() } });
+		return response.data;
+	}
+	catch (e)
+	{
+		// something went wrong
+	}
+
+	return { Success: false, UnknownError: true };
+}
+
+async function get<T extends BaseResponse>(serverPath: string): Promise<T | BaseResponse>
+{
+	try
+	{
+		const response = await axiosInstance.get(serverPath, { headers: { apiKeyHeader: getAPIKey() } });
+		return response.data;
+	}
+	catch (e)
+	{
+		// something went wrong
+	}
+
+	return { Success: false, UnknownError: true };
+}
 
 async function checkLicense(license: string): Promise<CheckLicenseResponse>
 {
 	if (!license)
 	{
-		await new Promise((resolve) => setTimeout(resolve, 5000));
-		return { Success: true, Key: 'TestKey', Expiration: '2024-04-01' };
-		return { Success: false };
+		return { Success: false, LicenseStatus: LicenseStatus.Unknown };
 	}
 
-	try
-	{
-		const response = await axiosInstance.post("License/CheckLicenseKey", {
-			License: license
-		});
-
-		const licenseResponse: CheckLicenseResponse = JSON.parse(response.data);
-		return licenseResponse;
-	}
-	catch (e)
-	{
-		// Log error to server
-	}
-
-	return { Success: false };
+	return post("License/CheckLicenseKey", { License: license });
 }
 
-async function validateEmailAndUsername(email: string, username: string): Promise<ValidateEmailAndUsernameResponse>
+function validateEmailAndUsername(email: string, username: string): Promise<ValidateEmailAndUsernameResponse>
 {
-	try
-	{
-		const response = await axiosInstance.post('Account/ValidateEmailAndUsername',
-			{
-				Email: email,
-				Username: username
-			});
-
-		const responseObj: ValidateEmailAndUsernameResponse = JSON.parse(response.data);
-		return responseObj;
-	}
-	catch { }
-
-	return { Success: false };
+	return post('Account/ValidateEmailAndUsername', {
+		Email: email,
+		Username: username
+	});
 }
 
-async function generateMFA(): Promise<GenerateMFAResponse>
+function generateMFA(): Promise<GenerateMFAResponse>
 {
-	try
-	{
-		const response = await axiosInstance.post('Account/GenerateMFA');
-
-		const responseObj: GenerateMFAResponse = JSON.parse(response.data);
-		return responseObj;
-
-	}
-	catch { }
-
-	return { Success: false };
+	return get('Account/GenerateMFA');
 }
 
-async function createAccount(firstName: string, lastName: string, email: string, username: string, password: string,
+function createAccount(firstName: string, lastName: string, email: string, username: string, password: string,
 	mfaKey: string, mfaCode: string, createdTime: number): Promise<CreateAccountResponse>
 {
-	try
-	{
-		const response = await axiosInstance.post('Account/GenerateMFA',
-			{
-				FirstName: firstName,
-				LastName: lastName,
-				Email: email,
-				Username: username,
-				Password: password,
-				MFAKey: mfaKey,
-				MFACode: mfaCode,
-				CreatedTime: createdTime,
-				DeviceName: getDeviceInfo().deviceName
-			});
-
-		// update  license
-		const responseObj: CreateAccountResponse = JSON.parse(response.data);
-		return responseObj;
-	}
-	catch { }
-
-	return { Success: false };
+	return post('Account/CreateAccount', {
+		FirstName: firstName,
+		LastName: lastName,
+		Email: email,
+		Username: username,
+		Password: password,
+		MFAKey: mfaKey,
+		MFACode: mfaCode,
+		CreatedTime: createdTime,
+		DeviceName: getDeviceInfo().deviceName
+	});
 }
 
 async function validateUsernameAndPassword(username: string, password: string): Promise<ValidateUsernameAndPasswordResponse>
 {
-	try
-	{
-		const response = await axiosInstance.post('Account/ValidateEmailAndUsername',
-			{
-				Username: username,
-				Password: password
-			});
-
-		const responseObj: ValidateUsernameAndPasswordResponse = JSON.parse(response.data);
-		return responseObj;
-	}
-	catch { }
-
-	return { Success: false };
+	return post('Account/ValidateEmailAndUsername', {
+		Username: username,
+		Password: password,
+	});
 }
 
 async function validateMFACode(username: string, password: string, mfaCode: string): Promise<ValidateMFACodeResponse>
 {
-	try
-	{
-		const response = await axiosInstance.post('Account/GenerateMFA',
-			{
-				Username: username,
-				Password: password,
-				MFACode: mfaCode,
-			});
-
-		// update  license
-		const responseObj: ValidateUsernameAndPasswordResponse = JSON.parse(response.data);
-		return responseObj;
-	}
-	catch { }
-
-	return { Success: false };
+	return post('Account/ValidateMFACode', {
+		Username: username,
+		Password: password,
+		MFACode: mfaCode,
+	});
 }
 
 async function syncUserData(key: string, appData: string, settingsData: string, passwordsValueData: string, filterData: string, groupData: string)
 {
-	try
-	{
-		const response = await axiosInstance.post('Account/SyncUserData',
-			{
-				License: currentLicense.key,
-				AppData: cryptUtility.encrypt(key, appData),
-				SettingsData: cryptUtility.encrypt(key, settingsData),
-				PasswordsValueData: cryptUtility.encrypt(key, passwordsValueData),
-				FilterData: cryptUtility.encrypt(key, filterData),
-				GroupData: cryptUtility.encrypt(key, groupData)
-			});
-
-		// update  license
-		const responseObj: any = JSON.parse(response.data);
-		return responseObj;
-	}
-	catch { }
-
-	return { Success: false };
+	return post('Account/SyncUserData', {
+		License: currentLicense.key,
+		AppData: cryptUtility.encrypt(key, appData),
+		SettingsData: cryptUtility.encrypt(key, settingsData),
+		PasswordsValueData: cryptUtility.encrypt(key, passwordsValueData),
+		FilterData: cryptUtility.encrypt(key, filterData),
+		GroupData: cryptUtility.encrypt(key, groupData)
+	});
 }
 
 async function getUserData(): Promise<any>
 {
-	try
-	{
-		const response = await axiosInstance.post('Account/GetUserData',
-			{
-				License: currentLicense.key,
-			});
-
-		// update  license
-		const responseObj: any = JSON.parse(response.data);
-		return responseObj;
-	}
-	catch { }
-
-	return { Success: false };
+	return post('Account/GetUserData', {
+		License: currentLicense.key,
+	});
 }
 
 const vaulticServer: VaulticServer =

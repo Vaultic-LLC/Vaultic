@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import hashUtility from "./HashUtility";
+import hashUtility, { internalHash } from "./HashUtility";
 import currentLicense from "../Objects/License";
 
 export interface CryptUtility
@@ -12,6 +12,33 @@ const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
 
+export function internalEncrypt(key: string, value: string, hashKey: boolean): string
+{
+	console.log(key);
+	try
+	{
+		const hashedKey: string = hashKey ? hashUtility.hash(key) : key;
+		//const keyBytes = Buffer.from(hashedKey, 'base64')
+		const keyBytes = Buffer.from(hashedKey, 'utf8')
+
+		console.log(keyBytes);
+		//console.log(keyBytes2);
+		const iv = crypto.randomBytes(ivLength);
+		const cipher = crypto.createCipheriv(encryptionMethod, keyBytes, iv,
+			{ 'authTagLength': authTagLength });
+
+		const encryptedValue = Buffer.concat([cipher.update(Buffer.from(value).toString("base64"), "base64"), cipher.final()]);
+		return Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64");
+	}
+	catch (e)
+	{
+		console.log(e);
+	}
+
+	return "";
+}
+
+// TODO: THIS WILL OVERWRITE EVERYONES DATA TO EMPTY STRINGS IF THEY DON'T HAVE A LICENSE, WHILE SYNCING. SHOULD UPDATE TO RETURN AN ERROR
 function encrypt(key: string, value: string): string
 {
 	if (!currentLicense.isValid())
@@ -19,16 +46,7 @@ function encrypt(key: string, value: string): string
 		return "";
 	}
 
-	const hashedKey: string = hashUtility.hash(key);
-	const keyBytes = Buffer.from(hashedKey, 'base64')
-
-	const iv = crypto.randomBytes(ivLength);
-	const cipher = crypto.createCipheriv(encryptionMethod, keyBytes, iv,
-		{ 'authTagLength': authTagLength });
-
-	const encryptedValue = Buffer.concat([cipher.update(Buffer.from(value).toString("base64"), "base64"), cipher.final()]);
-
-	return Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64");
+	return internalEncrypt(key, value, true);
 }
 
 // TODO: better error handling. have this return true / false on if the exception was thrown so i know if a blank

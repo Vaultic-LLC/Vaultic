@@ -7,7 +7,16 @@ export default defineConfig({
 		plugins: [externalizeDepsPlugin(), bytecodePlugin()]
 	},
 	preload: {
-		plugins: [externalizeDepsPlugin(), bytecodePlugin({ protectedStrings: ['akljffoifiohop2p23t2jfio3jfio12oijoi;j3io;ojijLJG:SJGfoi;gSHOIF:ioh2o1th1o2hSHFIOS:Hoi;hfo2h908t1ht81hoihIhoih1hpFKLJFHSJKLFhsdkjlfSFsdp[fl[,{SDF,oisf;JSDf;ji;h12KLDFn'] })]
+		plugins: [externalizeDepsPlugin(), bytecodePlugin(
+			{
+				protectedStrings:
+					[
+						'X-AK',
+						'12fasjkdF2owsnFvkwnvwe23dFSDfio2',
+						'ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321',
+						'a;lfasl;fjklavnaklsfhsadkfhsaklfsaflasdknvasdklfwefhw;IFKSNVKLASDJNVH234]21O51[2[2112[24215'
+					]
+			})]
 	},
 	renderer: {
 		resolve: {

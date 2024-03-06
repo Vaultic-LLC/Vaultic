@@ -109,8 +109,8 @@ export default defineComponent({
 	setup()
 	{
 		const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.NotSet });
+		const finishedMounting: Ref<boolean> = ref(false);
 
-		// const cursor: Ref<HTMLElement | null> = ref(null);
 		const needsAuthentication: Ref<boolean> = ref(stores.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
@@ -129,7 +129,7 @@ export default defineComponent({
 
 		const loadingColor: Ref<string> = ref('');
 		const loadingText: Ref<string> = ref('');
-		const showLoadingIndicator: Ref<boolean> = ref(false);
+		const showLoadingIndicator: Ref<boolean> = ref(true);
 
 		provide(ShowToastFunctionKey, showToastFunc);
 		provide(RequestAuthenticationFunctionKey, requestAuthentication);
@@ -263,8 +263,9 @@ export default defineComponent({
 				lastMouseover = Date.now();
 			});
 
-			await checkLicense();
+			await Promise.all([checkLicense(), new Promise((resolve) => setTimeout(resolve, 500))]);
 			hideLoadingIndicatorFunc();
+			finishedMounting.value = true;
 		});
 
 		watch(() => stores.needsAuthentication, (newValue) =>
@@ -365,6 +366,7 @@ export default defineComponent({
 			loadingColor,
 			loadingText,
 			showLoadingIndicator,
+			finishedMounting,
 			onGlobalAuthSuccessful
 		}
 	}

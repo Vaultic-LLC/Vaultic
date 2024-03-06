@@ -3,7 +3,7 @@
 		<div class="objectPopupGlass" @click.stop="closePopup">
 		</div>
 		<div class="objectyPopup">
-			<div v-if="preventClose" class="closeIconContainer" @click.stop="closePopup">
+			<div v-if="!preventClose" class="closeIconContainer" @click.stop="closePopup">
 				<ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
 			</div>
 			<div class="objectyPopupContent">
