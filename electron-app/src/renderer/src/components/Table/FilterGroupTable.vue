@@ -77,14 +77,14 @@ export default defineComponent({
 		const tableRef: Ref<null> = ref(null);
 		const tabToOpenOnAdd: ComputedRef<number> = computed(() => stores.appStore.activeFilterGroupsTable);
 
-		const passwordFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.passwordFilters, "text");
-		const pinnedPasswordFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.passwordFilters.filter(f => f.isPinned), "text");
+		const passwordFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.passwordFilters, "name");
+		const pinnedPasswordFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.passwordFilters.filter(f => f.isPinned), "name");
 
 		const passwordGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.passwordGroups, "name");
 		const pinnedPasswordGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.passwordGroups.filter(g => g.isPinned), "name");
 
-		const valueFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.nameValuePairFilters, "text");
-		const pinnedValueFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.nameValuePairFilters.filter(f => f.isPinned), "text");
+		const valueFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.nameValuePairFilters, "name");
+		const pinnedValueFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.nameValuePairFilters.filter(f => f.isPinned), "name");
 
 		const valueGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.valuesGroups, "name");
 		const pinnedValueGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.valuesGroups.filter(g => g.isPinned), "name");
@@ -163,7 +163,7 @@ export default defineComponent({
 			},
 			{
 				displayName: "Name",
-				backingProperty: "text",
+				backingProperty: "name",
 				width: '100px',
 				clickable: true
 			}
@@ -243,7 +243,7 @@ export default defineComponent({
 				default:
 					createPinnableSelectableTableRowModels<Filter>(DataType.Filters, stores.appStore.activePasswordValuesTable,
 						tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
-					{ return [{ component: 'TableRowTextValue', value: f.text, copiable: false, width: '100px' }] },
+					{ return [{ component: 'TableRowTextValue', value: f.name, copiable: false, width: '100px' }] },
 						true, "isActive", true, (f: Filter) => stores.filterStore.toggleFilter(f.id), onEditFilter, onFilterDeleteInitiated);
 			}
 
@@ -282,6 +282,12 @@ export default defineComponent({
 
 			if (saved)
 			{
+				passwordFilters.updateValues(stores.filterStore.passwordFilters);
+				pinnedPasswordFilters.updateValues(stores.filterStore.passwordFilters.filter(f => f.isPinned));
+
+				valueFilters.updateValues(stores.filterStore.nameValuePairFilters);
+				pinnedValueFilters.updateValues(stores.filterStore.nameValuePairFilters.filter(f => f.isPinned));
+
 				setTableRowDatas();
 			}
 		}

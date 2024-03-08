@@ -35,7 +35,7 @@ import { SecurityQuestion } from '../../../Types/EncryptedData';
 import { v4 as uuidv4 } from 'uuid';
 import { HeaderTabModel, InputColorModel } from '@renderer/Types/Models';
 import { defaultInputColor } from '@renderer/Types/Colors';
-import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
+import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 
 export default defineComponent({
 	name: "PasswordRow",
@@ -61,7 +61,7 @@ export default defineComponent({
 		});
 
 		// copy password so we don't accidentally edit it
-		const password: ComputedRef<PasswordStore> = computed(() => JSON.parse(JSON.stringify(props.value)));
+		const password: ComputedRef<ReactivePassword> = computed(() => JSON.parse(JSON.stringify(props.value)));
 		let passwordValue: Ref<string> = ref(password.value.password);
 		let securityQuestions: Ref<SecurityQuestion[]> = ref(password.value.securityQuestions);
 

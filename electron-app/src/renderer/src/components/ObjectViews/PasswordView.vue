@@ -276,17 +276,16 @@ export default defineComponent({
 			showLoadingIndicator(color.value, "Saving Password");
 			if (props.creating)
 			{
-				passwordState.value.lastModifiedTime = Date.now();
-				await stores.encryptedDataStore.addPassword(key, passwordState.value);
+				//passwordState.value.lastModifiedTime = Date.now();
+				await stores.passwordStore.addPassword(key, passwordState.value);
 
 				passwordState.value = defaultPassword();
 				refreshKey.value = Date.now().toString();
 			}
 			else
 			{
-				//@ts-ignore
 				// passwordState.value.securityQuestions = securityQuestionInputField.value.securityQuestions;
-				await stores.encryptedDataStore.updatePassword(
+				await stores.passwordStore.updatePassword(
 					passwordState.value, passwordIsDirty.value, dirtySecurityQuestionQuestions.value,
 					dirtySecurityQuestionAnswers.value, key);
 			}

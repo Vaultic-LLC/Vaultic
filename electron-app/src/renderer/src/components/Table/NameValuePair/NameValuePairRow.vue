@@ -16,7 +16,7 @@ import EncryptedInputField from '../../../components/InputFields/EncryptedInputF
 
 import { defaultInputColor } from '@renderer/Types/Colors';
 import { InputColorModel } from '@renderer/Types/Models';
-import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
+import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
 
 export default defineComponent({
 	name: "NameValuePairRow",
@@ -29,7 +29,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const textColor: string = defaultInputColor;
-		const value: ComputedRef<NameValuePairStore> = computed(() => JSON.parse(JSON.stringify(props.value)));
+		const value: ComputedRef<ReactiveValue> = computed(() => JSON.parse(JSON.stringify(props.value)));
 		let valueValue: Ref<string> = ref(value.value.value);
 
 		const colorModel: Ref<InputColorModel> = ref({

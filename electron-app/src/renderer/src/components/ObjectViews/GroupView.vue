@@ -47,8 +47,8 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
-import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
-import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
+import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
+import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
 
 export default defineComponent({
 	name: "GroupView",
@@ -80,8 +80,8 @@ export default defineComponent({
 		// @ts-ignore
 		const tableRowDatas: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
 
-		const passwordSortedCollection: SortedCollection<PasswordStore> = new SortedCollection(stores.encryptedDataStore.passwords, "passwordFor");
-		const valueSortedCollection: SortedCollection<NameValuePairStore> = new SortedCollection(stores.encryptedDataStore.nameValuePairs, "name");
+		const passwordSortedCollection: SortedCollection<ReactivePassword> = new SortedCollection(stores.passwordStore.passwords, "passwordFor");
+		const valueSortedCollection: SortedCollection<ReactiveValue> = new SortedCollection(stores.valueStore.nameValuePairs, "name");
 
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
@@ -108,11 +108,11 @@ export default defineComponent({
 			switch (stores.appStore.activePasswordValuesTable)
 			{
 				case DataType.NameValuePairs:
-					return createSortableHeaderModels<NameValuePairStore>(
+					return createSortableHeaderModels<ReactiveValue>(
 						activeValueHeader, valueHeaderDisplayField, valueSortedCollection, undefined, setTableRows);
 				case DataType.Passwords:
 				default:
-					return createSortableHeaderModels<PasswordStore>(
+					return createSortableHeaderModels<ReactivePassword>(
 						activePasswordHeader, passwordHeaderDisplayFields, passwordSortedCollection, undefined, setTableRows);
 			}
 		});

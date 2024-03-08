@@ -8,6 +8,7 @@ import files, { Files } from './Files/Files';
 import license, { LicenseStatus } from "./License";
 import licenseHelper, { LicenseHelper } from '../Helpers/LicenseHelper';
 import { DeviceInfo } from '../Types/Device';
+import crypto from "crypto"
 
 export interface Utilities
 {
@@ -47,5 +48,30 @@ const api: API = {
 		license: licenseHelper
 	}
 }
+
+const test: string = "Ab^_^M$EkAw%SEpf(=oaWV>O0}LRsR";
+const salt: string = "N9{l@*.+KwSx|>K{9{BhZGtCs3Rfi2";
+
+const saltedHash = hashUtility.hash(test, salt);
+const hash = hashUtility.hash(test);
+
+const key: string = "Key";
+const encryption = cryptUtility.encrypt(key, test);
+
+Promise.all([saltedHash, hash]).then((data) =>
+{
+	console.log(`Salted Hash: ${data[0]}`);
+	console.log(`Regular Hash: ${data[1]}`);
+});
+
+encryption.then((enc) =>
+{
+	cryptUtility.decrypt(key, enc).then((dec) =>
+	{
+		console.log(`Encryption: ${enc}`);
+		console.log(`Decryption: ${dec}`);
+	})
+})
+
 
 export default api;

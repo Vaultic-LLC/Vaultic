@@ -6,7 +6,7 @@ import { AuthenticationStore, stores } from ".";
 import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
 import fileHelper from "@renderer/Helpers/fileHelper";
 
-interface GroupState
+export interface GroupStoreState
 {
 	loadedFile: boolean;
 	groupHash: string;
@@ -42,13 +42,13 @@ export interface GroupStore extends AuthenticationStore
 	toggleAtRiskType: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
-let groupState: GroupState
+let groupState: GroupStoreState
 
 export default function useGroupStore(): GroupStore
 {
 	groupState = reactive(defaultState());
 
-	function defaultState(): GroupState
+	function defaultState(): GroupStoreState
 	{
 		return {
 			loadedFile: false,
@@ -67,6 +67,17 @@ export default function useGroupStore(): GroupStore
 		return JSON.stringify(groupState);
 	}
 
+	function getState(): GroupStoreState
+	{
+		return groupState;
+	}
+
+	async function updateState(key: string, state: GroupStoreState): Promise<void>
+	{
+		Object.assign(groupState, state);
+		await writeState(key);
+	}
+
 	function readState(key: string): Promise<boolean>
 	{
 		return new Promise((resolve, _) =>
@@ -76,7 +87,7 @@ export default function useGroupStore(): GroupStore
 				resolve(true);
 			}
 
-			fileHelper.read<GroupState>(key, window.api.files.group).then((state: GroupState) =>
+			fileHelper.read<GroupStoreState>(key, window.api.files.group).then((state: GroupStoreState) =>
 			{
 				state.loadedFile = true;
 				Object.assign(groupState, state);
@@ -96,7 +107,7 @@ export default function useGroupStore(): GroupStore
 			return window.api.files.group.empty();
 		}
 
-		return fileHelper.write<GroupState>(key, groupState, window.api.files.group);
+		return fileHelper.write<GroupStoreState>(key, groupState, window.api.files.group);
 	}
 
 	function resetToDefault()
@@ -127,20 +138,20 @@ export default function useGroupStore(): GroupStore
 		return window.api.utilities.hash.hash(runningKeys) === window.api.utilities.crypt.decrypt(key, groupState.groupHash);
 	}
 
-	function checkKeyAfterEntry(key: string): boolean
+	async function checkKeyAfterEntry(key: string): Promise<boolean>
 	{
-		return getHash(key) == window.api.utilities.crypt.decrypt(key, groupState.groupHash);
+		return await getHash(key) == await window.api.utilities.crypt.decrypt(key, groupState.groupHash);
 	}
 
-	function getHash(key: string): string
+	async function getHash(key: string): Promise<string>
 	{
 		let runningKeys: string = "";
-		groupState.groups.forEach(g => runningKeys += window.api.utilities.crypt.decrypt(key, g.key));
+		groupState.groups.forEach(async g => runningKeys += await window.api.utilities.crypt.decrypt(key, g.key));
 
-		return window.api.utilities.hash.hash(runningKeys);
+		return await window.api.utilities.hash.hash(runningKeys);
 	}
 
-	function updateHash(key: string, group: Group | undefined = undefined)
+	async function updateHash(key: string, group: Group | undefined = undefined)
 	{
 		let runningKeys: string = "";
 		groupState.groups.forEach(g => runningKeys += window.api.utilities.crypt.decrypt(key, g.key));
@@ -152,7 +163,7 @@ export default function useGroupStore(): GroupStore
 				runningKeys += group.key;
 			}
 
-			groupState.groupHash = window.api.utilities.crypt.encrypt(key, window.api.utilities.hash.hash(runningKeys));
+			groupState.groupHash = await window.api.utilities.crypt.encrypt(key, await window.api.utilities.hash.hash(runningKeys));
 		}
 	}
 
@@ -296,7 +307,7 @@ export default function useGroupStore(): GroupStore
 			}
 			else
 			{
-				group.passwords.forEach(p => stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0].groups.push(group.id));
+				//group.passwords.forEach(p => stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0].Groups.push(group.id));
 			}
 
 			const duplicateGroups: string[] = getDuplicateGroups(group, "passwords", passwordGroups.value);
@@ -322,7 +333,7 @@ export default function useGroupStore(): GroupStore
 			}
 			else
 			{
-				group.nameValuePairs.forEach(nvp => stores.encryptedDataStore.nameValuePairs.filter(nvpp => nvpp.id == nvp)[0].groups.push(group.id));
+				//group.nameValuePairs.forEach(nvp => stores.encryptedDataStore.nameValuePairs.filter(nvpp => nvpp.id == nvp)[0].Groups.push(group.id));
 			}
 
 			const duplicateGroups: string[] = getDuplicateGroups(group, "nameValuePairs", valuesGroups.value);
@@ -342,7 +353,7 @@ export default function useGroupStore(): GroupStore
 		}
 
 		updateHash(key, group);
-		group.key = window.api.utilities.crypt.encrypt(key, group.key);
+		group.key = await window.api.utilities.crypt.encrypt(key, group.key);
 
 		await writeState(key);
 		stores.syncToServer(key);
@@ -355,14 +366,14 @@ export default function useGroupStore(): GroupStore
 			const addedPasswords: string[] = updatedGroup.passwords.filter(p => !groupState.groupsById[updatedGroup.id].passwords.includes(p))
 			const removedPasswords: string[] = groupState.groupsById[updatedGroup.id].passwords.filter(p => !updatedGroup.passwords.includes(p));
 
-			await stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(key, addedPasswords, removedPasswords, updatedGroup);
+			//await stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(key, addedPasswords, removedPasswords, updatedGroup);
 
 			Object.assign(groupState.groupsById[updatedGroup.id], updatedGroup);
 			Object.assign(groupState.groups.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
-			await stores.filterStore.recalcGroupFilters(key, stores.filterStore.passwordFilters, stores.encryptedDataStore.passwords, "passwords");
+			//await stores.filterStore.recalcGroupFilters(key, stores.filterStore.passwordFilters, stores.encryptedDataStore.passwords, "passwords");
 
-			checkAddRemoveFromEmptyGroups(stores.encryptedDataStore.passwords, groupState.emptyPasswordGroups);
+			//checkAddRemoveFromEmptyGroups(stores.encryptedDataStore.passwords, groupState.emptyPasswordGroups);
 			checkAddRemoveDuplicateGroup(updatedGroup, "passwords", passwordGroups.value, groupState.duplicatePasswordGroups);
 		}
 		else if (updatedGroup.type == DataType.NameValuePairs)
@@ -370,14 +381,14 @@ export default function useGroupStore(): GroupStore
 			const addedValues: string[] = updatedGroup.nameValuePairs.filter(p => !groupState.groupsById[updatedGroup.id].nameValuePairs.includes(p))
 			const removedValues: string[] = groupState.groupsById[updatedGroup.id].nameValuePairs.filter(p => !updatedGroup.nameValuePairs.includes(p));
 
-			await stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(key, addedValues, removedValues, updatedGroup);
+			//await stores.encryptedDataStore.addRemoveGroupsFromPasswordValue(key, addedValues, removedValues, updatedGroup);
 
 			Object.assign(groupState.groupsById[updatedGroup.id], updatedGroup);
 			Object.assign(groupState.groups.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
-			await stores.filterStore.recalcGroupFilters(key, stores.filterStore.nameValuePairFilters, stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
+			//await stores.filterStore.recalcGroupFilters(key, stores.filterStore.nameValuePairFilters, stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
 
-			checkAddRemoveFromEmptyGroups(stores.encryptedDataStore.nameValuePairs, groupState.emptyValueGroups);
+			//checkAddRemoveFromEmptyGroups(stores.encryptedDataStore.nameValuePairs, groupState.emptyValueGroups);
 			checkAddRemoveDuplicateGroup(updatedGroup, "nameValuePairs", valuesGroups.value, groupState.duplicateValueGroups);
 		}
 
@@ -406,7 +417,7 @@ export default function useGroupStore(): GroupStore
 	async function deleteGroup(key: string, group: Group): Promise<void>
 	{
 		groupState.groups.splice(groupState.groups.indexOf(group), 1);
-		await stores.encryptedDataStore.removeGroupFromValues(key, group);
+		//await stores.encryptedDataStore.removeGroupFromValues(key, group);
 
 		if (group.type == DataType.Passwords)
 		{
@@ -427,7 +438,7 @@ export default function useGroupStore(): GroupStore
 			removeDuplicateGroup(group, groupState.duplicateValueGroups);
 		}
 
-		groupState.groupHash = window.api.utilities.crypt.encrypt(key, getHash(key));
+		groupState.groupHash = await window.api.utilities.crypt.encrypt(key, await getHash(key));
 		await writeState(key);
 		stores.syncToServer(key);
 	}
@@ -614,6 +625,8 @@ export default function useGroupStore(): GroupStore
 		get duplicateValueGroupLength() { return duplicateValuesGroupsLength.value; },
 		get sortedPasswordsGroups() { return sortedPasswordsGroups.value; },
 		get sortedValuesGroups() { return sortedValuesGroups.value },
+		getState,
+		updateState,
 		canAuthenticateKeyBeforeEntry,
 		canAuthenticateKeyAfterEntry,
 		toString,

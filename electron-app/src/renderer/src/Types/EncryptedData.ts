@@ -49,32 +49,32 @@ export interface PropertySelectorDisplayFields extends DisplayField
 
 export const PasswordProperties: PropertySelectorDisplayFields[] = [
 	{
-		backingProperty: "passwordFor",
+		backingProperty: "PasswordFor",
 		displayName: "Password For",
 		type: PropertyType.String,
 	},
 	{
-		backingProperty: "domain",
+		backingProperty: "Domain",
 		displayName: "Domain",
 		type: PropertyType.String,
 	},
 	{
-		backingProperty: "email",
+		backingProperty: "Email",
 		displayName: "Email",
 		type: PropertyType.String,
 	},
 	{
-		backingProperty: "login",
+		backingProperty: "Login",
 		displayName: "Login",
 		type: PropertyType.String,
 	},
 	{
-		backingProperty: "additionalInformation",
+		backingProperty: "AdditionalInformation",
 		displayName: "Additional Info",
 		type: PropertyType.String,
 	},
 	{
-		backingProperty: "groups",
+		backingProperty: "Groups",
 		displayName: "Group Name",
 		type: PropertyType.Object,
 	}
@@ -90,7 +90,7 @@ export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinna
 	passwordFor: string;
 	securityQuestions: SecurityQuestion[];
 	additionalInformation: string;
-	lastModifiedTime: number;
+	lastModifiedTime: string;
 	isWeak: boolean;
 	isWeakMessage: string;
 	containsLogin: boolean;
@@ -117,23 +117,23 @@ export enum NameValuePairType
 
 export const ValueProperties: PropertySelectorDisplayFields[] = [
 	{
-		backingProperty: "name",
+		backingProperty: "Name",
 		displayName: "Name",
 		type: PropertyType.String,
 	},
 	{
-		backingProperty: "additionalInformation",
+		backingProperty: "AdditionalInformation",
 		displayName: "Additional Info",
 		type: PropertyType.String,
 	},
 	{
-		backingProperty: "valueType",
+		backingProperty: "ValueType",
 		displayName: "Type",
 		type: PropertyType.Enum,
 		enum: NameValuePairType,
 	},
 	{
-		backingProperty: "groups",
+		backingProperty: "Groups",
 		displayName: "Group Name",
 		type: PropertyType.Object,
 	}
@@ -147,7 +147,7 @@ export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, I
 	valueType?: NameValuePairType;
 	notifyIfWeak: boolean;
 	additionalInformation: string;
-	lastModifiedTime: number;
+	lastModifiedTime: string;
 	isDuplicate: boolean;
 	isWeak: boolean;
 	isWeakMessage: string;
@@ -199,7 +199,7 @@ export function defaultPassword(): Password
 			answerLength: 0
 		}],
 		additionalInformation: '',
-		lastModifiedTime: 0,
+		lastModifiedTime: '',
 		isDuplicate: false,
 		isPinned: false,
 		isWeak: false,
@@ -218,7 +218,7 @@ export function defaultValue(): NameValuePair
 		value: '',
 		notifyIfWeak: true,
 		additionalInformation: '',
-		lastModifiedTime: 0,
+		lastModifiedTime: '',
 		isDuplicate: false,
 		isPinned: false,
 		filters: [],
@@ -235,11 +235,11 @@ export function defaultFilter(type: DataType): Filter
 		id: "",
 		key: '',
 		passwords: [],
-		nameValuePairs: [],
+		values: [],
 		isPinned: false,
 		type: type,
 		isActive: false,
-		text: '',
+		name: '',
 		conditions: [{
 			id: uuidv4(),
 			property: '',
@@ -254,7 +254,7 @@ export function defaultGroup(type: DataType): Group
 		id: "",
 		key: "",
 		passwords: [],
-		nameValuePairs: [],
+		values: [],
 		isPinned: false,
 		name: '',
 		type: type,

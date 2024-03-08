@@ -5,6 +5,7 @@ export interface BaseResponse
 {
 	Success: boolean;
 	UnknownError?: boolean;
+	ErrorID?: string;
 }
 
 interface DeviceSensitiveResponse extends BaseResponse

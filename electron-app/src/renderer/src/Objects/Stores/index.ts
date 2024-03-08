@@ -1,9 +1,10 @@
 import { reactive } from "vue";
 import useAppStore, { AppStore } from "./AppStore";
-import useEncryptedDataStore, { EncryptedDataStore } from "./EncryptedDataStore";
-import useFilterStore, { FilterStore } from "./FilterStore";
-import useGroupStore, { GroupStore } from "./GroupStore";
+import useFilterStore, { FilterStore, FilterStoreState } from "./FilterStore";
+import useGroupStore, { GroupStore, GroupStoreState } from "./GroupStore";
 import useSettingsStore, { SettingsStore } from "./SettingsStore";
+import usePasswordStore, { PasswordStore, PasswordStoreState } from "./PasswordStore";
+import useValueStore, { ValueStore, ValueStoreState } from "./ValueStore";
 
 export interface Store
 {
@@ -12,12 +13,22 @@ export interface Store
 	toString: () => string;
 }
 
+export interface DataStoreStates
+{
+	filterStoreState: FilterStoreState;
+	groupStoreState: GroupStoreState;
+	passwordStoreState: PasswordStoreState;
+	valueStoreState: ValueStoreState;
+}
+
 export interface AuthenticationStore extends Store
 {
 	canAuthenticateKeyBeforeEntry: () => Promise<boolean>; 		// checks if file exists
 	canAuthenticateKeyAfterEntry: () => boolean; 				// checks if the store has data.
 	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
-	checkKeyAfterEntry: (key: string) => boolean;
+	checkKeyAfterEntry: (key: string) => Promise<boolean>;
+	getState: () => any;
+	updateState: (key: string, state: any) => Promise<void>;
 }
 
 interface StoreState
@@ -31,17 +42,20 @@ export interface Stores
 	needsAuthentication: boolean;
 	settingsStore: SettingsStore;
 	appStore: AppStore;
-	encryptedDataStore: EncryptedDataStore;
-	groupStore: GroupStore;
 	filterStore: FilterStore;
-	canAuthenticateKeyBeforeEntry: () => Promise<[boolean, boolean, boolean]>;
+	groupStore: GroupStore;
+	passwordStore: PasswordStore;
+	valueStore: ValueStore;
+	canAuthenticateKeyBeforeEntry: () => Promise<[boolean, boolean, boolean, boolean]>;
 	canAuthenticateKeyAfterEntry: () => boolean;
 	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
-	checkKeyAfterEntry: (key: string) => boolean;
+	checkKeyAfterEntry: (key: string) => Promise<boolean>;
 	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
 	init: () => Promise<void>;
 	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
+	getStates: () => DataStoreStates;
+	updateAllStates: (key: string, states: DataStoreStates) => Promise<[void, void, void, void]>;
 }
 
 async function init(): Promise<void>
@@ -54,10 +68,11 @@ async function checkNeedsAuthenticating(): Promise<void>
 	stores.needsAuthentication = (await canAuthenticateKeyBeforeEntry()).some((v) => v);
 }
 
-function canAuthenticateKeyBeforeEntry(): Promise<[boolean, boolean, boolean]>
+function canAuthenticateKeyBeforeEntry(): Promise<[boolean, boolean, boolean, boolean]>
 {
 	return Promise.all([
-		stores.encryptedDataStore.canAuthenticateKeyBeforeEntry(),
+		stores.passwordStore.canAuthenticateKeyBeforeEntry(),
+		stores.valueStore.canAuthenticateKeyAfterEntry(),
 		stores.filterStore.canAuthenticateKeyBeforeEntry(),
 		stores.groupStore.canAuthenticateKeyBeforeEntry()
 	]);
@@ -65,16 +80,22 @@ function canAuthenticateKeyBeforeEntry(): Promise<[boolean, boolean, boolean]>
 
 function canAuthenticateKeyAfterEntry(): boolean
 {
-	return stores.encryptedDataStore.canAuthenticateKeyAfterEntry() ||
+	return stores.passwordStore.canAuthenticateKeyAfterEntry() ||
+		stores.valueStore.canAuthenticateKeyAfterEntry() ||
 		stores.filterStore.canAuthenticateKeyAfterEntry() ||
 		stores.groupStore.canAuthenticateKeyAfterEntry();
 }
 
 async function checkKeyBeforeEntry(key: string): Promise<boolean>
 {
-	if (await stores.encryptedDataStore.canAuthenticateKeyBeforeEntry())
+	if (await stores.passwordStore.canAuthenticateKeyBeforeEntry())
 	{
-		return await stores.encryptedDataStore.checkKeyBeforeEntry(key);
+		return await stores.passwordStore.checkKeyBeforeEntry(key);
+	}
+
+	if (await stores.valueStore.canAuthenticateKeyBeforeEntry())
+	{
+		return await stores.valueStore.checkKeyBeforeEntry(key);
 	}
 
 	if (await stores.filterStore.canAuthenticateKeyBeforeEntry())
@@ -91,11 +112,16 @@ async function checkKeyBeforeEntry(key: string): Promise<boolean>
 	return true;
 }
 
-function checkKeyAfterEntry(key: string): boolean
+async function checkKeyAfterEntry(key: string): Promise<boolean>
 {
-	if (stores.encryptedDataStore.canAuthenticateKeyAfterEntry())
+	if (stores.passwordStore.canAuthenticateKeyAfterEntry())
 	{
-		return stores.encryptedDataStore.checkKeyAfterEntry(key);
+		return stores.passwordStore.checkKeyAfterEntry(key);
+	}
+
+	if (stores.valueStore.canAuthenticateKeyAfterEntry())
+	{
+		return stores.valueStore.checkKeyAfterEntry(key);
 	}
 
 	if (stores.filterStore.canAuthenticateKeyAfterEntry())
@@ -118,7 +144,8 @@ async function loadStoreData(key: string): Promise<any>
 		[
 			stores.appStore.readState(key),
 			stores.settingsStore.readState(key),
-			stores.encryptedDataStore.readState(key),
+			stores.passwordStore.readState(key),
+			stores.valueStore.readState(key),
 			stores.filterStore.readState(key),
 			stores.groupStore.readState(key)
 		]);
@@ -128,7 +155,7 @@ async function loadStoreData(key: string): Promise<any>
 	{
 		if (stores.settingsStore.enableSyncing)
 		{
-			const response = await window.api.server.getUserData();
+			//const response = await window.api.server.getUserData();
 
 			if (!result[0])
 			{
@@ -158,7 +185,8 @@ function resetStoresToDefault()
 {
 	stores.settingsStore.resetToDefault();
 	stores.appStore.resetToDefault();
-	stores.encryptedDataStore.resetToDefault();
+	stores.passwordStore.resetToDefault();
+	stores.valueStore.resetToDefault();
 	stores.filterStore.resetToDefault();
 	stores.groupStore.resetToDefault();
 	checkNeedsAuthenticating();
@@ -176,8 +204,28 @@ async function syncToServer(key: string, incrementUserDataVersion: boolean = tru
 		await stores.appStore.incrementUserDataVersion(key);
 	}
 
-	window.api.server.syncUserData(key, stores.appStore.toString(), stores.settingsStore.toString(), stores.encryptedDataStore.toString(),
-		stores.filterStore.toString(), stores.groupStore.toString());
+	// window.api.server.syncUserData(key, stores.appStore.toString(), stores.settingsStore.toString(), stores.encryptedDataStore.toString(),
+	// 	stores.filterStore.toString(), stores.groupStore.toString());
+}
+
+function getStates(): DataStoreStates
+{
+	return {
+		filterStoreState: stores.filterStore.getState(),
+		groupStoreState: stores.groupStore.getState(),
+		passwordStoreState: stores.passwordStore.getState(),
+		valueStoreState: stores.valueStore.getState()
+	}
+}
+
+function updateAllStates(key: string, states: DataStoreStates): Promise<[void, void, void, void]>
+{
+	return Promise.all([
+		stores.filterStore.updateState(key, states.filterStoreState),
+		stores.groupStore.updateState(key, states.groupStoreState),
+		stores.passwordStore.updateState(key, states.passwordStoreState),
+		stores.valueStore.updateState(key, states.valueStoreState)
+	]);
 }
 
 export const stores: Stores =
@@ -186,9 +234,10 @@ export const stores: Stores =
 	set needsAuthentication(value: boolean) { storeState.needsAuthentication = value },
 	settingsStore: useSettingsStore(),
 	appStore: useAppStore(),
-	encryptedDataStore: useEncryptedDataStore(),
-	groupStore: useGroupStore(),
 	filterStore: useFilterStore(),
+	groupStore: useGroupStore(),
+	passwordStore: usePasswordStore(),
+	valueStore: useValueStore(),
 	canAuthenticateKeyBeforeEntry,
 	canAuthenticateKeyAfterEntry,
 	checkKeyBeforeEntry,
@@ -196,10 +245,11 @@ export const stores: Stores =
 	loadStoreData,
 	resetStoresToDefault,
 	init,
-	syncToServer
+	syncToServer,
+	getStates,
+	updateAllStates
 }
 
 // additional setup that requires another store. Prevents circular dependencies
-stores.encryptedDataStore.init(stores);
 stores.settingsStore.init(stores);
 stores.appStore.init(stores);

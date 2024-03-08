@@ -10,8 +10,8 @@ import { defineComponent, onMounted, onUnmounted } from "vue";
 export default defineComponent({
 	name: "PopupButton",
 	emits: ['onClick'],
-	props: ['color', 'text', 'width', 'height', 'fontSize', 'disabled'],
-	setup(_, ctx)
+	props: ['color', 'text', 'width', 'height', 'fontSize', 'disabled', 'isSubmit'],
+	setup(props, ctx)
 	{
 		function onClick()
 		{
@@ -29,10 +29,19 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
-			window.addEventListener("keyup", onKeyUp);
+			if (props.isSubmit)
+			{
+				window.addEventListener("keyup", onKeyUp);
+			}
 		});
 
-		onUnmounted(() => window.removeEventListener("keyup", onKeyUp));
+		onUnmounted(() =>
+		{
+			if (props.isSubmit)
+			{
+				window.removeEventListener("keyup", onKeyUp)
+			}
+		});
 
 		return {
 			onClick

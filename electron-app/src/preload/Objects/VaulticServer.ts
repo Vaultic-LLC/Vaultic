@@ -15,24 +15,27 @@ export interface VaulticServer
 	validateMFACode(username: string, password: string, mfaCode: string): Promise<ValidateMFACodeResponse>;
 	syncUserData: (key: string, appData: string, settingsData: string, passwordsValueData: string, filterData: string, groupData: string) => Promise<any>;
 	getUserData: () => Promise<any>;
+	addFilter: (data: string) => Promise<any>;
+	updateFilter: (data: string) => Promise<any>;
+	deleteFilter: (data: string) => Promise<any>;
 }
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
-const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321";
-const apiKeyHeader = "X-AK";
+const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
 const axiosInstance = axios.create({
 	baseURL: 'https://localhost:7007/',
-	timeout: 20000,
-	headers: { 'X-M': getDeviceInfo().mac }
+	timeout: 99999999999,
+	headers: { 'X-M': getDeviceInfo().mac },
+	//responseType: 'json',
 });
 
 function getAPIKey()
 {
 	const date = new Date();
-	const string = `${apiKeyPrefix}${date.getUTCMonth()}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
+	const string = `${apiKeyPrefix}${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
 
-	const encrypt = internalEncrypt(APIKeyEncryptionKey, string, false);
+	const encrypt = internalEncrypt(APIKeyEncryptionKey, string, true);
 
 	return encrypt;
 }
@@ -41,12 +44,15 @@ async function post<T extends BaseResponse>(serverPath: string, data: any): Prom
 {
 	try
 	{
-		const response = await axiosInstance.post(serverPath, data, { headers: { apiKeyHeader: getAPIKey() } });
+		const apiKey = await getAPIKey();
+		const response = await axiosInstance.post(serverPath, data, { headers: { "X-AK": apiKey } });
 		return response.data;
 	}
 	catch (e)
 	{
 		// something went wrong
+		// Create an ID using a GUID and log to server. Present user with ID when mentioning that
+		// an error occurred and to reach out to cusotmer service with the ID if the issue persists
 	}
 
 	return { Success: false, UnknownError: true };
@@ -56,7 +62,8 @@ async function get<T extends BaseResponse>(serverPath: string): Promise<T | Base
 {
 	try
 	{
-		const response = await axiosInstance.get(serverPath, { headers: { apiKeyHeader: getAPIKey() } });
+		const apiKey = await getAPIKey();
+		const response = await axiosInstance.get(serverPath, { headers: { "X-AK": apiKey } });
 		return response.data;
 	}
 	catch (e)
@@ -142,6 +149,21 @@ async function getUserData(): Promise<any>
 	});
 }
 
+async function addFilter(data: string): Promise<any>
+{
+	return post('Filter/Add', data);
+}
+
+async function updateFilter(data: string): Promise<any>
+{
+	return post('Filter/Update', data);
+}
+
+async function deleteFilter(data: string): Promise<any>
+{
+	return post('Filter/Delete', data);
+}
+
 const vaulticServer: VaulticServer =
 {
 	checkLicense,
@@ -152,6 +174,9 @@ const vaulticServer: VaulticServer =
 	validateMFACode,
 	syncUserData,
 	getUserData,
+	addFilter,
+	updateFilter,
+	deleteFilter
 };
 
 export default vaulticServer;

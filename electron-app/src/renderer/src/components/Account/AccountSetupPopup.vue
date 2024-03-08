@@ -1,6 +1,6 @@
 <template>
 	<div class="accountSetupPopupContainer">
-		<ObjectPopup :height="'40%'" :width="'30%'" :preventClose="true">
+		<ObjectPopup :height="'40%'" :width="'30%'" :preventClose="true" :glassOpacity="1">
 			<div>
 				<Transition name="fade" mode="out-in">
 					<div v-if="navigationStack.length > 0" class="accountSetupPopupContainer__backButton"

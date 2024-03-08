@@ -1,7 +1,7 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<TextInputField :label="'Name'" :color="color" v-model="filterState.text"
+		<TextInputField :label="'Name'" :color="color" v-model="filterState.name"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
 			class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0" :border="true" :emptyMessage="emptyMessage"

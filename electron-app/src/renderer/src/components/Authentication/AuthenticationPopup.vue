@@ -33,7 +33,7 @@
 			</Transition>
 			<div class="authenticationPopupButtons">
 				<PopupButton :color="color" :text="'Enter'" :disabled="disabled" :width="'100px'" :height="'35px'"
-					:fontSize="'20px'" @onClick="onEnter"></PopupButton>
+					:fontSize="'20px'" :isSubmit="true" @onClick="onEnter"></PopupButton>
 				<PopupButton v-if="allowCancel" :color="color" :text="'Cancel'" :disabled="disabled" :width="'100px'"
 					:height="'35px'" :fontSize="'20px'" @onClick="onCancel"></PopupButton>
 			</div>
@@ -139,7 +139,10 @@ export default defineComponent({
 			}
 			else
 			{
-				handleKeyIsValid(stores.checkKeyAfterEntry(key.value));
+				stores.checkKeyAfterEntry(key.value).then((isValid: boolean) =>
+				{
+					handleKeyIsValid(isValid);
+				});
 			}
 		}
 
@@ -374,16 +377,6 @@ export default defineComponent({
 	border-top-right-radius: 40%;
 	border-top-left-radius: 40%;
 	border-bottom: 0;
-}
-
-@keyframes hide {
-	0% {
-		opacity: 1;
-	}
-
-	100% {
-		opacity: 0;
-	}
 }
 
 @keyframes rubberband {

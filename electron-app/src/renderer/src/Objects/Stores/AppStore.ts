@@ -1,4 +1,4 @@
-import { reactive } from "vue";
+import { Ref, reactive, ref } from "vue";
 import { DataType } from "../../Types/Table"
 import { Stores, stores, Store } from ".";
 import { Dictionary } from "../../Types/DataStructures";
@@ -12,8 +12,6 @@ interface AppState
 	userDataVersion: number;
 	authenticated: boolean;
 	reloadMainUI: boolean;
-	activePasswordValuesTable: DataType;
-	activeFilterGroupsTable: DataType;
 	loginHistory: Dictionary<number[]>,
 }
 
@@ -39,6 +37,9 @@ export default function useAppStore(): AppStore
 	let appState = reactive(defaultState());
 	let autoLockTimeoutID: NodeJS.Timeout;
 
+	const activePasswordValueTable: Ref<DataType> = ref(DataType.Passwords);
+	const activeFilterGroupTable: Ref<DataType> = ref(DataType.Filters);
+
 	function defaultState(): AppState
 	{
 		return {
@@ -47,8 +48,6 @@ export default function useAppStore(): AppStore
 			userDataVersion: 0,
 			authenticated: false,
 			reloadMainUI: false,
-			activePasswordValuesTable: DataType.Passwords,
-			activeFilterGroupsTable: DataType.Filters,
 			loginHistory: {},
 		};
 	}
@@ -168,10 +167,10 @@ export default function useAppStore(): AppStore
 		set authenticated(value: boolean) { appState.authenticated = value; },
 		get reloadMainUI() { return appState.reloadMainUI; },
 		set reloadMainUI(value: boolean) { appState.reloadMainUI = value; },
-		get activePasswordValuesTable() { return appState.activePasswordValuesTable; },
-		set activePasswordValuesTable(value: DataType) { appState.activePasswordValuesTable = value; },
-		get activeFilterGroupsTable() { return appState.activeFilterGroupsTable; },
-		set activeFilterGroupsTable(value: DataType) { appState.activeFilterGroupsTable = value; },
+		get activePasswordValuesTable() { return activePasswordValueTable.value; },
+		set activePasswordValuesTable(value: DataType) { activePasswordValueTable.value = value; },
+		get activeFilterGroupsTable() { return activeFilterGroupTable.value; },
+		set activeFilterGroupsTable(value: DataType) { activeFilterGroupTable.value = value; },
 		get loginHistory() { return appState.loginHistory; },
 		init,
 		toString,

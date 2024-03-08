@@ -64,7 +64,6 @@ import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
-import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
 
 export default defineComponent({
 	name: "ValueView",
@@ -96,7 +95,7 @@ export default defineComponent({
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.valuesGroups, "name"));
 		// @ts-ignore
 		const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
-		const initalLength: Ref<number> = ref((valuesState.value as NameValuePairStore).valueLength ?? 0);
+		const initalLength: Ref<number> = ref(valuesState.value.valueLength ?? 0);
 		const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
 		const valueIsDirty: Ref<boolean> = ref(false);
 
@@ -225,15 +224,15 @@ export default defineComponent({
 			showLoadingIndicator(color.value, "Saving Value");
 			if (props.creating)
 			{
-				valuesState.value.lastModifiedTime = Date.now();
-				await stores.encryptedDataStore.addNameValuePair(key, valuesState.value);
+				//valuesState.value.lastModifiedTime = Date.now();
+				await stores.valueStore.addNameValuePair(key, valuesState.value);
 
 				valuesState.value = defaultValue();
 				refreshKey.value = Date.now().toString();
 			}
 			else
 			{
-				await stores.encryptedDataStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key);
+				await stores.valueStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key);
 			}
 
 			hideLoadingIndicator();

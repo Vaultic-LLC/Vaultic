@@ -1,6 +1,7 @@
 <template>
 	<Transition name="fade" mode="out-in">
-		<LoadingPopup v-if="showLoadingIndicator" :color="loadingColor" :text="loadingText" />
+		<LoadingPopup v-if="showLoadingIndicator" :color="loadingColor" :text="loadingText"
+			:glassOpacity="loadingOpacity" />
 	</Transition>
 	<Teleport to="#body">
 		<Transition name="fade" mode="out-in">
@@ -52,7 +53,6 @@
 <script lang="ts">
 import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide, watch } from 'vue';
 
-import MetricDrawer from "./components/MetricDrawer.vue"
 import TableSelector from "./components/TableSelector.vue"
 import FilterGroupTable from './components/Table/FilterGroupTable.vue';
 import GlobalAuthenticationPopup from './components/Authentication/GlobalAuthenticationPopup.vue';
@@ -85,7 +85,6 @@ export default defineComponent({
 	name: 'App',
 	components:
 	{
-		MetricDrawer,
 		TableSelector,
 		FilterGroupTable,
 		GlobalAuthenticationPopup,
@@ -129,6 +128,7 @@ export default defineComponent({
 
 		const loadingColor: Ref<string> = ref('');
 		const loadingText: Ref<string> = ref('');
+		const loadingOpacity: Ref<number | undefined> = ref(undefined);
 		const showLoadingIndicator: Ref<boolean> = ref(true);
 
 		provide(ShowToastFunctionKey, showToastFunc);
@@ -200,10 +200,12 @@ export default defineComponent({
 			setTimeout(() => showToast.value = false, 2000);
 		}
 
-		function showLoadingIndicatorFunc(color: string, text: string)
+		function showLoadingIndicatorFunc(color: string, text: string, opacity?: number)
 		{
 			loadingColor.value = color;
 			loadingText.value = text;
+			loadingOpacity.value = opacity;
+
 			showLoadingIndicator.value = true;
 		}
 
@@ -250,7 +252,7 @@ export default defineComponent({
 
 		onMounted(async () =>
 		{
-			showLoadingIndicatorFunc(stores.settingsStore.currentPrimaryColor.value, "Checking License");
+			showLoadingIndicatorFunc(stores.settingsStore.currentPrimaryColor.value, "Checking License", 1);
 
 			document.getElementById('body')?.addEventListener('mouseover', (_) =>
 			{
@@ -367,6 +369,7 @@ export default defineComponent({
 			loadingText,
 			showLoadingIndicator,
 			finishedMounting,
+			loadingOpacity,
 			onGlobalAuthSuccessful
 		}
 	}

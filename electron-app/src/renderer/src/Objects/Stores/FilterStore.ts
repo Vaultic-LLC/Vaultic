@@ -6,9 +6,10 @@ import { AtRiskType, IFilterable, IGroupable, IIdentifiable } from "../../Types/
 import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
 import fileHelper from "@renderer/Helpers/fileHelper";
 
-interface FilterState
+export interface FilterStoreState
 {
 	loadedFile: boolean;
+	filterHashSalt: string;
 	filterHash: string;
 	filters: Filter[];
 	emptyPasswordFilters: string[];
@@ -45,17 +46,18 @@ export interface FilterStore extends AuthenticationStore
 	toggleAtRiskType: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
-let filterState: FilterState;
+let filterState: FilterStoreState;
 
 export default function useFilterStore(): FilterStore
 {
 	filterState = reactive(defaultState());
 
 	// --- Generic Store methods ---
-	function defaultState(): FilterState
+	function defaultState(): FilterStoreState
 	{
 		return {
 			loadedFile: false,
+			filterHashSalt: '',
 			filterHash: '',
 			filters: [],
 			emptyPasswordFilters: [],
@@ -70,6 +72,17 @@ export default function useFilterStore(): FilterStore
 		return JSON.stringify(filterState);
 	}
 
+	function getState(): FilterStoreState
+	{
+		return filterState;
+	}
+
+	async function updateState(key: string, state: FilterStoreState): Promise<void>
+	{
+		Object.assign(filterState, state);
+		await writeState(key);
+	}
+
 	function readState(key: string): Promise<boolean>
 	{
 		return new Promise((resolve, _) =>
@@ -77,9 +90,10 @@ export default function useFilterStore(): FilterStore
 			if (filterState.loadedFile)
 			{
 				resolve(true);
+				return;
 			}
 
-			fileHelper.read<FilterState>(key, window.api.files.filter).then((state: FilterState) =>
+			fileHelper.read<FilterStoreState>(key, window.api.files.filter).then((state: FilterStoreState) =>
 			{
 				state.loadedFile = true;
 				Object.assign(filterState, state);
@@ -99,7 +113,7 @@ export default function useFilterStore(): FilterStore
 			return window.api.files.filter.empty();
 		}
 
-		return fileHelper.write<FilterState>(key, filterState, window.api.files.filter);
+		return fileHelper.write<FilterStoreState>(key, filterState, window.api.files.filter);
 	}
 
 	function resetToDefault()
@@ -125,25 +139,37 @@ export default function useFilterStore(): FilterStore
 		}
 
 		let runningKeys: string = "";
-		filterState.filters.forEach(f => runningKeys += window.api.utilities.crypt.decrypt(key, f.key));
+		//filterState.filters.forEach(async f => runningKeys += await window.api.utilities.crypt.decrypt(key, f.key));
+		for (const filter of filterState.filters)
+		{
+			runningKeys += await window.api.utilities.crypt.decrypt(key, filter.key);
+		}
 
-		return window.api.utilities.hash.hash(runningKeys) === window.api.utilities.crypt.decrypt(key, filterState.filterHash);
+		const runnighHash = await window.api.utilities.hash.hash(runningKeys, filterState.filterHashSalt);
+		const currentHash = await window.api.utilities.crypt.decrypt(key, filterState.filterHash);
+
+		return runnighHash === currentHash;
 	}
 
-	function checkKeyAfterEntry(key: string): boolean
+	async function checkKeyAfterEntry(key: string): Promise<boolean>
 	{
-		return getHash(key) == window.api.utilities.crypt.decrypt(key, filterState.filterHash);
+		const hash = await getHash(key);
+		const currentHash = await window.api.utilities.crypt.decrypt(key, filterState.filterHash);
+		return hash == currentHash;
 	}
 
-	function getHash(key: string)
+	async function getHash(key: string)
 	{
 		let runningKeys: string = "";
-		filterState.filters.forEach(f => runningKeys += window.api.utilities.crypt.decrypt(key, f.key));
+		for (const filter of filterState.filters)
+		{
+			runningKeys += await window.api.utilities.crypt.decrypt(key, filter.key);
+		}
 
-		return window.api.utilities.hash.hash(runningKeys)
+		return window.api.utilities.hash.hash(runningKeys, filterState.filterHashSalt)
 	}
 
-	function updateHash(key: string, filter: Filter | undefined = undefined)
+	async function updateHash(key: string, filter: Filter | undefined = undefined)
 	{
 		let runningKeys: string = "";
 		filterState.filters.forEach(f => runningKeys += window.api.utilities.crypt.decrypt(key, f.key));
@@ -155,7 +181,7 @@ export default function useFilterStore(): FilterStore
 				runningKeys += filter.key;
 			}
 
-			filterState.filterHash = window.api.utilities.crypt.encrypt(key, window.api.utilities.hash.hash(runningKeys));
+			filterState.filterHash = await window.api.utilities.crypt.encrypt(key, await window.api.utilities.hash.hash(runningKeys));
 		}
 	}
 
@@ -240,6 +266,7 @@ export default function useFilterStore(): FilterStore
 
 	function getDuplicateFilters(filter: Filter, valuesProperty: string, allFilters: Filter[]): string[]
 	{
+		// get filters that are duplciate because they have nothing
 		if (filter[valuesProperty].length == 0)
 		{
 			return allFilters.filter(f => f[valuesProperty].length == 0 && f.id != filter.id).map(f => f.id);
@@ -377,91 +404,121 @@ export default function useFilterStore(): FilterStore
 
 	async function addFilter(key: string, filter: Filter): Promise<void>
 	{
-		filter.id = generateUniqueID(filterState.filters);
-		filter.key = window.api.utilities.generator.randomValue(30);
+		const addFilterData = {
+			Sync: false,
+			Key: key,
+			Filter: filter,
+			...stores.getStates()
+		};
 
-		filterState.filters.push(filter);
+		const data: any = await window.api.server.addFilter(JSON.stringify(addFilterData));
+		console.log(data);
+		await stores.updateAllStates(key, data);
+		// filter.id = generateUniqueID(filterState.filters);
+		// filter.key = window.api.utilities.generator.randomValue(30);
 
-		if (filter.type == DataType.Passwords)
-		{
-			syncFiltersForValues(key, [filter], stores.encryptedDataStore.passwords, "passwords");
-			updateEmptyFilters(filter, "passwords", filterState.emptyPasswordFilters);
+		// filterState.filters.push(filter);
 
-			const duplicateFilters: string[] = getDuplicateFilters(filter, "passwords", passwordFilters.value);
-			if (duplicateFilters.length > 0)
-			{
-				filterState.duplicatePasswordFilters[filter.id] = duplicateFilters;
-			}
+		// if (filter.type == DataType.Passwords)
+		// {
+		// 	syncFiltersForValues(key, [filter], stores.encryptedDataStore.passwords, "passwords");
+		// 	updateEmptyFilters(filter, "passwords", filterState.emptyPasswordFilters);
 
-		}
-		else if (filter.type == DataType.NameValuePairs)
-		{
-			syncFiltersForValues(key, [filter], stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
-			updateEmptyFilters(filter, "nameValuePairs", filterState.emptyValueFilters);
+		// 	const duplicateFilters: string[] = getDuplicateFilters(filter, "passwords", passwordFilters.value);
+		// 	if (duplicateFilters.length > 0)
+		// 	{
+		// 		filterState.duplicatePasswordFilters[filter.id] = duplicateFilters;
+		// 	}
 
-			const duplicateFilters: string[] = getDuplicateFilters(filter, "nameValuePairs", nameValuePairFilters.value);
-			if (duplicateFilters.length > 0)
-			{
-				filterState.duplicateValueFilters[filter.id] = duplicateFilters;
-			}
-		}
+		// }
+		// else if (filter.type == DataType.NameValuePairs)
+		// {
+		// 	syncFiltersForValues(key, [filter], stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
+		// 	updateEmptyFilters(filter, "nameValuePairs", filterState.emptyValueFilters);
 
-		updateHash(key, filter);
-		filter.key = window.api.utilities.crypt.encrypt(key, filter.key);
+		// 	const duplicateFilters: string[] = getDuplicateFilters(filter, "nameValuePairs", nameValuePairFilters.value);
+		// 	if (duplicateFilters.length > 0)
+		// 	{
+		// 		filterState.duplicateValueFilters[filter.id] = duplicateFilters;
+		// 	}
+		// }
 
-		await writeState(key);
-		stores.syncToServer(key);
+		// updateHash(key, filter);
+		// filter.key = window.api.utilities.crypt.encrypt(key, filter.key);
+
+		// await writeState(key);
+		// stores.syncToServer(key);
 	}
 
 	// TODO: test
 	async function updateFilter(key: string, updatedFilter: Filter): Promise<void>
 	{
-		Object.assign(filterState.filters.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
-		switch (updatedFilter.type)
-		{
-			case DataType.Passwords:
-				syncFiltersForValues(key, [updatedFilter], stores.encryptedDataStore.passwords, "passwords");
-				updateEmptyFilters(updatedFilter, "passwords", filterState.emptyPasswordFilters);
-				checkAddRemoveDuplicateFilters(updatedFilter, "passwords", passwordFilters.value, filterState.duplicatePasswordFilters);
-				break;
-			case DataType.NameValuePairs:
-				syncFiltersForValues(key, [updatedFilter], stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
-				updateEmptyFilters(updatedFilter, "nameValuePairs", filterState.emptyValueFilters);
-				checkAddRemoveDuplicateFilters(updatedFilter, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
-				break;
-		}
+		const addFilterData = {
+			Sync: false,
+			Key: key,
+			Filter: updatedFilter,
+			...stores.getStates()
+		};
 
-		await writeState(key);
-		stores.syncToServer(key);
+		const data: any = await window.api.server.updateFilter(JSON.stringify(addFilterData));
+		console.log(data);
+		await stores.updateAllStates(key, data);
+		// Object.assign(filterState.filters.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
+		// switch (updatedFilter.type)
+		// {
+		// 	case DataType.Passwords:
+		// 		syncFiltersForValues(key, [updatedFilter], stores.passwordStore.passwords, "passwords");
+		// 		updateEmptyFilters(updatedFilter, "passwords", filterState.emptyPasswordFilters);
+		// 		checkAddRemoveDuplicateFilters(updatedFilter, "passwords", passwordFilters.value, filterState.duplicatePasswordFilters);
+		// 		break;
+		// 	case DataType.NameValuePairs:
+		// 		syncFiltersForValues(key, [updatedFilter], stores.valueStore.nameValuePairs, "nameValuePairs");
+		// 		updateEmptyFilters(updatedFilter, "nameValuePairs", filterState.emptyValueFilters);
+		// 		checkAddRemoveDuplicateFilters(updatedFilter, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
+		// 		break;
+		// }
+
+		// await writeState(key);
+		// stores.syncToServer(key);
 	}
 
 	async function deleteFilter(key: string, filter: Filter): Promise<void>
 	{
-		filterState.filters.splice(filterState.filters.indexOf(filter), 1);
-		await stores.encryptedDataStore.removeFilterFromValues(key, filter);
+		const addFilterData = {
+			Sync: false,
+			Key: key,
+			Filter: filter,
+			...stores.getStates()
+		};
 
-		if (filter.type == DataType.Passwords)
-		{
-			if (filterState.emptyPasswordFilters.includes(filter.id))
-			{
-				filterState.emptyPasswordFilters.splice(filterState.emptyPasswordFilters.indexOf(filter.id), 1);
-			}
+		const data: any = await window.api.server.deleteFilter(JSON.stringify(addFilterData));
+		console.log(data);
+		await stores.updateAllStates(key, data);
+		// filterState.filters.splice(filterState.filters.indexOf(filter), 1);
+		// await stores.encryptedDataStore.removeFilterFromValues(key, filter);
 
-			removeDuplicateFilter(filter, filterState.duplicatePasswordFilters);
-		}
-		else if (filter.type == DataType.NameValuePairs)
-		{
-			if (filterState.emptyValueFilters.includes(filter.id))
-			{
-				filterState.emptyValueFilters.splice(filterState.emptyValueFilters.indexOf(filter.id), 1);
-			}
+		// if (filter.type == DataType.Passwords)
+		// {
+		// 	if (filterState.emptyPasswordFilters.includes(filter.id))
+		// 	{
+		// 		filterState.emptyPasswordFilters.splice(filterState.emptyPasswordFilters.indexOf(filter.id), 1);
+		// 	}
 
-			removeDuplicateFilter(filter, filterState.duplicateValueFilters);
-		}
+		// 	removeDuplicateFilter(filter, filterState.duplicatePasswordFilters);
+		// }
+		// else if (filter.type == DataType.NameValuePairs)
+		// {
+		// 	if (filterState.emptyValueFilters.includes(filter.id))
+		// 	{
+		// 		filterState.emptyValueFilters.splice(filterState.emptyValueFilters.indexOf(filter.id), 1);
+		// 	}
 
-		filterState.filterHash = window.api.utilities.crypt.encrypt(key, getHash(key));
-		await writeState(key);
-		stores.syncToServer(key);
+		// 	removeDuplicateFilter(filter, filterState.duplicateValueFilters);
+		// }
+
+		// filterState.filterHash = await window.api.utilities.crypt.encrypt(key, await getHash(key));
+		// await writeState(key);
+		// stores.syncToServer(key);
 	}
 
 	// used when adding password / value
@@ -676,6 +733,8 @@ export default function useFilterStore(): FilterStore
 		get duplicatePasswordFiltersLength() { return duplicatePasswordFiltersLength.value; },
 		get duplicateValueFilters() { return filterState.duplicateValueFilters; },
 		get duplicateValueFiltersLength() { return duplicateValueFiltersLength.value; },
+		getState,
+		updateState,
 		canAuthenticateKeyBeforeEntry,
 		canAuthenticateKeyAfterEntry,
 		toString,

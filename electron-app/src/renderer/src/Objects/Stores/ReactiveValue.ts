@@ -2,14 +2,14 @@ import { NameValuePair, NameValuePairType } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
 
-export interface NameValuePairStore extends NameValuePair
+export interface ReactiveValue extends NameValuePair
 {
 	isOld: boolean;
 	isSafe: boolean;
 	updateValue: (key: string, value: NameValuePair, valueWasUpdated: boolean) => void;
 }
 
-export default async function useNameValuePairStore(key: string, nameValuePair: NameValuePair, encrypted: boolean = false): Promise<NameValuePairStore>
+export default async function createReactiveValue(key: string, nameValuePair: NameValuePair, encrypted: boolean = false): Promise<ReactiveValue>
 {
 	const nameValuePairState: NameValuePair = reactive(
 		{
@@ -19,7 +19,8 @@ export default async function useNameValuePairStore(key: string, nameValuePair: 
 	const isOld: ComputedRef<boolean> = computed(() =>
 	{
 		const today = Date.now();
-		const differenceInDays = (today - nameValuePairState.lastModifiedTime) / 1000 / 86400;
+		const lastModifiedTime = Date.parse(nameValuePairState.lastModifiedTime);
+		const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
 		return differenceInDays >= stores.settingsStore.oldPasswordDays;
 	});
@@ -65,7 +66,7 @@ export default async function useNameValuePairStore(key: string, nameValuePair: 
 
 		if (valueWasUpdated)
 		{
-			nameValuePairState.lastModifiedTime = Date.now();
+			//nameValuePairState.lastModifiedTime = Date.now();
 			nameValuePairState.valueLength = nameValuePairState.value.length;
 
 			checkIsWeak();

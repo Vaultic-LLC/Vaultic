@@ -25,12 +25,13 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",
-	props: ["show", "closePopup", "height", "width", 'preventClose'],
+	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity'],
 	setup(props)
 	{
 		const showPopup: ComputedRef<boolean> = computed(() => props.show);
 		const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : '80%');
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : '70%');
+		const computedGlassOpacity: ComputedRef<number> = computed(() => props.glassOpacity ? props.glassOpacity : 0.92);
 
 		const closePopupFunc: ComputedRef<(saved: boolean) => void> = computed(() => props.closePopup);
 		provide(ClosePopupFuncctionKey, closePopupFunc);
@@ -158,6 +159,7 @@ export default defineComponent({
 			showPopup,
 			computedHeight,
 			computedWidth,
+			computedGlassOpacity,
 			closePopup
 		};
 	}
@@ -181,7 +183,7 @@ export default defineComponent({
 	z-index: 6;
 	top: 0;
 	left: 0;
-	background: rgba(17, 15, 15, 0.92);
+	background: rgba(17, 15, 15, v-bind(computedGlassOpacity));
 }
 
 .objectyPopup {

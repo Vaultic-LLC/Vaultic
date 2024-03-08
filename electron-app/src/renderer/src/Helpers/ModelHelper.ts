@@ -6,8 +6,8 @@ import { AtRiskType, HeaderDisplayField, IIdentifiable, IPinnable } from "../Typ
 import { DataType, Filter } from "../Types/Table";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
 import { stores } from "@renderer/Objects/Stores";
-import { NameValuePairStore } from "@renderer/Objects/Stores/NameValuePairStore";
-import { PasswordStore } from "@renderer/Objects/Stores/PasswordStore";
+import { ReactiveValue } from "@renderer/Objects/Stores/ReactiveValue";
+import { ReactivePassword } from "@renderer/Objects/Stores/ReactivePassword";
 
 export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
 	sortableCollection: SortedCollection<T>, pinnedCollection?: SortedCollection<T>, updateModels?: () => void): SortableHeaderModel[]
@@ -256,63 +256,63 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 
 	if (dataType == DataType.Passwords)
 	{
-		switch (stores.encryptedDataStore.activeAtRiskPasswordType)
+		switch (stores.passwordStore.activeAtRiskPasswordType)
 		{
 			case AtRiskType.Old:
-				stores.encryptedDataStore.oldPasswords.value.forEach(p =>
+				stores.passwordStore.oldPasswords.value.forEach(p =>
 				{
-					addAtRiskValues(`This Password hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
+					addAtRiskValues(`This Password hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.passwordStore.passwords.filter(pw => pw.id == p)[0]);
 				});
 				break;
 			case AtRiskType.Duplicate:
-				stores.encryptedDataStore.duplicatePasswords.value.forEach(p =>
+				stores.passwordStore.duplicatePasswords.value.forEach(p =>
 				{
-					addAtRiskValues("This Password is used more than once", stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
+					addAtRiskValues("This Password is used more than once", stores.passwordStore.passwords.filter(pw => pw.id == p)[0]);
 				});
 				break;
 			case AtRiskType.Weak:
-				stores.encryptedDataStore.weakPasswords.value.forEach(p =>
+				stores.passwordStore.weakPasswords.value.forEach(p =>
 				{
-					const passwordStore: PasswordStore = stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0];
+					const passwordStore: ReactivePassword = stores.passwordStore.passwords.filter(pw => pw.id == p)[0];
 					addAtRiskValues(passwordStore.isWeakMessage, passwordStore);
 				});
 				break;
 			case AtRiskType.ContainsLogin:
-				stores.encryptedDataStore.containsLoginPasswords.value.forEach(p =>
+				stores.passwordStore.containsLoginPasswords.value.forEach(p =>
 				{
-					addAtRiskValues("This Password contains its Username", stores.encryptedDataStore.passwords.filter(pw => pw.id == p)[0]);
+					addAtRiskValues("This Password contains its Username", stores.passwordStore.passwords.filter(pw => pw.id == p)[0]);
 				});
 				break;
 		}
 	}
 	else if (dataType == DataType.NameValuePairs)
 	{
-		switch (stores.encryptedDataStore.activeAtRiskValueType)
+		switch (stores.valueStore.activeAtRiskValueType)
 		{
 			case AtRiskType.Old:
-				stores.encryptedDataStore.oldNameValuePairs.value.forEach(v =>
+				stores.valueStore.oldNameValuePairs.value.forEach(v =>
 				{
-					addAtRiskValues(`This Value hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+					addAtRiskValues(`This Value hasn't been updated in ${stores.settingsStore.oldPasswordDays} days`, stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
 				break;
 			case AtRiskType.Duplicate:
-				stores.encryptedDataStore.duplicateNameValuePairs.value.forEach(v =>
+				stores.valueStore.duplicateNameValuePairs.value.forEach(v =>
 				{
-					addAtRiskValues("This Value is used more than once", stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+					addAtRiskValues("This Value is used more than once", stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
 				break;
 			case AtRiskType.WeakVerabl:
-				stores.encryptedDataStore.weakVerbalValues.value.forEach(v =>
+				stores.valueStore.weakVerbalValues.value.forEach(v =>
 				{
-					const valueStore: NameValuePairStore = stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
-					addAtRiskValues(valueStore.isWeakMessage, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+					const valueStore: ReactiveValue = stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
+					addAtRiskValues(valueStore.isWeakMessage, stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
 				break;
 			case AtRiskType.Weak:
-				stores.encryptedDataStore.weakPasscodeValues.value.forEach(v =>
+				stores.valueStore.weakPasscodeValues.value.forEach(v =>
 				{
-					const valueStore: NameValuePairStore = stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
-					addAtRiskValues(valueStore.isWeakMessage, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+					const valueStore: ReactiveValue = stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
+					addAtRiskValues(valueStore.isWeakMessage, stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
 		}
 	}

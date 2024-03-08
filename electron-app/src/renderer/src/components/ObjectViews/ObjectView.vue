@@ -10,7 +10,7 @@
 			<PopupButton :color="color" :text="buttonText" :disabled="disabled" :fontSize="'20px'" :width="'200px'"
 				:height="'50px'" @onClick="onSave" />
 			<PopupButton :color="color" :text="'Create and Close'" :disabled="disabled" :fontSize="'20px'" :width="'200px'"
-				:height="'50px'" @onClick="onSaveAndClose" />
+				:height="'50px'" :isSubmit="true" @onClick="onSaveAndClose" />
 		</div>
 	</div>
 </template>

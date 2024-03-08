@@ -4,25 +4,29 @@ import currentLicense from "../Objects/License";
 
 export interface CryptUtility
 {
-	encrypt: (key: string, value: string) => string;
-	decrypt: (key: string, value: string) => string;
+	encrypt: (key: string, value: string) => Promise<string>;
+	decrypt: (key: string, value: string) => Promise<string>;
 }
 
 const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
 
-export function internalEncrypt(key: string, value: string, hashKey: boolean): string
+export async function internalEncrypt(key: string, value: string, exactKey: boolean): Promise<string>
 {
-	console.log(key);
 	try
 	{
-		const hashedKey: string = hashKey ? hashUtility.hash(key) : key;
-		//const keyBytes = Buffer.from(hashedKey, 'base64')
-		const keyBytes = Buffer.from(hashedKey, 'utf8')
+		// let keyBytes: Buffer;
+		// if (exactKey)
+		// {
+		// 	keyBytes = Buffer.from(key, 'utf8');
+		// }
+		// else
+		// {
+		// }
+		const hashedKey: string = await hashUtility.hash(key);
+		const keyBytes = Buffer.from(hashedKey, 'base64')
 
-		console.log(keyBytes);
-		//console.log(keyBytes2);
 		const iv = crypto.randomBytes(ivLength);
 		const cipher = crypto.createCipheriv(encryptionMethod, keyBytes, iv,
 			{ 'authTagLength': authTagLength });
@@ -32,31 +36,30 @@ export function internalEncrypt(key: string, value: string, hashKey: boolean): s
 	}
 	catch (e)
 	{
-		console.log(e);
 	}
 
 	return "";
 }
 
 // TODO: THIS WILL OVERWRITE EVERYONES DATA TO EMPTY STRINGS IF THEY DON'T HAVE A LICENSE, WHILE SYNCING. SHOULD UPDATE TO RETURN AN ERROR
-function encrypt(key: string, value: string): string
+async function encrypt(key: string, value: string): Promise<string>
 {
-	if (!currentLicense.isValid())
-	{
-		return "";
-	}
+	// if (!currentLicense.isValid())
+	// {
+	// 	return "";
+	// }
 
-	return internalEncrypt(key, value, true);
+	return internalEncrypt(key, value, false);
 }
 
 // TODO: better error handling. have this return true / false on if the exception was thrown so i know if a blank
 // string is the result of an incorect key or not
-function decrypt(key: string, value: string): string
+async function decrypt(key: string, value: string): Promise<string>
 {
-	if (!currentLicense.isValid())
-	{
-		return "";
-	}
+	// if (!currentLicense.isValid())
+	// {
+	// 	return "";
+	// }
 
 	try
 	{
@@ -64,8 +67,7 @@ function decrypt(key: string, value: string): string
 		const iv = Uint8Array.prototype.slice.call(cipher, 0, ivLength);
 		const authTag = Uint8Array.prototype.slice.call(cipher, -authTagLength);
 		const encryptedValue = Uint8Array.prototype.slice.call(cipher, ivLength, -authTagLength);
-
-		const hashedKey: string = hashUtility.hash(key);
+		const hashedKey: string = await hashUtility.hash(key);
 		const keyBytes = Buffer.from(hashedKey, 'base64')
 
 		const decipher = crypto.createDecipheriv(encryptionMethod, keyBytes, iv,

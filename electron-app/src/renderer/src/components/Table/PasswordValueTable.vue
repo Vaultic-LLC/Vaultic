@@ -68,8 +68,8 @@ import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrol
 import { v4 as uuidv4 } from 'uuid';
 import { useRequestAuthFunction, useLoadingIndicator, useToastFunction } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
-import { NameValuePairStore } from '@renderer/Objects/Stores/NameValuePairStore';
-import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
+import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
+import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
 
 export default defineComponent({
 	name: "PasswordValueTable",
@@ -96,20 +96,20 @@ export default defineComponent({
 		const collapseRowDefaultHeight: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			"300" : "300");
 
-		const passwords: IGroupableSortedCollection<PasswordStore> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
-		const pinnedPasswords: IGroupableSortedCollection<PasswordStore> = new IGroupableSortedCollection(DataType.Passwords, stores.encryptedDataStore.passwords.filter(p => p.isPinned), "passwordFor");
+		const passwords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
+		const pinnedPasswords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, stores.passwordStore.passwords.filter(p => p.isPinned), "passwordFor");
 
-		const nameValuePairs: IGroupableSortedCollection<NameValuePairStore> = new IGroupableSortedCollection(DataType.NameValuePairs, [], "name");
-		const pinnedNameValuePairs: IGroupableSortedCollection<NameValuePairStore> = new IGroupableSortedCollection(DataType.NameValuePairs, stores.encryptedDataStore.nameValuePairs.filter(nvp => nvp.isPinned), "name");
+		const nameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(DataType.NameValuePairs, [], "name");
+		const pinnedNameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(DataType.NameValuePairs, stores.valueStore.nameValuePairs.filter(nvp => nvp.isPinned), "name");
 
 		let rowComponent: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ? 'PasswordRow' : 'NameValuePairRow');
 		let collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>> = ref(new InfiniteScrollCollection<CollapsibleTableRowModel>());
 
 		let showEditPasswordPopup: Ref<boolean> = ref(false);
-		let currentEditingPasswordModel: Ref<PasswordStore | any> = ref({});
+		let currentEditingPasswordModel: Ref<ReactivePassword | any> = ref({});
 
 		let showEditValuePopup: Ref<boolean> = ref(false);
-		let currentEditingValueModel: Ref<NameValuePairStore | any> = ref({});
+		let currentEditingValueModel: Ref<ReactiveValue | any> = ref({});
 
 		let deletePassword: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
 		let deleteValue: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
@@ -315,9 +315,9 @@ export default defineComponent({
 			{
 				case DataType.NameValuePairs:
 					// eslint-disable-next-line
-					createCollapsibleTableRowModels<NameValuePairStore>(DataType.NameValuePairs,
+					createCollapsibleTableRowModels<ReactiveValue>(DataType.NameValuePairs,
 						collapsibleTableRowModels, nameValuePairs, pinnedNameValuePairs,
-						(v: NameValuePairStore) =>
+						(v: ReactiveValue) =>
 						{
 							return [
 								{
@@ -331,9 +331,9 @@ export default defineComponent({
 				case DataType.Passwords:
 				default:
 					// eslint-disable-next-line
-					createCollapsibleTableRowModels<PasswordStore>(DataType.Passwords,
+					createCollapsibleTableRowModels<ReactivePassword>(DataType.Passwords,
 						collapsibleTableRowModels, passwords, pinnedPasswords,
-						(p: PasswordStore) =>
+						(p: ReactivePassword) =>
 						{
 							return [
 								{
@@ -355,19 +355,19 @@ export default defineComponent({
 
 		function init()
 		{
-			filter(stores.filterStore.activePasswordFilters, [], passwords, stores.encryptedDataStore.unpinnedPasswords);
-			filter(stores.filterStore.activeNameValuePairFilters, [], nameValuePairs, stores.encryptedDataStore.unpinnedValues);
+			filter(stores.filterStore.activePasswordFilters, [], passwords, stores.passwordStore.unpinnedPasswords);
+			filter(stores.filterStore.activeNameValuePairFilters, [], nameValuePairs, stores.valueStore.unpinnedValues);
 
 			setModels();
 		}
 
-		function onEditPassword(password: PasswordStore)
+		function onEditPassword(password: ReactivePassword)
 		{
 			currentEditingPasswordModel.value = password;
 			showEditPasswordPopup.value = true;
 		}
 
-		function onEditValue(value: NameValuePairStore)
+		function onEditValue(value: ReactiveValue)
 		{
 			currentEditingValueModel.value = value;
 			showEditValuePopup.value = true;
@@ -393,11 +393,11 @@ export default defineComponent({
 			}
 		}
 
-		function onPasswordDeleteInitiated(password: PasswordStore)
+		function onPasswordDeleteInitiated(password: ReactivePassword)
 		{
 			deletePassword.value = async (key: string) =>
 			{
-				await stores.encryptedDataStore.deletePassword(key, password);
+				await stores.passwordStore.deletePassword(key, password);
 			};
 
 			if (requestAuthFunc)
@@ -415,11 +415,11 @@ export default defineComponent({
 			showToastFunction(color.value, "Password Deleted Successfully", true);
 		}
 
-		function onValueDeleteInitiated(value: NameValuePairStore)
+		function onValueDeleteInitiated(value: ReactiveValue)
 		{
 			deleteValue.value = async (key: string) =>
 			{
-				await stores.encryptedDataStore.deleteNameValuePair(key, value);
+				await stores.valueStore.deleteNameValuePair(key, value);
 			};
 
 			if (requestAuthFunc)
@@ -459,32 +459,32 @@ export default defineComponent({
 
 		watch(() => stores.filterStore.activePasswordFilters, (newValue, oldValue) =>
 		{
-			filter(newValue, oldValue, passwords, stores.encryptedDataStore.unpinnedPasswords);
+			filter(newValue, oldValue, passwords, stores.passwordStore.unpinnedPasswords);
 			setModels();
 		});
 
 		watch(() => stores.filterStore.activeNameValuePairFilters, (newValue, oldValue) =>
 		{
-			filter(newValue, oldValue, nameValuePairs, stores.encryptedDataStore.unpinnedValues);
+			filter(newValue, oldValue, nameValuePairs, stores.valueStore.unpinnedValues);
 			setModels();
 		});
 
-		watch(() => stores.encryptedDataStore.passwords.length, () =>
+		watch(() => stores.passwordStore.passwords.length, () =>
 		{
 			init();
 		});
 
-		watch(() => stores.encryptedDataStore.nameValuePairs.length, () =>
+		watch(() => stores.valueStore.nameValuePairs.length, () =>
 		{
 			init();
 		});
 
-		watch(() => stores.encryptedDataStore.activeAtRiskPasswordType, () =>
+		watch(() => stores.passwordStore.activeAtRiskPasswordType, () =>
 		{
 			init();
 		});
 
-		watch(() => stores.encryptedDataStore.activeAtRiskValueType, () =>
+		watch(() => stores.valueStore.activeAtRiskValueType, () =>
 		{
 			init();
 		});

@@ -38,7 +38,7 @@ import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteS
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
 import { ShowToastFunctionKey } from '@renderer/Types/Keys';
 import { stores } from '@renderer/Objects/Stores';
-import { PasswordStore } from '@renderer/Objects/Stores/PasswordStore';
+import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 
 export default defineComponent({
 	name: "BreachedPasswords",
@@ -55,7 +55,7 @@ export default defineComponent({
 	{
 		const tableRef: Ref<HTMLElement | null> = ref(null);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
-		const passwords: SortedCollection<PasswordStore> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
+		const passwords: SortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
 		const tableRowDatas: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection());
 		const scanning: Ref<boolean> = ref(false);
 
@@ -66,10 +66,10 @@ export default defineComponent({
 		function updateMetricModel()
 		{
 			return {
-				key: `pbreached${3}${stores.encryptedDataStore.passwords.length}`,
+				key: `pbreached${3}${stores.passwordStore.passwords.length}`,
 				title: 'Breached',
 				filledAmount: 3,
-				totalAmount: stores.encryptedDataStore.passwords.length,
+				totalAmount: stores.passwordStore.passwords.length,
 				color: color.value,
 				active: false,
 				pulse: true,
@@ -84,10 +84,10 @@ export default defineComponent({
 		function resetMetricModels()
 		{
 			return {
-				key: `pbreached${0}${stores.encryptedDataStore.passwords.length}`,
+				key: `pbreached${0}${stores.passwordStore.passwords.length}`,
 				title: 'Breached',
 				filledAmount: 0,
-				totalAmount: stores.encryptedDataStore.passwords.length,
+				totalAmount: stores.passwordStore.passwords.length,
 				color: color.value,
 				active: false,
 				pulse: true,
@@ -132,7 +132,7 @@ export default defineComponent({
 		// should request the data breeches once when the app first loads and store them somewhere
 		onMounted(() =>
 		{
-			passwords.updateValues(stores.encryptedDataStore.passwords.filter((_, i) => i < 4));
+			passwords.updateValues(stores.passwordStore.passwords.filter((_, i) => i < 4));
 
 			if (passwords.values.length > 0)
 			{
@@ -140,9 +140,9 @@ export default defineComponent({
 			}
 		});
 
-		watch(() => stores.encryptedDataStore.passwords.length, (newValue, oldValue) =>
+		watch(() => stores.passwordStore.passwords.length, (newValue, oldValue) =>
 		{
-			passwords.updateValues(stores.encryptedDataStore.passwords.filter((_, i) => i < 4));
+			passwords.updateValues(stores.passwordStore.passwords.filter((_, i) => i < 4));
 			if (newValue > oldValue)
 			{
 				if (passwords.values.length > 0)

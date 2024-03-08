@@ -19,15 +19,17 @@ export default defineComponent({
 	{
 		LoadingIndicator
 	},
-	props: ['color', 'text'],
+	props: ['color', 'text', 'glassOpacity'],
 	setup(props)
 	{
 		const primaryColor: ComputedRef<string> = computed(() => props.color ? props.color : "#bb29ff");
 		const textToUse: ComputedRef<string> = computed(() => props.text ? props.text : "Loading...");
+		const computedGlassOpacity: ComputedRef<number> = computed(() => props.glassOpacity ? props.glassOpacity : 0.92);
 
 		return {
 			primaryColor,
-			textToUse
+			textToUse,
+			computedGlassOpacity
 		}
 	}
 })
@@ -69,7 +71,7 @@ export default defineComponent({
 	position: fixed;
 	width: 100%;
 	height: 100%;
-	background: rgba(17, 15, 15, 0.92);
+	background: rgba(17, 15, 15, v-bind(computedGlassOpacity));
 	z-index: 90;
 	top: 0;
 	left: 0;

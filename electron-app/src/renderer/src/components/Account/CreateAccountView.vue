@@ -81,6 +81,12 @@ export default defineComponent({
 				{
 					// notify user
 				}
+
+				// could move this into a helper since every respose that fails needs to check this
+				if (response.UnknownError)
+				{
+					//
+				}
 			}
 		}
 		return {

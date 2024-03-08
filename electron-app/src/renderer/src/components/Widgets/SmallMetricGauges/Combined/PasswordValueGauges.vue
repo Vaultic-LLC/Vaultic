@@ -42,58 +42,58 @@ export default defineComponent({
 				case DataType.NameValuePairs:
 					models.push(
 						{
-							key: `vold${stores.encryptedDataStore.oldNameValuePairs.value.length}${stores.encryptedDataStore.nameValuePairs.length}`,
+							key: `vold${stores.valueStore.oldNameValuePairs.value.length}${stores.valueStore.nameValuePairs.length}`,
 							title: 'Old',
-							filledAmount: stores.encryptedDataStore.oldNameValuePairs.value.length,
-							totalAmount: stores.encryptedDataStore.nameValuePairs.length,
+							filledAmount: stores.valueStore.oldNameValuePairs.value.length,
+							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.settingsStore.currentColorPalette.valuesColor.primaryColor,
 							style: { 'grid-row': '1', 'grid-column': '1' },
-							active: stores.encryptedDataStore.activeAtRiskValueType == AtRiskType.Old,
+							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Old,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Old)
+								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Old)
 							}
 						});
 					models.push(
 						{
-							key: `vdup${stores.encryptedDataStore.duplicateNameValuePairsLength}${stores.encryptedDataStore.nameValuePairs.length}`,
+							key: `vdup${stores.valueStore.duplicateNameValuePairsLength}${stores.valueStore.nameValuePairs.length}`,
 							title: 'Duplicate',
-							filledAmount: stores.encryptedDataStore.duplicateNameValuePairsLength,
-							totalAmount: stores.encryptedDataStore.nameValuePairs.length,
+							filledAmount: stores.valueStore.duplicateNameValuePairsLength,
+							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.settingsStore.currentColorPalette.valuesColor.primaryColor,
 							style: { 'grid-row': '1', 'grid-column': '2' },
-							active: stores.encryptedDataStore.activeAtRiskValueType == AtRiskType.Duplicate,
+							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Duplicate,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Duplicate);
+								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Duplicate);
 							}
 						});
 					models.push(
 						{
-							key: `vwv${stores.encryptedDataStore.weakVerbalValues.value.length}${stores.encryptedDataStore.nameValuePairs.length}`,
+							key: `vwv${stores.valueStore.weakVerbalValues.value.length}${stores.valueStore.nameValuePairs.length}`,
 							title: 'Weak Verbal',
-							filledAmount: stores.encryptedDataStore.weakVerbalValues.value.length,
-							totalAmount: stores.encryptedDataStore.nameValuePairs.length,
+							filledAmount: stores.valueStore.weakVerbalValues.value.length,
+							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.settingsStore.currentColorPalette.valuesColor.primaryColor,
 							style: { 'grid-row': '2', 'grid-column': '1' },
-							active: stores.encryptedDataStore.activeAtRiskValueType == AtRiskType.WeakVerabl,
+							active: stores.valueStore.activeAtRiskValueType == AtRiskType.WeakVerabl,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.WeakVerabl)
+								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.WeakVerabl)
 							}
 						});
 					models.push(
 						{
-							key: `vwp${stores.encryptedDataStore.weakPasscodeValues.value.length}${stores.encryptedDataStore.nameValuePairs.length}`,
+							key: `vwp${stores.valueStore.weakPasscodeValues.value.length}${stores.valueStore.nameValuePairs.length}`,
 							title: 'Weak Passcode',
-							filledAmount: stores.encryptedDataStore.weakPasscodeValues.value.length,
-							totalAmount: stores.encryptedDataStore.nameValuePairs.length,
+							filledAmount: stores.valueStore.weakPasscodeValues.value.length,
+							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.settingsStore.currentColorPalette.valuesColor.primaryColor,
 							style: { 'grid-row': '2', 'grid-column': '2' },
-							active: stores.encryptedDataStore.activeAtRiskValueType == AtRiskType.Weak,
+							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Weak,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Weak);
+								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Weak);
 							}
 						});
 					break;
@@ -101,58 +101,58 @@ export default defineComponent({
 				default:
 					models.push(
 						{
-							key: `pold${stores.encryptedDataStore.oldPasswords.value.length}${stores.encryptedDataStore.passwords.length}`,
+							key: `pold${stores.passwordStore.oldPasswords.value.length}${stores.passwordStore.passwords.length}`,
 							title: 'Old',
-							filledAmount: stores.encryptedDataStore.oldPasswords.value.length,
-							totalAmount: stores.encryptedDataStore.passwords.length,
+							filledAmount: stores.passwordStore.oldPasswords.value.length,
+							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.settingsStore.currentColorPalette.passwordsColor.primaryColor,
 							style: { 'grid-row': '1', 'grid-column': '1' },
-							active: stores.encryptedDataStore.activeAtRiskPasswordType == AtRiskType.Old,
+							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Old,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Old);
+								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Old);
 							}
 						});
 					models.push(
 						{
-							key: `pdup${stores.encryptedDataStore.duplicatePasswordsLength}${stores.encryptedDataStore.passwords.length}`,
+							key: `pdup${stores.passwordStore.duplicatePasswordsLength}${stores.passwordStore.passwords.length}`,
 							title: 'Duplicate',
-							filledAmount: stores.encryptedDataStore.duplicatePasswordsLength,
-							totalAmount: stores.encryptedDataStore.passwords.length,
+							filledAmount: stores.passwordStore.duplicatePasswordsLength,
+							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.settingsStore.currentColorPalette.passwordsColor.primaryColor,
 							style: { 'grid-row': '1', 'grid-column': '2' },
-							active: stores.encryptedDataStore.activeAtRiskPasswordType == AtRiskType.Duplicate,
+							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Duplicate,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Duplicate);
+								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Duplicate);
 							}
 						});
 					models.push(
 						{
-							key: `pweak${stores.encryptedDataStore.weakPasswords.value.length}${stores.encryptedDataStore.passwords.length}`,
+							key: `pweak${stores.passwordStore.weakPasswords.value.length}${stores.passwordStore.passwords.length}`,
 							title: 'Weak',
-							filledAmount: stores.encryptedDataStore.weakPasswords.value.length,
-							totalAmount: stores.encryptedDataStore.passwords.length,
+							filledAmount: stores.passwordStore.weakPasswords.value.length,
+							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.settingsStore.currentColorPalette.passwordsColor.primaryColor,
 							style: { 'grid-row': '2', 'grid-column': '1' },
-							active: stores.encryptedDataStore.activeAtRiskPasswordType == AtRiskType.Weak,
+							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Weak,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Weak);
+								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Weak);
 							}
 						});
 					models.push(
 						{
-							key: `pcl${stores.encryptedDataStore.containsLoginPasswords.value.length}${stores.encryptedDataStore.passwords.length}`,
+							key: `pcl${stores.passwordStore.containsLoginPasswords.value.length}${stores.passwordStore.passwords.length}`,
 							title: 'Contains Username',
-							filledAmount: stores.encryptedDataStore.containsLoginPasswords.value.length,
-							totalAmount: stores.encryptedDataStore.passwords.length,
+							filledAmount: stores.passwordStore.containsLoginPasswords.value.length,
+							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.settingsStore.currentColorPalette.passwordsColor.primaryColor,
 							style: { 'grid-row': '2', 'grid-column': '2' },
-							active: stores.encryptedDataStore.activeAtRiskPasswordType == AtRiskType.ContainsLogin,
+							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.ContainsLogin,
 							onClick: function ()
 							{
-								stores.encryptedDataStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.ContainsLogin);
+								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.ContainsLogin);
 							}
 						});
 			}

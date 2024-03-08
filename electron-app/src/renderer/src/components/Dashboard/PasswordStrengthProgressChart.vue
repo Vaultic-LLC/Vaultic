@@ -48,12 +48,12 @@ export default defineComponent({
 		const color: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			stores.settingsStore.currentColorPalette.passwordsColor.primaryColor : stores.settingsStore.currentColorPalette.valuesColor.primaryColor);
 
-		let lableArray: Ref<number[]> = ref([...stores.encryptedDataStore.currentAndSafePasswords.current]);
-		let chartOneArray: Ref<number[]> = ref([...stores.encryptedDataStore.currentAndSafePasswords.safe]);
+		let lableArray: Ref<number[]> = ref([...stores.passwordStore.currentAndSafePasswords.current]);
+		let chartOneArray: Ref<number[]> = ref([...stores.passwordStore.currentAndSafePasswords.safe]);
 
 		let table: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values")
-		let target: Ref<(number | undefined)[]> = ref(stores.encryptedDataStore.currentAndSafePasswords.current.map(_ => stores.encryptedDataStore.passwords.length));
-		let max: Ref<number> = ref(Math.max(...stores.encryptedDataStore.currentAndSafePasswords.safe));
+		let target: Ref<(number | undefined)[]> = ref(stores.passwordStore.currentAndSafePasswords.current.map(_ => stores.passwordStore.passwords.length));
+		let max: Ref<number> = ref(Math.max(...stores.passwordStore.currentAndSafePasswords.safe));
 
 		const height: Ref<string> = ref('100%');
 		const width: Ref<string> = ref('100%');
@@ -205,6 +205,7 @@ export default defineComponent({
 					pointBackgroundColor: mixHexes(color.value, "888888"),
 					pointRadius: 0,
 					tension: 0.4,
+					hidden: true,
 				}
 			]
 		}
@@ -265,24 +266,24 @@ export default defineComponent({
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
 				newColor = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
-				lableArray.value = stores.encryptedDataStore.currentAndSafePasswords.current.map((_, i) => i);
-				chartOneArray.value = EMACalc([...stores.encryptedDataStore.currentAndSafePasswords.safe], 2);
+				lableArray.value = stores.passwordStore.currentAndSafePasswords.current.map((_, i) => i);
+				chartOneArray.value = EMACalc([...stores.passwordStore.currentAndSafePasswords.safe], 2);
 				table.value = "Password";
 
 				// show the target at the last 1/3 of the data unless we are less than 4. Les than 4 means a third won't give us 2 data points so just show the whole line
-				const targetPoint: number = stores.encryptedDataStore.currentAndSafePasswords.current.length < 4
+				const targetPoint: number = stores.passwordStore.currentAndSafePasswords.current.length < 4
 					? 0 :
-					Math.floor(stores.encryptedDataStore.currentAndSafePasswords.current.length - stores.encryptedDataStore.currentAndSafePasswords.current.length / 3);
+					Math.floor(stores.passwordStore.currentAndSafePasswords.current.length - stores.passwordStore.currentAndSafePasswords.current.length / 3);
 
 				// if the user has all safe passwords, make sure the two graphs are at the same point so that it looks like they can't make them any safer
-				if (stores.encryptedDataStore.currentAndSafePasswords.safe[stores.encryptedDataStore.currentAndSafePasswords.safe.length - 1] ==
-					stores.encryptedDataStore.currentAndSafePasswords.current[stores.encryptedDataStore.currentAndSafePasswords.current.length - 1])
+				if (stores.passwordStore.currentAndSafePasswords.safe[stores.passwordStore.currentAndSafePasswords.safe.length - 1] ==
+					stores.passwordStore.currentAndSafePasswords.current[stores.passwordStore.currentAndSafePasswords.current.length - 1])
 				{
-					target.value = stores.encryptedDataStore.currentAndSafePasswords.current.map((_, i) => i >= targetPoint ? chartOneArray.value[chartOneArray.value.length - 1] : undefined)
+					target.value = stores.passwordStore.currentAndSafePasswords.current.map((_, i) => i >= targetPoint ? chartOneArray.value[chartOneArray.value.length - 1] : undefined)
 				}
 				else
 				{
-					target.value = stores.encryptedDataStore.currentAndSafePasswords.current.map((_, i) => i >= targetPoint ? stores.encryptedDataStore.passwords.length : undefined)
+					target.value = stores.passwordStore.currentAndSafePasswords.current.map((_, i) => i >= targetPoint ? stores.passwordStore.passwords.length : undefined)
 				}
 
 				max.value = Math.max(...[...chartOneArray.value, ...(target.value.filter(v => v != undefined) as number[])]) + 0.5;
@@ -290,24 +291,24 @@ export default defineComponent({
 			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
 			{
 				newColor = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
-				lableArray.value = stores.encryptedDataStore.currentAndSafeValues.current.map((_, i) => i);
-				chartOneArray.value = EMACalc([...stores.encryptedDataStore.currentAndSafeValues.safe], 2);
+				lableArray.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i);
+				chartOneArray.value = EMACalc([...stores.valueStore.currentAndSafeValues.safe], 2);
 				table.value = "Value";
 
-				const targetPoint: number = stores.encryptedDataStore.currentAndSafeValues.current.length < 4
+				const targetPoint: number = stores.valueStore.currentAndSafeValues.current.length < 4
 					? 0 :
-					Math.floor(stores.encryptedDataStore.currentAndSafeValues.current.length - stores.encryptedDataStore.currentAndSafeValues.current.length / 3);
-				target.value = stores.encryptedDataStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? stores.encryptedDataStore.nameValuePairs.length : undefined)
+					Math.floor(stores.valueStore.currentAndSafeValues.current.length - stores.valueStore.currentAndSafeValues.current.length / 3);
+				target.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? stores.valueStore.nameValuePairs.length : undefined)
 
 				// if the user has all safe values, make sure the two graphs are at the same point so that it looks like they can't make them any safer
-				if (stores.encryptedDataStore.currentAndSafeValues.safe[stores.encryptedDataStore.currentAndSafeValues.safe.length - 1] ==
-					stores.encryptedDataStore.currentAndSafeValues.current[stores.encryptedDataStore.currentAndSafeValues.current.length - 1])
+				if (stores.valueStore.currentAndSafeValues.safe[stores.valueStore.currentAndSafeValues.safe.length - 1] ==
+					stores.valueStore.currentAndSafeValues.current[stores.valueStore.currentAndSafeValues.current.length - 1])
 				{
-					target.value = stores.encryptedDataStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? chartOneArray.value[chartOneArray.value.length - 1] : undefined)
+					target.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? chartOneArray.value[chartOneArray.value.length - 1] : undefined)
 				}
 				else
 				{
-					target.value = stores.encryptedDataStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? stores.encryptedDataStore.nameValuePairs.length : undefined)
+					target.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? stores.valueStore.nameValuePairs.length : undefined)
 				}
 
 				max.value = Math.max(...[...chartOneArray.value, ...(target.value.filter(v => v != undefined) as number[])]) + 0.5;
@@ -404,14 +405,14 @@ export default defineComponent({
 				resizeObserver.observe(chartContainer.value)
 			}
 
-			stores.encryptedDataStore.addEvent("onPasswordChange", onDataChange);
-			stores.encryptedDataStore.addEvent("onValueChange", onDataChange);
+			stores.passwordStore.addEvent("onPasswordChange", onDataChange);
+			stores.valueStore.addEvent("onValueChange", onDataChange);
 		});
 
 		onUnmounted(() =>
 		{
-			stores.encryptedDataStore.removeEvent("onPasswordChange", onDataChange);
-			stores.encryptedDataStore.removeEvent("onValueChange", onDataChange);
+			stores.passwordStore.removeEvent("onPasswordChange", onDataChange);
+			stores.valueStore.removeEvent("onValueChange", onDataChange);
 		});
 
 		setOptions(1000);
