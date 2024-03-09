@@ -1,4 +1,4 @@
-import { NameValuePair, NameValuePairType } from "../../Types/EncryptedData";
+import { NameValuePair } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
 
@@ -6,10 +6,9 @@ export interface ReactiveValue extends NameValuePair
 {
 	isOld: boolean;
 	isSafe: boolean;
-	updateValue: (key: string, value: NameValuePair, valueWasUpdated: boolean) => void;
 }
 
-export default async function createReactiveValue(key: string, nameValuePair: NameValuePair, encrypted: boolean = false): Promise<ReactiveValue>
+export default function createReactiveValue(nameValuePair: NameValuePair): ReactiveValue
 {
 	const nameValuePairState: NameValuePair = reactive(
 		{
@@ -26,68 +25,6 @@ export default async function createReactiveValue(key: string, nameValuePair: Na
 	});
 
 	const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !nameValuePairState.isDuplicate && !nameValuePairState.isWeak)
-
-	function checkIsWeak()
-	{
-		if (!nameValuePairState.valueType || !nameValuePairState.notifyIfWeak)
-		{
-			nameValuePairState.isWeak = false;
-			nameValuePairState.isWeakMessage = "";
-
-			return;
-		}
-
-		if (nameValuePairState.valueType == NameValuePairType.Verbal)
-		{
-			const wordCount: number = nameValuePairState.value.trim().split(/\s+/).length
-			if (wordCount < 5)
-			{
-				nameValuePairState.isWeak = true;
-				nameValuePairState.isWeakMessage = "Verbal Code has less than 5 words. For best security, create a Verbal Code that is longer than 5 words";
-			}
-		}
-		else if (nameValuePairState.valueType == NameValuePairType.Passcode)
-		{
-			const [weak, isWeakMessage] = window.api.helpers.validation.isWeak(nameValuePairState.value, "Passcode");
-
-			nameValuePairState.isWeak = weak;
-			nameValuePairState.isWeakMessage = isWeakMessage;
-		}
-	}
-
-	function encryptedValue(key: string)
-	{
-		nameValuePairState.value = window.api.utilities.crypt.encrypt(key, nameValuePairState.value);
-	}
-
-	function updateValue(key: string, value: NameValuePair, valueWasUpdated: boolean)
-	{
-		Object.assign(nameValuePairState, value);
-
-		if (valueWasUpdated)
-		{
-			//nameValuePairState.lastModifiedTime = Date.now();
-			nameValuePairState.valueLength = nameValuePairState.value.length;
-
-			checkIsWeak();
-			encryptedValue(key);
-		}
-		else if (!value.notifyIfWeak)
-		{
-			nameValuePairState.isWeak = false;
-			nameValuePairState.isWeakMessage = "";
-		}
-	}
-
-	// creating new value
-	if (!encrypted)
-	{
-		nameValuePairState.valueLength = nameValuePairState.value.length;
-		checkIsWeak();
-		encryptedValue(key);
-
-		await stores.filterStore.addFiltersToNewValue(key, stores.filterStore.nameValuePairFilters, nameValuePairState, "nameValuePairs");
-	}
 
 	return {
 		get id() { return nameValuePairState.id; },
@@ -109,6 +46,6 @@ export default async function createReactiveValue(key: string, nameValuePair: Na
 		get isPinned() { return nameValuePairState.isPinned; },
 		set isPinned(value: boolean) { nameValuePairState.isPinned = value; },
 		get valueLength() { return nameValuePairState.valueLength; },
-		updateValue
+		get key() { return nameValuePairState.key; },
 	};
 }

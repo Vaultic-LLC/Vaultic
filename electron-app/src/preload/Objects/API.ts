@@ -1,14 +1,12 @@
 import { getDeviceInfo } from './DeviceInfo';
-import vaulticServer, { VaulticServer } from "./VaulticServer";
 import cryptUtility, { CryptUtility } from '../Utilities/CryptUtility';
 import validationHelper, { ValidationHelper } from '../Helpers/ValidationHelper';
 import hashUtility, { HashUtility } from '../Utilities/HashUtility';
 import generatorUtility, { GeneratorUtility } from '../Utilities/Generator';
 import files, { Files } from './Files/Files';
-import license, { LicenseStatus } from "./License";
 import licenseHelper, { LicenseHelper } from '../Helpers/LicenseHelper';
 import { DeviceInfo } from '../Types/Device';
-import crypto from "crypto"
+import vaulticServer, { VaulticServer } from "./Server/VaulticServer"
 
 export interface Utilities
 {

@@ -4,7 +4,8 @@ export interface Files
 {
 	app: File;
 	settings: File;
-	encryptedData: File;
+	password: File;
+	value: File;
 	filter: File;
 	group: File;
 	license: File;
@@ -12,7 +13,8 @@ export interface Files
 
 const appFile = useFile("app");
 const settingsFile = useFile("settings");
-const encryptedDataFile = useFile("data");
+const passwordFile = useFile("passwords");
+const valueFile = useFile("values");
 const filterFile = useFile("filters");
 const groupFile = useFile("groups");
 const licenseFile = useFile("license");
@@ -21,7 +23,8 @@ const files: Files =
 {
 	app: appFile,
 	settings: settingsFile,
-	encryptedData: encryptedDataFile,
+	password: passwordFile,
+	value: valueFile,
 	filter: filterFile,
 	group: groupFile,
 	license: licenseFile

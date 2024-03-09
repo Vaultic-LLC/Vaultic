@@ -5,7 +5,7 @@
 		"src/main/*",
 		"src/preload/*",
 		"src/preload/Objects/API.ts",
-		"src/preload/Objects/VaulticServer.ts",
+		"src/preload/Objects/Server/*",
 		"src/preload/Objects/DeviceInfo.ts",
 		"src/preload/Objects/Files/*",
 		"src/preload/Objects/License.ts",

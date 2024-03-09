@@ -266,6 +266,12 @@ export default defineComponent({
 
 			if (saved)
 			{
+				passwordGroups.updateValues(stores.groupStore.passwordGroups);
+				pinnedPasswordGroups.updateValues(stores.groupStore.passwordGroups.filter(g => g.isPinned));
+
+				valueGroups.updateValues(stores.groupStore.valuesGroups);
+				pinnedValueGroups.updateValues(stores.groupStore.valuesGroups.filter(g => g.isPinned));
+
 				setTableRowDatas();
 			}
 		}

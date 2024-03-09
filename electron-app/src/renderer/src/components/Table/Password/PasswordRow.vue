@@ -80,13 +80,24 @@ export default defineComponent({
 
 		watch(() => props.authenticationPromise as Promise<string>, (newValue) =>
 		{
-			newValue?.then((key: string) =>
+			newValue?.then(async (key: string) =>
 			{
-				passwordValue.value = window.api.utilities.crypt.decrypt(key, passwordValue.value);
+				window.api.utilities.crypt.decrypt(key, passwordValue.value).then((password) =>
+				{
+					passwordValue.value = password;
+				});
+
 				securityQuestions.value.forEach(sq =>
 				{
-					sq.question = window.api.utilities.crypt.decrypt(key, sq.question);
-					sq.answer = window.api.utilities.crypt.decrypt(key, sq.answer);
+					window.api.utilities.crypt.decrypt(key, sq.question).then((question) =>
+					{
+						sq.question = question;
+					});
+
+					window.api.utilities.crypt.decrypt(key, sq.answer).then((answer) =>
+					{
+						sq.answer = answer;
+					});
 				});
 			}).catch(() =>
 			{

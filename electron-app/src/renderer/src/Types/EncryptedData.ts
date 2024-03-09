@@ -83,6 +83,7 @@ export const PasswordProperties: PropertySelectorDisplayFields[] = [
 export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable
 {
 	[key: string]: any;
+	key: string;
 	login: string;
 	domain: string;
 	email: string;
@@ -142,6 +143,7 @@ export const ValueProperties: PropertySelectorDisplayFields[] = [
 export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, IPinnable
 {
 	[key: string]: any;
+	key: string;
 	name: string;
 	value: string;
 	valueType?: NameValuePairType;
@@ -185,6 +187,7 @@ export function defaultPassword(): Password
 {
 	return {
 		id: "",
+		key: "",
 		passwordFor: '',
 		login: '',
 		domain: '',
@@ -214,6 +217,7 @@ export function defaultValue(): NameValuePair
 {
 	return {
 		id: "",
+		key: '',
 		name: '',
 		value: '',
 		notifyIfWeak: true,

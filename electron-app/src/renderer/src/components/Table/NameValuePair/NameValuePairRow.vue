@@ -44,7 +44,10 @@ export default defineComponent({
 		{
 			newValue?.then((key: string) =>
 			{
-				valueValue.value = window.api.utilities.crypt.decrypt(key, valueValue.value);
+				window.api.utilities.crypt.decrypt(key, valueValue.value).then((value) =>
+				{
+					valueValue.value  = value;
+				});
 			}).catch(() =>
 			{
 				// auth was cancelled

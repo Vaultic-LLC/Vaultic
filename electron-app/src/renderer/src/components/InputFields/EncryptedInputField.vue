@@ -96,9 +96,9 @@ export default defineComponent({
 			return true;
 		}
 
-		function onAuthenticationSuccessful(key: string)
+		async function onAuthenticationSuccessful(key: string)
 		{
-			inputText.value = window.api.utilities.crypt.decrypt(key, props.modelValue);
+			inputText.value = await window.api.utilities.crypt.decrypt(key, props.modelValue);
 			isLocked.value = false;
 			isDisabled.value = false;
 		}

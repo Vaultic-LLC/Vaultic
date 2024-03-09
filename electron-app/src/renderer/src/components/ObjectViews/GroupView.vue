@@ -221,17 +221,17 @@ export default defineComponent({
 							id: uuidv4(),
 							key: nvp.id,
 							values: values,
-							isActive: ref(groupState.value.nameValuePairs.includes(nvp.id)),
+							isActive: ref(groupState.value.values.includes(nvp.id)),
 							selectable: true,
 							onClick: function ()
 							{
-								if (groupState.value.nameValuePairs.includes(nvp.id))
+								if (groupState.value.values.includes(nvp.id))
 								{
-									groupState.value.nameValuePairs = groupState.value.nameValuePairs.filter(id => id != nvp.id);
+									groupState.value.values = groupState.value.values.filter(id => id != nvp.id);
 								}
 								else
 								{
-									groupState.value.nameValuePairs.push(nvp.id);
+									groupState.value.values.push(nvp.id);
 								}
 							}
 						}

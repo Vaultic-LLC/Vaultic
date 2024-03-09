@@ -1,18 +1,17 @@
-import { NameValuePair, CurrentAndSafeStructure, IIdentifiable, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
+import { NameValuePair, CurrentAndSafeStructure, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, reactive, ref } from "vue";
 import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
-import { DataType, Filter, Group } from "../../Types/Table";
+import { DataType } from "../../Types/Table";
 import { Dictionary } from "../../Types/DataStructures";
 import { AuthenticationStore, Stores, stores } from ".";
-import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
 import fileHelper from "@renderer/Helpers/fileHelper";
 
 export interface ValueStoreState
 {
-	loadedFile: boolean;
-	nameValuePairs: ReactiveValue[];
+	values: ReactiveValue[];
+	valueHashSalt: string;
 	valueHash: string;
-	duplicateNameValuePairs: Dictionary<string[]>;
+	duplicateValues: Dictionary<string[]>;
 	currentAndSafeValues: CurrentAndSafeStructure;
 }
 
@@ -33,9 +32,6 @@ export interface ValueStore extends AuthenticationStore
 	addNameValuePair: (key: string, nameValuePair: NameValuePair) => Promise<boolean>;
 	updateNameValuePair: (nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string) => Promise<void>;
 	deleteNameValuePair: (key: string, nameValuePair: ReactiveValue) => Promise<void>;
-	addRemoveGroupsFromPasswordValue: (key: string, addedValues: string[], removedValues: string[], group: Group) => Promise<void>;
-	removeFilterFromValues: (key: string, filter: Filter) => Promise<void>;
-	removeGroupFromValues: (key: string, group: Group) => Promise<void>;
 	toggleAtRiskModels: (dataType: DataType, atRiskType: AtRiskType) => void;
 	addEvent: (event: ValueStoreEvents, callback: () => void) => void;
 	removeEvent: (event: ValueStoreEvents, callback: () => void) => void;
@@ -47,15 +43,17 @@ export default function useValueStore(): ValueStore
 {
 	encryptedDataState = reactive(defaultState());
 	const events: Dictionary<{ (): void }[]> = {};
+	let loadedFile: boolean = false;
 
 	// -- Generic Store Methods
 	function defaultState(): ValueStoreState
 	{
+		loadedFile = false;
 		return {
-			loadedFile: false,
-			nameValuePairs: [],
+			values: [],
+			valueHashSalt: "",
 			valueHash: "",
-			duplicateNameValuePairs: {},
+			duplicateValues: {},
 			currentAndSafeValues: { current: [], safe: [] },
 		};
 	}
@@ -73,30 +71,32 @@ export default function useValueStore(): ValueStore
 	async function updateState(key: string, state: ValueStoreState): Promise<void>
 	{
 		Object.assign(encryptedDataState, state);
+
+		encryptedDataState.values = encryptedDataState.values.map(v => createReactiveValue(v));
 		await writeState(key);
 	}
 
 	function canAuthenticateKeyBeforeEntry(): Promise<boolean>
 	{
-		return window.api.files.encryptedData.exists();
+		return window.api.files.value.exists();
 	}
 
 	function canAuthenticateKeyAfterEntry(): boolean
 	{
-		return encryptedDataState.nameValuePairs.length > 0;
+		return encryptedDataState.values.length > 0;
 	}
 
 	function writeState(key: string): Promise<void>
 	{
-		if (encryptedDataState.nameValuePairs.length == 0)
+		if (encryptedDataState.values.length == 0)
 		{
 			// TODO: error handling
-			return window.api.files.encryptedData.empty();
+			return window.api.files.value.empty();
 		}
 		else
 		{
 			// TODO: error handling
-			return fileHelper.write(key, encryptedDataState, window.api.files.encryptedData);
+			return fileHelper.write(key, encryptedDataState, window.api.files.value);
 		}
 	}
 
@@ -106,30 +106,33 @@ export default function useValueStore(): ValueStore
 	}
 
 	// --- Private Helper Methods ---
-	function calculateHash<T extends { [key: string]: string }>(key: string, values: T[], property: string)
+	async function calculateHash<T extends { [key: string]: string }>(key: string, values: T[], salt: string)
 	{
-		let runningPasswords: string = "";
-		values.forEach(v => runningPasswords += window.api.utilities.crypt.decrypt(key, v[property]));
+		let runningKeys: string = "";
+		for (const value of values)
+		{
+			runningKeys += await window.api.utilities.crypt.decrypt(key, value.key);
+		}
 
-		return window.api.utilities.hash.hash(runningPasswords);
+		return window.api.utilities.hash.hash(runningKeys, salt);
 	}
 
 	async function readState(key: string): Promise<boolean>
 	{
 		return new Promise((resolve, _) =>
 		{
-			if (encryptedDataState.loadedFile)
+			if (loadedFile)
 			{
 				resolve(true);
 			}
 			// if the key is wrong there is a good chance that the json will fail when parsing, but its still possible to produce valid json that isn't right
 			try
 			{
-				fileHelper.read<ValueStoreState>(key, window.api.files.encryptedData).then(async (data: ValueStoreState) =>
+				fileHelper.read<ValueStoreState>(key, window.api.files.value).then(async (data: ValueStoreState) =>
 				{
 					if (data.valueHash)
 					{
-						if (calculateHash(key, data.nameValuePairs, 'value') == window.api.utilities.crypt.decrypt(key, data.valueHash))
+						if (await calculateHash(key, data.values, data.valueHashSalt) == await window.api.utilities.crypt.decrypt(key, data.valueHash))
 						{
 							await assignState(data);
 							resolve(true);
@@ -152,132 +155,26 @@ export default function useValueStore(): ValueStore
 		async function assignState(state: ValueStoreState): Promise<void>
 		{
 			Object.assign(encryptedDataState, state);
-			encryptedDataState.loadedFile = true;
+			loadedFile = true;
 
-			encryptedDataState.nameValuePairs = [];
+			encryptedDataState.values = [];
 
-			state.nameValuePairs.forEach(async nvp =>
+			state.values.forEach(nvp =>
 			{
-				const vs: ReactiveValue = await createReactiveValue(key, nvp, true);
-				encryptedDataState.nameValuePairs.push(vs);
+				const vs: ReactiveValue = createReactiveValue(nvp);
+				encryptedDataState.values.push(vs);
 			});
 		}
 	}
 
-	function checkKeyUpdateValueHash(key: string, newValue: string): boolean
-	{
-		let runningValues: string = "";
-		encryptedDataState.nameValuePairs.forEach(nvp => runningValues += window.api.utilities.crypt.decrypt(key, nvp.value));
-
-		if (encryptedDataState.valueHash === "" || window.api.utilities.hash.hash(runningValues) == window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash))
-		{
-			runningValues += newValue;
-			encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, window.api.utilities.hash.hash(runningValues));
-
-			return true;
-		}
-
-		return false;
-	}
-
-	function updateDuplicatePasswordOrValueIndex<T extends IIdentifiable & (ReactiveValue)>
-		(key: string, value: T, property: string, allValues: T[], duplicateValues: Dictionary<string[]>)
-	{
-		const potentialDupllicates: T[] = allValues.filter(v => v.id != value.id);
-		const decryptedValue: string = window.api.utilities.crypt.decrypt(key, value[property]);
-
-		if (!duplicateValues[value.id])
-		{
-			duplicateValues[value.id] = [];
-		}
-
-		potentialDupllicates.forEach(d =>
-		{
-			if (!duplicateValues[d.id])
-			{
-				duplicateValues[d.id] = [];
-			}
-
-			const potentialDuplicateDecryptedValue: string = window.api.utilities.crypt.decrypt(key, d[property]);
-			if (decryptedValue == potentialDuplicateDecryptedValue)
-			{
-				if (!duplicateValues[value.id].includes(d.id))
-				{
-					value.isDuplicate = true;
-					duplicateValues[value.id].push(d.id)
-				}
-
-				if (!duplicateValues[d.id].includes(value.id))
-				{
-					allValues.filter(v => v.id == d.id)[0].isDuplicate = true;
-					duplicateValues[d.id].push(value.id);
-				}
-			}
-			else
-			{
-				if (duplicateValues[value.id].includes(d.id))
-				{
-					duplicateValues[value.id].splice(duplicateValues[value.id].indexOf(d.id), 1);
-				}
-
-				if (duplicateValues[d.id].includes(value.id))
-				{
-					duplicateValues[d.id].splice(duplicateValues[d.id].indexOf(value.id), 1);
-				}
-
-				if (duplicateValues[d.id].length == 0)
-				{
-					allValues.filter(v => v.id == d.id)[0].isDuplicate = false;
-					delete duplicateValues[d.id];
-				}
-			}
-		});
-
-		if (duplicateValues[value.id].length == 0)
-		{
-			value.isDuplicate = false;
-			delete duplicateValues[value.id];
-		}
-	}
-
-	function removeValueFromDuplicates<T extends IIdentifiable & (ReactiveValue)>
-		(value: T, duplicateValues: Dictionary<string[]>)
-	{
-		if (!duplicateValues[value.id])
-		{
-			return;
-		}
-
-		duplicateValues[value.id].forEach(v =>
-		{
-			if (!duplicateValues[v])
-			{
-				return;
-			}
-
-			if (duplicateValues[v].includes(value.id))
-			{
-				duplicateValues[v].splice(duplicateValues[v].indexOf(value.id), 1);
-			}
-
-			if (duplicateValues[v].length == 0)
-			{
-				delete duplicateValues[v];
-			}
-		});
-
-		delete duplicateValues[value.id];
-	}
-
 	// --- Public ---
-	const oldNameValuePairs: ComputedRef<string[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => nvp.isOld).map(nvp => nvp.id));
-	const weakVerbalValues: ComputedRef<string[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => nvp.valueType == NameValuePairType.Verbal && nvp.isWeak).map(nvp => nvp.id));
-	const weakPasscodeValues: ComputedRef<string[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => nvp.valueType == NameValuePairType.Passcode && nvp.isWeak).map(nvp => nvp.id));
-	const duplicateNameValuePairs: ComputedRef<string[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => nvp.isDuplicate).map(nvp => nvp.id));
-	const duplicateNameValuePairsLength: ComputedRef<number> = computed(() => Object.keys(encryptedDataState.duplicateNameValuePairs).length);
-	const safeNameValuePairs: ComputedRef<string[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => nvp.isSafe).map(nvp => nvp.id));
+	const oldNameValuePairs: ComputedRef<string[]> = computed(() => encryptedDataState.values.filter(nvp => nvp.isOld).map(nvp => nvp.id));
+	const weakVerbalValues: ComputedRef<string[]> = computed(() => encryptedDataState.values.filter(nvp => nvp.valueType == NameValuePairType.Verbal && nvp.isWeak).map(nvp => nvp.id));
+	const weakPasscodeValues: ComputedRef<string[]> = computed(() => encryptedDataState.values.filter(nvp => nvp.valueType == NameValuePairType.Passcode && nvp.isWeak).map(nvp => nvp.id));
+	const duplicateNameValuePairs: ComputedRef<string[]> = computed(() => encryptedDataState.values.filter(nvp => nvp.isDuplicate).map(nvp => nvp.id));
+	const duplicateNameValuePairsLength: ComputedRef<number> = computed(() => Object.keys(encryptedDataState.duplicateValues).length);
 
-	const unpinnedValues: ComputedRef<ReactiveValue[]> = computed(() => encryptedDataState.nameValuePairs.filter(nvp => !nvp.isPinned));
+	const unpinnedValues: ComputedRef<ReactiveValue[]> = computed(() => encryptedDataState.values.filter(nvp => !nvp.isPinned));
 	const activeAtRiskValueType: Ref<AtRiskType> = ref(AtRiskType.None);
 
 	function init(_: Stores)
@@ -291,11 +188,11 @@ export default function useValueStore(): ValueStore
 			return true;
 		}
 
-		if (encryptedDataState.loadedFile)
+		if (loadedFile)
 		{
 			if (encryptedDataState.valueHash)
 			{
-				return calculateHash(key, encryptedDataState.nameValuePairs, "value") == window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash);
+				return await calculateHash(key, encryptedDataState.values, encryptedDataState.valueHashSalt) == await window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash);
 			}
 		}
 		else
@@ -306,157 +203,63 @@ export default function useValueStore(): ValueStore
 		return false;
 	}
 
-	function checkKeyAfterEntry(key: string): boolean
+	async function checkKeyAfterEntry(key: string): Promise<boolean>
 	{
 		if (encryptedDataState.valueHash)
 		{
-			return calculateHash(key, encryptedDataState.nameValuePairs, "value") == window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash);
+			return await calculateHash(key, encryptedDataState.values, encryptedDataState.valueHashSalt) == await window.api.utilities.crypt.decrypt(key, encryptedDataState.valueHash);
 		}
 
 		return false;
 	}
 
-	async function addNameValuePair(key: string, nameValuePair: NameValuePair): Promise<boolean>
+	async function addNameValuePair(key: string, value: NameValuePair): Promise<boolean>
 	{
-		if (!checkKeyUpdateValueHash(key, nameValuePair.value))
-		{
-			return false;
-		}
+		const addValueData = {
+			Sync: false,
+			OldDays: stores.settingsStore.oldPasswordDays,
+			Key: key,
+			Value: value,
+			...stores.getStates()
+		};
 
-		nameValuePair.id = generateUniqueID(encryptedDataState.nameValuePairs);
+		const data: any = await window.api.server.value.add(JSON.stringify(addValueData));
+		await stores.updateAllStates(key, data);
 
-		const ReactiveValue: ReactiveValue = await createReactiveValue(key, nameValuePair);
-		encryptedDataState.nameValuePairs.push(ReactiveValue);
-
-		updateDuplicatePasswordOrValueIndex(key, ReactiveValue, "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
-
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
-		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
-
-		await stores.groupStore.syncGroupsAfterPasswordOrValueWasAdded(key, DataType.NameValuePairs, nameValuePair);
-
-		await writeState(key);
 		events["onValueChange"]?.forEach(c => c());
-		stores.syncToServer(key);
-
 		return true;
 	}
 
-	async function updateNameValuePair(nameValuePair: NameValuePair, valueWasUpdated: boolean, key: string): Promise<void>
+	async function updateNameValuePair(value: NameValuePair, valueWasUpdated: boolean, key: string): Promise<void>
 	{
-		if (valueWasUpdated && !checkKeyAfterEntry(key))
-		{
-			return;
-		}
+		const updatedValueData = {
+			Sync: false,
+			OldDays: stores.settingsStore.oldPasswordDays,
+			Key: key,
+			Value: value,
+			ValueWasUpdated: valueWasUpdated,
+			...stores.getStates()
+		};
 
-		const currentValue: ReactiveValue[] = encryptedDataState.nameValuePairs.filter(nvp => nvp.id == nameValuePair.id);
-		if (currentValue.length != 1)
-		{
-			// TODO: show toast message
-			return;
-		}
+		const data: any = await window.api.server.value.update(JSON.stringify(updatedValueData));
+		await stores.updateAllStates(key, data);
 
-		// get groups before updating
-		const addedGroups: string[] = nameValuePair.Groups.filter(currentGroup => !currentValue[0].Groups.includes(currentGroup));
-		const removedGroups: string[] = currentValue[0].Groups.filter(previousGroup => !nameValuePair.Groups.includes(previousGroup));
-
-		currentValue[0].updateValue(key, nameValuePair, valueWasUpdated);
-
-		if (valueWasUpdated)
-		{
-			updateDuplicatePasswordOrValueIndex(key, currentValue[0], "value", encryptedDataState.nameValuePairs, encryptedDataState.duplicateNameValuePairs);
-
-			encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
-			encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
-
-			encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
-		}
-
-		await stores.groupStore.syncGroupsAfterPasswordOrValueWasUpdated(key, DataType.NameValuePairs, addedGroups, removedGroups, nameValuePair.id);
-		await stores.filterStore.syncFiltersForValues(key, stores.filterStore.nameValuePairFilters, [nameValuePair as ReactiveValue], "nameValuePairs", true);
-
-		await writeState(key);
 		events["onValueChange"]?.forEach(c => c());
-		stores.syncToServer(key);
 	}
 
-	async function deleteNameValuePair(key: string, nameValuePair: ReactiveValue): Promise<void>
+	async function deleteNameValuePair(key: string, value: ReactiveValue): Promise<void>
 	{
-		// empty the password so we can just run it through the duplicate logic since no other passwords should be empty
-		removeValueFromDuplicates(nameValuePair, encryptedDataState.duplicateNameValuePairs);
+		const deleteValueData = {
+			Sync: false,
+			Key: key,
+			Value: value,
+			...stores.getStates()
+		};
 
-		encryptedDataState.nameValuePairs.splice(encryptedDataState.nameValuePairs.indexOf(nameValuePair), 1);
+		const data: any = await window.api.server.value.delete(JSON.stringify(deleteValueData));
+		await stores.updateAllStates(key, data);
 
-		encryptedDataState.currentAndSafeValues.current.push(encryptedDataState.nameValuePairs.length);
-		encryptedDataState.currentAndSafeValues.safe.push(safeNameValuePairs.value.length);
-
-		encryptedDataState.valueHash = window.api.utilities.crypt.encrypt(key, calculateHash(key, encryptedDataState.nameValuePairs, "value"));
-
-		// remove from groups and filters
-		await stores.groupStore.removeValueFromGroups(key, DataType.NameValuePairs, nameValuePair);
-		await stores.filterStore.removeValueFromFilers(key, DataType.NameValuePairs, nameValuePair);
-
-		await writeState(key);
 		events["onValueChange"]?.forEach(c => c());
-		stores.syncToServer(key);
-	}
-
-	function addRemoveGroupsFromPasswordValue(key: string, addedValues: string[], removedValues: string[], group: Group): Promise<void>
-	{
-		if (group.type == DataType.NameValuePairs)
-		{
-			addedValues.forEach(v =>
-			{
-				const nameValuePair: ReactiveValue = encryptedDataState.nameValuePairs.filter(nvp => nvp.id == v)[0];
-				if (!nameValuePair.Groups.includes(group.id))
-				{
-					nameValuePair.Groups.push(group.id);
-				}
-			});
-
-			removedValues.forEach(v =>
-			{
-				const nameValuePair: ReactiveValue = encryptedDataState.nameValuePairs.filter(nvp => nvp.id == v)[0];
-				if (nameValuePair.Groups.includes(group.id))
-				{
-					nameValuePair.Groups.splice(nameValuePair.Groups.indexOf(v), 1);
-				}
-			});
-		}
-
-		return writeState(key);
-	}
-
-	function removeFilterFromValues(key: string, filter: Filter): Promise<void>
-	{
-		if (filter.type == DataType.NameValuePairs)
-		{
-			encryptedDataState.nameValuePairs.forEach(nvp =>
-			{
-				if (nvp.filters.includes(filter.id))
-				{
-					nvp.filters.splice(nvp.filters.indexOf(filter.id), 1);
-				}
-			});
-		}
-
-		return writeState(key);
-	}
-
-	function removeGroupFromValues(key: string, group: Group): Promise<void>
-	{
-		if (group.type == DataType.NameValuePairs)
-		{
-			encryptedDataState.nameValuePairs.forEach(nvp =>
-			{
-				if (nvp.Groups.includes(group.id))
-				{
-					nvp.Groups.splice(nvp.Groups.indexOf(group.id), 1);
-				}
-			});
-		}
-
-		return writeState(key);
 	}
 
 	function toggleAtRiskModels(dataType: DataType, atRiskType: AtRiskType)
@@ -495,7 +298,7 @@ export default function useValueStore(): ValueStore
 	}
 
 	return {
-		get nameValuePairs() { return encryptedDataState.nameValuePairs; },
+		get nameValuePairs() { return encryptedDataState.values; },
 		get unpinnedValues() { return unpinnedValues.value; },
 		oldNameValuePairs,
 		duplicateNameValuePairs,
@@ -516,10 +319,7 @@ export default function useValueStore(): ValueStore
 		checkKeyAfterEntry,
 		addNameValuePair,
 		updateNameValuePair,
-		addRemoveGroupsFromPasswordValue,
 		deleteNameValuePair,
-		removeFilterFromValues,
-		removeGroupFromValues,
 		toggleAtRiskModels,
 		addEvent,
 		removeEvent

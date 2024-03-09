@@ -1,14 +1,12 @@
-import { Filter, DataType, FilterCondition, FilterConditionType, Group } from "../../Types/Table";
+import { Filter, DataType } from "../../Types/Table";
 import { ComputedRef, Ref, computed, reactive, ref } from "vue";
 import { AuthenticationStore, stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
-import { AtRiskType, IFilterable, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
-import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
+import { AtRiskType } from "../../Types/EncryptedData";
 import fileHelper from "@renderer/Helpers/fileHelper";
 
 export interface FilterStoreState
 {
-	loadedFile: boolean;
 	filterHashSalt: string;
 	filterHash: string;
 	filters: Filter[];
@@ -36,13 +34,6 @@ export interface FilterStore extends AuthenticationStore
 	toggleFilter(id: string): boolean | undefined;
 	updateFilter(key: string, updatedFilter: Filter): Promise<void>;
 	deleteFilter: (key: string, filter: Filter) => Promise<void>;
-	addFiltersToNewValue: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>
-		(key: string, filters: Filter[], value: T, valuesProperty: string) => Promise<void>;
-	syncFiltersForValues: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>
-		(key: string, filters: Filter[], arr: T[], valuesProperty: string, witeFile: boolean) => Promise<void>;
-	recalcGroupFilters: <T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>
-		(key: string, filters: Filter[], arr: T[], valuesProperty: string) => Promise<void>;
-	removeValueFromFilers: <T extends { [index: string]: string | number } & IFilterable & IIdentifiable>(key: string, dataType: DataType, value: T) => Promise<void>;
 	toggleAtRiskType: (dataType: DataType, atRiskType: AtRiskType) => void;
 }
 
@@ -51,12 +42,12 @@ let filterState: FilterStoreState;
 export default function useFilterStore(): FilterStore
 {
 	filterState = reactive(defaultState());
-
+	let loadedFile: boolean = false;
 	// --- Generic Store methods ---
 	function defaultState(): FilterStoreState
 	{
+		loadedFile = false;
 		return {
-			loadedFile: false,
 			filterHashSalt: '',
 			filterHash: '',
 			filters: [],
@@ -87,7 +78,7 @@ export default function useFilterStore(): FilterStore
 	{
 		return new Promise((resolve, _) =>
 		{
-			if (filterState.loadedFile)
+			if (loadedFile)
 			{
 				resolve(true);
 				return;
@@ -95,7 +86,7 @@ export default function useFilterStore(): FilterStore
 
 			fileHelper.read<FilterStoreState>(key, window.api.files.filter).then((state: FilterStoreState) =>
 			{
-				state.loadedFile = true;
+				loadedFile = true;
 				Object.assign(filterState, state);
 
 				resolve(true);
@@ -139,7 +130,6 @@ export default function useFilterStore(): FilterStore
 		}
 
 		let runningKeys: string = "";
-		//filterState.filters.forEach(async f => runningKeys += await window.api.utilities.crypt.decrypt(key, f.key));
 		for (const filter of filterState.filters)
 		{
 			runningKeys += await window.api.utilities.crypt.decrypt(key, filter.key);
@@ -167,213 +157,6 @@ export default function useFilterStore(): FilterStore
 		}
 
 		return window.api.utilities.hash.hash(runningKeys, filterState.filterHashSalt)
-	}
-
-	async function updateHash(key: string, filter: Filter | undefined = undefined)
-	{
-		let runningKeys: string = "";
-		filterState.filters.forEach(f => runningKeys += window.api.utilities.crypt.decrypt(key, f.key));
-
-		if (filterState.filterHash === "" || window.api.utilities.crypt.decrypt(key, filterState.filterHash) === window.api.utilities.hash.hash(runningKeys))
-		{
-			if (filter && filter.key)
-			{
-				runningKeys += filter.key;
-			}
-
-			filterState.filterHash = await window.api.utilities.crypt.encrypt(key, await window.api.utilities.hash.hash(runningKeys));
-		}
-	}
-
-	// --- Private ---
-	// TODO: Test w/ multiple conditions
-	function filterAppliesToValue<T extends { [index: string]: string | number } & IFilterable & IGroupable>(conditions: FilterCondition[], value: T): boolean
-	{
-		let allFilterConditionsApply: boolean = true;
-		conditions.forEach(fc =>
-		{
-			if (allFilterConditionsApply == false)
-			{
-				return allFilterConditionsApply;
-			}
-
-			if (fc.property === "groups")
-			{
-				const groups: Group[] = stores.groupStore.groups.filter(g => value.groups.includes(g.id));
-
-				switch (fc.filterType)
-				{
-					case FilterConditionType.StartsWith:
-						allFilterConditionsApply = allFilterConditionsApply && groups.some(g => g.name.toLowerCase().startsWith(fc.value.toLowerCase()));
-						break;
-					case FilterConditionType.EndsWith:
-						allFilterConditionsApply = allFilterConditionsApply && groups.some(g => g.name.toLowerCase().endsWith(fc.value.toLowerCase()));
-						break;
-					case FilterConditionType.Contains:
-						allFilterConditionsApply = allFilterConditionsApply && groups.some(g => g.name.toLowerCase().includes(fc.value.toLowerCase()));
-						break;
-					case FilterConditionType.EqualTo:
-						allFilterConditionsApply = allFilterConditionsApply && groups.some(g => g.name.toLowerCase() == fc.value.toLowerCase());
-						break;
-					default:
-						return false;
-				}
-			}
-			else
-			{
-				switch (fc.filterType)
-				{
-					case FilterConditionType.StartsWith:
-						allFilterConditionsApply = allFilterConditionsApply && value[fc.property].toString().toLowerCase().startsWith(fc.value.toLowerCase());
-						break;
-					case FilterConditionType.EndsWith:
-						allFilterConditionsApply = allFilterConditionsApply && value[fc.property].toString().toLowerCase().endsWith(fc.value.toLowerCase());
-						break;
-					case FilterConditionType.Contains:
-						allFilterConditionsApply = allFilterConditionsApply && value[fc.property].toString().toLowerCase().includes(fc.value.toLowerCase());
-						break;
-					case FilterConditionType.EqualTo:
-						allFilterConditionsApply = allFilterConditionsApply && value[fc.property].toString().toLowerCase() == fc.value.toLowerCase();
-						break;
-					default:
-						return false;
-				}
-			}
-
-			return false;
-		});
-
-		return allFilterConditionsApply;
-	}
-
-	function updateEmptyFilters(filter: Filter, valuesProperty: string, emptyFilters: string[])
-	{
-		if (filter[valuesProperty].length == 0)
-		{
-			if (!emptyFilters.includes(filter.id))
-			{
-				emptyFilters.push(filter.id);
-			}
-		}
-		else
-		{
-			if (emptyFilters.includes(filter.id))
-			{
-				emptyFilters.splice(emptyFilters.indexOf(filter.id), 1);
-			}
-		}
-	}
-
-	function getDuplicateFilters(filter: Filter, valuesProperty: string, allFilters: Filter[]): string[]
-	{
-		// get filters that are duplciate because they have nothing
-		if (filter[valuesProperty].length == 0)
-		{
-			return allFilters.filter(f => f[valuesProperty].length == 0 && f.id != filter.id).map(f => f.id);
-		}
-
-		let potentialDuplicateFilters: Filter[] = allFilters.filter(f => f.id != filter.id && f[valuesProperty].length == filter[valuesProperty].length);
-		for (let i = 0; i < filter[valuesProperty].length; i++)
-		{
-			if (potentialDuplicateFilters.length == 0)
-			{
-				return [];
-			}
-
-			potentialDuplicateFilters = potentialDuplicateFilters.filter(f => f[valuesProperty].includes(filter[valuesProperty][i]));
-		}
-
-		return potentialDuplicateFilters.map(f => f.id);
-	}
-
-	function checkAddRemoveDuplicateFilters(filter: Filter, valuesProperty: string, allFilters: Filter[], duplicateFilters: Dictionary<string[]>)
-	{
-		if (!duplicateFilters[filter.id])
-		{
-			duplicateFilters[filter.id] = [];
-		}
-
-		const newDuplicateGroups: string[] = getDuplicateFilters(filter, valuesProperty, allFilters);
-		const addedDuplicateGroups: string[] = newDuplicateGroups.filter(g => !duplicateFilters[filter.id].includes(g));
-		const removedDuplicateGroups: string[] = duplicateFilters[filter.id].filter(g => !newDuplicateGroups.includes(g));
-
-		// nothing changed, everything is still good
-		if (newDuplicateGroups.length == 0 && duplicateFilters[filter.id].length == 0)
-		{
-			delete duplicateFilters[filter.id];
-			return;
-		}
-
-		// add all new duplicate groups
-		addedDuplicateGroups.forEach(g =>
-		{
-			if (!duplicateFilters[filter.id].includes(g))
-			{
-				duplicateFilters[filter.id].push(g);
-			}
-
-			if (!duplicateFilters[g])
-			{
-				duplicateFilters[g] = [];
-			}
-
-			if (!duplicateFilters[g].includes(filter.id))
-			{
-				duplicateFilters[g].push(filter.id);
-			}
-		});
-
-		// remove all duplicates group that are no longer duplciate. Delete property if its now empty
-		removedDuplicateGroups.forEach(g =>
-		{
-			if (duplicateFilters[filter.id].includes(g))
-			{
-				duplicateFilters[filter.id].splice(duplicateFilters[filter.id].indexOf(g), 1);
-			}
-
-			if (duplicateFilters[g].includes(filter.id))
-			{
-				duplicateFilters[g].splice(duplicateFilters[g].indexOf(filter.id), 1);
-				if (duplicateFilters[g].length == 0)
-				{
-					delete duplicateFilters[g];
-				}
-			}
-		});
-
-		// delete property if its now empty
-		if (duplicateFilters[filter.id].length == 0)
-		{
-			delete duplicateFilters[filter.id];
-		}
-	}
-
-	function removeDuplicateFilter(filter: Filter, duplicateFilters: Dictionary<string[]>)
-	{
-		if (!duplicateFilters[filter.id])
-		{
-			return;
-		}
-
-		duplicateFilters[filter.id].forEach(f =>
-		{
-			if (!duplicateFilters[f])
-			{
-				return;
-			}
-
-			if (duplicateFilters[f].includes(filter.id))
-			{
-				duplicateFilters[f].splice(duplicateFilters[f].indexOf(filter.id), 1);
-			}
-
-			if (duplicateFilters[f].length == 0)
-			{
-				delete duplicateFilters[f];
-			}
-		});
-
-		delete duplicateFilters[filter.id];
 	}
 
 	// --- Public ---
@@ -411,43 +194,8 @@ export default function useFilterStore(): FilterStore
 			...stores.getStates()
 		};
 
-		const data: any = await window.api.server.addFilter(JSON.stringify(addFilterData));
-		console.log(data);
+		const data: any = await window.api.server.filter.add(JSON.stringify(addFilterData));
 		await stores.updateAllStates(key, data);
-		// filter.id = generateUniqueID(filterState.filters);
-		// filter.key = window.api.utilities.generator.randomValue(30);
-
-		// filterState.filters.push(filter);
-
-		// if (filter.type == DataType.Passwords)
-		// {
-		// 	syncFiltersForValues(key, [filter], stores.encryptedDataStore.passwords, "passwords");
-		// 	updateEmptyFilters(filter, "passwords", filterState.emptyPasswordFilters);
-
-		// 	const duplicateFilters: string[] = getDuplicateFilters(filter, "passwords", passwordFilters.value);
-		// 	if (duplicateFilters.length > 0)
-		// 	{
-		// 		filterState.duplicatePasswordFilters[filter.id] = duplicateFilters;
-		// 	}
-
-		// }
-		// else if (filter.type == DataType.NameValuePairs)
-		// {
-		// 	syncFiltersForValues(key, [filter], stores.encryptedDataStore.nameValuePairs, "nameValuePairs");
-		// 	updateEmptyFilters(filter, "nameValuePairs", filterState.emptyValueFilters);
-
-		// 	const duplicateFilters: string[] = getDuplicateFilters(filter, "nameValuePairs", nameValuePairFilters.value);
-		// 	if (duplicateFilters.length > 0)
-		// 	{
-		// 		filterState.duplicateValueFilters[filter.id] = duplicateFilters;
-		// 	}
-		// }
-
-		// updateHash(key, filter);
-		// filter.key = window.api.utilities.crypt.encrypt(key, filter.key);
-
-		// await writeState(key);
-		// stores.syncToServer(key);
 	}
 
 	// TODO: test
@@ -460,26 +208,8 @@ export default function useFilterStore(): FilterStore
 			...stores.getStates()
 		};
 
-		const data: any = await window.api.server.updateFilter(JSON.stringify(addFilterData));
-		console.log(data);
+		const data: any = await window.api.server.filter.update(JSON.stringify(addFilterData));
 		await stores.updateAllStates(key, data);
-		// Object.assign(filterState.filters.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
-		// switch (updatedFilter.type)
-		// {
-		// 	case DataType.Passwords:
-		// 		syncFiltersForValues(key, [updatedFilter], stores.passwordStore.passwords, "passwords");
-		// 		updateEmptyFilters(updatedFilter, "passwords", filterState.emptyPasswordFilters);
-		// 		checkAddRemoveDuplicateFilters(updatedFilter, "passwords", passwordFilters.value, filterState.duplicatePasswordFilters);
-		// 		break;
-		// 	case DataType.NameValuePairs:
-		// 		syncFiltersForValues(key, [updatedFilter], stores.valueStore.nameValuePairs, "nameValuePairs");
-		// 		updateEmptyFilters(updatedFilter, "nameValuePairs", filterState.emptyValueFilters);
-		// 		checkAddRemoveDuplicateFilters(updatedFilter, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
-		// 		break;
-		// }
-
-		// await writeState(key);
-		// stores.syncToServer(key);
 	}
 
 	async function deleteFilter(key: string, filter: Filter): Promise<void>
@@ -491,209 +221,8 @@ export default function useFilterStore(): FilterStore
 			...stores.getStates()
 		};
 
-		const data: any = await window.api.server.deleteFilter(JSON.stringify(addFilterData));
-		console.log(data);
+		const data: any = await window.api.server.filter.delete(JSON.stringify(addFilterData));
 		await stores.updateAllStates(key, data);
-		// filterState.filters.splice(filterState.filters.indexOf(filter), 1);
-		// await stores.encryptedDataStore.removeFilterFromValues(key, filter);
-
-		// if (filter.type == DataType.Passwords)
-		// {
-		// 	if (filterState.emptyPasswordFilters.includes(filter.id))
-		// 	{
-		// 		filterState.emptyPasswordFilters.splice(filterState.emptyPasswordFilters.indexOf(filter.id), 1);
-		// 	}
-
-		// 	removeDuplicateFilter(filter, filterState.duplicatePasswordFilters);
-		// }
-		// else if (filter.type == DataType.NameValuePairs)
-		// {
-		// 	if (filterState.emptyValueFilters.includes(filter.id))
-		// 	{
-		// 		filterState.emptyValueFilters.splice(filterState.emptyValueFilters.indexOf(filter.id), 1);
-		// 	}
-
-		// 	removeDuplicateFilter(filter, filterState.duplicateValueFilters);
-		// }
-
-		// filterState.filterHash = await window.api.utilities.crypt.encrypt(key, await getHash(key));
-		// await writeState(key);
-		// stores.syncToServer(key);
-	}
-
-	// used when adding password / value
-	function addFiltersToNewValue<T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(
-		key: string, filters: Filter[], value: T, valuesProperty: string): Promise<void>
-	{
-		filters.forEach(f =>
-		{
-			if (filterAppliesToValue(f.conditions, value))
-			{
-				if (!value.filters.includes(f.id))
-				{
-					value.filters.push(f.id);
-				}
-
-				if (!f[valuesProperty].includes(value.id))
-				{
-					f[valuesProperty].push(value.id);
-				}
-			}
-
-			switch (f.type)
-			{
-				case DataType.Passwords:
-					updateEmptyFilters(f, valuesProperty, filterState.emptyPasswordFilters);
-					checkAddRemoveDuplicateFilters(f, "passwords", passwordFilters.value, filterState.duplicatePasswordFilters);
-					break;
-				case DataType.NameValuePairs:
-					updateEmptyFilters(f, valuesProperty, filterState.emptyValueFilters);
-					checkAddRemoveDuplicateFilters(f, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
-					break;
-			}
-		});
-
-		return writeState(key);
-	}
-
-	// used when adding / updating filter or updating password / value
-	function syncFiltersForValues<T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(
-		key: string, filters: Filter[], arr: T[], valuesProperty: string, writeToFile: boolean = false): Promise<void>
-	{
-		filters.forEach(f =>
-		{
-			arr.forEach(v =>
-			{
-				if (filterAppliesToValue(f.conditions, v))
-				{
-					if (!v.filters.includes(f.id))
-					{
-						v.filters.push(f.id);
-					}
-
-					if (!f[valuesProperty].includes(v.id))
-					{
-						f[valuesProperty].push(v.id);
-					}
-				}
-				else
-				{
-					if (v.filters.includes(f.id))
-					{
-						v.filters.splice(v.filters.indexOf(f.id), 1);
-					}
-
-					if (f[valuesProperty].includes(v.id))
-					{
-						f[valuesProperty].splice(f[valuesProperty].indexOf(v.id), 1);
-					}
-				}
-			});
-
-			switch (f.type)
-			{
-				case DataType.Passwords:
-					updateEmptyFilters(f, valuesProperty, filterState.emptyPasswordFilters);
-					checkAddRemoveDuplicateFilters(f, "passwords", passwordFilters.value, filterState.duplicatePasswordFilters);
-					break;
-				case DataType.NameValuePairs:
-					updateEmptyFilters(f, valuesProperty, filterState.emptyValueFilters);
-					checkAddRemoveDuplicateFilters(f, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
-					break;
-			}
-		});
-
-		if (writeToFile)
-		{
-			return writeState(key);
-		}
-
-		return Promise.resolve();
-	}
-
-	function recalcGroupFilters<T extends { [index: string]: string | number } & IFilterable & IGroupable & IIdentifiable>(
-		key: string, filters: Filter[], arr: T[], valuesProperty: string): Promise<void>
-	{
-		filters.forEach(f =>
-		{
-			if (f.conditions.filter(fc => fc.property === "groups").length == 0)
-			{
-				return;
-			}
-
-			arr.forEach(v =>
-			{
-				if (filterAppliesToValue(f.conditions, v))
-				{
-					if (!v.filters.includes(f.id))
-					{
-						v.filters.push(f.id);
-					}
-
-					if (!f[valuesProperty].includes(v.id))
-					{
-						f[valuesProperty].push(v.id);
-					}
-				}
-				else
-				{
-					if (v.filters.includes(f.id))
-					{
-						v.filters.splice(v.filters.indexOf(f.id), 1);
-					}
-
-					if (f[valuesProperty].includes(v.id))
-					{
-						f[valuesProperty].splice(f[valuesProperty].indexOf(v.id), 1);
-					}
-				}
-			});
-
-			switch (f.type)
-			{
-				case DataType.Passwords:
-					updateEmptyFilters(f, valuesProperty, filterState.emptyPasswordFilters);
-					checkAddRemoveDuplicateFilters(f, "passwords", passwordFilters.value, filterState.duplicatePasswordFilters);
-					break;
-				case DataType.NameValuePairs:
-					updateEmptyFilters(f, valuesProperty, filterState.emptyValueFilters);
-					checkAddRemoveDuplicateFilters(f, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
-					break;
-			}
-		});
-
-		return writeState(key);
-	}
-
-	// called when password / value is deleted
-	function removeValueFromFilers<T extends { [index: string]: string | number } & IFilterable & IIdentifiable>(key: string, dataType: DataType, value: T): Promise<void>
-	{
-		if (dataType == DataType.Passwords)
-		{
-			passwordFilters.value.forEach(f =>
-			{
-				if (f.passwords.includes(value.id))
-				{
-					f.passwords.splice(f.passwords.indexOf(value.id), 1);
-					checkAddRemoveDuplicateFilters(f, "passwords", passwordFilters.value, filterState.duplicatePasswordFilters);
-					updateEmptyFilters(f, "passwords", filterState.emptyPasswordFilters);
-				}
-			});
-		}
-		else if (dataType == DataType.NameValuePairs)
-		{
-			nameValuePairFilters.value.forEach(f =>
-			{
-				if (f.nameValuePairs.includes(value.id))
-				{
-					f.nameValuePairs.splice(f.nameValuePairs.indexOf(value.id), 1);
-					checkAddRemoveDuplicateFilters(f, "nameValuePairs", nameValuePairFilters.value, filterState.duplicateValueFilters);
-					updateEmptyFilters(f, "nameValuePairs", filterState.emptyValueFilters);
-				}
-			});
-		}
-
-		return writeState(key);
 	}
 
 	function toggleAtRiskType(dataType: DataType, atRiskType: AtRiskType)
@@ -745,10 +274,6 @@ export default function useFilterStore(): FilterStore
 		addFilter,
 		toggleFilter,
 		updateFilter,
-		addFiltersToNewValue,
-		syncFiltersForValues,
-		recalcGroupFilters,
-		removeValueFromFilers,
 		deleteFilter,
 		toggleAtRiskType
 	};

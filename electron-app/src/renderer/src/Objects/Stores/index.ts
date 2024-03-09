@@ -72,7 +72,7 @@ function canAuthenticateKeyBeforeEntry(): Promise<[boolean, boolean, boolean, bo
 {
 	return Promise.all([
 		stores.passwordStore.canAuthenticateKeyBeforeEntry(),
-		stores.valueStore.canAuthenticateKeyAfterEntry(),
+		stores.valueStore.canAuthenticateKeyBeforeEntry(),
 		stores.filterStore.canAuthenticateKeyBeforeEntry(),
 		stores.groupStore.canAuthenticateKeyBeforeEntry()
 	]);
@@ -218,6 +218,7 @@ function getStates(): DataStoreStates
 	}
 }
 
+// TODO: MAKE SURE WE ARE ONLY CALLING THIS WITH VALID STATES AND A SUCCESSFUL REQEUST. OTHERWISE ALL OF THEIR DATA WILL BE LOST
 function updateAllStates(key: string, states: DataStoreStates): Promise<[void, void, void, void]>
 {
 	return Promise.all([
