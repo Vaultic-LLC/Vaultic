@@ -1,5 +1,4 @@
 import crypto from "crypto"
-import currentLicense from "../Objects/License";
 
 export interface HashUtility
 {
@@ -8,7 +7,7 @@ export interface HashUtility
 
 const defaultSalt: string = "a;lfasl;fjklavnaklsfhsadkfhsaklfsaflasdknvasdklfwefhw;IFKSNVKLASDJNVH234]21O51[2[2112[24215";
 
-export async function internalHash(value: string, salt?: string): Promise<string>
+async function hash(value: string, salt?: string): Promise<string>
 {
 	if (!salt)
 	{
@@ -24,17 +23,6 @@ export async function internalHash(value: string, salt?: string): Promise<string
 			resolve(derivedKey.toString('base64'));
 		});
 	});
-
-	//return createHash('sha256').update(salt + value).digest('base64');
-}
-
-async function hash(value: string, salt?: string): Promise<string>
-{
-	// if (!currentLicense.isValid())
-	// {
-	// 	return "";
-	// }
-	return internalHash(value, salt);
 }
 
 const hashUtility: HashUtility = {

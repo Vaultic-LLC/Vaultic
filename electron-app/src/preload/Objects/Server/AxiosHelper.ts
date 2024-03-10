@@ -1,7 +1,7 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import { getDeviceInfo } from '../DeviceInfo';
-import { BaseResponse } from '../../Types/Responses';
-import { internalEncrypt } from '../../Utilities/CryptUtility';
+import { BaseResponse, CreateSessionResponse } from '../../Types/Responses';
+import cryptUtility from '../../Utilities/CryptUtility';
 
 export interface AxiosHelper
 {
@@ -17,7 +17,6 @@ const axiosInstance = axios.create({
 	baseURL: 'https://localhost:7007/',
 	timeout: 99999999999,
 	headers: { 'X-M': getDeviceInfo().mac },
-	//responseType: 'json',
 });
 
 function getAPIKey()
@@ -25,9 +24,14 @@ function getAPIKey()
 	const date = new Date();
 	const string = `${apiKeyPrefix}${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
 
-	const encrypt = internalEncrypt(APIKeyEncryptionKey, string, true);
+	const encrypt = cryptUtility.encrypt(APIKeyEncryptionKey, string);
 
 	return encrypt;
+}
+
+function isCreateSessionResponse(response: any): response is CreateSessionResponse
+{
+	return 'AntiCSRFToken' in response;
 }
 
 async function post<T extends BaseResponse>(serverPath: string, data: any): Promise<T | BaseResponse>
@@ -36,13 +40,20 @@ async function post<T extends BaseResponse>(serverPath: string, data: any): Prom
 	{
 		const apiKey = await getAPIKey();
 		const response = await axiosInstance.post(serverPath, data, { headers: { "X-AK": apiKey } });
+
+		if (isCreateSessionResponse(response) && response.AntiCSRFToken)
+		{
+			axiosInstance.defaults.headers.common['X-ACSRF-TOKEN'] = response.AntiCSRFToken;
+		}
+
 		return response.data;
 	}
 	catch (e)
 	{
-		// something went wrong
-		// Create an ID using a GUID and log to server. Present user with ID when mentioning that
-		// an error occurred and to reach out to cusotmer service with the ID if the issue persists
+		if (e instanceof AxiosError)
+		{
+			return { Success: false, UnknownError: true, StatusCode: e.status };
+		}
 	}
 
 	return { Success: false, UnknownError: true };
@@ -58,7 +69,10 @@ async function get<T extends BaseResponse>(serverPath: string): Promise<T | Base
 	}
 	catch (e)
 	{
-		// something went wrong
+		if (e instanceof AxiosError)
+		{
+			return { Success: false, UnknownError: true, StatusCode: e.status };
+		}
 	}
 
 	return { Success: false, UnknownError: true };

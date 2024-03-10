@@ -45,6 +45,7 @@ export default defineComponent({
 				invalidate("Pleas enter a value");
 				return false;
 			}
+
 			if (additionalValidationFunction.value)
 			{
 				const [isVaild, invalidMesage] = additionalValidationFunction.value(props.modelValue);
@@ -54,6 +55,7 @@ export default defineComponent({
 					return false;
 				}
 			}
+
 			return true;
 		}
 
@@ -115,7 +117,8 @@ export default defineComponent({
 			type,
 			labelBackgroundColor,
 			validateType,
-			onInput
+			onInput,
+			invalidate
 		};
 	}
 })

@@ -1,4 +1,4 @@
-import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey } from "@renderer/Types/Keys";
+import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey, ShowErrorContainerFunctionKey } from "@renderer/Types/Keys";
 import { inject } from "vue";
 
 export function useRequestAuthFunction(): { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined
@@ -14,4 +14,14 @@ export function useLoadingIndicator(): [(color: string, text: string) => void, (
 export function useToastFunction(): { (color: string, toastText: string, success: boolean): void }
 {
 	return inject(ShowToastFunctionKey, () => { });
+}
+
+export function useUnknownResponsePopup(): { (statusCode?: number): void }
+{
+	return inject(ShowUnknownResonsePopupFunctionKey, () => { });
+}
+
+export function useErrorContainer(): { (message: string): void }
+{
+	return inject(ShowErrorContainerFunctionKey, () => { });
 }

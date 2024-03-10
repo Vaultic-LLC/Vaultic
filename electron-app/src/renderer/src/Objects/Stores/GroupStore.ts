@@ -38,11 +38,11 @@ export interface GroupStore extends AuthenticationStore
 }
 
 let groupState: GroupStoreState
+let loadedFile: boolean = false;
 
 export default function useGroupStore(): GroupStore
 {
 	groupState = reactive(defaultState());
-	let loadedFile: boolean = false;
 
 	function defaultState(): GroupStoreState
 	{

@@ -38,12 +38,12 @@ export interface ValueStore extends AuthenticationStore
 }
 
 let encryptedDataState: ValueStoreState;
+let loadedFile: boolean = false;
 
 export default function useValueStore(): ValueStore
 {
 	encryptedDataState = reactive(defaultState());
 	const events: Dictionary<{ (): void }[]> = {};
-	let loadedFile: boolean = false;
 
 	// -- Generic Store Methods
 	function defaultState(): ValueStoreState

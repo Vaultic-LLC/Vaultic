@@ -1,12 +1,6 @@
-import currentLicense from "../Objects/License";
 
 function isWeak(value: string, type: string): [boolean, string]
 {
-	if (!currentLicense.isValid())
-	{
-		return [true, "An error has occured. Please restart the application"];
-	}
-
 	if (value.length < 16)
 	{
 		return [true, type + ` is less than 16 characters. For best security, create ${type}s that are at least 16 characters long.`];
@@ -32,32 +26,17 @@ function isWeak(value: string, type: string): [boolean, string]
 
 function containsNumber(value: string): boolean
 {
-	if (!currentLicense.isValid())
-	{
-		return false;
-	}
-
 	return /\d/.test(value);
 }
 
 function containsSpecialCharacter(value: string): boolean
 {
-	if (!currentLicense.isValid())
-	{
-		return false;
-	}
-
 	const specialCharacters = /[ `!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~]/;
 	return specialCharacters.test(value);
 }
 
 function containsUppercaseAndLowercaseNumber(value: string): boolean
 {
-	if (!currentLicense.isValid())
-	{
-		return false;
-	}
-
 	return /[A-Z]/.test(value) && /[a-z]/.test(value);
 }
 

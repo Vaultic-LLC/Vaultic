@@ -204,7 +204,8 @@ export default defineComponent({
 			generateRandomValue,
 			copyValue,
 			focus,
-			validate
+			validate,
+			invalidate
 		}
 	}
 })

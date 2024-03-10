@@ -10,6 +10,14 @@
 				<slot></slot>
 			</div>
 		</div>
+		<div v-if="showPulsing" class="pulsingCircles">
+			<div class="circle circleOne">
+			</div>
+			<div class="circle circleTwo">
+			</div>
+			<div class="circle circleThree">
+			</div>
+		</div>
 	</div>
 </template>
 <script lang="ts">
@@ -25,7 +33,7 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",
-	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity'],
+	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity', "showPulsing"],
 	setup(props)
 	{
 		const showPopup: ComputedRef<boolean> = computed(() => props.show);
@@ -166,12 +174,12 @@ export default defineComponent({
 })
 </script>
 
-<style>
+<style scoped>
 .objectPopupContainer {
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	z-index: 6;
+	z-index: 7;
 	top: 0;
 	left: 0;
 }
@@ -180,7 +188,7 @@ export default defineComponent({
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	z-index: 6;
+	z-index: 5;
 	top: 0;
 	left: 0;
 	background: rgba(17, 15, 15, v-bind(computedGlassOpacity));
@@ -201,7 +209,7 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	overflow: hidden;
-	z-index: 6;
+	z-index: 7;
 	transition: 0.3s;
 }
 
@@ -216,7 +224,7 @@ export default defineComponent({
 			v-bind(secondaryColorOne),
 			v-bind(secondaryColorTwo));
 	animation: rotate 3s linear infinite;
-	z-index: 6;
+	z-index: 7;
 	transition: 0.3s;
 }
 
@@ -251,6 +259,45 @@ export default defineComponent({
 	inset: 5px;
 	background: var(--app-color);
 	border-radius: 16px;
-	z-index: 7;
+	z-index: 8;
+}
+
+.pulsingCircles {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 75%;
+	aspect-ratio: 1 / 1;
+	z-index: 6;
+	transition: 0.3s;
+}
+
+.pulsingCircles.unlocked {
+	opacity: 0;
+}
+
+.pulsingCircles .circle {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 10%;
+	aspect-ratio: 1 / 1;
+	border-radius: 50%;
+	background-color: v-bind(primaryColor);
+	animation: growAndFade 6s infinite ease-out;
+}
+
+.pulsingCircles .circle.circleOne {
+	animation-delay: 0s;
+}
+
+.pulsingCircles .circle.circleTwo {
+	animation-delay: 2s;
+}
+
+.pulsingCircles .circle.circleThree {
+	animation-delay: 4s;
 }
 </style>

@@ -27,3 +27,15 @@
 		opacity: 0;
 	}
 }
+
+@keyframes growAndFade {
+	0% {
+		opacity: .25;
+		transform: translate(-50%, -50%) scale(0);
+	}
+
+	100% {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(8);
+	}
+}

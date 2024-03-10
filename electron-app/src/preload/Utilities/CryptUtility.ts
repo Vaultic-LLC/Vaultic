@@ -1,6 +1,5 @@
 import crypto from "crypto";
-import hashUtility, { internalHash } from "./HashUtility";
-import currentLicense from "../Objects/License";
+import hashUtility from "./HashUtility";
 
 export interface CryptUtility
 {
@@ -12,18 +11,11 @@ const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
 
-export async function internalEncrypt(key: string, value: string, exactKey: boolean): Promise<string>
+// TODO: THIS WILL OVERWRITE EVERYONES DATA TO EMPTY STRINGS IF THEY DON'T HAVE A LICENSE, WHILE SYNCING. SHOULD UPDATE TO RETURN AN ERROR
+async function encrypt(key: string, value: string): Promise<string>
 {
 	try
 	{
-		// let keyBytes: Buffer;
-		// if (exactKey)
-		// {
-		// 	keyBytes = Buffer.from(key, 'utf8');
-		// }
-		// else
-		// {
-		// }
 		const hashedKey: string = await hashUtility.hash(key);
 		const keyBytes = Buffer.from(hashedKey, 'base64')
 
@@ -41,26 +33,10 @@ export async function internalEncrypt(key: string, value: string, exactKey: bool
 	return "";
 }
 
-// TODO: THIS WILL OVERWRITE EVERYONES DATA TO EMPTY STRINGS IF THEY DON'T HAVE A LICENSE, WHILE SYNCING. SHOULD UPDATE TO RETURN AN ERROR
-async function encrypt(key: string, value: string): Promise<string>
-{
-	// if (!currentLicense.isValid())
-	// {
-	// 	return "";
-	// }
-
-	return internalEncrypt(key, value, false);
-}
-
 // TODO: better error handling. have this return true / false on if the exception was thrown so i know if a blank
 // string is the result of an incorect key or not
 async function decrypt(key: string, value: string): Promise<string>
 {
-	// if (!currentLicense.isValid())
-	// {
-	// 	return "";
-	// }
-
 	try
 	{
 		const cipher: Buffer = Buffer.from(value, "base64");

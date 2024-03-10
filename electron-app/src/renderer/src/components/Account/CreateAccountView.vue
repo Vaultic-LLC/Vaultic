@@ -6,9 +6,9 @@
 				:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
 			<TextInputField :color="color" :label="'Last Name'" v-model="lastName"
 				:style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
-			<TextInputField :color="color" :label="'Email'" v-model="email" :width="'300px'"
+			<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email" :width="'300px'"
 				:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 4' }" />
-			<TextInputField :color="color" :label="'Username'" v-model="username"
+			<TextInputField ref="usernameField" :color="color" :label="'Username'" v-model="username"
 				:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" />
 			<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
 				:isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true" :showCopy="false"
@@ -25,6 +25,8 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
 
 import { GridDefinition, InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
+import { useErrorContainer, useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
+import { InputComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "CreateAccountView",
@@ -38,6 +40,9 @@ export default defineComponent({
 	props: ['color'],
 	setup(props, ctx)
 	{
+		const emailField: Ref<InputComponent | null> = ref(null);
+		const usernameField: Ref<InputComponent | null> = ref(null);
+
 		const firstName: Ref<string> = ref('');
 		const lastName: Ref<string> = ref('');
 		const email: Ref<string> = ref('');
@@ -53,39 +58,48 @@ export default defineComponent({
 			columnWidth: '100px'
 		}
 
+		const showUnknownResponse = useUnknownResponsePopup();
+		const showErrorContainer = useErrorContainer();
+
 		async function createAccount()
 		{
-			// show loading indicator
-			const response = await window.api.server.validateEmailAndUsername(email.value, username.value);
+			// TODO show loading indicator
+			const response = await window.api.server.account.validateEmailAndUsername(email.value, username.value);
 			if (response.Success)
 			{
-				const mfaResponse = await window.api.server.generateMFA();
+				const mfaResponse = await window.api.server.account.generateMFA();
 				if (mfaResponse.Success)
 				{
 					ctx.emit('onSuccess', firstName.value, lastName.value, email.value, username.value,
 						password.value, mfaResponse.MFAKey, mfaResponse.GeneratedTime);
 				}
-				else
+				else if (response.UnknownError)
 				{
-					// TODO: basic error handling
+					showUnknownResponse(response.StatusCode);
 				}
 			}
 			else
 			{
+				if (response.UnknownError)
+				{
+					showUnknownResponse(response.StatusCode);
+					return;
+				}
+
+				if (response.DeviceIsTaken)
+				{
+					showErrorContainer("There is already an account associated with this device. Please sign in using that account");
+					return;
+				}
+
 				if (response.EmailIsTaken)
 				{
-					// notify user
+					emailField.value?.invalidate("Email is already in use. Please use a different one");
 				}
 
 				if (response.UsernameIsTaken)
 				{
-					// notify user
-				}
-
-				// could move this into a helper since every respose that fails needs to check this
-				if (response.UnknownError)
-				{
-					//
+					usernameField.value?.invalidate("Username is taken. Please try a different one");
 				}
 			}
 		}
@@ -97,6 +111,8 @@ export default defineComponent({
 			password,
 			colorModel,
 			gridDefinition,
+			emailField,
+			usernameField,
 			createAccount
 		};
 	}
@@ -104,6 +120,10 @@ export default defineComponent({
 </script>
 
 <style>
+.createAccountViewContainer {
+	height: 100%;
+}
+
 .createAccountViewContainer__row {
 	display: flex;
 }

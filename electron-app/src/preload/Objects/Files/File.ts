@@ -1,7 +1,6 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import fs from "fs";
 import child_process from 'child_process';
-import currentLicense from '../License';
 
 export interface File
 {
@@ -125,11 +124,6 @@ export default function useFile(name: string): File
 
 	async function empty(): Promise<void>
 	{
-		if (!currentLicense.isValid())
-		{
-			return;
-		}
-
 		let unlocked: boolean = false;
 		try
 		{
@@ -158,11 +152,6 @@ export default function useFile(name: string): File
 
 	async function write(data: string): Promise<void>
 	{
-		if (!currentLicense.isValid())
-		{
-			return;
-		}
-
 		let unlocked: boolean = false;
 		try
 		{
@@ -191,11 +180,6 @@ export default function useFile(name: string): File
 
 	async function read(): Promise<string>
 	{
-		if (!currentLicense.isValid())
-		{
-			return "";
-		}
-
 		if (!await fileExistsAndHasData())
 		{
 			return "";

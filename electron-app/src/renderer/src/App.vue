@@ -5,6 +5,11 @@
 	</Transition>
 	<Teleport to="#body">
 		<Transition name="fade" mode="out-in">
+			<UnknownResponsePopup v-if="showUnknownResponsePopup" :statusCode="unknownResponseStatusCode" @onOk="showUnknownResponsePopup = false"  />
+		</Transition>
+	</Teleport>
+	<Teleport to="#body">
+		<Transition name="fade" mode="out-in">
 			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" :model="accountSetupModel" />
 		</Transition>
 	</Teleport>
@@ -74,12 +79,13 @@ import LoadingPopup from './components/Loading/LoadingPopup.vue';
 import AccountSetupPopup from "./components/Account/AccountSetupPopup.vue"
 
 import { AccountSetupModel, AccountSetupView, SingleSelectorItemModel } from './Types/Models';
-import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey } from './Types/Keys';
+import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import { stores } from './Objects/Stores';
 import { LicenseResponse, LicenseStatus } from './Types/AccountSetup';
+import UnknownResponsePopup from './components/UnknownResponsePopup.vue';
 
 export default defineComponent({
 	name: 'App',
@@ -107,7 +113,7 @@ export default defineComponent({
 	},
 	setup()
 	{
-		const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.NotSet });
+		const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 		const finishedMounting: Ref<boolean> = ref(false);
 
 		const needsAuthentication: Ref<boolean> = ref(stores.needsAuthentication);
@@ -129,12 +135,16 @@ export default defineComponent({
 		const loadingColor: Ref<string> = ref('');
 		const loadingText: Ref<string> = ref('');
 		const loadingOpacity: Ref<number | undefined> = ref(undefined);
-		const showLoadingIndicator: Ref<boolean> = ref(true);
+		const showLoadingIndicator: Ref<boolean> = ref(false);
+
+		const showUnknownResponsePopup: Ref<boolean> = ref(false);
+		const unknownResponseStatusCode: Ref<number | undefined> = ref(undefined);
 
 		provide(ShowToastFunctionKey, showToastFunc);
 		provide(RequestAuthenticationFunctionKey, requestAuthentication);
 		provide(ShowLoadingIndicatorFunctionKey, showLoadingIndicatorFunc);
 		provide(HideLoadingIndicatorFunctionKey, hideLoadingIndicatorFunc);
+		provide(ShowUnknownResonsePopupFunctionKey, showUnknownResponsePopupFunc);
 
 		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
 
@@ -214,6 +224,12 @@ export default defineComponent({
 			showLoadingIndicator.value = false;
 		}
 
+		function showUnknownResponsePopupFunc(statusCode?: number)
+		{
+			unknownResponseStatusCode.value = statusCode;
+			showUnknownResponsePopup.value = true;
+		}
+
 		function requestAuthentication(color: string, onSuccess: (key: string) => void, onCancel: () => void)
 		{
 			requestAuthColor.value = color;
@@ -252,8 +268,6 @@ export default defineComponent({
 
 		onMounted(async () =>
 		{
-			showLoadingIndicatorFunc(stores.settingsStore.currentPrimaryColor.value, "Checking License", 1);
-
 			document.getElementById('body')?.addEventListener('mouseover', (_) =>
 			{
 				if (Date.now() - lastMouseover < threshold)
@@ -265,8 +279,6 @@ export default defineComponent({
 				lastMouseover = Date.now();
 			});
 
-			await Promise.all([checkLicense(), new Promise((resolve) => setTimeout(resolve, 500))]);
-			hideLoadingIndicatorFunc();
 			finishedMounting.value = true;
 		});
 
@@ -274,37 +286,6 @@ export default defineComponent({
 		{
 			needsAuthentication.value = newValue;
 		});
-
-		async function checkLicense()
-		{
-			const response = await window.api.helpers.license.checkLicense();
-			if (response.Success)
-			{
-				onAccountSetupSuccess();
-			}
-			else
-			{
-				handleFailedLicenseResponse(response);
-			}
-		}
-
-		function onAccountSetupSuccess()
-		{
-			accountSetupModel.value.currentView = AccountSetupView.NotSet;
-
-			setInterval(async () =>
-			{
-				if (window.api.helpers.license.currentLicenseStatus() != 1)
-				{
-					const response = await window.api.helpers.license.checkLicense();
-					if (!response.Success)
-					{
-						handleFailedLicenseResponse(response);
-					}
-				}
-
-			}, 600000);
-		}
 
 		function handleFailedLicenseResponse(response: LicenseResponse)
 		{
@@ -370,7 +351,9 @@ export default defineComponent({
 			showLoadingIndicator,
 			finishedMounting,
 			loadingOpacity,
-			onGlobalAuthSuccessful
+			onGlobalAuthSuccessful,
+			showUnknownResponsePopup,
+			unknownResponseStatusCode
 		}
 	}
 });

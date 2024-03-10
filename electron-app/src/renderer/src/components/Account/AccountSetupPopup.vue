@@ -1,27 +1,25 @@
 <template>
 	<div class="accountSetupPopupContainer">
-		<ObjectPopup :height="'40%'" :width="'30%'" :preventClose="true" :glassOpacity="1">
-			<div>
-				<Transition name="fade" mode="out-in">
-					<div v-if="navigationStack.length > 0" class="accountSetupPopupContainer__backButton"
-						@click="navigateBack">
-						<ion-icon name="arrow-back-outline"></ion-icon>
-					</div>
-				</Transition>
-				<Transition name="fade" mode="out-in">
-					<IncorrectDeviceView v-if="accountSetupModel.currentView == AccountSetupView.IncorrectDevice"
-						:updatesLeft="accountSetupModel.updateDevicesLeft" :devices="accountSetupModel.devices" />
-					<SignInView v-else-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
-						@onSuccess="onUsernamePasswordViewSuccess" @onMoveToCreateAccount="moveToCreateAccount" />
-					<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
-						:color="primaryColor" @onSuccess="onCreateAccoutViewSucceeded" />
-					<MFAView v-else-if="accountSetupModel.currentView == AccountSetupView.MFA" :creating="creatingAccount"
-						:account="account" :color="primaryColor" @onSuccess="onMFAViewSucceeded" />
-					<PaymentInfoView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
-						accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
-						accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor" />
-				</Transition>
-			</div>
+		<ObjectPopup :height="'40%'" :width="'30%'" :preventClose="true" :glassOpacity="1" :showPulsing="true">
+			<Transition name="fade" mode="out-in">
+				<div v-if="navigationStack.length > 0" class="accountSetupPopupContainer__backButton"
+					@click="navigateBack">
+					<ion-icon name="arrow-back-outline"></ion-icon>
+				</div>
+			</Transition>
+			<Transition name="fade" mode="out-in">
+				<IncorrectDeviceView v-if="accountSetupModel.currentView == AccountSetupView.IncorrectDevice"
+					:updatesLeft="accountSetupModel.updateDevicesLeft" :devices="accountSetupModel.devices" />
+				<SignInView v-else-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
+					@onSuccess="onUsernamePasswordViewSuccess" @onMoveToCreateAccount="moveToCreateAccount" />
+				<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
+					:color="primaryColor" @onSuccess="onCreateAccoutViewSucceeded" />
+				<MFAView v-else-if="accountSetupModel.currentView == AccountSetupView.MFA" :creating="creatingAccount"
+					:account="account" :color="primaryColor" @onSuccess="onMFAViewSucceeded" />
+				<PaymentInfoView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
+					accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
+					accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor" />
+			</Transition>
 		</ObjectPopup>
 	</div>
 </template>

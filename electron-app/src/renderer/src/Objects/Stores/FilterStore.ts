@@ -38,11 +38,11 @@ export interface FilterStore extends AuthenticationStore
 }
 
 let filterState: FilterStoreState;
+let loadedFile: boolean = false;
 
 export default function useFilterStore(): FilterStore
 {
 	filterState = reactive(defaultState());
-	let loadedFile: boolean = false;
 	// --- Generic Store methods ---
 	function defaultState(): FilterStoreState
 	{

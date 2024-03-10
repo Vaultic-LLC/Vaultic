@@ -41,12 +41,12 @@ export interface PasswordStore extends AuthenticationStore
 }
 
 let encryptedDataState: PasswordStoreState;
+let loadedFile: boolean = false;
 
 export default function usePasswordStore(): PasswordStore
 {
 	encryptedDataState = reactive(defaultState());
 	const events: Dictionary<{ (): void }[]> = {};
-	let loadedFile: boolean = false;
 
 	// -- Generic Store Methods
 	function defaultState(): PasswordStoreState

@@ -1,7 +1,7 @@
 <template>
 	<div class="usernamePasswordViewContainer">
 		<AccountSetupView :color="color" :title="title" :displayGrid="false" :buttonText="'Submit'"
-			:onSubmit="onSubmitMFACode">
+			@onSubmit="onSubmitMFACode">
 			<div v-if="creating" class="usernamePasswordViewContainer__setupInstructions">
 				<ol class="usernamePasswordViewContainer__list">
 					<li>Download an authenticator app by searching for 'Authenticator' in your mobile device's app store
@@ -26,7 +26,8 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue
 import TextInputField from '../InputFields/TextInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
 
-import { Account } from '@renderer/Types/AccountSetup';
+import { Account, LicenseStatus } from '@renderer/Types/AccountSetup';
+import { useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 import qrCode from "qrcode";
 
 export default defineComponent({
@@ -47,11 +48,13 @@ export default defineComponent({
 
 		const qrCodeUrl: Ref<string> = ref('');
 
+		const showUnknownResponse = useUnknownResponsePopup();
+
 		async function onSubmitMFACode()
 		{
 			if (props.creating)
 			{
-				const response = await window.api.server.createAccount(
+				const response = await window.api.server.account.createAccount(
 					account.value.firstName, account.value.lastName, account.value.email, account.value.username, account.value.password,
 					account.value.mfaKey, mfaCode.value, account.value.createdTime);
 
@@ -61,6 +64,12 @@ export default defineComponent({
 				}
 				else
 				{
+					if (response.UnknownError)
+					{
+						showUnknownResponse(response.StatusCode);
+						return;
+					}
+
 					if (response.ExpiredMFACode)
 					{
 						// send another request to get a new one and update mfaCode
@@ -78,17 +87,22 @@ export default defineComponent({
 						// navigate back to the enter username / email page
 					}
 				}
-
 			}
 			else
 			{
-				const response = await window.api.server.validateMFACode(account.value.username, account.value.password, mfaCode.value);
+				const response = await window.api.server.account.validateMFACode(account.value.username, account.value.password, mfaCode.value);
 				if (response.Success)
 				{
 					ctx.emit('onSuccess');
 				}
 				else
 				{
+					if (response.UnknownError)
+					{
+						showUnknownResponse(response.StatusCode);
+						return;
+					}
+
 					if (response.InvalidMFACode)
 					{
 						// notify user
@@ -100,6 +114,10 @@ export default defineComponent({
 					else if (response.IncorrectUsernameOrPassword)
 					{
 						// navigate back to enter username / password page
+					}
+					else if (response.LicenseStatus && response.LicenseStatus != LicenseStatus.Active)
+					{
+						// navigate to payment page with license status
 					}
 				}
 			}

@@ -1,15 +1,12 @@
 <template>
-	<div class="usernamePasswordViewContainer">
+	<div class="signInViewContainer">
 		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
 			@onSubmit="onSubmit">
-			<TextInputField :color="color" :label="'Username'" v-model="username"
-				:style="{ 'grid-row': '1 / span 2', 'grid-column': '1 / span 2' }" />
-			<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
-				:isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true" :showCopy="false"
-				:style="{ 'grid-row': '3 / span 2', 'grid-column': '1 / span 2' }" />
-			<div class="usernamePasswordViewContainer__createAccountLink"
-				:style="{ 'grid-row': '5', 'grid-column': '1 / span 3' }">Don't have an account?
-				<button class="usernamePasswordViewContainer__createAccountLinkButton" @click="moveToCreateAccount">
+			<TextInputField ref="usernameField" :color="color" :label="'Username'" v-model="username"/>
+			<EncryptedInputField ref="passwordField" :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
+				:isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true" :showCopy="false"/>
+			<div class="signInViewContainer__createAccountLink">Don't have an account?
+				<button class="signInViewContainer__createAccountLinkButton" @click="moveToCreateAccount">
 					Create One
 				</button>
 			</div>
@@ -25,6 +22,8 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
+import { InputComponent } from '@renderer/Types/Components';
+import { useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "SignInView",
@@ -38,10 +37,15 @@ export default defineComponent({
 	props: ['color'],
 	setup(props, ctx)
 	{
+		const usernameField: Ref<InputComponent | null> = ref(null);
+		const passwordField: Ref<InputComponent | null> = ref(null);
+
 		const username: Ref<string> = ref('');
 		const password: Ref<string> = ref('');
 
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
+
+		const showUnknownResponse = useUnknownResponsePopup();
 
 		function moveToCreateAccount()
 		{
@@ -50,7 +54,7 @@ export default defineComponent({
 
 		async function onSubmit()
 		{
-			const response = await window.api.server.validateUsernameAndPassword(username.value, password.value);
+			const response = await window.api.server.account.validateUsernameAndPassword(username.value, password.value);
 			if (response.Success)
 			{
 				ctx.emit('onSuccess', username.value, password.value);
@@ -59,18 +63,19 @@ export default defineComponent({
 			{
 				if (response.IncorrectUsernameOrPassword)
 				{
-					// Show validation message
+					usernameField.value?.invalidate("Username or Password is incorrect");
+					passwordField.value?.invalidate("Username or Password is incorrect");
 				}
-				else if (response.IncorrectDevice)
+				else if (response.UnknownError)
 				{
-					// Is this possible?
-					// technically, but it would be hard. The user would have to spoof their license in between
-					// checking the license request and this one
+					showUnknownResponse(response.StatusCode);
 				}
 			}
 		}
 
 		return {
+			usernameField,
+			passwordField,
 			username,
 			password,
 			colorModel,
@@ -82,12 +87,16 @@ export default defineComponent({
 </script>
 
 <style>
-.usernamePasswordViewContainer__createAccountLink {
+.signInViewContainer {
+	height: 100%;
+}
+
+.signInViewContainer__createAccountLink {
 	color: white;
 	font-size: 17px;
 }
 
-.usernamePasswordViewContainer__createAccountLinkButton {
+.signInViewContainer__createAccountLinkButton {
 	background-color: var(--app-color);
 	color: v-bind(color);
 	text-decoration: underline;
@@ -96,7 +105,7 @@ export default defineComponent({
 	font-size: 17px;
 }
 
-.usernamePasswordViewContainer__createAccountLinkButton:hover {
+.signInViewContainer__createAccountLinkButton:hover {
 	opacity: 0.8;
 }
 </style>

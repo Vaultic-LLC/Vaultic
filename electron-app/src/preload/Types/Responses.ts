@@ -6,6 +6,12 @@ export interface BaseResponse
 	Success: boolean;
 	UnknownError?: boolean;
 	ErrorID?: string;
+	StatusCode?: number;
+}
+
+export interface CreateSessionResponse extends BaseResponse
+{
+	AntiCSRFToken?: string;
 }
 
 interface DeviceSensitiveResponse extends BaseResponse
@@ -15,23 +21,17 @@ interface DeviceSensitiveResponse extends BaseResponse
 	Devices?: Device[];
 }
 
-interface LicenseResponse extends DeviceSensitiveResponse
+export interface CheckLicenseResponse extends DeviceSensitiveResponse
 {
-	Expiration?: string;
-	Key?: string;
-}
-
-export interface CheckLicenseResponse extends LicenseResponse
-{
-	LicenseIsExpired?: boolean;
-	UnknownLicense?: boolean;
 	LicenseStatus?: LicenseStatus;
+	LicenseIsExpired?: boolean;
 }
 
 export interface ValidateEmailAndUsernameResponse extends BaseResponse
 {
 	EmailIsTaken?: boolean;
 	UsernameIsTaken?: boolean;
+	DeviceIsTaken?: boolean;
 }
 
 export interface GenerateMFAResponse extends BaseResponse
@@ -40,7 +40,7 @@ export interface GenerateMFAResponse extends BaseResponse
 	GeneratedTime?: string;
 }
 
-export interface CreateAccountResponse extends LicenseResponse
+export interface CreateAccountResponse extends CreateSessionResponse
 {
 	ExpiredMFACode?: boolean;
 	InvalidMFACode?: boolean;
@@ -54,7 +54,7 @@ export interface ValidateUsernameAndPasswordResponse extends DeviceSensitiveResp
 	IncorrectUsernameOrPassword?: boolean;
 }
 
-export interface ValidateMFACodeResponse extends LicenseResponse
+export interface ValidateMFACodeResponse extends CreateSessionResponse, CheckLicenseResponse
 {
 	InvalidMFACode?: boolean;
 	IncorrectUsernameOrPassword?: boolean;

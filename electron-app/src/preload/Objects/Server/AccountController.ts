@@ -1,7 +1,6 @@
 import { CreateAccountResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from "../../Types/Responses";
 import cryptUtility from "../../Utilities/CryptUtility";
 import { getDeviceInfo } from "../DeviceInfo";
-import currentLicense from "../License";
 import { AxiosHelper } from "./AxiosHelper"
 
 export interface AccountController
@@ -68,7 +67,6 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 	function syncUserData(key: string, appData: string, settingsData: string, passwordsValueData: string, filterData: string, groupData: string)
 	{
 		return axiosHelper.post('Account/SyncUserData', {
-			License: currentLicense.key,
 			AppData: cryptUtility.encrypt(key, appData),
 			SettingsData: cryptUtility.encrypt(key, settingsData),
 			PasswordsValueData: cryptUtility.encrypt(key, passwordsValueData),
@@ -79,9 +77,7 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 
 	function getUserData(): Promise<any>
 	{
-		return axiosHelper.post('Account/GetUserData', {
-			License: currentLicense.key,
-		});
+		return axiosHelper.get('Account/GetUserData');
 	}
 
 	return {

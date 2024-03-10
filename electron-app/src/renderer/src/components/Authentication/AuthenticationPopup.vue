@@ -263,7 +263,7 @@ export default defineComponent({
 })
 </script>
 
-<style>
+<style scoped>
 .authPopupContainer {
 	z-index: 100;
 }

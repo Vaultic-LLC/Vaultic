@@ -17,3 +17,7 @@ export const RequestAuthenticationFunctionKey = "RequestAuthenticaitonFunctionKe
 
 export const ShowLoadingIndicatorFunctionKey = "ShowLoadingIndicatorFunctionKey";
 export const HideLoadingIndicatorFunctionKey = "HideLoadingIndicatorFunctionKey";
+
+export const ShowUnknownResonsePopupFunctionKey = "ShowUnknownResponsePopupFunctionKey";
+
+export const ShowErrorContainerFunctionKey = "ShowErrorContainerFunctionKey";
