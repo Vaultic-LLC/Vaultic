@@ -13,10 +13,12 @@ export interface AxiosHelper
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
+const deviceInfo = getDeviceInfo();
+
 const axiosInstance = axios.create({
 	baseURL: 'https://localhost:7007/',
 	timeout: 99999999999,
-	headers: { 'X-M': getDeviceInfo().mac },
+	headers: { 'X-M': deviceInfo.mac, 'X-DN': deviceInfo.deviceName },
 });
 
 function getAPIKey()

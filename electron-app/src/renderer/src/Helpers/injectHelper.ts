@@ -20,8 +20,3 @@ export function useUnknownResponsePopup(): { (statusCode?: number): void }
 {
 	return inject(ShowUnknownResonsePopupFunctionKey, () => { });
 }
-
-export function useErrorContainer(): { (message: string): void }
-{
-	return inject(ShowErrorContainerFunctionKey, () => { });
-}

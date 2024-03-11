@@ -1,4 +1,4 @@
-import { CreateAccountResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from "../../Types/Responses";
+import { BaseResponse, CreateAccountResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from "../../Types/Responses";
 import cryptUtility from "../../Utilities/CryptUtility";
 import { getDeviceInfo } from "../DeviceInfo";
 import { AxiosHelper } from "./AxiosHelper"
@@ -8,12 +8,13 @@ export interface AccountController
 	validateEmailAndUsername: (email: string, username: string) => Promise<ValidateEmailAndUsernameResponse>;
 	generateMFA: () => Promise<GenerateMFAResponse>;
 	createAccount: (firstName: string, lastName: string, email: string, username: string, password: string,
-		mfaKey: string, mfaCode: string, createdTime: number) => Promise<CreateAccountResponse>;
+		mfaKey: string, mfaCode: string, createdTime: string) => Promise<CreateAccountResponse>;
 	validateUsernameAndPassword: (username: string, password: string) => Promise<ValidateUsernameAndPasswordResponse>;
 	validateMFACode: (username: string, password: string, mfaCode: string) => Promise<ValidateMFACodeResponse>;
 	syncUserData: (key: string, appData: string, settingsData: string, passwordsValueData: string,
 		filterData: string, groupData: string) => Promise<any>;
 	getUserData: () => Promise<any>;
+	deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => Promise<BaseResponse>;
 }
 
 export function createAccountController(axiosHelper: AxiosHelper): AccountController
@@ -32,7 +33,7 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 	}
 
 	function createAccount(firstName: string, lastName: string, email: string, username: string, password: string,
-		mfaKey: string, mfaCode: string, createdTime: number): Promise<CreateAccountResponse>
+		mfaKey: string, mfaCode: string, createdTime: string): Promise<CreateAccountResponse>
 	{
 		return axiosHelper.post('Account/CreateAccount', {
 			FirstName: firstName,
@@ -43,7 +44,6 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 			MFAKey: mfaKey,
 			MFACode: mfaCode,
 			CreatedTime: createdTime,
-			DeviceName: getDeviceInfo().deviceName
 		});
 	}
 
@@ -80,6 +80,14 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 		return axiosHelper.get('Account/GetUserData');
 	}
 
+	function deleteDevice(desktopDeviceID?: number, mobileDeviceID?: number)
+	{
+		return axiosHelper.post('Account/DeleteDevice', {
+			UserDesktopDeviceID: desktopDeviceID,
+			UserMobileDeviceID: mobileDeviceID
+		})
+	}
+
 	return {
 		validateEmailAndUsername,
 		generateMFA,
@@ -87,6 +95,7 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 		validateUsernameAndPassword,
 		validateMFACode,
 		syncUserData,
-		getUserData
+		getUserData,
+		deleteDevice
 	}
 }

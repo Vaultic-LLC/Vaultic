@@ -1,3 +1,5 @@
+import { IIdentifiable } from "./EncryptedData";
+
 export enum LicenseStatus
 {
 	NotActivated,
@@ -7,12 +9,25 @@ export enum LicenseStatus
 	Unknown
 };
 
-export interface Device
+export interface Device extends IIdentifiable
 {
+	[key: string]: any;
+	UserDesktopDeviceID?: number;
+	UserMobileDeviceID?: number;
 	Name: string;
 	Model: string;
 	Version: string;
 	MacAddress: string;
+	Type: string;
+}
+
+export interface IncorrectDeviceResponse
+{
+	IncorrectDevice?: boolean;
+	DesktopDeviceUpdatesLeft?: number;
+	MobileDeviceUpdatesLeft?: number;
+	DesktopDevices?: Device[];
+	MobileDevices?: Device[];
 }
 
 export interface LicenseResponse
@@ -36,6 +51,6 @@ export interface Account
 	username: string;
 	password: string;
 	mfaKey: string;
-	createdTime: number;
+	createdTime: string;
 }
 

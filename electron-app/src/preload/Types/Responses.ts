@@ -14,14 +14,16 @@ export interface CreateSessionResponse extends BaseResponse
 	AntiCSRFToken?: string;
 }
 
-interface DeviceSensitiveResponse extends BaseResponse
+interface IncorrectDeviceResponse extends BaseResponse
 {
 	IncorrectDevice?: boolean;
-	DeviceUpdatesLeft?: number;
+	DesktopDeviceUpdatesLeft?: number;
+	MobileDeviceUpdatesLeft?: number;
 	Devices?: Device[];
+	MobileDevices?: Device[];
 }
 
-export interface CheckLicenseResponse extends DeviceSensitiveResponse
+export interface CheckLicenseResponse extends IncorrectDeviceResponse
 {
 	LicenseStatus?: LicenseStatus;
 	LicenseIsExpired?: boolean;
@@ -49,7 +51,7 @@ export interface CreateAccountResponse extends CreateSessionResponse
 	DeviceIsTaken?: boolean;
 }
 
-export interface ValidateUsernameAndPasswordResponse extends DeviceSensitiveResponse
+export interface ValidateUsernameAndPasswordResponse extends IncorrectDeviceResponse
 {
 	IncorrectUsernameOrPassword?: boolean;
 }

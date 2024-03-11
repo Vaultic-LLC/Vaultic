@@ -1,6 +1,6 @@
 <template>
 	<div class="usernamePasswordViewContainer">
-		<AccountSetupView :color="color" :title="title" :displayGrid="false" :buttonText="'Submit'"
+		<AccountSetupView ref="mainView" :color="color" :title="title" :displayGrid="false" :buttonText="'Submit'"
 			@onSubmit="onSubmitMFACode">
 			<div v-if="creating" class="usernamePasswordViewContainer__setupInstructions">
 				<ol class="usernamePasswordViewContainer__list">
@@ -14,7 +14,7 @@
 			<div v-else class="usernamePasswordViewContainer__enterInstructions">
 				<div>Enter the 6-digit code you see in your authenticator app into the input below and click submit</div>
 			</div>
-			<TextInputField :color="color" :label="'Code'" v-model="mfaCode"
+			<TextInputField ref="mfaCodeField" :color="color" :label="'Code'" v-model="mfaCode"
 				:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
 		</AccountSetupView>
 	</div>
@@ -29,6 +29,7 @@ import AccountSetupView from './AccountSetupView.vue';
 import { Account, LicenseStatus } from '@renderer/Types/AccountSetup';
 import { useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 import qrCode from "qrcode";
+import { FormComponent, InputComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "MFAView",
@@ -41,9 +42,12 @@ export default defineComponent({
 	props: ['creating', 'account', 'color'],
 	setup(props, ctx)
 	{
+		const mainView: Ref<FormComponent | null> = ref(null);
+		const mfaCodeField: Ref<InputComponent | null> = ref(null);
+
 		const title: ComputedRef<string> = computed(() => props.creating ? "Setup Multifactor Authentication" : "Enter Multifactor Authentication Code");
 
-		const account: ComputedRef<Account> = computed(() => props.account);
+		const account: Ref<Account> = ref(props.account);
 		const mfaCode: Ref<string> = ref('');
 
 		const qrCodeUrl: Ref<string> = ref('');
@@ -72,19 +76,36 @@ export default defineComponent({
 
 					if (response.ExpiredMFACode)
 					{
-						// send another request to get a new one and update mfaCode
+						const response = await window.api.server.account.generateMFA();
+						if (response.Success)
+						{
+							account.value.mfaKey = response.MFAKey!;
+							account.value.createdTime = response.GeneratedTime!;
+							mainView.value?.showAlertMessage(true, "QR Code has expired. Please try again with this new one");
+						}
+						else
+						{
+							showUnknownResponse(response.StatusCode);
+						}
 					}
 					else if (response.InvalidMFACode)
 					{
-						// notify user
+						mfaCodeField.value?.invalidate("Incorrect code");
+						return;
 					}
 					else if (response.DeviceIsTaken)
 					{
-						// notify user
+						mainView.value?.showAlertMessage(false, "There is already an account associated with this device. Please sign in using that account");
+						return;
 					}
-					else if (response.UsernameIsTaken || response.EmailIsTaken)
+
+					if (response.EmailIsTaken)
 					{
-						// navigate back to the enter username / email page
+						mainView.value?.showAlertMessage(false, "Email is already in use. Please use a different one")
+					}
+					else if (response.UsernameIsTaken)
+					{
+						mainView.value?.showAlertMessage(false, "Username is taken. Please pick a different one")
 					}
 				}
 			}
@@ -105,15 +126,15 @@ export default defineComponent({
 
 					if (response.InvalidMFACode)
 					{
-						// notify user
+						mfaCodeField.value?.invalidate("Incorrect code");
 					}
 					else if (response.IncorrectDevice)
 					{
-						// notify user
+						// navigate to Incorrect Device View
 					}
 					else if (response.IncorrectUsernameOrPassword)
 					{
-						// navigate back to enter username / password page
+						mainView.value?.showAlertMessage(false, "Incorrect Username or Password")
 					}
 					else if (response.LicenseStatus && response.LicenseStatus != LicenseStatus.Active)
 					{
@@ -123,22 +144,28 @@ export default defineComponent({
 			}
 		}
 
-		onMounted(() =>
+		function generateQRCode()
 		{
 			const url = `otpauth://totp/${account.value.username}?secret=${account.value.mfaKey}&issuer=Vaultic`
-
 			qrCode.toDataURL(url, function (err, data_url)
 			{
 				if (err)
 				{
-					// notify user
+					mainView.value?.showAlertMessage(false, "Unable to generate MFA Code at this time. Please try again later or contact support")
 				}
 
 				qrCodeUrl.value = data_url;
 			});
+		}
+
+		onMounted(() =>
+		{
+			generateQRCode();
 		});
 
 		return {
+			mainView,
+			mfaCodeField,
 			account,
 			mfaCode,
 			title,

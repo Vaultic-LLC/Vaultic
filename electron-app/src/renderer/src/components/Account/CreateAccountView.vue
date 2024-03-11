@@ -1,6 +1,6 @@
 <template>
 	<div class="createAccountViewContainer">
-		<AccountSetupView :color="color" :title="'Create Account'" :buttonText="'Create'" @onSubmit="createAccount"
+		<AccountSetupView ref="mainView" :color="color" :title="'Create Account'" :buttonText="'Create'" @onSubmit="createAccount"
 			:displayGrid="true" :gridDefinition="gridDefinition">
 			<TextInputField :color="color" :label="'First Name'" v-model="firstName"
 				:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
@@ -25,8 +25,8 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
 
 import { GridDefinition, InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
-import { useErrorContainer, useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
-import { InputComponent } from '@renderer/Types/Components';
+import { useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
+import { FormComponent, InputComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "CreateAccountView",
@@ -37,17 +37,19 @@ export default defineComponent({
 		AccountSetupView
 	},
 	emits: ['onSuccess'],
-	props: ['color'],
+	props: ['color', 'account'],
 	setup(props, ctx)
 	{
+		const mainView: Ref<FormComponent | null> = ref(null);
+
 		const emailField: Ref<InputComponent | null> = ref(null);
 		const usernameField: Ref<InputComponent | null> = ref(null);
 
-		const firstName: Ref<string> = ref('');
-		const lastName: Ref<string> = ref('');
-		const email: Ref<string> = ref('');
-		const username: Ref<string> = ref('');
-		const password: Ref<string> = ref('');
+		const firstName: Ref<string> = ref(props.account.firstName);
+		const lastName: Ref<string> = ref(props.account.lastName);
+		const email: Ref<string> = ref(props.account.email);
+		const username: Ref<string> = ref(props.account.username);
+		const password: Ref<string> = ref(props.account.password);
 
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
@@ -59,7 +61,6 @@ export default defineComponent({
 		}
 
 		const showUnknownResponse = useUnknownResponsePopup();
-		const showErrorContainer = useErrorContainer();
 
 		async function createAccount()
 		{
@@ -88,7 +89,7 @@ export default defineComponent({
 
 				if (response.DeviceIsTaken)
 				{
-					showErrorContainer("There is already an account associated with this device. Please sign in using that account");
+					mainView.value?.showAlertMessage(false, "There is already an account associated with this device. Please sign in using that account")
 					return;
 				}
 
@@ -99,11 +100,12 @@ export default defineComponent({
 
 				if (response.UsernameIsTaken)
 				{
-					usernameField.value?.invalidate("Username is taken. Please try a different one");
+					usernameField.value?.invalidate("Username is taken. Please pick a different one");
 				}
 			}
 		}
 		return {
+			mainView,
 			firstName,
 			lastName,
 			email,

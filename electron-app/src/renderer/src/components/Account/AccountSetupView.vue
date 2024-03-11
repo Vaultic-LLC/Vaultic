@@ -4,9 +4,9 @@
 			<h2 class="accountSetupViewContainer__title">{{ title }}</h2>
 		</div>
 		<Transition name="fade" mode="out-in">
-			<div v-if="showErrorContainer" class="accountSetupViewContainer__errorContainer">
+			<div v-if="showAlertContainer" class="accountSetupViewContainer__alertContainer" :class="{info : alertIsInfo}">
 				<ion-icon name="alert-circle-outline"></ion-icon>
-				{{ errorContainerMessage }}
+				{{ alertMessage }}
 			</div>
 		</Transition>
 		<div class="accountSetupViewContainer__content" :class="{ flex: displayGrid == false, grid: displayGrid == true }"
@@ -25,12 +25,12 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onUnmounted, provide, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onUnmounted, provide, ref } from 'vue';
 
 import PopupButton from '../InputFields/PopupButton.vue';
 
 import { GridDefinition } from '@renderer/Types/Models';
-import { ShowErrorContainerFunctionKey, ValidationFunctionsKey } from '@renderer/Types/Keys';
+import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey, ValidationFunctionsKey } from '@renderer/Types/Keys';
 
 export default defineComponent({
 	name: "AccountSetupViewPopup",
@@ -48,16 +48,20 @@ export default defineComponent({
 
 		let validationFunctions: Ref<{ (): boolean; }[]> = ref([]);
 
-		const showErrorContainer: Ref<boolean> = ref(false);
-		const errorContainerMessage: Ref<string> = ref("");
+		const showAlertContainer: Ref<boolean> = ref(false);
+		const alertIsInfo: Ref<boolean> = ref(false);
+		const alertMessage: Ref<string> = ref('');
+
+		const disableBackButton: { (): void } = inject(DisableBackButtonFunctionKey, () => {});
+		const enableBackButton: { (): void } = inject(EnableBackButtonFunctionKey, () => {});
 
 		provide(ValidationFunctionsKey, validationFunctions);
-		provide(ShowErrorContainerFunctionKey, showErrorContainerFunction);
 
 		function onSubmit()
 		{
+			disableBackButton();
 			disabled.value = true;
-			showErrorContainer.value = false;
+			showAlertContainer.value = false;
 
 			let allValid: boolean = true;
 			validationFunctions.value.forEach(f => allValid = f() && allValid);
@@ -68,23 +72,27 @@ export default defineComponent({
 			}
 
 			disabled.value = false;
+			enableBackButton();
 		}
 
-		function showErrorContainerFunction(message: string)
+		function showErrorMessage(isInfo: boolean, message: string)
 		{
-			errorContainerMessage.value = message;
-			showErrorContainer.value = true;
+			alertIsInfo.value = isInfo;
+			alertMessage.value = message;
+			showAlertContainer.value = true;
 		}
 
-		onUnmounted(() => showErrorContainer.value = false);
+		onUnmounted(() => showAlertContainer.value = false);
 
 		return {
 			display,
 			gridDef,
 			disabled,
-			showErrorContainer,
-			errorContainerMessage,
-			onSubmit
+			showAlertContainer,
+			alertMessage,
+			alertIsInfo,
+			onSubmit,
+			showErrorMessage
 		}
 	}
 })
@@ -107,11 +115,15 @@ export default defineComponent({
 	color: white;
 }
 
-.accountSetupViewContainer__errorContainer {
+.accountSetupViewContainer__alertContainer {
 	width: 5%;
 	background-color: #ce4f36;
 	border-radius: 5%;
 	display: flex;
+}
+
+.accountSetupViewContainer__alertContainer.info{
+	background-color: #3784d6;
 }
 
 .accountSetupViewContainer__content {

@@ -2,18 +2,16 @@
 	<div class="accountSetupPopupContainer">
 		<ObjectPopup :height="'40%'" :width="'30%'" :preventClose="true" :glassOpacity="1" :showPulsing="true">
 			<Transition name="fade" mode="out-in">
-				<div v-if="navigationStack.length > 0" class="accountSetupPopupContainer__backButton"
+				<div v-if="navigationStack.length > 0 && !disableBack" class="accountSetupPopupContainer__backButton"
 					@click="navigateBack">
 					<ion-icon name="arrow-back-outline"></ion-icon>
 				</div>
 			</Transition>
 			<Transition name="fade" mode="out-in">
-				<IncorrectDeviceView v-if="accountSetupModel.currentView == AccountSetupView.IncorrectDevice"
-					:updatesLeft="accountSetupModel.updateDevicesLeft" :devices="accountSetupModel.devices" />
-				<SignInView v-else-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
+				<SignInView v-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
 					@onSuccess="onUsernamePasswordViewSuccess" @onMoveToCreateAccount="moveToCreateAccount" />
 				<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
-					:color="primaryColor" @onSuccess="onCreateAccoutViewSucceeded" />
+					:color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
 				<MFAView v-else-if="accountSetupModel.currentView == AccountSetupView.MFA" :creating="creatingAccount"
 					:account="account" :color="primaryColor" @onSuccess="onMFAViewSucceeded" />
 				<PaymentInfoView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
@@ -25,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, provide, ref, watch } from 'vue';
 
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import { AccountSetupModel, AccountSetupView } from '@renderer/Types/Models';
@@ -36,6 +34,7 @@ import SignInView from './SignInView.vue';
 import PaymentInfoView from './PaymentInfoView.vue';
 import { Account } from '@renderer/Types/AccountSetup';
 import { stores } from '@renderer/Objects/Stores';
+import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey } from '@renderer/Types/Keys';
 
 export default defineComponent({
 	name: "AccountSetupPopup",
@@ -55,6 +54,7 @@ export default defineComponent({
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 		const accountSetupModel: Ref<AccountSetupModel> = ref(props.model);
 		const navigationStack: Ref<AccountSetupView[]> = ref([]);
+		const disableBack: Ref<boolean> = ref(false);
 
 		const creatingAccount: Ref<boolean> = ref(false);
 		const account: Ref<Account> = ref({
@@ -64,8 +64,11 @@ export default defineComponent({
 			username: '',
 			password: '',
 			mfaKey: '',
-			createdTime: -1
+			createdTime: ''
 		});
+
+		provide(DisableBackButtonFunctionKey, disableBackButtonFunction);
+		provide(EnableBackButtonFunctionKey, enableBackButtonFunction);
 
 		function onUsernamePasswordViewSuccess(username: string, password: string)
 		{
@@ -83,9 +86,9 @@ export default defineComponent({
 		}
 
 		function onCreateAccoutViewSucceeded(firstName: string, lastName: string, email: string,
-			username: string, password: string, mfaKey: string, createdTime: number)
+			username: string, password: string, mfaKey: string, createdTime: string)
 		{
-			navigationStack.value.shift();
+			navigationStack.value.push(AccountSetupView.CreateAccount);
 
 			account.value.firstName = firstName;
 			account.value.lastName = lastName;
@@ -120,6 +123,16 @@ export default defineComponent({
 			}
 		}
 
+		function disableBackButtonFunction()
+		{
+			disableBack.value = true;
+		}
+
+		function enableBackButtonFunction()
+		{
+			disableBack.value = false;
+		}
+
 		watch(() => props.model.currentView, () =>
 		{
 			accountSetupModel.value = props.model;
@@ -132,6 +145,7 @@ export default defineComponent({
 			account,
 			primaryColor,
 			navigationStack,
+			disableBack,
 			onUsernamePasswordViewSuccess,
 			moveToCreateAccount,
 			onCreateAccoutViewSucceeded,

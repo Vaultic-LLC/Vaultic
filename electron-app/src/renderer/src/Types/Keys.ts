@@ -20,4 +20,5 @@ export const HideLoadingIndicatorFunctionKey = "HideLoadingIndicatorFunctionKey"
 
 export const ShowUnknownResonsePopupFunctionKey = "ShowUnknownResponsePopupFunctionKey";
 
-export const ShowErrorContainerFunctionKey = "ShowErrorContainerFunctionKey";
+export const DisableBackButtonFunctionKey = "DisableBackButtonFunctionKey";
+export const EnableBackButtonFunctionKey = "EnableBackButtonFunctionKey";

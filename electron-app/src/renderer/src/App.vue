@@ -84,7 +84,6 @@ import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import { stores } from './Objects/Stores';
-import { LicenseResponse, LicenseStatus } from './Types/AccountSetup';
 import UnknownResponsePopup from './components/UnknownResponsePopup.vue';
 
 export default defineComponent({
@@ -286,43 +285,6 @@ export default defineComponent({
 		{
 			needsAuthentication.value = newValue;
 		});
-
-		function handleFailedLicenseResponse(response: LicenseResponse)
-		{
-			if (response.LicenseIsExpired)
-			{
-				accountSetupModel.value.currentView = AccountSetupView.UpdatePayment;
-			}
-			else if (response.IncorrectDevice)
-			{
-				accountSetupModel.value.currentView = AccountSetupView.IncorrectDevice;
-				accountSetupModel.value.updateDevicesLeft = response.DeviceUpdatesLeft;
-				accountSetupModel.value.devices = response.Devices;
-			}
-			else if (response.UnknownLicense)
-			{
-				accountSetupModel.value.currentView = AccountSetupView.SignIn;
-			}
-			else if (response.LicenseStatus != undefined)
-			{
-				if (response.LicenseStatus == LicenseStatus.NotActivated)
-				{
-					accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
-				}
-				else if (response.LicenseStatus == LicenseStatus.Inactive)
-				{
-					accountSetupModel.value.currentView = AccountSetupView.UpdatePayment;
-				}
-				else if (response.LicenseStatus == LicenseStatus.Cancelled)
-				{
-					accountSetupModel.value.currentView = AccountSetupView.ReActivate;
-				}
-			}
-			else
-			{
-				// unknown error, should check connection or reach out to customer service
-			}
-		}
 
 		let clr = "#0f111d";
 		return {

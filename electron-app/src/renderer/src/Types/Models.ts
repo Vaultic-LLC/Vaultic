@@ -161,7 +161,6 @@ export function defaultInputColorModel(color: string): InputColorModel
 export enum AccountSetupView
 {
 	NotSet,
-	IncorrectDevice,
 	SignIn,
 	CreateAccount,
 	MFA,
