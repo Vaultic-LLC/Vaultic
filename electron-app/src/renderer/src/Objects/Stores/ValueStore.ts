@@ -224,7 +224,7 @@ export default function useValueStore(): ValueStore
 		};
 
 		const data: any = await window.api.server.value.add(JSON.stringify(addValueData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 
 		events["onValueChange"]?.forEach(c => c());
 		return true;
@@ -242,7 +242,7 @@ export default function useValueStore(): ValueStore
 		};
 
 		const data: any = await window.api.server.value.update(JSON.stringify(updatedValueData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 
 		events["onValueChange"]?.forEach(c => c());
 	}
@@ -257,7 +257,7 @@ export default function useValueStore(): ValueStore
 		};
 
 		const data: any = await window.api.server.value.delete(JSON.stringify(deleteValueData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 
 		events["onValueChange"]?.forEach(c => c());
 	}

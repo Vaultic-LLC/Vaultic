@@ -22,3 +22,7 @@ export const ShowUnknownResonsePopupFunctionKey = "ShowUnknownResponsePopupFunct
 
 export const DisableBackButtonFunctionKey = "DisableBackButtonFunctionKey";
 export const EnableBackButtonFunctionKey = "EnableBackButtonFunctionKey";
+
+export const ShowIncorrectDevicePopupFunctionKey = "ShowIncorrectDevicePopupFunctionKey";
+
+export const OnSessionExpiredFunctionKey = "OnSessionExpiredFunctionKey";

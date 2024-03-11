@@ -195,7 +195,7 @@ export default function useFilterStore(): FilterStore
 		};
 
 		const data: any = await window.api.server.filter.add(JSON.stringify(addFilterData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 	}
 
 	// TODO: test
@@ -209,7 +209,7 @@ export default function useFilterStore(): FilterStore
 		};
 
 		const data: any = await window.api.server.filter.update(JSON.stringify(addFilterData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 	}
 
 	async function deleteFilter(key: string, filter: Filter): Promise<void>
@@ -222,7 +222,7 @@ export default function useFilterStore(): FilterStore
 		};
 
 		const data: any = await window.api.server.filter.delete(JSON.stringify(addFilterData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 	}
 
 	function toggleAtRiskType(dataType: DataType, atRiskType: AtRiskType)

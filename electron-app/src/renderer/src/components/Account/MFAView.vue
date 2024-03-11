@@ -27,7 +27,7 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
 
 import { Account, LicenseStatus } from '@renderer/Types/AccountSetup';
-import { useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
+import { useIncorrectDevicePopup, useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 import qrCode from "qrcode";
 import { FormComponent, InputComponent } from '@renderer/Types/Components';
 
@@ -53,6 +53,7 @@ export default defineComponent({
 		const qrCodeUrl: Ref<string> = ref('');
 
 		const showUnknownResponse = useUnknownResponsePopup();
+		const showIncorrectDevice = useIncorrectDevicePopup();
 
 		async function onSubmitMFACode()
 		{
@@ -130,7 +131,7 @@ export default defineComponent({
 					}
 					else if (response.IncorrectDevice)
 					{
-						// navigate to Incorrect Device View
+						showIncorrectDevice(response);
 					}
 					else if (response.IncorrectUsernameOrPassword)
 					{

@@ -170,7 +170,7 @@ export default function useGroupStore(): GroupStore
 		};
 
 		const data: any = await window.api.server.group.add(JSON.stringify(addGroupData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 	}
 
 	async function updateGroup(key: string, updatedGroup: Group): Promise<void>
@@ -183,7 +183,7 @@ export default function useGroupStore(): GroupStore
 		};
 
 		const data: any = await window.api.server.group.update(JSON.stringify(updateGroupData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 	}
 
 	async function deleteGroup(key: string, group: Group): Promise<void>
@@ -196,7 +196,7 @@ export default function useGroupStore(): GroupStore
 		};
 
 		const data: any = await window.api.server.group.delete(JSON.stringify(deleteGroupData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 	}
 
 	function toggleAtRiskType(dataType: DataType, atRiskType: AtRiskType)

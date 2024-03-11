@@ -228,7 +228,7 @@ export default function usePasswordStore(): PasswordStore
 		};
 
 		const data: any = await window.api.server.password.add(JSON.stringify(addPasswordData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 
 		events["onPasswordChange"]?.forEach(c => c());
 		return true;
@@ -249,7 +249,7 @@ export default function usePasswordStore(): PasswordStore
 		};
 
 		const data: any = await window.api.server.password.update(JSON.stringify(updatedPasswordData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 
 		events["onPasswordChange"]?.forEach(c => c());
 	}
@@ -264,7 +264,7 @@ export default function usePasswordStore(): PasswordStore
 		};
 
 		const data: any = await window.api.server.password.delete(JSON.stringify(deletePasswordData));
-		await stores.updateAllStates(key, data);
+		await stores.handleUpdateStoreResponse(key, data);
 
 		events["onPasswordChange"]?.forEach(c => c());
 	}

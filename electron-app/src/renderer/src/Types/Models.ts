@@ -174,4 +174,5 @@ export interface AccountSetupModel
 	currentView: AccountSetupView;
 	updateDevicesLeft?: number;
 	devices?: Device[];
+	infoMessage?: string;
 }

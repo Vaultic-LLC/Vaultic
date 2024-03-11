@@ -7,7 +7,7 @@
 			<div>
 				Automatic mobile device updates left: {{ responseObj.MobileDeviceUpdatesLeft }}
 			</div>
-			<ToolTip :color="color" :message="`Once you run out of automatic updates, you'll have to pay for any additional updates or reach out to customer support.`" />
+			<ToolTip :color="color" :message="`Once you run out of automatic updates, you'll have to pay for any additional updates or reach out to customer service.`" />
 		</div>
 		<div class="deviceTable">
 			<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
@@ -45,6 +45,7 @@ import { SortedCollection } from '@renderer/Objects/DataStructures/SortedCollect
 import { HeaderDisplayField } from '@renderer/Types/EncryptedData';
 import { v4 as uuidv4 } from 'uuid';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
+import { useOnSessionExpired, useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
 	name: "DevicesView",
@@ -55,7 +56,7 @@ export default defineComponent({
 		TableRow,
 		ToolTip
 	},
-	emits: ['onUctiveHead', 'onCancelled'],
+	emits: ['onSave', 'onClose'],
 	props: ['response', 'color'],
 	setup(props)
 	{
@@ -63,6 +64,9 @@ export default defineComponent({
 		const devices: ComputedRef<SortedCollection<Device>> = computed(() => new SortedCollection([], "Name"));
         const activeHeader: Ref<number> = ref(1);
 		const tableRows: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection<TableRowData>());
+
+		const showUnknownResponse = useUnknownResponsePopup();
+		const onSessionExpired = useOnSessionExpired();
 
 		const filterHeaderDisplayField: HeaderDisplayField[] = [
 		{
@@ -97,6 +101,7 @@ export default defineComponent({
 		{
 			tableRows.value.setValues(devices.value.calculatedValues.map((d) =>
 			{
+				d.id = uuidv4();
 				const values: TextTableRowValue[] = [
 					{component: "TextTableRowValue", value: d.Name, copiable: false, width: '75px' },
 					{component: "TestTableRowValue", value: d.Type, copiable: false, width: '75px'},
@@ -110,7 +115,8 @@ export default defineComponent({
 					values: values,
 					onDelete: function()
 					{
-						doDelete(d.UserDesktopDeviceID, d.UserMobileDeviceID)
+						// TODO: This should require master key
+						doDelete(d.id, d.UserDesktopDeviceID, d.UserMobileDeviceID)
 					}
 				}
 
@@ -118,11 +124,28 @@ export default defineComponent({
 			}));
 		}
 
-		async function doDelete(desktopDeviceID?: number, mobileDeviceID?: number)
+		async function doDelete(deviceID: string, desktopDeviceID?: number, mobileDeviceID?: number)
 		{
 			// TODO: show loading indicator
 			const response = await window.api.server.account.deleteDevice(desktopDeviceID, mobileDeviceID);
+			if (response.Success)
+			{
+				devices.value.remove(deviceID);
+				setTableRows();
+			}
+			else
+			{
+				if (response.UnknownError)
+				{
+					showUnknownResponse(response.StatusCode);
+					return;
+				}
 
+				if (response.InvalidSession)
+				{
+					onSessionExpired();
+				}
+			}
 		}
 
 		onMounted(() =>

@@ -1,7 +1,8 @@
 export interface Device
 {
-	UserDesktopDeviceID: number;
-	UserMobileDeviceID: number;
+	id: string;
+	UserDesktopDeviceID?: number;
+	UserMobileDeviceID?: number;
 	Name: string;
 	Model: string;
 	Version: string;

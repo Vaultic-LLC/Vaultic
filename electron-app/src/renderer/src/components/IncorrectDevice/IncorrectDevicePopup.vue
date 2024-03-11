@@ -13,13 +13,13 @@
 					:fontSize="'18px'" @onClick="showDevicePopup = true">
 				</PopupButton>
 				<PopupButton :color="color" :text="'Cancel'" :width="'150px'" :height="'40px'"
-					:fontSize="'18px'" @onClick="cancel">
+					:fontSize="'18px'" @onClick="close">
 				</PopupButton>
 			</div>
 		</ObjectPopup>
 		<Teleport to="#body">
 			<Transition>
-				<DevicePopup v-if="showDevicePopup" :response="response" />
+				<DevicePopup v-if="showDevicePopup" :response="response" @onClose="close" />
 			</Transition>
 		</Teleport>
 	</div>
@@ -36,19 +36,20 @@ export default defineComponent({
 	{
 		DevicePopup
 	},
-	emits: ['onCancel', 'onShowDeviceView'],
+	emits: ['onClose'],
 	props: ['response', 'color'],
 	setup(_, ctx)
 	{
 		const showDevicePopup: Ref<boolean> = ref(false);
-		function cancel()
+		function close()
 		{
-			ctx.emit('onCancel');
+			showDevicePopup.value = false;
+			ctx.emit('onClose');
 		}
 
 		return {
 			showDevicePopup,
-			cancel
+			close
 		}
 	}
 })

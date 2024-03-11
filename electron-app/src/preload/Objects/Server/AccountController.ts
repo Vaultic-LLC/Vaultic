@@ -1,6 +1,5 @@
-import { BaseResponse, CreateAccountResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from "../../Types/Responses";
+import { CreateAccountResponse, DeleteDeviceResponse, GenerateMFAResponse, ValidateEmailAndUsernameResponse, ValidateMFACodeResponse, ValidateUsernameAndPasswordResponse } from "../../Types/Responses";
 import cryptUtility from "../../Utilities/CryptUtility";
-import { getDeviceInfo } from "../DeviceInfo";
 import { AxiosHelper } from "./AxiosHelper"
 
 export interface AccountController
@@ -14,7 +13,7 @@ export interface AccountController
 	syncUserData: (key: string, appData: string, settingsData: string, passwordsValueData: string,
 		filterData: string, groupData: string) => Promise<any>;
 	getUserData: () => Promise<any>;
-	deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => Promise<BaseResponse>;
+	deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
 }
 
 export function createAccountController(axiosHelper: AxiosHelper): AccountController
@@ -80,7 +79,7 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 		return axiosHelper.get('Account/GetUserData');
 	}
 
-	function deleteDevice(desktopDeviceID?: number, mobileDeviceID?: number)
+	function deleteDevice(desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
 	{
 		return axiosHelper.post('Account/DeleteDevice', {
 			UserDesktopDeviceID: desktopDeviceID,

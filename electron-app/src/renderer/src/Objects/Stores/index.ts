@@ -5,6 +5,7 @@ import useGroupStore, { GroupStore, GroupStoreState } from "./GroupStore";
 import useSettingsStore, { SettingsStore } from "./SettingsStore";
 import usePasswordStore, { PasswordStore, PasswordStoreState } from "./PasswordStore";
 import useValueStore, { ValueStore, ValueStoreState } from "./ValueStore";
+import { useOnSessionExpired, useUnknownResponsePopup } from "@renderer/Helpers/injectHelper";
 
 export interface Store
 {
@@ -55,7 +56,7 @@ export interface Stores
 	init: () => Promise<void>;
 	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
 	getStates: () => DataStoreStates;
-	updateAllStates: (key: string, states: DataStoreStates) => Promise<[void, void, void, void]>;
+	handleUpdateStoreResponse: (key: string, response: any) => Promise<void>;
 }
 
 async function init(): Promise<void>
@@ -218,15 +219,30 @@ function getStates(): DataStoreStates
 	}
 }
 
-// TODO: MAKE SURE WE ARE ONLY CALLING THIS WITH VALID STATES AND A SUCCESSFUL REQEUST. OTHERWISE ALL OF THEIR DATA WILL BE LOST
-function updateAllStates(key: string, states: DataStoreStates): Promise<[void, void, void, void]>
+async function handleUpdateStoreResponse(key: string, response: any): Promise<void>
 {
-	return Promise.all([
-		stores.filterStore.updateState(key, states.filterStoreState),
-		stores.groupStore.updateState(key, states.groupStoreState),
-		stores.passwordStore.updateState(key, states.passwordStoreState),
-		stores.valueStore.updateState(key, states.valueStoreState)
-	]);
+	if (response.Success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
+		&& response.valueStoreState)
+	{
+		// TODO: Error handling?
+		await Promise.all([
+			stores.filterStore.updateState(key, response.filterStoreState),
+			stores.groupStore.updateState(key, response.groupStoreState),
+			stores.passwordStore.updateState(key, response.passwordStoreState),
+			stores.valueStore.updateState(key, response.valueStoreState)
+		]);
+	}
+	else
+	{
+		if (response.UnknownError)
+		{
+			useUnknownResponsePopup()(response.statusCode);
+		}
+		else if (response.InvalidSession)
+		{
+			useOnSessionExpired()();
+		}
+	}
 }
 
 export const stores: Stores =
@@ -248,7 +264,7 @@ export const stores: Stores =
 	init,
 	syncToServer,
 	getStates,
-	updateAllStates
+	handleUpdateStoreResponse
 }
 
 // additional setup that requires another store. Prevents circular dependencies

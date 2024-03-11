@@ -1,6 +1,6 @@
 <template>
 	<div class="signInViewContainer">
-		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
+		<AccountSetupView ref="mainView" :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
 			@onSubmit="onSubmit">
 			<TextInputField ref="usernameField" :color="color" :label="'Username'" v-model="username"/>
 			<EncryptedInputField ref="passwordField" :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
@@ -15,14 +15,14 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
-import { InputComponent } from '@renderer/Types/Components';
+import { FormComponent, InputComponent } from '@renderer/Types/Components';
 import { useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 
 export default defineComponent({
@@ -34,9 +34,10 @@ export default defineComponent({
 		AccountSetupView
 	},
 	emits: ['onMoveToCreateAccount', 'onSuccess'],
-	props: ['color'],
+	props: ['color', 'infoMessage'],
 	setup(props, ctx)
 	{
+		const mainView: Ref<FormComponent | null> = ref(null);
 		const usernameField: Ref<InputComponent | null> = ref(null);
 		const passwordField: Ref<InputComponent | null> = ref(null);
 
@@ -73,7 +74,16 @@ export default defineComponent({
 			}
 		}
 
+		onMounted(() =>
+		{
+			if (props.infoMessage)
+			{
+				mainView.value?.showAlertMessage(true, props.infoMessage);
+			}
+		});
+
 		return {
+			mainView,
 			usernameField,
 			passwordField,
 			username,

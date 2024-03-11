@@ -10,6 +10,11 @@
 	</Teleport>
 	<Teleport to="#body">
 		<Transition name="fade" mode="out-in">
+			<IncorrectDevicePopup v-if="showIncorrectDevicePopup" :response="incorrectDeviceResponse" @onClose="showIncorrectDevicePopup = false"  />
+		</Transition>
+	</Teleport>
+	<Teleport to="#body">
+		<Transition name="fade" mode="out-in">
 			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" :model="accountSetupModel" />
 		</Transition>
 	</Teleport>
@@ -77,14 +82,16 @@ import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import SliderField from './components/InputFields/SliderField.vue';
 import LoadingPopup from './components/Loading/LoadingPopup.vue';
 import AccountSetupPopup from "./components/Account/AccountSetupPopup.vue"
+import IncorrectDevicePopup from './components/IncorrectDevice/IncorrectDevicePopup.vue';
+import UnknownResponsePopup from './components/UnknownResponsePopup.vue';
 
 import { AccountSetupModel, AccountSetupView, SingleSelectorItemModel } from './Types/Models';
-import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey } from './Types/Keys';
+import { HideLoadingIndicatorFunctionKey, OnSessionExpiredFunctionKey, RequestAuthenticationFunctionKey, ShowIncorrectDevicePopupFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
 import { DataType } from './Types/Table';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import { stores } from './Objects/Stores';
-import UnknownResponsePopup from './components/UnknownResponsePopup.vue';
+import { IncorrectDeviceResponse } from './Types/AccountSetup';
 
 export default defineComponent({
 	name: 'App',
@@ -108,7 +115,9 @@ export default defineComponent({
 		LayoutIconCard,
 		SliderField,
 		LoadingPopup,
-		AccountSetupPopup
+		AccountSetupPopup,
+		UnknownResponsePopup,
+		IncorrectDevicePopup
 	},
 	setup()
 	{
@@ -139,11 +148,16 @@ export default defineComponent({
 		const showUnknownResponsePopup: Ref<boolean> = ref(false);
 		const unknownResponseStatusCode: Ref<number | undefined> = ref(undefined);
 
+		const showIncorrectDevicePopup: Ref<boolean> = ref(false);
+		const incorrectDeviceResponse: Ref<IncorrectDeviceResponse | undefined> = ref(undefined);
+
 		provide(ShowToastFunctionKey, showToastFunc);
 		provide(RequestAuthenticationFunctionKey, requestAuthentication);
 		provide(ShowLoadingIndicatorFunctionKey, showLoadingIndicatorFunc);
 		provide(HideLoadingIndicatorFunctionKey, hideLoadingIndicatorFunc);
 		provide(ShowUnknownResonsePopupFunctionKey, showUnknownResponsePopupFunc);
+		provide(ShowIncorrectDevicePopupFunctionKey, showIncorrectDevicePopupFuntion);
+		provide(OnSessionExpiredFunctionKey, onSessionExpired);
 
 		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
 
@@ -227,6 +241,18 @@ export default defineComponent({
 		{
 			unknownResponseStatusCode.value = statusCode;
 			showUnknownResponsePopup.value = true;
+		}
+
+		function showIncorrectDevicePopupFuntion(response: IncorrectDeviceResponse)
+		{
+			showIncorrectDevicePopup.value = true;
+			incorrectDeviceResponse.value = response;
+		}
+
+		function onSessionExpired(message: string = "Your session has expired. Please re sign in")
+		{
+			accountSetupModel.value.infoMessage = message;
+			accountSetupModel.value.currentView = AccountSetupView.SignIn;
 		}
 
 		function requestAuthentication(color: string, onSuccess: (key: string) => void, onCancel: () => void)
@@ -315,7 +341,9 @@ export default defineComponent({
 			loadingOpacity,
 			onGlobalAuthSuccessful,
 			showUnknownResponsePopup,
-			unknownResponseStatusCode
+			unknownResponseStatusCode,
+			showIncorrectDevicePopup,
+			incorrectDeviceResponse
 		}
 	}
 });

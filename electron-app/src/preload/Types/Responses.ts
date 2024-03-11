@@ -19,7 +19,7 @@ interface IncorrectDeviceResponse extends BaseResponse
 	IncorrectDevice?: boolean;
 	DesktopDeviceUpdatesLeft?: number;
 	MobileDeviceUpdatesLeft?: number;
-	Devices?: Device[];
+	DesktopDevices?: Device[];
 	MobileDevices?: Device[];
 }
 
@@ -60,4 +60,14 @@ export interface ValidateMFACodeResponse extends CreateSessionResponse, CheckLic
 {
 	InvalidMFACode?: boolean;
 	IncorrectUsernameOrPassword?: boolean;
+}
+
+export interface InvalidSessionResponse extends BaseResponse
+{
+	InvalidSession?: boolean;
+}
+
+export interface DeleteDeviceResponse extends InvalidSessionResponse
+{
+	DeviceNotFound?: boolean;
 }

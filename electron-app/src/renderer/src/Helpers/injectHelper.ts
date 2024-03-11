@@ -1,4 +1,5 @@
-import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey, ShowErrorContainerFunctionKey } from "@renderer/Types/Keys";
+import { IncorrectDeviceResponse } from "@renderer/Types/AccountSetup";
+import { HideLoadingIndicatorFunctionKey, RequestAuthenticationFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey, ShowIncorrectDevicePopupFunctionKey, OnSessionExpiredFunctionKey } from "@renderer/Types/Keys";
 import { inject } from "vue";
 
 export function useRequestAuthFunction(): { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined
@@ -19,4 +20,14 @@ export function useToastFunction(): { (color: string, toastText: string, success
 export function useUnknownResponsePopup(): { (statusCode?: number): void }
 {
 	return inject(ShowUnknownResonsePopupFunctionKey, () => { });
+}
+
+export function useIncorrectDevicePopup(): { (response: IncorrectDeviceResponse): void }
+{
+	return inject(ShowIncorrectDevicePopupFunctionKey, () => { });
+}
+
+export function useOnSessionExpired(): { (message?: string): void }
+{
+	return inject(OnSessionExpiredFunctionKey, () => { });
 }

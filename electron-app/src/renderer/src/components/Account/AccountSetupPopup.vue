@@ -9,7 +9,8 @@
 			</Transition>
 			<Transition name="fade" mode="out-in">
 				<SignInView v-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
-					@onSuccess="onUsernamePasswordViewSuccess" @onMoveToCreateAccount="moveToCreateAccount" />
+					:infoMessage="accountSetupModel.infoMessage" @onSuccess="onUsernamePasswordViewSuccess"
+					@onMoveToCreateAccount="moveToCreateAccount" />
 				<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
 					:color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
 				<MFAView v-else-if="accountSetupModel.currentView == AccountSetupView.MFA" :creating="creatingAccount"
@@ -23,7 +24,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, provide, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onUnmounted, provide, ref, watch } from 'vue';
 
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import { AccountSetupModel, AccountSetupView } from '@renderer/Types/Models';
@@ -136,6 +137,11 @@ export default defineComponent({
 		watch(() => props.model.currentView, () =>
 		{
 			accountSetupModel.value = props.model;
+		});
+
+		onUnmounted(() =>
+		{
+			accountSetupModel.value.infoMessage = "";
 		});
 
 		return {
