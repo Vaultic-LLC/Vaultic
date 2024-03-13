@@ -17,6 +17,7 @@ import EncryptedInputField from '../../../components/InputFields/EncryptedInputF
 import { defaultInputColor } from '@renderer/Types/Colors';
 import { InputColorModel } from '@renderer/Types/Models';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
+import cryptHelper from '@renderer/Helpers/cryptHelper';
 
 export default defineComponent({
 	name: "NameValuePairRow",
@@ -44,9 +45,14 @@ export default defineComponent({
 		{
 			newValue?.then((key: string) =>
 			{
-				window.api.utilities.crypt.decrypt(key, valueValue.value).then((value) =>
+				cryptHelper.decrypt(key, valueValue.value).then((result) =>
 				{
-					valueValue.value  = value;
+					if (!result.success)
+					{
+						return;
+					}
+
+					valueValue.value = result.value ?? "";
 				});
 			}).catch(() =>
 			{

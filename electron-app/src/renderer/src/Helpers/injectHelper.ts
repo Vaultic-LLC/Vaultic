@@ -17,7 +17,7 @@ export function useToastFunction(): { (color: string, toastText: string, success
 	return inject(ShowToastFunctionKey, () => { });
 }
 
-export function useUnknownResponsePopup(): { (statusCode?: number): void }
+export function useUnknownResponsePopup(): { (statusCode?: number, logID?: number): void }
 {
 	return inject(ShowUnknownResonsePopupFunctionKey, () => { });
 }

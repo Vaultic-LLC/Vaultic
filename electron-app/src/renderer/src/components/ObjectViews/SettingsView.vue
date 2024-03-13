@@ -47,7 +47,7 @@ import { GridDefinition } from '../../Types/Models';
 import { FilterStatus } from '../../Types/Table';
 import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
-import { SettingsState } from '@renderer/Objects/Stores/SettingsStore';
+import { SettingsStoreState } from '@renderer/Objects/Stores/SettingsStore';
 
 export default defineComponent({
 	name: "ValueView",
@@ -62,7 +62,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const refreshKey: Ref<string> = ref("");
-		const settingsState: Ref<SettingsState> = ref(props.model);
+		const settingsState: Ref<SettingsStoreState> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 		const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
 
@@ -97,7 +97,7 @@ export default defineComponent({
 		async function onAuthenticationSuccessful(key: string)
 		{
 			showLoadingIndicator(color.value, "Saving Settings");
-			await stores.settingsStore.updateSettings(key, settingsState.value);
+			await stores.settingsStore.updateState(key, settingsState.value);
 			hideLoadingIndicator();
 
 			saveSucceeded(true);

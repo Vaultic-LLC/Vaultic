@@ -3,7 +3,7 @@ import { Device } from "./Device";
 
 export interface BaseResponse
 {
-	Success: boolean;
+	success: boolean;
 	UnknownError?: boolean;
 	ErrorID?: string;
 	StatusCode?: number;
@@ -70,4 +70,9 @@ export interface InvalidSessionResponse extends BaseResponse
 export interface DeleteDeviceResponse extends InvalidSessionResponse
 {
 	DeviceNotFound?: boolean;
+}
+
+export interface LogResponse extends BaseResponse
+{
+	LogID?: number;
 }

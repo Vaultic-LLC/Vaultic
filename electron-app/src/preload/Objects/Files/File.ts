@@ -1,13 +1,15 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import fs from "fs";
 import child_process from 'child_process';
+import vaulticServer from '../Server/VaulticServer';
+import { MethodResponse } from '../../Types/MethodResponse';
 
 export interface File
 {
 	exists: () => Promise<boolean>;
 	empty: () => Promise<void>;
-	write: (data: string) => Promise<void>;
-	read: () => Promise<string>;
+	write: (data: string) => Promise<MethodResponse>;
+	read: () => Promise<MethodResponse>;
 }
 
 let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
@@ -135,9 +137,13 @@ export default function useFile(name: string): File
 
 			unlocked = false;
 		}
-		catch (e)
+		catch (e: any)
 		{
-			console.log(e);
+			if (e?.error instanceof Error)
+			{
+				const error: Error = e?.error as Error;
+				await vaulticServer.app.log(error.message, error.stack ?? "");
+			}
 		}
 
 		if (unlocked)
@@ -150,22 +156,36 @@ export default function useFile(name: string): File
 		}
 	}
 
-	async function write(data: string): Promise<void>
+	async function write(data: string): Promise<MethodResponse>
 	{
 		let unlocked: boolean = false;
+		let wrote: boolean = false;
+		let logID: number | undefined;
+
 		try
 		{
 			await unlock();
 			unlocked = true;
 
 			await writeFile(data);
+			wrote = true;
 
 			await lock();
 			unlocked = false;
+
+			return { success: true }
 		}
-		catch (e)
+		catch (e: any)
 		{
-			console.log(e);
+			if (e?.error instanceof Error)
+			{
+				const error: Error = e?.error as Error;
+				const response = await vaulticServer.app.log(error.message, error.stack ?? "");
+				if (response.success)
+				{
+					logID = response.LogID;
+				}
+			}
 		}
 
 		if (unlocked)
@@ -176,31 +196,43 @@ export default function useFile(name: string): File
 			}
 			catch { }
 		}
+
+		return { success: wrote, logID: logID }
 	}
 
-	async function read(): Promise<string>
+	async function read(): Promise<MethodResponse>
 	{
 		if (!await fileExistsAndHasData())
 		{
-			return "";
+			return { success: true, value: "" };
 		}
 
 		let unlocked: boolean = false;
+		let data: string = "";
+		let logID: number | undefined;
 		try
 		{
 			await unlock();
 			unlocked = true;
 
-			const data: string = await readFile();
+			data = await readFile();
 
 			await lock();
 			unlocked = false;
 
-			return data;
+			return { success: true, value: data };
 		}
-		catch (e)
+		catch (e: any)
 		{
-			console.log(e);
+			if (e?.error instanceof Error)
+			{
+				const error: Error = e?.error as Error;
+				const response = await vaulticServer.app.log(error.message, error.stack ?? "");
+				if (response.success)
+				{
+					logID = response.LogID;
+				}
+			}
 		}
 
 		if (unlocked)
@@ -212,7 +244,7 @@ export default function useFile(name: string): File
 			catch { }
 		}
 
-		return "";
+		return { success: data != "", value: data, logID: logID };
 	}
 
 	checkMakeDataDirectory();

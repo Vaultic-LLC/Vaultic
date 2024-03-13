@@ -6,6 +6,11 @@ export interface IIdentifiable
 	id: string;
 }
 
+export interface IKeyable
+{
+	key: string;
+}
+
 export interface IFilterable
 {
 	filters: string[];
@@ -80,10 +85,9 @@ export const PasswordProperties: PropertySelectorDisplayFields[] = [
 	}
 ]
 
-export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable
+export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable, IKeyable
 {
 	[key: string]: any;
-	key: string;
 	login: string;
 	domain: string;
 	email: string;
@@ -140,10 +144,9 @@ export const ValueProperties: PropertySelectorDisplayFields[] = [
 	}
 ]
 
-export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, IPinnable
+export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, IPinnable, IKeyable
 {
 	[key: string]: any;
-	key: string;
 	name: string;
 	value: string;
 	valueType?: NameValuePairType;
@@ -270,6 +273,13 @@ export interface DataFile
 {
 	exists: () => Promise<boolean>;
 	empty: () => Promise<void>;
-	write: (data: string) => Promise<void>;
-	read: () => Promise<string>;
+	write: (data: string) => Promise<MethodResponse>;
+	read: () => Promise<MethodResponse>;
+}
+
+export interface MethodResponse
+{
+	success: boolean;
+	logID?: number;
+	value?: string;
 }

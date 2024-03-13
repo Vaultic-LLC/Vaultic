@@ -18,7 +18,7 @@ import IconCard from "../../IconCard.vue"
 import ObjectPopup from "../../ObjectPopups/ObjectPopup.vue"
 import EditSettingsPopup from "../../ObjectPopups/EditPopups/EditSettingsPopup.vue"
 import { stores } from '@renderer/Objects/Stores';
-import { SettingsState } from '@renderer/Objects/Stores/SettingsStore';
+import { SettingsStoreState } from '@renderer/Objects/Stores/SettingsStore';
 
 export default defineComponent({
 	name: "SettingsIconCard",
@@ -31,7 +31,7 @@ export default defineComponent({
 	setup()
 	{
 		const showEditSettingsPopup: Ref<boolean> = ref(false);
-		const settingsState: ComputedRef<SettingsState> = computed(() => stores.settingsStore.state);
+		const settingsState: ComputedRef<SettingsStoreState> = computed(() => stores.settingsStore.getState());
 
 		function closeSettings()
 		{

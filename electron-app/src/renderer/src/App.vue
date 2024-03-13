@@ -5,7 +5,7 @@
 	</Transition>
 	<Teleport to="#body">
 		<Transition name="fade" mode="out-in">
-			<UnknownResponsePopup v-if="showUnknownResponsePopup" :statusCode="unknownResponseStatusCode" @onOk="showUnknownResponsePopup = false"  />
+			<UnknownResponsePopup v-if="showUnknownResponsePopup" :statusCode="unknownResponseStatusCode" :logID="errorLogID" @onOk="showUnknownResponsePopup = false"  />
 		</Transition>
 	</Teleport>
 	<Teleport to="#body">
@@ -15,7 +15,7 @@
 	</Teleport>
 	<Teleport to="#body">
 		<Transition name="fade" mode="out-in">
-			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" :model="accountSetupModel" />
+			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" :model="accountSetupModel" @onClose="accountSetupModel.currentView = 0" />
 		</Transition>
 	</Teleport>
 	<Teleport to="#body">
@@ -147,6 +147,7 @@ export default defineComponent({
 
 		const showUnknownResponsePopup: Ref<boolean> = ref(false);
 		const unknownResponseStatusCode: Ref<number | undefined> = ref(undefined);
+		const errorLogID: Ref<number | undefined> = ref(undefined)
 
 		const showIncorrectDevicePopup: Ref<boolean> = ref(false);
 		const incorrectDeviceResponse: Ref<IncorrectDeviceResponse | undefined> = ref(undefined);
@@ -237,9 +238,10 @@ export default defineComponent({
 			showLoadingIndicator.value = false;
 		}
 
-		function showUnknownResponsePopupFunc(statusCode?: number)
+		function showUnknownResponsePopupFunc(statusCode?: number, logID?: number)
 		{
 			unknownResponseStatusCode.value = statusCode;
+			errorLogID.value = logID;
 			showUnknownResponsePopup.value = true;
 		}
 
@@ -342,6 +344,7 @@ export default defineComponent({
 			onGlobalAuthSuccessful,
 			showUnknownResponsePopup,
 			unknownResponseStatusCode,
+			errorLogID,
 			showIncorrectDevicePopup,
 			incorrectDeviceResponse
 		}

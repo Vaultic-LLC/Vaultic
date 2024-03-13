@@ -2,13 +2,20 @@
 	<div class="signInViewContainer">
 		<AccountSetupView ref="mainView" :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
 			@onSubmit="onSubmit">
-			<TextInputField ref="usernameField" :color="color" :label="'Username'" v-model="username"/>
-			<EncryptedInputField ref="passwordField" :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
-				:isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true" :showCopy="false"/>
-			<div class="signInViewContainer__createAccountLink">Don't have an account?
-				<button class="signInViewContainer__createAccountLinkButton" @click="moveToCreateAccount">
-					Create One
-				</button>
+			<div class="signInViewContainer__content">
+				<TextInputField ref="usernameField" :color="color" :label="'Username'" v-model="username"/>
+				<EncryptedInputField ref="passwordField" :colorModel="colorModel" :label="'Password'" v-model="password" :initialLength="0"
+					:isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true" :showCopy="false"/>
+				<div class="signInViewContainer__limitedMode">Or
+					<button class="signInViewContainer__createAccountLinkButton" @click="moveToLimitedMode">
+						Continue in Limited Mode
+					</button>
+				</div>
+				<div class="signInViewContainer__createAccountLink">Don't have an account?
+					<button class="signInViewContainer__createAccountLinkButton" @click="moveToCreateAccount">
+						Create One
+					</button>
+				</div>
 			</div>
 		</AccountSetupView>
 	</div>
@@ -33,7 +40,7 @@ export default defineComponent({
 		EncryptedInputField,
 		AccountSetupView
 	},
-	emits: ['onMoveToCreateAccount', 'onSuccess'],
+	emits: ['onMoveToCreateAccount', 'onSuccess', 'onMoveToLimitedMode'],
 	props: ['color', 'infoMessage'],
 	setup(props, ctx)
 	{
@@ -53,10 +60,15 @@ export default defineComponent({
 			ctx.emit('onMoveToCreateAccount');
 		}
 
+		function moveToLimitedMode()
+		{
+			ctx.emit('onMoveToLimitedMode');
+		}
+
 		async function onSubmit()
 		{
 			const response = await window.api.server.account.validateUsernameAndPassword(username.value, password.value);
-			if (response.Success)
+			if (response.success)
 			{
 				ctx.emit('onSuccess', username.value, password.value);
 			}
@@ -90,7 +102,8 @@ export default defineComponent({
 			password,
 			colorModel,
 			moveToCreateAccount,
-			onSubmit
+			onSubmit,
+			moveToLimitedMode
 		};
 	}
 })
@@ -99,6 +112,18 @@ export default defineComponent({
 <style>
 .signInViewContainer {
 	height: 100%;
+}
+
+.signInViewContainer__content {
+	display: flex;
+    flex-direction: column;
+    row-gap: 30px;
+    justify-content: center;
+    align-items: center;
+}
+
+.signInViewContainer__limitedMode {
+	color: white;
 }
 
 .signInViewContainer__createAccountLink {

@@ -1,18 +1,11 @@
 import { reactive } from "vue";
-import useAppStore, { AppStore } from "./AppStore";
-import useFilterStore, { FilterStore, FilterStoreState } from "./FilterStore";
-import useGroupStore, { GroupStore, GroupStoreState } from "./GroupStore";
-import useSettingsStore, { SettingsStore } from "./SettingsStore";
-import usePasswordStore, { PasswordStore, PasswordStoreState } from "./PasswordStore";
-import useValueStore, { ValueStore, ValueStoreState } from "./ValueStore";
+import appStore, { AppStoreType } from "./AppStore";
+import filterStore, { FilterStoreType, FilterStoreState } from "./FilterStore";
+import groupStore, { GroupStoreType, GroupStoreState } from "./GroupStore";
+import settingStore, { SettingStoreType } from "./SettingsStore";
+import passwordStore, { PasswordStoreType, PasswordStoreState } from "./PasswordStore";
+import valueStore, { ValueStoreType, ValueStoreState } from "./ValueStore";
 import { useOnSessionExpired, useUnknownResponsePopup } from "@renderer/Helpers/injectHelper";
-
-export interface Store
-{
-	readState: (key: string) => Promise<boolean>;
-	resetToDefault: () => void;
-	toString: () => string;
-}
 
 export interface DataStoreStates
 {
@@ -20,16 +13,6 @@ export interface DataStoreStates
 	groupStoreState: GroupStoreState;
 	passwordStoreState: PasswordStoreState;
 	valueStoreState: ValueStoreState;
-}
-
-export interface AuthenticationStore extends Store
-{
-	canAuthenticateKeyBeforeEntry: () => Promise<boolean>; 		// checks if file exists
-	canAuthenticateKeyAfterEntry: () => boolean; 				// checks if the store has data.
-	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
-	checkKeyAfterEntry: (key: string) => Promise<boolean>;
-	getState: () => any;
-	updateState: (key: string, state: any) => Promise<void>;
 }
 
 interface StoreState
@@ -41,12 +24,12 @@ const storeState: StoreState = reactive({ needsAuthentication: true });
 export interface Stores
 {
 	needsAuthentication: boolean;
-	settingsStore: SettingsStore;
-	appStore: AppStore;
-	filterStore: FilterStore;
-	groupStore: GroupStore;
-	passwordStore: PasswordStore;
-	valueStore: ValueStore;
+	settingsStore: SettingStoreType;
+	appStore: AppStoreType;
+	filterStore: FilterStoreType;
+	groupStore: GroupStoreType;
+	passwordStore: PasswordStoreType;
+	valueStore: ValueStoreType;
 	canAuthenticateKeyBeforeEntry: () => Promise<[boolean, boolean, boolean, boolean]>;
 	canAuthenticateKeyAfterEntry: () => boolean;
 	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
@@ -202,7 +185,7 @@ async function syncToServer(key: string, incrementUserDataVersion: boolean = tru
 
 	if (incrementUserDataVersion)
 	{
-		await stores.appStore.incrementUserDataVersion(key);
+		//await stores.appStore.incrementUserDataVersion(key);
 	}
 
 	// window.api.server.syncUserData(key, stores.appStore.toString(), stores.settingsStore.toString(), stores.encryptedDataStore.toString(),
@@ -221,7 +204,7 @@ function getStates(): DataStoreStates
 
 async function handleUpdateStoreResponse(key: string, response: any): Promise<void>
 {
-	if (response.Success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
+	if (response.success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
 		&& response.valueStoreState)
 	{
 		// TODO: Error handling?
@@ -249,12 +232,12 @@ export const stores: Stores =
 {
 	get needsAuthentication() { return storeState.needsAuthentication },
 	set needsAuthentication(value: boolean) { storeState.needsAuthentication = value },
-	settingsStore: useSettingsStore(),
-	appStore: useAppStore(),
-	filterStore: useFilterStore(),
-	groupStore: useGroupStore(),
-	passwordStore: usePasswordStore(),
-	valueStore: useValueStore(),
+	settingsStore: settingStore,
+	appStore: appStore,
+	filterStore: filterStore,
+	groupStore: groupStore,
+	passwordStore: passwordStore,
+	valueStore: valueStore,
 	canAuthenticateKeyBeforeEntry,
 	canAuthenticateKeyAfterEntry,
 	checkKeyBeforeEntry,

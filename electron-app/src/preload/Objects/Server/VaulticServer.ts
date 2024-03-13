@@ -1,9 +1,11 @@
 import { AccountController, createAccountController } from "./AccountController";
+import { AppController, createAppController } from "./AppController";
 import axiosHelper from "./AxiosHelper";
 import { StoreController, createFilterController, createGroupController, createPasswordController, createValueController } from "./StoreController";
 
 export interface VaulticServer
 {
+	app: AppController;
 	account: AccountController;
 	filter: StoreController;
 	group: StoreController;
@@ -13,6 +15,7 @@ export interface VaulticServer
 
 const vaulticServer: VaulticServer =
 {
+	app: createAppController(axiosHelper),
 	account: createAccountController(axiosHelper),
 	filter: createFilterController(axiosHelper),
 	group: createGroupController(axiosHelper),

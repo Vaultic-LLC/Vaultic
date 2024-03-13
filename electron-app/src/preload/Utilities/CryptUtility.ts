@@ -1,19 +1,21 @@
 import crypto from "crypto";
 import hashUtility from "./HashUtility";
+import vaulticServer from "../Objects/Server/VaulticServer";
+import { MethodResponse } from "../Types/MethodResponse";
 
 export interface CryptUtility
 {
-	encrypt: (key: string, value: string) => Promise<string>;
-	decrypt: (key: string, value: string) => Promise<string>;
+	encrypt: (key: string, value: string) => Promise<MethodResponse>;
+	decrypt: (key: string, value: string) => Promise<MethodResponse>;
 }
 
 const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
 
-// TODO: THIS WILL OVERWRITE EVERYONES DATA TO EMPTY STRINGS IF THEY DON'T HAVE A LICENSE, WHILE SYNCING. SHOULD UPDATE TO RETURN AN ERROR
-async function encrypt(key: string, value: string): Promise<string>
+async function encrypt(key: string, value: string): Promise<MethodResponse>
 {
+	let logID: number | undefined;
 	try
 	{
 		const hashedKey: string = await hashUtility.hash(key);
@@ -24,19 +26,28 @@ async function encrypt(key: string, value: string): Promise<string>
 			{ 'authTagLength': authTagLength });
 
 		const encryptedValue = Buffer.concat([cipher.update(Buffer.from(value).toString("base64"), "base64"), cipher.final()]);
-		return Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64");
+		return { success: true, value: Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64") };
 	}
-	catch (e)
+	catch (e: any)
 	{
+		if (e?.error instanceof Error)
+		{
+			const error: Error = e?.error as Error;
+			const response = await vaulticServer.app.log(error.message, error.stack ?? "");
+			if (response.success)
+			{
+				logID = response.LogID;
+			}
+		}
 	}
 
-	return "";
+	return { success: false, logID };
 }
 
-// TODO: better error handling. have this return true / false on if the exception was thrown so i know if a blank
 // string is the result of an incorect key or not
-async function decrypt(key: string, value: string): Promise<string>
+async function decrypt(key: string, value: string): Promise<MethodResponse>
 {
+	let logID: number | undefined;
 	try
 	{
 		const cipher: Buffer = Buffer.from(value, "base64");
@@ -54,12 +65,23 @@ async function decrypt(key: string, value: string): Promise<string>
 		let decryptedValue = decipher.update(encryptedValue);
 		decryptedValue = Buffer.concat([decryptedValue, decipher.final()]);
 
-		return Buffer.from(decryptedValue).toString("ascii");
+		return { success: true, value: Buffer.from(decryptedValue).toString("ascii") };
 	}
 	catch (e: any)
 	{
-		return "";
+		if (e?.error instanceof Error)
+		{
+			// TODO probably don't want to log here since everytime a user enters the wrong key we will log
+			const error: Error = e?.error as Error;
+			const response = await vaulticServer.app.log(error.message, error.stack ?? "");
+			if (response.success)
+			{
+				logID = response.LogID;
+			}
+		}
 	}
+
+	return { success: false, logID };
 }
 
 const cryptUtility: CryptUtility =

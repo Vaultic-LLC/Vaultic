@@ -128,7 +128,7 @@ export default defineComponent({
 		{
 			// TODO: show loading indicator
 			const response = await window.api.server.account.deleteDevice(desktopDeviceID, mobileDeviceID);
-			if (response.Success)
+			if (response.success)
 			{
 				devices.value.remove(deviceID);
 				setTableRows();

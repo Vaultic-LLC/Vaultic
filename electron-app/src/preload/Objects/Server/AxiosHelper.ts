@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosInstance } from 'axios';
 import { getDeviceInfo } from '../DeviceInfo';
 import { BaseResponse, CreateSessionResponse } from '../../Types/Responses';
 import cryptUtility from '../../Utilities/CryptUtility';
+import { MethodResponse } from '../../Types/MethodResponse';
 
 export interface AxiosHelper
 {
@@ -21,14 +22,13 @@ const axiosInstance = axios.create({
 	headers: { 'X-M': deviceInfo.mac, 'X-DN': deviceInfo.deviceName },
 });
 
-function getAPIKey()
+async function getAPIKey()
 {
 	const date = new Date();
 	const string = `${apiKeyPrefix}${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
 
-	const encrypt = cryptUtility.encrypt(APIKeyEncryptionKey, string);
-
-	return encrypt;
+	const encrypt: MethodResponse = await cryptUtility.encrypt(APIKeyEncryptionKey, string);
+	return encrypt.value ?? "";
 }
 
 function isCreateSessionResponse(response: any): response is CreateSessionResponse
@@ -54,11 +54,11 @@ async function post<T extends BaseResponse>(serverPath: string, data: any): Prom
 	{
 		if (e instanceof AxiosError)
 		{
-			return { Success: false, UnknownError: true, StatusCode: e.status };
+			return { success: false, UnknownError: true, StatusCode: e.status };
 		}
 	}
 
-	return { Success: false, UnknownError: true };
+	return { success: false, UnknownError: true };
 }
 
 async function get<T extends BaseResponse>(serverPath: string): Promise<T | BaseResponse>
@@ -73,11 +73,11 @@ async function get<T extends BaseResponse>(serverPath: string): Promise<T | Base
 	{
 		if (e instanceof AxiosError)
 		{
-			return { Success: false, UnknownError: true, StatusCode: e.status };
+			return { success: false, UnknownError: true, StatusCode: e.status };
 		}
 	}
 
-	return { Success: false, UnknownError: true };
+	return { success: false, UnknownError: true };
 }
 
 const axiosHelper: AxiosHelper =

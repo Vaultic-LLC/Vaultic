@@ -36,6 +36,7 @@ import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Const
 import tippy from 'tippy.js';
 import { InputColorModel } from '@renderer/Types/Models';
 import { stores } from '@renderer/Objects/Stores';
+import cryptHelper from '@renderer/Helpers/cryptHelper';
 
 export default defineComponent({
 	name: "EncryptedInputField",
@@ -98,7 +99,13 @@ export default defineComponent({
 
 		async function onAuthenticationSuccessful(key: string)
 		{
-			inputText.value = await window.api.utilities.crypt.decrypt(key, props.modelValue);
+			const result = await cryptHelper.decrypt(key, props.modelValue);
+			if (!result.success)
+			{
+				return;
+			}
+
+			inputText.value = result.value ?? "";
 			isLocked.value = false;
 			isDisabled.value = false;
 		}

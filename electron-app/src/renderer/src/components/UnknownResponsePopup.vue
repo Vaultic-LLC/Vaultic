@@ -2,15 +2,18 @@
 	<div class="unknownResponsePopup">
 		<ObjectPopup :height="'40%'" :width="'30%'">
 			<div class="unknownResponsePopup__title">
-				<h2>An Unknown Error has occured</h2>
+				<h2>An Error has occured</h2>
 			</div>
 			<div class="unknownResponsePopup__body">
 				<div>
-					Please check your connection and try again. If the issue persists
+					{{ message }} If the issue persists
 					<button>Contact Support</button>
 				</div>
-				<div>
+				<div v-if="statusCode">
 					Staus Code: {{ statusCode ?? -1 }}
+				</div>
+				<div v-if="logID">
+					Log ID: {{ logID }}
 				</div>
 			</div>
 			<div class="unknownResponsePopup__buttons">
@@ -25,7 +28,7 @@
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from 'vue';
 
-import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
+import ObjectPopup from './ObjectPopups/ObjectPopup.vue';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
@@ -35,9 +38,10 @@ export default defineComponent({
 		ObjectPopup
 	},
     emits: ['onOk'],
-	props: ['statusCode'],
-	setup(_, ctx)
+	props: ['statusCode', 'logID'],
+	setup(props, ctx)
 	{
+		const message: ComputedRef<string> = computed(() => props.statusCode ? "Please check your connection and try again." : "An error has occured. Please try again.")
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 
         function onSubmit()
@@ -47,6 +51,7 @@ export default defineComponent({
 
 		return {
 			primaryColor,
+			message,
             onSubmit
 		}
 	}

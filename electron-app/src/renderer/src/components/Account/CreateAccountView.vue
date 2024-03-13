@@ -66,10 +66,10 @@ export default defineComponent({
 		{
 			// TODO show loading indicator
 			const response = await window.api.server.account.validateEmailAndUsername(email.value, username.value);
-			if (response.Success)
+			if (response.success)
 			{
 				const mfaResponse = await window.api.server.account.generateMFA();
-				if (mfaResponse.Success)
+				if (mfaResponse.success)
 				{
 					ctx.emit('onSuccess', firstName.value, lastName.value, email.value, username.value,
 						password.value, mfaResponse.MFAKey, mfaResponse.GeneratedTime);

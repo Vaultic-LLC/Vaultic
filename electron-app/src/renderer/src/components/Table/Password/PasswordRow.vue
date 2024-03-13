@@ -36,6 +36,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { HeaderTabModel, InputColorModel } from '@renderer/Types/Models';
 import { defaultInputColor } from '@renderer/Types/Colors';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
+import cryptHelper from '@renderer/Helpers/cryptHelper';
 
 export default defineComponent({
 	name: "PasswordRow",
@@ -82,21 +83,36 @@ export default defineComponent({
 		{
 			newValue?.then(async (key: string) =>
 			{
-				window.api.utilities.crypt.decrypt(key, passwordValue.value).then((password) =>
+				cryptHelper.decrypt(key, passwordValue.value).then((result) =>
 				{
-					passwordValue.value = password;
+					if (!result.success)
+					{
+						return;
+					}
+
+					passwordValue.value = result.value ?? "";
 				});
 
 				securityQuestions.value.forEach(sq =>
 				{
-					window.api.utilities.crypt.decrypt(key, sq.question).then((question) =>
+					cryptHelper.decrypt(key, sq.question).then((result) =>
 					{
-						sq.question = question;
+						if (!result.success)
+						{
+							return;
+						}
+
+						sq.question = result.value ?? "";
 					});
 
-					window.api.utilities.crypt.decrypt(key, sq.answer).then((answer) =>
+					cryptHelper.decrypt(key, sq.answer).then((result) =>
 					{
-						sq.answer = answer;
+						if (!result.success)
+						{
+							return;
+						}
+
+						sq.answer = result.value ?? "";
 					});
 				});
 			}).catch(() =>

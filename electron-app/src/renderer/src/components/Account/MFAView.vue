@@ -63,7 +63,7 @@ export default defineComponent({
 					account.value.firstName, account.value.lastName, account.value.email, account.value.username, account.value.password,
 					account.value.mfaKey, mfaCode.value, account.value.createdTime);
 
-				if (response.Success)
+				if (response.success)
 				{
 					ctx.emit('onSuccess');
 				}
@@ -78,7 +78,7 @@ export default defineComponent({
 					if (response.ExpiredMFACode)
 					{
 						const response = await window.api.server.account.generateMFA();
-						if (response.Success)
+						if (response.success)
 						{
 							account.value.mfaKey = response.MFAKey!;
 							account.value.createdTime = response.GeneratedTime!;
@@ -113,7 +113,7 @@ export default defineComponent({
 			else
 			{
 				const response = await window.api.server.account.validateMFACode(account.value.username, account.value.password, mfaCode.value);
-				if (response.Success)
+				if (response.success)
 				{
 					ctx.emit('onSuccess');
 				}

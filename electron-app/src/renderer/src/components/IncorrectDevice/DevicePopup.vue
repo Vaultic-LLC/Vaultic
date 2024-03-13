@@ -19,7 +19,7 @@
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from 'vue';
 
-import DeviceView from './DeviceView.vue';
+import DeviceView from './DevicesView.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 

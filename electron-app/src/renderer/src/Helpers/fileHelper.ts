@@ -1,4 +1,6 @@
 import { DataFile } from "@renderer/Types/EncryptedData";
+import { useUnknownResponsePopup } from "./injectHelper";
+import cryptHelper from "./cryptHelper";
 
 // Uesd to read and write files. ContextBridge can only take simple types so we have to do most of
 // the heavy lifting on the renderer side and then send just strings back and fourth
@@ -11,33 +13,42 @@ export interface FileHelper
 
 async function read<T>(key: string, file: DataFile): Promise<T>
 {
-	const data: string = await file.read();
-	if (!data)
+	const data = await file.read();
+	if (!data.success)
+	{
+		useUnknownResponsePopup()(undefined, data.logID);
+		return {} as T;
+	}
+
+	const decryptedData = await cryptHelper.decrypt(key, data[1]);
+	if (!decryptedData.success)
 	{
 		return {} as T;
 	}
 
-	// TOOD: Error logging
 	try
 	{
-		const decryptedData: string = await window.api.utilities.crypt.decrypt(key, data);
-		return JSON.parse(decryptedData) as T;
+		return JSON.parse(decryptedData.value!) as T;
 	}
-	catch { }
+	catch (e) { }
 
 	return {} as T;
 }
 
 async function write<T>(key: string, data: T, file: DataFile): Promise<void>
 {
-	try
+	const jsonData: string = JSON.stringify(data);
+	const encryptedData = await cryptHelper.encrypt(key, jsonData);
+	if (!encryptedData.success)
 	{
-		const jsonData: string = JSON.stringify(data);
-		const encryptedData: string = await window.api.utilities.crypt.encrypt(key, jsonData);
-
-		await file.write(encryptedData);
+		return;
 	}
-	catch { }
+
+	const result = await file.write(encryptedData.value!);
+	if (!result.success)
+	{
+		useUnknownResponsePopup()(undefined, result.logID);
+	}
 }
 
 const fileHelper: FileHelper =
