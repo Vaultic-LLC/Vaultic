@@ -6,6 +6,7 @@ import settingStore, { SettingStoreType } from "./SettingsStore";
 import passwordStore, { PasswordStoreType, PasswordStoreState } from "./PasswordStore";
 import valueStore, { ValueStoreType, ValueStoreState } from "./ValueStore";
 import { useOnSessionExpired, useUnknownResponsePopup } from "@renderer/Helpers/injectHelper";
+import createPopupStore, { PopupStore } from "./PopupStore";
 
 export interface DataStoreStates
 {
@@ -30,6 +31,7 @@ export interface Stores
 	groupStore: GroupStoreType;
 	passwordStore: PasswordStoreType;
 	valueStore: ValueStoreType;
+	popupStore: PopupStore;
 	canAuthenticateKeyBeforeEntry: () => Promise<[boolean, boolean, boolean, boolean]>;
 	canAuthenticateKeyAfterEntry: () => boolean;
 	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
@@ -238,6 +240,7 @@ export const stores: Stores =
 	groupStore: groupStore,
 	passwordStore: passwordStore,
 	valueStore: valueStore,
+	popupStore: createPopupStore(),
 	canAuthenticateKeyBeforeEntry,
 	canAuthenticateKeyAfterEntry,
 	checkKeyBeforeEntry,
@@ -252,4 +255,3 @@ export const stores: Stores =
 
 // additional setup that requires another store. Prevents circular dependencies
 stores.settingsStore.init(stores);
-stores.appStore.init(stores);

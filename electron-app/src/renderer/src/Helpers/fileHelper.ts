@@ -20,7 +20,7 @@ async function read<T>(key: string, file: DataFile): Promise<T>
 		return {} as T;
 	}
 
-	const decryptedData = await cryptHelper.decrypt(key, data[1]);
+	const decryptedData = await cryptHelper.decrypt(key, data.value!);
 	if (!decryptedData.success)
 	{
 		return {} as T;

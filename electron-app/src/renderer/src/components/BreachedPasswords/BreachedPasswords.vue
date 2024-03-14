@@ -36,7 +36,6 @@ import { DataType } from '@renderer/Types/Table';
 import { SmallMetricGaugeModel, TableRowData } from '@renderer/Types/Models';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
-import { ShowToastFunctionKey } from '@renderer/Types/Keys';
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 
@@ -58,8 +57,6 @@ export default defineComponent({
 		const passwords: SortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
 		const tableRowDatas: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection());
 		const scanning: Ref<boolean> = ref(false);
-
-		const showToastFunc: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const metricModel: Ref<SmallMetricGaugeModel> = ref(updateMetricModel())
 
@@ -118,7 +115,7 @@ export default defineComponent({
 
 				if (notifyComplete)
 				{
-					showToastFunc(color.value, "Scan Complete", true);
+					stores.popupStore.showToast(color.value, "Scan Complete", true);
 				}
 			});
 		}

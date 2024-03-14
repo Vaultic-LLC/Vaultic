@@ -183,13 +183,19 @@ export class AuthenticationStore<U extends IKeyable, T extends AuthenticationSto
 		}
 
 		let state = await fileHelper.read<T>(key, this.getFile());
-		const hash = await this.calculateHash(key, state.values, state.hashSalt);
-		if (!hash[0])
+		const calcualtedHash = await this.calculateHash(key, state.values, state.hashSalt);
+		if (!calcualtedHash[0])
 		{
 			return false;
 		}
 
-		if (hash[1] != state.hash)
+		const currentHash = await cryptHelper.decrypt(key, state.hash);
+		if (!currentHash.success)
+		{
+			return false;
+		}
+
+		if (calcualtedHash[1] != currentHash.value)
 		{
 			return false;
 		}

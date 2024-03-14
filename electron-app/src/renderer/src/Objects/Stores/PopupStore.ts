@@ -1,0 +1,147 @@
+import { IncorrectDeviceResponse } from "@renderer/Types/AccountSetup";
+import { AccountSetupModel, AccountSetupView } from "@renderer/Types/Models";
+import { Ref, ref } from "vue";
+import { stores } from ".";
+
+export type PopupStore = ReturnType<typeof createPopupStore>
+
+export default function createPopupStore()
+{
+	const color: Ref<string> = ref('');
+
+	const loadingIndicatorIsShowing: Ref<boolean> = ref(false)
+	const loadingText: Ref<string> = ref('');
+	const loadingOpacity: Ref<number | undefined> = ref(undefined);
+
+	const unknownResponseIsShowing: Ref<boolean> = ref(false);
+	const statusCode: Ref<number | undefined> = ref(undefined);
+	const logID: Ref<number | undefined> = ref(undefined);
+
+	const incorrectDeviceIsShowing: Ref<boolean> = ref(false);
+	const response: Ref<IncorrectDeviceResponse> = ref({});
+
+	const accountSetupIsShowing: Ref<boolean> = ref(false);
+	const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
+
+	const requestAuthenticationIsShowing: Ref<boolean> = ref(false);
+	const needsToSetupKey: Ref<boolean> = ref(false);
+	const onSuccess: Ref<{ (key: string): void }> = ref(() => { });
+	const onCancel: Ref<{ (): void }> = ref(() => { });
+
+	const toastIsShowing: Ref<boolean> = ref(false);
+	const toastText: Ref<string> = ref('');
+	const toastSuccess: Ref<boolean> = ref(false);
+
+	function showLoadingIndicator(clr: string, text?: string, opacity?: number)
+	{
+		color.value = clr;
+		loadingText.value = text ?? "";
+		loadingOpacity.value = opacity;
+		loadingIndicatorIsShowing.value = true;
+	}
+
+	function hideLoadingIndicator()
+	{
+		loadingIndicatorIsShowing.value = false;
+	}
+
+	function showUnkonwnResponse(sc?: number, lID?: number)
+	{
+		statusCode.value = sc ?? -1;
+		logID.value = lID ?? -1;
+		unknownResponseIsShowing.value = true;
+	}
+
+	function hideUnkonwnResponse()
+	{
+		unknownResponseIsShowing.value = false;
+	}
+
+	function showIncorrectDevice(rsponse?: IncorrectDeviceResponse)
+	{
+		response.value = rsponse ?? {};
+		incorrectDeviceIsShowing.value = true;
+	}
+
+	function hideIncorrectDevice()
+	{
+		incorrectDeviceIsShowing.value = false;
+	}
+
+	function showAccountSetup(view: AccountSetupView, message?: string)
+	{
+		accountSetupModel.value.infoMessage = message;
+		accountSetupModel.value.currentView = view;
+		accountSetupIsShowing.value = true;
+	}
+
+	function hideAccountSetup()
+	{
+		accountSetupIsShowing.value = false;
+	}
+
+	function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
+	{
+		color.value = clr;
+		onSuccess.value = onSucess;
+		onCancel.value = onCancl;
+
+		if (!stores.canAuthenticateKeyAfterEntry())
+		{
+			needsToSetupKey.value = true;
+		}
+		else
+		{
+			needsToSetupKey.value = false;
+		}
+
+		requestAuthenticationIsShowing.value = true;
+	}
+
+	function hideRequesetAuthentication()
+	{
+		requestAuthenticationIsShowing.value = false;
+	}
+
+	function showToast(clr: string, text: string, success: boolean)
+	{
+		color.value = clr;
+		toastText.value = text;
+		toastSuccess.value = success;
+		toastIsShowing.value = true;
+
+		setTimeout(() => toastIsShowing.value = false, 2000);
+	}
+
+	return {
+		get color() { return color.value },
+		get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
+		get loadingText() { return loadingText.value },
+		get loadingOpacity() { return loadingOpacity.value },
+		get unknownResponseIsShowing() { return unknownResponseIsShowing.value },
+		get statusCode() { return statusCode.value },
+		get logID() { return logID.value },
+		get incorrectDeviceIsShowing() { return incorrectDeviceIsShowing.value },
+		get response() { return response.value },
+		get accountSetupIsShowing() { return accountSetupIsShowing.value },
+		get accountSetupModel() { return accountSetupModel.value },
+		get requestAuthenticationIsShowing() { return requestAuthenticationIsShowing.value },
+		get needsToSetupKey() { return needsToSetupKey.value },
+		get onSuccess() { return onSuccess.value },
+		get onCancel() { return onCancel.value },
+		get toastIsShowing() { return toastIsShowing.value },
+		get toastText() { return toastText.value },
+		get toastSuccess() { return toastSuccess.value },
+		showLoadingIndicator,
+		hideLoadingIndicator,
+		showUnkonwnResponse,
+		hideUnkonwnResponse,
+		showIncorrectDevice,
+		hideIncorrectDevice,
+		showAccountSetup,
+		hideAccountSetup,
+		showRequestAuthentication,
+		hideRequesetAuthentication,
+		showToast
+	}
+}

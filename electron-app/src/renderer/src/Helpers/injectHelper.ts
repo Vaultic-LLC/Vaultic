@@ -17,16 +17,19 @@ export function useToastFunction(): { (color: string, toastText: string, success
 	return inject(ShowToastFunctionKey, () => { });
 }
 
+// TODO update
 export function useUnknownResponsePopup(): { (statusCode?: number, logID?: number): void }
 {
 	return inject(ShowUnknownResonsePopupFunctionKey, () => { });
 }
 
+// TODO Update
 export function useIncorrectDevicePopup(): { (response: IncorrectDeviceResponse): void }
 {
 	return inject(ShowIncorrectDevicePopupFunctionKey, () => { });
 }
 
+// TODO update
 export function useOnSessionExpired(): { (message?: string): void }
 {
 	return inject(OnSessionExpiredFunctionKey, () => { });

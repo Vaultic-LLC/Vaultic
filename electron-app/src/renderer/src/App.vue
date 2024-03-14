@@ -1,32 +1,6 @@
 <template>
-	<Transition name="fade" mode="out-in">
-		<LoadingPopup v-if="showLoadingIndicator" :color="loadingColor" :text="loadingText"
-			:glassOpacity="loadingOpacity" />
-	</Transition>
-	<Teleport to="#body">
-		<Transition name="fade" mode="out-in">
-			<UnknownResponsePopup v-if="showUnknownResponsePopup" :statusCode="unknownResponseStatusCode" :logID="errorLogID" @onOk="showUnknownResponsePopup = false"  />
-		</Transition>
-	</Teleport>
-	<Teleport to="#body">
-		<Transition name="fade" mode="out-in">
-			<IncorrectDevicePopup v-if="showIncorrectDevicePopup" :response="incorrectDeviceResponse" @onClose="showIncorrectDevicePopup = false"  />
-		</Transition>
-	</Teleport>
-	<Teleport to="#body">
-		<Transition name="fade" mode="out-in">
-			<AccountSetupPopup v-if="accountSetupModel.currentView != 0" :model="accountSetupModel" @onClose="accountSetupModel.currentView = 0" />
-		</Transition>
-	</Teleport>
-	<Teleport to="#body">
-		<Transition name="lockFade" mode="out-in">
-			<GlobalAuthenticationPopup v-if="needsAuthentication" @onAuthenticationSuccessful="onGlobalAuthSuccessful" />
-		</Transition>
-	</Teleport>
-	<Transition name="fade">
-		<RequestedAuthenticationPopup v-if="requestAuth" :authenticationSuccessful="onAuthSuccess"
-			:authenticationCanceled="onAuthCancel" :setupKey="needsToSetupKey" :color="requestAuthColor" />
-	</Transition>
+	<Popups>
+	</Popups>
 	<div id="mainUI" class="mainUI">
 		<div class="center">
 			<ColorPaletteContainer />
@@ -55,21 +29,15 @@
 			<AboutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" />
 		</div>
 	</div>
-	<Transition name="fade" mode="out-in">
-		<ToastPopup v-if="showToast" :color="toastColor" :text="toastText" :success="toastSuccess" />
-	</Transition>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide, watch } from 'vue';
+import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide } from 'vue';
 
 import TableSelector from "./components/TableSelector.vue"
 import FilterGroupTable from './components/Table/FilterGroupTable.vue';
-import GlobalAuthenticationPopup from './components/Authentication/GlobalAuthenticationPopup.vue';
 import PasswordValueTable from './components/Table/PasswordValueTable.vue';
 import ColorPaletteContainer from './components/ColorPalette/ColorPaletteContainer.vue';
-import ToastPopup from './components/ToastPopup.vue';
-import RequestedAuthenticationPopup from './components/Authentication/RequestedAuthenticationPopup.vue';
 import BreachedPasswords from "./components/BreachedPasswords/BreachedPasswords.vue"
 import PasswordValueGauges from './components/Widgets/SmallMetricGauges/Combined/PasswordValueGauges.vue';
 import FilterGroupGauges from './components/Widgets/SmallMetricGauges/Combined/FilterGroupGauges.vue';
@@ -79,11 +47,7 @@ import SettingsIconCard from "./components/Widgets/IconCards/SettingsIconCard.vu
 import LockIconCard from "./components/Widgets/IconCards/LockIconCard.vue"
 import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
-import SliderField from './components/InputFields/SliderField.vue';
-import LoadingPopup from './components/Loading/LoadingPopup.vue';
-import AccountSetupPopup from "./components/Account/AccountSetupPopup.vue"
-import IncorrectDevicePopup from './components/IncorrectDevice/IncorrectDevicePopup.vue';
-import UnknownResponsePopup from './components/UnknownResponsePopup.vue';
+import Popups from './components/Popups.vue';
 
 import { AccountSetupModel, AccountSetupView, SingleSelectorItemModel } from './Types/Models';
 import { HideLoadingIndicatorFunctionKey, OnSessionExpiredFunctionKey, RequestAuthenticationFunctionKey, ShowIncorrectDevicePopupFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey } from './Types/Keys';
@@ -97,13 +61,11 @@ export default defineComponent({
 	name: 'App',
 	components:
 	{
+		Popups,
 		TableSelector,
 		FilterGroupTable,
-		GlobalAuthenticationPopup,
 		PasswordValueTable,
 		ColorPaletteContainer,
-		ToastPopup,
-		RequestedAuthenticationPopup,
 		BreachedPasswords,
 		PasswordValueGauges,
 		FilterGroupGauges,
@@ -113,18 +75,12 @@ export default defineComponent({
 		LockIconCard,
 		AboutIconCard,
 		LayoutIconCard,
-		SliderField,
-		LoadingPopup,
-		AccountSetupPopup,
-		UnknownResponsePopup,
-		IncorrectDevicePopup
 	},
 	setup()
 	{
 		const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 		const finishedMounting: Ref<boolean> = ref(false);
 
-		const needsAuthentication: Ref<boolean> = ref(stores.needsAuthentication);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
 		//let backgroundClr: Ref<string> = ref('#0f111d');
@@ -285,11 +241,6 @@ export default defineComponent({
 			requestAuth.value = true;
 		}
 
-		function onGlobalAuthSuccessful()
-		{
-			stores.needsAuthentication = false;
-		}
-
 		let lastMouseover: number = 0;
 		const threshold: number = 1000;
 
@@ -307,17 +258,12 @@ export default defineComponent({
 			});
 
 			finishedMounting.value = true;
-		});
-
-		watch(() => stores.needsAuthentication, (newValue) =>
-		{
-			needsAuthentication.value = newValue;
+			stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
 		});
 
 		let clr = "#0f111d";
 		return {
 			accountSetupModel,
-			needsAuthentication,
 			backgroundColor,
 			currentColorPalette,
 			clr,
@@ -341,12 +287,11 @@ export default defineComponent({
 			showLoadingIndicator,
 			finishedMounting,
 			loadingOpacity,
-			onGlobalAuthSuccessful,
 			showUnknownResponsePopup,
 			unknownResponseStatusCode,
 			errorLogID,
 			showIncorrectDevicePopup,
-			incorrectDeviceResponse
+			incorrectDeviceResponse,
 		}
 	}
 });
