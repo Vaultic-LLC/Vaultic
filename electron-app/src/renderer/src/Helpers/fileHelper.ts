@@ -7,32 +7,33 @@ import { stores } from "@renderer/Objects/Stores";
 
 export interface FileHelper
 {
-	read: <T>(key: string, file: DataFile) => Promise<T>;
+	read: <T>(key: string, file: DataFile) => Promise<[boolean, T]>;
 	write: <T>(key: string, data: T, file: DataFile) => Promise<void>;
 }
 
-async function read<T>(key: string, file: DataFile): Promise<T>
+async function read<T>(key: string, file: DataFile): Promise<[boolean, T]>
 {
-	const data = await file.read();
-	if (!data.success)
+	const result = await file.read();
+	if (!result.success)
 	{
-		stores.popupStore.showUnkonwnError(undefined, data.logID);
-		return {} as T;
+		stores.popupStore.showError(result.logID);
+		return [false, {} as T];
 	}
 
-	const decryptedData = await cryptHelper.decrypt(key, data.value!);
+	const decryptedData = await cryptHelper.decrypt(key, result.value!);
 	if (!decryptedData.success)
 	{
-		return {} as T;
+		// don't show an error since this can happen if the key is wrong
+		return [false, {} as T];
 	}
 
 	try
 	{
-		return JSON.parse(decryptedData.value!) as T;
+		return [true, JSON.parse(decryptedData.value!) as T];
 	}
 	catch (e) { }
 
-	return {} as T;
+	return [false, {} as T];
 }
 
 async function write<T>(key: string, data: T, file: DataFile): Promise<void>
@@ -41,13 +42,14 @@ async function write<T>(key: string, data: T, file: DataFile): Promise<void>
 	const encryptedData = await cryptHelper.encrypt(key, jsonData);
 	if (!encryptedData.success)
 	{
+		stores.popupStore.showError(encryptedData.logID);
 		return;
 	}
 
 	const result = await file.write(encryptedData.value!);
 	if (!result.success)
 	{
-		stores.popupStore.showUnkonwnError(undefined, result.logID);
+		stores.popupStore.showError(result.logID);
 	}
 }
 

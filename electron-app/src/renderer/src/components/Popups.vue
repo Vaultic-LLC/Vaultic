@@ -8,7 +8,7 @@
 		<Teleport to="#body">
 			<Transition name="fade" mode="out-in">
 				<UnknownResponsePopup v-if="popupStore.unknownErrorIsShowing"
-				:statusCode="popupStore.statusCode" :logID="popupStore.logID"
+				:statusCode="popupStore.statusCode" :logID="popupStore.logID" :axiosCode="popupStore.axiosCode"
 				@onOk="popupStore.hideUnkonwnError()"  />
 			</Transition>
 		</Teleport>

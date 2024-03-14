@@ -56,25 +56,34 @@ export default defineComponent({
 		{
 			if (props.creating)
 			{
+				stores.popupStore.showLoadingIndicator(props.color);
+
 				const response = await window.api.server.account.createAccount(
 					account.value.firstName, account.value.lastName, account.value.email, account.value.username, account.value.password,
 					account.value.mfaKey, mfaCode.value, account.value.createdTime);
 
+				stores.popupStore.hideLoadingIndicator();
+
 				if (response.success)
 				{
 					ctx.emit('onSuccess');
+					stores.popupStore.hideLoadingIndicator();
 				}
 				else
 				{
 					if (response.UnknownError)
 					{
-						stores.popupStore.showUnkonwnError(response.StatusCode);
+						stores.popupStore.hideLoadingIndicator();
+
+						stores.popupStore.showErrorResponse(response);
 						return;
 					}
 
 					if (response.ExpiredMFACode)
 					{
 						const response = await window.api.server.account.generateMFA();
+						stores.popupStore.hideLoadingIndicator();
+
 						if (response.success)
 						{
 							account.value.mfaKey = response.MFAKey!;
@@ -83,33 +92,42 @@ export default defineComponent({
 						}
 						else
 						{
-							stores.popupStore.showUnkonwnError(response.StatusCode);
+							stores.popupStore.showErrorResponse(response);
 						}
 					}
 					else if (response.InvalidMFACode)
 					{
+						stores.popupStore.hideLoadingIndicator();
 						mfaCodeField.value?.invalidate("Incorrect code");
+
 						return;
 					}
 					else if (response.DeviceIsTaken)
 					{
+						stores.popupStore.hideLoadingIndicator();
 						mainView.value?.showAlertMessage(false, "There is already an account associated with this device. Please sign in using that account");
+
 						return;
 					}
 
 					if (response.EmailIsTaken)
 					{
+						stores.popupStore.hideLoadingIndicator();
 						mainView.value?.showAlertMessage(false, "Email is already in use. Please use a different one")
 					}
 					else if (response.UsernameIsTaken)
 					{
+						stores.popupStore.hideLoadingIndicator();
 						mainView.value?.showAlertMessage(false, "Username is taken. Please pick a different one")
 					}
 				}
 			}
 			else
 			{
+				stores.popupStore.showLoadingIndicator(props.color);
 				const response = await window.api.server.account.validateMFACode(account.value.username, account.value.password, mfaCode.value);
+				stores.popupStore.hideLoadingIndicator();
+
 				if (response.success)
 				{
 					ctx.emit('onSuccess');
@@ -118,7 +136,7 @@ export default defineComponent({
 				{
 					if (response.UnknownError)
 					{
-						stores.popupStore.showUnkonwnError(response.StatusCode);
+						stores.popupStore.showErrorResponse(response);
 						return;
 					}
 

@@ -1,4 +1,4 @@
-import { IncorrectDeviceResponse } from "@renderer/Types/AccountSetup";
+import { BaseResponse, IncorrectDeviceResponse } from "@renderer/Types/AccountSetup";
 import { AccountSetupModel, AccountSetupView } from "@renderer/Types/Models";
 import { Ref, ref } from "vue";
 import { stores } from ".";
@@ -16,6 +16,7 @@ export default function createPopupStore()
 	const unknownErrorIsShowing: Ref<boolean> = ref(false);
 	const statusCode: Ref<number | undefined> = ref(undefined);
 	const logID: Ref<number | undefined> = ref(undefined);
+	const axiosCode: Ref<string | undefined> = ref('');
 
 	const incorrectDeviceIsShowing: Ref<boolean> = ref(false);
 	const response: Ref<IncorrectDeviceResponse> = ref({});
@@ -45,10 +46,16 @@ export default function createPopupStore()
 		loadingIndicatorIsShowing.value = false;
 	}
 
-	function showUnkonwnError(sc?: number, lID?: number)
+	function showErrorResponse(response: BaseResponse)
 	{
-		statusCode.value = sc;
-		logID.value = lID;
+		statusCode.value = response.StatusCode;
+		axiosCode.value = response.AxiosCode;
+		unknownErrorIsShowing.value = true;
+	}
+
+	function showError(logid?: number)
+	{
+		logID.value = logid
 		unknownErrorIsShowing.value = true;
 	}
 
@@ -136,6 +143,7 @@ export default function createPopupStore()
 		get unknownErrorIsShowing() { return unknownErrorIsShowing.value },
 		get statusCode() { return statusCode.value },
 		get logID() { return logID.value },
+		get axiosCode() { return axiosCode.value },
 		get incorrectDeviceIsShowing() { return incorrectDeviceIsShowing.value },
 		get response() { return response.value },
 		get accountSetupIsShowing() { return accountSetupIsShowing.value },
@@ -149,7 +157,8 @@ export default function createPopupStore()
 		get toastSuccess() { return toastSuccess.value },
 		showLoadingIndicator,
 		hideLoadingIndicator,
-		showUnkonwnError,
+		showErrorResponse,
+		showError,
 		hideUnkonwnError,
 		showIncorrectDevice,
 		hideIncorrectDevice,

@@ -80,7 +80,7 @@ export default defineComponent({
 				}
 				else if (response.UnknownError)
 				{
-					stores.popupStore.showUnkonwnError(response.StatusCode);
+					stores.popupStore.showErrorResponse(response);
 				}
 			}
 		}

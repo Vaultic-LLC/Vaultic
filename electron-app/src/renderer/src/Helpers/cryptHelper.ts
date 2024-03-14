@@ -12,7 +12,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 	const result = await window.api.utilities.crypt.encrypt(key, value);
 	if (!result.success)
 	{
-		stores.popupStore.showUnkonwnError(undefined, result.logID);
+		stores.popupStore.showError(result.logID);
 	}
 
 	return result;
@@ -20,13 +20,8 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 
 async function decrypt(key: string, value: string): Promise<MethodResponse>
 {
-	const result = await window.api.utilities.crypt.decrypt(key, value);
-	if (!result.success)
-	{
-		stores.popupStore.showUnkonwnError(undefined, result.logID);
-	}
-
-	return result;
+	// This is expected to fail if the user enters the wrong key, don't show the error popup
+	return await window.api.utilities.crypt.decrypt(key, value);
 }
 
 const cryptHelper: CryptHelper = {

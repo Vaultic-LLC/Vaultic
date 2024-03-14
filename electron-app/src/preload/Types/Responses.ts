@@ -7,6 +7,7 @@ export interface BaseResponse
 	UnknownError?: boolean;
 	ErrorID?: string;
 	StatusCode?: number;
+	AxiosCode?: string;
 }
 
 export interface CreateSessionResponse extends BaseResponse

@@ -47,6 +47,7 @@ export default function useFile(name: string): File
 		return size > 0;
 	}
 
+	// TODO: These won't work on Mac
 	function unlock(): Promise<void>
 	{
 		return new Promise<void>((resolve) =>
@@ -89,13 +90,13 @@ export default function useFile(name: string): File
 
 	function readFile(): Promise<string>
 	{
-		return new Promise<string>((resolve) =>
+		return new Promise<string>((resolve, reject) =>
 		{
 			fs.readFile(fullPath, { encoding: 'utf8' }, (err, data) =>
 			{
 				if (err != null)
 				{
-					resolve("");
+					reject(err);
 				}
 
 				resolve(data);
@@ -105,13 +106,13 @@ export default function useFile(name: string): File
 
 	function writeFile(data: string): Promise<void>
 	{
-		return new Promise<void>((resolve) =>
+		return new Promise<void>((resolve, reject) =>
 		{
 			fs.writeFile(fullPath, data, { encoding: 'utf8' }, (err) =>
 			{
 				if (err != null)
 				{
-					// TODO: Log error
+					reject(err);
 				}
 
 				resolve();

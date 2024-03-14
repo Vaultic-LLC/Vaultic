@@ -125,7 +125,6 @@ class SettingsStore extends Store<SettingsStoreState>
 		const oldColorPalette: ColorPalette[] = this.state.colorPalettes.filter(cp => cp.id == colorPalette.id);
 		if (oldColorPalette.length != 1)
 		{
-			// TODO: Handle Error
 			return Promise.resolve();
 		}
 

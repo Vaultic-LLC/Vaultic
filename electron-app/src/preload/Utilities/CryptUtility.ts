@@ -44,10 +44,8 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 	return { success: false, logID };
 }
 
-// string is the result of an incorect key or not
 async function decrypt(key: string, value: string): Promise<MethodResponse>
 {
-	let logID: number | undefined;
 	try
 	{
 		const cipher: Buffer = Buffer.from(value, "base64");
@@ -69,19 +67,10 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	}
 	catch (e: any)
 	{
-		if (e?.error instanceof Error)
-		{
-			// TODO probably don't want to log here since everytime a user enters the wrong key we will log
-			const error: Error = e?.error as Error;
-			const response = await vaulticServer.app.log(error.message, error.stack ?? "");
-			if (response.success)
-			{
-				logID = response.LogID;
-			}
-		}
+		// don't want to log here since everytime a user enters the wrong key an exception is thrown
 	}
 
-	return { success: false, logID };
+	return { success: false };
 }
 
 const cryptUtility: CryptUtility =

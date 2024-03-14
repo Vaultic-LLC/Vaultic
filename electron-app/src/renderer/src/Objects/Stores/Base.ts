@@ -77,7 +77,11 @@ export class Store<T extends {}>
 			return true;
 		}
 
-		const state = await fileHelper.read<T>(key, this.getFile());
+		const [succeeded, state] = await fileHelper.read<T>(key, this.getFile());
+		if (!succeeded)
+		{
+			return false;
+		}
 
 		this.loadedFile = true;
 		Object.assign(this.state, state);

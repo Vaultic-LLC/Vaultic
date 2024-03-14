@@ -62,11 +62,14 @@ export default defineComponent({
 
 		async function createAccount()
 		{
-			// TODO show loading indicator
+			stores.popupStore.showLoadingIndicator(props.color);
 			const response = await window.api.server.account.validateEmailAndUsername(email.value, username.value);
+
 			if (response.success)
 			{
 				const mfaResponse = await window.api.server.account.generateMFA();
+
+				stores.popupStore.hideLoadingIndicator();
 				if (mfaResponse.success)
 				{
 					ctx.emit('onSuccess', firstName.value, lastName.value, email.value, username.value,
@@ -74,14 +77,16 @@ export default defineComponent({
 				}
 				else if (response.UnknownError)
 				{
-					stores.popupStore.showUnkonwnError(response.StatusCode);
+					stores.popupStore.showErrorResponse(response);
 				}
 			}
 			else
 			{
+				stores.popupStore.hideLoadingIndicator();
+
 				if (response.UnknownError)
 				{
-					stores.popupStore.showUnkonwnError(response.StatusCode);
+					stores.popupStore.showErrorResponse(response);
 					return;
 				}
 

@@ -18,7 +18,7 @@ const deviceInfo = getDeviceInfo();
 
 const axiosInstance = axios.create({
 	baseURL: 'https://localhost:7007/',
-	timeout: 99999999999,
+	timeout: 120000,
 	headers: { 'X-M': deviceInfo.mac, 'X-DN': deviceInfo.deviceName },
 });
 
@@ -54,7 +54,8 @@ async function post<T extends BaseResponse>(serverPath: string, data: any): Prom
 	{
 		if (e instanceof AxiosError)
 		{
-			return { success: false, UnknownError: true, StatusCode: e.status };
+			console.log(e);
+			return { success: false, UnknownError: true, StatusCode: e.status, AxiosCode: e.code };
 		}
 	}
 
@@ -73,7 +74,7 @@ async function get<T extends BaseResponse>(serverPath: string): Promise<T | Base
 	{
 		if (e instanceof AxiosError)
 		{
-			return { success: false, UnknownError: true, StatusCode: e.status };
+			return { success: false, UnknownError: true, StatusCode: e.status, AxiosCode: e.code };
 		}
 	}
 

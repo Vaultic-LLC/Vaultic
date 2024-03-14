@@ -7,7 +7,7 @@
 				</div>
 				<div class="unknownResponsePopup__body">
 					<div>
-						{{ message }} If the issue persists
+						{{ message }}
 						<ButtonLink :color="primaryColor" :text="'Contact Support'" />
 					</div>
 					<div v-if="statusCode">
@@ -45,11 +45,23 @@ export default defineComponent({
 		ButtonLink
 	},
     emits: ['onOk'],
-	props: ['statusCode', 'logID'],
+	props: ['statusCode', 'logID', 'axiosCode'],
 	setup(props, ctx)
 	{
-		const message: ComputedRef<string> = computed(() => props.statusCode ? "Please check your connection and try again." : "An error has occured. Please try again.")
+		const message: ComputedRef<string> = computed(getMessage)
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
+
+		function getMessage()
+		{
+			if (props.statusCode || (props.axiosCode && (props.axiosCode == "ERR_NETWORK" || props.axiosCode == "ECONNABORTED")))
+			{
+				return "Please check your connection and try again. If the issue persists";
+			}
+			else
+			{
+				return "An error has occured, please try again. If the issue persits, restart the app or"
+			}
+		}
 
         function onOk()
         {

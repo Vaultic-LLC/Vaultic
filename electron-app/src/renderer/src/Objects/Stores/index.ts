@@ -210,7 +210,6 @@ async function handleUpdateStoreResponse(key: string, response: any): Promise<vo
 	if (response.success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
 		&& response.valueStoreState)
 	{
-		// TODO: Error handling?
 		await Promise.all([
 			stores.filterStore.updateState(key, response.filterStoreState),
 			stores.groupStore.updateState(key, response.groupStoreState),
@@ -222,7 +221,7 @@ async function handleUpdateStoreResponse(key: string, response: any): Promise<vo
 	{
 		if (response.UnknownError)
 		{
-			stores.popupStore.showUnkonwnError(response.StatusCode);
+			stores.popupStore.showErrorResponse(response.StatusCode);
 		}
 		else if (response.InvalidSession)
 		{

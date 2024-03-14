@@ -9,6 +9,15 @@ export enum LicenseStatus
 	Unknown
 };
 
+export interface BaseResponse
+{
+	success: boolean;
+	UnknownError?: boolean;
+	ErrorID?: string;
+	StatusCode?: number;
+	AxiosCode?: string;
+}
+
 export interface Device extends IIdentifiable
 {
 	[key: string]: any;
