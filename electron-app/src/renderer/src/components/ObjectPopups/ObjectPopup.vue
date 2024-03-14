@@ -3,7 +3,7 @@
 		<div class="objectPopupGlass" @click.stop="closePopup">
 		</div>
 		<div class="objectyPopup">
-			<div v-if="!preventClose" class="closeIconContainer" @click.stop="closePopup">
+			<div v-if="!doPreventClose" class="closeIconContainer" @click.stop="closePopup">
 				<ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
 			</div>
 			<div class="objectyPopupContent">
@@ -33,13 +33,19 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",
-	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity', "showPulsing"],
+	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity', "showPulsing", "beforeHeight", "beforeWidth"],
 	setup(props)
 	{
 		const showPopup: ComputedRef<boolean> = computed(() => props.show);
+
 		const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : '80%');
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : '70%');
+
+		const computedBeforeHeight: ComputedRef<string> = computed(() => props.beforeHeight ? props.beforeHeight : "200%");
+		const computedBeforeWidth: ComputedRef<string> = computed(() => props.beforeWidth ? props.beforeWidth : "150%");
+
 		const computedGlassOpacity: ComputedRef<number> = computed(() => props.glassOpacity ? props.glassOpacity : 0.92);
+		const doPreventClose: ComputedRef<boolean> = computed(() => props.preventClose === true);
 
 		const closePopupFunc: ComputedRef<(saved: boolean) => void> = computed(() => props.closePopup);
 		provide(ClosePopupFuncctionKey, closePopupFunc);
@@ -121,7 +127,7 @@ export default defineComponent({
 
 		function closePopup()
 		{
-			if (props.preventClose)
+			if (doPreventClose.value)
 			{
 				return;
 			}
@@ -168,7 +174,10 @@ export default defineComponent({
 			computedHeight,
 			computedWidth,
 			computedGlassOpacity,
-			closePopup
+			closePopup,
+			doPreventClose,
+			computedBeforeHeight,
+			computedBeforeWidth
 		};
 	}
 })
@@ -216,8 +225,8 @@ export default defineComponent({
 .objectyPopup::before {
 	content: "";
 	position: absolute;
-	width: 150%;
-	height: 200%;
+	height: v-bind(computedBeforeHeight);
+	width: v-bind(computedBeforeWidth);
 	border-radius: inherit;
 	background-image: linear-gradient(0,
 			v-bind(primaryColor),
@@ -233,7 +242,7 @@ export default defineComponent({
 	top: 3%;
 	right: 3%;
 	transition: 0.3s;
-	z-index: 8;
+	z-index: 9;
 	display: flex;
 	justify-content: center;
 	align-items: center;

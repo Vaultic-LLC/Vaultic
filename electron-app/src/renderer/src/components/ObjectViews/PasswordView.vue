@@ -72,7 +72,6 @@ import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTa
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
-import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
 
@@ -118,9 +117,6 @@ export default defineComponent({
 		const locked: Ref<boolean> = ref(!props.creating);
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
 
 		provide(DirtySecurityQuestionQuestionsKey, dirtySecurityQuestionQuestions);
 		provide(DirtySecurityQuestionAnswersKey, dirtySecurityQuestionAnswers);
@@ -258,22 +254,17 @@ export default defineComponent({
 
 		function onSave()
 		{
-			if (requestAuthFunc)
+			stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+			return new Promise((resolve, reject) =>
 			{
-				requestAuthFunc(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
-				return new Promise((resolve, reject) =>
-				{
-					saveSucceeded = resolve;
-					saveFailed = reject;
-				});
-			}
-
-			return Promise.reject();
+				saveSucceeded = resolve;
+				saveFailed = reject;
+			});
 		}
 
 		async function onAuthenticationSuccessful(key: string)
 		{
-			showLoadingIndicator(color.value, "Saving Password");
+			stores.popupStore.showLoadingIndicator(color.value, "Saving Password");
 			if (props.creating)
 			{
 				//passwordState.value.lastModifiedTime = Date.now();
@@ -290,7 +281,7 @@ export default defineComponent({
 					dirtySecurityQuestionAnswers.value, key);
 			}
 
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 			saveSucceeded(true);
 		}
 

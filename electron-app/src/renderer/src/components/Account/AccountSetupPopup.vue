@@ -172,8 +172,8 @@ export default defineComponent({
 	width: 100%;
 	height: 100%;
 	top: 0%;
-	z-index: 150;
 	position: fixed;
+	z-index: 150;
 }
 
 .accountSetupPopupContainer__backButton {

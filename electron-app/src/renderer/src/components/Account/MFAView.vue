@@ -27,9 +27,9 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
 
 import { Account, LicenseStatus } from '@renderer/Types/AccountSetup';
-import { useIncorrectDevicePopup, useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 import qrCode from "qrcode";
 import { FormComponent, InputComponent } from '@renderer/Types/Components';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "MFAView",
@@ -52,9 +52,6 @@ export default defineComponent({
 
 		const qrCodeUrl: Ref<string> = ref('');
 
-		const showUnknownResponse = useUnknownResponsePopup();
-		const showIncorrectDevice = useIncorrectDevicePopup();
-
 		async function onSubmitMFACode()
 		{
 			if (props.creating)
@@ -71,7 +68,7 @@ export default defineComponent({
 				{
 					if (response.UnknownError)
 					{
-						showUnknownResponse(response.StatusCode);
+						stores.popupStore.showUnkonwnError(response.StatusCode);
 						return;
 					}
 
@@ -86,7 +83,7 @@ export default defineComponent({
 						}
 						else
 						{
-							showUnknownResponse(response.StatusCode);
+							stores.popupStore.showUnkonwnError(response.StatusCode);
 						}
 					}
 					else if (response.InvalidMFACode)
@@ -121,7 +118,7 @@ export default defineComponent({
 				{
 					if (response.UnknownError)
 					{
-						showUnknownResponse(response.StatusCode);
+						stores.popupStore.showUnkonwnError(response.StatusCode);
 						return;
 					}
 
@@ -131,7 +128,7 @@ export default defineComponent({
 					}
 					else if (response.IncorrectDevice)
 					{
-						showIncorrectDevice(response);
+						stores.popupStore.showIncorrectDevice(response);
 					}
 					else if (response.IncorrectUsernameOrPassword)
 					{

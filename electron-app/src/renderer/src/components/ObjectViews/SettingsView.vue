@@ -45,7 +45,6 @@ import EnumInputField from '../InputFields/EnumInputField.vue';
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
 import { FilterStatus } from '../../Types/Table';
-import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 import { SettingsStoreState } from '@renderer/Objects/Stores/SettingsStore';
 
@@ -73,32 +72,24 @@ export default defineComponent({
 			columnWidth: '100px'
 		}
 
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
-
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
 
 		function onSave()
 		{
-			if (requestAuthFunc)
+			stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+			return new Promise((resolve, reject) =>
 			{
-				requestAuthFunc(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
-				return new Promise((resolve, reject) =>
-				{
-					saveSucceeded = resolve;
-					saveFaield = reject;
-				});
-			}
-
-			return Promise.reject();
+				saveSucceeded = resolve;
+				saveFaield = reject;
+			});
 		}
 
 		async function onAuthenticationSuccessful(key: string)
 		{
-			showLoadingIndicator(color.value, "Saving Settings");
+			stores.popupStore.showLoadingIndicator(color.value, "Saving Settings");
 			await stores.settingsStore.updateState(key, settingsState.value);
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 
 			saveSucceeded(true);
 		}

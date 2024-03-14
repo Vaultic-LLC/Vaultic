@@ -11,13 +11,6 @@ export const ClosePopupFuncctionKey = "ClosePopup";
 export const DirtySecurityQuestionQuestionsKey = "DirtySecurityQuestionQuestionsKey";
 export const DirtySecurityQuestionAnswersKey = "DirtySecurityQuestionAnswersKey";
 
-export const ShowToastFunctionKey = "ShowToastFunctionKey";
-
-export const RequestAuthenticationFunctionKey = "RequestAuthenticaitonFunctionKey";
-
-export const ShowLoadingIndicatorFunctionKey = "ShowLoadingIndicatorFunctionKey";
-export const HideLoadingIndicatorFunctionKey = "HideLoadingIndicatorFunctionKey";
-
 export const ShowUnknownResonsePopupFunctionKey = "ShowUnknownResponsePopupFunctionKey";
 
 export const DisableBackButtonFunctionKey = "DisableBackButtonFunctionKey";

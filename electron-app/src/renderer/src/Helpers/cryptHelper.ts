@@ -1,5 +1,5 @@
 import { MethodResponse } from "@renderer/Types/EncryptedData";
-import { useUnknownResponsePopup } from "./injectHelper";
+import { stores } from "@renderer/Objects/Stores";
 
 export interface CryptHelper
 {
@@ -12,7 +12,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 	const result = await window.api.utilities.crypt.encrypt(key, value);
 	if (!result.success)
 	{
-		//useUnknownResponsePopup()(undefined, result.logID);
+		stores.popupStore.showUnkonwnError(undefined, result.logID);
 	}
 
 	return result;
@@ -23,7 +23,7 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	const result = await window.api.utilities.crypt.decrypt(key, value);
 	if (!result.success)
 	{
-		//useUnknownResponsePopup()(undefined, result.logID);
+		stores.popupStore.showUnkonwnError(undefined, result.logID);
 	}
 
 	return result;

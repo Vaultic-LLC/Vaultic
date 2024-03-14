@@ -35,7 +35,6 @@ import ToolTip from '../ToolTip.vue';
 
 import { GridDefinition } from '../../Types/Models';
 import { ColorPalette } from '../../Types/Colors';
-import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
@@ -56,9 +55,6 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
-
 		const gridDefinition: GridDefinition =
 		{
 			rows: 12,
@@ -70,22 +66,17 @@ export default defineComponent({
 
 		function onSave()
 		{
-			if (requestAuthFunc)
+			stores.popupStore.showRequestAuthentication(primaryColor.value, doSave, onAuthCancelled);
+			return new Promise((resolve, reject) =>
 			{
-				requestAuthFunc(primaryColor.value, doSave, onAuthCancelled);
-				return new Promise((resolve, reject) =>
-				{
-					saveSucceeded = resolve;
-					saveFailed = reject;
-				});
-			}
-
-			return Promise.reject();
+				saveSucceeded = resolve;
+				saveFailed = reject;
+			});
 		}
 
 		async function doSave(key: string)
 		{
-			showLoadingIndicator(primaryColor.value, "Saving Color Palette");
+			stores.popupStore.showLoadingIndicator(primaryColor.value, "Saving Color Palette");
 			colorPaletteState.value.isCreated = true;
 			colorPaletteState.value.editable = true;
 
@@ -93,7 +84,7 @@ export default defineComponent({
 
 			refreshKey.value = Date.now().toString();
 
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 			saveSucceeded(true);
 		}
 

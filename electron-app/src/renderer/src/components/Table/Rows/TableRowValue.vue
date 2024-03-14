@@ -14,7 +14,7 @@ import { computed, ComputedRef, defineComponent, inject } from 'vue';
 
 import { TextTableRowValue } from '../../../Types/Models';
 import clipboard from 'clipboardy';
-import { ShowToastFunctionKey } from '../../../Types/Keys';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "TableRowValue",
@@ -24,12 +24,11 @@ export default defineComponent({
 		const rowValue: ComputedRef<TextTableRowValue> = computed(() => props.model);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 
-		const showToastFunction: { (color: string, title: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		function copyText(text: string)
 		{
 			clipboard.write(text);
-			showToastFunction(primaryColor.value, "Copied to Clipboard", true);
+			stores.popupStore.showToast(primaryColor.value, "Copied to Clipboard", true);
 		}
 
 		return {

@@ -1,6 +1,6 @@
 import { DataFile } from "@renderer/Types/EncryptedData";
-import { useUnknownResponsePopup } from "./injectHelper";
 import cryptHelper from "./cryptHelper";
+import { stores } from "@renderer/Objects/Stores";
 
 // Uesd to read and write files. ContextBridge can only take simple types so we have to do most of
 // the heavy lifting on the renderer side and then send just strings back and fourth
@@ -16,7 +16,7 @@ async function read<T>(key: string, file: DataFile): Promise<T>
 	const data = await file.read();
 	if (!data.success)
 	{
-		useUnknownResponsePopup()(undefined, data.logID);
+		stores.popupStore.showUnkonwnError(undefined, data.logID);
 		return {} as T;
 	}
 
@@ -47,7 +47,7 @@ async function write<T>(key: string, data: T, file: DataFile): Promise<void>
 	const result = await file.write(encryptedData.value!);
 	if (!result.success)
 	{
-		useUnknownResponsePopup()(undefined, result.logID);
+		stores.popupStore.showUnkonwnError(undefined, result.logID);
 	}
 }
 

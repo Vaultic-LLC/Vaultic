@@ -56,7 +56,6 @@ import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { v4 as uuidv4 } from 'uuid';
-import { useRequestAuthFunction, useLoadingIndicator, useToastFunction } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
@@ -114,10 +113,6 @@ export default defineComponent({
 
 		let deleteFilter: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
 		let deleteGroup: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
-
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
-		const showToastFunction = useToastFunction();
 
 		const emptyTableMessage: ComputedRef<string> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ?
 			getEmptyTableMessage(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password Filters" : "Value Filters") :
@@ -305,19 +300,16 @@ export default defineComponent({
 				await stores.filterStore.deleteFilter(key, filter);
 			}
 
-			if (requestAuthFunc)
-			{
-				requestAuthFunc(color.value, onFilterDeleteConfirmed, () => { });
-			}
+			stores.popupStore.showRequestAuthentication(color.value, onFilterDeleteConfirmed, () => { });
 		}
 
 		async function onFilterDeleteConfirmed(key: string)
 		{
-			showLoadingIndicator(color.value, "Deleting Filter");
+			stores.popupStore.showLoadingIndicator(color.value, "Deleting Filter");
 			await deleteFilter.value(key);
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 
-			showToastFunction(color.value, "Filter Deleted Sucessfully", true);
+			stores.popupStore.showToast(color.value, "Filter Deleted Successfully", true);
 		}
 
 		function onGroupDeleteInitiated(group: Group)
@@ -327,19 +319,16 @@ export default defineComponent({
 				await stores.groupStore.deleteGroup(key, group);
 			}
 
-			if (requestAuthFunc)
-			{
-				requestAuthFunc(color.value, onGroupDeleteConfirmed, () => { });
-			}
+			stores.popupStore.showRequestAuthentication(color.value, onGroupDeleteConfirmed, () => { });
 		}
 
 		async function onGroupDeleteConfirmed(key: string)
 		{
-			showLoadingIndicator(color.value, "Deleting Group");
+			stores.popupStore.showLoadingIndicator(color.value, "Deleting Group");
 			await deleteGroup.value(key);
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 
-			showToastFunction(color.value, "Group Deleted Sucessfully", true);
+			stores.popupStore.showToast(color.value, "Group Deleted Sucessfully", true);
 		}
 
 		onMounted(() =>

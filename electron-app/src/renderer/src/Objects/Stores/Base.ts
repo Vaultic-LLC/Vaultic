@@ -44,10 +44,13 @@ export class Store<T extends {}>
 		return fileHelper.write<T>(key, this.state, this.getFile());
 	}
 
+	protected postAssignState(_: T): void { }
+
 	public init(_: Stores) { }
 
 	public resetToDefault()
 	{
+		this.loadedFile = false;
 		Object.assign(this.state, this.defaultState());
 	}
 
@@ -69,10 +72,16 @@ export class Store<T extends {}>
 			return true;
 		}
 
+		if (!(await this.getFile().exists()))
+		{
+			return true;
+		}
+
 		const state = await fileHelper.read<T>(key, this.getFile());
 
 		this.loadedFile = true;
 		Object.assign(this.state, state);
+		this.postAssignState(state);
 
 		return true;
 	}
@@ -116,8 +125,6 @@ export class AuthenticationStore<U extends IKeyable, T extends AuthenticationSto
 		return super.writeState(key);
 	}
 
-	protected postAssignState(_: T): void { }
-
 	protected getPasswordAtRiskType(): Ref<AtRiskType>
 	{
 		return ref({} as AtRiskType);
@@ -159,52 +166,20 @@ export class AuthenticationStore<U extends IKeyable, T extends AuthenticationSto
 
 	private async checkKey(key: string): Promise<boolean>
 	{
-		const hash = await this.calculateHash(key, this.state.values, this.state.hashSalt);
-		if (!hash[0])
-		{
-			return false;
-		}
-
-		const result = await cryptHelper.decrypt(key, this.state.hash);
-
-		if (!result.success)
-		{
-			return false;
-		}
-
-		return hash[1] === result.value;
-	}
-
-	public async readState(key: string): Promise<boolean>
-	{
-		if (this.loadedFile)
-		{
-			return true;
-		}
-
-		let state = await fileHelper.read<T>(key, this.getFile());
-		const calcualtedHash = await this.calculateHash(key, state.values, state.hashSalt);
+		const calcualtedHash = await this.calculateHash(key, this.state.values, this.state.hashSalt);
 		if (!calcualtedHash[0])
 		{
 			return false;
 		}
 
-		const currentHash = await cryptHelper.decrypt(key, state.hash);
+		const currentHash = await cryptHelper.decrypt(key, this.state.hash);
+
 		if (!currentHash.success)
 		{
 			return false;
 		}
 
-		if (calcualtedHash[1] != currentHash.value)
-		{
-			return false;
-		}
-
-		Object.assign(this.state, state);
-		this.loadedFile = true;
-		this.postAssignState(state);
-
-		return true;
+		return calcualtedHash[1] === currentHash.value;
 	}
 
 	public canAuthenticateKeyBeforeEntry(): Promise<boolean>

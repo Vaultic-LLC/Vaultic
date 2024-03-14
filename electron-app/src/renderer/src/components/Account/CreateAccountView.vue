@@ -25,8 +25,8 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
 
 import { GridDefinition, InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
-import { useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
 import { FormComponent, InputComponent } from '@renderer/Types/Components';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "CreateAccountView",
@@ -60,8 +60,6 @@ export default defineComponent({
 			columnWidth: '100px'
 		}
 
-		const showUnknownResponse = useUnknownResponsePopup();
-
 		async function createAccount()
 		{
 			// TODO show loading indicator
@@ -76,14 +74,14 @@ export default defineComponent({
 				}
 				else if (response.UnknownError)
 				{
-					showUnknownResponse(response.StatusCode);
+					stores.popupStore.showUnkonwnError(response.StatusCode);
 				}
 			}
 			else
 			{
 				if (response.UnknownError)
 				{
-					showUnknownResponse(response.StatusCode);
+					stores.popupStore.showUnkonwnError(response.StatusCode);
 					return;
 				}
 

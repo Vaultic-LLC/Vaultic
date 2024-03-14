@@ -16,7 +16,6 @@ import { computed, ComputedRef, defineComponent, inject, Ref, ref } from 'vue';
 import GroupIcon from './GroupIcon.vue';
 import TableRow from "../Table/Rows/TableRow.vue"
 import { Group } from '../../Types/Table';
-import { RequestAuthenticationFunctionKey } from '../../Types/Keys';
 import { GroupIconModel } from '@renderer/Types/Models';
 import { stores } from '@renderer/Objects/Stores';
 
@@ -91,8 +90,6 @@ export default defineComponent({
 			return tempGroupModels;
 		});
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void } | undefined = inject(RequestAuthenticationFunctionKey);
-
 		function toggleCollapseContent()
 		{
 			if (showCollapseRow.value)
@@ -102,16 +99,12 @@ export default defineComponent({
 				return;
 			}
 
-			// reqAuth.value = true;
-			if (requestAuthFunc)
+			stores.popupStore.showRequestAuthentication(primaryColor.value, onAuthenticationSuccessful, onAuthenticationCanceld);
+			authPromise.value = new Promise((resolve, reject) =>
 			{
-				requestAuthFunc(primaryColor.value, onAuthenticationSuccessful, onAuthenticationCanceld);
-				authPromise.value = new Promise((resolve, reject) =>
-				{
-					resolveFunc = resolve;
-					rejectFunc = reject;
-				});
-			}
+				resolveFunc = resolve;
+				rejectFunc = reject;
+			});
 		}
 
 		function onAuthenticationSuccessful(key: string)

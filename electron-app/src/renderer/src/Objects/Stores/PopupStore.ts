@@ -13,14 +13,14 @@ export default function createPopupStore()
 	const loadingText: Ref<string> = ref('');
 	const loadingOpacity: Ref<number | undefined> = ref(undefined);
 
-	const unknownResponseIsShowing: Ref<boolean> = ref(false);
+	const unknownErrorIsShowing: Ref<boolean> = ref(false);
 	const statusCode: Ref<number | undefined> = ref(undefined);
 	const logID: Ref<number | undefined> = ref(undefined);
 
 	const incorrectDeviceIsShowing: Ref<boolean> = ref(false);
 	const response: Ref<IncorrectDeviceResponse> = ref({});
 
-	const accountSetupIsShowing: Ref<boolean> = ref(false);
+	const accountSetupIsShowing: Ref<boolean> = ref(true);
 	const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 
 	const requestAuthenticationIsShowing: Ref<boolean> = ref(false);
@@ -45,16 +45,16 @@ export default function createPopupStore()
 		loadingIndicatorIsShowing.value = false;
 	}
 
-	function showUnkonwnResponse(sc?: number, lID?: number)
+	function showUnkonwnError(sc?: number, lID?: number)
 	{
-		statusCode.value = sc ?? -1;
-		logID.value = lID ?? -1;
-		unknownResponseIsShowing.value = true;
+		statusCode.value = sc;
+		logID.value = lID;
+		unknownErrorIsShowing.value = true;
 	}
 
-	function hideUnkonwnResponse()
+	function hideUnkonwnError()
 	{
-		unknownResponseIsShowing.value = false;
+		unknownErrorIsShowing.value = false;
 	}
 
 	function showIncorrectDevice(rsponse?: IncorrectDeviceResponse)
@@ -66,6 +66,11 @@ export default function createPopupStore()
 	function hideIncorrectDevice()
 	{
 		incorrectDeviceIsShowing.value = false;
+	}
+
+	function showSessionExpired()
+	{
+		showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please sign back in");
 	}
 
 	function showAccountSetup(view: AccountSetupView, message?: string)
@@ -83,8 +88,6 @@ export default function createPopupStore()
 	function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
 	{
 		color.value = clr;
-		onSuccess.value = onSucess;
-		onCancel.value = onCancl;
 
 		if (!stores.canAuthenticateKeyAfterEntry())
 		{
@@ -93,6 +96,18 @@ export default function createPopupStore()
 		else
 		{
 			needsToSetupKey.value = false;
+		}
+
+		onSuccess.value = (key: string) =>
+		{
+			requestAuthenticationIsShowing.value = false;
+			onSucess(key);
+		};
+
+		onCancel.value = () =>
+		{
+			requestAuthenticationIsShowing.value = false;
+			onCancl();
 		}
 
 		requestAuthenticationIsShowing.value = true;
@@ -118,7 +133,7 @@ export default function createPopupStore()
 		get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
 		get loadingText() { return loadingText.value },
 		get loadingOpacity() { return loadingOpacity.value },
-		get unknownResponseIsShowing() { return unknownResponseIsShowing.value },
+		get unknownErrorIsShowing() { return unknownErrorIsShowing.value },
 		get statusCode() { return statusCode.value },
 		get logID() { return logID.value },
 		get incorrectDeviceIsShowing() { return incorrectDeviceIsShowing.value },
@@ -134,10 +149,11 @@ export default function createPopupStore()
 		get toastSuccess() { return toastSuccess.value },
 		showLoadingIndicator,
 		hideLoadingIndicator,
-		showUnkonwnResponse,
-		hideUnkonwnResponse,
+		showUnkonwnError,
+		hideUnkonwnError,
 		showIncorrectDevice,
 		hideIncorrectDevice,
+		showSessionExpired,
 		showAccountSetup,
 		hideAccountSetup,
 		showRequestAuthentication,

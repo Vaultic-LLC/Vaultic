@@ -5,7 +5,6 @@ import groupStore, { GroupStoreType, GroupStoreState } from "./GroupStore";
 import settingStore, { SettingStoreType } from "./SettingsStore";
 import passwordStore, { PasswordStoreType, PasswordStoreState } from "./PasswordStore";
 import valueStore, { ValueStoreType, ValueStoreState } from "./ValueStore";
-import { useOnSessionExpired, useUnknownResponsePopup } from "@renderer/Helpers/injectHelper";
 import createPopupStore, { PopupStore } from "./PopupStore";
 
 export interface DataStoreStates
@@ -124,6 +123,8 @@ async function checkKeyAfterEntry(key: string): Promise<boolean>
 	return true;
 }
 
+// Is only called from GlobalAuthPopup and should stay that way since readState doesn't do any
+// authenticating
 async function loadStoreData(key: string): Promise<any>
 {
 	const result = await Promise.all(
@@ -221,11 +222,11 @@ async function handleUpdateStoreResponse(key: string, response: any): Promise<vo
 	{
 		if (response.UnknownError)
 		{
-			useUnknownResponsePopup()(response.statusCode);
+			stores.popupStore.showUnkonwnError(response.StatusCode);
 		}
 		else if (response.InvalidSession)
 		{
-			useOnSessionExpired()();
+			stores.popupStore.showSessionExpired();
 		}
 	}
 }

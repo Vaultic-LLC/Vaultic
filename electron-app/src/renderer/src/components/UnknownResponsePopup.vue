@@ -1,25 +1,27 @@
 <template>
 	<div class="unknownResponsePopup">
-		<ObjectPopup :height="'40%'" :width="'30%'">
-			<div class="unknownResponsePopup__title">
-				<h2>An Error has occured</h2>
-			</div>
-			<div class="unknownResponsePopup__body">
-				<div>
-					{{ message }} If the issue persists
-					<button>Contact Support</button>
+		<ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :beforeHeight="'300%'" :closePopup="onOk">
+			<div class="unknownResponsePopup__content">
+				<div class="unknownResponsePopup__title">
+					<h2>An Error has occured</h2>
 				</div>
-				<div v-if="statusCode">
-					Staus Code: {{ statusCode ?? -1 }}
+				<div class="unknownResponsePopup__body">
+					<div>
+						{{ message }} If the issue persists
+						<ButtonLink :color="primaryColor" :text="'Contact Support'" />
+					</div>
+					<div v-if="statusCode">
+						Staus Code: {{ statusCode ?? -1 }}
+					</div>
+					<div v-if="logID">
+						Log ID: {{ logID }}
+					</div>
 				</div>
-				<div v-if="logID">
-					Log ID: {{ logID }}
+				<div class="unknownResponsePopup__buttons">
+					<PopupButton :color="primaryColor" :text="'Ok'" :width="'150px'" :height="'40px'"
+						:fontSize="'18px'" @onClick="onOk">
+					</PopupButton>
 				</div>
-			</div>
-			<div class="unknownResponsePopup__buttons">
-				<PopupButton :color="primaryColor" :text="'Ok'" :width="'150px'" :height="'40px'"
-                    :fontSize="'18px'" @onClick="onSubmit">
-				</PopupButton>
 			</div>
 		</ObjectPopup>
 	</div>
@@ -29,13 +31,18 @@
 import { ComputedRef, computed, defineComponent } from 'vue';
 
 import ObjectPopup from './ObjectPopups/ObjectPopup.vue';
+import PopupButton from './InputFields/PopupButton.vue';
+import ButtonLink from './InputFields/ButtonLink.vue';
+
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "AccountSetupPopup",
 	components:
 	{
-		ObjectPopup
+		ObjectPopup,
+		PopupButton,
+		ButtonLink
 	},
     emits: ['onOk'],
 	props: ['statusCode', 'logID'],
@@ -44,7 +51,7 @@ export default defineComponent({
 		const message: ComputedRef<string> = computed(() => props.statusCode ? "Please check your connection and try again." : "An error has occured. Please try again.")
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 
-        function onSubmit()
+        function onOk()
         {
             ctx.emit('onOk');
         }
@@ -52,7 +59,7 @@ export default defineComponent({
 		return {
 			primaryColor,
 			message,
-            onSubmit
+            onOk
 		}
 	}
 })
@@ -61,21 +68,43 @@ export default defineComponent({
 <style>
 .unknownResponsePopup {
 	color: white;
+	z-index: 160;
+	width: 100%;
+	height: 100%;
+	top: 0%;
+	position: fixed;
+}
+
+.unknownResponsePopup__content {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 
 .unknownResponsePopup__title {
-	position: absolute;
+	/* position: absolute; */
 	top: 5%;
 	left: 50%;
-	transform: translate(-50%);
+	margin-top: 3%;
+	/* transform: translate(-50%); */
 }
 
 .unknownResponsePopup__body {
-	position: absolute;
+	/* position: absolute; */
 	top: 20%;
 	left: 50%;
-	transform: translateX(-50%);
+	/* transform: translateX(-50%); */
 	width: 80%;
+}
+
+.unknownResponsePopup__buttons {
+	flex-grow: 1;
+	margin-bottom: 5%;
+	display: flex;
+	justify-content: center;
+	align-items: flex-end;
 }
 
 </style>

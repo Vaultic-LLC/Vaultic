@@ -45,7 +45,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
-import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
@@ -85,9 +84,6 @@ export default defineComponent({
 
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
-
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
 
 		const emptyMessage: ComputedRef<string> = computed(() =>
 		{
@@ -287,22 +283,17 @@ export default defineComponent({
 
 		function onSave()
 		{
-			if (requestAuthFunc)
+			stores.popupStore.showRequestAuthentication(groupColor.value, doSave, onAuthCanceld);
+			return new Promise((resolve, reject) =>
 			{
-				requestAuthFunc(groupColor.value, doSave, onAuthCanceld);
-				return new Promise((resolve, reject) =>
-				{
-					saveSucceeded = resolve;
-					saveFailed = reject;
-				});
-			}
-
-			return Promise.reject(false);
+				saveSucceeded = resolve;
+				saveFailed = reject;
+			});
 		}
 
 		async function doSave(key: string)
 		{
-			showLoadingIndicator(groupColor.value, "Saving Group");
+			stores.popupStore.showLoadingIndicator(groupColor.value, "Saving Group");
 			if (props.creating)
 			{
 				await stores.groupStore.addGroup(key, groupState.value);
@@ -315,7 +306,7 @@ export default defineComponent({
 				await stores.groupStore.updateGroup(key, groupState.value);
 			}
 
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 			if (saveSucceeded)
 			{
 				saveSucceeded(true);

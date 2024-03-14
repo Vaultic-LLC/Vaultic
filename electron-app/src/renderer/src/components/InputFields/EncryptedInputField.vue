@@ -29,7 +29,7 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 
-import { DecryptFunctionsKey, RequestAuthorizationKey, ShowToastFunctionKey, ValidationFunctionsKey } from '../../Types/Keys';
+import { DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import clipboard from 'clipboardy';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
@@ -64,8 +64,6 @@ export default defineComponent({
 		let isLocked: Ref<boolean> = ref(props.isInitiallyEncrypted);
 
 		let inputText: Ref<string> = ref(props.initialLength > 0 ? "*".repeat(props.initialLength) : props.modelValue);
-
-		const showToastFunction: { (color: string, toastText: string, success: boolean): void } = inject(ShowToastFunctionKey, () => { });
 
 		const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
 
@@ -141,7 +139,7 @@ export default defineComponent({
 		function copyValue()
 		{
 			clipboard.write(inputText.value);
-			showToastFunction(colorModel.value.color, "Copied to Clipboard", true);
+			stores.popupStore.showToast(colorModel.value.color, "Copied to Clipboard", true);
 		}
 
 		function focus()

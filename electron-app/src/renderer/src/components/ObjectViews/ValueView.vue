@@ -62,7 +62,6 @@ import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
-import { useRequestAuthFunction, useLoadingIndicator } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
@@ -107,9 +106,6 @@ export default defineComponent({
 			columns: 15,
 			columnWidth: '100px'
 		}
-
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
 
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
@@ -206,22 +202,17 @@ export default defineComponent({
 
 		function onSave()
 		{
-			if (requestAuthFunc)
+			stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+			return new Promise((resolve, reject) =>
 			{
-				requestAuthFunc(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
-				return new Promise((resolve, reject) =>
-				{
-					saveSucceeded = resolve;
-					saveFaield = reject;
-				});
-			}
-
-			return Promise.reject();
+				saveSucceeded = resolve;
+				saveFaield = reject;
+			});
 		}
 
 		async function onAuthenticationSuccessful(key: string)
 		{
-			showLoadingIndicator(color.value, "Saving Value");
+			stores.popupStore.showLoadingIndicator(color.value, "Saving Value");
 			if (props.creating)
 			{
 				//valuesState.value.lastModifiedTime = Date.now();
@@ -235,7 +226,7 @@ export default defineComponent({
 				await stores.valueStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key);
 			}
 
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 			saveSucceeded(true);
 		}
 

@@ -49,13 +49,11 @@ import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
 
-import { AccountSetupModel, AccountSetupView, SingleSelectorItemModel } from './Types/Models';
-import { HideLoadingIndicatorFunctionKey, OnSessionExpiredFunctionKey, RequestAuthenticationFunctionKey, ShowIncorrectDevicePopupFunctionKey, ShowLoadingIndicatorFunctionKey, ShowToastFunctionKey, ShowUnknownResonsePopupFunctionKey } from './Types/Keys';
+import { AccountSetupModel, AccountSetupView } from './Types/Models';
+import { OnSessionExpiredFunctionKey } from './Types/Keys';
 import { ColorPalette } from './Types/Colors';
-import { DataType } from './Types/Table';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import { stores } from './Objects/Stores';
-import { IncorrectDeviceResponse } from './Types/AccountSetup';
 
 export default defineComponent({
 	name: 'App',
@@ -85,160 +83,14 @@ export default defineComponent({
 		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
 		//let backgroundClr: Ref<string> = ref('#0f111d');
 
-		const toastColor: Ref<string> = ref('');
-		const showToast: Ref<boolean> = ref(false);
-		const toastText: Ref<string> = ref('');
-		const toastSuccess: Ref<boolean> = ref(false);
-
-		const requestAuthColor: Ref<string> = ref('');
-		const needsToSetupKey: Ref<boolean> = ref(false);
-		const requestAuth: Ref<boolean> = ref(false);
-		const onAuthSuccess: Ref<{ (key: string): void }> = ref((_: string) => { });
-		const onAuthCancel: Ref<{ (): void }> = ref(() => { });
-
-		const loadingColor: Ref<string> = ref('');
-		const loadingText: Ref<string> = ref('');
-		const loadingOpacity: Ref<number | undefined> = ref(undefined);
-		const showLoadingIndicator: Ref<boolean> = ref(false);
-
-		const showUnknownResponsePopup: Ref<boolean> = ref(false);
-		const unknownResponseStatusCode: Ref<number | undefined> = ref(undefined);
-		const errorLogID: Ref<number | undefined> = ref(undefined)
-
-		const showIncorrectDevicePopup: Ref<boolean> = ref(false);
-		const incorrectDeviceResponse: Ref<IncorrectDeviceResponse | undefined> = ref(undefined);
-
-		provide(ShowToastFunctionKey, showToastFunc);
-		provide(RequestAuthenticationFunctionKey, requestAuthentication);
-		provide(ShowLoadingIndicatorFunctionKey, showLoadingIndicatorFunc);
-		provide(HideLoadingIndicatorFunctionKey, hideLoadingIndicatorFunc);
-		provide(ShowUnknownResonsePopupFunctionKey, showUnknownResponsePopupFunc);
-		provide(ShowIncorrectDevicePopupFunctionKey, showIncorrectDevicePopupFuntion);
 		provide(OnSessionExpiredFunctionKey, onSessionExpired);
 
 		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
-
-		const passwordTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
-		{
-			return {
-				title: ref("Passwords"),
-				color: ref(currentColorPalette.value.passwordsColor.primaryColor),
-				isActive: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
-				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
-			}
-		});
-
-		const valuesTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
-		{
-			return {
-				title: ref("Values"),
-				color: ref(currentColorPalette.value.valuesColor.primaryColor),
-				isActive: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
-				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.NameValuePairs; }
-			}
-		});
-
-		const filtersTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
-		{
-			return {
-				title: ref("Filters"),
-				color: ref(currentColorPalette.value.filtersColor),
-				isActive: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters),
-				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Filters; }
-			}
-		});
-
-		const groupsTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
-		{
-			return {
-				title: ref("Groups"),
-				color: ref(currentColorPalette.value.groupsColor),
-				isActive: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Groups),
-				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Groups; }
-			}
-		});
-
-		const color: ComputedRef<string> = computed(() =>
-		{
-			switch (stores.appStore.activeFilterGroupsTable)
-			{
-				case DataType.Groups:
-					return stores.settingsStore.currentColorPalette.groupsColor;
-				case DataType.Filters:
-				default:
-					return stores.settingsStore.currentColorPalette.filtersColor
-			}
-		});
-
-		function showToastFunc(color: string, title: string, success: boolean)
-		{
-			toastColor.value = color;
-			toastText.value = title;
-			toastSuccess.value = success;
-			showToast.value = true;
-
-			setTimeout(() => showToast.value = false, 2000);
-		}
-
-		function showLoadingIndicatorFunc(color: string, text: string, opacity?: number)
-		{
-			loadingColor.value = color;
-			loadingText.value = text;
-			loadingOpacity.value = opacity;
-
-			showLoadingIndicator.value = true;
-		}
-
-		function hideLoadingIndicatorFunc()
-		{
-			showLoadingIndicator.value = false;
-		}
-
-		function showUnknownResponsePopupFunc(statusCode?: number, logID?: number)
-		{
-			unknownResponseStatusCode.value = statusCode;
-			errorLogID.value = logID;
-			showUnknownResponsePopup.value = true;
-		}
-
-		function showIncorrectDevicePopupFuntion(response: IncorrectDeviceResponse)
-		{
-			showIncorrectDevicePopup.value = true;
-			incorrectDeviceResponse.value = response;
-		}
 
 		function onSessionExpired(message: string = "Your session has expired. Please re sign in")
 		{
 			accountSetupModel.value.infoMessage = message;
 			accountSetupModel.value.currentView = AccountSetupView.SignIn;
-		}
-
-		function requestAuthentication(color: string, onSuccess: (key: string) => void, onCancel: () => void)
-		{
-			requestAuthColor.value = color;
-
-			if (!stores.canAuthenticateKeyAfterEntry())
-			{
-				needsToSetupKey.value = true;
-			}
-			else
-			{
-				needsToSetupKey.value = false;
-			}
-
-			onAuthSuccess.value = (key: string) =>
-			{
-				requestAuth.value = false;
-				onSuccess(key);
-			};
-
-			onAuthCancel.value = () =>
-			{
-				requestAuth.value = false;
-				onCancel();
-			}
-
-			requestAuth.value = true;
 		}
 
 		let lastMouseover: number = 0;
@@ -267,31 +119,8 @@ export default defineComponent({
 			backgroundColor,
 			currentColorPalette,
 			clr,
-			passwordTableControl,
-			valuesTableControl,
-			filtersTableControl,
-			groupsTableControl,
-			color,
-			toastColor,
-			showToast,
-			toastText,
-			toastSuccess,
-			requestAuthColor,
-			requestAuth,
-			onAuthSuccess,
-			onAuthCancel,
-			needsToSetupKey,
 			gradient,
-			loadingColor,
-			loadingText,
-			showLoadingIndicator,
 			finishedMounting,
-			loadingOpacity,
-			showUnknownResponsePopup,
-			unknownResponseStatusCode,
-			errorLogID,
-			showIncorrectDevicePopup,
-			incorrectDeviceResponse,
 		}
 	}
 });

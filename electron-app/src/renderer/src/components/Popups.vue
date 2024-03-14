@@ -7,9 +7,9 @@
 		</Transition>
 		<Teleport to="#body">
 			<Transition name="fade" mode="out-in">
-				<UnknownResponsePopup v-if="popupStore.unknownResponseIsShowing"
+				<UnknownResponsePopup v-if="popupStore.unknownErrorIsShowing"
 				:statusCode="popupStore.statusCode" :logID="popupStore.logID"
-				@onOk="popupStore.hideUnkonwnResponse()"  />
+				@onOk="popupStore.hideUnkonwnError()"  />
 			</Transition>
 		</Teleport>
 		<Teleport to="#body">

@@ -36,7 +36,6 @@ import { DisplayField, PasswordProperties, ValueProperties, defaultFilter } from
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
 import { v4 as uuidv4 } from 'uuid';
-import { useLoadingIndicator, useRequestAuthFunction } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
 
@@ -63,9 +62,6 @@ export default defineComponent({
 		let saveSucceeded: (value: boolean) => void;
 		let saveFailed: (value: boolean) => void;
 
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
-
 		const emptyMessage: Ref<string> = ref(getEmptyTableMessage("Filter Conditions"));
 
 		const gridDefinition: GridDefinition =
@@ -88,22 +84,17 @@ export default defineComponent({
 
 		function onSave()
 		{
-			if (requestAuthFunc)
+			stores.popupStore.showRequestAuthentication(color.value, doSave, onAuthCancelled);
+			return new Promise((resolve, reject) =>
 			{
-				requestAuthFunc(color.value, doSave, onAuthCancelled);
-				return new Promise((resolve, reject) =>
-				{
-					saveSucceeded = resolve;
-					saveFailed = reject;
-				});
-			}
-
-			return Promise.reject();
+				saveSucceeded = resolve;
+				saveFailed = reject;
+			});
 		}
 
 		async function doSave(key: string)
 		{
-			showLoadingIndicator(color.value, "Saving Filter");
+			stores.popupStore.showLoadingIndicator(color.value, "Saving Filter");
 			if (props.creating)
 			{
 				await stores.filterStore.addFilter(key, filterState.value);
@@ -116,7 +107,7 @@ export default defineComponent({
 				await stores.filterStore.updateFilter(key, filterState.value);
 			}
 
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 			if (saveSucceeded)
 			{
 				saveSucceeded(true);

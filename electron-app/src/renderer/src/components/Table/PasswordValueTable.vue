@@ -66,7 +66,6 @@ import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedC
 import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { v4 as uuidv4 } from 'uuid';
-import { useRequestAuthFunction, useLoadingIndicator, useToastFunction } from '@renderer/Helpers/injectHelper';
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
@@ -118,10 +117,6 @@ export default defineComponent({
 		const valueSearchText: Ref<string> = ref('');
 		const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			passwordSearchText : valueSearchText);
-
-		const requestAuthFunc = useRequestAuthFunction();
-		const [showLoadingIndicator, hideLoadingIndicator] = useLoadingIndicator();
-		const showToastFunction = useToastFunction();
 
 		const emptyTableMessage: ComputedRef<string> = computed(() =>
 		{
@@ -400,19 +395,16 @@ export default defineComponent({
 				await stores.passwordStore.deletePassword(key, password);
 			};
 
-			if (requestAuthFunc)
-			{
-				requestAuthFunc(color.value, onDeletePasswordConfirmed, () => { });
-			}
+			stores.popupStore.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
 		}
 
 		async function onDeletePasswordConfirmed(key: string)
 		{
-			showLoadingIndicator(color.value, "Deleting Password");
+			stores.popupStore.showLoadingIndicator(color.value, "Deleting Password");
 			await deletePassword.value(key);
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 
-			showToastFunction(color.value, "Password Deleted Successfully", true);
+			stores.popupStore.showToast(color.value, "Password Deleted Successfully", true);
 		}
 
 		function onValueDeleteInitiated(value: ReactiveValue)
@@ -422,19 +414,16 @@ export default defineComponent({
 				await stores.valueStore.deleteNameValuePair(key, value);
 			};
 
-			if (requestAuthFunc)
-			{
-				requestAuthFunc(color.value, onDeleteValueConfirmed, () => { });
-			}
+			stores.popupStore.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });
 		}
 
 		async function onDeleteValueConfirmed(key: string)
 		{
-			showLoadingIndicator(color.value, "Deleting Value");
+			stores.popupStore.showLoadingIndicator(color.value, "Deleting Value");
 			await deleteValue.value(key);
-			hideLoadingIndicator();
+			stores.popupStore.hideLoadingIndicator();
 
-			showToastFunction(color.value, "Value Deleted Successfully", true);
+			stores.popupStore.showToast(color.value, "Value Deleted Successfully", true);
 		}
 
 		onMounted(() =>

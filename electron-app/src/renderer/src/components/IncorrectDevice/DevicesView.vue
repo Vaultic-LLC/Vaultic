@@ -45,7 +45,7 @@ import { SortedCollection } from '@renderer/Objects/DataStructures/SortedCollect
 import { HeaderDisplayField } from '@renderer/Types/EncryptedData';
 import { v4 as uuidv4 } from 'uuid';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
-import { useOnSessionExpired, useUnknownResponsePopup } from '@renderer/Helpers/injectHelper';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "DevicesView",
@@ -64,9 +64,6 @@ export default defineComponent({
 		const devices: ComputedRef<SortedCollection<Device>> = computed(() => new SortedCollection([], "Name"));
         const activeHeader: Ref<number> = ref(1);
 		const tableRows: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection<TableRowData>());
-
-		const showUnknownResponse = useUnknownResponsePopup();
-		const onSessionExpired = useOnSessionExpired();
 
 		const filterHeaderDisplayField: HeaderDisplayField[] = [
 		{
@@ -137,13 +134,13 @@ export default defineComponent({
 			{
 				if (response.UnknownError)
 				{
-					showUnknownResponse(response.StatusCode);
+					stores.popupStore.showUnkonwnError(response.StatusCode);
 					return;
 				}
 
 				if (response.InvalidSession)
 				{
-					onSessionExpired();
+					stores.popupStore.showSessionExpired();
 				}
 			}
 		}

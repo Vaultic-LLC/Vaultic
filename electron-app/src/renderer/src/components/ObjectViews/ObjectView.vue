@@ -17,9 +17,10 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, provide, ref, watch } from 'vue';
 
-import { ClosePopupFuncctionKey, ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey, ShowToastFunctionKey, RequestAuthenticationFunctionKey } from '../../Types/Keys';
+import { ClosePopupFuncctionKey, ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Types/Keys';
 import { GridDefinition } from '../../Types/Models';
 import PopupButton from '../InputFields/PopupButton.vue';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectView",
@@ -43,12 +44,6 @@ export default defineComponent({
 		provide(DecryptFunctionsKey, decryptFunctions);
 		provide(RequestAuthorizationKey, requestAuthorization);
 
-		const requestAuthFunc: { (color: string, onSuccess: (key: string) => void, onCancel: () => void): void; } | undefined =
-			inject(RequestAuthenticationFunctionKey);
-
-		const showToastFunction: { (color: string, toastText: string, success: boolean): void; } =
-			inject(ShowToastFunctionKey, () => { });
-
 		function onSave()
 		{
 			disabled.value = true;
@@ -65,7 +60,7 @@ export default defineComponent({
 						closePopupFunction.value(true);
 					}
 
-					showToastFunction(primaryColor.value, "Saved Successfully", true);
+					stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
 				}).catch(() =>
 				{
 					// cancelled
@@ -91,7 +86,7 @@ export default defineComponent({
 						closePopupFunction.value(true);
 					}
 
-					showToastFunction(primaryColor.value, "Saved Successfully", true);
+					stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
 				}).catch(() =>
 				{
 					// cancelled
@@ -119,10 +114,8 @@ export default defineComponent({
 				return;
 			}
 
-			if (requestAuthFunc)
-			{
-				requestAuthFunc(primaryColor.value, onAuthenticationSuccessful, authenticationCancelled);
-			}
+			stores.popupStore.showRequestAuthentication(primaryColor.value,
+				onAuthenticationSuccessful, authenticationCancelled);
 
 			requestAuthorization.value = false;
 		});
