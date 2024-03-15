@@ -88,6 +88,7 @@ export const PasswordProperties: PropertySelectorDisplayFields[] = [
 export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable, IKeyable
 {
 	[key: string]: any;
+	isVaultic: boolean;
 	login: string;
 	domain: string;
 	email: string;
@@ -191,6 +192,7 @@ export function defaultPassword(): Password
 	return {
 		id: "",
 		key: "",
+		isVaultic: false,
 		passwordFor: '',
 		login: '',
 		domain: '',

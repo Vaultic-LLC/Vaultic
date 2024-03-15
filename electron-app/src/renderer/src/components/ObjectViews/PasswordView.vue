@@ -3,6 +3,13 @@
 		:gridDefinition="gridDefinition">
 		<TextInputField :color="color" :label="'Password For'" v-model="passwordState.passwordFor"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
+		<div class="vaulticPasswordContainer" v-if="showVaulticPasswordCheckbox"
+			:style="{ 'grid-row': '2 / span 1', 'grid-column': '2 / span 2', 'margin-top': '10px', 'margin-left': '5px' }">
+			<CheckboxInputField :label="'Vaultic Account'" :color="color" v-model="passwordState.isVaultic" :fadeIn="true"
+				:style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
+			<ToolTip :color="color" :size="20" :fadeIn="true"
+				:message="'This password is the one used to log into the app. If set, it can be autofilled when logging in by using your master key'" />
+		</div>
 		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain" :showToolTip="true"
 			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is www.facebook.com'"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2' }" />
@@ -63,6 +70,7 @@ import AddButton from '../Table/Controls/AddButton.vue';
 import SecurityQuestionRow from '../Table/Rows/SecurityQuestionRow.vue';
 import UnlockButton from "../UnlockButton.vue"
 import ToolTip from '../ToolTip.vue';
+import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 
 import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
@@ -91,7 +99,8 @@ export default defineComponent({
 		SelectableTableRow,
 		SecurityQuestionRow,
 		UnlockButton,
-		ToolTip
+		ToolTip,
+		CheckboxInputField
 	},
 	props: ['creating', 'model'],
 	setup(props)
@@ -102,6 +111,7 @@ export default defineComponent({
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
+		const showVaulticPasswordCheckbox: ComputedRef<boolean> = computed(() => !stores.passwordStore.hasVaulticPassword);
 
 		// @ts-ignore
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.passwordGroups, "name"));
@@ -379,7 +389,8 @@ export default defineComponent({
 			onQuestionDirty,
 			onAnswerDirty,
 			onDeleteSecurityQuestion,
-			scrolledToBottom
+			scrolledToBottom,
+			showVaulticPasswordCheckbox
 		};
 	},
 })
@@ -397,5 +408,12 @@ export default defineComponent({
 .domainContainer {
 	display: flex;
 	flex-direction: row;
+}
+
+.vaulticPasswordContainer {
+	display: flex;
+	justify-content: flex-start;
+	align-items: flex-start;
+	column-gap: 10px;
 }
 </style>

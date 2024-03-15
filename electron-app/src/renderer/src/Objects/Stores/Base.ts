@@ -6,7 +6,12 @@ import { DataType } from "@renderer/Types/Table";
 import { Dictionary } from "@renderer/Types/DataStructures";
 import { Stores } from ".";
 
-export interface AuthenticationStoreState<T extends IKeyable>
+export interface StoreState
+{
+	version: number;
+}
+
+export interface AuthenticationStoreState<T extends IKeyable> extends StoreState
 {
 	values: T[];
 	hash: string;

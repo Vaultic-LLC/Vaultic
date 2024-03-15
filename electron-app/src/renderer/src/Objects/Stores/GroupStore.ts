@@ -62,6 +62,7 @@ class GroupStore extends AuthenticationStore<Group, GroupStoreState>
 	protected defaultState()
 	{
 		return {
+			version: 0,
 			hash: '',
 			hashSalt: '',
 			values: [],

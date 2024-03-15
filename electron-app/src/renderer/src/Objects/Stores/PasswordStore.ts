@@ -24,6 +24,8 @@ class PasswordStore extends AuthenticationStore<ReactivePassword, PasswordStoreS
 
 	private internalActiveAtRiskPasswordType: Ref<AtRiskType>;
 
+	private internalHasVaulticPassword: ComputedRef<boolean>;
+
 	get passwords() { return this.state.values; }
 	get unpinnedPasswords() { return this.internalUnpinnedPasswords.value; }
 	get oldPasswords() { return this.internalOldPasswords }
@@ -33,6 +35,7 @@ class PasswordStore extends AuthenticationStore<ReactivePassword, PasswordStoreS
 	get duplicatePasswordsLength() { return this.internalDuplicatePasswordsLength.value; }
 	get currentAndSafePasswords() { return this.state.currentAndSafePasswords; }
 	get activeAtRiskPasswordType() { return this.internalActiveAtRiskPasswordType.value; }
+	get hasVaulticPassword() { return this.internalHasVaulticPassword.value; }
 
 	constructor()
 	{
@@ -48,11 +51,14 @@ class PasswordStore extends AuthenticationStore<ReactivePassword, PasswordStoreS
 		this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !p.isPinned));
 
 		this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
+
+		this.internalHasVaulticPassword = computed(() => this.state.values.filter(p => p.isVaultic).length > 0);
 	}
 
 	protected defaultState()
 	{
 		return {
+			version: 0,
 			hash: "",
 			hashSalt: "",
 			values: [],

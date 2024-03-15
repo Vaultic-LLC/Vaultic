@@ -63,11 +63,11 @@ export default defineComponent({
 		async function createAccount()
 		{
 			stores.popupStore.showLoadingIndicator(props.color);
-			const response = await window.api.server.account.validateEmailAndUsername(email.value, username.value);
+			const response = await window.api.server.session.validateEmailAndUsername(email.value, username.value);
 
 			if (response.success)
 			{
-				const mfaResponse = await window.api.server.account.generateMFA();
+				const mfaResponse = await window.api.server.session.generateMFA();
 
 				stores.popupStore.hideLoadingIndicator();
 				if (mfaResponse.success)

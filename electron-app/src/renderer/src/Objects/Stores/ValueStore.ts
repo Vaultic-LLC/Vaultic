@@ -53,6 +53,7 @@ class ValueStore extends AuthenticationStore<ReactiveValue, ValueStoreState>
 	protected defaultState()
 	{
 		return {
+			version: 0,
 			hash: "",
 			hashSalt: "",
 			values: [],

@@ -58,7 +58,7 @@ export default defineComponent({
 			{
 				stores.popupStore.showLoadingIndicator(props.color);
 
-				const response = await window.api.server.account.createAccount(
+				const response = await window.api.server.session.createAccount(
 					account.value.firstName, account.value.lastName, account.value.email, account.value.username, account.value.password,
 					account.value.mfaKey, mfaCode.value, account.value.createdTime);
 
@@ -81,7 +81,7 @@ export default defineComponent({
 
 					if (response.ExpiredMFACode)
 					{
-						const response = await window.api.server.account.generateMFA();
+						const response = await window.api.server.session.generateMFA();
 						stores.popupStore.hideLoadingIndicator();
 
 						if (response.success)
@@ -125,7 +125,7 @@ export default defineComponent({
 			else
 			{
 				stores.popupStore.showLoadingIndicator(props.color);
-				const response = await window.api.server.account.validateMFACode(account.value.username, account.value.password, mfaCode.value);
+				const response = await window.api.server.session.validateMFACode(account.value.username, account.value.password, mfaCode.value);
 				stores.popupStore.hideLoadingIndicator();
 
 				if (response.success)

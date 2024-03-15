@@ -24,7 +24,7 @@
 			:setupKey="popupStore.needsToSetupKey" :color="popupStore.color" />
 		</Transition>
 		<Teleport to="#body">
-			<Transition name="fade" mode="out-in">
+			<Transition name="accountSetupFade" mode="out-in">
 				<AccountSetupPopup v-if="popupStore.accountSetupIsShowing"
 				:model="popupStore.accountSetupModel"
 				@onClose="popupStore.hideAccountSetup()" />
@@ -32,8 +32,8 @@
 		</Teleport>
 		<Teleport to="#body">
 			<Transition name="lockFade" mode="out-in">
-				<GlobalAuthenticationPopup v-if="needsAuthentication"
-				@onAuthenticationSuccessful="onGlobalAuthSuccessful" />
+				<GlobalAuthenticationPopup v-if="popupStore.globalAuthIsShowing"
+				@onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
 			</Transition>
 		</Teleport>
 		<Transition name="fade" mode="out-in">
@@ -44,7 +44,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref, watch } from 'vue';
+import { defineComponent } from 'vue';
 
 import GlobalAuthenticationPopup from './Authentication/GlobalAuthenticationPopup.vue';
 import ToastPopup from './ToastPopup.vue';
@@ -70,22 +70,8 @@ export default defineComponent({
 	},
 	setup()
 	{
-		const needsAuthentication: Ref<boolean> = ref(stores.needsAuthentication);
-
-		function onGlobalAuthSuccessful()
-		{
-			stores.needsAuthentication = false;
-		}
-
-		watch(() => stores.needsAuthentication, (newValue) =>
-		{
-			needsAuthentication.value = newValue;
-		});
-
 		return {
 			popupStore: stores.popupStore,
-			needsAuthentication,
-			onGlobalAuthSuccessful
 		}
 	}
 });

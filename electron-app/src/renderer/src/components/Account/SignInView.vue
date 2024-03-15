@@ -58,13 +58,14 @@ export default defineComponent({
 
 		function moveToLimitedMode()
 		{
+			stores.popupStore.showGlobalAuthentication(props.color);
 			ctx.emit('onMoveToLimitedMode');
 		}
 
 		async function onSubmit()
 		{
 			stores.popupStore.showLoadingIndicator(props.color);
-			const response = await window.api.server.account.validateUsernameAndPassword(username.value, password.value);
+			const response = await window.api.server.session.validateUsernameAndPassword(username.value, password.value);
 			stores.popupStore.hideLoadingIndicator();
 
 			if (response.success)

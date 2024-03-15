@@ -18,7 +18,7 @@ export default defineComponent({
 	{
 		function lockApp()
 		{
-			stores.resetStoresToDefault();
+			stores.appStore.lock();
 		}
 
 		return {

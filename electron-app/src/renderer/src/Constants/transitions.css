@@ -1,7 +1,5 @@
-.lockFade-enter-active,
 .lockFade-leave-active {
 	transition: opacity 1s linear;
-	/* z-index: 100; */
 }
 
 .lockFade-enter-from,
@@ -27,5 +25,16 @@
 
 .addObjectFade-enter-from,
 .addObjectFade-leave-to {
+	opacity: 0;
+}
+
+
+.accountSetupFade-enter-active,
+.accountSetupFade-leave-active {
+	transition: opacity 0.5s linear;
+}
+
+.accountSetupFade-enter-from,
+.accountSetupFade-leave-to {
 	opacity: 0;
 }

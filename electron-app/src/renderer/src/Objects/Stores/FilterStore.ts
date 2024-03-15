@@ -60,6 +60,7 @@ class FilterStore extends AuthenticationStore<Filter, FilterStoreState>
 	protected defaultState()
 	{
 		return {
+			version: 0,
 			hash: '',
 			hashSalt: '',
 			values: [],

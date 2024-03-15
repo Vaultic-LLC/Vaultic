@@ -3,10 +3,11 @@ import { DataType } from "../../Types/Table"
 import { stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
 import { hideAll } from 'tippy.js';
-import { Store } from "./Base";
+import { Store, StoreState } from "./Base";
 import { DataFile } from "@renderer/Types/EncryptedData";
+import { AccountSetupView } from "@renderer/Types/Models";
 
-interface AppStoreState
+interface AppStoreState extends StoreState
 {
 	loadedFile: boolean;
 	readonly isWindows: boolean;
@@ -49,6 +50,7 @@ class AppStore extends Store<AppStoreState>
 	protected defaultState()
 	{
 		return {
+			version: 0,
 			loadedFile: false,
 			isWindows: window.api.device.platform === "win32",
 			userDataVersion: 0,
@@ -101,13 +103,20 @@ class AppStore extends Store<AppStoreState>
 		}
 	}
 
+	public lock()
+	{
+		hideAll();
+		stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
+		stores.resetStoresToDefault();
+		window.api.server.session.expire();
+	}
+
 	public resetSessionTime()
 	{
 		clearTimeout(this.autoLockTimeoutID);
 		this.autoLockTimeoutID = setTimeout(() =>
 		{
-			hideAll();
-			stores.resetStoresToDefault();
+			this.lock();
 		}, stores.settingsStore.autoLockNumberTime);
 	}
 

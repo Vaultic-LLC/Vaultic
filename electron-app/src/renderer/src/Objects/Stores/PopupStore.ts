@@ -24,6 +24,8 @@ export default function createPopupStore()
 	const accountSetupIsShowing: Ref<boolean> = ref(true);
 	const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 
+	const globalAuthIsShowing: Ref<boolean> = ref(false);
+
 	const requestAuthenticationIsShowing: Ref<boolean> = ref(false);
 	const needsToSetupKey: Ref<boolean> = ref(false);
 	const onSuccess: Ref<{ (key: string): void }> = ref(() => { });
@@ -48,8 +50,8 @@ export default function createPopupStore()
 
 	function showErrorResponse(response: BaseResponse)
 	{
-		statusCode.value = response.StatusCode;
-		axiosCode.value = response.AxiosCode;
+		statusCode.value = response?.StatusCode;
+		axiosCode.value = response?.AxiosCode;
 		unknownErrorIsShowing.value = true;
 	}
 
@@ -90,6 +92,17 @@ export default function createPopupStore()
 	function hideAccountSetup()
 	{
 		accountSetupIsShowing.value = false;
+	}
+
+	function showGlobalAuthentication(clr: string)
+	{
+		color.value = clr;
+		globalAuthIsShowing.value = true;
+	}
+
+	function hideGlobalAuthentication()
+	{
+		globalAuthIsShowing.value = false;
 	}
 
 	function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
@@ -148,6 +161,7 @@ export default function createPopupStore()
 		get response() { return response.value },
 		get accountSetupIsShowing() { return accountSetupIsShowing.value },
 		get accountSetupModel() { return accountSetupModel.value },
+		get globalAuthIsShowing() { return globalAuthIsShowing.value },
 		get requestAuthenticationIsShowing() { return requestAuthenticationIsShowing.value },
 		get needsToSetupKey() { return needsToSetupKey.value },
 		get onSuccess() { return onSuccess.value },
@@ -165,6 +179,8 @@ export default function createPopupStore()
 		showSessionExpired,
 		showAccountSetup,
 		hideAccountSetup,
+		showGlobalAuthentication,
+		hideGlobalAuthentication,
 		showRequestAuthentication,
 		hideRequesetAuthentication,
 		showToast

@@ -3,10 +3,10 @@ import { ComputedRef, Ref, computed, ref, watch } from "vue";
 import { Stores, stores } from ".";
 import { DataType, FilterStatus } from "../../Types/Table";
 import { AutoLockTime } from "../../Types/Settings";
-import { Store } from "./Base";
+import { Store, StoreState } from "./Base";
 import { DataFile } from "@renderer/Types/EncryptedData";
 
-export interface SettingsStoreState
+export interface SettingsStoreState extends StoreState
 {
 	loadedFile: boolean;
 	readonly rowChunkAmount: number;
@@ -55,6 +55,7 @@ class SettingsStore extends Store<SettingsStoreState>
 	protected defaultState()
 	{
 		return {
+			version: 0,
 			loadedFile: false,
 			rowChunkAmount: 10,
 			colorPalettes: colorPalettes,
