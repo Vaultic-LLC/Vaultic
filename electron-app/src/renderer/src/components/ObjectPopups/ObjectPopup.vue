@@ -33,7 +33,8 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",
-	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity', "showPulsing", "beforeHeight", "beforeWidth"],
+	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity', "showPulsing",
+		"beforeHeight", "beforeWidth"],
 	setup(props)
 	{
 		const showPopup: ComputedRef<boolean> = computed(() => props.show);

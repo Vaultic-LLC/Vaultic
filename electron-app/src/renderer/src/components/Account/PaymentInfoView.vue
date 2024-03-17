@@ -1,7 +1,7 @@
 <template>
 	<div class="paymentInfoView">
 		<div>
-
+			// have back button or something in case the user wants to jsut continue in offline mode
 		</div>
 	</div>
 </template>

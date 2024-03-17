@@ -1,6 +1,6 @@
 <template>
-	<Popups>
-	</Popups>
+	<StatusBar/>
+	<Popups />
 	<div id="mainUI" class="mainUI">
 		<div class="center">
 			<ColorPaletteContainer />
@@ -48,6 +48,7 @@ import LockIconCard from "./components/Widgets/IconCards/LockIconCard.vue"
 import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
+import StatusBar from './components/StatusBar.vue';
 
 import { AccountSetupModel, AccountSetupView } from './Types/Models';
 import { OnSessionExpiredFunctionKey } from './Types/Keys';
@@ -59,6 +60,7 @@ export default defineComponent({
 	name: 'App',
 	components:
 	{
+		StatusBar,
 		Popups,
 		TableSelector,
 		FilterGroupTable,

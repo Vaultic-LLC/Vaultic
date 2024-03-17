@@ -110,6 +110,7 @@ export default defineComponent({
 			}
 			else
 			{
+				stores.appStore.isOnline = true;
 				ctx.emit('onAccountSetupComplete');
 			}
 		}

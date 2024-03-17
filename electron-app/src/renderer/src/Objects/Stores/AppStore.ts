@@ -9,7 +9,6 @@ import { AccountSetupView } from "@renderer/Types/Models";
 
 interface AppStoreState extends StoreState
 {
-	loadedFile: boolean;
 	readonly isWindows: boolean;
 	userDataVersion: number;
 	reloadMainUI: boolean;
@@ -18,6 +17,8 @@ interface AppStoreState extends StoreState
 
 class AppStore extends Store<AppStoreState>
 {
+	isOnline: boolean;
+
 	private autoLockTimeoutID: NodeJS.Timeout | undefined;
 
 	private internalAuthenticated: boolean;
@@ -41,6 +42,8 @@ class AppStore extends Store<AppStoreState>
 	{
 		super();
 
+		this.isOnline = false;
+
 		this.internalAuthenticated = false;
 
 		this.internalActivePasswordValueTable = ref(DataType.Passwords);
@@ -51,7 +54,6 @@ class AppStore extends Store<AppStoreState>
 	{
 		return {
 			version: 0,
-			loadedFile: false,
 			isWindows: window.api.device.platform === "win32",
 			userDataVersion: 0,
 			reloadMainUI: false,

@@ -8,7 +8,7 @@
 			<CheckboxInputField :label="'Vaultic Account'" :color="color" v-model="passwordState.isVaultic" :fadeIn="true"
 				:style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
 			<ToolTip :color="color" :size="20" :fadeIn="true"
-				:message="'This password is the one used to log into the app. If set, it can be autofilled when logging in by using your master key'" />
+				:message="'This password is the one used to Sign in with your Master Key. Updating it will automatically update your Vaultic Account'" />
 		</div>
 		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain" :showToolTip="true"
 			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is www.facebook.com'"
@@ -111,7 +111,8 @@ export default defineComponent({
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
-		const showVaulticPasswordCheckbox: ComputedRef<boolean> = computed(() => !stores.passwordStore.hasVaulticPassword);
+		const showVaulticPasswordCheckbox: ComputedRef<boolean> =
+			computed(() => passwordState.value.isVaultic || !stores.passwordStore.hasVaulticPassword);
 
 		// @ts-ignore
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.passwordGroups, "name"));

@@ -16,10 +16,13 @@
 			}">
 			<slot></slot>
 		</div>
-		<div class="accountSetupViewContainer__buttons">
+		<div class="accountSetupViewContainer__footer">
+			<slot name="footer"></slot>
 			<PopupButton :color="color" :disabled="disabled" :text="buttonText" :width="'150px'" :height="'40px'"
 			 :fontSize="'18px'" @onClick="onSubmit">
 			</PopupButton>
+			<!-- <div class="accountSetupViewContainer__buttons">
+			</div> -->
 		</div>
 	</div>
 </template>
@@ -39,12 +42,13 @@ export default defineComponent({
 		PopupButton
 	},
 	emits: ['onSubmit'],
-	props: ['color', 'title', 'buttonText', 'displayGrid', 'gridDefinition'],
+	props: ['color', 'title', 'buttonText', 'displayGrid', 'gridDefinition', 'titleMargin'],
 	setup(props, ctx)
 	{
 		const disabled: Ref<boolean> = ref(false);
 		const display: ComputedRef<string> = computed(() => props.displayGrid ? "grid" : "flex");
 		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
+		const computedTitleMargin: ComputedRef<string> = computed(() => props.titleMargin ? props.titleMargin : "3%");
 
 		let validationFunctions: Ref<{ (): boolean; }[]> = ref([]);
 
@@ -91,6 +95,7 @@ export default defineComponent({
 			showAlertContainer,
 			alertMessage,
 			alertIsInfo,
+			computedTitleMargin,
 			onSubmit,
 			showErrorMessage
 		}
@@ -127,7 +132,7 @@ export default defineComponent({
 }
 
 .accountSetupViewContainer__content {
-	margin-top: 3%;
+	margin-top: v-bind(computedTitleMargin);
 	display: v-bind(display);
 }
 
@@ -142,13 +147,14 @@ export default defineComponent({
 	column-gap: 10px;
 }
 
-.accountSetupViewContainer__buttons {
+.accountSetupViewContainer__footer {
 	flex-grow: 1;
 	margin-bottom: 5%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: flex-end;
+	row-gap: 20px;
 }
 </style>
 
