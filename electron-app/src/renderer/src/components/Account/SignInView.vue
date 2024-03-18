@@ -101,7 +101,11 @@ export default defineComponent({
 
 		function moveToLimitedMode()
 		{
-			stores.popupStore.showGlobalAuthentication(props.color);
+			if (stores.needsAuthentication)
+			{
+				stores.popupStore.showGlobalAuthentication(props.color);
+			}
+
 			ctx.emit('onMoveToLimitedMode');
 		}
 
@@ -155,8 +159,8 @@ export default defineComponent({
 					{
 						stores.popupStore.hideLoadingIndicator();
 						mainView.value?.showAlertMessage(false, "Unable to find Vaultic Password. Please add it to your Passwords within the app before signing in with your Master Key");
-						// TODO: Maybe?
-						// stores.resetStoresToDefault();
+						stores.resetStoresToDefault();
+
                     	return;
 					}
 
@@ -166,24 +170,28 @@ export default defineComponent({
 					if (!decryptedPasswordResposne.success)
 					{
 						stores.popupStore.hideLoadingIndicator();
-						return false;
+						stores.resetStoresToDefault();
+
+						return;
 					}
 
 					const response = await window.api.server.session.validateUsernameAndPassword(password.login, decryptedPasswordResposne.value!);
 					if (response.success)
 					{
 						stores.popupStore.hideLoadingIndicator();
-						ctx.emit('onSuccess', username.value, password.value);
+						ctx.emit('onSuccess', password.login, decryptedPasswordResposne.value);
 					}
 					else
 					{
 						if (response.IncorrectUsernameOrPassword)
 						{
 							mainView.value?.showAlertMessage(false, "The Username or Password you have stored for your Vaultic Account is incorrect. Please try entering it manually or click 'Forgot my Username or Password'");
+							stores.resetStoresToDefault();
 						}
 						else if (response.UnknownError)
 						{
 							stores.popupStore.showErrorResponse(response);
+							stores.resetStoresToDefault();
 						}
 					}
                 }

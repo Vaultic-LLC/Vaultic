@@ -2,7 +2,11 @@
 	<div class="authPopupContainer">
 		<div class="authenticationPopup"
 			:class="{ unlocked: unlocked, unlockFailed: unlockFailed, rubberband: rubberbandOnUnlock }">
-			<div class="authenticationPopupContent">
+			<div v-if="iconOnly" class="authenticationPopupIcon">
+				<div class="authenticationPopupIcon__circle"></div>
+				<div class="authenticationPopupIcon__triangle"></div>
+			</div>
+			<div v-if="!iconOnly" class="authenticationPopupContent">
 				<div class="title">{{ authTitle }}</div>
 				<EncryptedInputField ref="encryptedInputField" class="key" :label="'Key'" :colorModel="colorModel"
 					v-model="key" :required="true" :width="'75%'" />
@@ -31,7 +35,7 @@
 				<!-- TODO: Move this down when setting up key -->
 				<LoadingIndicator v-if="disabled && !unlocked" :color="primaryColor" />
 			</Transition>
-			<div class="authenticationPopupButtons">
+			<div v-if="!iconOnly" class="authenticationPopupButtons">
 				<PopupButton :color="color" :text="'Enter'" :disabled="disabled" :width="'100px'" :height="'35px'"
 					:fontSize="'20px'" :isSubmit="true" @onClick="onEnter"></PopupButton>
 				<PopupButton v-if="allowCancel" :color="color" :text="'Cancel'" :disabled="disabled" :width="'100px'"
@@ -71,7 +75,8 @@ export default defineComponent({
 		PopupButton
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
-	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color", "beforeEntry", "focusOnShow"],
+	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color", "beforeEntry",
+		"focusOnShow", "iconOnly"],
 	setup(props, ctx)
 	{
 		const encryptedInputField: Ref<null> = ref(null);
@@ -91,8 +96,8 @@ export default defineComponent({
 		const disabled: Ref<boolean> = ref(false);
 
 		const needsToSetupKey: ComputedRef<boolean> = computed(() => props.setupKey ?? false);
-		const computedWidth: ComputedRef<string> = computed(() => props.setupKey ? "25%" : "15%");
-		const computedHeight: ComputedRef<string> = computed(() => props.setupKey ? "35%" : "25%");
+		const computedWidth: ComputedRef<string> = computed(() => props.setupKey ? "25%" : props.iconOnly ? "9%" : "15%");
+		const computedHeight: ComputedRef<string> = computed(() => props.setupKey ? "35%" : props.iconOnly ? "15%" : "25%");
 		const buttonBottom: ComputedRef<string> = computed(() => props.setupKey ? "5%" : "10%");
 		const contentTop: ComputedRef<string> = computed(() => props.setupKey ? "10%" : "20%");
 
@@ -501,5 +506,33 @@ export default defineComponent({
 .authenticationPopupContent .matchesKey {
 	width: 80%;
 	margin-left: 10%;
+}
+
+.authenticationPopupIcon {
+	width: 100%;
+	height: 100%;
+	font-size: 20px;
+	color: gray;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+}
+
+.authenticationPopupIcon__circle {
+	width: 20%;
+    aspect-ratio: 1 /1;
+    background: v-bind(color);
+    border-radius: 50%;
+	margin-bottom: -45px;
+}
+
+.authenticationPopupIcon__triangle {
+	background: transparent;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    border-bottom: 100px solid v-bind(color);
+    width: 0;
+    aspect-ratio: 1/ 1;
 }
 </style>

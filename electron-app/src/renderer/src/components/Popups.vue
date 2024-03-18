@@ -32,7 +32,8 @@
 		</Teleport>
 		<Teleport to="#body">
 			<Transition name="lockFade" mode="out-in">
-				<GlobalAuthenticationPopup v-if="popupStore.globalAuthIsShowing"
+				<GlobalAuthenticationPopup ref="globalAuthPopup" v-if="popupStore.globalAuthIsShowing"
+				:playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
 				@onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
 			</Transition>
 		</Teleport>
@@ -57,7 +58,7 @@ import UnknownResponsePopup from './UnknownResponsePopup.vue';
 import { stores } from '..//Objects/Stores';
 
 export default defineComponent({
-	name: 'App',
+	name: 'Popups',
 	components:
 	{
 		GlobalAuthenticationPopup,

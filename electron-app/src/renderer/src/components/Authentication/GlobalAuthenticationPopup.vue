@@ -3,15 +3,16 @@
 		<div class="mainUICover"></div>
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
-			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true" />
+			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true" :iconOnly="iconOnly" />
 	</div>
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import AuthenticationPopup from "./AuthenticationPopup.vue"
 import { stores } from '@renderer/Objects/Stores';
+import { AuthPopup } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "GlobalAuthenticationPopup",
@@ -20,9 +21,10 @@ export default defineComponent({
 		AuthenticationPopup
 	},
 	emits: ['onAuthenticationSuccessful'],
-	setup(_, ctx)
+	props: ['playUnlockAnimation', 'iconOnly'],
+	setup(props, ctx)
 	{
-		const authPopup: Ref<null> = ref(null);
+		const authPopup: Ref<AuthPopup | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 		const unlocked: Ref<boolean> = ref(false);
 
@@ -33,22 +35,43 @@ export default defineComponent({
 				await stores.appStore.recordLogin(key, Date.now());
 				stores.appStore.authenticated = true;
 
-				//@ts-ignore
-				authPopup.value?.playUnlockAnimation();
-				unlocked.value = true;
-
-				setTimeout(() =>
-				{
-					ctx.emit('onAuthenticationSuccessful');
-				}, 2500);
+				playUnlockAnimation();
 			});
 		}
+
+		function playUnlockAnimation()
+		{
+			authPopup.value?.playUnlockAnimation();
+			unlocked.value = true;
+
+			setTimeout(() =>
+			{
+				ctx.emit('onAuthenticationSuccessful');
+			}, 2500);
+		}
+
+		onMounted(() =>
+		{
+			if (props.playUnlockAnimation === true)
+			{
+				playUnlockAnimation();
+			}
+		});
+
+		watch(() => props.playUnlockAnimation, (newValue) =>
+		{
+			if (newValue)
+			{
+				playUnlockAnimation();
+			}
+		});
 
 		return {
 			unlocked,
 			primaryColor,
 			authPopup,
 			authenticationSuccessful,
+			playUnlockAnimation
 		}
 	}
 })

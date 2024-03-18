@@ -1,6 +1,7 @@
 <template>
 	<div class="accountSetupPopupContainer">
-		<ObjectPopup :height="'40%'" :width="'30%'" :preventClose="true" :glassOpacity="1" :showPulsing="true">
+		<ObjectPopup ref="objectPopup" :height="'40%'" :width="'30%'" :preventClose="true" :glassOpacity="1"
+			:showPulsing="true">
 			<Transition name="fade" mode="out-in">
 				<div v-if="navigationStack.length > 0 && !disableBack" class="accountSetupPopupContainer__backButton"
 					@click="navigateBack">
@@ -47,10 +48,12 @@ export default defineComponent({
 		SignInView,
 		PaymentInfoView
 	},
-	emits: ['onAccountSetupComplete', 'reCheckLicense', 'onClose'],
+	emits: ['onClose'],
 	props: ['model'],
 	setup(props, ctx)
 	{
+		const objectPopup: Ref<null> = ref(null);
+
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 		const accountSetupModel: Ref<AccountSetupModel> = ref(props.model);
 		const navigationStack: Ref<AccountSetupView[]> = ref([]);
@@ -102,7 +105,7 @@ export default defineComponent({
 			accountSetupModel.value.currentView = AccountSetupView.MFA;
 		}
 
-		function onMFAViewSucceeded()
+		async function onMFAViewSucceeded()
 		{
 			if (creatingAccount.value)
 			{
@@ -111,7 +114,13 @@ export default defineComponent({
 			else
 			{
 				stores.appStore.isOnline = true;
-				ctx.emit('onAccountSetupComplete');
+				stores.popupStore.showGlobalAuthWithLockIcon(primaryColor.value);
+
+				ctx.emit('onClose');
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+
+				stores.popupStore.hideLoadingIndicator();
+				stores.popupStore.playUnlockAnimation();
 			}
 		}
 
@@ -150,6 +159,7 @@ export default defineComponent({
 		});
 
 		return {
+			objectPopup,
 			AccountSetupView,
 			accountSetupModel,
 			creatingAccount,

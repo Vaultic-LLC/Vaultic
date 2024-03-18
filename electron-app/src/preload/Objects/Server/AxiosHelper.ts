@@ -54,7 +54,6 @@ async function post<T extends BaseResponse>(serverPath: string, data: any): Prom
 	{
 		if (e instanceof AxiosError)
 		{
-			console.log(e);
 			return { success: false, UnknownError: true, StatusCode: e.status, AxiosCode: e.code };
 		}
 	}

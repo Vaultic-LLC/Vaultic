@@ -45,7 +45,7 @@ export default defineComponent({
 	position: fixed;
 	width: 3%;
 	height: 1%;
-	top: 1%;
+	top: 1.5%;
 	right: 2%;
 	background-color: transparent;
 	z-index: 151;

@@ -9,3 +9,8 @@ export interface FormComponent extends Component
 {
 	showAlertMessage: (isInfo: boolean, message: string) => void;
 }
+
+export interface AuthPopup extends Component
+{
+	playUnlockAnimation: () => void;
+}

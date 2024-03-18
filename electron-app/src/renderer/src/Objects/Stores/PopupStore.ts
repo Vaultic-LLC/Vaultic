@@ -25,6 +25,8 @@ export default function createPopupStore()
 	const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 
 	const globalAuthIsShowing: Ref<boolean> = ref(false);
+	const onlyShowLockIcon: Ref<boolean> = ref(false);
+	const playingUnlockAnimation: Ref<boolean> = ref(false);
 
 	const requestAuthenticationIsShowing: Ref<boolean> = ref(false);
 	const needsToSetupKey: Ref<boolean> = ref(false);
@@ -94,6 +96,18 @@ export default function createPopupStore()
 		accountSetupIsShowing.value = false;
 	}
 
+	function showGlobalAuthWithLockIcon(clr: string)
+	{
+		color.value = clr;
+		onlyShowLockIcon.value = true;
+		globalAuthIsShowing.value = true;
+	}
+
+	function playUnlockAnimation()
+	{
+		playingUnlockAnimation.value = true;
+	}
+
 	function showGlobalAuthentication(clr: string)
 	{
 		color.value = clr;
@@ -102,6 +116,7 @@ export default function createPopupStore()
 
 	function hideGlobalAuthentication()
 	{
+		playingUnlockAnimation.value = false;
 		globalAuthIsShowing.value = false;
 	}
 
@@ -162,6 +177,8 @@ export default function createPopupStore()
 		get accountSetupIsShowing() { return accountSetupIsShowing.value },
 		get accountSetupModel() { return accountSetupModel.value },
 		get globalAuthIsShowing() { return globalAuthIsShowing.value },
+		get onlyShowLockIcon() { return onlyShowLockIcon.value },
+		get playingUnlockAnimation() { return playingUnlockAnimation.value },
 		get requestAuthenticationIsShowing() { return requestAuthenticationIsShowing.value },
 		get needsToSetupKey() { return needsToSetupKey.value },
 		get onSuccess() { return onSuccess.value },
@@ -179,6 +196,8 @@ export default function createPopupStore()
 		showSessionExpired,
 		showAccountSetup,
 		hideAccountSetup,
+		showGlobalAuthWithLockIcon,
+		playUnlockAnimation,
 		showGlobalAuthentication,
 		hideGlobalAuthentication,
 		showRequestAuthentication,

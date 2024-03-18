@@ -11,6 +11,7 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import AuthenticationPopup from "./AuthenticationPopup.vue"
+import { AuthPopup } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "RequestedAuthenticationPopup",
@@ -21,18 +22,13 @@ export default defineComponent({
 	props: ["authenticationSuccessful", "authenticationCanceled", "setupKey", "color"],
 	setup(props)
 	{
-		const authPopup: Ref<null> = ref(null);
+		const authPopup: Ref<AuthPopup | null> = ref(null);
 		const needsToSetupKey: ComputedRef<boolean> = computed(() => props.setupKey ?? false);
 		const title: ComputedRef<string> = computed(() => props.setupKey ? "Please create your Master Key" : "");
 
 		function onAuthSuccessful(key: string)
 		{
-			if (authPopup.value)
-			{
-				//@ts-ignore
-				authPopup.value.playUnlockAnimation();
-			}
-
+			authPopup.value?.playUnlockAnimation();
 			setTimeout(() =>
 			{
 				props.authenticationSuccessful(key)

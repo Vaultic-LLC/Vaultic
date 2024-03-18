@@ -126,7 +126,6 @@ export default defineComponent({
 			{
 				stores.popupStore.showLoadingIndicator(props.color);
 				const response = await window.api.server.session.validateMFACode(account.value.username, account.value.password, mfaCode.value);
-				stores.popupStore.hideLoadingIndicator();
 
 				if (response.success)
 				{
@@ -134,6 +133,7 @@ export default defineComponent({
 				}
 				else
 				{
+					stores.popupStore.hideLoadingIndicator();
 					if (response.UnknownError)
 					{
 						stores.popupStore.showErrorResponse(response);
