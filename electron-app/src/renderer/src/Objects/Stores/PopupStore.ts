@@ -86,6 +86,11 @@ export default function createPopupStore()
 
 	function showAccountSetup(view: AccountSetupView, message?: string)
 	{
+		if (accountSetupIsShowing.value)
+		{
+			return;
+		}
+
 		accountSetupModel.value.infoMessage = message;
 		accountSetupModel.value.currentView = view;
 		accountSetupIsShowing.value = true;

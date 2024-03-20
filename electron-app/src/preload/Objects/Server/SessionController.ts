@@ -1,4 +1,4 @@
-import { ValidateEmailAndUsernameResponse, GenerateMFAResponse, CreateAccountResponse, ValidateUsernameAndPasswordResponse, ValidateMFACodeResponse, BaseResponse } from "../../Types/Responses";
+import { ValidateEmailAndUsernameResponse, GenerateMFAResponse, CreateAccountResponse, ValidateUsernameAndPasswordResponse, ValidateMFACodeResponse, BaseResponse, GenerateOneTimePasswordResposne } from "../../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface SessionController
@@ -10,6 +10,7 @@ export interface SessionController
 	validateUsernameAndPassword: (username: string, password: string) => Promise<ValidateUsernameAndPasswordResponse>;
 	validateMFACode: (username: string, password: string, mfaCode: string) => Promise<ValidateMFACodeResponse>;
 	expire: () => Promise<BaseResponse>;
+	generateOneTimePassword: (email: string) => Promise<GenerateOneTimePasswordResposne>;
 }
 
 export function createSessionController(axiosHelper: AxiosHelper)
@@ -64,12 +65,21 @@ export function createSessionController(axiosHelper: AxiosHelper)
 		return axiosHelper.post('Session/Expire', {});
 	}
 
+	function generateOneTimePassword(email: string): Promise<GenerateOneTimePasswordResposne>
+	{
+		return axiosHelper.post('Session/GenerateOneTimePassword',
+			{
+				Email: email
+			});
+	}
+
 	return {
 		validateEmailAndUsername,
 		generateMFA,
 		createAccount,
 		validateUsernameAndPassword,
 		validateMFACode,
-		expire
+		expire,
+		generateOneTimePassword
 	}
 }

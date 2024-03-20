@@ -118,7 +118,8 @@ export enum NameValuePairType
 	Passcode = "Passcode",
 	Safe = "Safe",
 	Information = "Information",
-	Other = "Other"
+	MFAKey = "MFAKey",
+	Other = "Other",
 }
 
 export const ValueProperties: PropertySelectorDisplayFields[] = [

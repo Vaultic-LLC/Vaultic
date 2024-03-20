@@ -2,19 +2,25 @@ import { CreateAccountResponse, DeleteDeviceResponse, GenerateMFAResponse, Valid
 import cryptUtility from "../../Utilities/CryptUtility";
 import { AxiosHelper } from "./AxiosHelper"
 
-export interface AccountController
+export interface UserController
 {
+	finishUserSetup: (data: string) => Promise<any>;
 	syncUserData: (key: string, appData: string, settingsData: string, passwordsValueData: string,
 		filterData: string, groupData: string) => Promise<any>;
 	getUserData: () => Promise<any>;
 	deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
 }
 
-export function createAccountController(axiosHelper: AxiosHelper): AccountController
+export function createUserController(axiosHelper: AxiosHelper): UserController
 {
+	function finishUserSetup(data: string)
+	{
+		return axiosHelper.post('User/FinishUserSetup', data);
+	}
+
 	function syncUserData(key: string, appData: string, settingsData: string, passwordsValueData: string, filterData: string, groupData: string)
 	{
-		return axiosHelper.post('Account/SyncUserData', {
+		return axiosHelper.post('User/SyncUserData', {
 			AppData: cryptUtility.encrypt(key, appData),
 			SettingsData: cryptUtility.encrypt(key, settingsData),
 			PasswordsValueData: cryptUtility.encrypt(key, passwordsValueData),
@@ -25,18 +31,19 @@ export function createAccountController(axiosHelper: AxiosHelper): AccountContro
 
 	function getUserData(): Promise<any>
 	{
-		return axiosHelper.get('Account/GetUserData');
+		return axiosHelper.get('User/GetUserData');
 	}
 
 	function deleteDevice(desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
 	{
-		return axiosHelper.post('Account/DeleteDevice', {
+		return axiosHelper.post('User/DeleteDevice', {
 			UserDesktopDeviceID: desktopDeviceID,
 			UserMobileDeviceID: mobileDeviceID
 		})
 	}
 
 	return {
+		finishUserSetup,
 		syncUserData,
 		getUserData,
 		deleteDevice

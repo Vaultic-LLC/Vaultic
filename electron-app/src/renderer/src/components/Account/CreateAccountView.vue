@@ -62,6 +62,9 @@ export default defineComponent({
 
 		async function createAccount()
 		{
+			ctx.emit('onSuccess', firstName.value, lastName.value, email.value, username.value,
+						password.value, '', '');
+			return;
 			stores.popupStore.showLoadingIndicator(props.color);
 			const response = await window.api.server.session.validateEmailAndUsername(email.value, username.value);
 

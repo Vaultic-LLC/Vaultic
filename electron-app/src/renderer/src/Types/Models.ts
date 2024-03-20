@@ -166,7 +166,9 @@ export enum AccountSetupView
 	MFA,
 	SetupPayment,
 	UpdatePayment,
-	ReActivate
+	ReActivate,
+	CreateOTP,
+	CreateMasterKey
 }
 
 export interface AccountSetupModel

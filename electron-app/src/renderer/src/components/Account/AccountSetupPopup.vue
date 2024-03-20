@@ -11,14 +11,19 @@
 			<Transition name="fade" mode="out-in">
 				<SignInView v-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
 					:infoMessage="accountSetupModel.infoMessage" @onSuccess="onUsernamePasswordViewSuccess"
-					@onMoveToCreateAccount="moveToCreateAccount" @onMoveToLimitedMode="close" />
+					@onMoveToCreateAccount="moveToCreateAccount" @onMoveToLimitedMode="close"
+					@onMoveToCreateOTP="moveToCreateOTP" />
 				<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
 					:color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
 				<MFAView v-else-if="accountSetupModel.currentView == AccountSetupView.MFA" :creating="creatingAccount"
 					:account="account" :color="primaryColor" @onSuccess="onMFAViewSucceeded" />
+				<CreateMasterKeyView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateMasterKey" :color="primaryColor"
+					:account="account" />
 				<PaymentInfoView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
 					accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
 					accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor" />
+				<CreateOTPView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateOTP" :color="primaryColor"
+					@onOk="navigateBack" />
 			</Transition>
 		</ObjectPopup>
 	</div>
@@ -32,6 +37,8 @@ import CreateAccountView from './CreateAccountView.vue';
 import MFAView from './MFAView.vue';
 import SignInView from './SignInView.vue';
 import PaymentInfoView from './PaymentInfoView.vue';
+import CreateOTPView from './CreateOTPView.vue';
+import CreateMasterKeyView from './CreateMasterKeyView.vue';
 
 import { AccountSetupModel, AccountSetupView } from '@renderer/Types/Models';
 import { Account } from '@renderer/Types/AccountSetup';
@@ -46,7 +53,9 @@ export default defineComponent({
 		CreateAccountView,
 		MFAView,
 		SignInView,
-		PaymentInfoView
+		PaymentInfoView,
+		CreateOTPView,
+		CreateMasterKeyView
 	},
 	emits: ['onClose'],
 	props: ['model'],
@@ -88,6 +97,12 @@ export default defineComponent({
 			accountSetupModel.value.currentView = AccountSetupView.CreateAccount;
 		}
 
+		function moveToCreateOTP()
+		{
+			navigationStack.value.push(AccountSetupView.SignIn);
+			accountSetupModel.value.currentView = AccountSetupView.CreateOTP;
+		}
+
 		function onCreateAccoutViewSucceeded(firstName: string, lastName: string, email: string,
 			username: string, password: string, mfaKey: string, createdTime: string)
 		{
@@ -109,7 +124,7 @@ export default defineComponent({
 		{
 			if (creatingAccount.value)
 			{
-				accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
+				accountSetupModel.value.currentView = AccountSetupView.CreateMasterKey;
 			}
 			else
 			{
@@ -172,7 +187,8 @@ export default defineComponent({
 			onCreateAccoutViewSucceeded,
 			onMFAViewSucceeded,
 			navigateBack,
-			close
+			close,
+			moveToCreateOTP,
 		}
 	}
 })

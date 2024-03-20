@@ -124,7 +124,7 @@ export default defineComponent({
 		async function doDelete(deviceID: string, desktopDeviceID?: number, mobileDeviceID?: number)
 		{
 			// TODO: show loading indicator
-			const response = await window.api.server.account.deleteDevice(desktopDeviceID, mobileDeviceID);
+			const response = await window.api.server.user.deleteDevice(desktopDeviceID, mobileDeviceID);
 			if (response.success)
 			{
 				devices.value.remove(deviceID);

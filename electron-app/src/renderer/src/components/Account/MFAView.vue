@@ -30,6 +30,7 @@ import { Account, LicenseStatus } from '@renderer/Types/AccountSetup';
 import qrCode from "qrcode";
 import { FormComponent, InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
+import { generateMFAQRCode } from '@renderer/Helpers/generatorHelper';
 
 export default defineComponent({
 	name: "MFAView",
@@ -54,6 +55,8 @@ export default defineComponent({
 
 		async function onSubmitMFACode()
 		{
+			ctx.emit('onSuccess');
+			return;
 			if (props.creating)
 			{
 				stores.popupStore.showLoadingIndicator(props.color);
@@ -160,23 +163,16 @@ export default defineComponent({
 			}
 		}
 
-		function generateQRCode()
-		{
-			const url = `otpauth://totp/${account.value.username}?secret=${account.value.mfaKey}&issuer=Vaultic`
-			qrCode.toDataURL(url, function (err, data_url)
-			{
-				if (err)
-				{
-					mainView.value?.showAlertMessage(false, "Unable to generate MFA Code at this time. Please try again later or contact support")
-				}
-
-				qrCodeUrl.value = data_url;
-			});
-		}
-
 		onMounted(() =>
 		{
-			generateQRCode();
+			generateMFAQRCode(`${account.value.username} MFA Key`, account.value.mfaKey).then((url) =>
+			{
+				qrCodeUrl.value = url;
+			})
+			.catch(() =>
+			{
+				mainView.value?.showAlertMessage(false, "Unable to generate MFA Code at this time. Please try again later or contact support")
+			})
 		});
 
 		return {
@@ -193,12 +189,18 @@ export default defineComponent({
 </script>
 
 <style>
+.usernamePasswordViewContainer {
+	height: 100%;
+}
+
 .usernamePasswordViewContainer__setupInstructions {
+	width: 80%;
 	display: flex;
 }
 
 .usernamePasswordViewContainer__enterInstructions {
 	color: white;
+	width: 80%;
 }
 
 .usernamePasswordViewContainer__list {

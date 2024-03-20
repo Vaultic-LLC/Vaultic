@@ -77,3 +77,8 @@ export interface LogResponse extends BaseResponse
 {
 	LogID?: number;
 }
+
+export interface GenerateOneTimePasswordResposne extends BaseResponse
+{
+	UnknownEmail?: boolean;
+}

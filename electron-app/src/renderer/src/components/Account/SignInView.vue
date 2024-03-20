@@ -39,6 +39,9 @@
 					<div class="signInViewContainer__limitedMode">
 						<ButtonLink :color="color" :text="'Continue in Offline Mode'" @onClick="moveToLimitedMode"/>
 					</div>
+					<div class="signInViewContainer__forgotPassword">
+						<ButtonLink :color="color" :text="'Forgot Username or Password'" @onClick="moveToCreateOTP"/>
+					</div>
 					<div class="signInViewContainer__createAccountLink">Don't have an account?
 						<ButtonLink :color="color" :text="'Create One'" @onClick="moveToCreateAccount"/>
 					</div>
@@ -71,7 +74,7 @@ export default defineComponent({
 		AccountSetupView,
 		ButtonLink
 	},
-	emits: ['onMoveToCreateAccount', 'onSuccess', 'onMoveToLimitedMode'],
+	emits: ['onMoveToCreateAccount', 'onSuccess', 'onMoveToLimitedMode', 'onMoveToCreateOTP'],
 	props: ['color', 'infoMessage'],
 	setup(props, ctx)
 	{
@@ -204,6 +207,11 @@ export default defineComponent({
             refreshKey.value = Date.now().toString();
         }
 
+		function moveToCreateOTP()
+		{
+			ctx.emit('onMoveToCreateOTP');
+		}
+
 		onMounted(() =>
 		{
 			if (props.infoMessage)
@@ -230,6 +238,7 @@ export default defineComponent({
 			onSubmit,
 			moveToLimitedMode,
             updateInputView,
+			moveToCreateOTP
 		};
 	}
 })
@@ -326,8 +335,8 @@ export default defineComponent({
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    row-gap: 30px;
-	margin-bottom: 40px;
+    row-gap: 20px;
+	margin-bottom: 27px;
 }
 
 .signInViewContainer__limitedMode {
