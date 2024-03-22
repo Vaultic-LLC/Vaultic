@@ -40,7 +40,7 @@ export interface Stores
 	init: () => Promise<void>;
 	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
 	getStates: () => DataStoreStates;
-	handleUpdateStoreResponse: (key: string, response: any) => Promise<void>;
+	handleUpdateStoreResponse: (key: string, response: any, suppressError?: boolean) => Promise<void>;
 }
 
 async function init(): Promise<void>
@@ -205,7 +205,7 @@ function getStates(): DataStoreStates
 	}
 }
 
-async function handleUpdateStoreResponse(key: string, response: any): Promise<void>
+async function handleUpdateStoreResponse(key: string, response: any, suppressError: boolean = false): Promise<void>
 {
 	if (response.success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
 		&& response.valueStoreState)
@@ -217,7 +217,7 @@ async function handleUpdateStoreResponse(key: string, response: any): Promise<vo
 			stores.valueStore.updateState(key, response.valueStoreState)
 		]);
 	}
-	else
+	else if (!suppressError)
 	{
 		if (response.UnknownError)
 		{

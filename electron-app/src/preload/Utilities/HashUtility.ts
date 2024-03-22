@@ -1,34 +1,35 @@
-import crypto from "crypto"
+import crypto, { createHash } from "crypto"
 
 export interface HashUtility
 {
-	hash: (value: string, salt?: string) => Promise<string>;
+	//hash: (value: string, salt: string) => Promise<string>;
+	insecureHash: (value: string) => string;
 }
 
-const defaultSalt: string = "a;lfasl;fjklavnaklsfhsadkfhsaklfsaflasdknvasdklfwefhw;IFKSNVKLASDJNVH234]21O51[2[2112[24215";
+// TODO remove if I no longer need
+// async function hash(value: string, salt: string): Promise<string>
+// {
+// 	return new Promise((resolve, _) =>
+// 	{
+// 		console.time();
+// 		crypto.pbkdf2(value, salt!, 6000000, 32,
+// 			'sha256', (err, derivedKey) =>
+// 		{
+// 			if (err) throw err;
+// 			resolve(derivedKey.toString('base64'));
+// 			console.timeLog();
+// 		});
+// 	});
+// }
 
-async function hash(value: string, salt?: string): Promise<string>
+function insecureHash(value: string)
 {
-	if (!salt)
-	{
-		salt = defaultSalt;
-	}
-
-	return new Promise((resolve, _) =>
-	{
-		console.time();
-		crypto.pbkdf2(value, salt!, 6000000, 32,
-			'sha256', (err, derivedKey) =>
-		{
-			if (err) throw err;
-			resolve(derivedKey.toString('base64'));
-			console.timeLog();
-		});
-	});
+	return createHash('sha256').update(value).digest('base64');
 }
 
 const hashUtility: HashUtility = {
-	hash
+	//hash,
+	insecureHash
 };
 
 export default hashUtility;

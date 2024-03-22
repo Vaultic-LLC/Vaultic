@@ -51,7 +51,7 @@ export default defineComponent({
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Old,
 							onClick: function ()
 							{
-								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Old)
+								stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Old)
 							}
 						});
 					models.push(
@@ -65,7 +65,7 @@ export default defineComponent({
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Duplicate,
 							onClick: function ()
 							{
-								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Duplicate);
+								stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Duplicate);
 							}
 						});
 					models.push(
@@ -79,7 +79,7 @@ export default defineComponent({
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.WeakVerabl,
 							onClick: function ()
 							{
-								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.WeakVerabl)
+								stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.WeakVerabl)
 							}
 						});
 					models.push(
@@ -93,7 +93,7 @@ export default defineComponent({
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Weak,
 							onClick: function ()
 							{
-								stores.valueStore.toggleAtRiskModels(DataType.NameValuePairs, AtRiskType.Weak);
+								stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Weak);
 							}
 						});
 					break;
@@ -110,7 +110,7 @@ export default defineComponent({
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Old,
 							onClick: function ()
 							{
-								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Old);
+								stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Old);
 							}
 						});
 					models.push(
@@ -124,7 +124,7 @@ export default defineComponent({
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Duplicate,
 							onClick: function ()
 							{
-								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Duplicate);
+								stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Duplicate);
 							}
 						});
 					models.push(
@@ -138,7 +138,7 @@ export default defineComponent({
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Weak,
 							onClick: function ()
 							{
-								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.Weak);
+								stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Weak);
 							}
 						});
 					models.push(
@@ -152,7 +152,7 @@ export default defineComponent({
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.ContainsLogin,
 							onClick: function ()
 							{
-								stores.passwordStore.toggleAtRiskModels(DataType.Passwords, AtRiskType.ContainsLogin);
+								stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.ContainsLogin);
 							}
 						});
 			}

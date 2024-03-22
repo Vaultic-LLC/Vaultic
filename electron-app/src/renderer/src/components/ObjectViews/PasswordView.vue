@@ -3,10 +3,10 @@
 		:gridDefinition="gridDefinition">
 		<TextInputField :color="color" :label="'Password For'" v-model="passwordState.passwordFor"
 			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
-		<div class="vaulticPasswordContainer" v-if="showVaulticPasswordCheckbox"
+		<div class="vaulticPasswordContainer" v-if="passwordState.isVaultic"
 			:style="{ 'grid-row': '2 / span 1', 'grid-column': '2 / span 2', 'margin-top': '10px', 'margin-left': '5px' }">
-			<CheckboxInputField :label="'Vaultic Account'" :color="color" v-model="passwordState.isVaultic" :fadeIn="true"
-				:style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
+			<CheckboxInputField :label="'Vaultic Account'" :color="color" v-model="passwordState.isVaultic"
+				:fadeIn="true" :style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
 			<ToolTip :color="color" :size="20" :fadeIn="true"
 				:message="'This password is the one used to Sign in with your Master Key. Updating it will automatically update your Vaultic Account'" />
 		</div>
@@ -18,16 +18,16 @@
 		<TextInputField :color="color" :label="'Username'" v-model="passwordState.login"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }" />
 		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordState.password"
-			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true"
-			:required="true" showCopy="true" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
-			@onDirty="passwordIsDirty = true" />
+			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true"
+			:showUnlock="true" :required="true" showCopy="true"
+			:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" @onDirty="passwordIsDirty = true" />
 		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
 			v-model="passwordState.additionalInformation" :width="500"
 			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 5' }" />
 		<TableTemplate ref="tableRef" :color="color"
 			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
-			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
-			:showEmptyMessage="showEmptyMessage" @scrolled-to-bottom="scrolledToBottom">
+			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0"
+			:emptyMessage="emptyMessage" :showEmptyMessage="showEmptyMessage" @scrolled-to-bottom="scrolledToBottom">
 			<template #header>
 				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="headerTabs" :border="true">
 					<template #controls>
@@ -111,8 +111,6 @@ export default defineComponent({
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor);
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
-		const showVaulticPasswordCheckbox: ComputedRef<boolean> =
-			computed(() => passwordState.value.isVaultic || !stores.passwordStore.hasVaulticPassword);
 
 		// @ts-ignore
 		const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(stores.groupStore.passwordGroups, "name"));
@@ -391,7 +389,6 @@ export default defineComponent({
 			onAnswerDirty,
 			onDeleteSecurityQuestion,
 			scrolledToBottom,
-			showVaulticPasswordCheckbox
 		};
 	},
 })

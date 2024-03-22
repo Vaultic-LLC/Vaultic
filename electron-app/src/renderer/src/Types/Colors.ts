@@ -14,6 +14,7 @@ export interface TableColorScheme
 	primaryColor: string;
 	secondaryColorOne: string;
 	secondaryColorTwo: string;
+	alertColor: string;
 }
 
 export interface ColorPalette
@@ -42,12 +43,14 @@ export const emptyColorPalette: ColorPalette =
 	passwordsColor: {
 		primaryColor: "",
 		secondaryColorOne: "",
-		secondaryColorTwo: ""
+		secondaryColorTwo: "",
+		alertColor: ""
 	},
 	valuesColor: {
 		primaryColor: "",
 		secondaryColorOne: "",
-		secondaryColorTwo: ""
+		secondaryColorTwo: "",
+		alertColor: "",
 	},
 	filtersColor: "",
 	groupsColor: "",
@@ -67,12 +70,14 @@ export const colorPalettes: ColorPalette[] = [
 		passwordsColor: {
 			primaryColor: "#bb29ff",
 			secondaryColorOne: "#6612ec",
-			secondaryColorTwo: "#2419bf"
+			secondaryColorTwo: "#2419bf",
+			alertColor: "#c94eb0"
 		},
 		valuesColor: {
 			primaryColor: "#03C4A1",
 			secondaryColorOne: "#03a7c4",
-			secondaryColorTwo: "#0374c4"
+			secondaryColorTwo: "#0374c4",
+			alertColor: "#42e2db"
 		},
 		filtersColor: "#7752FE",
 		groupsColor: "#19A7CE",
@@ -90,12 +95,14 @@ export const colorPalettes: ColorPalette[] = [
 		passwordsColor: {
 			primaryColor: "#9A031E",
 			secondaryColorOne: "#a712ec",
-			secondaryColorTwo: "#530101"
+			secondaryColorTwo: "#530101",
+			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "#BF3131",
 			secondaryColorOne: "#5d0ca6",
-			secondaryColorTwo: "#a712ec"
+			secondaryColorTwo: "#a712ec",
+			alertColor: ""
 		},
 		filtersColor: "#FB8B24",
 		groupsColor: "#E36414",
@@ -113,12 +120,14 @@ export const colorPalettes: ColorPalette[] = [
 		passwordsColor: {
 			primaryColor: "#777777",
 			secondaryColorOne: "#bbbbbb",
-			secondaryColorTwo: "#111111"
+			secondaryColorTwo: "#111111",
+			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "#888888",
 			secondaryColorOne: "#bbbbbb",
-			secondaryColorTwo: "#111111"
+			secondaryColorTwo: "#111111",
+			alertColor: ""
 		},
 		filtersColor: "#a9b3bb",
 		groupsColor: "#8e9a98",
@@ -136,12 +145,14 @@ export const colorPalettes: ColorPalette[] = [
 		passwordsColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
-			secondaryColorTwo: ""
+			secondaryColorTwo: "",
+			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
-			secondaryColorTwo: ""
+			secondaryColorTwo: "",
+			alertColor: ""
 		},
 		filtersColor: "",
 		groupsColor: "",
@@ -159,12 +170,14 @@ export const colorPalettes: ColorPalette[] = [
 		passwordsColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
-			secondaryColorTwo: ""
+			secondaryColorTwo: "",
+			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
-			secondaryColorTwo: ""
+			secondaryColorTwo: "",
+			alertColor: ""
 		},
 		filtersColor: "",
 		groupsColor: "",
@@ -182,12 +195,14 @@ export const colorPalettes: ColorPalette[] = [
 		passwordsColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
-			secondaryColorTwo: ""
+			secondaryColorTwo: "",
+			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
-			secondaryColorTwo: ""
+			secondaryColorTwo: "",
+			alertColor: ""
 		},
 		filtersColor: "",
 		groupsColor: "",

@@ -57,9 +57,6 @@ export interface Account
 	firstName: string;
 	lastName: string;
 	email: string;
-	username: string;
-	password: string;
-	mfaKey: string;
-	createdTime: string;
+	masterKey: string;
 }
 

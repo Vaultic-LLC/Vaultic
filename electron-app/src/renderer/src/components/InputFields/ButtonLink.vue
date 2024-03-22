@@ -32,6 +32,7 @@ export default defineComponent({
 	border: none;
 	cursor: pointer;
 	font-size: 17px;
+	padding: 0;
 }
 
 .buttonLink:hover {

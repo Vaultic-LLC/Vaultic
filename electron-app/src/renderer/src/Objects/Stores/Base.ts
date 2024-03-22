@@ -169,7 +169,7 @@ export class AuthenticationStore<U extends IKeyable, T extends AuthenticationSto
 			runningKeys += result.value ?? "";
 		}
 
-		const hash = await window.api.utilities.hash.hash(runningKeys, salt);
+		const hash = window.api.utilities.hash.insecureHash(runningKeys);
 		return [true, hash];
 	}
 

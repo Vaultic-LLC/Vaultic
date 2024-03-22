@@ -24,43 +24,25 @@ interface IncorrectDeviceResponse extends BaseResponse
 	MobileDevices?: Device[];
 }
 
-export interface CheckLicenseResponse extends IncorrectDeviceResponse
+interface LicenseResponse
 {
 	LicenseStatus?: LicenseStatus;
-	LicenseIsExpired?: boolean;
 }
 
-export interface ValidateEmailAndUsernameResponse extends BaseResponse
+export interface ValidateEmailResponse extends BaseResponse
 {
 	EmailIsTaken?: boolean;
-	UsernameIsTaken?: boolean;
 	DeviceIsTaken?: boolean;
 }
 
-export interface GenerateMFAResponse extends BaseResponse
+export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, StoreResponse
 {
-	MFAKey?: string;
-	GeneratedTime?: string;
 }
 
-export interface CreateAccountResponse extends CreateSessionResponse
+export interface ValidateUserResponse extends LicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
 {
-	ExpiredMFACode?: boolean;
-	InvalidMFACode?: boolean;
-	EmailIsTaken?: boolean;
-	UsernameIsTaken?: boolean;
-	DeviceIsTaken?: boolean;
-}
-
-export interface ValidateUsernameAndPasswordResponse extends IncorrectDeviceResponse
-{
-	IncorrectUsernameOrPassword?: boolean;
-}
-
-export interface ValidateMFACodeResponse extends CreateSessionResponse, CheckLicenseResponse
-{
-	InvalidMFACode?: boolean;
-	IncorrectUsernameOrPassword?: boolean;
+	InvalidMasterKey?: boolean;
+	UnknownEmail?: boolean;
 }
 
 export interface InvalidSessionResponse extends BaseResponse
@@ -78,7 +60,10 @@ export interface LogResponse extends BaseResponse
 	LogID?: number;
 }
 
-export interface GenerateOneTimePasswordResposne extends BaseResponse
+export interface StoreResponse
 {
-	UnknownEmail?: boolean;
+	filterStoreState?: any;
+	groupStoreState?: any;
+	passwordStoreState?: any;
+	valueStoreState?: any;
 }

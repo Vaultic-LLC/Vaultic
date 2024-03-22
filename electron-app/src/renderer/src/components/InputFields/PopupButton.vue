@@ -1,11 +1,11 @@
 <template>
-	<button class="popupButton" :disabled="disabled" @click.stop="onClick">
+	<button ref="button" class="popupButton" :disabled="disabled" @click.stop="onClick">
 		{{ text }}
 	</button>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted } from "vue";
+import { Ref, defineComponent, onMounted, onUnmounted, ref } from "vue";
 
 export default defineComponent({
 	name: "PopupButton",
@@ -13,8 +13,11 @@ export default defineComponent({
 	props: ['color', 'text', 'width', 'height', 'fontSize', 'disabled', 'isSubmit'],
 	setup(props, ctx)
 	{
+		const button: Ref<HTMLElement | null> = ref(null);
+
 		function onClick()
 		{
+			button.value?.blur();
 			ctx.emit('onClick');
 		}
 
@@ -44,6 +47,7 @@ export default defineComponent({
 		});
 
 		return {
+			button,
 			onClick
 		}
 	}

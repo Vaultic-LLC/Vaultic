@@ -81,7 +81,7 @@ export default function createPopupStore()
 
 	function showSessionExpired()
 	{
-		showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please sign back in");
+		showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'");
 	}
 
 	function showAccountSetup(view: AccountSetupView, message?: string)

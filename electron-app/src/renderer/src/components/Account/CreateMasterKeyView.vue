@@ -1,17 +1,23 @@
 <template>
 	<div class="createMasterKeyViewContainer">
 		<Transition name="fade" mode="out-in">
-			<AccountSetupView :color="color" :title="'Crete Master Key'" :buttonText="'Submit'"
-				:displayGrid="false" :titleMargin="'0.5%'" @onSubmit="onSubmit">
+			<AccountSetupView :color="color" :title="'Create Master Key'" :buttonText="'Submit'" :displayGrid="false"
+				:titleMargin="'0%'" :titleMarginTop="'1.5%'" @onSubmit="onSubmit">
 				<div class="createMasterKeyViewContainer__content">
-					<div class="createMasterKeyViewContainer__info">Your Master Key is used to encrypt and decrypt all your data. Ideally it should never be written down. See
-						<ButtonLink :color="color" :text="'Creating Strong and Memorable Passwords'" @onClick="openCreateStrongAndMemorablePasswords" />
-						for help. <b>If your key is forgotten, it can never be recovered!</b>
+					<Transition name="fade" mode="out-in">
+						<AlertBanner :key="refreshKey" :message="alertMessage" />
+					</Transition>
+					<div class="createMasterKeyViewContainer__info"> See
+						<ButtonLink :color="color" :text="'Creating a Strong and Memorable Key'"
+							@onClick="openCreateStrongAndMemorablePasswords" />
+						for help.
 					</div>
 					<div class="createMasterKeyViewContainer__inputs">
-						<EncryptedInputField ref="encryptedInputField" class="key" :label="'Master Key'" :colorModel="colorModel"
-							v-model="key" :required="true" :width="'300px'" :style="{'grid-row': '1 / span 2', 'grid-column': '3'}" />
-						<div class="createMasterKeyViewContainer__keyRequirements" :style="{'grid-row': '3 / span 4', 'grid-column': '3 / span 12'}">
+						<EncryptedInputField ref="encryptedInputField" class="key" :label="'Master Key'"
+							:colorModel="colorModel" v-model="key" :required="true" :width="'350px'"
+							:style="{ 'grid-row': '1 / span 2', 'grid-column': '2' }" />
+						<div class="createMasterKeyViewContainer__keyRequirements"
+							:style="{ 'grid-row': '3 / span 4', 'grid-column': '2 / span 12' }">
 							<CheckboxInputField class="greaterThanTwentyCharacters" :label="'At Least 20 Characters'"
 								:color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
 								:height="'auto'" :disabled="true" />
@@ -22,13 +28,15 @@
 							<CheckboxInputField class="containsNumber" :label="'Contains a Number'" :color="color"
 								v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
 							<CheckboxInputField class="containsSpecialCharacter" :label="'Contains a Special Character'"
-								:color="color" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'" :height="'auto'"
-								:disabled="true" />
+								:color="color" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
+								:height="'auto'" :disabled="true" />
 						</div>
 						<EncryptedInputField ref="confirmEncryptedInputField" :label="'Confirm Key'"
-							:colorModel="colorModel" v-model="reEnterKey" :width="'300px'" :style="{'grid-row': '7 / span 2', 'grid-column': '3'}" />
-						<CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'" :color="color"
-							v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" :style="{'grid-row': '9', 'grid-column': '3 / span 12'}" />
+							:colorModel="colorModel" v-model="reEnterKey" :width="'350px'"
+							:style="{ 'grid-row': '7 / span 2', 'grid-column': '2' }" />
+						<CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'"
+							:color="color" v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'"
+							:disabled="true" :style="{ 'grid-row': '9', 'grid-column': '2 / span 12' }" />
 					</div>
 				</div>
 			</AccountSetupView>
@@ -37,12 +45,13 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
+import AlertBanner from './AlertBanner.vue';
 
 import { InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
@@ -56,19 +65,22 @@ export default defineComponent({
 		AccountSetupView,
 		EncryptedInputField,
 		CheckboxInputField,
-		ButtonLink
+		ButtonLink,
+		AlertBanner
 	},
-	emits: ['onDone'],
+	emits: ['onSuccess'],
 	props: ['color', 'account'],
 	setup(props, ctx)
 	{
+		const refreshKey: Ref<string> = ref('');
+
 		const key: Ref<string> = ref('');
 		const reEnterKey: Ref<string> = ref('');
 
 		const account: ComputedRef<Account> = computed(() => props.account);
 
 		const encryptedInputField: Ref<InputComponent | null> = ref(null);
-		const confirmEncryptedInputField:Ref<InputComponent | null> = ref(null);
+		const confirmEncryptedInputField: Ref<InputComponent | null> = ref(null);
 
 		const greaterThanTwentyCharacters: Ref<boolean> = ref(false);
 		const containesUpperAndLowerCase: Ref<boolean> = ref(false);
@@ -76,7 +88,17 @@ export default defineComponent({
 		const hasSpecialCharacter: Ref<boolean> = ref(false);
 		const matchesKey: Ref<boolean> = ref(false);
 
+		const alertMessage: Ref<string> = ref('');
+
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
+
+		async function showAlertMessage(message: string)
+		{
+			stores.popupStore.hideLoadingIndicator();
+			refreshKey.value = Date.now.toString();
+			await new Promise((resolve) => setTimeout(resolve, 300));
+			alertMessage.value = message;
+		}
 
 		async function onSubmit()
 		{
@@ -84,10 +106,10 @@ export default defineComponent({
 				!containesUpperAndLowerCase.value ||
 				!hasNumber.value ||
 				!hasSpecialCharacter.value)
-				{
-					encryptedInputField.value?.invalidate("Please meet all the requirements below");
-					return;
-				}
+			{
+				encryptedInputField.value?.invalidate("Please meet all the requirements below");
+				return;
+			}
 			else if (!matchesKey.value)
 			{
 				confirmEncryptedInputField.value?.invalidate("Keys do not match");
@@ -95,26 +117,47 @@ export default defineComponent({
 			}
 
 			const data = {
+				FirstName: account.value.firstName,
+				LastName: account.value.lastName,
+				Email: account.value.email,
 				Key: key.value,
-				Password: account.value.password,
 				...stores.getStates(),
 			}
 
-			const response = await window.api.server.user.finishUserSetup(JSON.stringify(data));
+			stores.popupStore.showLoadingIndicator(props.color);
+			const response = await window.api.server.session.createAccount(JSON.stringify(data));
 			if (response.success)
 			{
+				stores.popupStore.hideLoadingIndicator();
+
 				await stores.handleUpdateStoreResponse(key.value, response);
-				ctx.emit('onDone');
+				ctx.emit('onSuccess');
 			}
 			else
 			{
-				stores.popupStore.showErrorResponse(response);
+				if (response.DeviceIsTaken)
+				{
+					showAlertMessage("There is already an account associated with this device. Please sign in using that account");
+					return;
+				}
+
+				if (response.EmailIsTaken)
+				{
+					showAlertMessage("Email is already in use. Please use a different one");
+				}
+				else if (response.UnknownError)
+				{
+					stores.popupStore.showErrorResponse(response);
+				}
 			}
 		}
 
 		function openCreateStrongAndMemorablePasswords()
 		{
-
+			// TODO: Make sure website mentions how much better it is to create a key that is
+			// at least 32 digits long, even though we don't require it.
+			// Also mention the benefit of replacing letters in words with numbers to prevent
+			// dictionary attacks
 		}
 
 		watch(() => key.value, (newValue) =>
@@ -138,7 +181,13 @@ export default defineComponent({
 			matchesKey.value = newValue == key.value;
 		});
 
+		onMounted(() =>
+		{
+			alertMessage.value = "Your Master Key is used to encrypt and decrypt all your data. Ideally it should never be written down. If your key is forgotten, it can never be recovered."
+		});
+
 		return {
+			refreshKey,
 			key,
 			reEnterKey,
 			encryptedInputField,
@@ -149,6 +198,7 @@ export default defineComponent({
 			hasSpecialCharacter,
 			matchesKey,
 			colorModel,
+			alertMessage,
 			onSubmit,
 			openCreateStrongAndMemorablePasswords
 		}
@@ -171,7 +221,7 @@ export default defineComponent({
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	row-gap: 20px;
+	row-gap: 15px;
 }
 
 .createMasterKeyViewContainer__inputs {
@@ -182,14 +232,14 @@ export default defineComponent({
 
 .createMasterKeyViewContainer__keyRequirements {
 	grid-area: 3 / 3 / span 4 / span 12;
-    display: flex;
-    flex-direction: column;
-    row-gap: 5px;
-    transform: translateX(10px);
+	display: flex;
+	flex-direction: column;
+	row-gap: 5px;
+	transform: translateX(10px);
+	margin-top: 5px;
 }
 
 .createMasterKeyViewContainer__matchesKey {
 	transform: translateX(10px);
 }
 </style>
-

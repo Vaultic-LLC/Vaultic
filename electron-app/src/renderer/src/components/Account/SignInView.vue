@@ -1,52 +1,40 @@
 <template>
 	<div class="signInViewContainer">
-		<AccountSetupView ref="mainView" :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
+		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
 			:titleMargin="'0'" @onSubmit="onSubmit">
-			<div class="signInViewContainer__content">
-                <Transition name="fade" mode="out-in">
-                    <div class="signInViewContainer__inputCarousel" :key="refreshKey">
-                        <div ref="inputCarouselTop" class="signInViewContainer__inputCarousel__top">
-                            <div v-if="inputView == 1" class="signInViewContainer__inputCarousel__navigationButton left"
-                                    @click="updateInputView(0)">
-                                <ion-icon name="chevron-back-outline"></ion-icon>
-                            </div>
-                            <div v-if="inputView == 0" ref="usernamePasswordInput" class="signInViewContainer__inputCarousel__inputs">
-                                <TextInputField ref="usernameField" :color="color" :label="'Username'" v-model="username"/>
-                                <EncryptedInputField ref="passwordField" :colorModel="colorModel" :label="'Password'" v-model="password"
-                                :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true"
-                                :showCopy="false"/>
-                            </div>
-                            <div v-else-if="inputView == 1" ref="masterKeyInput" class="signInViewContainer__inputCarousel__inputs">
-                                <EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'" v-model="masterKey"
-                                :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false" :showUnlock="true" :required="true"
-                                :showCopy="false"/>
-                            </div>
-                            <div v-if="inputView == 0" class="signInViewContainer__inputCarousel__navigationButton right"
-                                @click="updateInputView(1)">
-                                <ion-icon name="chevron-forward-outline"></ion-icon>
-                            </div>
-                        </div>
-                    </div>
-                </Transition>
-			</div>
-			<template #footer>
-				<div class="signInViewContainer__contentBottom">
-					<div class="signInViewContainer__divider">
-						<div class="signInViewContainer__divider__line"></div>
-						<div class="signInViewContainer__divider__text">Or</div>
-						<div class="signInViewContainer__divider__line"></div>
+			<Transition name="fade" mode="out-in">
+				<div :key="refreshKey">
+					<div class="signInViewContainer__content">
+						<AlertBanner v-if="alertMessage" :message="alertMessage" />
+						<div v-if="failedAutoLogin" class="signInViewContainer__inputs">
+							<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
+								:width="'300px'" />
+							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
+								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
+								:showUnlock="true" :required="true" :showCopy="false" :width="'300px'" />
+						</div>
+						<div v-else>
+							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
+								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
+								:showUnlock="true" :required="true" :showCopy="false" :width="'300px'" />
+						</div>
 					</div>
-					<div class="signInViewContainer__limitedMode">
-						<ButtonLink :color="color" :text="'Continue in Offline Mode'" @onClick="moveToLimitedMode"/>
-					</div>
-					<div class="signInViewContainer__forgotPassword">
-						<ButtonLink :color="color" :text="'Forgot Username or Password'" @onClick="moveToCreateOTP"/>
-					</div>
-					<div class="signInViewContainer__createAccountLink">Don't have an account?
-						<ButtonLink :color="color" :text="'Create One'" @onClick="moveToCreateAccount"/>
+					<div class="signInViewContainer__contentBottom">
+						<div class="signInViewContainer__divider">
+							<div class="signInViewContainer__divider__line"></div>
+							<div class="signInViewContainer__divider__text">Or</div>
+							<div class="signInViewContainer__divider__line"></div>
+						</div>
+						<div class="signInViewContainer__limitedMode">
+							<ButtonLink :color="color" :text="'Continue in Offline Mode'"
+								@onClick="moveToLimitedMode" />
+						</div>
+						<div class="signInViewContainer__createAccountLink">Don't have an account?
+							<ButtonLink :color="color" :text="'Create One'" @onClick="moveToCreateAccount" />
+						</div>
 					</div>
 				</div>
-			</template>
+			</Transition>
 		</AccountSetupView>
 	</div>
 </template>
@@ -58,12 +46,12 @@ import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
+import AlertBanner from "./AlertBanner.vue"
 
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
-import { FormComponent, InputComponent } from '@renderer/Types/Components';
+import { InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
 import { Password } from '@renderer/Types/EncryptedData';
-import cryptHelper from '@renderer/Helpers/cryptHelper';
 
 export default defineComponent({
 	name: "SignInView",
@@ -72,30 +60,27 @@ export default defineComponent({
 		TextInputField,
 		EncryptedInputField,
 		AccountSetupView,
-		ButtonLink
+		ButtonLink,
+		AlertBanner
 	},
-	emits: ['onMoveToCreateAccount', 'onSuccess', 'onMoveToLimitedMode', 'onMoveToCreateOTP'],
+	emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToCreateOTP'],
 	props: ['color', 'infoMessage'],
 	setup(props, ctx)
 	{
-        const refreshKey: Ref<string> = ref('');
+		const refreshKey: Ref<string> = ref('');
 
-		const mainView: Ref<FormComponent | null> = ref(null);
-		const usernameField: Ref<InputComponent | null> = ref(null);
-		const passwordField: Ref<InputComponent | null> = ref(null);
-        const masterKeyField: Ref<InputComponent | null> = ref(null);
+		const masterKeyField: Ref<InputComponent | null> = ref(null);
+		const masterKey: Ref<string> = ref('');
 
-		const inputCarouselTop: Ref<HTMLElement | null> = ref(null);
-		const usernamePasswordInput: Ref<HTMLElement | null> = ref(null);
-		const masterKeyInput: Ref<HTMLElement | null> = ref(null);
+		const emailField: Ref<InputComponent | null> = ref(null);
+		const email: Ref<string> = ref('');
 
-		const inputView: Ref<number> = ref(0);
-
-		const username: Ref<string> = ref('');
-		const password: Ref<string> = ref('');
-        const masterKey: Ref<string> = ref('');
-
+		const failedAutoLogin: Ref<boolean> = ref(false);
+		const alertMessage: Ref<string> = ref('');
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
+
+		const contentBottomRowGap: ComputedRef<string> = computed(() => failedAutoLogin.value ? "20px" : "30px");
+		const contentBottomMargin: ComputedRef<string> = computed(() => failedAutoLogin.value ? "15px" : alertMessage.value ? "50px" : "130px");
 
 		function moveToCreateAccount()
 		{
@@ -112,133 +97,135 @@ export default defineComponent({
 			ctx.emit('onMoveToLimitedMode');
 		}
 
+		async function didFailedAutoLogin()
+		{
+			refreshKey.value = Date.now().toString();
+			await new Promise((resolve) => setTimeout(resolve, 300));
+
+			stores.popupStore.hideLoadingIndicator();
+			alertMessage.value = "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it."
+			failedAutoLogin.value = true;
+		}
+
 		async function onSubmit()
 		{
 			stores.popupStore.showLoadingIndicator(props.color);
-			if (inputView.value == 0)
-			{
-				const response = await window.api.server.session.validateUsernameAndPassword(username.value, password.value);
-				stores.popupStore.hideLoadingIndicator();
 
-				if (response.success)
+			if (!failedAutoLogin.value)
+			{
+				if (!(await stores.passwordStore.canAuthenticateKeyBeforeEntry()))
 				{
-					ctx.emit('onSuccess', username.value, password.value);
+					didFailedAutoLogin();
+					return;
 				}
 				else
 				{
-					if (response.IncorrectUsernameOrPassword)
+					const validKey = await stores.checkKeyBeforeEntry(masterKey.value);
+					if (!validKey)
 					{
-						usernameField.value?.invalidate("Username or Password is incorrect");
-						passwordField.value?.invalidate("Username or Password is incorrect");
-					}
-					else if (response.UnknownError)
-					{
-						stores.popupStore.showErrorResponse(response);
-					}
-				}
-			}
-			else if (inputView.value == 1)
-			{
-                if (!(await stores.passwordStore.canAuthenticateKeyBeforeEntry()))
-                {
-					stores.popupStore.hideLoadingIndicator();
-                    mainView.value?.showAlertMessage(false, "Unable to find Vaultic Password. Please add it to your Passwords within the app before signing in with your Master Key");
-
-					return;
-                }
-                else
-                {
-                    const validKey = await stores.checkKeyBeforeEntry(masterKey.value);
-                    if (!validKey)
-                    {
 						stores.popupStore.hideLoadingIndicator();
-                    	masterKeyField.value?.invalidate("Master Key is incorrect");
+						masterKeyField.value?.invalidate("Master Key is incorrect");
 
-                        return;
-                    }
+						return;
+					}
 
-                    await stores.loadStoreData(masterKey.value);
+					await stores.loadStoreData(masterKey.value);
 					if (!stores.passwordStore.hasVaulticPassword)
 					{
-						stores.popupStore.hideLoadingIndicator();
-						mainView.value?.showAlertMessage(false, "Unable to find Vaultic Password. Please add it to your Passwords within the app before signing in with your Master Key");
-						stores.resetStoresToDefault();
-
-                    	return;
-					}
-
-					const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
-					const decryptedPasswordResposne = await cryptHelper.decrypt(masterKey.value, password.password);
-
-					if (!decryptedPasswordResposne.success)
-					{
-						stores.popupStore.hideLoadingIndicator();
+						didFailedAutoLogin();
 						stores.resetStoresToDefault();
 
 						return;
 					}
 
-					const response = await window.api.server.session.validateUsernameAndPassword(password.login, decryptedPasswordResposne.value!);
+					const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
+					const response = await window.api.server.session.validateEmailAndMasterKey(password.email, masterKey.value);
+
 					if (response.success)
 					{
-						stores.popupStore.hideLoadingIndicator();
-						ctx.emit('onSuccess', password.login, decryptedPasswordResposne.value);
+						ctx.emit('onKeySuccess');
 					}
 					else
 					{
-						if (response.IncorrectUsernameOrPassword)
-						{
-							mainView.value?.showAlertMessage(false, "The Username or Password you have stored for your Vaultic Account is incorrect. Please try entering it manually or click 'Forgot my Username or Password'");
-							stores.resetStoresToDefault();
-						}
-						else if (response.UnknownError)
-						{
-							stores.popupStore.showErrorResponse(response);
-							stores.resetStoresToDefault();
-						}
+						handleFailedResponse(response);
 					}
-                }
+				}
+			}
+			else
+			{
+				// TODO: add stores and 'ReAddVaulticPassword' parameter
+				const response = await window.api.server.session.validateEmailAndMasterKey(email.value, masterKey.value);
+
+				// no matter what try to add the vaultic password. We can fail but still need to add it ex. license isn't valid
+				await stores.handleUpdateStoreResponse(masterKey.value, response, true);
+
+				if (response.success)
+				{
+					ctx.emit('onKeySuccess');
+				}
+				else
+				{
+					handleFailedResponse(response);
+				}
 			}
 		}
 
-        function updateInputView(index: number)
-        {
-            inputView.value = index;
-            refreshKey.value = Date.now().toString();
-        }
-
-		function moveToCreateOTP()
+		function handleFailedResponse(response: any)
 		{
-			ctx.emit('onMoveToCreateOTP');
+			stores.popupStore.hideLoadingIndicator();
+
+			if (response.IncorrectDevice)
+			{
+				stores.popupStore.showIncorrectDevice(response);
+			}
+			else if (response.InvalidMasterKey)
+			{
+				masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
+				stores.resetStoresToDefault();
+			}
+			else if (response.UnknownEmail)
+			{
+				if (!failedAutoLogin.value)
+				{
+					failedAutoLogin.value = true;
+				}
+				else
+				{
+					emailField.value?.invalidate("Incorrect Email. Please try again");
+				}
+
+				stores.resetStoresToDefault();
+			}
+			else if (response.LicenseStatus && response.LicenseStatus != 1)
+			{
+				// TODO move to setup payment page
+			}
+			else if (response.UnknownError)
+			{
+				stores.popupStore.showErrorResponse(response);
+				stores.resetStoresToDefault();
+			}
 		}
 
 		onMounted(() =>
 		{
-			if (props.infoMessage)
-			{
-				mainView.value?.showAlertMessage(true, props.infoMessage);
-			}
+			alertMessage.value = props.infoMessage;
 		});
 
 		return {
-            refreshKey,
-			mainView,
-			usernameField,
-			passwordField,
-            masterKeyField,
-			inputCarouselTop,
-			usernamePasswordInput,
-			masterKeyInput,
-			username,
-			password,
-            masterKey,
+			refreshKey,
+			masterKeyField,
+			masterKey,
+			emailField,
+			email,
 			colorModel,
-			inputView,
+			failedAutoLogin,
+			alertMessage,
+			contentBottomRowGap,
+			contentBottomMargin,
 			moveToCreateAccount,
-			onSubmit,
 			moveToLimitedMode,
-            updateInputView,
-			moveToCreateOTP
+			onSubmit,
 		};
 	}
 })
@@ -250,93 +237,29 @@ export default defineComponent({
 }
 
 .signInViewContainer__content {
-	display: flex;
-    flex-direction: column;
-    /* row-gap: 30px; */
-    justify-content: center;
-    align-items: center;
-	transition: 0.3s;
-	position: relative;
-}
-
-.signInViewContainer__inputCarousel {
+	margin-top: 10px;
+	row-gap: 20px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	transition: 0.3s;
 }
 
-.signInViewContainer__inputCarousel__top {
-	position: relative;
-	margin-top: 15px;
-}
-
-.signInViewContainer__inputCarousel__navigationButton {
+.signInViewContainer__inputs {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	color: grey;
-	font-size: 35px;
-	cursor: pointer;
-	position:absolute;
-	transition: 0.3s;
-	top: 50%;
-	transform: translateY(-50%);
-}
-
-.signInViewContainer__inputCarousel__navigationButton:hover {
-	/* transform: scale(1.05); */
-	color: v-bind(color);
-}
-
-.signInViewContainer__inputCarousel__navigationButton.right {
-	right: -38%;
-}
-
-.signInViewContainer__inputCarousel__navigationButton.left {
-	left: -38%;
-}
-
-.signInViewContainer__inputCarousel__inputs {
-	display: flex;
 	flex-direction: column;
-	row-gap: 30px;
-	justify-content: center;
-	align-items: center;
-}
-
-.signInViewContainer__inputCarousel__activeViewIcons {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	column-gap: 10px;
-	margin-top: 15px;
-	transition: 0.3s;
-}
-
-.signInViewContainer__inputCarousel__activeViewIcon {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border-radius: 50%;
-	transition: 0.3s;
-	position: relative;
-	color: white;
-	font-size: 1.2rem;
-}
-
-.signInViewContainer__inputCarousel__activeViewIcon.active {
-	color: v-bind(color);
+	row-gap: 20px;
 }
 
 .signInViewContainer__contentBottom {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    row-gap: 20px;
-	margin-bottom: 27px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	row-gap: v-bind(contentBottomRowGap);
+	margin-top: v-bind(contentBottomMargin);
 }
 
 .signInViewContainer__limitedMode {

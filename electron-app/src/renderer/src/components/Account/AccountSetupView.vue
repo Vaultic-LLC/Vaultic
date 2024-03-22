@@ -3,14 +3,8 @@
 		<div class="accountSetupViewContainer__header">
 			<h2 class="accountSetupViewContainer__title">{{ title }}</h2>
 		</div>
-		<Transition name="fade" mode="out-in">
-			<div v-if="showAlertContainer" class="accountSetupViewContainer__alertContainer" :class="{info : alertIsInfo}">
-				<ion-icon name="alert-circle-outline"></ion-icon>
-				{{ alertMessage }}
-			</div>
-		</Transition>
-		<div class="accountSetupViewContainer__content" :class="{ flex: displayGrid == false, grid: displayGrid == true }"
-			:style="{
+		<div class="accountSetupViewContainer__content"
+			:class="{ flex: displayGrid == false, grid: displayGrid == true }" :style="{
 				'grid-template-rows': `repeat(${gridDef?.rows}, ${gridDef?.rowHeight})`,
 				'grid-template-columns': `repeat(${gridDef?.columns}, ${gridDef?.columnWidth})`
 			}">
@@ -19,7 +13,7 @@
 		<div class="accountSetupViewContainer__footer">
 			<slot name="footer"></slot>
 			<PopupButton :color="color" :disabled="disabled" :text="buttonText" :width="'150px'" :height="'40px'"
-			 :fontSize="'18px'" @onClick="onSubmit">
+				:fontSize="'18px'" @onClick="onSubmit">
 			</PopupButton>
 			<!-- <div class="accountSetupViewContainer__buttons">
 			</div> -->
@@ -28,7 +22,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onUnmounted, provide, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, provide, ref } from 'vue';
 
 import PopupButton from '../InputFields/PopupButton.vue';
 
@@ -42,22 +36,19 @@ export default defineComponent({
 		PopupButton
 	},
 	emits: ['onSubmit'],
-	props: ['color', 'title', 'buttonText', 'displayGrid', 'gridDefinition', 'titleMargin'],
+	props: ['color', 'title', 'buttonText', 'displayGrid', 'gridDefinition', 'titleMargin', 'titleMarginTop'],
 	setup(props, ctx)
 	{
 		const disabled: Ref<boolean> = ref(false);
 		const display: ComputedRef<string> = computed(() => props.displayGrid ? "grid" : "flex");
 		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
 		const computedTitleMargin: ComputedRef<string> = computed(() => props.titleMargin ? props.titleMargin : "3%");
+		const computedTitleMarginTop: ComputedRef<string> = computed(() => props.titleMarginTop ? props.titleMarginTop : "5%");
 
 		let validationFunctions: Ref<{ (): boolean; }[]> = ref([]);
 
-		const showAlertContainer: Ref<boolean> = ref(false);
-		const alertIsInfo: Ref<boolean> = ref(false);
-		const alertMessage: Ref<string> = ref('');
-
-		const disableBackButton: { (): void } = inject(DisableBackButtonFunctionKey, () => {});
-		const enableBackButton: { (): void } = inject(EnableBackButtonFunctionKey, () => {});
+		const disableBackButton: { (): void } = inject(DisableBackButtonFunctionKey, () => { });
+		const enableBackButton: { (): void } = inject(EnableBackButtonFunctionKey, () => { });
 
 		provide(ValidationFunctionsKey, validationFunctions);
 
@@ -65,7 +56,6 @@ export default defineComponent({
 		{
 			disableBackButton();
 			disabled.value = true;
-			showAlertContainer.value = false;
 
 			let allValid: boolean = true;
 			validationFunctions.value.forEach(f => allValid = f() && allValid);
@@ -79,25 +69,13 @@ export default defineComponent({
 			enableBackButton();
 		}
 
-		function showErrorMessage(isInfo: boolean, message: string)
-		{
-			alertIsInfo.value = isInfo;
-			alertMessage.value = message;
-			showAlertContainer.value = true;
-		}
-
-		onUnmounted(() => showAlertContainer.value = false);
-
 		return {
 			display,
 			gridDef,
 			disabled,
-			showAlertContainer,
-			alertMessage,
-			alertIsInfo,
 			computedTitleMargin,
-			onSubmit,
-			showErrorMessage
+			computedTitleMarginTop,
+			onSubmit
 		}
 	}
 })
@@ -113,22 +91,11 @@ export default defineComponent({
 }
 
 .accountSetupViewContainer__header {
-	margin-top: 5%;
+	margin-top: v-bind(computedTitleMarginTop);
 }
 
 .accountSetupViewContainer__title {
 	color: white;
-}
-
-.accountSetupViewContainer__alertContainer {
-	width: 5%;
-	background-color: #ce4f36;
-	border-radius: 5%;
-	display: flex;
-}
-
-.accountSetupViewContainer__alertContainer.info{
-	background-color: #3784d6;
 }
 
 .accountSetupViewContainer__content {
@@ -157,4 +124,3 @@ export default defineComponent({
 	row-gap: 20px;
 }
 </style>
-

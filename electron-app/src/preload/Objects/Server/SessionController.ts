@@ -1,63 +1,39 @@
-import { ValidateEmailAndUsernameResponse, GenerateMFAResponse, CreateAccountResponse, ValidateUsernameAndPasswordResponse, ValidateMFACodeResponse, BaseResponse, GenerateOneTimePasswordResposne } from "../../Types/Responses";
+import { ValidateEmailResponse, CreateAccountResponse, BaseResponse, ValidateUserResponse } from "../../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface SessionController
 {
-	validateEmailAndUsername: (email: string, username: string) => Promise<ValidateEmailAndUsernameResponse>;
-	generateMFA: () => Promise<GenerateMFAResponse>;
-	createAccount: (firstName: string, lastName: string, email: string, username: string, password: string,
-		mfaKey: string, mfaCode: string, createdTime: string) => Promise<CreateAccountResponse>;
-	validateUsernameAndPassword: (username: string, password: string) => Promise<ValidateUsernameAndPasswordResponse>;
-	validateMFACode: (username: string, password: string, mfaCode: string) => Promise<ValidateMFACodeResponse>;
+	validateEmail: (email: string) => Promise<ValidateEmailResponse>;
+	createAccount: (data: string) => Promise<CreateAccountResponse>;
+	validateEmailAndMasterKey: (username: string, password: string) => Promise<ValidateUserResponse>;
 	expire: () => Promise<BaseResponse>;
-	generateOneTimePassword: (email: string) => Promise<GenerateOneTimePasswordResposne>;
 }
 
 export function createSessionController(axiosHelper: AxiosHelper)
 {
-	function validateEmailAndUsername(email: string, username: string): Promise<ValidateEmailAndUsernameResponse>
+	function validateEmail(email: string): Promise<ValidateEmailResponse>
 	{
 		return axiosHelper.post('Session/ValidateEmailAndUsername', {
 			Email: email,
-			Username: username
 		});
 	}
 
-	function generateMFA(): Promise<GenerateMFAResponse>
+	function createAccount(data: string): Promise<CreateAccountResponse>
 	{
-		return axiosHelper.get('Session/GenerateMFA');
+		return axiosHelper.post('Session/CreateAccount', data);
 	}
 
-	function createAccount(firstName: string, lastName: string, email: string, username: string, password: string,
-		mfaKey: string, mfaCode: string, createdTime: string): Promise<CreateAccountResponse>
+	function validateEmailAndMasterKey(email: string, key: string): Promise<ValidateUserResponse>
 	{
-		return axiosHelper.post('Session/CreateAccount', {
-			FirstName: firstName,
-			LastName: lastName,
+		return axiosHelper.post('Session/ValidateEmailAndMasterKey', {
 			Email: email,
-			Username: username,
-			Password: password,
-			MFAKey: mfaKey,
-			MFACode: mfaCode,
-			CreatedTime: createdTime,
+			MasterKey: key,
 		});
 	}
 
-	function validateUsernameAndPassword(username: string, password: string): Promise<ValidateUsernameAndPasswordResponse>
+	function validateEmailMasterKeyAndReAddVaulticAccount(data: string): Promise<ValidateUserResponse>
 	{
-		return axiosHelper.post('Session/ValidateEmailAndUsername', {
-			Username: username,
-			Password: password,
-		});
-	}
-
-	function validateMFACode(username: string, password: string, mfaCode: string): Promise<ValidateMFACodeResponse>
-	{
-		return axiosHelper.post('Session/ValidateMFACode', {
-			Username: username,
-			Password: password,
-			MFACode: mfaCode,
-		});
+		return axiosHelper.post('Session/ValidateEmailMasterKeyAndReAddVaulticAccount', data);
 	}
 
 	function expire(): Promise<BaseResponse>
@@ -65,21 +41,10 @@ export function createSessionController(axiosHelper: AxiosHelper)
 		return axiosHelper.post('Session/Expire', {});
 	}
 
-	function generateOneTimePassword(email: string): Promise<GenerateOneTimePasswordResposne>
-	{
-		return axiosHelper.post('Session/GenerateOneTimePassword',
-			{
-				Email: email
-			});
-	}
-
 	return {
-		validateEmailAndUsername,
-		generateMFA,
+		validateEmail,
 		createAccount,
-		validateUsernameAndPassword,
-		validateMFACode,
+		validateEmailAndMasterKey,
 		expire,
-		generateOneTimePassword
 	}
 }

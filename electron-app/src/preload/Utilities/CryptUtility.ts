@@ -7,18 +7,20 @@ export interface CryptUtility
 {
 	encrypt: (key: string, value: string) => Promise<MethodResponse>;
 	decrypt: (key: string, value: string) => Promise<MethodResponse>;
+	publicEncrypt: (value: string) => MethodResponse;
 }
 
 const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
+const VaulticPublicKey = "-----BEGIN PUBLIC KEY----- \nw/BNE+8BC9VgO0Hezp7Z6LKPPqPDewuvPA8uby1m6MIHvsq4aLpSrKq5alRgUYe3xTMNhGJQjgLO3Ol6r8olYsD1WviUhS3tGj1iTOthGBcmWaTFfeLyCGiXI11vCUnccV/yHYEJxRgir1WlvZovNorkkhYOm5w4oJWAwJ2MmkE=\n-----END PUBLIC KEY-----";
 
 async function encrypt(key: string, value: string): Promise<MethodResponse>
 {
 	let logID: number | undefined;
 	try
 	{
-		const hashedKey: string = await hashUtility.hash(key);
+		const hashedKey: string = hashUtility.insecureHash(key);
 		const keyBytes = Buffer.from(hashedKey, 'base64')
 
 		const iv = crypto.randomBytes(ivLength);
@@ -52,7 +54,7 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 		const iv = Uint8Array.prototype.slice.call(cipher, 0, ivLength);
 		const authTag = Uint8Array.prototype.slice.call(cipher, -authTagLength);
 		const encryptedValue = Uint8Array.prototype.slice.call(cipher, ivLength, -authTagLength);
-		const hashedKey: string = await hashUtility.hash(key);
+		const hashedKey: string = hashUtility.insecureHash(key);
 		const keyBytes = Buffer.from(hashedKey, 'base64')
 
 		const decipher = crypto.createDecipheriv(encryptionMethod, keyBytes, iv,
@@ -73,10 +75,26 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	return { success: false };
 }
 
+function publicEncrypt(value: string): MethodResponse
+{
+	try
+	{
+		const bytes = Buffer.from(value);
+		return { success: true, value: crypto.publicEncrypt(VaulticPublicKey, bytes).toString("ascii") };
+	}
+	catch (e)
+	{
+		console.log(e);
+	}
+
+	return { success: false }
+}
+
 const cryptUtility: CryptUtility =
 {
 	encrypt,
-	decrypt
+	decrypt,
+	publicEncrypt
 };
 
 export default cryptUtility;
