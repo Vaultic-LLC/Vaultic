@@ -6,6 +6,7 @@ import settingStore, { SettingStoreType } from "./SettingsStore";
 import passwordStore, { PasswordStoreType, PasswordStoreState } from "./PasswordStore";
 import valueStore, { ValueStoreType, ValueStoreState } from "./ValueStore";
 import createPopupStore, { PopupStore } from "./PopupStore";
+import { StoreState } from "./Base";
 
 export interface DataStoreStates
 {
@@ -15,12 +16,12 @@ export interface DataStoreStates
 	valueStoreState: ValueStoreState;
 }
 
-interface StoreState
+interface StoresState
 {
 	needsAuthentication: boolean;
 }
 
-const storeState: StoreState = reactive({ needsAuthentication: true });
+const storeState: StoresState = reactive({ needsAuthentication: true });
 export interface Stores
 {
 	needsAuthentication: boolean;
@@ -123,49 +124,50 @@ async function checkKeyAfterEntry(key: string): Promise<boolean>
 	return true;
 }
 
-// Is only called from GlobalAuthPopup and should stay that way since readState doesn't do any
+// Is only called from GlobalAuthPopup and SignInView and should stay that way since readState doesn't do any
 // authenticating
 async function loadStoreData(key: string): Promise<any>
 {
-	const result = await Promise.all(
-		[
-			stores.appStore.readState(key),
-			stores.settingsStore.readState(key),
-			stores.passwordStore.readState(key),
-			stores.valueStore.readState(key),
-			stores.filterStore.readState(key),
-			stores.groupStore.readState(key)
-		]);
+	const result = await Promise.all([
+		stores.appStore.readState(key),
+		stores.settingsStore.readState(key),
+		stores.passwordStore.readState(key),
+		stores.valueStore.readState(key),
+		stores.filterStore.readState(key),
+		stores.groupStore.readState(key)
+	]);
 
-	// Only need to check from server if reading in failed. the server can never be newer than the file
-	if (result.some(r => !r))
-	{
-		if (stores.settingsStore.enableSyncing)
-		{
-			//const response = await window.api.server.getUserData();
+	// 1) Need to check to see if we are online
+	// 2) If so, need to get data from server
+	// 3) Override the older of the two with the newer
+	// if (stores.appStore.isOnline && stores.settingsStore.backupData)
+	// {
+	// 	const response = await window.api.server.user.getUserData();
+	// 	if (response.success)
+	// 	{
+	// 		[[stores.appStore.getState(), response.appStoreState]].forEach((states) =>
+	// 		{
+	// 			const serverStateObj: StoreState = JSON.parse(states[1]);
 
-			if (!result[0])
-			{
-				// override app state
-			}
-			else if (!result[1])
-			{
-				// override settings stase
-			}
-			else if (!result[2])
-			{
-				// override encrypted data state
-			}
-			else if (!result[3])
-			{
-				// override filter state
-			}
-			else if (!result[4])
-			{
-				// orverride group state
-			}
-		}
-	}
+	// 			if (states[0].version == serverStateObj.version)
+	// 			{
+	// 				return 0;
+	// 			}
+	// 			else if (states[0].version > serverStateObj.version)
+	// 			{
+	// 				return -1;
+	// 			}
+	// 			else
+	// 			{
+	// 				return 1;
+	// 			}
+	// 		});
+	// 	}
+	// 	else
+	// 	{
+
+	// 	}
+	// }
 }
 
 function resetStoresToDefault()
@@ -181,7 +183,7 @@ function resetStoresToDefault()
 
 async function syncToServer(key: string, incrementUserDataVersion: boolean = true): Promise<void>
 {
-	if (!stores.settingsStore.enableSyncing)
+	if (!stores.settingsStore.backupData)
 	{
 		return;
 	}

@@ -19,7 +19,7 @@ export interface SettingsStoreState extends StoreState
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
 	percentMetricForPulse: number;
-	enableSyncing: boolean;
+	backupData: boolean;
 	automaticSyncing: boolean;
 }
 
@@ -40,7 +40,7 @@ class SettingsStore extends Store<SettingsStoreState>
 	get multipleFilterBehavior() { return this.state.multipleFilterBehavior; }
 	get oldPasswordDays() { return this.state.oldPasswordDays; }
 	get percentMetricForPulse() { return this.state.percentMetricForPulse; }
-	get enableSyncing() { return this.state.enableSyncing; }
+	get backupData() { return this.state.backupData; }
 	get automaticSyncing() { return this.state.automaticSyncing; }
 	get currentPrimaryColor() { return this.internalCurrentPrimaryColor }
 
@@ -67,7 +67,7 @@ class SettingsStore extends Store<SettingsStoreState>
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
 			percentMetricForPulse: 1,
-			enableSyncing: true,
+			backupData: true,
 			automaticSyncing: true
 		};
 	}
