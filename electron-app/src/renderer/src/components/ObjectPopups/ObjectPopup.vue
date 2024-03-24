@@ -2,7 +2,7 @@
 	<div class="objectPopupContainer">
 		<div class="objectPopupGlass" @click.stop="closePopup">
 		</div>
-		<div class="objectyPopup">
+		<div ref="objectPopup" class="objectyPopup">
 			<div v-if="!doPreventClose" class="closeIconContainer" @click.stop="closePopup">
 				<ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
 			</div>
@@ -33,17 +33,24 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ObjectPopup",
-	props: ["show", "closePopup", "height", "width", 'preventClose', 'glassOpacity', "showPulsing",
-		"beforeHeight", "beforeWidth"],
+	props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing"],
 	setup(props)
 	{
+		const objectPopup: Ref<HTMLElement | null> = ref(null);
+		const resizeObserver: ResizeObserver = new ResizeObserver(() => checkWidthToHeightRatio());
+
 		const showPopup: ComputedRef<boolean> = computed(() => props.show);
 
 		const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : '80%');
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : '70%');
 
-		const computedBeforeHeight: ComputedRef<string> = computed(() => props.beforeHeight ? props.beforeHeight : "200%");
-		const computedBeforeWidth: ComputedRef<string> = computed(() => props.beforeWidth ? props.beforeWidth : "150%");
+		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ? props.minHeight : '0px');
+		const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ? props.minWidth : '0px');
+
+		const computedBeforeHeight: Ref<string> = ref(props.height);
+		const computedBeforeWidth: Ref<string> = ref(props.width);
+
+		const pulsingWidth: Ref<string> = ref(props.width);
 
 		const computedGlassOpacity: ComputedRef<number> = computed(() => props.glassOpacity ? props.glassOpacity : 0.92);
 		const doPreventClose: ComputedRef<boolean> = computed(() => props.preventClose === true);
@@ -137,6 +144,28 @@ export default defineComponent({
 			closePopupFunc.value(false);
 		}
 
+		function checkWidthToHeightRatio()
+		{
+			const info = objectPopup.value?.getBoundingClientRect();
+			if (!info)
+			{
+				return;
+			}
+
+			if (info.height > info.width)
+			{
+				pulsingWidth.value = `${info.height}px`;
+				computedBeforeHeight.value = `${info.height * ((info.height / info.width) + 1)}px`;
+				computedBeforeWidth.value = `${info.width * ((info.height / info.width) + 1)}px`;
+			}
+			else
+			{
+				pulsingWidth.value = `${info.width}px`;
+				computedBeforeHeight.value = `${info.height * ((info.width / info.height) + 1)}px`;
+				computedBeforeWidth.value = `${info.width * ((info.width / info.height) + 1)}px`;
+			}
+		}
+
 		watch(() => stores.appStore.activePasswordValuesTable, () =>
 		{
 			transitionColors();
@@ -144,6 +173,12 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
+			if (objectPopup.value)
+			{
+				resizeObserver.observe(objectPopup.value);
+				checkWidthToHeightRatio();
+			}
+
 			previousPrimaryColor.value = stores.settingsStore.currentPrimaryColor.value;
 			primaryColor.value = stores.settingsStore.currentPrimaryColor.value;
 
@@ -168,6 +203,7 @@ export default defineComponent({
 		});
 
 		return {
+			objectPopup,
 			primaryColor,
 			secondaryColorOne,
 			secondaryColorTwo,
@@ -175,10 +211,13 @@ export default defineComponent({
 			computedHeight,
 			computedWidth,
 			computedGlassOpacity,
-			closePopup,
 			doPreventClose,
 			computedBeforeHeight,
-			computedBeforeWidth
+			computedBeforeWidth,
+			computedMinHeight,
+			computedMinWidth,
+			pulsingWidth,
+			closePopup,
 		};
 	}
 })
@@ -196,17 +235,19 @@ export default defineComponent({
 
 .objectPopupGlass {
 	position: absolute;
-	width: 100%;
-	height: 100%;
+	width: 105%;
+	height: 105%;
 	z-index: 5;
 	top: 0;
-	left: 0;
+	left: -3%;
 	background: rgba(17, 15, 15, v-bind(computedGlassOpacity));
 }
 
 .objectyPopup {
 	height: v-bind(computedHeight);
 	width: v-bind(computedWidth);
+	min-height: v-bind(computedMinHeight);
+	min-width: v-bind(computedMinWidth);
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
@@ -277,7 +318,9 @@ export default defineComponent({
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	width: 75%;
+	width: v-bind(pulsingWidth);
+	max-width: 80%;
+	max-height: 80%;
 	aspect-ratio: 1 / 1;
 	z-index: 6;
 	transition: 0.3s;
@@ -292,7 +335,7 @@ export default defineComponent({
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	width: 10%;
+	width: 20%;
 	aspect-ratio: 1 / 1;
 	border-radius: 50%;
 	background-color: v-bind(primaryColor);

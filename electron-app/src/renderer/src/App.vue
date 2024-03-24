@@ -1,5 +1,5 @@
 <template>
-	<StatusBar/>
+	<StatusBar />
 	<Popups />
 	<div id="mainUI" class="mainUI">
 		<div class="center">
@@ -133,6 +133,12 @@ export default defineComponent({
 @import './Constants/animations.css';
 @import './Constants/transitions.css';
 
+@media (max-width: 1000px) {
+	html {
+		font-size: 10px;
+	}
+}
+
 #app {
 	font-family: Avenir, Helvetica, Arial, sans-serif;
 	-webkit-font-smoothing: antialiased;
@@ -153,6 +159,11 @@ body {
 h2,
 div {
 	user-select: none;
+}
+
+h2 {
+	margin-top: min(5px, 10%);
+	margin-bottom: min(5px, 10%);
 }
 
 .tempWidget {

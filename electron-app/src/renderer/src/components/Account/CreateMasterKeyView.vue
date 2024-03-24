@@ -147,7 +147,7 @@ export default defineComponent({
 				}
 				else if (response.UnknownError)
 				{
-					stores.popupStore.showErrorResponse(response);
+					stores.popupStore.showErrorResponseAlert(response);
 				}
 			}
 		}

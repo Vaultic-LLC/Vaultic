@@ -1,6 +1,6 @@
 <template>
 	<div class="authPopupContainer">
-		<div class="authenticationPopup"
+		<div ref="authenticationPopup" class="authenticationPopup"
 			:class="{ unlocked: unlocked, unlockFailed: unlockFailed, rubberband: rubberbandOnUnlock }">
 			<div v-if="iconOnly" class="authenticationPopupIcon">
 				<div class="authenticationPopupIcon__circle"></div>
@@ -21,15 +21,16 @@
 					<CheckboxInputField class="containsNumber" :label="'Contains a Number'" :color="primaryColor"
 						v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
 					<CheckboxInputField class="containsSpecialCharacter" :label="'Contains a Special Character'"
-						:color="primaryColor" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'" :height="'auto'"
-						:disabled="true" />
+						:color="primaryColor" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
+						:height="'auto'" :disabled="true" />
 				</div>
 				<!-- <div class="helpCreateStrongKey">
                 </div> -->
 				<EncryptedInputField v-if="needsToSetupKey" ref="confirmEncryptedInputField" :label="'Confirm Key'"
 					:colorModel="colorModel" v-model="reEnterKey" :width="'75%'" />
-				<CheckboxInputField v-if="needsToSetupKey" class="matchesKey" :label="'Matches Key'" :color="primaryColor"
-					v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
+				<CheckboxInputField v-if="needsToSetupKey" class="matchesKey" :label="'Matches Key'"
+					:color="primaryColor" v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'"
+					:disabled="true" />
 			</div>
 			<Transition name="fade">
 				<!-- TODO: Move this down when setting up key -->
@@ -79,6 +80,9 @@ export default defineComponent({
 		"focusOnShow", "iconOnly"],
 	setup(props, ctx)
 	{
+		const authenticationPopup: Ref<HTMLElement | null> = ref(null);
+		const resizeObserver: ResizeObserver = new ResizeObserver(() => onResize());
+
 		const encryptedInputField: Ref<null> = ref(null);
 		const confirmEncryptedInputField: Ref<null> = ref(null);
 		const loadingIndicator: Ref<null> = ref(null);
@@ -106,6 +110,9 @@ export default defineComponent({
 		const hasNumber: Ref<boolean> = ref(false);
 		const hasSpecialCharacter: Ref<boolean> = ref(false);
 		const matchesKey: Ref<boolean> = ref(false);
+
+		const pulsingWidth: Ref<string> = ref('75%');
+
 
 		let lastAuthAttempt: number = 0;
 		function onEnter()
@@ -196,6 +203,24 @@ export default defineComponent({
 			return [confirmKey == key.value, "Keys do not match"];
 		}
 
+		function onResize()
+		{
+			const info = authenticationPopup.value?.getBoundingClientRect();
+			if (!info)
+			{
+				return;
+			}
+
+			if (info.height > info.width)
+			{
+				pulsingWidth.value = `${info.height}px`;
+			}
+			else
+			{
+				pulsingWidth.value = `${info.width}px`;
+			}
+		}
+
 		watch(() => key.value, (newValue) =>
 		{
 			if (!needsToSetupKey.value)
@@ -224,6 +249,11 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
+			if (authenticationPopup.value)
+			{
+				resizeObserver.observe(authenticationPopup.value);
+			}
+
 			setTimeout(() => startPulsing.value = true, 5000);
 
 			if (props.focusOnShow == true && encryptedInputField.value)
@@ -234,6 +264,7 @@ export default defineComponent({
 		});
 
 		return {
+			authenticationPopup,
 			loadingIndicator,
 			encryptedInputField,
 			confirmEncryptedInputField,
@@ -258,6 +289,7 @@ export default defineComponent({
 			contentTop,
 			colorModel,
 			disabled,
+			pulsingWidth,
 			onEnter,
 			onCancel,
 			enforceStringKey,
@@ -413,7 +445,9 @@ export default defineComponent({
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	width: 75%;
+	width: v-bind(pulsingWidth);
+	max-width: 80%;
+	max-height: 80%;
 	aspect-ratio: 1 / 1;
 	z-index: 91;
 	transition: 0.3s;
@@ -428,7 +462,7 @@ export default defineComponent({
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	width: 10%;
+	width: 20%;
 	aspect-ratio: 1 / 1;
 	border-radius: 50%;
 	background-color: v-bind('primaryColor');
@@ -521,18 +555,18 @@ export default defineComponent({
 
 .authenticationPopupIcon__circle {
 	width: 20%;
-    aspect-ratio: 1 /1;
-    background: v-bind(color);
-    border-radius: 50%;
+	aspect-ratio: 1 /1;
+	background: v-bind(color);
+	border-radius: 50%;
 	margin-bottom: -45px;
 }
 
 .authenticationPopupIcon__triangle {
 	background: transparent;
-    border-left: 25px solid transparent;
-    border-right: 25px solid transparent;
-    border-bottom: 100px solid v-bind(color);
-    width: 0;
-    aspect-ratio: 1/ 1;
+	border-left: 25px solid transparent;
+	border-right: 25px solid transparent;
+	border-bottom: 100px solid v-bind(color);
+	width: 0;
+	aspect-ratio: 1/ 1;
 }
 </style>

@@ -16,7 +16,7 @@ async function read<T>(key: string, file: DataFile): Promise<[boolean, T]>
 	const result = await file.read();
 	if (!result.success)
 	{
-		stores.popupStore.showError(result.logID);
+		stores.popupStore.showErrorAlert(result.logID);
 		return [false, {} as T];
 	}
 
@@ -42,14 +42,14 @@ async function write<T>(key: string, data: T, file: DataFile): Promise<void>
 	const encryptedData = await cryptHelper.encrypt(key, jsonData);
 	if (!encryptedData.success)
 	{
-		stores.popupStore.showError(encryptedData.logID);
+		stores.popupStore.showErrorAlert(encryptedData.logID);
 		return;
 	}
 
 	const result = await file.write(encryptedData.value!);
 	if (!result.success)
 	{
-		stores.popupStore.showError(result.logID);
+		stores.popupStore.showErrorAlert(result.logID);
 	}
 }
 

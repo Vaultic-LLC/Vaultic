@@ -3,12 +3,12 @@
 		<ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :beforeHeight="'300%'" :closePopup="onOk">
 			<div class="unknownResponsePopup__content">
 				<div class="unknownResponsePopup__title">
-					<h2>An Error has occured</h2>
+					<h2>{{ title }}</h2>
 				</div>
 				<div class="unknownResponsePopup__body">
 					<div>
 						{{ message }}
-						<ButtonLink :color="primaryColor" :text="'Contact Support'" />
+						<ButtonLink v-if="showContactSupport" :color="primaryColor" :text="'Contact Support'" />
 					</div>
 					<div v-if="statusCode">
 						Staus Code: {{ statusCode ?? -1 }}
@@ -18,8 +18,8 @@
 					</div>
 				</div>
 				<div class="unknownResponsePopup__buttons">
-					<PopupButton :color="primaryColor" :text="'Ok'" :width="'150px'" :height="'40px'"
-						:fontSize="'18px'" @onClick="onOk">
+					<PopupButton :color="primaryColor" :text="'Ok'" :width="'150px'" :height="'40px'" :fontSize="'18px'"
+						@onClick="onOk">
 					</PopupButton>
 				</div>
 			</div>
@@ -37,23 +37,28 @@ import ButtonLink from './InputFields/ButtonLink.vue';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
-	name: "AccountSetupPopup",
+	name: "AlertPopup",
 	components:
 	{
 		ObjectPopup,
 		PopupButton,
 		ButtonLink
 	},
-    emits: ['onOk'],
-	props: ['statusCode', 'logID', 'axiosCode'],
+	emits: ['onOk'],
+	props: ['title', 'message', 'showContactSupport', 'statusCode', 'logID', 'axiosCode'],
 	setup(props, ctx)
 	{
-		const message: ComputedRef<string> = computed(getMessage)
+		const title: ComputedRef<string> = computed(() => props.title ? props.title : "An Error has occured");
+		const message: ComputedRef<string> = computed(getMessage);
 		const primaryColor: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
 
 		function getMessage()
 		{
-			if (props.statusCode || (props.axiosCode && (props.axiosCode == "ERR_NETWORK" || props.axiosCode == "ECONNABORTED")))
+			if (props.message)
+			{
+				return props.message;
+			}
+			else if (props.statusCode || (props.axiosCode && (props.axiosCode == "ERR_NETWORK" || props.axiosCode == "ECONNABORTED")))
 			{
 				return "Please check your connection and try again. If the issue persists";
 			}
@@ -63,15 +68,16 @@ export default defineComponent({
 			}
 		}
 
-        function onOk()
-        {
-            ctx.emit('onOk');
-        }
+		function onOk()
+		{
+			ctx.emit('onOk');
+		}
 
 		return {
+			title,
 			primaryColor,
 			message,
-            onOk
+			onOk
 		}
 	}
 })
@@ -118,5 +124,4 @@ export default defineComponent({
 	justify-content: center;
 	align-items: flex-end;
 }
-
 </style>

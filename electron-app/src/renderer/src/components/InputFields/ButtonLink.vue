@@ -31,7 +31,7 @@ export default defineComponent({
 	text-decoration: underline;
 	border: none;
 	cursor: pointer;
-	font-size: 17px;
+	font-size: clamp(13px, 1vw, 20px);
 	padding: 0;
 }
 

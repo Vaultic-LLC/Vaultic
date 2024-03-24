@@ -12,7 +12,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 	const result = await window.api.utilities.crypt.encrypt(key, value);
 	if (!result.success)
 	{
-		stores.popupStore.showError(result.logID);
+		stores.popupStore.showErrorAlert(result.logID);
 	}
 
 	return result;

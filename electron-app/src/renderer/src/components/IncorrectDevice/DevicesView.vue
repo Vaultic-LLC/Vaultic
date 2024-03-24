@@ -7,12 +7,12 @@
 			<div>
 				Automatic mobile device updates left: {{ responseObj.MobileDeviceUpdatesLeft }}
 			</div>
-			<ToolTip :color="color" :message="`Once you run out of automatic updates, you'll have to pay for any additional updates or reach out to customer service.`" />
+			<ToolTip :color="color"
+				:message="`Once you run out of automatic updates, you'll have to pay for any additional updates or reach out to customer service.`" />
 		</div>
 		<div class="deviceTable">
 			<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
-				:headerModels="headers" :scrollbar-size="1" :emptyMessage="''"
-				:showEmptyMessage="false"
+				:headerModels="headers" :scrollbar-size="1" :emptyMessage="''" :showEmptyMessage="false"
 				:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 				@scrolledToBottom="tableRows.loadNextChunk()">
 				<template #header>
@@ -62,34 +62,34 @@ export default defineComponent({
 	{
 		const responseObj: Ref<IncorrectDeviceResponse> = ref(props.response);
 		const devices: ComputedRef<SortedCollection<Device>> = computed(() => new SortedCollection([], "Name"));
-        const activeHeader: Ref<number> = ref(1);
+		const activeHeader: Ref<number> = ref(1);
 		const tableRows: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection<TableRowData>());
 
 		const filterHeaderDisplayField: HeaderDisplayField[] = [
-		{
-			displayName: "Name",
-			backingProperty: "Name",
-			width: '75px',
-			clickable: true
-		},
-		{
-			displayName: "Type",
-			backingProperty: "Type",
-			width: '75px',
-			clickable: true
-		},
-		{
-			displayName: "Model",
-			backingProperty: "Model",
-			width: '75px',
-			clickable: true
-		},
-		{
-			displayName: "Version",
-			backingProperty: "Version",
-			width: '75px',
-			clickable: true
-		}];
+			{
+				displayName: "Name",
+				backingProperty: "Name",
+				width: '75px',
+				clickable: true
+			},
+			{
+				displayName: "Type",
+				backingProperty: "Type",
+				width: '75px',
+				clickable: true
+			},
+			{
+				displayName: "Model",
+				backingProperty: "Model",
+				width: '75px',
+				clickable: true
+			},
+			{
+				displayName: "Version",
+				backingProperty: "Version",
+				width: '75px',
+				clickable: true
+			}];
 
 		const headers: SortableHeaderModel[] = createSortableHeaderModels<Device>(activeHeader, filterHeaderDisplayField,
 			devices.value, undefined, setTableRows);
@@ -100,17 +100,17 @@ export default defineComponent({
 			{
 				d.id = uuidv4();
 				const values: TextTableRowValue[] = [
-					{component: "TextTableRowValue", value: d.Name, copiable: false, width: '75px' },
-					{component: "TestTableRowValue", value: d.Type, copiable: false, width: '75px'},
-					{component: "TextTableRowValue", value: d.Model, copiable: false, width: '75px'},
-					{component: "TextTableRowValue", value: d.Verison, copiable: false, width: '75px'}
+					{ component: "TextTableRowValue", value: d.Name, copiable: false, width: '75px' },
+					{ component: "TestTableRowValue", value: d.Type, copiable: false, width: '75px' },
+					{ component: "TextTableRowValue", value: d.Model, copiable: false, width: '75px' },
+					{ component: "TextTableRowValue", value: d.Verison, copiable: false, width: '75px' }
 				]
 
 				let tableRow: TableRowData =
 				{
 					id: uuidv4(),
 					values: values,
-					onDelete: function()
+					onDelete: function ()
 					{
 						// TODO: This should require master key
 						doDelete(d.id, d.UserDesktopDeviceID, d.UserMobileDeviceID)
@@ -134,7 +134,7 @@ export default defineComponent({
 			{
 				if (response.UnknownError)
 				{
-					stores.popupStore.showErrorResponse(response);
+					stores.popupStore.showErrorResponseAlert(response);
 					return;
 				}
 

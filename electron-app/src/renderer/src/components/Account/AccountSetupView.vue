@@ -12,8 +12,9 @@
 		</div>
 		<div class="accountSetupViewContainer__footer">
 			<slot name="footer"></slot>
-			<PopupButton :color="color" :disabled="disabled" :text="buttonText" :width="'150px'" :height="'40px'"
-				:fontSize="'18px'" @onClick="onSubmit">
+			<PopupButton :color="color" :disabled="disabled" :text="buttonText" :width="'7vw'" :minWidth="'75px'"
+				:maxWidth="'150px'" :height="'100%'" :fontSize="'1.2vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
+				onClick="onSubmit">
 			</PopupButton>
 			<!-- <div class="accountSetupViewContainer__buttons">
 			</div> -->
@@ -42,6 +43,7 @@ export default defineComponent({
 		const disabled: Ref<boolean> = ref(false);
 		const display: ComputedRef<string> = computed(() => props.displayGrid ? "grid" : "flex");
 		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
+
 		const computedTitleMargin: ComputedRef<string> = computed(() => props.titleMargin ? props.titleMargin : "3%");
 		const computedTitleMarginTop: ComputedRef<string> = computed(() => props.titleMarginTop ? props.titleMarginTop : "5%");
 
@@ -99,8 +101,12 @@ export default defineComponent({
 }
 
 .accountSetupViewContainer__content {
+	height: 100%;
+	width: 80%;
 	margin-top: v-bind(computedTitleMargin);
 	display: v-bind(display);
+	position: relative;
+	z-index: 3;
 }
 
 .accountSetupViewContainer__content.flex {
@@ -115,12 +121,16 @@ export default defineComponent({
 }
 
 .accountSetupViewContainer__footer {
+	width: 100%;
+	height: 10%;
 	flex-grow: 1;
-	margin-bottom: 5%;
+	margin-bottom: 1.5vh;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: flex-end;
 	row-gap: 20px;
+	position: relative;
+	z-index: 1;
 }
 </style>

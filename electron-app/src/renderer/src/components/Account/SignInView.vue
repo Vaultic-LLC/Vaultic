@@ -1,22 +1,23 @@
 <template>
 	<div class="signInViewContainer">
 		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
-			:titleMargin="'0'" @onSubmit="onSubmit">
+			:titleMargin="'2%'" :titleMarginTop="'3%'" @onSubmit="onSubmit">
 			<Transition name="fade" mode="out-in">
-				<div :key="refreshKey">
+				<div class="signInViewContainer__contentContainer" :key="refreshKey">
 					<div class="signInViewContainer__content">
-						<AlertBanner v-if="alertMessage" :message="alertMessage" />
-						<div v-if="failedAutoLogin" class="signInViewContainer__inputs">
+						<div v-if="true" class="signInViewContainer__inputs">
 							<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
-								:width="'300px'" />
+								:width="'80%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
 								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
-								:showUnlock="true" :required="true" :showCopy="false" :width="'300px'" />
+								:showUnlock="true" :required="true" :showCopy="false" :width="'80%'" :maxWidth="'300px'"
+								:height="'4vh'" :minHeight="'35px'" />
 						</div>
 						<div v-else>
 							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
 								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
-								:showUnlock="true" :required="true" :showCopy="false" :width="'300px'" />
+								:showUnlock="true" :required="true" :showCopy="false" :width="'80%'" :maxWidth="'300px'"
+								:height="'4vhh'" :minHeight="'35px'" />
 						</div>
 					</div>
 					<div class="signInViewContainer__contentBottom">
@@ -32,6 +33,8 @@
 						<div class="signInViewContainer__createAccountLink">Don't have an account?
 							<ButtonLink :color="color" :text="'Create One'" @onClick="moveToCreateAccount" />
 						</div>
+						<!-- Add an empty div so row gap acts as margin. Using margin causes the row-gap property to not work at some sizes -->
+						<div></div>
 					</div>
 				</div>
 			</Transition>
@@ -46,7 +49,6 @@ import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
-import AlertBanner from "./AlertBanner.vue"
 
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
 import { InputComponent } from '@renderer/Types/Components';
@@ -61,7 +63,6 @@ export default defineComponent({
 		EncryptedInputField,
 		AccountSetupView,
 		ButtonLink,
-		AlertBanner
 	},
 	emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToCreateOTP'],
 	props: ['color', 'infoMessage'],
@@ -76,11 +77,10 @@ export default defineComponent({
 		const email: Ref<string> = ref('');
 
 		const failedAutoLogin: Ref<boolean> = ref(false);
-		const alertMessage: Ref<string> = ref('');
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
-		const contentBottomRowGap: ComputedRef<string> = computed(() => failedAutoLogin.value ? "20px" : "30px");
-		const contentBottomMargin: ComputedRef<string> = computed(() => failedAutoLogin.value ? "15px" : alertMessage.value ? "50px" : "130px");
+		const contentBottomRowGap: ComputedRef<string> = computed(() => failedAutoLogin.value ? "20%" : "20%");
+		const contentBottomMargin: ComputedRef<string> = computed(() => failedAutoLogin.value ? "15px" : "130px");
 
 		function moveToCreateAccount()
 		{
@@ -99,11 +99,11 @@ export default defineComponent({
 
 		async function didFailedAutoLogin()
 		{
+			stores.popupStore.showAlert("Unable to auto log in", "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it.", false);
 			refreshKey.value = Date.now().toString();
 			await new Promise((resolve) => setTimeout(resolve, 300));
 
 			stores.popupStore.hideLoadingIndicator();
-			alertMessage.value = "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it."
 			failedAutoLogin.value = true;
 		}
 
@@ -202,14 +202,17 @@ export default defineComponent({
 			}
 			else if (response.UnknownError)
 			{
-				stores.popupStore.showErrorResponse(response);
+				stores.popupStore.showErrorResponseAlert(response);
 				stores.resetStoresToDefault();
 			}
 		}
 
 		onMounted(() =>
 		{
-			alertMessage.value = props.infoMessage;
+			if (props.infoMessage)
+			{
+				stores.popupStore.showAlert("Alert", props.infoMessage, false);
+			}
 		});
 
 		return {
@@ -220,7 +223,6 @@ export default defineComponent({
 			email,
 			colorModel,
 			failedAutoLogin,
-			alertMessage,
 			contentBottomRowGap,
 			contentBottomMargin,
 			moveToCreateAccount,
@@ -236,8 +238,14 @@ export default defineComponent({
 	height: 100%;
 }
 
+.signInViewContainer__contentContainer {
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
 .signInViewContainer__content {
-	margin-top: 10px;
 	row-gap: 20px;
 	display: flex;
 	flex-direction: column;
@@ -246,6 +254,7 @@ export default defineComponent({
 }
 
 .signInViewContainer__inputs {
+	width: 100%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -254,12 +263,13 @@ export default defineComponent({
 }
 
 .signInViewContainer__contentBottom {
+	height: 10vh;
 	display: flex;
-	justify-content: center;
+	justify-content: flex-end;
 	align-items: center;
 	flex-direction: column;
-	row-gap: v-bind(contentBottomRowGap);
-	margin-top: v-bind(contentBottomMargin);
+	row-gap: 8%;
+	flex-grow: 1;
 }
 
 .signInViewContainer__limitedMode {
@@ -268,7 +278,7 @@ export default defineComponent({
 
 .signInViewContainer__createAccountLink {
 	color: white;
-	font-size: 17px;
+	font-size: clamp(13px, 1vw, 20px);
 }
 
 .signInViewContainer__divider {
@@ -288,5 +298,6 @@ export default defineComponent({
 
 .signInViewContainer__divider__text {
 	color: gray;
+	font-size: clamp(13px, 1vw, 20px);
 }
 </style>

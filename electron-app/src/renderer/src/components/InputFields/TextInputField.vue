@@ -1,8 +1,8 @@
 <template>
 	<div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
-		<input required="false" class="textInputFieldInput" type="text" name="text" autocomplete="off" :value="modelValue"
-			@input="onInput(($event.target as HTMLInputElement).value)" @keypress="validateType" :disabled="disabled"
-			:maxlength="200" />
+		<input required="false" class="textInputFieldInput" type="text" name="text" autocomplete="off"
+			:value="modelValue" @input="onInput(($event.target as HTMLInputElement).value)" @keypress="validateType"
+			:disabled="disabled" :maxlength="200" />
 		<label class="textInputFieldLable">{{ label }}</label>
 		<div v-if="showToolTip" class="textInputFieldContainer__tooltipContainer">
 			<ToolTip :color="color" :message="toolTipMessage" />
@@ -25,14 +25,22 @@ export default defineComponent({
 		ToolTip
 	},
 	emits: ["update:modelValue"],
-	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "inputType", "additionalValidationFunction",
-		"isOnWidget", "showToolTip", 'toolTipMessage'],
+	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight',
+		"inputType", "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
 		const validationFunction: Ref<{ (): boolean; }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
+
 		const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
+		const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
+		const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
+
+		const computedHeight: ComputedRef<string> = computed(() => props.height ?? "50px");
+		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "50px");
+		const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
+
 		const type: ComputedRef<string> = computed(() => props.inputType ? props.inputType : "text");
 		const additionalValidationFunction: Ref<{ (input: string): [boolean, string]; } | undefined> = ref(props.additionalValidationFunction);
 		const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
@@ -114,6 +122,11 @@ export default defineComponent({
 			defaultInputColor,
 			defaultInputTextColor,
 			computedWidth,
+			computedMinWidth,
+			computedMaxWidth,
+			computedHeight,
+			computedMinHeight,
+			computedMaxHeight,
 			type,
 			labelBackgroundColor,
 			validateType,
@@ -127,8 +140,12 @@ export default defineComponent({
 <style scoped>
 .textInputFieldContainer {
 	position: relative;
-	height: 50px;
+	height: v-bind(computedHeight);
+	min-height: v-bind(computedMinHeight);
+	max-height: v-bind(computedMaxHeight);
 	width: v-bind(computedWidth);
+	min-width: v-bind(computedMinWidth);
+	max-width: v-bind(computedMaxWidth);
 }
 
 .textInputFieldContainer.fadeIn {
@@ -148,25 +165,26 @@ export default defineComponent({
 
 .textInputFieldContainer .textInputFieldInput {
 	position: absolute;
-	width: inherit;
-	height: inherit;
+	width: 100%;
+	height: 100%;
 	left: 0;
 	border: solid 1.5px v-bind(defaultInputColor);
 	color: white;
 	border-radius: 1rem;
 	background: none;
-	font-size: 1rem;
+	font-size: clamp(13px, 1.2vh, 25px);
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .textInputFieldContainer .textInputFieldLable {
 	position: absolute;
 	left: 10px;
-	top: 0;
+	top: 50%;
 	color: v-bind(defaultInputTextColor);
 	pointer-events: none;
-	transform: translateY(1rem);
+	transform: translateY(-50%);
 	transition: var(--input-label-transition);
+	font-size: clamp(13px, 1.2vh, 25px);
 }
 
 .textInputFieldContainer .textInputFieldInput:focus,
@@ -178,6 +196,7 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:focus~label,
 .textInputFieldContainer .textInputFieldInput:valid~label,
 .textInputFieldContainer .textInputFieldInput:disabled~label {
+	top: 0;
 	transform: translateY(-80%) scale(0.8);
 	background-color: v-bind(labelBackgroundColor);
 	padding: 0 .2em;

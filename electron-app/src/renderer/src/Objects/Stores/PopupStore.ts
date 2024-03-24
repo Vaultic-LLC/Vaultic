@@ -13,7 +13,10 @@ export default function createPopupStore()
 	const loadingText: Ref<string> = ref('');
 	const loadingOpacity: Ref<number | undefined> = ref(undefined);
 
-	const unknownErrorIsShowing: Ref<boolean> = ref(false);
+	const alertIsShowing: Ref<boolean> = ref(false);
+	const showContactSupport: Ref<boolean> = ref(false);
+	const alertTitle: Ref<string | undefined> = ref(undefined);
+	const alertMessage: Ref<string | undefined> = ref(undefined);
 	const statusCode: Ref<number | undefined> = ref(undefined);
 	const logID: Ref<number | undefined> = ref(undefined);
 	const axiosCode: Ref<string | undefined> = ref('');
@@ -50,22 +53,42 @@ export default function createPopupStore()
 		loadingIndicatorIsShowing.value = false;
 	}
 
-	function showErrorResponse(response: BaseResponse)
+	function showErrorResponseAlert(response: BaseResponse)
 	{
+		alertTitle.value = undefined;
+		alertMessage.value = undefined;
+
+		showContactSupport.value = true;
 		statusCode.value = response?.StatusCode;
 		axiosCode.value = response?.AxiosCode;
-		unknownErrorIsShowing.value = true;
+		alertIsShowing.value = true;
 	}
 
-	function showError(logid?: number)
+	function showErrorAlert(logid?: number)
 	{
+		alertTitle.value = undefined;
+		alertMessage.value = undefined;
+
+		showContactSupport.value = true;
 		logID.value = logid
-		unknownErrorIsShowing.value = true;
+		alertIsShowing.value = true;
 	}
 
-	function hideUnkonwnError()
+	function showAlert(title: string, message: string, showContactSupportMessage: boolean)
 	{
-		unknownErrorIsShowing.value = false;
+		logID.value = undefined;
+		statusCode.value = undefined;
+		axiosCode.value = undefined;
+
+		showContactSupport.value = showContactSupportMessage;
+		alertTitle.value = title;
+		alertMessage.value = message;
+		alertIsShowing.value = true;
+	}
+
+	function hideAlert()
+	{
+		alertIsShowing.value = false;
 	}
 
 	function showIncorrectDevice(rsponse?: IncorrectDeviceResponse)
@@ -173,7 +196,10 @@ export default function createPopupStore()
 		get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
 		get loadingText() { return loadingText.value },
 		get loadingOpacity() { return loadingOpacity.value },
-		get unknownErrorIsShowing() { return unknownErrorIsShowing.value },
+		get alertIsShowing() { return alertIsShowing.value },
+		get showContactSupport() { return showContactSupport.value },
+		get alertTitle() { return alertTitle.value },
+		get alertMessage() { return alertMessage.value },
 		get statusCode() { return statusCode.value },
 		get logID() { return logID.value },
 		get axiosCode() { return axiosCode.value },
@@ -193,9 +219,10 @@ export default function createPopupStore()
 		get toastSuccess() { return toastSuccess.value },
 		showLoadingIndicator,
 		hideLoadingIndicator,
-		showErrorResponse,
-		showError,
-		hideUnkonwnError,
+		showErrorResponseAlert,
+		showErrorAlert,
+		showAlert,
+		hideAlert,
 		showIncorrectDevice,
 		hideIncorrectDevice,
 		showSessionExpired,

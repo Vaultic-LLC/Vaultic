@@ -1,7 +1,7 @@
 <template>
 	<div class="accountSetupPopupContainer">
-		<ObjectPopup ref="objectPopup" :height="'40%'" :width="'30%'" :preventClose="true" :glassOpacity="1"
-			:showPulsing="true">
+		<ObjectPopup ref="objectPopup" :height="'40%'" :width="'30%'" :minHeight="'350px'" :minWidth="'220px'"
+			:preventClose="true" :glassOpacity="1" :showPulsing="true">
 			<Transition name="fade" mode="out-in">
 				<div v-if="navigationStack.length > 0 && !disableBack" class="accountSetupPopupContainer__backButton"
 					@click="navigateBack">

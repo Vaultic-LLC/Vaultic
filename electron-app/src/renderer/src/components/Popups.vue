@@ -1,40 +1,39 @@
 <template>
 	<div class="popups">
 		<Transition name="fade" mode="out-in">
-			<LoadingPopup v-if="popupStore.loadingIndicatorIsShowing"
-				:color="popupStore.color" :text="popupStore.loadingText"
-				:glassOpacity="popupStore.loadingOpacity" />
+			<LoadingPopup v-if="popupStore.loadingIndicatorIsShowing" :color="popupStore.color"
+				:text="popupStore.loadingText" :glassOpacity="popupStore.loadingOpacity" />
 		</Transition>
 		<Teleport to="#body">
 			<Transition name="fade" mode="out-in">
-				<UnknownResponsePopup v-if="popupStore.unknownErrorIsShowing"
-				:statusCode="popupStore.statusCode" :logID="popupStore.logID" :axiosCode="popupStore.axiosCode"
-				@onOk="popupStore.hideUnkonwnError()"  />
+				<AlertPopup v-if="popupStore.alertIsShowing" :showContactSupport="popupStore.showContactSupport"
+					:title="popupStore.alertTitle" :message="popupStore.alertMessage"
+					:statusCode="popupStore.statusCode" :logID="popupStore.logID" :axiosCode="popupStore.axiosCode"
+					@onOk="popupStore.hideAlert()" />
 			</Transition>
 		</Teleport>
 		<Teleport to="#body">
 			<Transition name="fade" mode="out-in">
-				<IncorrectDevicePopup v-if="popupStore.incorrectDeviceIsShowing"
-				:response="popupStore.response" @onClose="popupStore.hideIncorrectDevice()"  />
+				<IncorrectDevicePopup v-if="popupStore.incorrectDeviceIsShowing" :response="popupStore.response"
+					@onClose="popupStore.hideIncorrectDevice()" />
 			</Transition>
 		</Teleport>
 		<Transition name="fade">
 			<RequestedAuthenticationPopup v-if="popupStore.requestAuthenticationIsShowing"
-			:authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
-			:setupKey="popupStore.needsToSetupKey" :color="popupStore.color" />
+				:authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
+				:setupKey="popupStore.needsToSetupKey" :color="popupStore.color" />
 		</Transition>
 		<Teleport to="#body">
 			<Transition name="accountSetupFade" mode="out-in">
-				<AccountSetupPopup v-if="popupStore.accountSetupIsShowing"
-				:model="popupStore.accountSetupModel"
-				@onClose="popupStore.hideAccountSetup()" />
+				<AccountSetupPopup v-if="popupStore.accountSetupIsShowing" :model="popupStore.accountSetupModel"
+					@onClose="popupStore.hideAccountSetup()" />
 			</Transition>
 		</Teleport>
 		<Teleport to="#body">
 			<Transition name="lockFade" mode="out-in">
 				<GlobalAuthenticationPopup ref="globalAuthPopup" v-if="popupStore.globalAuthIsShowing"
-				:playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
-				@onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
+					:playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
+					@onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
 			</Transition>
 		</Teleport>
 		<Transition name="fade" mode="out-in">
@@ -53,7 +52,7 @@ import RequestedAuthenticationPopup from './Authentication/RequestedAuthenticati
 import LoadingPopup from './Loading/LoadingPopup.vue';
 import AccountSetupPopup from "./Account/AccountSetupPopup.vue"
 import IncorrectDevicePopup from './IncorrectDevice/IncorrectDevicePopup.vue';
-import UnknownResponsePopup from './UnknownResponsePopup.vue';
+import AlertPopup from './AlertPopup.vue';
 
 import { stores } from '..//Objects/Stores';
 
@@ -66,7 +65,7 @@ export default defineComponent({
 		RequestedAuthenticationPopup,
 		LoadingPopup,
 		AccountSetupPopup,
-		UnknownResponsePopup,
+		AlertPopup,
 		IncorrectDevicePopup
 	},
 	setup()

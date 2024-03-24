@@ -10,6 +10,7 @@ import { AccountSetupView } from "@renderer/Types/Models";
 interface AppStoreState extends StoreState
 {
 	readonly isWindows: boolean;
+	isOnline: boolean;
 	userDataVersion: number;
 	reloadMainUI: boolean;
 	loginHistory: Dictionary<number[]>,
@@ -17,8 +18,6 @@ interface AppStoreState extends StoreState
 
 class AppStore extends Store<AppStoreState>
 {
-	isOnline: boolean;
-
 	private autoLockTimeoutID: NodeJS.Timeout | undefined;
 
 	private internalAuthenticated: boolean;
@@ -27,6 +26,8 @@ class AppStore extends Store<AppStoreState>
 	private internalActiveFilterGroupTable: Ref<DataType> = ref(DataType.Filters);
 
 	get isWindows() { return this.state.isWindows; }
+	get isOnline() { return this.state.isOnline; }
+	set isOnline(value: boolean) { this.state.isOnline = value; }
 	get userDataVersion() { return this.state.userDataVersion; }
 	get authenticated() { return this.internalAuthenticated; }
 	set authenticated(value: boolean) { this.internalAuthenticated = value; }
@@ -42,8 +43,6 @@ class AppStore extends Store<AppStoreState>
 	{
 		super();
 
-		this.isOnline = false;
-
 		this.internalAuthenticated = false;
 
 		this.internalActivePasswordValueTable = ref(DataType.Passwords);
@@ -55,6 +54,7 @@ class AppStore extends Store<AppStoreState>
 		return {
 			version: 0,
 			isWindows: window.api.device.platform === "win32",
+			isOnline: false,
 			userDataVersion: 0,
 			reloadMainUI: false,
 			loginHistory: {},
@@ -109,8 +109,12 @@ class AppStore extends Store<AppStoreState>
 	{
 		hideAll();
 		stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
+		if (this.isOnline === true)
+		{
+			window.api.server.session.expire();
+		}
+
 		stores.resetStoresToDefault();
-		window.api.server.session.expire();
 	}
 
 	public resetSessionTime()

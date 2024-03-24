@@ -223,7 +223,7 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 	{
 		if (response.UnknownError)
 		{
-			stores.popupStore.showErrorResponse(response.StatusCode);
+			stores.popupStore.showErrorResponseAlert(response.StatusCode);
 		}
 		else if (response.InvalidSession)
 		{

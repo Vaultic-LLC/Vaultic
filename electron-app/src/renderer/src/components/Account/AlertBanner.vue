@@ -29,6 +29,7 @@ export default defineComponent({
 <style>
 .alertBannerContainer {
 	width: 80%;
+	height: 25%;
 	background: v-bind(backgroundColor);
 	color: var(--app-color);
 	display: flex;

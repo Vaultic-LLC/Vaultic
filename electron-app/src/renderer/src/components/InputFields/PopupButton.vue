@@ -10,7 +10,8 @@ import { Ref, defineComponent, onMounted, onUnmounted, ref } from "vue";
 export default defineComponent({
 	name: "PopupButton",
 	emits: ['onClick'],
-	props: ['color', 'text', 'width', 'height', 'fontSize', 'disabled', 'isSubmit'],
+	props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'fontSize', 'minFontSize', 'maxFontSize',
+		'disabled', 'isSubmit'],
 	setup(props, ctx)
 	{
 		const button: Ref<HTMLElement | null> = ref(null);
@@ -58,15 +59,18 @@ export default defineComponent({
 .popupButton {
 	width: v-bind(width);
 	height: v-bind(height);
+	max-width: v-bind(maxWidth);
+	min-width: v-bind(minWidth);
 	background-color: var(--app-color);
 	color: white;
 	border: 2px solid v-bind(color);
 	border-radius: 10px;
 	transition: 0.3s;
-	font-size: v-bind(fontSize);
+	font-size: clamp(v-bind(minFontSize), v-bind(fontSize), v-bind(maxFontSize));
 	animation: fadeIn 1s linear forwards;
 	cursor: pointer;
 	outline: none;
+	padding: 2px;
 }
 
 .popupButton:hover,

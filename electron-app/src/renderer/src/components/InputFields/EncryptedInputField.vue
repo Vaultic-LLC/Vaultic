@@ -42,7 +42,8 @@ export default defineComponent({
 	name: "EncryptedInputField",
 	emits: ["update:modelValue", "onDirty"],
 	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
-		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", 'isOnWidget'],
+		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
+		"minHeight", "maxHeight", 'isOnWidget'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
@@ -51,8 +52,13 @@ export default defineComponent({
 		const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
 		const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
 
-		const height: ComputedRef<string> = computed(() => "50px");
+		const computedHeight: ComputedRef<string> = computed(() => props.height ?? "50px");
+		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "50px");
+		const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
+
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "200px");
+		const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
+		const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 		const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
 		const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
@@ -197,8 +203,12 @@ export default defineComponent({
 			shouldFadeIn,
 			defaultInputColor,
 			defaultInputTextColor,
-			height,
+			computedHeight,
+			computedMinHeight,
+			computedMaxHeight,
 			computedWidth,
+			computedMinWidth,
+			computedMaxWidth,
 			backgroundColor,
 			container,
 			colorModel,
@@ -219,8 +229,12 @@ export default defineComponent({
 <style scoped>
 .textInputFieldContainer {
 	position: relative;
-	height: v-bind(height);
+	height: v-bind(computedHeight);
+	min-height: v-bind(computedMinHeight);
+	max-height: v-bind(computedMaxHeight);
 	width: v-bind(computedWidth);
+	min-width: v-bind(computedMinWidth);
+	max-width: v-bind(computedMaxWidth);
 }
 
 .textInputFieldContainer.fadeIn {
@@ -246,25 +260,26 @@ export default defineComponent({
 
 .textInputFieldContainer .textInputFieldInput {
 	position: absolute;
-	width: inherit;
-	height: 50px;
+	width: 100%;
+	height: 100%;
 	left: 0;
 	border: solid 1.5px v-bind('colorModel.borderColor');
 	color: white;
 	border-radius: 1rem;
 	background: none;
-	font-size: 1rem;
+	font-size: clamp(13px, 1.2vh, 25px);
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .textInputFieldContainer .textInputFieldLable {
 	position: absolute;
 	left: 5%;
-	top: 0;
+	top: 50%;
 	color: v-bind('colorModel.textColor');
 	pointer-events: none;
-	transform: translateY(1rem);
+	transform: translateY(-50%);
 	transition: var(--input-label-transition);
+	font-size: clamp(13px, 1.2vh, 25px);
 }
 
 .textInputFieldContainer .textInputFieldInput:focus,
@@ -277,6 +292,7 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:focus~label,
 .textInputFieldContainer .textInputFieldInput:valid~label,
 .textInputFieldContainer .textInputFieldInput:disabled~label {
+	top: 0;
 	transform: translateY(-80%) scale(0.8);
 	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
@@ -285,14 +301,14 @@ export default defineComponent({
 
 .textInputFieldContainer .icons {
 	position: absolute;
-	width: 50px;
-	height: 50px;
+	/* width: 50px;
+	height: 50px; */
 	top: 0;
 	right: -10px;
 	display: flex;
 	justify-content: flex-start;
 	align-items: center;
-	transform: translateX(100%);
+	transform: translate(100%, 50%);
 }
 
 .textInputFieldContainer .icons .unlockedIcons {
@@ -333,7 +349,7 @@ export default defineComponent({
 
 .encryptedInputIcon {
 	color: white;
-	font-size: 24px;
+	font-size: clamp(17px, 2vh, 25px);
 	transition: 0.3s;
 	cursor: pointer;
 }
