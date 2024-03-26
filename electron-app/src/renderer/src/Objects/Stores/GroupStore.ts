@@ -3,9 +3,9 @@ import { DataType, Group } from "../../Types/Table";
 import { AtRiskType, DataFile } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
 import { stores } from ".";
-import { AuthenticationStore, AuthenticationStoreState } from "./Base";
+import { DataTypeStore, DataTypeStoreState } from "./Base";
 
-export interface GroupStoreState extends AuthenticationStoreState<Group>
+export interface GroupStoreState extends DataTypeStoreState<Group>
 {
 	groupsById: Dictionary<Group>;
 	emptyPasswordGroups: string[];
@@ -14,7 +14,7 @@ export interface GroupStoreState extends AuthenticationStoreState<Group>
 	duplicateValueGroups: Dictionary<string[]>;
 }
 
-class GroupStore extends AuthenticationStore<Group, GroupStoreState>
+class GroupStore extends DataTypeStore<Group, GroupStoreState>
 {
 	private internalPasswordGroups: ComputedRef<Group[]>;
 	private internalValueGroups: ComputedRef<Group[]>;

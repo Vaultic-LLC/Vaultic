@@ -1,6 +1,5 @@
-import { AtRiskType, DataFile, IKeyable } from "@renderer/Types/EncryptedData";
+import { AtRiskType, DataFile } from "@renderer/Types/EncryptedData";
 import fileHelper from "@renderer/Helpers/fileHelper";
-import cryptHelper from "@renderer/Helpers/cryptHelper";
 import { Ref, reactive, ref } from "vue";
 import { DataType } from "@renderer/Types/Table";
 import { Dictionary } from "@renderer/Types/DataStructures";
@@ -11,7 +10,7 @@ export interface StoreState
 	version: number;
 }
 
-export interface AuthenticationStoreState<T extends IKeyable> extends StoreState
+export interface DataTypeStoreState<T> extends StoreState
 {
 	values: T[];
 	hash: string;
@@ -117,21 +116,11 @@ export class Store<T extends {}>
 	}
 }
 
-export class AuthenticationStore<U extends IKeyable, T extends AuthenticationStoreState<U>> extends Store<T>
+export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends Store<T>
 {
 	constructor()
 	{
 		super()
-	}
-
-	protected async writeState(key: string)
-	{
-		if (this.state.values.length == 0)
-		{
-			return this.getFile().empty();
-		}
-
-		return super.writeState(key);
 	}
 
 	protected getPasswordAtRiskType(): Ref<AtRiskType>
@@ -154,67 +143,6 @@ export class AuthenticationStore<U extends IKeyable, T extends AuthenticationSto
 
 		currentType.value = AtRiskType.None;
 	}
-
-	// private async calculateHash<U extends IKeyable>(key: string, values: U[], salt: string): Promise<[boolean, string]>
-	// {
-	// 	let runningKeys: string = "";
-	// 	for (const v of values)
-	// 	{
-	// 		const result = await cryptHelper.decrypt(key, v.key);
-	// 		if (!result.success)
-	// 		{
-	// 			return [false, ""];
-	// 		}
-
-	// 		runningKeys += result.value ?? "";
-	// 	}
-
-	// 	const hash = window.api.utilities.hash.insecureHash(runningKeys);
-	// 	return [true, hash];
-	// }
-
-	// private async checkKey(key: string): Promise<boolean>
-	// {
-	// 	const calcualtedHash = await this.calculateHash(key, this.state.values, this.state.hashSalt);
-	// 	if (!calcualtedHash[0])
-	// 	{
-	// 		return false;
-	// 	}
-
-	// 	const currentHash = await cryptHelper.decrypt(key, this.state.hash);
-
-	// 	if (!currentHash.success)
-	// 	{
-	// 		return false;
-	// 	}
-
-	// 	return calcualtedHash[1] === currentHash.value;
-	// }
-
-	// public canAuthenticateKeyBeforeEntry(): Promise<boolean>
-	// {
-	// 	return this.getFile().exists();
-	// }
-
-	// public canAuthenticateKeyAfterEntry(): boolean
-	// {
-	// 	return this.state.values.length > 0;
-	// }
-
-	// public async checkKeyBeforeEntry(key: string): Promise<boolean>
-	// {
-	// 	if (!(await this.readState(key)))
-	// 	{
-	// 		return false;
-	// 	}
-
-	// 	return this.checkKey(key);
-	// }
-
-	// public checkKeyAfterEntry(key: string): Promise<boolean>
-	// {
-	// 	return this.checkKey(key);
-	// }
 
 	public toggleAtRiskType(dataType: DataType, atRiskType: AtRiskType)
 	{

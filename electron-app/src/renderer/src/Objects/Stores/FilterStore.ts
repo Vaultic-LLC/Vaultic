@@ -3,9 +3,9 @@ import { ComputedRef, Ref, computed, ref } from "vue";
 import { stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
 import { AtRiskType, DataFile } from "../../Types/EncryptedData";
-import { AuthenticationStore, AuthenticationStoreState } from "./Base";
+import { DataTypeStore, DataTypeStoreState } from "./Base";
 
-export interface FilterStoreState extends AuthenticationStoreState<Filter>
+export interface FilterStoreState extends DataTypeStoreState<Filter>
 {
 	emptyPasswordFilters: string[];
 	emptyValueFilters: string[];
@@ -13,7 +13,7 @@ export interface FilterStoreState extends AuthenticationStoreState<Filter>
 	duplicateValueFilters: Dictionary<string[]>;
 }
 
-class FilterStore extends AuthenticationStore<Filter, FilterStoreState>
+class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 {
 	private internalPasswordFilters: ComputedRef<Filter[]>;
 	private internalActivePasswordFilters: ComputedRef<Filter[]>;

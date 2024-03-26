@@ -6,11 +6,6 @@ export interface IIdentifiable
 	id: string;
 }
 
-export interface IKeyable
-{
-	key: string;
-}
-
 export interface IFilterable
 {
 	filters: string[];
@@ -85,7 +80,7 @@ export const PasswordProperties: PropertySelectorDisplayFields[] = [
 	}
 ]
 
-export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable, IKeyable
+export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable
 {
 	[key: string]: any;
 	isVaultic: boolean;
@@ -146,7 +141,7 @@ export const ValueProperties: PropertySelectorDisplayFields[] = [
 	}
 ]
 
-export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, IPinnable, IKeyable
+export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, IPinnable
 {
 	[key: string]: any;
 	name: string;

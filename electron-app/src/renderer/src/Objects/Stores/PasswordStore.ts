@@ -3,15 +3,15 @@ import { ComputedRef, Ref, computed, ref } from "vue";
 import { ReactivePassword } from "./ReactivePassword";
 import { Dictionary } from "../../Types/DataStructures";
 import { stores } from ".";
-import { AuthenticationStore, AuthenticationStoreState } from "./Base";
+import { DataTypeStore, DataTypeStoreState } from "./Base";
 
-export interface PasswordStoreState extends AuthenticationStoreState<ReactivePassword>
+export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 {
 	duplicatePasswords: Dictionary<string[]>;
 	currentAndSafePasswords: CurrentAndSafeStructure;
 }
 
-class PasswordStore extends AuthenticationStore<ReactivePassword, PasswordStoreState>
+class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 {
 	private internalOldPasswords: ComputedRef<string[]>;
 	private internalWeakPasswords: ComputedRef<string[]>;

@@ -3,15 +3,15 @@ import { ComputedRef, Ref, computed, ref } from "vue";
 import { ReactiveValue } from "./ReactiveValue";
 import { Dictionary } from "../../Types/DataStructures";
 import { stores } from ".";
-import { AuthenticationStore, AuthenticationStoreState } from "./Base";
+import { DataTypeStore, DataTypeStoreState } from "./Base";
 
-export interface ValueStoreState extends AuthenticationStoreState<ReactiveValue>
+export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 {
 	duplicateValues: Dictionary<string[]>;
 	currentAndSafeValues: CurrentAndSafeStructure;
 }
 
-class ValueStore extends AuthenticationStore<ReactiveValue, ValueStoreState>
+class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 {
 	private internalOldNameValuePairs: ComputedRef<string[]>;
 	private internalWeakVerbalValues: ComputedRef<string[]>;
