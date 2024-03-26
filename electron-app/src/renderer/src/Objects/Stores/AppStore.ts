@@ -10,10 +10,12 @@ import { AccountSetupView } from "@renderer/Types/Models";
 interface AppStoreState extends StoreState
 {
 	readonly isWindows: boolean;
+	keyHash: string;
+	keySalt: string;
 	isOnline: boolean;
 	userDataVersion: number;
 	reloadMainUI: boolean;
-	loginHistory: Dictionary<number[]>,
+	loginHistory: Dictionary<number[]>;
 }
 
 class AppStore extends Store<AppStoreState>
@@ -53,6 +55,8 @@ class AppStore extends Store<AppStoreState>
 	{
 		return {
 			version: 0,
+			keyHash: '',
+			keySalt: '',
 			isWindows: window.api.device.platform === "win32",
 			isOnline: false,
 			userDataVersion: 0,
@@ -103,6 +107,33 @@ class AppStore extends Store<AppStoreState>
 			await this.writeState(key);
 			stores.syncToServer(key, false);
 		}
+	}
+
+	public async setKey(key: string)
+	{
+		if (!this.state.keyHash)
+		{
+			const salt = window.api.utilities.generator.randomValue(30);
+			this.state.keyHash = await window.api.utilities.hash.hash(key, salt);
+			this.state.keySalt = salt;
+
+			await this.writeState(key);
+		}
+	}
+
+	public canAuthenticateKey(): Promise<boolean>
+	{
+		return this.getFile().exists();
+	}
+
+	public async authenticateKey(key: string): Promise<boolean>
+	{
+		if (!this.loadedFile && !(await this.readState(key)))
+		{
+			return false;
+		}
+
+		return this.state.keyHash === await window.api.utilities.hash.hash(key, this.state.keySalt);
 	}
 
 	public lock()

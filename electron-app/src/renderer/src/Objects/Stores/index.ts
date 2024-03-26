@@ -1,4 +1,3 @@
-import { reactive } from "vue";
 import appStore, { AppStoreType } from "./AppStore";
 import filterStore, { FilterStoreType, FilterStoreState } from "./FilterStore";
 import groupStore, { GroupStoreType, GroupStoreState } from "./GroupStore";
@@ -6,7 +5,6 @@ import settingStore, { SettingStoreType } from "./SettingsStore";
 import passwordStore, { PasswordStoreType, PasswordStoreState } from "./PasswordStore";
 import valueStore, { ValueStoreType, ValueStoreState } from "./ValueStore";
 import createPopupStore, { PopupStore } from "./PopupStore";
-import { StoreState } from "./Base";
 
 export interface DataStoreStates
 {
@@ -16,15 +14,8 @@ export interface DataStoreStates
 	valueStoreState: ValueStoreState;
 }
 
-interface StoresState
-{
-	needsAuthentication: boolean;
-}
-
-const storeState: StoresState = reactive({ needsAuthentication: true });
 export interface Stores
 {
-	needsAuthentication: boolean;
 	settingsStore: SettingStoreType;
 	appStore: AppStoreType;
 	filterStore: FilterStoreType;
@@ -32,96 +23,11 @@ export interface Stores
 	passwordStore: PasswordStoreType;
 	valueStore: ValueStoreType;
 	popupStore: PopupStore;
-	canAuthenticateKeyBeforeEntry: () => Promise<[boolean, boolean, boolean, boolean]>;
-	canAuthenticateKeyAfterEntry: () => boolean;
-	checkKeyBeforeEntry: (key: string) => Promise<boolean>;
-	checkKeyAfterEntry: (key: string) => Promise<boolean>;
 	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
-	init: () => Promise<void>;
 	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
 	getStates: () => DataStoreStates;
 	handleUpdateStoreResponse: (key: string, response: any, suppressError?: boolean) => Promise<void>;
-}
-
-async function init(): Promise<void>
-{
-	return checkNeedsAuthenticating();
-}
-
-async function checkNeedsAuthenticating(): Promise<void>
-{
-	stores.needsAuthentication = (await canAuthenticateKeyBeforeEntry()).some((v) => v);
-}
-
-function canAuthenticateKeyBeforeEntry(): Promise<[boolean, boolean, boolean, boolean]>
-{
-	return Promise.all([
-		stores.passwordStore.canAuthenticateKeyBeforeEntry(),
-		stores.valueStore.canAuthenticateKeyBeforeEntry(),
-		stores.filterStore.canAuthenticateKeyBeforeEntry(),
-		stores.groupStore.canAuthenticateKeyBeforeEntry()
-	]);
-}
-
-function canAuthenticateKeyAfterEntry(): boolean
-{
-	return stores.passwordStore.canAuthenticateKeyAfterEntry() ||
-		stores.valueStore.canAuthenticateKeyAfterEntry() ||
-		stores.filterStore.canAuthenticateKeyAfterEntry() ||
-		stores.groupStore.canAuthenticateKeyAfterEntry();
-}
-
-async function checkKeyBeforeEntry(key: string): Promise<boolean>
-{
-	if (await stores.passwordStore.canAuthenticateKeyBeforeEntry())
-	{
-		return await stores.passwordStore.checkKeyBeforeEntry(key);
-	}
-
-	if (await stores.valueStore.canAuthenticateKeyBeforeEntry())
-	{
-		return await stores.valueStore.checkKeyBeforeEntry(key);
-	}
-
-	if (await stores.filterStore.canAuthenticateKeyBeforeEntry())
-	{
-		return await stores.filterStore.checkKeyBeforeEntry(key);
-	}
-
-	if (await stores.groupStore.canAuthenticateKeyBeforeEntry())
-	{
-		return await stores.groupStore.checkKeyBeforeEntry(key);
-	}
-
-	// no master key has been setup yet, anything goes
-	return true;
-}
-
-async function checkKeyAfterEntry(key: string): Promise<boolean>
-{
-	if (stores.passwordStore.canAuthenticateKeyAfterEntry())
-	{
-		return stores.passwordStore.checkKeyAfterEntry(key);
-	}
-
-	if (stores.valueStore.canAuthenticateKeyAfterEntry())
-	{
-		return stores.valueStore.checkKeyAfterEntry(key);
-	}
-
-	if (stores.filterStore.canAuthenticateKeyAfterEntry())
-	{
-		return stores.filterStore.checkKeyAfterEntry(key);
-	}
-
-	if (stores.groupStore.canAuthenticateKeyAfterEntry())
-	{
-		return stores.groupStore.checkKeyAfterEntry(key);
-	}
-
-	// no master key has been setup yet, anything goes
-	return true;
 }
 
 // Is only called from GlobalAuthPopup and SignInView and should stay that way since readState doesn't do any
@@ -178,7 +84,6 @@ function resetStoresToDefault()
 	stores.valueStore.resetToDefault();
 	stores.filterStore.resetToDefault();
 	stores.groupStore.resetToDefault();
-	checkNeedsAuthenticating();
 }
 
 async function syncToServer(key: string, incrementUserDataVersion: boolean = true): Promise<void>
@@ -234,8 +139,6 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 
 export const stores: Stores =
 {
-	get needsAuthentication() { return storeState.needsAuthentication },
-	set needsAuthentication(value: boolean) { storeState.needsAuthentication = value },
 	settingsStore: settingStore,
 	appStore: appStore,
 	filterStore: filterStore,
@@ -243,13 +146,8 @@ export const stores: Stores =
 	passwordStore: passwordStore,
 	valueStore: valueStore,
 	popupStore: createPopupStore(),
-	canAuthenticateKeyBeforeEntry,
-	canAuthenticateKeyAfterEntry,
-	checkKeyBeforeEntry,
-	checkKeyAfterEntry,
 	loadStoreData,
 	resetStoresToDefault,
-	init,
 	syncToServer,
 	getStates,
 	handleUpdateStoreResponse

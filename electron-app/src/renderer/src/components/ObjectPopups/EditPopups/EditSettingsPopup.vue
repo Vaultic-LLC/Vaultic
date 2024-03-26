@@ -10,7 +10,7 @@
 import { defineComponent, ref, Ref } from 'vue';
 
 import SettingsView from '../../../components/ObjectViews/SettingsView.vue';
-import { SettingsState } from '@renderer/Objects/Stores/SettingsStore';
+import { SettingsStoreState } from '@renderer/Objects/Stores/SettingsStore';
 
 export default defineComponent({
 	name: "EditSettingsPopup",
@@ -22,7 +22,7 @@ export default defineComponent({
 	setup(props)
 	{
 		// copy the object so that we don't edit the original one
-		const currentSettings: Ref<SettingsState> = ref(JSON.parse(JSON.stringify(props.model)));
+		const currentSettings: Ref<SettingsStoreState> = ref(JSON.parse(JSON.stringify(props.model)));
 
 		return {
 			currentSettings

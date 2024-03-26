@@ -148,17 +148,13 @@ export default function createPopupStore()
 		globalAuthIsShowing.value = false;
 	}
 
-	function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
+	async function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
 	{
 		color.value = clr;
 
-		if (!stores.canAuthenticateKeyAfterEntry())
+		if (!(await stores.appStore.canAuthenticateKey()))
 		{
-			needsToSetupKey.value = true;
-		}
-		else
-		{
-			needsToSetupKey.value = false;
+			return;
 		}
 
 		onSuccess.value = (key: string) =>

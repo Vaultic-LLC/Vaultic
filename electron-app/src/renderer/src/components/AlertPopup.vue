@@ -66,7 +66,7 @@ export default defineComponent({
 			}
 			else
 			{
-				return "An error has occured, please try again. If the issue persits, restart the app or"
+				return "An error has occured, please try again. If the issue persists, restart the app or"
 			}
 		}
 

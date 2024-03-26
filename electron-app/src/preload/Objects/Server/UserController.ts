@@ -1,11 +1,9 @@
-import { DeleteDeviceResponse, ReSetupMFAResponse } from "../../Types/Responses";
+import { DeleteDeviceResponse } from "../../Types/Responses";
 import cryptUtility from "../../Utilities/CryptUtility";
 import { AxiosHelper } from "./AxiosHelper"
 
 export interface UserController
 {
-	finishUserSetup: (data: string) => Promise<any>;
-	reSetupMFA: (data: string) => Promise<ReSetupMFAResponse>;
 	syncUserData: (key: string, appData: string, settingsData: string, passwordsValueData: string,
 		filterData: string, groupData: string) => Promise<any>;
 	getUserData: () => Promise<any>;
@@ -15,16 +13,6 @@ export interface UserController
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
 {
-	function finishUserSetup(data: string)
-	{
-		return axiosHelper.post('User/FinishUserSetup', data);
-	}
-
-	function reSetupMFA(data: string)
-	{
-		return axiosHelper.post('User/ReSetupMFA', data);
-	}
-
 	function syncUserData(key: string, appData: string, settingsData: string, passwordsValueData: string, filterData: string, groupData: string)
 	{
 		return axiosHelper.post('User/SyncUserData', {
@@ -61,8 +49,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 	}
 
 	return {
-		finishUserSetup,
-		reSetupMFA,
 		syncUserData,
 		getUserData,
 		deleteDevice,

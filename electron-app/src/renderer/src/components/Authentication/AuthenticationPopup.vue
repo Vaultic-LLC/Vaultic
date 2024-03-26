@@ -10,30 +10,8 @@
 				<div class="title">{{ authTitle }}</div>
 				<EncryptedInputField ref="encryptedInputField" class="key" :label="'Key'" :colorModel="colorModel"
 					v-model="key" :required="true" :width="'75%'" />
-				<div class="keyRequirements" v-if="needsToSetupKey">
-					<CheckboxInputField class="greaterThanTwentyCharacters" :label="'At Least 20 Characters'"
-						:color="primaryColor" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
-						:height="'auto'" :disabled="true" />
-					<CheckboxInputField class="containsUpperAndLowerCaseLetters"
-						:label="'Contains an Upper and Lower Case Letter'" :color="primaryColor"
-						v-model="containesUpperAndLowerCase" :fadeIn="true" :width="'100%'" :height="'auto'"
-						:disabled="true" />
-					<CheckboxInputField class="containsNumber" :label="'Contains a Number'" :color="primaryColor"
-						v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
-					<CheckboxInputField class="containsSpecialCharacter" :label="'Contains a Special Character'"
-						:color="primaryColor" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
-						:height="'auto'" :disabled="true" />
-				</div>
-				<!-- <div class="helpCreateStrongKey">
-                </div> -->
-				<EncryptedInputField v-if="needsToSetupKey" ref="confirmEncryptedInputField" :label="'Confirm Key'"
-					:colorModel="colorModel" v-model="reEnterKey" :width="'75%'" />
-				<CheckboxInputField v-if="needsToSetupKey" class="matchesKey" :label="'Matches Key'"
-					:color="primaryColor" v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'"
-					:disabled="true" />
 			</div>
 			<Transition name="fade">
-				<!-- TODO: Move this down when setting up key -->
 				<LoadingIndicator v-if="disabled && !unlocked" :color="primaryColor" />
 			</Transition>
 			<div v-if="!iconOnly" class="authenticationPopupButtons">
@@ -55,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
 
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
@@ -76,7 +54,7 @@ export default defineComponent({
 		PopupButton
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
-	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "setupKey", "color", "beforeEntry",
+	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "color", "beforeEntry",
 		"focusOnShow", "iconOnly"],
 	setup(props, ctx)
 	{
@@ -84,11 +62,9 @@ export default defineComponent({
 		const resizeObserver: ResizeObserver = new ResizeObserver(() => onResize());
 
 		const encryptedInputField: Ref<null> = ref(null);
-		const confirmEncryptedInputField: Ref<null> = ref(null);
 		const loadingIndicator: Ref<null> = ref(null);
 
 		const key: Ref<string> = ref("");
-		const reEnterKey: Ref<string> = ref("");
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const authTitle: ComputedRef<string> = computed(() => props.title ? props.title : "Please enter your Key");
@@ -99,20 +75,12 @@ export default defineComponent({
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(primaryColor.value));
 		const disabled: Ref<boolean> = ref(false);
 
-		const needsToSetupKey: ComputedRef<boolean> = computed(() => props.setupKey ?? false);
-		const computedWidth: ComputedRef<string> = computed(() => props.setupKey ? "25%" : props.iconOnly ? "9%" : "15%");
-		const computedHeight: ComputedRef<string> = computed(() => props.setupKey ? "35%" : props.iconOnly ? "15%" : "25%");
-		const buttonBottom: ComputedRef<string> = computed(() => props.setupKey ? "5%" : "10%");
-		const contentTop: ComputedRef<string> = computed(() => props.setupKey ? "10%" : "20%");
-
-		const greaterThanTwentyCharacters: Ref<boolean> = ref(false);
-		const containesUpperAndLowerCase: Ref<boolean> = ref(false);
-		const hasNumber: Ref<boolean> = ref(false);
-		const hasSpecialCharacter: Ref<boolean> = ref(false);
-		const matchesKey: Ref<boolean> = ref(false);
+		const computedWidth: ComputedRef<string> = computed(() => props.iconOnly ? "9%" : "15%");
+		const computedHeight: ComputedRef<string> = computed(() => props.iconOnly ? "15%" : "25%");
+		const buttonBottom: ComputedRef<string> = computed(() => "10%");
+		const contentTop: ComputedRef<string> = computed(() => "20%");
 
 		const pulsingWidth: Ref<string> = ref('75%');
-
 
 		let lastAuthAttempt: number = 0;
 		function onEnter()
@@ -132,30 +100,10 @@ export default defineComponent({
 
 			lastAuthAttempt = Date.now();
 
-			if (needsToSetupKey.value && (!greaterThanTwentyCharacters.value ||
-				!containesUpperAndLowerCase.value ||
-				!hasNumber.value ||
-				!hasSpecialCharacter.value))
+			stores.appStore.authenticateKey(key.value).then((isValid: boolean) =>
 			{
-				disabled.value = false;
-				jiggleContainer();
-				return;
-			}
-
-			if (props.beforeEntry === true)
-			{
-				stores.checkKeyBeforeEntry(key.value).then((isValid: boolean) =>
-				{
-					handleKeyIsValid(isValid);
-				});
-			}
-			else
-			{
-				stores.checkKeyAfterEntry(key.value).then((isValid: boolean) =>
-				{
-					handleKeyIsValid(isValid);
-				});
-			}
+				handleKeyIsValid(isValid);
+			});
 		}
 
 		function handleKeyIsValid(isValid: boolean)
@@ -192,17 +140,6 @@ export default defineComponent({
 			setTimeout(() => unlockFailed.value = false, 1000);
 		}
 
-		function enforceStringKey(key: string): [boolean, string]
-		{
-			const [valueIsWeak, isWeakMessage] = window.api.helpers.validation.isWeak(key, "Key");
-			return [!valueIsWeak, isWeakMessage];
-		}
-
-		function enforceKeysMatch(confirmKey: string)
-		{
-			return [confirmKey == key.value, "Keys do not match"];
-		}
-
 		function onResize()
 		{
 			const info = authenticationPopup.value?.getBoundingClientRect();
@@ -220,32 +157,6 @@ export default defineComponent({
 				pulsingWidth.value = `${info.width}px`;
 			}
 		}
-
-		watch(() => key.value, (newValue) =>
-		{
-			if (!needsToSetupKey.value)
-			{
-				return;
-			}
-
-			greaterThanTwentyCharacters.value = newValue.length >= 20;
-			containesUpperAndLowerCase.value = window.api.helpers.validation.containsUppercaseAndLowercaseNumber(newValue);
-			hasNumber.value = window.api.helpers.validation.containsNumber(newValue);
-			hasSpecialCharacter.value = window.api.helpers.validation.containsSpecialCharacter(newValue);
-		});
-
-		watch(() => reEnterKey.value, (newValue) =>
-		{
-			if (!greaterThanTwentyCharacters.value ||
-				!containesUpperAndLowerCase.value ||
-				!hasNumber.value ||
-				!hasSpecialCharacter.value)
-			{
-				return;
-			}
-
-			matchesKey.value = newValue == key.value;
-		});
 
 		onMounted(() =>
 		{
@@ -267,9 +178,7 @@ export default defineComponent({
 			authenticationPopup,
 			loadingIndicator,
 			encryptedInputField,
-			confirmEncryptedInputField,
 			key,
-			reEnterKey,
 			authTitle,
 			currentColorPalette,
 			unlocked,
@@ -277,12 +186,6 @@ export default defineComponent({
 			unlockAnimDelay,
 			startPulsing,
 			primaryColor,
-			greaterThanTwentyCharacters,
-			containesUpperAndLowerCase,
-			matchesKey,
-			hasNumber,
-			hasSpecialCharacter,
-			needsToSetupKey,
 			computedWidth,
 			computedHeight,
 			buttonBottom,
@@ -292,8 +195,6 @@ export default defineComponent({
 			pulsingWidth,
 			onEnter,
 			onCancel,
-			enforceStringKey,
-			enforceKeysMatch,
 			playUnlockAnimation
 		}
 	}
@@ -491,55 +392,6 @@ export default defineComponent({
 		opacity: 0;
 		transform: translate(-50%, -50%) scale(8);
 	}
-}
-
-.authenticationPopupContent .key {
-	margin-top: 5%;
-}
-
-.authenticationPopupContent .lockIcon {
-	color: grey;
-	font-size: 80px;
-	margin-top: 10%;
-
-}
-
-.authenticationPopupContent .matchesKey {
-	margin-top: 2.5%;
-}
-
-.authenticationPopupContent .keyRequirements {
-	display: grid;
-	width: 80%;
-	row-gap: 5px;
-	margin-left: 10%;
-	margin-top: 2.5%;
-	margin-bottom: 5%;
-}
-
-.authenticationPopupContent .keyRequirements .greaterThanTwentyCharacters {
-	grid-column: 1;
-	grid-row: 1;
-}
-
-.authenticationPopupContent .keyRequirements .containsUpperAndLowerCaseLetters {
-	grid-column: 1;
-	grid-row: 2;
-}
-
-.authenticationPopupContent .keyRequirements .containsNumber {
-	grid-column: 1;
-	grid-row: 3;
-}
-
-.authenticationPopupContent .keyRequirements .containsSpecialCharacter {
-	grid-column: 1;
-	grid-row: 4;
-}
-
-.authenticationPopupContent .matchesKey {
-	width: 80%;
-	margin-left: 10%;
 }
 
 .authenticationPopupIcon {

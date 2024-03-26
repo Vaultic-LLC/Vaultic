@@ -48,5 +48,6 @@ export default function createReactivePassword(password: Password): ReactivePass
 		get isPinned() { return passwordState.isPinned },
 		set isPinned(value: boolean) { passwordState.isPinned = value; },
 		get key() { return passwordState.key; },
+		get isVaultic() { return passwordState.isVaultic; }
 	}
 }

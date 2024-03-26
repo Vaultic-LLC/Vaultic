@@ -99,8 +99,6 @@ export default defineComponent({
 
 		async function onSubmit()
 		{
-			showAlertMessage("There is already an account associated with this device. Please sign in using that account");
-			return;
 			if (!greaterThanTwentyCharacters.value ||
 				!containesUpperAndLowerCase.value ||
 				!hasNumber.value ||
@@ -127,9 +125,10 @@ export default defineComponent({
 			const response = await window.api.server.session.createAccount(JSON.stringify(data));
 			if (response.success)
 			{
-				stores.popupStore.hideLoadingIndicator();
-
+				await stores.appStore.setKey(key.value);
 				await stores.handleUpdateStoreResponse(key.value, response);
+
+				stores.popupStore.hideLoadingIndicator();
 				ctx.emit('onSuccess');
 			}
 			else

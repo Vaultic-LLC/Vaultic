@@ -405,14 +405,14 @@ export default defineComponent({
 				resizeObserver.observe(chartContainer.value)
 			}
 
-			stores.passwordStore.addEvent("onPasswordChange", onDataChange);
-			stores.valueStore.addEvent("onValueChange", onDataChange);
+			stores.passwordStore.addEvent("onChanged", onDataChange);
+			stores.valueStore.addEvent("onChanged", onDataChange);
 		});
 
 		onUnmounted(() =>
 		{
-			stores.passwordStore.removeEvent("onPasswordChange", onDataChange);
-			stores.valueStore.removeEvent("onValueChange", onDataChange);
+			stores.passwordStore.removeEvent("onChanged", onDataChange);
+			stores.valueStore.removeEvent("onChanged", onDataChange);
 		});
 
 		setOptions(1000);

@@ -5,7 +5,8 @@ export interface SessionController
 {
 	validateEmail: (email: string) => Promise<ValidateEmailResponse>;
 	createAccount: (data: string) => Promise<CreateAccountResponse>;
-	validateEmailAndMasterKey: (username: string, password: string) => Promise<ValidateUserResponse>;
+	validateEmailAndMasterKey: (email: string, key: string) => Promise<ValidateUserResponse>;
+	validateEmailMasterKeyAndReAddVaulticAccount(data: string): Promise<ValidateUserResponse>;
 	expire: () => Promise<BaseResponse>;
 }
 
@@ -13,7 +14,7 @@ export function createSessionController(axiosHelper: AxiosHelper)
 {
 	function validateEmail(email: string): Promise<ValidateEmailResponse>
 	{
-		return axiosHelper.post('Session/ValidateEmailAndUsername', {
+		return axiosHelper.post('Session/ValidateEmail', {
 			Email: email,
 		});
 	}
@@ -45,6 +46,7 @@ export function createSessionController(axiosHelper: AxiosHelper)
 		validateEmail,
 		createAccount,
 		validateEmailAndMasterKey,
+		validateEmailMasterKeyAndReAddVaulticAccount,
 		expire,
 	}
 }

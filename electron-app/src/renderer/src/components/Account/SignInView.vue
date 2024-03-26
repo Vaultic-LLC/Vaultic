@@ -5,7 +5,7 @@
 			<Transition name="fade" mode="out-in">
 				<div class="signInViewContainer__contentContainer" :key="refreshKey">
 					<div class="signInViewContainer__content">
-						<div v-if="true" class="signInViewContainer__inputs">
+						<div v-if="failedAutoLogin" class="signInViewContainer__inputs">
 							<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
 								:width="'80%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
@@ -13,11 +13,11 @@
 								:showUnlock="true" :required="true" :showCopy="false" :width="'80%'" :maxWidth="'300px'"
 								:height="'4vh'" :minHeight="'35px'" />
 						</div>
-						<div v-else>
+						<div v-else class="signInViewContainer__inputs">
 							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
 								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
 								:showUnlock="true" :required="true" :showCopy="false" :width="'80%'" :maxWidth="'300px'"
-								:height="'4vhh'" :minHeight="'35px'" />
+								:height="'4vh'" :minHeight="'35px'" />
 						</div>
 					</div>
 					<div class="signInViewContainer__contentBottom">
@@ -87,9 +87,9 @@ export default defineComponent({
 			ctx.emit('onMoveToCreateAccount');
 		}
 
-		function moveToLimitedMode()
+		async function moveToLimitedMode()
 		{
-			if (stores.needsAuthentication)
+			if (await stores.appStore.canAuthenticateKey())
 			{
 				stores.popupStore.showGlobalAuthentication(props.color);
 			}
@@ -99,7 +99,7 @@ export default defineComponent({
 
 		async function didFailedAutoLogin()
 		{
-			stores.popupStore.showAlert("Unable to auto log in", "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it.", false);
+			stores.popupStore.showAlert("Unable to auto log in", "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it, or crate a new account.", false);
 			refreshKey.value = Date.now().toString();
 			await new Promise((resolve) => setTimeout(resolve, 300));
 
@@ -113,14 +113,14 @@ export default defineComponent({
 
 			if (!failedAutoLogin.value)
 			{
-				if (!(await stores.passwordStore.canAuthenticateKeyBeforeEntry()))
+				if (!(await stores.appStore.canAuthenticateKey()))
 				{
 					didFailedAutoLogin();
 					return;
 				}
 				else
 				{
-					const validKey = await stores.checkKeyBeforeEntry(masterKey.value);
+					const validKey = await stores.appStore.authenticateKey(masterKey.value);
 					if (!validKey)
 					{
 						stores.popupStore.hideLoadingIndicator();
@@ -153,8 +153,13 @@ export default defineComponent({
 			}
 			else
 			{
-				// TODO: add stores and 'ReAddVaulticPassword' parameter
-				const response = await window.api.server.session.validateEmailAndMasterKey(email.value, masterKey.value);
+				const data = {
+					Email: email.value,
+					MasterKey: masterKey.value,
+					...stores.getStates()
+				};
+
+				const response = await window.api.server.session.validateEmailMasterKeyAndReAddVaulticAccount(JSON.stringify(data));
 
 				// no matter what try to add the vaultic password. We can fail but still need to add it ex. license isn't valid
 				await stores.handleUpdateStoreResponse(masterKey.value, response, true);

@@ -22,7 +22,7 @@ type StoreEvent = "onChanged";
 
 export class Store<T extends {}>
 {
-	state: T;
+	protected state: T;
 	loadedFile: boolean;
 	events: Dictionary<{ (): void }[]>;
 
@@ -155,66 +155,66 @@ export class AuthenticationStore<U extends IKeyable, T extends AuthenticationSto
 		currentType.value = AtRiskType.None;
 	}
 
-	private async calculateHash<U extends IKeyable>(key: string, values: U[], salt: string): Promise<[boolean, string]>
-	{
-		let runningKeys: string = "";
-		for (const v of values)
-		{
-			const result = await cryptHelper.decrypt(key, v.key);
-			if (!result.success)
-			{
-				return [false, ""];
-			}
+	// private async calculateHash<U extends IKeyable>(key: string, values: U[], salt: string): Promise<[boolean, string]>
+	// {
+	// 	let runningKeys: string = "";
+	// 	for (const v of values)
+	// 	{
+	// 		const result = await cryptHelper.decrypt(key, v.key);
+	// 		if (!result.success)
+	// 		{
+	// 			return [false, ""];
+	// 		}
 
-			runningKeys += result.value ?? "";
-		}
+	// 		runningKeys += result.value ?? "";
+	// 	}
 
-		const hash = window.api.utilities.hash.insecureHash(runningKeys);
-		return [true, hash];
-	}
+	// 	const hash = window.api.utilities.hash.insecureHash(runningKeys);
+	// 	return [true, hash];
+	// }
 
-	private async checkKey(key: string): Promise<boolean>
-	{
-		const calcualtedHash = await this.calculateHash(key, this.state.values, this.state.hashSalt);
-		if (!calcualtedHash[0])
-		{
-			return false;
-		}
+	// private async checkKey(key: string): Promise<boolean>
+	// {
+	// 	const calcualtedHash = await this.calculateHash(key, this.state.values, this.state.hashSalt);
+	// 	if (!calcualtedHash[0])
+	// 	{
+	// 		return false;
+	// 	}
 
-		const currentHash = await cryptHelper.decrypt(key, this.state.hash);
+	// 	const currentHash = await cryptHelper.decrypt(key, this.state.hash);
 
-		if (!currentHash.success)
-		{
-			return false;
-		}
+	// 	if (!currentHash.success)
+	// 	{
+	// 		return false;
+	// 	}
 
-		return calcualtedHash[1] === currentHash.value;
-	}
+	// 	return calcualtedHash[1] === currentHash.value;
+	// }
 
-	public canAuthenticateKeyBeforeEntry(): Promise<boolean>
-	{
-		return this.getFile().exists();
-	}
+	// public canAuthenticateKeyBeforeEntry(): Promise<boolean>
+	// {
+	// 	return this.getFile().exists();
+	// }
 
-	public canAuthenticateKeyAfterEntry(): boolean
-	{
-		return this.state.values.length > 0;
-	}
+	// public canAuthenticateKeyAfterEntry(): boolean
+	// {
+	// 	return this.state.values.length > 0;
+	// }
 
-	public async checkKeyBeforeEntry(key: string): Promise<boolean>
-	{
-		if (!(await this.readState(key)))
-		{
-			return false;
-		}
+	// public async checkKeyBeforeEntry(key: string): Promise<boolean>
+	// {
+	// 	if (!(await this.readState(key)))
+	// 	{
+	// 		return false;
+	// 	}
 
-		return this.checkKey(key);
-	}
+	// 	return this.checkKey(key);
+	// }
 
-	public checkKeyAfterEntry(key: string): Promise<boolean>
-	{
-		return this.checkKey(key);
-	}
+	// public checkKeyAfterEntry(key: string): Promise<boolean>
+	// {
+	// 	return this.checkKey(key);
+	// }
 
 	public toggleAtRiskType(dataType: DataType, atRiskType: AtRiskType)
 	{
