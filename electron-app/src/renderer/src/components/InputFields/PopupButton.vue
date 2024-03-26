@@ -10,7 +10,7 @@ import { Ref, defineComponent, onMounted, onUnmounted, ref } from "vue";
 export default defineComponent({
 	name: "PopupButton",
 	emits: ['onClick'],
-	props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'fontSize', 'minFontSize', 'maxFontSize',
+	props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize', 'minFontSize', 'maxFontSize',
 		'disabled', 'isSubmit'],
 	setup(props, ctx)
 	{
@@ -61,6 +61,8 @@ export default defineComponent({
 	height: v-bind(height);
 	max-width: v-bind(maxWidth);
 	min-width: v-bind(minWidth);
+	max-height: v-bind(maxHeight);
+	min-height: v-bind(minHeight);
 	background-color: var(--app-color);
 	color: white;
 	border: 2px solid v-bind(color);

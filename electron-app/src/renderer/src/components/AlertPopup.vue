@@ -1,6 +1,7 @@
 <template>
 	<div class="unknownResponsePopup">
-		<ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :beforeHeight="'300%'" :closePopup="onOk">
+		<ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :minWidth="'200px'" :minHeight="'200px'"
+			:closePopup="onOk">
 			<div class="unknownResponsePopup__content">
 				<div class="unknownResponsePopup__title">
 					<h2>{{ title }}</h2>
@@ -18,8 +19,9 @@
 					</div>
 				</div>
 				<div class="unknownResponsePopup__buttons">
-					<PopupButton :color="primaryColor" :text="'Ok'" :width="'150px'" :height="'40px'" :fontSize="'18px'"
-						@onClick="onOk">
+					<PopupButton :color="primaryColor" :text="'Ok'" :width="'7vw'" :minWidth="'75px'"
+						:maxWidth="'100px'" :height="'40%'" :minHeight="'30px'" :maxHeight="'35px'" :fontSize="'0.7vw'"
+						:minFontSize="'15px'" :maxFontSize="'20px'" @onClick="onOk">
 					</PopupButton>
 				</div>
 			</div>
@@ -99,27 +101,26 @@ export default defineComponent({
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
+	row-gap: 5%;
 }
 
 .unknownResponsePopup__title {
-	/* position: absolute; */
+	font-size: clamp(10px, 1vw, 20px);
 	top: 5%;
 	left: 50%;
 	margin-top: 3%;
-	/* transform: translate(-50%); */
 }
 
 .unknownResponsePopup__body {
-	/* position: absolute; */
+	font-size: clamp(10px, 1vw, 20px);
 	top: 20%;
 	left: 50%;
-	/* transform: translateX(-50%); */
 	width: 80%;
 }
 
 .unknownResponsePopup__buttons {
 	flex-grow: 1;
-	margin-bottom: 5%;
+	margin-bottom: clamp(10px, 1.5vh, 10px);
 	display: flex;
 	justify-content: center;
 	align-items: flex-end;
