@@ -14,7 +14,7 @@
 			<slot name="footer"></slot>
 			<PopupButton :color="color" :disabled="disabled" :text="buttonText" :width="'7vw'" :minWidth="'75px'"
 				:maxWidth="'150px'" :height="'100%'" :fontSize="'1.2vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-				onClick="onSubmit">
+				@onClick="onSubmit">
 			</PopupButton>
 			<!-- <div class="accountSetupViewContainer__buttons">
 			</div> -->
@@ -97,6 +97,7 @@ export default defineComponent({
 }
 
 .accountSetupViewContainer__title {
+	font-size: clamp(13px, 1.5vw, 30px);
 	color: white;
 }
 
@@ -112,7 +113,7 @@ export default defineComponent({
 .accountSetupViewContainer__content.flex {
 	flex-direction: column;
 	row-gap: 50px;
-	justify-content: center;
+	justify-content: flex-start;
 	align-items: center;
 }
 

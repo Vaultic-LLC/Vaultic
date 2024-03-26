@@ -4,39 +4,38 @@
 			<AccountSetupView :color="color" :title="'Create Master Key'" :buttonText="'Submit'" :displayGrid="false"
 				:titleMargin="'0%'" :titleMarginTop="'1.5%'" @onSubmit="onSubmit">
 				<div class="createMasterKeyViewContainer__content">
-					<Transition name="fade" mode="out-in">
-						<AlertBanner :key="refreshKey" :message="alertMessage" />
-					</Transition>
-					<div class="createMasterKeyViewContainer__info"> See
-						<ButtonLink :color="color" :text="'Creating a Strong and Memorable Key'"
-							@onClick="openCreateStrongAndMemorablePasswords" />
-						for help.
-					</div>
 					<div class="createMasterKeyViewContainer__inputs">
 						<EncryptedInputField ref="encryptedInputField" class="key" :label="'Master Key'"
-							:colorModel="colorModel" v-model="key" :required="true" :width="'350px'"
-							:style="{ 'grid-row': '1 / span 2', 'grid-column': '2' }" />
+							:colorModel="colorModel" v-model="key" :required="true" :width="'12vw'" :maxWidth="'300px'"
+							:height="'4vh'" :minHeight="'35px'"
+							:style="{ 'grid-row': '1 / span 2', 'grid-column': '3' }" />
 						<div class="createMasterKeyViewContainer__keyRequirements"
-							:style="{ 'grid-row': '3 / span 4', 'grid-column': '2 / span 12' }">
-							<CheckboxInputField class="greaterThanTwentyCharacters" :label="'At Least 20 Characters'"
+							:style="{ 'grid-row': '3 / span 4', 'grid-column': '3 / span 12' }">
+							<CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
 								:color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
-								:height="'auto'" :disabled="true" />
-							<CheckboxInputField class="containsUpperAndLowerCaseLetters"
-								:label="'Contains an Upper and Lower Case Letter'" :color="color"
-								v-model="containesUpperAndLowerCase" :fadeIn="true" :width="'100%'" :height="'auto'"
-								:disabled="true" />
-							<CheckboxInputField class="containsNumber" :label="'Contains a Number'" :color="color"
-								v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'auto'" :disabled="true" />
-							<CheckboxInputField class="containsSpecialCharacter" :label="'Contains a Special Character'"
+								:height="'1.25vh'" :minHeight="'10px'" :disabled="true" />
+							<CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Upper and Lower Case'"
+								:color="color" v-model="containesUpperAndLowerCase" :fadeIn="true" :width="'100%'"
+								:height="'1.25vh'" :minHeight="'10px'" :disabled="true" />
+							<CheckboxInputField class="containsNumber" :label="'Number'" :color="color"
+								v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
+								:minHeight="'10px'" :disabled="true" />
+							<CheckboxInputField class="containsSpecialCharacter" :label="'Special Character'"
 								:color="color" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
-								:height="'auto'" :disabled="true" />
+								:height="'1.25vh'" :minHeight="'10px'" :disabled="true" />
 						</div>
 						<EncryptedInputField ref="confirmEncryptedInputField" :label="'Confirm Key'"
-							:colorModel="colorModel" v-model="reEnterKey" :width="'350px'"
-							:style="{ 'grid-row': '7 / span 2', 'grid-column': '2' }" />
+							:colorModel="colorModel" v-model="reEnterKey" :width="'12vw'" :maxWidth="'300px'"
+							:height="'4vh'" :minHeight="'35px'"
+							:style="{ 'grid-row': '7 / span 2', 'grid-column': '3', 'margin-top': '5px' }" />
 						<CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'"
-							:color="color" v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'auto'"
-							:disabled="true" :style="{ 'grid-row': '9', 'grid-column': '2 / span 12' }" />
+							:color="color" v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
+							:minHeight="'10px'" :disabled="true"
+							:style="{ 'grid-row': '9', 'grid-column': '3 / span 12' }" />
+					</div>
+					<div class="createMasterKeyViewContainer__info">
+						<ButtonLink :color="color" :text="'Help Creating a Strong and Memorable Key'"
+							@onClick="openCreateStrongAndMemorablePasswords" />
 					</div>
 				</div>
 			</AccountSetupView>
@@ -45,13 +44,12 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
-import AlertBanner from './AlertBanner.vue';
 
 import { InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
@@ -66,7 +64,6 @@ export default defineComponent({
 		EncryptedInputField,
 		CheckboxInputField,
 		ButtonLink,
-		AlertBanner
 	},
 	emits: ['onSuccess'],
 	props: ['color', 'account'],
@@ -94,14 +91,16 @@ export default defineComponent({
 
 		async function showAlertMessage(message: string)
 		{
-			stores.popupStore.hideLoadingIndicator();
+			stores.popupStore.showAlert('Unable to create master key', message, false);
 			refreshKey.value = Date.now.toString();
 			await new Promise((resolve) => setTimeout(resolve, 300));
-			alertMessage.value = message;
+			stores.popupStore.hideLoadingIndicator();
 		}
 
 		async function onSubmit()
 		{
+			showAlertMessage("There is already an account associated with this device. Please sign in using that account");
+			return;
 			if (!greaterThanTwentyCharacters.value ||
 				!containesUpperAndLowerCase.value ||
 				!hasNumber.value ||
@@ -181,11 +180,6 @@ export default defineComponent({
 			matchesKey.value = newValue == key.value;
 		});
 
-		onMounted(() =>
-		{
-			alertMessage.value = "Your Master Key is used to encrypt and decrypt all your data. Ideally it should never be written down. If your key is forgotten, it can never be recovered."
-		});
-
 		return {
 			refreshKey,
 			key,
@@ -212,8 +206,11 @@ export default defineComponent({
 }
 
 .createMasterKeyViewContainer__info {
-	width: 80%;
-	color: white;
+	width: 100%;
+	display: flex;
+	flex-grow: 1;
+	justify-content: center;
+	align-items: center;
 }
 
 .createMasterKeyViewContainer__content {
@@ -222,24 +219,29 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	row-gap: 15px;
+	height: 100%;
+	width: 100%;
 }
 
 .createMasterKeyViewContainer__inputs {
+	margin-top: 5px;
 	display: grid;
-	grid-template-rows: repeat(10, 30px);
-	grid-template-columns: repeat(14, 30px);
+	grid-template-rows: repeat(10, clamp(20px, 2.2vh, 35px));
+	grid-template-columns: repeat(14, clamp(12px, 1.25vw, 30px));
 }
 
 .createMasterKeyViewContainer__keyRequirements {
+	min-height: 50px;
 	grid-area: 3 / 3 / span 4 / span 12;
 	display: flex;
 	flex-direction: column;
-	row-gap: 5px;
+	row-gap: clamp(7.5px, 11%, 10px);
 	transform: translateX(10px);
 	margin-top: 5px;
 }
 
 .createMasterKeyViewContainer__matchesKey {
-	transform: translateX(10px);
+	transform: translate(15px, 5px);
+	margin-top: 5px;
 }
 </style>

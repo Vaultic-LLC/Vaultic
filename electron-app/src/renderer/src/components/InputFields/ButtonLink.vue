@@ -7,7 +7,7 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-	name: "CheckboxInputField",
+	name: "ButtonLink",
 	emits: ["onClick"],
 	props: ["color", "text"],
 	setup(_, ctx)

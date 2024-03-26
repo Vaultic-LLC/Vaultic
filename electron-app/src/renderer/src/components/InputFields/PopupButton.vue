@@ -1,5 +1,5 @@
 <template>
-	<button ref="button" class="popupButton" :disabled="disabled" @click.stop="onClick">
+	<button ref="button" class="popupButton" :disabled="disabled" @click.stop="doOnClick">
 		{{ text }}
 	</button>
 </template>
@@ -16,7 +16,7 @@ export default defineComponent({
 	{
 		const button: Ref<HTMLElement | null> = ref(null);
 
-		function onClick()
+		function doOnClick()
 		{
 			button.value?.blur();
 			ctx.emit('onClick');
@@ -27,7 +27,7 @@ export default defineComponent({
 			if (e.key === 'Enter')
 			{
 				e.stopPropagation();
-				onClick();
+				doOnClick();
 			}
 		}
 
@@ -49,7 +49,7 @@ export default defineComponent({
 
 		return {
 			button,
-			onClick
+			doOnClick
 		}
 	}
 })

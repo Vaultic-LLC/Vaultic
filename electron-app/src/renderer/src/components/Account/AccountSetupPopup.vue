@@ -169,7 +169,7 @@ export default defineComponent({
 
 .accountSetupPopupContainer__backButton {
 	color: v-bind(primaryColor);
-	font-size: 20px;
+	font-size: clamp(15px, 2vw, 25px);
 	position: absolute;
 	top: 5%;
 	left: 5%;
@@ -179,8 +179,9 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	background-color: v-bind(primaryColor);
-	width: 30px;
-	height: 30px;
+	width: clamp(20px, 2vw, 30px);
+	/* height: 30px; */
+	aspect-ratio: 1 /1;
 	cursor: pointer;
 }
 

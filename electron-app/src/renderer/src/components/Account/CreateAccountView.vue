@@ -1,16 +1,16 @@
 <template>
 	<div class="createAccountViewContainer">
-		<AccountSetupView :color="color" :title="'Create Account'" :buttonText="'Create'" @onSubmit="createAccount">
+		<AccountSetupView :color="color" :title="'Create Account'" :buttonText="'Create'" :displayGrid="false"
+			@onSubmit="createAccount">
 			<Transition name="fade" mode="out-in">
 				<div :key="refreshKey" class="createAccountViewContainer__content">
-					<AlertBanner v-if="alertMessage" :message="alertMessage" />
 					<div class="createAccountViewContainer__inputs">
-						<div class="createAccountViewContainer__nameInputs">
-							<TextInputField :color="color" :label="'First Name'" v-model="firstName" />
-							<TextInputField :color="color" :label="'Last Name'" v-model="lastName" />
-						</div>
-						<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
-							:width="'415px'" />
+						<TextInputField :color="color" :label="'First Name'" v-model="firstName" :width="'80%'"
+							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+						<TextInputField :color="color" :label="'Last Name'" v-model="lastName" :width="'80%'"
+							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+						<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email" :width="'80%'"
+							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 					</div>
 				</div>
 			</Transition>
@@ -24,7 +24,6 @@ import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
-import AlertBanner from './AlertBanner.vue';
 
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
 import { InputComponent } from '@renderer/Types/Components';
@@ -37,7 +36,6 @@ export default defineComponent({
 		TextInputField,
 		EncryptedInputField,
 		AccountSetupView,
-		AlertBanner
 	},
 	emits: ['onSuccess'],
 	props: ['color', 'account'],
@@ -57,10 +55,11 @@ export default defineComponent({
 
 		async function showAlertMessage()
 		{
-			stores.popupStore.hideLoadingIndicator();
+			stores.popupStore.showAlert("Unable to create account",
+				"There is already an account associated with this device. Please sign in using that account", false);
 			refreshKey.value = Date.now().toString();
 			await new Promise((resolve) => setTimeout(resolve, 300));
-			alertMessage.value = "There is already an account associated with this device. Please sign in using that account";
+			stores.popupStore.hideLoadingIndicator();
 		}
 
 		async function createAccount()
@@ -126,6 +125,7 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	row-gap: 30px;
+	width: 100%;
 }
 
 .createAccountViewContainer__inputs {
@@ -134,6 +134,7 @@ export default defineComponent({
 	align-items: center;
 	flex-direction: column;
 	row-gap: 30px;
+	width: 100%;
 }
 
 .createAccountViewContainer__nameInputs {

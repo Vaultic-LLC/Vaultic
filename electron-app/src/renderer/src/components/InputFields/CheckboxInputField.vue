@@ -15,7 +15,7 @@ import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 export default defineComponent({
 	name: "CheckboxInputField",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "height"],
+	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "height", "minHeight", "maxHeight"],
 	setup(props, ctx)
 	{
 		const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
@@ -23,6 +23,8 @@ export default defineComponent({
 
 		const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "auto")
 		const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : "20px");
+		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "5px");
+		const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "20px");
 
 		function onClick()
 		{
@@ -47,6 +49,8 @@ export default defineComponent({
 			checked,
 			computedWidth,
 			computedHeight,
+			computedMinHeight,
+			computedMaxHeight,
 			onClick
 		}
 	}
@@ -57,6 +61,8 @@ export default defineComponent({
 .checkboxInputContainer {
 	height: v-bind(computedHeight);
 	width: v-bind(computedWidth);
+	min-height: v-bind(computedMinHeight);
+	max-height: v-bind(computedMaxHeight);
 	position: relative;
 	display: flex;
 	justify-content: flex-start;
@@ -72,9 +78,11 @@ export default defineComponent({
 .checkboxInputCheckbox {
 	background-color: var(--app-color);
 	border: 1.5px solid white;
-	border-radius: 5px;
-	width: 15px;
-	height: 15px;
+	border-radius: 30%;
+	height: v-bind(computedHeight);
+	min-height: v-bind(computedMinHeight);
+	max-height: v-bind(computedMaxHeight);
+	aspect-ratio: 1 /1;
 	transition: 0.3s;
 	display: flex;
 	justify-content: center;
@@ -106,7 +114,7 @@ export default defineComponent({
 
 .checkboxInputContainer .checkboxInputFieldLabel {
 	color: white;
-	font-size: 15px;
+	font-size: clamp(10px, 1vh, 20px);
 }
 
 .checkboxInputContainer .checkboxInputFieldLabel.disabled {
