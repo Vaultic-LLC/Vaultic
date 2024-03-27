@@ -50,6 +50,7 @@ export default defineComponent({
 	position: fixed;
 	width: 10%;
 	aspect-ratio: 1 / 0.75;
+	min-width: 100px;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
@@ -59,12 +60,12 @@ export default defineComponent({
 	justify-content: center;
 	row-gap: 10px;
 	z-index: 90;
-	border-radius: 20px;
+	border-radius: 10%;
 }
 
 .loadingPopupContainer__text {
 	color: white;
-	font-size: 18px;
+	font-size: clamp(13px, 1vw, 20px);
 }
 
 .loadingPopupContainer__glass {

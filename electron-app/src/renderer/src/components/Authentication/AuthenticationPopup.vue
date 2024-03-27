@@ -11,9 +11,6 @@
 				<EncryptedInputField ref="encryptedInputField" class="authenticationPopupContent__key" :label="'Key'"
 					:colorModel="colorModel" v-model="key" :required="true" :width="'70%'" :minWidth="'150px'"
 					:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
-				<Transition name="fade" mode="out-in">
-					<LoadingIndicator v-if="disabled && !unlocked" :color="primaryColor" />
-				</Transition>
 			</div>
 			<div v-if="!iconOnly" class="authenticationPopupButtons">
 				<PopupButton :color="color" :text="'Enter'" :disabled="disabled" :width="'5vw'" :minWidth="'75px'"
@@ -40,7 +37,6 @@ import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue
 
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
-import LoadingIndicator from '../Loading/LoadingIndicator.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 
 import { ColorPalette } from '../../Types/Colors';
@@ -53,7 +49,6 @@ export default defineComponent({
 	{
 		EncryptedInputField,
 		CheckboxInputField,
-		LoadingIndicator,
 		PopupButton
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
@@ -93,6 +88,7 @@ export default defineComponent({
 				return;
 			}
 
+			stores.popupStore.showLoadingIndicator(primaryColor.value, "Checking Key");
 			disabled.value = true;
 			if (Date.now() - lastAuthAttempt < 1000)
 			{
@@ -123,6 +119,7 @@ export default defineComponent({
 			}
 			else
 			{
+				stores.popupStore.hideLoadingIndicator();
 				ctx.emit("onAuthenticationSuccessful", key.value);
 			}
 		}
@@ -139,6 +136,7 @@ export default defineComponent({
 
 		function jiggleContainer()
 		{
+			stores.popupStore.hideLoadingIndicator();
 			unlockFailed.value = true;
 			setTimeout(() => unlockFailed.value = false, 1000);
 		}

@@ -34,13 +34,13 @@ export default defineComponent({
 	justify-content: center;
 	height: 20%;
 	width: 50%;
+	column-gap: 10%;
 }
 
 .loadingIndicator__dot {
-	height: 12px;
-	width: 12px;
-	margin-right: 10px;
-	border-radius: 10px;
+	width: clamp(7px, 1vw, 12px);
+	aspect-ratio: 1/ 1;
+	border-radius: 50%;
 	background-color: v-bind(color);
 	transform: scale(0.5);
 	animation: loadingPulse 2s infinite ease-in-out;
