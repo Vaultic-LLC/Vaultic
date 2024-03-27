@@ -3,7 +3,8 @@
 		<div class="mainUICover"></div>
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
-			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true" :iconOnly="iconOnly" />
+			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true"
+			:iconOnly="iconOnly" />
 	</div>
 </template>
 
@@ -81,7 +82,7 @@ export default defineComponent({
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	z-index: 90;
+	z-index: 100;
 	top: 0;
 	left: 0;
 }

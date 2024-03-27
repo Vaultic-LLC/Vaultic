@@ -54,13 +54,13 @@ export default defineComponent({
 .reqAuthFade-enter-active,
 .reqAuthFade-leave-active {
 	transition: opacity 0.3s linear;
-	z-index: 100;
+	z-index: 90;
 }
 
 .reqAuthFade-enter-from,
 .reqAuthFade-leave-to {
 	opacity: 0;
-	z-index: 100;
+	z-index: 90;
 }
 
 .requestAuthGlass {

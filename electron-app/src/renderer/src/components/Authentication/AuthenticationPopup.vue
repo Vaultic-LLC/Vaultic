@@ -7,18 +7,21 @@
 				<div class="authenticationPopupIcon__triangle"></div>
 			</div>
 			<div v-if="!iconOnly" class="authenticationPopupContent">
-				<div class="title">{{ authTitle }}</div>
-				<EncryptedInputField ref="encryptedInputField" class="key" :label="'Key'" :colorModel="colorModel"
-					v-model="key" :required="true" :width="'75%'" />
+				<div class="title">Please enter your Key</div>
+				<EncryptedInputField ref="encryptedInputField" class="authenticationPopupContent__key" :label="'Key'"
+					:colorModel="colorModel" v-model="key" :required="true" :width="'70%'" :minWidth="'150px'"
+					:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+				<Transition name="fade" mode="out-in">
+					<LoadingIndicator v-if="disabled && !unlocked" :color="primaryColor" />
+				</Transition>
 			</div>
-			<Transition name="fade">
-				<LoadingIndicator v-if="disabled && !unlocked" :color="primaryColor" />
-			</Transition>
 			<div v-if="!iconOnly" class="authenticationPopupButtons">
-				<PopupButton :color="color" :text="'Enter'" :disabled="disabled" :width="'100px'" :height="'35px'"
-					:fontSize="'20px'" :isSubmit="true" @onClick="onEnter"></PopupButton>
-				<PopupButton v-if="allowCancel" :color="color" :text="'Cancel'" :disabled="disabled" :width="'100px'"
-					:height="'35px'" :fontSize="'20px'" @onClick="onCancel"></PopupButton>
+				<PopupButton :color="color" :text="'Enter'" :disabled="disabled" :width="'5vw'" :minWidth="'75px'"
+					:maxWidth="'120px'" :height="'100%'" :minHeight="'30px'" :maxHeight="'40px'" :fontSize="'0.8vw'"
+					:minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true" @onClick="onEnter"></PopupButton>
+				<PopupButton v-if="allowCancel" :color="color" :text="'Cancel'" :disabled="disabled" :width="'5vw'"
+					:minWidth="'75px'" :maxWidth="'120px'" :height="'100%'" :minHeight="'30px'" :maxHeight="'40px'"
+					:fontSize="'0.8vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onCancel"></PopupButton>
 			</div>
 		</div>
 		<div v-if="showPulsing" class="pulsingCircles" :class="{ unlocked: unlocked }">
@@ -54,7 +57,7 @@ export default defineComponent({
 		PopupButton
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
-	props: ["title", "allowCancel", "rubberbandOnUnlock", "showPulsing", "color", "beforeEntry",
+	props: ["allowCancel", "rubberbandOnUnlock", "showPulsing", "color", "beforeEntry",
 		"focusOnShow", "iconOnly"],
 	setup(props, ctx)
 	{
@@ -67,7 +70,7 @@ export default defineComponent({
 		const key: Ref<string> = ref("");
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
-		const authTitle: ComputedRef<string> = computed(() => props.title ? props.title : "Please enter your Key");
+		const authTitle: ComputedRef<string> = computed(() => "Please enter your Key");
 		const unlocked: Ref<boolean> = ref(false);
 		const unlockFailed: Ref<boolean> = ref(false);
 		const unlockAnimDelay: Ref<string> = ref(props.rubberbandOnUnlock ? '0.7s' : '0s');
@@ -75,8 +78,8 @@ export default defineComponent({
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(primaryColor.value));
 		const disabled: Ref<boolean> = ref(false);
 
-		const computedWidth: ComputedRef<string> = computed(() => props.iconOnly ? "9%" : "15%");
-		const computedHeight: ComputedRef<string> = computed(() => props.iconOnly ? "15%" : "25%");
+		const computedWidth: ComputedRef<string> = computed(() => props.iconOnly ? "9%" : "17.5%");
+		const computedHeight: ComputedRef<string> = computed(() => props.iconOnly ? "15%" : "27.5%");
 		const buttonBottom: ComputedRef<string> = computed(() => "10%");
 		const contentTop: ComputedRef<string> = computed(() => "20%");
 
@@ -150,11 +153,11 @@ export default defineComponent({
 
 			if (info.height > info.width)
 			{
-				pulsingWidth.value = `${info.height}px`;
+				pulsingWidth.value = `${info.height * 2}px`;
 			}
 			else
 			{
-				pulsingWidth.value = `${info.width}px`;
+				pulsingWidth.value = `${info.width * 2}px`;
 			}
 		}
 
@@ -209,6 +212,10 @@ export default defineComponent({
 .authenticationPopup {
 	width: v-bind('computedWidth');
 	height: v-bind('computedHeight');
+	min-width: 200px;
+	min-height: 200px;
+	max-width: 385px;
+	max-height: 350px;
 	background-color: var(--app-color);
 	z-index: 100;
 	position: fixed;
@@ -279,29 +286,32 @@ export default defineComponent({
 }
 
 .authenticationPopup .authenticationPopupContent {
-	position: absolute;
-	top: v-bind(contentTop);
-	left: 0%;
 	width: 100%;
+	height: 78%;
 	display: flex;
 	justify-content: flex-start;
 	align-items: center;
 	flex-direction: column;
-	/* row-gap: 30px; */
+	row-gap: 12%;
 }
 
 .authenticationPopup .authenticationPopupContent .title {
 	color: white;
-	font-size: 18px;
+	font-size: clamp(13px, 1vw, 20px);
+	margin-top: 10%;
+}
+
+.authenticationPopupContent__key {
+	transform: translateX(-10px);
 }
 
 .authenticationPopupButtons {
-	position: absolute;
-	bottom: v-bind(buttonBottom);
+	width: 100%;
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	column-gap: 50px;
+	flex-grow: 1;
+	align-items: flex-end;
+	justify-content: space-evenly;
+	margin-bottom: 10%;
 }
 
 .authenticationPopup.unlocked.rubberband {

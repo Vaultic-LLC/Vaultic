@@ -34,7 +34,6 @@ export default defineComponent({
 	justify-content: center;
 	height: 20%;
 	width: 50%;
-	margin-top: 50px;
 }
 
 .loadingIndicator__dot {

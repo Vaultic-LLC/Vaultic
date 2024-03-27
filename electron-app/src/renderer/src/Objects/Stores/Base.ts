@@ -13,8 +13,6 @@ export interface StoreState
 export interface DataTypeStoreState<T> extends StoreState
 {
 	values: T[];
-	hash: string;
-	hashSalt: string;
 }
 
 type StoreEvent = "onChanged";

@@ -18,6 +18,13 @@
 					@onClose="popupStore.hideIncorrectDevice()" />
 			</Transition>
 		</Teleport>
+		<Teleport to="#body">
+			<Transition name="lockFade" mode="out-in">
+				<GlobalAuthenticationPopup ref="globalAuthPopup" v-if="popupStore.globalAuthIsShowing"
+					:playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
+					@onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
+			</Transition>
+		</Teleport>
 		<Transition name="fade">
 			<RequestedAuthenticationPopup v-if="popupStore.requestAuthenticationIsShowing"
 				:authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
@@ -27,13 +34,6 @@
 			<Transition name="accountSetupFade" mode="out-in">
 				<AccountSetupPopup v-if="popupStore.accountSetupIsShowing" :model="popupStore.accountSetupModel"
 					@onClose="popupStore.hideAccountSetup()" />
-			</Transition>
-		</Teleport>
-		<Teleport to="#body">
-			<Transition name="lockFade" mode="out-in">
-				<GlobalAuthenticationPopup ref="globalAuthPopup" v-if="popupStore.globalAuthIsShowing"
-					:playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
-					@onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
 			</Transition>
 		</Teleport>
 		<Transition name="fade" mode="out-in">
