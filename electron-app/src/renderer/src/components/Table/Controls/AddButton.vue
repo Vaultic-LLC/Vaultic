@@ -26,8 +26,8 @@ export default defineComponent({
 }
 
 .addRowButtonContainer__button {
-	height: 35px;
-	width: 35px;
+	height: clamp(15px, 2vw, 35px);
+	width: clamp(15px, 2vw, 35px);
 	display: flex;
 	justify-content: center;
 	align-items: center;

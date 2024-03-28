@@ -10,10 +10,10 @@
 				<PasswordValueTable />
 			</div>
 		</div>
-		<div class="tempWidget" :style="{ right: '2%', top: '4%' }">
+		<div class="tempWidget" :style="{ right: '2%', top: '4%', width: '17%', height: '30%' }">
 			<PasswordValueGauges />
 		</div>
-		<div class="tempWidget" :style="{ right: '2%', top: '45%' }">
+		<div class="tempWidget" :style="{ right: '2%', top: '45%', width: '17%' }">
 			<FilterGroupGauges />
 		</div>
 		<div class="tempWidget"
@@ -146,6 +146,9 @@ export default defineComponent({
 	-moz-osx-font-smoothing: grayscale;
 	text-align: center;
 	color: var(--app-color);
+	/* TODO: Doesn't work */
+	min-width: 1170px;
+	min-height: 540px;
 }
 
 body {
@@ -185,7 +188,7 @@ h2 {
 	position: absolute;
 	background: var(--widget-background-color);
 	display: grid;
-	border-radius: 20px;
+	border-radius: 1vw;
 }
 
 .tippy-box[data-theme~='material'] {

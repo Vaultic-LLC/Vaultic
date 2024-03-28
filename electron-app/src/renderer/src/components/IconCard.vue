@@ -35,7 +35,7 @@ export default defineComponent({
 .iconCardContainer {
 	/* background: var(--widget-background-color); */
 	height: 100%;
-	border-radius: 20px;
+	border-radius: 1vw;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -54,19 +54,14 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	/* color: white; */
-	row-gap: 20px;
+	row-gap: 0.7vw;
 }
 
 .iconCardContainer__icon {
 	transition: 0.3s;
-	font-size: 48px;
+	font-size: clamp(15px, 2vw, 48px);
 	transform: translateY(50%);
 	color: white;
-	/* background-image: v-bind(gradient);
-	background-clip: text;
-	-webkit-background-clip: text;
-	text-fill-color: transparent;
-	-webkit-text-fill-color: transparent; */
 }
 
 .iconCardContainer:hover .iconCardContainer__items .iconCardContainer__icon {
@@ -77,7 +72,7 @@ export default defineComponent({
 .iconCardContainer__text {
 	transition: 0.3s;
 	opacity: 0;
-	font-size: 24px;
+	font-size: clamp(10px, 1vw, 24px);
 	color: v-bind(color);
 }
 

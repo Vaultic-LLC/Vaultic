@@ -17,7 +17,7 @@ import { defaultInputColor, defaultInputTextColor } from "../../../Types/Colors"
 export default defineComponent({
 	name: "SearchBar",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "color", "width", "labelBackground"],
+	props: ["modelValue", "color", "width", 'minWidth', 'maxWidth', "labelBackground"],
 	setup(props)
 	{
 		const input: Ref<HTMLElement | null> = ref(null);
@@ -73,8 +73,12 @@ export default defineComponent({
 <style scoped>
 .searchBarContainer {
 	position: relative;
-	height: 50px;
+	height: 4vh;
+	min-height: 30px;
+	max-height: 50px;
 	width: v-bind('computedWidth');
+	min-width: v-bind('minWidth');
+	max-width: v-bind('maxWidth');
 	border: 1.5px solid v-bind(color);
 	border-radius: 2rem;
 	transition: border 300ms cubic-bezier(0.4, 0, 0.2, 1), .3s;
@@ -82,24 +86,27 @@ export default defineComponent({
 
 .searchBarContainer .seachBarInput {
 	position: absolute;
+	top: 50%;
+	transform: translate(0.1vw, -50%);
 	border: 0;
 	width: 80%;
 	height: inherit;
 	left: 20%;
 	color: white;
 	background: none;
-	font-size: 1rem;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .searchBarContainer .searchBarLabel {
 	position: absolute;
 	left: 20%;
-	top: 0;
+	top: 50%;
 	color: v-bind(defaultInputTextColor);
 	pointer-events: none;
-	transform: translateY(1rem);
+	transform: translate(5px, -50%);
 	transition: var(--input-label-transition);
 	background-color: #121218;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .searchBarContainer.active {
@@ -115,6 +122,7 @@ export default defineComponent({
 
 .searchBarContainer .seachBarInput:focus~label,
 .searchBarContainer .seachBarInput:valid~label {
+	top: 0;
 	transform: translateY(-80%) scale(0.8);
 	background-color: #15151b;
 	padding: 0 .2em;
@@ -124,7 +132,7 @@ export default defineComponent({
 
 .searchBarContainer .searchIcon {
 	position: absolute;
-	font-size: 1.5rem;
+	font-size: clamp(11px, 1.2vw, 25px);
 	top: 50%;
 	left: 5%;
 	height: 50%;

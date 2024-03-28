@@ -34,7 +34,7 @@ export default defineComponent({
 	background-color: v-bind('rowValue.color');
 	box-shadow: 0 0 10px v-bind('rowValue.color');
 	border-radius: 50%;
-	width: 30px;
-	height: 30px;
+	width: 1.2vw;
+	aspect-ratio: 1 / 1;
 }
 </style>

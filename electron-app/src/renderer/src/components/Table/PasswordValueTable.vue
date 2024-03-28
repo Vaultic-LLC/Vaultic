@@ -8,8 +8,8 @@
 			<template #header>
 				<TableHeaderRow :color="color" :model="headerModels" :tabs="headerTabs">
 					<template #controls>
-						<SearchBar v-if="activeTable == 0" v-model="currentSearchText" :color="color"
-							:labelBackground="'rgb(44 44 51 / 16%)'" />
+						<SearchBar v-model="currentSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
+							:width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" />
 						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
 					</template>
 				</TableHeaderRow>
@@ -170,20 +170,20 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '175px',
-				padding: '25px',
-				clickable: true
+				width: 'clamp(75px, 7vw, 175px)',
+				padding: 'clamp(10px, 1vw, 25px)',
+				clickable: true,
 			},
 			{
 				displayName: "Password For",
 				backingProperty: "passwordFor",
-				width: '200px',
+				width: 'clamp(100px, 7vw, 250px)',
 				clickable: true
 			},
 			{
 				displayName: "Username",
 				backingProperty: "login",
-				width: '250px',
+				width: 'clamp(100px, 7.5vw, 250px)',
 				clickable: true
 			}
 		];
@@ -192,20 +192,20 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: '175px',
-				padding: '25px',
+				width: 'clamp(75px, 7vw, 175px)',
+				padding: 'clamp(10px, 1vw, 25px)',
 				clickable: true
 			},
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '200px',
+				width: 'clamp(100px, 7vw, 250px)',
 				clickable: true
 			},
 			{
 				displayName: "Type",
 				backingProperty: "valueType",
-				width: '250px',
+				width: 'clamp(100px, 7.5vw, 250px)',
 				clickable: true
 			}
 		];
@@ -316,10 +316,10 @@ export default defineComponent({
 						{
 							return [
 								{
-									component: 'TableRowTextValue', value: v.name, copiable: false, width: '150px'
+									component: 'TableRowTextValue', value: v.name, copiable: false, width: 'clamp(100px, 7vw, 150px)'
 								},
 								{
-									component: 'TableRowTextValue', value: v.valueType ?? '', copiable: false, width: '150px'
+									component: 'TableRowTextValue', value: v.valueType ?? '', copiable: false, width: 'clamp(100px, 7vw, 150px)'
 								}]
 						}, onEditValue, onValueDeleteInitiated);
 					break;
@@ -332,10 +332,10 @@ export default defineComponent({
 						{
 							return [
 								{
-									component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: '150px',
+									component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: 'clamp(100px, 7vw, 150px)',
 								},
 								{
-									component: 'TableRowTextValue', value: p.login, copiable: true, width: '250px'
+									component: 'TableRowTextValue', value: p.login, copiable: true, width: 'clamp(100px, 7.5vw, 250px)'
 								}]
 						},
 						onEditPassword, onPasswordDeleteInitiated);

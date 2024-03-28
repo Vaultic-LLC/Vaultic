@@ -2,8 +2,8 @@
 	<tr class="tableRow"
 		:class="{ clickable: clickable, pinned: isPinned, zIndexing: zIndexing, deletingRow: deletingRow }">
 		<slot></slot>
-		<component v-for="(rowValue, index) in tableRowData.values" :key="index" :is="rowValue.component" :model="rowValue"
-			:color="color" />
+		<component v-for="(rowValue, index) in tableRowData.values" :key="index" :is="rowValue.component"
+			:model="rowValue" :color="color" />
 		<td class="gapRow" :style="{ 'width': 'auto' }"></td>
 		<td v-if="allowPin || allowEdit || allowDelete" class="gapData"></td>
 		<td v-if="!hideAtRiskCell" class="tableRowIconCell" :class="{ hideCell: !tableRowData.atRiskMessage }">
@@ -128,8 +128,8 @@ export default defineComponent({
 	opacity: 0;
 	animation: fadeIn 1s linear forwards;
 	animation-delay: v-bind(animationDelay);
-	border-top-right-radius: 20px;
-	border-bottom-right-radius: 20px;
+	border-top-right-radius: 1vw;
+	border-bottom-right-radius: 1vw;
 	transition: box-shadow 0.3s;
 
 	border: 10px solid transparent;
@@ -219,20 +219,10 @@ export default defineComponent({
 	opacity: 0;
 }
 
-.tableRow .groupCell {
-	display: flex;
-	height: inherit;
-	width: 100px;
-	justify-content: center;
-	align-items: center;
-	overflow: hidden;
-	flex-wrap: wrap;
-}
-
 .tableRow .rowIcon {
 	color: white;
 	transition: 0.3s;
-	font-size: 28px;
+	font-size: clamp(18px, 1.1vw, 28px);
 	cursor: pointer;
 }
 
@@ -271,19 +261,6 @@ export default defineComponent({
 .rowValue .rowValueValue {
 	overflow: hidden;
 	text-overflow: ellipsis;
-}
-
-.rowValue .copyIcon {
-	color: white;
-	transition: 0.3s;
-	font-size: 20px;
-	cursor: pointer;
-	transform: translate(50%, -50%);
-}
-
-.rowValue .copyIcon:hover {
-	color: v-bind(primaryColor);
-	transform: translate(50%, -50%) scale(1.1);
 }
 
 .tableRow .tableRowIconCell {

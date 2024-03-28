@@ -3,8 +3,8 @@
 		<Transition name="fade" mode="out-in">
 			<div :key="key" class="tableHeaderContent" :style="{ 'padding-left': headerModel.padding ?? '0' }">
 				<span class="tableHeaderText" :class="{ hover: hoveringIcon || hoveringText }"
-					@mouseover="hoveringText = true" @mouseleave="hoveringText = false">{{
-						headerModel.name }}</span>
+					@mouseover="hoveringText = true" @mouseleave="hoveringText = false">
+					{{ headerModel.name }}</span>
 				<span v-if="showIcon" class="iconContainer"
 					:class="{ descending: headerModel.descending?.value, active: headerModel.isActive.value, hover: hoveringIcon || hoveringText }"
 					@mouseover="hoveringIcon = true" @mouseleave="hoveringIcon = false">
@@ -63,12 +63,11 @@ export default defineComponent({
 	color: white;
 	text-align: left;
 	user-select: none;
-	padding-top: 20px;
-	padding-bottom: 20px;
+	padding-top: clamp(5px, 0.7vw, 20px);
+	padding-bottom: clamp(5px, 0.7vw, 20px);
 	transition: 0.6s;
 	animation: fadeIn 1s linear forwards;
 	z-index: 1;
-	/* background-color: v-bind(background); */
 	opacity: 1;
 	width: v-bind('headerModel.width');
 }
@@ -94,7 +93,8 @@ export default defineComponent({
 
 .tableHeaderText {
 	opacity: 1;
-	transform: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	font-size: clamp(10px, 0.8vw, 18px);
 }
 
 .tableHeaderCell.clickable .tableHeaderContent .tableHeaderText {
@@ -106,10 +106,11 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	opacity: 0;
-	width: 20px;
+	width: clamp(5px, 1vw, 20px);
 	transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, transform 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 	transform: rotate(0);
-	margin-left: 5px;
+	cursor: pointer;
+	/* margin-left: 5px; */
 }
 
 .iconContainer.active {

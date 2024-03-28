@@ -107,13 +107,13 @@ export default defineComponent({
 }
 
 .tableHeaderTab.regular {
-	font-size: 20px;
-	padding: 10px;
+	font-size: clamp(10px, 1vw, 20px);
+	padding: clamp(5px, 0.5vw, 10px);
 }
 
 .tableHeaderTab.small {
-	font-size: 16px;
-	padding: 4px;
+	font-size: clamp(10px, 0.8vw, 16px);
+	padding: clamp(1px, 0.3vw, 4px);
 }
 
 .tableHeaderTab:not(.active):hover {

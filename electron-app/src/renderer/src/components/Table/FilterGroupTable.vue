@@ -8,16 +8,17 @@
 			<template #header>
 				<TableHeaderRow :model="headerModels" :tabs="headerTabs">
 					<template #controls>
-						<SearchBar v-model="currentSearchText" :color="color" :width="'250px'" />
+						<SearchBar v-model="currentSearchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
+							:minWidth="'100px'" />
 						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
 					</template>
 				</TableHeaderRow>
 			</template>
 			<template #body>
-				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues" :key="trd.id"
-					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': '100px' }" :color="color" :allowPin="true" :allowEdit="true"
-					:allowDelete="true" />
+				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues"
+					:key="trd.id" :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
+					:style="{ width: '5%', 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" :allowPin="true"
+					:allowEdit="true" :allowDelete="true" />
 			</template>
 		</TableTemplate>
 		<Teleport to="#body">
@@ -152,14 +153,14 @@ export default defineComponent({
 			{
 				displayName: "Active",
 				backingProperty: "isActive",
-				width: '112px',
-				padding: '12px',
+				width: 'clamp(60px, 4.3vw, 112px)',
+				padding: 'clamp(5px, 0.5vw, 12px)',
 				clickable: true
 			},
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '100px',
+				width: 'clamp(60px, 4.3vw, 100px)',
 				clickable: true
 			}
 		];
@@ -168,14 +169,14 @@ export default defineComponent({
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: '112px',
-				padding: '12px',
+				width: 'clamp(60px, 4.3vw, 112px)',
+				padding: 'clamp(5px, 0.5vw, 12px)',
 				clickable: true
 			},
 			{
 				displayName: "Color",
 				backingProperty: "color",
-				width: "100px",
+				width: 'clamp(60px, 4.3vw, 100px)',
 				clickable: true
 			}
 		];
@@ -228,8 +229,8 @@ export default defineComponent({
 					createPinnableSelectableTableRowModels<Group>(DataType.Groups, stores.appStore.activePasswordValuesTable, tableRowDatas,
 						currentGroups.value, currentPinnedGroups.value, (g: Group) =>
 					{
-						return [{ component: 'TableRowTextValue', value: g.name, copiable: false, width: '100px', margin: true },
-						{ component: "TableRowColorValue", color: g.color, copiable: true, width: '100px', margin: false }]
+						return [{ component: 'TableRowTextValue', value: g.name, copiable: false, width: 'calc(clamp(60px, 4.3vw, 112px) - clamp(5px, 0.5vw, 12px))', margin: true },
+						{ component: "TableRowColorValue", color: g.color, copiable: true, width: 'clamp(60px, 4.3vw, 100px)', margin: false }]
 					},
 						false, "", false, undefined, onEditGroup,
 						onGroupDeleteInitiated);
@@ -238,7 +239,7 @@ export default defineComponent({
 				default:
 					createPinnableSelectableTableRowModels<Filter>(DataType.Filters, stores.appStore.activePasswordValuesTable,
 						tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
-					{ return [{ component: 'TableRowTextValue', value: f.name, copiable: false, width: '100px' }] },
+					{ return [{ component: 'TableRowTextValue', value: f.name, copiable: false, width: 'clamp(60px, 4.3vw, 100px)' }] },
 						true, "isActive", true, (f: Filter) => stores.filterStore.toggleFilter(f.id), onEditFilter, onFilterDeleteInitiated);
 			}
 

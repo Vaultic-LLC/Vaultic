@@ -1,8 +1,9 @@
 <template>
-	<TableRow class="hover" :class="{ shadow: shadow, isOpen: showCollapseRow || stayOpen }" @click="toggleCollapseContent"
-		:model="model" :rowNumber="rowNumber" :color="primaryColor" :allowPin="true" :allowEdit="true" :allowDelete="true"
-		:hideAtRisk="false" :clickable="true" :style="{ 'height': '100px' }">
-		<td class="groupCell">
+	<TableRow class="hover" :class="{ shadow: shadow, isOpen: showCollapseRow || stayOpen }"
+		@click="toggleCollapseContent" :model="model" :rowNumber="rowNumber" :color="primaryColor" :allowPin="true"
+		:allowEdit="true" :allowDelete="true" :hideAtRisk="false" :clickable="true"
+		:style="{ 'height': 'clamp(40px, 3.7vw, 100px)' }">
+		<td class="tableRow__groupCell">
 			<GroupIcon v-for="(model) in groupIconModels" :key="model.toolTipText" :model="model" />
 		</td>
 	</TableRow>
@@ -12,7 +13,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, inject, Ref, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
 import GroupIcon from './GroupIcon.vue';
 import TableRow from "../Table/Rows/TableRow.vue"
 import { Group } from '../../Types/Table';
@@ -134,4 +135,14 @@ export default defineComponent({
 	}
 })
 </script>
-<style></style>
+<style>
+.tableRow__groupCell {
+	display: flex;
+	height: inherit;
+	width: clamp(75px, 5vw, 150px);
+	justify-content: center;
+	align-items: center;
+	overflow: hidden;
+	flex-wrap: wrap;
+}
+</style>

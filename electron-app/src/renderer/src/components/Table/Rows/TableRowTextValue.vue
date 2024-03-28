@@ -34,5 +34,6 @@ export default defineComponent({
 .tableRowTextValueValue {
 	overflow: hidden;
 	text-overflow: ellipsis;
+	font-size: clamp(10px, 0.6vw, 16px);
 }
 </style>

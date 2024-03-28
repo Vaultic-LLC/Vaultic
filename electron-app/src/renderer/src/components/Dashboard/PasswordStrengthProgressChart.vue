@@ -255,8 +255,10 @@ export default defineComponent({
 			return undefined;
 		}
 
-		function refreshChart()
+		async function refreshChart()
 		{
+			// this fixes the bug where the graph won't resize correctly when clicking the minimize / expand button in the top toolbar
+			await new Promise((resolve) => setTimeout(resolve, 100));
 			const info = chartContainer.value?.getBoundingClientRect();
 			if (info)
 			{

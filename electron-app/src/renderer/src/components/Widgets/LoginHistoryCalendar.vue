@@ -1,8 +1,10 @@
 <template>
 	<div class="calendarWidgetContainer">
-		<h2 class="calendarWidgetContainer__title">
-			Recent Logins
-		</h2>
+		<div class="calendarWidgetContainer__title">
+			<h2>
+				Recent Logins
+			</h2>
+		</div>
 		<Calendar transparent expanded borderless :isDark="true" :color="'gray'" :attributes="attributes" />
 	</div>
 </template>
@@ -62,8 +64,8 @@ export default defineComponent({
 }
 
 .calendarWidgetContainer__title {
-	margin-top: 20px;
 	color: white;
+	font-size: clamp(10px, 0.8vw, 17px);
 }
 
 .vc-weekday {
@@ -105,5 +107,24 @@ export default defineComponent({
 .vc-day-layer {
 	bottom: auto;
 	top: 80%;
+}
+
+.vc-header {
+	margin-top: 0px;
+}
+
+.vc-header .vs-arrow {
+	width: clamp(10px, 1.5vw, 28px);
+	height: clamp(12px, 1.5vw, 30px);
+}
+
+.vc-weekday {
+	padding: 0;
+	font-size: clamp(7px, 0.75vw, 14px);
+}
+
+.vc-day-content {
+	height: clamp(10px, 1.8vh, 28px);
+	font-size: clamp(7px, 0.75vw, 14px);
 }
 </style>

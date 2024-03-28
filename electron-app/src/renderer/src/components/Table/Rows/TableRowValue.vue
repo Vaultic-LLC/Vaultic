@@ -1,6 +1,7 @@
 <template>
 	<td>
-		<div class="rowValue" :style="{ 'width': rowValue.width, 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
+		<div class="rowValue"
+			:style="{ 'width': rowValue.width, 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
 			<slot></slot>
 			<div v-if="rowValue.copiable" class="copyIcon" @click.stop="copyText(rowValue.value)">
 				<ion-icon name="clipboard-outline"></ion-icon>
@@ -10,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, inject } from 'vue';
+import { computed, ComputedRef, defineComponent } from 'vue';
 
 import { TextTableRowValue } from '../../../Types/Models';
 import clipboard from 'clipboardy';
@@ -23,7 +24,6 @@ export default defineComponent({
 	{
 		const rowValue: ComputedRef<TextTableRowValue> = computed(() => props.model);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
-
 
 		function copyText(text: string)
 		{
@@ -55,7 +55,7 @@ export default defineComponent({
 .rowValue .copyIcon {
 	color: white;
 	transition: 0.3s;
-	font-size: 20px;
+	font-size: clamp(13px, 1.2vw, 25px);
 	cursor: pointer;
 	transform: translate(50%, -50%);
 }

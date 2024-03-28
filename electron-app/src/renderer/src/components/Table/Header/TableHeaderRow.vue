@@ -4,9 +4,9 @@
 			<TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
 		</div>
 		<div class="tableHeader__tableHeaderRow" :class="{
-			'tableHeader__tableHeaderRow--noTabs': headerTabs.length == 0,
-			'tableHeader__tableHeaderRow--border': applyBorder
-		}">
+				'tableHeader__tableHeaderRow--noTabs': headerTabs.length == 0,
+				'tableHeader__tableHeaderRow--border': applyBorder
+			}">
 			<div class="tableHeader__tableHeaderRow__headers">
 				<TableHeaderCell v-for="( header, index ) in  headerModels " :key="index" :model="header"
 					:backgroundColor="backgroundColor" :index="index" />
@@ -115,8 +115,8 @@ export default defineComponent({
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
-	column-gap: 30px;
-	padding: 10px;
+	column-gap: 1.2vw;
+	/* padding: 10px; */
 	padding-right: 2%;
 }
 

@@ -369,7 +369,7 @@ export default defineComponent({
 }
 
 .pulsingCircles.unlocked {
-	opacity: 0;
+	animation: shrink 0.5s linear forwards;
 }
 
 .pulsingCircles .circle {
@@ -405,6 +405,12 @@ export default defineComponent({
 	100% {
 		opacity: 0;
 		transform: translate(-50%, -50%) scale(8);
+	}
+}
+
+@keyframes shrink {
+	100% {
+		transform: translate(-50%, -50%) scale(0);
 	}
 }
 

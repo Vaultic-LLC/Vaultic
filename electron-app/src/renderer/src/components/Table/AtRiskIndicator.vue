@@ -57,7 +57,7 @@ export default defineComponent({
 }
 
 .atRiskContainer .atRiskIcon {
-	font-size: 28px;
+	font-size: clamp(18px, 1.1vw, 28px);
 	color: v-bind(color);
 	transition: 0.3s;
 }

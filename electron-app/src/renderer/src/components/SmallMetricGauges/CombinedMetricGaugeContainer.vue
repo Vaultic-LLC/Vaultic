@@ -1,7 +1,9 @@
 <template>
 	<div class="combinedMetricGaugeContainer">
 		<Transition name="fade" mode="out-in">
-			<h2 :key="rKey" class="combinedMetricGaugeContainer__atRiskTitle">{{ title }}</h2>
+			<div :key="rKey" class="combinedMetricGaugeContainer__atRiskTitle">
+				<h2>{{ title }}</h2>
+			</div>
 		</Transition>
 		<div class="combinedMetricGaugeContainer__metrics" :key="rKey">
 			<slot></slot>
@@ -36,19 +38,21 @@ export default defineComponent({
 	flex-direction: column;
 	background-color: var(--widget-background-color);
 	border-radius: 20px;
-	padding-left: 50px;
-	padding-bottom: 60px;
-	padding-right: 50px;
+	padding-left: clamp(15px, 2vw, 50px);
+	padding-right: clamp(15px, 2vw, 50px);
+	padding-bottom: clamp(10px, 5vh, 60px);
 }
 
 .combinedMetricGaugeContainer__metrics {
 	display: grid;
-	column-gap: 40px;
-	row-gap: 55px;
+	column-gap: 1.5vw;
+	row-gap: 4vh;
 }
 
 .combinedMetricGaugeContainer__atRiskTitle {
 	color: white;
-	margin-bottom: 10%;
+	margin-top: 5%;
+	margin-bottom: 5%;
+	font-size: clamp(10px, 0.8vw, 17px);
 }
 </style>

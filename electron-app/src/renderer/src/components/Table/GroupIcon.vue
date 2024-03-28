@@ -1,5 +1,5 @@
 <template>
-	<div ref="groupIcon" class="groupIcon" @mouseenter="" @mouseleave="">
+	<div ref="groupIcon" class="groupIcon">
 		<span class="groupText">
 			{{ groupModel.iconDisplayText }}
 		</span>
@@ -10,8 +10,6 @@
 import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
 
 import tippy from 'tippy.js';
-import 'tippy.js/dist/tippy.css'; // optional for styling
-import 'tippy.js/animations/scale.css';
 import { GroupIconModel } from '@renderer/Types/Models';
 
 export default defineComponent({
@@ -45,13 +43,14 @@ export default defineComponent({
 </script>
 <style>
 .groupIcon {
-	width: 40px;
-	height: 40px;
-	border-radius: 25px;
+	width: clamp(15px, 1.4vw, 40px);
+	aspect-ratio: 1 / 1;
+	border-radius: 50%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	margin: 5px;
+	margin-left: 5px;
+	margin-right: 5px;
 	transition: 0.5s;
 	background: v-bind('groupModel.color');
 	box-shadow: 0 0 10px v-bind('groupModel.color');
@@ -63,5 +62,6 @@ export default defineComponent({
 
 .groupText {
 	user-select: none;
+	font-size: clamp(10px, 0.7vw, 16px);
 }
 </style>
