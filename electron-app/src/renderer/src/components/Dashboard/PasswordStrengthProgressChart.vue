@@ -4,7 +4,9 @@
 			<div class="strengthGraphContainer__resetButton" @click="reset">
 				Reset
 			</div>
-			<h2 class="strengthGraphContainer__title">Security Over Time</h2>
+			<div class="strengthGraphContainer__title">
+				<h2>Security Over Time</h2>
+			</div>
 		</div>
 		<div ref="chartContainer" class="strengthGraphContainer__chart">
 			<Transition name="fade" mode="out-in">
@@ -12,7 +14,8 @@
 					{{ noDataMessage }}
 				</div>
 			</Transition>
-			<Line ref="lineChart" :data="data" :options="options" :style="{ width: width, height: height }">
+			<Line :key="refreshKey" ref="lineChart" :data="data" :options="options"
+				:style="{ width: width, height: height }">
 			</Line>
 		</div>
 	</div>
@@ -40,6 +43,7 @@ export default defineComponent({
 	},
 	setup()
 	{
+		let refreshed: number = 0;
 		const refreshKey: Ref<string> = ref('');
 		const key: Ref<string> = ref('');
 		const chartContainer: Ref<HTMLElement | null> = ref(null);
@@ -56,7 +60,7 @@ export default defineComponent({
 		let max: Ref<number> = ref(Math.max(...stores.passwordStore.currentAndSafePasswords.safe));
 
 		const height: Ref<string> = ref('100%');
-		const width: Ref<string> = ref('100%');
+		const width: Ref<string> = ref('85%');
 
 		const resizeObserver: ResizeObserver = new ResizeObserver(() => refreshChart());
 
@@ -77,7 +81,7 @@ export default defineComponent({
 
 			lineChart.value.chart.data.labels = toRaw(lableArray.value);
 			lineChart.value.chart.data.datasets[0].data = chartOneArray.value;
-			lineChart.value.chart.data.datasets[0].label = table.value + ' Security Rating';
+			lineChart.value.chart.data.datasets[0].label = 'Secure ' + table.value;
 
 			lineChart.value.chart.data.datasets[1].data = target.value;
 
@@ -121,6 +125,12 @@ export default defineComponent({
 		// should only be called when first loading. Otherwise just update the options through the line chart
 		function setOptions(animationTime: number)
 		{
+			let boxSize = getBoxWidthAndHeight();
+			if (!boxSize)
+			{
+				boxSize = [defaultLegendBoxWidth, defaultLegendBoxHeight];
+			}
+
 			options.value = {
 				responsive: true,
 				elements:
@@ -137,12 +147,13 @@ export default defineComponent({
 				},
 				plugins:
 				{
-					// legend: {
-					// 	onClick: function (e)
-					// 	{
-					// 		e.stopPropagation();
-					// 	}
-					// },
+					legend: {
+						labels: {
+							boxWidth: boxSize[0],
+							boxHeight: boxSize[1],
+							padding: 10
+						}
+					},
 					zoom: {
 						zoom: {
 							wheel: {
@@ -184,7 +195,7 @@ export default defineComponent({
 		{
 			return [
 				{
-					label: table.value + ' Security Rating',
+					label: 'Secure ' + table.value,
 					data: EMACalc(chartOneArray.value, 2),
 					backgroundColor: function (context)
 					{
@@ -228,9 +239,42 @@ export default defineComponent({
 			return emaArray;
 		}
 
+		const defaultLegendBoxWidth = 40;
+		const defaultLegendBoxHeight = 10;
+		const maxChartContainerWidth = 538;
+
+		function getBoxWidthAndHeight(): [number, number] | undefined
+		{
+			const info = chartContainer.value?.getBoundingClientRect();
+			if (info)
+			{
+				const ratio = info.width / maxChartContainerWidth;
+				return [defaultLegendBoxWidth * ratio, defaultLegendBoxHeight * ratio]
+			}
+
+			return undefined;
+		}
+
 		function refreshChart()
 		{
-			refreshKey.value = Date.now().toString();
+			const info = chartContainer.value?.getBoundingClientRect();
+			if (info)
+			{
+				const boxSize = getBoxWidthAndHeight();
+				if (boxSize)
+				{
+					lineChart.value.chart.options.plugins.legend.labels.boxWidth = boxSize[0];
+					lineChart.value.chart.options.plugins.legend.labels.boxHeight = boxSize[1];
+					lineChart.value.chart.update();
+				}
+			}
+
+			// seems like we need to refresh it twice so that the chart loads witht he correct width / height inline styles
+			if (refreshed < 2)
+			{
+				refreshed += 1;
+				refreshKey.value = Date.now().toString();
+			}
 		}
 
 		function getGradient(chart: any, hexColor: string)
@@ -268,7 +312,7 @@ export default defineComponent({
 				newColor = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
 				lableArray.value = stores.passwordStore.currentAndSafePasswords.current.map((_, i) => i);
 				chartOneArray.value = EMACalc([...stores.passwordStore.currentAndSafePasswords.safe], 2);
-				table.value = "Password";
+				table.value = "Passwords";
 
 				// show the target at the last 1/3 of the data unless we are less than 4. Les than 4 means a third won't give us 2 data points so just show the whole line
 				const targetPoint: number = stores.passwordStore.currentAndSafePasswords.current.length < 4
@@ -293,7 +337,7 @@ export default defineComponent({
 				newColor = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
 				lableArray.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i);
 				chartOneArray.value = EMACalc([...stores.valueStore.currentAndSafeValues.safe], 2);
-				table.value = "Value";
+				table.value = "Values";
 
 				const targetPoint: number = stores.valueStore.currentAndSafeValues.current.length < 4
 					? 0 :
@@ -443,6 +487,7 @@ export default defineComponent({
 	height: 100%;
 	border-radius: 20px;
 	background: rgb(44 44 51 / 16%);
+	padding-top: 0.7vw;
 	/* margin: 10px;
 	margin-top: 50px;
 	padding-top: 1%; */
@@ -462,11 +507,12 @@ export default defineComponent({
 	align-items: center;
 	padding: 5px;
 	width: 10%;
-	height: 25px;
+	height: 7%;
 	color: white;
 	border-radius: 20px;
 	border: 2px solid v-bind(color);
 	transition: 0.3s;
+	font-size: clamp(10px, 0.8vw, 17px);
 }
 
 .strengthGraphContainer__resetButton:hover {
@@ -476,6 +522,7 @@ export default defineComponent({
 .strengthGraphContainer__title {
 	width: 75%;
 	color: white;
+	font-size: clamp(10px, 0.8vw, 17px);
 }
 
 .strengthGraphContainer__chart {
@@ -484,16 +531,17 @@ export default defineComponent({
 	width: 100%;
 	display: flex;
 	justify-content: center;
+	margin-top: 0.3vw;
 }
 
 .strengthGraphContainer__noData {
 	position: absolute;
 	color: gray;
 	text-align: center;
-	font-size: 24px;
+	font-size: clamp(12px, 1.3vw, 25px);
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	width: 60%;
+	width: 80%;
 }
 </style>

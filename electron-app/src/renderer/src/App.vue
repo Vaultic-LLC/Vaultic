@@ -16,7 +16,8 @@
 		<div class="tempWidget" :style="{ right: '2%', top: '45%' }">
 			<FilterGroupGauges />
 		</div>
-		<div class="tempWidget" :style="{ top: '4%', left: '58%', width: '21%', height: '25%' }">
+		<div class="tempWidget"
+			:style="{ top: '4%', left: '58%', width: '21%', height: '25%', 'min-height': '180px', 'min-width': '268px' }">
 			<PasswordStrengthProgressChart />
 		</div>
 		<div class="tempWidget" :style="{ top: '72%', right: '2%', width: '17%' }">

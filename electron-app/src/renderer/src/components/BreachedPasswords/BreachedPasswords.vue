@@ -175,7 +175,7 @@ export default defineComponent({
 	width: 25%;
 	height: 24.5%;
 	min-width: 317px;
-	min-height: 150px;
+	min-height: 180px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;

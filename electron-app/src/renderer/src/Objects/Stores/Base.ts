@@ -65,6 +65,8 @@ export class Store<T extends {}>
 	{
 		Object.assign(this.state, state);
 		await this.writeState(key);
+
+		this.events['onChanged']?.forEach(f => f());
 	}
 
 	public async readState(key: string): Promise<boolean>
@@ -88,6 +90,7 @@ export class Store<T extends {}>
 		this.loadedFile = true;
 		Object.assign(this.state, state);
 		this.postAssignState(state);
+		this.events['onChanged']?.forEach(f => f());
 
 		return true;
 	}
