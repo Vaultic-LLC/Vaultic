@@ -2,17 +2,17 @@
 	<div class="authPopupContainer">
 		<div ref="authenticationPopup" class="authenticationPopup"
 			:class="{ unlocked: unlocked, unlockFailed: unlockFailed, rubberband: rubberbandOnUnlock }">
-			<div v-if="iconOnly" class="authenticationPopupIcon">
+			<div v-if="showIcon" class="authenticationPopupIcon">
 				<div class="authenticationPopupIcon__circle"></div>
 				<div class="authenticationPopupIcon__triangle"></div>
 			</div>
-			<div v-if="!iconOnly" class="authenticationPopupContent">
+			<div v-if="!showIcon" class="authenticationPopupContent">
 				<div class="title">Please enter your Key</div>
 				<EncryptedInputField ref="encryptedInputField" class="authenticationPopupContent__key" :label="'Key'"
 					:colorModel="colorModel" v-model="key" :required="true" :width="'70%'" :minWidth="'150px'"
 					:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 			</div>
-			<div v-if="!iconOnly" class="authenticationPopupButtons">
+			<div v-if="!showIcon" class="authenticationPopupButtons">
 				<PopupButton :color="color" :text="'Enter'" :disabled="disabled" :width="'5vw'" :minWidth="'75px'"
 					:maxWidth="'120px'" :height="'100%'" :minHeight="'30px'" :maxHeight="'40px'" :fontSize="'0.8vw'"
 					:minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true" @onClick="onEnter"></PopupButton>
@@ -73,12 +73,15 @@ export default defineComponent({
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(primaryColor.value));
 		const disabled: Ref<boolean> = ref(false);
 
-		const computedWidth: ComputedRef<string> = computed(() => props.iconOnly ? "9%" : "17.5%");
-		const computedHeight: ComputedRef<string> = computed(() => props.iconOnly ? "15%" : "27.5%");
+		const computedWidth: ComputedRef<string> = computed(() => showIcon.value ? "9%" : "17.5%");
+		const computedHeight: ComputedRef<string> = computed(() => showIcon.value ? "15%" : "27.5%");
 		const buttonBottom: ComputedRef<string> = computed(() => "10%");
 		const contentTop: ComputedRef<string> = computed(() => "20%");
 
 		const pulsingWidth: Ref<string> = ref('75%');
+
+		const forceShowIcon: Ref<boolean> = ref(false);
+		const showIcon: ComputedRef<boolean> = computed(() => props.iconOnly || forceShowIcon.value);
 
 		let lastAuthAttempt: number = 0;
 		function onEnter()
@@ -105,7 +108,7 @@ export default defineComponent({
 			});
 		}
 
-		function handleKeyIsValid(isValid: boolean)
+		async function handleKeyIsValid(isValid: boolean)
 		{
 			if (!isValid)
 			{
@@ -119,6 +122,8 @@ export default defineComponent({
 			}
 			else
 			{
+				forceShowIcon.value = true;
+				await new Promise((resolve) => setTimeout(resolve, 100));
 				stores.popupStore.hideLoadingIndicator();
 				ctx.emit("onAuthenticationSuccessful", key.value);
 			}
@@ -194,6 +199,7 @@ export default defineComponent({
 			colorModel,
 			disabled,
 			pulsingWidth,
+			showIcon,
 			onEnter,
 			onCancel,
 			playUnlockAnimation
@@ -226,7 +232,7 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	flex-direction: column;
-	transition: 0.3s linear;
+	transition: 0.1s linear;
 }
 
 .authenticationPopup.unlockFailed {
@@ -405,7 +411,6 @@ export default defineComponent({
 .authenticationPopupIcon {
 	width: 100%;
 	height: 100%;
-	font-size: 20px;
 	color: gray;
 	display: flex;
 	justify-content: center;
@@ -418,7 +423,7 @@ export default defineComponent({
 	aspect-ratio: 1 /1;
 	background: v-bind(color);
 	border-radius: 50%;
-	margin-bottom: -45px;
+	margin-bottom: -20%;
 }
 
 .authenticationPopupIcon__triangle {

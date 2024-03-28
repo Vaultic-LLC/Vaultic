@@ -1,7 +1,8 @@
 <template>
 	<div class="breachedPasswordsContainer">
 		<div class="breachedPasswordsContainer__content">
-			<div class="breachedPasswordsContainer__scanButton" :class="{ scanning: scanning }" @click="startScan(true)">
+			<div class="breachedPasswordsContainer__scanButton" :class="{ scanning: scanning }"
+				@click="startScan(true)">
 				<span v-if="scanning">Scanning...</span>
 				<span v-else>Scan</span>
 			</div>
@@ -23,7 +24,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import SpinningGlobe from './SpinningGlobe.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
@@ -168,19 +169,18 @@ export default defineComponent({
 <style>
 .breachedPasswordsContainer {
 	position: absolute;
-	padding-top: 10px;
+	padding-top: 0.7vw;
 	top: 4%;
 	left: 31%;
 	width: 25%;
 	height: 24.5%;
+	min-width: 317px;
+	min-height: 150px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 	border-radius: 20px;
-	/* background: linear-gradient(145deg, #121a20, #0f161b);
-	box-shadow: 5px 5px 10px #070a0c,
-		-5px -5px 10px #1b2630; */
 	background: rgb(44 44 51 / 16%);
 }
 
@@ -192,6 +192,7 @@ export default defineComponent({
 .breachedPasswordsContainer__title {
 	color: white;
 	height: 10%;
+	font-size: clamp(10px, 0.8vw, 17px);
 }
 
 .breachedPasswordsContainer__items {
@@ -200,6 +201,7 @@ export default defineComponent({
 	align-items: center;
 	width: 100%;
 	height: 82.5%;
+	margin-top: 0.3vw;
 }
 
 .breeachedPasswordTable {
@@ -247,17 +249,18 @@ export default defineComponent({
 	align-items: center;
 	padding: 5px;
 	width: 10%;
-	height: 25px;
+	height: 7%;
 	color: white;
 	border-radius: 20px;
 	border: 2px solid v-bind(color);
 	transition: 0.3s;
+	font-size: clamp(10px, 0.8vw, 17px);
 }
 
 .breachedPasswordsContainer__scanButton.scanning {
 	color: grey;
 	border: 2px solid grey;
-	width: 12%;
+	width: 14%;
 }
 
 .breachedPasswordsContainer__scanButton:not(.scanning):hover {

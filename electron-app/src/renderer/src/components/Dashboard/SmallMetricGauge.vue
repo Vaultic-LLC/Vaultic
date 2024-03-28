@@ -1,11 +1,9 @@
 <template>
 	<div>
-		<div class="smallMetricContainer2" ref="smallMetricContainer" :key="key" @click="onClick"
+		<div class="smallMetricContainer" ref="smallMetricContainer" :key="key" @click="onClick"
 			:class="{ active: active, pulse: pulse }">
-			<div class="title">
-				<h2>{{ amountOutOfTotal }}</h2>
-				<p>{{ model.title }}</p>
-			</div>
+			<h2 class="smallMetricContainer__amount">{{ amountOutOfTotal }}</h2>
+			<div class="smallMetricContainer__title">{{ model.title }}</div>
 			<Doughnut ref="doughnutChart" :data="data" :options="options" />
 		</div>
 	</div>
@@ -196,12 +194,10 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.smallMetricContainer2 {
+.smallMetricContainer {
 	position: relative;
-	/* width: 50%; */
-	/* height: auto; */
-	width: 150px;
-	height: 150px;
+	width: clamp(50px, 6vw, 150px);
+	/* height: 150px; */
 	aspect-ratio: 1 / 1;
 	display: flex;
 	justify-content: center;
@@ -214,15 +210,15 @@ export default defineComponent({
 	box-shadow: 0 0 0 v-bind(primaryColor);
 }
 
-.smallMetricContainer2.active {
+.smallMetricContainer.active {
 	box-shadow: 0 0 25px v-bind(primaryColor);
 }
 
-.smallMetricContainer2.pulse {
+.smallMetricContainer.pulse {
 	animation: pulseMetricGauge 1s infinite;
 }
 
-.smallMetricContainer2:hover {
+.smallMetricContainer:hover {
 	box-shadow: 0 0 25px v-bind(primaryColor);
 }
 
@@ -271,52 +267,38 @@ export default defineComponent({
 	}
 }
 
-.title {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	flex-direction: column;
+.smallMetricContainer__amount {
 	opacity: 0;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -65%);
+	color: v-bind(textColor);
+	font-weight: 700;
+	font-size: clamp(13px, 1.5vw, 36px);
+	transition: 0.2s;
+	user-select: none;
 	animation: fadeIn 1s linear forwards;
 	animation-delay: 1s;
 }
 
-
-.title h2 {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	color: v-bind(textColor);
-	font-weight: 700;
-	font-size: 2.5em;
-	transform: translateY(20px);
-	transition: 0.2s;
-	user-select: none;
-}
-
-/* .smallMetricContainer2:hover .title h2 {
-    font-size: 2.6em;
-} */
-
-.title p {
+.smallMetricContainer__title {
+	opacity: 0;
+	position: absolute;
+	top: 106%;
 	font-weight: 300;
-	font-size: 0.75em;
+	font-size: clamp(10px, 0.6vw, 36px);
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	color: rgba(255, 255, 255, 0.75);
-	transform: translateY(40px);
 	transition: 0.2s;
 	user-select: none;
+	animation: fadeIn 1s linear forwards;
+	animation-delay: 1s;
 }
 
-.smallMetricContainer2__checkmark {
+.smallMetricContainer__checkmark {
 	color: v-bind(primaryColor);
 	font-size: 50px;
 }
-
-/* .smallMetricContainer2:hover .title p {
-    font-size: 0.85em;
-} */
 </style>
