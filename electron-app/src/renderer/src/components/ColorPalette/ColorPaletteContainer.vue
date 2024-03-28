@@ -53,10 +53,13 @@ export default defineComponent({
 	display: grid;
 	flex-direction: column;
 	width: 20%;
-	height: 27%;
+	height: 20%;
 	top: 5%;
 	left: 2%;
-	/* column-gap: 50px; */
+	column-gap: 10%;
+	row-gap: 10%;
 	z-index: 1;
+	grid-template-rows: repeat(3, 5vh);
+	grid-template-columns: repeat(2, 8vw);
 }
 </style>

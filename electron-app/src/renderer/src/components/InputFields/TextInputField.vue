@@ -184,7 +184,7 @@ export default defineComponent({
 	pointer-events: none;
 	transform: translateY(-50%);
 	transition: var(--input-label-transition);
-	font-size: clamp(13px, 1.2vh, 25px);
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .textInputFieldContainer .textInputFieldInput:focus,

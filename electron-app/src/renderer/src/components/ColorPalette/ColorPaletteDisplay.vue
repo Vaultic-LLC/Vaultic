@@ -8,7 +8,8 @@
 			</div>
 		</div>
 		<div class="colorPaletteContainer" @click.stop="onPaletteSelected" @mouseenter="hoveringDisplay = true"
-			@mouseleave="hoveringDisplay = false" :class="{ notCreated: !created, hover: hoveringDisplay || hoveringIcon }">
+			@mouseleave="hoveringDisplay = false"
+			:class="{ notCreated: !created, hover: hoveringDisplay || hoveringIcon }">
 			<SelectorButton v-if="created" :selectorButtonModel="selectorButtonModel" class="selectorButton" />
 			<div v-else class="addColorIconContainer">
 				<ion-icon class="addColorIcon" name="add-outline"></ion-icon>
@@ -177,8 +178,8 @@ export default defineComponent({
 
 .colorPaletteOuterContainer {
 	position: relative;
-	height: 70px;
-	width: 200px;
+	height: 100%;
+	width: 100%;
 	margin: 10px;
 }
 
@@ -211,18 +212,18 @@ export default defineComponent({
 }
 
 .colorPaletteContainer .selectorButton {
-	margin-right: 50px;
+	margin-right: 2vw;
 }
 
 .colorPaletteContainer .addColorIconContainer {
-	margin-right: 50px;
-	width: 30px;
-	height: 30px;
+	margin-right: clamp(10px, 1.5vw, 30px);
+	width: clamp(14px, 1.1vw, 30px);
+	aspect-ratio: 1 /1;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	color: white;
-	font-size: 35px;
+	font-size: clamp(14px, 1.1vw, 35px);
 	border-radius: 50%;
 	background: v-bind(addColorGradient);
 	transition: 0.6s;
@@ -241,16 +242,16 @@ export default defineComponent({
 
 .colorPaletteContainer .passwordColor {
 	background: v-bind(editIconBackgroundColor);
-	width: 30px;
-	height: 30px;
+	width: clamp(12px, 1.2vw, 30px);
+	aspect-ratio: 1/ 1;
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;
 }
 
 .colorPaletteContainer .valuesColor {
 	background: v-bind(valueBackgroundColor);
-	width: 30px;
-	height: 30px;
+	width: clamp(12px, 1.2vw, 30px);
+	aspect-ratio: 1/ 1;
 	border-top-right-radius: 20px;
 	border-bottom-right-radius: 20px;
 }
@@ -287,14 +288,16 @@ export default defineComponent({
 	background: v-bind(editIconBackgroundColor);
 	border-radius: 50%;
 	transition: 0.3s;
-	padding: 10px;
+	padding: 10%;
 	opacity: 0;
 	z-index: 1;
+	height: clamp(5px, 1vw, 25px);
+	width: clamp(5px, 1vw, 25px);
 }
 
 .colorPaletteOuterContainer .editButton .editIcon {
 	color: white;
-	font-size: 25px;
+	font-size: clamp(14px, 1.1vw, 25px);
 }
 
 .colorPaletteOuterContainer .editButton:hover {

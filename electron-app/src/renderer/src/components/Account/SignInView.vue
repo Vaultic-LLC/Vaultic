@@ -1,7 +1,7 @@
 <template>
 	<div class="signInViewContainer">
 		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
-			:titleMargin="'2%'" :titleMarginTop="'3%'" @onSubmit="onSubmit">
+			:titleMargin="'4%'" :titleMarginTop="'5%'" @onSubmit="onSubmit">
 			<Transition name="fade" mode="out-in">
 				<div class="signInViewContainer__contentContainer" :key="refreshKey">
 					<div class="signInViewContainer__content">
