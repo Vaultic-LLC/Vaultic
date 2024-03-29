@@ -170,7 +170,7 @@ export default defineComponent({
 	left: 0;
 	border: solid 1.5px v-bind(defaultInputColor);
 	color: white;
-	border-radius: 1rem;
+	border-radius: min(1vw, 1rem);
 	background: none;
 	font-size: clamp(13px, 1.2vh, 25px);
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);

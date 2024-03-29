@@ -33,7 +33,7 @@ export default defineComponent({
 			let attr: any[] = [];
 			Object.keys(stores.appStore.loginHistory).forEach(day =>
 			{
-				attr.push(...stores.appStore.loginHistory[day].map((l, i) =>
+				attr.push(...stores.appStore.loginHistory[day].map((l) =>
 				{
 					return {
 						key: l,

@@ -298,7 +298,7 @@ export default defineComponent({
 .objectyPopup .closeIconContainer .closeIcon {
 	transition: 0.3s;
 	color: white;
-	font-size: 40px;
+	font-size: clamp(25px, 1.5vw, 40px);
 }
 
 .objectyPopup .closeIconContainer:hover .closeIcon {

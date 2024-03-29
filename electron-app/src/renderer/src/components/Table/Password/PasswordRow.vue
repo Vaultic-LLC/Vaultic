@@ -12,8 +12,6 @@
 			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false"
 			:row-gap="securityQuestionRowGap" :emptyMessage="emptyMessage"
 			:showEmptyMessage="securityQuestions.length == 0" :backgroundColor="backgroundColor">
-			<template #header>
-			</template>
 			<template #body>
 				<SecurityQuestionRow v-for="(sq, index) in securityQuestions" :key="sq.id" :rowNumber="index"
 					:colorModel="colorModel" :model="sq" :disabled="true" :isInitiallyEncrypted="false" />
@@ -26,7 +24,6 @@
 import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import TableTemplate from '../TableTemplate.vue';
-import TableHeaderRow from '../Header/TableHeaderRow.vue';
 import SecurityQuestionRow from '../Rows/SecurityQuestionRow.vue';
 
 import TextAreaInputField from '../../../components/InputFields/TextAreaInputField.vue';
@@ -46,7 +43,6 @@ export default defineComponent({
 		TextAreaInputField,
 		EncryptedInputField,
 		TableTemplate,
-		TableHeaderRow,
 		SecurityQuestionRow
 	},
 	props: ["value", "authenticationPromise", "color", 'isShowing'],

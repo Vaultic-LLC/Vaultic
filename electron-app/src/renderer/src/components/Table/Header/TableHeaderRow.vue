@@ -40,7 +40,7 @@ export default defineComponent({
 		const headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.tabs ?? []);
 		const hoveringTab: Ref<number> = ref(-1);
 		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
-		const computedHeight: ComputedRef<string> = computed(() => (props.height ?? 80) + 'px');
+		const computedHeight: ComputedRef<string> = computed(() => props.height ?? 'clamp(15px, 5.8vh, 80px)');
 
 		function onTabClick(index: number)
 		{

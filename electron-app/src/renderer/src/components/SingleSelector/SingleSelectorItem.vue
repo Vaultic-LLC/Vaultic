@@ -102,19 +102,19 @@ export default defineComponent({
 }
 
 .tableSelectorButton.first {
-	border-top-left-radius: 20px;
-	border-bottom-left-radius: 20px;
+	border-top-left-radius: 1vw;
+	border-bottom-left-radius: 1vw;
 }
 
 .tableSelectorButton.last {
-	border-top-right-radius: 20px;
-	border-bottom-right-radius: 20px;
+	border-top-right-radius: 1vw;
+	border-bottom-right-radius: 1vw;
 }
 
 .tableSelectorButton .tableSelectorButtonText {
 	transition: 0.3s;
 	color: white;
-	font-size: 20px;
+	font-size: clamp(10px, 0.8vw, 17px);
 	padding: 10px;
 	cursor: pointer;
 	text-align: center;

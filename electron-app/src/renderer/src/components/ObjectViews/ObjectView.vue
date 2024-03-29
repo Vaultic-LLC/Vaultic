@@ -7,10 +7,13 @@
 			<slot></slot>
 		</div>
 		<div class="createButtons">
-			<PopupButton :color="color" :text="buttonText" :disabled="disabled" :fontSize="'20px'" :width="'200px'"
-				:height="'50px'" @onClick="onSave" />
-			<PopupButton :color="color" :text="'Create and Close'" :disabled="disabled" :fontSize="'20px'" :width="'200px'"
-				:height="'50px'" :isSubmit="true" @onClick="onSaveAndClose" />
+			<PopupButton :color="color" :text="buttonText" :disabled="disabled" :width="'7vw'" :minWidth="'125px'"
+				:maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'35px'" :height="'2vw'" :fontSize="'1.2vw'"
+				:minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSave" />
+			<PopupButton :color="color" :text="'Create and Close'" :disabled="disabled" :width="'7vw'"
+				:minWidth="'125px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'35px'" :height="'2vw'"
+				:fontSize="'1.2vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
+				@onClick="onSaveAndClose" />
 		</div>
 	</div>
 </template>

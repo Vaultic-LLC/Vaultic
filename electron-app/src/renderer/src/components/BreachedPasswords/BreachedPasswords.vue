@@ -26,10 +26,6 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
-import SpinningGlobe from './SpinningGlobe.vue';
-import TableTemplate from '../Table/TableTemplate.vue';
-import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
-import TableRow from '../Table/Rows/TableRow.vue';
 import WorldMap from './WorldMap.vue';
 
 import { IGroupableSortedCollection, SortedCollection } from '@renderer/Objects/DataStructures/SortedCollections';
@@ -44,10 +40,6 @@ export default defineComponent({
 	name: "BreachedPasswords",
 	components:
 	{
-		SpinningGlobe,
-		TableTemplate,
-		TableHeaderRow,
-		TableRow,
 		WorldMap,
 		SmallMetricGauge
 	},

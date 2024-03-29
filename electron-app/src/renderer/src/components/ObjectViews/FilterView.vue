@@ -1,11 +1,11 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<TextInputField :label="'Name'" :color="color" v-model="filterState.name"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
+		<TextInputField :label="'Name'" :color="color" v-model="filterState.name" :width="'8vw'" :height="'4vh'"
+			:minHeight="'35px'" :style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
 		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
-			class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0" :border="true" :emptyMessage="emptyMessage"
-			:showEmptyMessage="filterState.conditions.length == 0 ?? true">
+			class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0" :border="true"
+			:emptyMessage="emptyMessage" :showEmptyMessage="filterState.conditions.length == 0 ?? true">
 			<template #header>
 				<TableHeaderRow :color="color" :tabs="headerTabs" :border="true">
 					<template #controls>
@@ -67,9 +67,9 @@ export default defineComponent({
 		const gridDefinition: GridDefinition =
 		{
 			rows: 12,
-			rowHeight: '50px',
+			rowHeight: 'clamp(10px, 2vw, 50px)',
 			columns: 14,
-			columnWidth: '100px'
+			columnWidth: 'clamp(20px, 4vw, 100px)'
 		};
 
 		const headerTabs: HeaderTabModel[] = [
