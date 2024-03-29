@@ -180,6 +180,8 @@ export default defineComponent({
 	position: relative;
 	height: 100%;
 	width: 100%;
+	min-width: 91.2px;
+	min-height: 30.2px;
 	margin: 10px;
 }
 

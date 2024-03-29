@@ -243,7 +243,7 @@ export default defineComponent({
 }
 
 .tableContainer.medium::-webkit-scrollbar {
-	width: 10px;
+	width: clamp(7px, 0.7vw, 10px);
 }
 
 .tableContainer.border::-webkit-scrollbar-track {

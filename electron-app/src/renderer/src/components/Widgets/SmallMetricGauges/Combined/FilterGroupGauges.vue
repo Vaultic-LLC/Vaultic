@@ -1,5 +1,5 @@
 <template>
-	<div class="filterGroupGaugeContainer">
+	<div class="filterGroupGaugesWidget">
 		<CombinedMetricGaugeContainer :refreshKey="refreshKey" :title="title">
 			<EmptyFilterGroupGauge :style="{ 'grid-row': 1, 'grid-column': 1 }" />
 			<DuplicateFilterGroupGauge :style="{ 'grid-row': 1, 'grid-column': 2 }" />
@@ -46,4 +46,23 @@ export default defineComponent({
 	}
 })
 </script>
-<style></style>
+<style>
+.filterGroupGaugesWidget {
+	position: absolute;
+	left: 81%;
+	top: 45%;
+	width: 17%;
+}
+
+@media (max-width: 1450px) {
+	.filterGroupGaugesWidget {
+		left: max(935px, 82%);
+	}
+}
+
+@media (max-height: 650px) {
+	.filterGroupGaugesWidget {
+		top: max(258px, 43%);
+	}
+}
+</style>

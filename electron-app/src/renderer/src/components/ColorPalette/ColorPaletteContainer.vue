@@ -53,13 +53,22 @@ export default defineComponent({
 	display: grid;
 	flex-direction: column;
 	width: 20%;
+	min-width: 228px;
+	min-height: 120px;
 	height: 20%;
-	top: 5%;
-	left: 2%;
+	top: max(30px, 5%);
+	left: max(11px, 2%);
 	column-gap: 10%;
 	row-gap: 10%;
 	z-index: 1;
-	grid-template-rows: repeat(3, 5vh);
-	grid-template-columns: repeat(2, 8vw);
+	grid-template-rows: repeat(3, max(30px, 5vh));
+	grid-template-columns: repeat(2, max(91px, 8vw));
+	transition: 0.3s;
+}
+
+@media (max-width: 1300px) {
+	.colorPalettesContainer {
+		left: 1%;
+	}
 }
 </style>

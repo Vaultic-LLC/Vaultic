@@ -1,7 +1,7 @@
 <template>
 	<div class="statusBarContainer">
 		<div class="statusBarContainer__onlineStatusContainer">
-			<div class="statusBarContainer__onlineStatusIcon" :class="{ online: online}">
+			<div class="statusBarContainer__onlineStatusIcon" :class="{ online: online }">
 			</div>
 			<Transition name="fade" mode="out-in">
 				<div class="statusBarContainer__onlineStatusText" :key="refreshKey">
@@ -22,7 +22,7 @@ export default defineComponent({
 	{
 		const refreshKey: Ref<string> = ref('');
 		const online: Ref<boolean> = ref(stores.appStore.isOnline);
-		const text: Ref<string>  = ref(online.value ? "Online" : "Offline");
+		const text: Ref<string> = ref(online.value ? "Online" : "Offline");
 
 		watch(() => stores.appStore.isOnline, (newValue) =>
 		{
@@ -45,8 +45,8 @@ export default defineComponent({
 	position: fixed;
 	width: 3%;
 	height: 1%;
-	top: 1.5%;
-	right: 2%;
+	top: 2%;
+	left: 2.5%;
 	background-color: transparent;
 	z-index: 151;
 	display: flex;
@@ -80,5 +80,6 @@ export default defineComponent({
 
 .statusBarContainer__onlineStatusText {
 	color: white;
+	font-size: clamp(7px, 1vw, 18px);
 }
 </style>

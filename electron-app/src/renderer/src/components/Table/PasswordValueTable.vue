@@ -1,9 +1,8 @@
 <template>
-	<div id="passwordValueTable">
-		<TableTemplate ref="tableRef" :rowGap="0" id="passwordTable" class="shadow scrollbar" :color="color"
+	<div class="passwordValueTableContainer">
+		<TableTemplate id="passwordValueTable" ref="tableRef" :rowGap="0" class="shadow scrollbar" :color="color"
 			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
 			:showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0"
-			:style="{ height: '55%', width: '48%', left: '31%', top: '42%' }"
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :color="color" :model="headerModels" :tabs="headerTabs">
@@ -517,7 +516,17 @@ export default defineComponent({
 </script>
 
 <style>
-.passwordValueTable {
-	z-index: 1;
+#passwordValueTable {
+	height: 55%;
+	width: 48%;
+	min-width: 547px;
+	left: 31%;
+	top: max(252px, 42%);
+}
+
+@media (max-width: 1300px) {
+	#passwordValueTable {
+		left: max(324px, 28.5%);
+	}
 }
 </style>

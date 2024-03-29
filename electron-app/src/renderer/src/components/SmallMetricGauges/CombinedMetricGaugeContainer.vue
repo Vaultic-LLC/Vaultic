@@ -40,7 +40,7 @@ export default defineComponent({
 	border-radius: 20px;
 	padding-left: clamp(15px, 2vw, 50px);
 	padding-right: clamp(15px, 2vw, 50px);
-	padding-bottom: clamp(10px, 5vh, 60px);
+	padding-bottom: clamp(5px, 4vh, 60px);
 }
 
 .combinedMetricGaugeContainer__metrics {

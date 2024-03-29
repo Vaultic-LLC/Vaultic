@@ -287,7 +287,7 @@ export default defineComponent({
 	position: absolute;
 	top: 106%;
 	font-weight: 300;
-	font-size: clamp(10px, 0.6vw, 36px);
+	font-size: clamp(8px, 0.6vw, 36px);
 	letter-spacing: 2px;
 	text-transform: uppercase;
 	color: rgba(255, 255, 255, 0.75);

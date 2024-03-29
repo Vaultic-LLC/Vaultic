@@ -10,25 +10,15 @@
 				<PasswordValueTable />
 			</div>
 		</div>
-		<div class="tempWidget" :style="{ right: '2%', top: '4%', width: '17%', height: '30%' }">
-			<PasswordValueGauges />
-		</div>
-		<div class="tempWidget" :style="{ right: '2%', top: '45%', width: '17%' }">
-			<FilterGroupGauges />
-		</div>
-		<div class="tempWidget"
-			:style="{ top: '4%', left: '58%', width: '21%', height: '25%', 'min-height': '180px', 'min-width': '268px' }">
+		<PasswordValueGauges />
+		<FilterGroupGauges />
+		<div class="tempWidget secureProgressChartWidget">
 			<PasswordStrengthProgressChart />
 		</div>
-		<div class="tempWidget" :style="{ top: '72%', right: '2%', width: '17%' }">
-			<LoginHistoryCalendar />
+		<div class="tempWidget loginHistoryCalendarWidget">
+			<LoginHistoryCalendar :refresh="false" />
 		</div>
-		<div class="iconWidgets" :style="{ top: '89%', left: '3%', width: '25%', height: '8%' }">
-			<LockIconCard :style="{ 'grid-row': '1', 'grid-column': 1 }" />
-			<SettingsIconCard :style="{ 'grid-row': '1', 'grid-column': 2 }" />
-			<!-- <LayoutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" /> -->
-			<AboutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" />
-		</div>
+		<MenuWidget />
 	</div>
 </template>
 
@@ -50,6 +40,7 @@ import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
 import StatusBar from './components/StatusBar.vue';
+import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 
 import { AccountSetupModel, AccountSetupView } from './Types/Models';
 import { OnSessionExpiredFunctionKey } from './Types/Keys';
@@ -76,6 +67,7 @@ export default defineComponent({
 		LockIconCard,
 		AboutIconCard,
 		LayoutIconCard,
+		MenuWidget
 	},
 	setup()
 	{
@@ -147,8 +139,8 @@ export default defineComponent({
 	text-align: center;
 	color: var(--app-color);
 	/* TODO: Doesn't work */
-	min-width: 1170px;
-	min-height: 540px;
+	min-width: 1140px;
+	min-height: 600px;
 }
 
 body {
@@ -184,11 +176,62 @@ h2 {
 	row-gap: 25px;
 }
 
-.iconWidgets {
-	position: absolute;
-	background: var(--widget-background-color);
-	display: grid;
-	border-radius: 1vw;
+.secureProgressChartWidget {
+	top: 4%;
+	left: 58%;
+	width: 21%;
+	height: 25%;
+	min-height: 180px;
+	min-width: 250px;
+}
+
+.loginHistoryCalendarWidget {
+	top: 70.5%;
+	left: 81%;
+	width: 17%;
+	min-width: 240px;
+	min-height: 140px;
+}
+
+@media (max-width: 1450px) {
+	.loginHistoryCalendarWidget {
+		width: 18%;
+	}
+}
+
+@media (max-width: 1300px) {
+	.loginHistoryCalendarWidget {
+		left: max(890px, 78%);
+		width: 21.5%;
+	}
+}
+
+@media (max-width: 1300px) {
+	.secureProgressChartWidget {
+		left: max(627px, 55%);
+	}
+}
+
+@media (max-height: 750px) {
+	.loginHistoryCalendarWidget {
+		top: 73%;
+	}
+}
+
+@media (max-height: 690px) {
+	.loginHistoryCalendarWidget {
+		top: 72%;
+	}
+}
+
+@media (max-height: 650px) {
+	.secureProgressChartWidget {
+		top: max(12px, 2%);
+	}
+
+	.loginHistoryCalendarWidget {
+		top: max(414px, 69%);
+	}
 }
 
 .tippy-box[data-theme~='material'] {

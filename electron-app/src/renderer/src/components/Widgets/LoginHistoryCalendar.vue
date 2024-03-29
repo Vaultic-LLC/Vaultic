@@ -23,6 +23,7 @@ export default defineComponent({
 	{
 		Calendar,
 	},
+	props: ['refresh'],
 	setup()
 	{
 		const color: ComputedRef<string> = computed(() => stores.settingsStore.currentPrimaryColor.value);
@@ -32,7 +33,7 @@ export default defineComponent({
 			let attr: any[] = [];
 			Object.keys(stores.appStore.loginHistory).forEach(day =>
 			{
-				attr.push(...stores.appStore.loginHistory[day].map((l) =>
+				attr.push(...stores.appStore.loginHistory[day].map((l, i) =>
 				{
 					return {
 						key: l,
@@ -99,6 +100,10 @@ export default defineComponent({
 	--vc-focus-ring: 0 0 0 2px v-bind(color);
 }
 
+.vc-container {
+	width: 100%
+}
+
 .vc-dots {
 	flex-wrap: wrap;
 	row-gap: 2px;
@@ -110,12 +115,21 @@ export default defineComponent({
 }
 
 .vc-header {
-	margin-top: 0px;
+	margin-top: clamp(0px, 0.2vw, 10px);
+	margin-bottom: clamp(0px, 0.2vw, 10px);
 }
 
-.vc-header .vs-arrow {
+.vc-header .vc-arrow {
 	width: clamp(10px, 1.5vw, 28px);
 	height: clamp(12px, 1.5vw, 30px);
+}
+
+.vc-header .vc-title {
+	font-size: clamp(10px, 0.7vw, 15px);
+}
+
+.vc-day {
+	min-height: 0px;
 }
 
 .vc-weekday {
@@ -124,7 +138,32 @@ export default defineComponent({
 }
 
 .vc-day-content {
-	height: clamp(10px, 1.8vh, 28px);
+	height: clamp(13px, 3vh, 45px);
 	font-size: clamp(7px, 0.75vw, 14px);
+}
+
+@media (max-height: 1180px) {
+	.vc-day-content {
+		height: clamp(13px, 2.5vh, 45px);
+	}
+}
+
+@media (max-height: 750px) {
+	.vc-day-content {
+		height: clamp(13px, 1.8vh, 45px);
+	}
+}
+
+.vc-dots {
+	width: clamp(3px, 0.2vw, 5px);
+	height: clamp(3px, 0.5vw, 6px);
+	overflow: hidden;
+}
+
+.vc-dot {
+	width: clamp(3px, 0.2vw, 5px);
+	height: clamp(3px, 0.2vw, 5px);
+	margin-right: 0px !important;
+	margin-top: clamp(0px, 0.2vw, 1px);
 }
 </style>

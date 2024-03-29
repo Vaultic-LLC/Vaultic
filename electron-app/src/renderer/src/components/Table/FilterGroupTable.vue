@@ -3,7 +3,6 @@
 		<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
 			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
 			:showEmptyMessage="tableRowDatas.visualValues.length == 0"
-			:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #header>
 				<TableHeaderRow :model="headerModels" :tabs="headerTabs">
@@ -437,4 +436,18 @@ export default defineComponent({
 });
 </script>
 
-<style></style>
+<style>
+#filterTable {
+	height: 43%;
+	width: 25%;
+	min-width: 285px;
+	left: 3%;
+	top: max(252px, 42%);
+}
+
+@media (max-width: 1300px) {
+	#filterTable {
+		left: max(11px, 1%);
+	}
+}
+</style>

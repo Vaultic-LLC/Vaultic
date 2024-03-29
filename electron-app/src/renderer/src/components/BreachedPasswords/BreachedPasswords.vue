@@ -170,11 +170,11 @@ export default defineComponent({
 .breachedPasswordsContainer {
 	position: absolute;
 	padding-top: 0.7vw;
-	top: 4%;
-	left: 31%;
+	top: max(12px, 4%);
+	left: max(325px, 31%);
 	width: 25%;
 	height: 24.5%;
-	min-width: 317px;
+	min-width: 280px;
 	min-height: 180px;
 	display: flex;
 	flex-direction: column;
@@ -182,6 +182,18 @@ export default defineComponent({
 	align-items: center;
 	border-radius: 20px;
 	background: rgb(44 44 51 / 16%);
+}
+
+@media (max-width: 1300px) {
+	.breachedPasswordsContainer {
+		left: max(325px, 28.5%);
+	}
+}
+
+@media (max-height: 650px) {
+	.breachedPasswordsContainer {
+		top: max(12px, 2%);
+	}
 }
 
 .breachedPasswordsContainer__content {

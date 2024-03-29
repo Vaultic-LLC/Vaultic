@@ -1,5 +1,5 @@
 <template>
-	<div class="filterGroupGaugeContainer">
+	<div class="passwordValueGaugesWidget">
 		<CombinedMetricGaugeContainer :refreshKey="refreshKey" :title="title">
 			<SmallMetricGauge v-for="model in passwordValueMetricGaugeModels" :key="model.key" :model="model"
 				:style="model.style" />
@@ -18,7 +18,7 @@ import SmallMetricGauge from '@renderer/components/Dashboard/SmallMetricGauge.vu
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
-	name: "FilterGroupGauges",
+	name: "PasswordValueGauges",
 	components:
 	{
 		CombinedMetricGaugeContainer,
@@ -169,4 +169,24 @@ export default defineComponent({
 	}
 })
 </script>
-<style></style>
+<style>
+.passwordValueGaugesWidget {
+	position: absolute;
+	left: 81%;
+	top: 4%;
+	width: 17%;
+	height: 30%;
+}
+
+@media (max-width: 1450px) {
+	.passwordValueGaugesWidget {
+		left: max(935px, 82%);
+	}
+}
+
+@media (max-height: 650px) {
+	.passwordValueGaugesWidget {
+		top: max(12px, 2%);
+	}
+}
+</style>

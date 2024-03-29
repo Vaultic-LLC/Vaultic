@@ -49,6 +49,15 @@ window.addEventListener('unhandledrejection', (e) =>
 	}
 });
 
+window.addEventListener("resize", () =>
+{
+	if (window.innerWidth < 1140)
+	{
+		window.innerWidth = 1140;
+	}
+});
+
+
 const app = createApp(App);
 
 app.use(setupCalendar, {});
