@@ -10,13 +10,11 @@ async function hash(value: string, salt: string): Promise<string>
 {
 	return new Promise((resolve, _) =>
 	{
-		console.time();
 		crypto.pbkdf2(value, salt!, 5900000, 32,
 			'sha256', (err, derivedKey) =>
 		{
 			if (err) throw err;
 			resolve(derivedKey.toString('base64'));
-			console.timeLog();
 		});
 	});
 }

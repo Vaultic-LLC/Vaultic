@@ -1,11 +1,16 @@
 <template>
 	<div class="nameValuePairRowContainer">
-		<EncryptedInputField :colorModel="colorModel" :label="'Value'" v-model="valueValue" :showCopy="true"
-			:style="{ 'grid-row': '2', 'grid-column': '2 / span 2' }" :disabled="true" />
-		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
-			v-model="nameValuePair.additionalInformation" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 3' }"
-			:disabled="true" :height="150" :width="300" />
-		<img :src="qrCodeUrl" :style="{ 'grid-row': '3 / span 5', 'grid-column': '13 / span 4' }" />
+		<div class="nameValuePairRowContainer__left">
+			<EncryptedInputField :colorModel="colorModel" :label="'Value'" v-model="valueValue" :showCopy="true"
+				:disabled="true" :width="'11vw'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
+				:isOnWidget="true" />
+			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
+				v-model="nameValuePair.additionalInformation" :width="'12vw'" :height="'9vh'" :maxHeight="'135px'"
+				:maxWidth="'300px'" :isOnWidget="true" />
+		</div>
+		<div class="nameValuePairRowContainer__right">
+			<img class="nameValuePairRowContainer__qrCode" :src="qrCodeUrl" />
+		</div>
 	</div>
 </template>
 
@@ -64,8 +69,7 @@ export default defineComponent({
 						generateMFAQRCode(value.value.name, result.value).then((url) =>
 						{
 							qrCodeUrl.value = url;
-						})
-						.catch(() => {});
+						}).catch(() => { });
 					}
 				});
 			}).catch(() =>
@@ -96,8 +100,25 @@ export default defineComponent({
 
 <style>
 .nameValuePairRowContainer {
-	display: grid;
-	grid-template-rows: repeat(10, 30px);
-	grid-template-columns: repeat(15, 75px);
+	display: flex;
+	max-height: inherit;
+}
+
+.nameValuePairRowContainer__left {
+	display: flex;
+	flex-direction: column;
+	row-gap: 2vw;
+	margin-right: clamp(50px, 5vw, 100px);
+}
+
+.nameValuePairRowContainer__right {
+	display: flex;
+	justify-content: center;
+	flex-grow: 1;
+}
+
+.nameValuePairRowContainer__qrCode {
+	height: 50%;
+	transform: translate(4vw);
 }
 </style>

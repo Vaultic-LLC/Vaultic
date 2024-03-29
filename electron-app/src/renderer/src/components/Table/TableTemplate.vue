@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onUpdated, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, onUpdated, Ref, ref, watch } from 'vue';
 
 import { SortableHeaderModel } from '@renderer/Types/Models';
 import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
@@ -44,6 +44,7 @@ export default defineComponent({
 	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor'],
 	setup(props, ctx)
 	{
+		const resizeObserver: ResizeObserver = new ResizeObserver(calcScrollbarColor);
 		const key: Ref<string> = ref('');
 		const tableContainer: Ref<HTMLElement | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
@@ -148,6 +149,14 @@ export default defineComponent({
 		watch(() => props.emptyMessage, () =>
 		{
 			key.value = Date.now().toString();
+		});
+
+		onMounted(() =>
+		{
+			if (tableContainer.value)
+			{
+				resizeObserver.observe(tableContainer.value);
+			}
 		});
 
 		onUpdated(() =>

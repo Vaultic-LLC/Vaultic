@@ -2,13 +2,11 @@
 	<div class="passwordRowContainer">
 		<div class="passwordRowContainer__left">
 			<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordValue"
-				:initialLength="value.passwordLength" :showCopy="true"
-				:style="{ 'grid-row': '2 / span 2', 'grid-column': '2 / span 2' }" :disabled="true"
-				:isInitiallyEncrypted="false" :isOnWidget="true" :width="'11vw'" :maxWidth="'300px'" :height="'4vh'"
-				:minHeight="'35px'" />
+				:initialLength="value.passwordLength" :showCopy="true" :disabled="true" :isInitiallyEncrypted="false"
+				:isOnWidget="true" :width="'11vw'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'" :isOnWidget="true"
-				v-model="pword.additionalInformation" :style="{ 'grid-row': '5 / span 4', 'grid-column': '2 / span 2' }"
-				:disabled="true" :width="'12vw'" :height="'9vh'" :maxHeight="'135px'" :maxWidth="'300px'" />
+				v-model="pword.additionalInformation" :disabled="true" :width="'12vw'" :height="'9vh'"
+				:maxHeight="'135px'" :maxWidth="'300px'" />
 		</div>
 		<TableTemplate :color="textColor" :style="{ 'position': 'relative', 'flex-grow': '1' }"
 			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false"
