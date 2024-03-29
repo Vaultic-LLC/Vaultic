@@ -36,6 +36,7 @@ import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
 import { tween } from '@renderer/Helpers/TweenHelper';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "TableTemplate",
@@ -46,7 +47,7 @@ export default defineComponent({
 		const key: Ref<string> = ref('');
 		const tableContainer: Ref<HTMLElement | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
-		const rowGapValue: ComputedRef<string> = computed(() => `${props.rowGap}px`);
+		const rowGapValue: ComputedRef<string> = computed(() => props.rowGap ?? "0px");
 		const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels ?? []);
 		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
 		const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
@@ -67,7 +68,7 @@ export default defineComponent({
 			{
 				const from: RGBColor | null = hexToRgb(lastColor.value);
 				const to: RGBColor | null = hexToRgb(primaryColor.value);
-
+				stores.settingsStore.currentPrimaryColor.value;
 				if (tableContainer.value?.scrollHeight <= tableContainer.value?.clientHeight)
 				{
 					scrollbarColor.value = lastColor.value;

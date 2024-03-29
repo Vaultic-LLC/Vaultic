@@ -1,17 +1,19 @@
 <template>
 	<div class="passwordRowContainer">
-		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordValue"
-			:initialLength="value.passwordLength" :showCopy="true"
-			:style="{ 'grid-row': '2 / span 2', 'grid-column': '2 / span 2' }" :disabled="true"
-			:isInitiallyEncrypted="false" :isOnWidget="true" />
-		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'" v-model="pword.additionalInformation"
-			:style="{ 'grid-row': '5 / span 4', 'grid-column': '2 / span 2' }" :disabled="true" :height="135"
-			:width="300" />
-		<TableTemplate :color="textColor"
-			:style="{ 'position': 'relative', 'grid-row': '2 / span 9', 'grid-column': '10 / span 5' }"
-			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false" :row-gap="0"
-			:emptyMessage="emptyMessage" :showEmptyMessage="securityQuestions.length == 0"
-			:backgroundColor="backgroundColor">
+		<div class="passwordRowContainer__left">
+			<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordValue"
+				:initialLength="value.passwordLength" :showCopy="true"
+				:style="{ 'grid-row': '2 / span 2', 'grid-column': '2 / span 2' }" :disabled="true"
+				:isInitiallyEncrypted="false" :isOnWidget="true" :width="'11vw'" :maxWidth="'300px'" :height="'4vh'"
+				:minHeight="'35px'" />
+			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'" :isOnWidget="true"
+				v-model="pword.additionalInformation" :style="{ 'grid-row': '5 / span 4', 'grid-column': '2 / span 2' }"
+				:disabled="true" :width="'12vw'" :height="'9vh'" :maxHeight="'135px'" :maxWidth="'300px'" />
+		</div>
+		<TableTemplate :color="textColor" :style="{ 'position': 'relative', 'flex-grow': '1' }"
+			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false"
+			:row-gap="securityQuestionRowGap" :emptyMessage="emptyMessage"
+			:showEmptyMessage="securityQuestions.length == 0" :backgroundColor="backgroundColor">
 			<template #header>
 			</template>
 			<template #body>
@@ -23,7 +25,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import TableTemplate from '../TableTemplate.vue';
 import TableHeaderRow from '../Header/TableHeaderRow.vue';
@@ -37,6 +39,7 @@ import { HeaderTabModel, InputColorModel } from '@renderer/Types/Models';
 import { defaultInputColor } from '@renderer/Types/Colors';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import cryptHelper from '@renderer/Helpers/cryptHelper';
+import { screenWidthIsAtRatioOfMax } from '@renderer/Helpers/screenSizeHelepr';
 
 export default defineComponent({
 	name: "PasswordRow",
@@ -51,7 +54,8 @@ export default defineComponent({
 	props: ["value", "authenticationPromise", "color", 'isShowing'],
 	setup(props)
 	{
-		const textColor: string = "rgba(118, 118, 118, 0.3)";
+		const resizeObserver: ResizeObserver = new ResizeObserver(calcRowGap);
+		const textColor: string = "#7676764d";
 		const backgroundColor: string = "transparent";
 		const colorModel: Ref<InputColorModel> = ref({
 			color: props.color,
@@ -60,6 +64,8 @@ export default defineComponent({
 			borderColor: "rgba(118, 118, 118, 0.3)",
 			activeBorderColor: "rgba(118, 118, 118, 0.3)"
 		});
+
+		const securityQuestionRowGap: Ref<string> = ref(screenWidthIsAtRatioOfMax(0.8) ? 'clamp(10px, 1vh, 20px)' : 'clamp(10px, 1vh, 20px)');
 
 		// copy password so we don't accidentally edit it
 		const password: ComputedRef<ReactivePassword> = computed(() => JSON.parse(JSON.stringify(props.value)));
@@ -78,6 +84,11 @@ export default defineComponent({
 				onClick: () => { }
 			}
 		];
+
+		function calcRowGap()
+		{
+			securityQuestionRowGap.value = screenWidthIsAtRatioOfMax(0.8) ? 'clamp(25px, 1vh, 30px)' : 'clamp(10px, 1vh, 20px)';
+		}
 
 		watch(() => props.authenticationPromise as Promise<string>, (newValue) =>
 		{
@@ -130,6 +141,15 @@ export default defineComponent({
 			}
 		});
 
+		onMounted(() =>
+		{
+			const app = document.getElementById('app');
+			if (app)
+			{
+				resizeObserver.observe(app);
+			}
+		})
+
 		return {
 			pword: props.value,
 			securityQuestions,
@@ -138,7 +158,8 @@ export default defineComponent({
 			emptyMessage,
 			headerTabs,
 			backgroundColor,
-			colorModel
+			colorModel,
+			securityQuestionRowGap
 		}
 	}
 })
@@ -146,9 +167,15 @@ export default defineComponent({
 
 <style>
 .passwordRowContainer {
-	display: grid;
-	grid-template-rows: repeat(10, 30px);
-	grid-template-columns: repeat(7, 50px);
+	display: flex;
+	max-height: inherit;
+}
+
+.passwordRowContainer__left {
+	display: flex;
+	flex-direction: column;
+	row-gap: 2vw;
+	margin-right: clamp(50px, 5vw, 100px);
 }
 
 .passwordRowContainer__table--fadeIn {

@@ -4,7 +4,7 @@
 			openContainer: openContainer, keepStylesWhileMoving: keepStylesWhileMoving,
 			noAnimation: noAnimation
 		}">
-			<div :style="{ 'display': showInputs ? 'grid' : 'none' }">
+			<div :style="{ 'display': showInputs ? 'grid' : 'none', 'max-height': 'inherit' }">
 				<slot></slot>
 			</div>
 		</div>
@@ -68,8 +68,8 @@ export default defineComponent({
 	row-gap: 10px;
 	border-bottom-right-radius: 20px;
 
-	height: v-bind(rowHeight);
-	max-height: v-bind(rowHeight);
+	height: v-bind(defaultHeight);
+	max-height: v-bind(defaultHeight);
 	animation: 1s slideIn ease forwards;
 	opacity: 0;
 	box-shadow: -5px 5px 10px #070a0c,
@@ -79,7 +79,7 @@ export default defineComponent({
 
 .slideInContainer.openContainer {
 	display: grid;
-	max-height: v-bind(rowHeight);
+	max-height: v-bind(defaultHeight);
 	animation: 1s slideOut ease;
 
 	transition: opacity 2s linear forwards;
@@ -103,13 +103,13 @@ export default defineComponent({
 	}
 
 	100% {
-		max-height: v-bind(rowHeight);
+		max-height: v-bind(defaultHeight);
 	}
 }
 
 @keyframes slideIn {
 	0% {
-		max-height: v-bind(rowHeight);
+		max-height: v-bind(defaultHeight);
 	}
 
 	100% {

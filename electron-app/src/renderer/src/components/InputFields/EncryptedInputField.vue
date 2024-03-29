@@ -9,7 +9,7 @@
 				<div v-if="isLocked && showUnlock">
 					<ion-icon class="encryptedInputIcon" name="lock-open-outline" @click="unlock"></ion-icon>
 				</div>
-				<div v-if="!isLocked" class="unlockedIcons">
+				<div v-if="!isLocked && showButtonsUnderneath != true" class="unlockedIcons">
 					<ion-icon class="encryptedInputIcon" v-if="isHidden" name="eye-outline"
 						@click="toggleHidden(false)"></ion-icon>
 					<ion-icon class="encryptedInputIcon" v-else name="eye-off-outline"
@@ -22,6 +22,14 @@
 				<a>
 					<span>Random</span>
 				</a>
+			</div>
+			<div v-if="showButtonsUnderneath == true" class="encryptedInputContainer__unlockIconsUnderneath">
+				<ion-icon class="encryptedInputIcon" v-if="isHidden" name="eye-outline"
+					@click="toggleHidden(false)"></ion-icon>
+				<ion-icon class="encryptedInputIcon" v-else name="eye-off-outline"
+					@click="toggleHidden(true)"></ion-icon>
+				<ion-icon class="encryptedInputIcon" v-if="showCopy" name="clipboard-outline"
+					@click="copyValue"></ion-icon>
 			</div>
 		</div>
 	</div>
@@ -43,7 +51,7 @@ export default defineComponent({
 	emits: ["update:modelValue", "onDirty"],
 	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
 		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
-		"minHeight", "maxHeight", 'isOnWidget'],
+		"minHeight", "maxHeight", 'isOnWidget', 'showButtonsUnderneath'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
@@ -312,6 +320,18 @@ export default defineComponent({
 }
 
 .textInputFieldContainer .icons .unlockedIcons {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	column-gap: 5px;
+}
+
+.encryptedInputContainer__unlockIconsUnderneath {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	margin-top: 10px;
+	margin-left: 5px;
 	display: flex;
 	justify-content: center;
 	align-items: center;

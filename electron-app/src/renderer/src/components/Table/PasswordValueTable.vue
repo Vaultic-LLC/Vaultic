@@ -19,7 +19,7 @@
 					v-for="(model, index) in collapsibleTableRowModels.visualValues" :key="model.id"
 					:groups="model.data.groups" :model="model" :rowNumber="index" :color="color">
 					<SlideInRow :isShowing="props.isShowing" :colspan="headerModels.length + 1"
-						:defaultHeight="collapseRowDefaultHeight">
+						:defaultHeight="'clamp(100px, 22vh, 300px)'">
 						<component :is="rowComponent" :value="model.data"
 							:authenticationPromise="props.authenticationPromise" :color="color"
 							:isShowing="props.isShowing" />
@@ -92,8 +92,6 @@ export default defineComponent({
 		const activeTable: Ref<number> = ref(stores.appStore.activePasswordValuesTable);
 		const color: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			stores.settingsStore.currentColorPalette.passwordsColor.primaryColor : stores.settingsStore.currentColorPalette.valuesColor.primaryColor);
-		const collapseRowDefaultHeight: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
-			"300" : "300");
 
 		const passwords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
 		const pinnedPasswords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, stores.passwordStore.passwords.filter(p => p.isPinned), "passwordFor");
@@ -502,7 +500,6 @@ export default defineComponent({
 			headerModels,
 			rowComponent,
 			collapsibleTableRowModels,
-			collapseRowDefaultHeight,
 			showEditPasswordPopup,
 			currentEditingPasswordModel,
 			showEditValuePopup,

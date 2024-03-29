@@ -4,7 +4,7 @@
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
 			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true"
-			:iconOnly="iconOnly" />
+			:iconOnly="false" />
 	</div>
 </template>
 

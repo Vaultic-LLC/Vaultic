@@ -16,12 +16,13 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, re
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { InputColorModel } from '@renderer/Types/Models';
+import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
 
 export default defineComponent({
 
 	name: "TextAreaInputField",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "width", "height"],
+	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isOnWidget", "width", 'minWidth', 'maxWidth', "height", 'minHeight', 'maxHeight'],
 	setup(props, ctx)
 	{
 		const textArea: Ref<HTMLElement | null> = ref(null);
@@ -31,8 +32,8 @@ export default defineComponent({
 		const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
 		let invalid: Ref<boolean> = ref(false);
 
-		const textAreaWidth: ComputedRef<string> = computed(() => (props.width ?? 400) + "px");
-		const textAreaHeight: ComputedRef<string> = computed(() => (props.height ?? 200) + "px");
+		const textAreaWidth: ComputedRef<string> = computed(() => props.width ?? "400px");
+		const textAreaHeight: ComputedRef<string> = computed(() => props.height ?? "200px");
 
 		const thumbTopNumber: Ref<number> = ref(0);
 		const thumbTopString: ComputedRef<string> = computed(() => thumbTopNumber.value + "px");
@@ -41,6 +42,7 @@ export default defineComponent({
 		const thumbHeightString: ComputedRef<string> = computed(() => thumbHeightNumber.value + "px");
 		const textAreaStraightBorder: ComputedRef<boolean> = computed(() => thumbHeightNumber.value != 0);
 
+		const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 		let body: HTMLElement | null = null;
 
 		function onScroll(e: any)
@@ -158,6 +160,7 @@ export default defineComponent({
 			textArea,
 			textAreaStraightBorder,
 			scrollThumb,
+			labelBackgroundColor,
 			onInput
 		}
 	}
@@ -169,20 +172,17 @@ export default defineComponent({
 	position: relative;
 	height: v-bind(textAreaHeight);
 	width: v-bind(textAreaWidth);
+	min-height: v-bind(minHeight);
+	min-width: v-bind(minWidth);
+	max-height: v-bind(maxHeight);
+	max-width: v-bind(maxWidth);
 	display: flex;
-	/* border: solid 1.5px v-bind('colorModel.borderColor');
-	border-radius: 1rem;
-	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1); */
 }
 
 .textAreaInputFieldContainer.fadeIn {
 	opacity: 0;
 	animation: fadeIn 1s linear forwards;
 }
-
-/* .textAreaInputFieldContainer.active {
-	border: 1.5px solid v-bind('colorModel.activeBorderColor');
-} */
 
 @keyframes fadeIn {
 	0% {
@@ -196,13 +196,13 @@ export default defineComponent({
 
 .textAreaInputFieldContainer__input {
 	position: absolute;
-	width: inherit;
-	height: inherit;
+	width: 100%;
+	height: 100%;
 	left: 0;
 	color: white;
 	border-radius: 1rem;
 	background: none;
-	font-size: 1rem;
+	font-size: clamp(11px, 1.2vh, 25px);
 	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 	resize: none;
 	padding: 5px;
@@ -218,9 +218,11 @@ export default defineComponent({
 	left: 10px;
 	top: 0;
 	color: v-bind('colorModel.textColor');
+	background-color: v-bind(labelBackgroundColor);
 	pointer-events: none;
 	transform: translateY(1rem);
 	transition: var(--input-label-transition);
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .textAreaInputFieldContainer__input:focus,
@@ -233,7 +235,7 @@ export default defineComponent({
 .textAreaInputFieldContainer__input:valid~label,
 .textAreaInputFieldContainer__input:disabled~label {
 	transform: translateY(-80%) scale(0.8);
-	background-color: var(--app-color);
+	background-color: v-bind(labelBackgroundColor);
 	padding: 0 .2em;
 	color: v-bind('colorModel.activeTextColor');
 	left: 0px;

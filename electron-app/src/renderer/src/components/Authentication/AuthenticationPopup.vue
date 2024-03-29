@@ -217,7 +217,7 @@ export default defineComponent({
 	width: v-bind('computedWidth');
 	height: v-bind('computedHeight');
 	min-width: 200px;
-	min-height: 200px;
+	min-height: 180px;
 	max-width: 385px;
 	max-height: 350px;
 	background-color: var(--app-color);
@@ -436,7 +436,7 @@ export default defineComponent({
 	background: transparent;
 	border-left: 25px solid transparent;
 	border-right: 25px solid transparent;
-	border-bottom: 100px solid v-bind(color);
+	border-bottom: clamp(85px, 4vw, 100px) solid v-bind(color);
 	width: 0;
 	aspect-ratio: 1/ 1;
 }
