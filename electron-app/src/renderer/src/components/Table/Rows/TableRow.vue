@@ -224,6 +224,7 @@ export default defineComponent({
 	transition: 0.3s;
 	font-size: clamp(18px, 1.1vw, 28px);
 	cursor: pointer;
+	will-change: transform;
 }
 
 .tableRow .rowIcon:hover {

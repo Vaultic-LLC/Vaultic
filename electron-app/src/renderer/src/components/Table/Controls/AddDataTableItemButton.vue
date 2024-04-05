@@ -3,7 +3,8 @@
 		<AddButton :color="primaryColor" @click="doShowEditControlsPopup" />
 		<Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="showEditControlsPopup" :closePopup="closePopup">
+				<ObjectPopup v-if="showEditControlsPopup" :minWidth="'800px'" :minHeight="'480px'"
+					:closePopup="closePopup">
 					<AddObjectPopup :initalActiveContent="initalActiveContent" />
 				</ObjectPopup>
 			</Transition>

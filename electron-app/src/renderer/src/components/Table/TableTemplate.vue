@@ -195,6 +195,7 @@ export default defineComponent({
 	width: calc(100% - 10px);
 	border-top-right-radius: 20px;
 	border-top-left-radius: 20px;
+	transform: translateY(0.5px);
 }
 
 .tableContainer {
@@ -207,8 +208,9 @@ export default defineComponent({
 	width: 100%;
 	height: 100%;
 	background-color: v-bind(backgroundColor);
-	border-bottom-left-radius: 20px;
-	border-bottom-right-radius: 20px;
+	border-bottom-left-radius: 1vw;
+	border-bottom-right-radius: 1vw;
+	will-change: transform;
 }
 
 .tableContainer.small {
@@ -217,8 +219,8 @@ export default defineComponent({
 }
 
 .tableContainer.medium {
-	border-bottom-left-radius: 20px;
-	border-bottom-right-radius: 20px;
+	border-bottom-left-radius: clamp(9px, 1vw, 13px);
+	border-bottom-right-radius: 1vw;
 }
 
 .tableContainer.border {
@@ -237,6 +239,7 @@ export default defineComponent({
 	border-collapse: separate;
 	/* border-spacing: 10px; */
 }
+
 
 .tableContainer.small::-webkit-scrollbar {
 	width: 5px;
@@ -259,6 +262,7 @@ export default defineComponent({
 }
 
 .tableContainer.scrollbar::-webkit-scrollbar-thumb {
+	max-width: 50%;
 	transition: 0.3s;
 	background: v-bind(thumbColor);
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);

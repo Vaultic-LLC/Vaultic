@@ -31,7 +31,8 @@ import tippy from 'tippy.js';
 export default defineComponent({
 	name: "EnumInputField",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget'],
+	props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget', 'height', 'minHeight', 'maxHeight',
+		'width', 'minWidth', 'maxWidth'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
@@ -187,13 +188,16 @@ export default defineComponent({
 <style scoped>
 .dropDownContainer {
 	position: relative;
-	height: 50px;
-	width: 200px;
+	height: v-bind(height);
+	width: v-bind(width);
+	max-height: v-bind(maxHeight);
+	max-width: v-bind(maxWidth);
+	min-height: v-bind(minHeight);
+	min-width: v-bind(minWidth);
 
 	border: solid 1.5px #9e9e9e;
-	border-radius: 1rem;
+	border-radius: min(1vw, 1rem);
 	background: none;
-	font-size: 1rem;
 	color: white;
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -221,6 +225,7 @@ export default defineComponent({
 	left: 5%;
 	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 	cursor: pointer;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .dropDownContainer.active .dropDownTitle .dropDownLabel {
@@ -235,7 +240,7 @@ export default defineComponent({
 	visibility: unset;
 	top: 30%;
 	right: 5%;
-	font-size: 24px;
+	font-size: clamp(15px, 2vh, 25px);
 	color: white;
 	transition: 0.3s;
 	transform: rotate(0);
@@ -255,6 +260,7 @@ export default defineComponent({
 .dropDownContainer .dropDownTitle .selectedItemText {
 	display: none;
 	color: white;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .dropDownContainer .dropDownTitle .selectedItemText.hasValue {
@@ -266,12 +272,12 @@ export default defineComponent({
 }
 
 .dropDownContainer .dropDownSelect {
-	width: inherit;
+	width: 100%;
 	position: absolute;
 	left: 0;
 	bottom: -2%;
 	background: none;
-	font-size: 1rem;
+	font-size: clamp(11px, 1.2vh, 25px);
 	color: white;
 	transform: translate(-1.5px, 100%);
 	border-bottom-left-radius: 1rem;
@@ -306,6 +312,7 @@ export default defineComponent({
 	padding-left: 10px;
 	transition: 0.15s;
 	opacity: 1;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .dropDownSelect.opened .dropDownSelectOption:last-child {

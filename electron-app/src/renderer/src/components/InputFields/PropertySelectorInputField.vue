@@ -33,7 +33,8 @@ import tippy from 'tippy.js';
 export default defineComponent({
 	name: "PropertySelectorInputField",
 	emits: ["update:modelValue", "propertyTypeChanged"],
-	props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget', 'fadeIn'],
+	props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget', 'fadeIn', 'height', 'minHeight', 'maxHeight',
+		'width', 'minWidth', 'maxWidth'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
@@ -72,6 +73,8 @@ export default defineComponent({
 					ctx.emit("propertyTypeChanged", selectedPropertyType);
 				}
 			}
+
+			focused.value = false;
 		}
 
 		function onEnter()
@@ -185,13 +188,16 @@ export default defineComponent({
 <style scoped>
 .dropDownContainer {
 	position: relative;
-	height: 50px;
-	width: 200px;
+	height: v-bind(height);
+	width: v-bind(width);
+	max-height: v-bind(maxHeight);
+	max-width: v-bind(maxWidth);
+	min-height: v-bind(minHeight);
+	min-width: v-bind(minWidth);
 
 	border: solid 1.5px #9e9e9e;
-	border-radius: 1rem;
+	border-radius: min(1vw, 1rem);
 	background: none;
-	font-size: 1rem;
 	color: white;
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -219,6 +225,7 @@ export default defineComponent({
 	left: 5%;
 	transition: var(--input-label-transition);
 	cursor: pointer;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .dropDownContainer.active .dropDownTitle .dropDownLabel {
@@ -226,13 +233,14 @@ export default defineComponent({
 	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .dropDownContainer .dropDownTitle .dropDownIcon {
 	position: absolute;
 	top: 30%;
 	right: 5%;
-	font-size: 24px;
+	font-size: clamp(15px, 2vh, 25px);
 	color: white;
 	transition: 0.3s;
 	transform: rotate(0);
@@ -252,6 +260,7 @@ export default defineComponent({
 .dropDownContainer .dropDownTitle .selectedItemText {
 	display: none;
 	color: white;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .dropDownContainer .dropDownTitle .selectedItemText.hasValue {
@@ -263,12 +272,12 @@ export default defineComponent({
 }
 
 .dropDownContainer .dropDownSelect {
-	width: inherit;
+	width: 100%;
 	position: absolute;
 	left: 0;
 	bottom: 0;
 	background: none;
-	font-size: 1rem;
+	font-size: clamp(11px, 1.2vh, 25px);
 	color: white;
 	transform: translate(-1.5px, 100%);
 	border-bottom-left-radius: 1rem;
@@ -292,7 +301,8 @@ export default defineComponent({
 
 .dropDownSelect .dropDownSelectOption {
 	display: none;
-	background-color: var(backgroundColor);
+	background-color: v-bind(backgroundColor);
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .dropDownSelect.opened .dropDownSelectOption {

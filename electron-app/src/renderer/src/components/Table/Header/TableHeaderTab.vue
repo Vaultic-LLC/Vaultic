@@ -121,10 +121,10 @@ export default defineComponent({
 }
 
 .tableHeaderTab:nth-child(1) {
-	border-top-left-radius: 20px;
+	border-top-left-radius: min(1.2vw, 20px);
 }
 
 .tableHeaderTab:last-child {
-	border-top-right-radius: 20px;
+	border-top-right-radius: min(1.2vw, 20px);
 }
 </style>

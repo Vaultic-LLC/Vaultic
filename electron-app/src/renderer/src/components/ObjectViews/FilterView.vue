@@ -3,9 +3,8 @@
 		:gridDefinition="gridDefinition">
 		<TextInputField :label="'Name'" :color="color" v-model="filterState.name" :width="'8vw'" :height="'4vh'"
 			:minHeight="'35px'" :style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
-		<TableTemplate :style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
-			class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0" :border="true"
-			:emptyMessage="emptyMessage" :showEmptyMessage="filterState.conditions.length == 0 ?? true">
+		<TableTemplate id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0"
+			:border="true" :emptyMessage="emptyMessage" :showEmptyMessage="filterState.conditions.length == 0 ?? true">
 			<template #header>
 				<TableHeaderRow :color="color" :tabs="headerTabs" :border="true">
 					<template #controls>
@@ -150,4 +149,13 @@ export default defineComponent({
 })
 </script>
 
-<style></style>
+<style>
+#addFilterTable {
+	position: relative;
+	grid-row: 4 / span 8;
+	grid-column: 4 / span 9;
+	height: 110%;
+	min-width: 410px;
+	min-height: 200px;
+}
+</style>

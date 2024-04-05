@@ -83,7 +83,8 @@ export default defineComponent({
 
 .tableHeader__tableTabs {
 	display: flex;
-	border-top-left-radius: 20px;
+	border-top-left-radius: 1vw;
+	transform: translateY(0.5px);
 }
 
 .tableHeader__tableHeaderRow {
@@ -93,11 +94,11 @@ export default defineComponent({
 	justify-content: space-between;
 	align-items: center;
 	background: rgb(44 44 51 / 16%);
-	border-top-right-radius: 20px;
+	border-top-right-radius: 1vw;
 }
 
 .tableHeader__tableHeaderRow--noTabs {
-	border-top-left-radius: 20px;
+	border-top-left-radius: 1vw;
 }
 
 .tableHeader__tableHeaderRow--border {
