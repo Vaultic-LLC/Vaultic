@@ -1,7 +1,8 @@
 <template>
 	<div ref="container" class="colorPickerInputFieldContainer" :class="{ active: active }">
 		<input ref="input" class="colorPicker" :tabindex="0" type="text" data-coloris v-model="pickedColor"
-			@input="onColorSelected(($event.target as HTMLInputElement).value)" @open="onOpen" @close="opened = false" />
+			@input="onColorSelected(($event.target as HTMLInputElement).value)" @open="onOpen"
+			@close="opened = false" />
 		<label class="colorPickerLabel">{{ label }}</label>
 		<div class="pickedColor"></div>
 	</div>
@@ -16,7 +17,7 @@ import Coloris from '@melloware/coloris';
 export default defineComponent({
 	name: "ColorPickerInputField",
 	emits: ["update:modelValue"],
-	props: ['modelValue', 'color', 'label'],
+	props: ['modelValue', 'color', 'label', "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
@@ -111,13 +112,17 @@ export default defineComponent({
 <style>
 .colorPickerInputFieldContainer {
 	position: relative;
-	width: 200px;
-	height: 50px;
+	height: v-bind(height);
+	width: v-bind(width);
+	max-height: v-bind(maxHeight);
+	max-width: v-bind(maxWidth);
+	min-height: v-bind(minHeight);
+	min-width: v-bind(minWidth);
 
 	border: solid 1.5px #9e9e9e;
-	border-radius: 1rem;
+	border-radius: min(1vw, 1rem);
 	background: none;
-	font-size: 1rem;
+	font-size: clamp(13px, 1.2vh, 25px);
 	color: white;
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 	animation: fadeIn 1s linear forwards;
@@ -139,6 +144,7 @@ export default defineComponent({
 }
 
 .colorPickerInputFieldContainer.active .colorPickerLabel {
+	top: 0;
 	transform: translateY(-80%) scale(0.8);
 	background-color: var(--app-color);
 	padding: 0 .2em;
@@ -148,18 +154,19 @@ export default defineComponent({
 .colorPickerLabel {
 	position: absolute;
 	color: white;
-	left: 5%;
-	top: 0;
+	left: 10px;
+	top: 50%;
 	color: #e8e8e8;
 	pointer-events: none;
-	transform: translateY(1rem);
+	transform: translateY(-50%);
 	transition: var(--input-label-transition);
+	font-size: clamp(12px, 1.2vh, 25px);
 }
 
 .colorPicker {
 	opacity: 0;
-	width: inherit;
-	height: inherit;
+	width: 100%;
+	height: 100%;
 	z-index: 2;
 	position: relative;
 }

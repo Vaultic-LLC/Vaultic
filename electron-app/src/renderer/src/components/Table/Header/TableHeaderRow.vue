@@ -1,19 +1,11 @@
 <template>
-	<div class="tableHeader">
-		<div class="tableHeader__tableTabs">
-			<TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
+	<div class="tableHeader__tableHeaderRow">
+		<div class="tableHeader__tableHeaderRow__headers">
+			<TableHeaderCell v-for="( header, index ) in  headerModels " :key="index" :model="header"
+				:backgroundColor="backgroundColor" :index="index" />
 		</div>
-		<div class="tableHeader__tableHeaderRow" :class="{
-				'tableHeader__tableHeaderRow--noTabs': headerTabs.length == 0,
-				'tableHeader__tableHeaderRow--border': applyBorder
-			}">
-			<div class="tableHeader__tableHeaderRow__headers">
-				<TableHeaderCell v-for="( header, index ) in  headerModels " :key="index" :model="header"
-					:backgroundColor="backgroundColor" :index="index" />
-			</div>
-			<div class="tableHeader__tableHeaderRow__controls">
-				<slot name="controls"></slot>
-			</div>
+		<div class="tableHeader__tableHeaderRow__controls">
+			<slot name="controls"></slot>
 		</div>
 	</div>
 </template>
@@ -88,24 +80,13 @@ export default defineComponent({
 }
 
 .tableHeader__tableHeaderRow {
-	width: 100%;
+	width: calc(100% - 10px);
 	height: v-bind(computedHeight);
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 	background: rgb(44 44 51 / 16%);
 	border-top-right-radius: 1vw;
-}
-
-.tableHeader__tableHeaderRow--noTabs {
-	border-top-left-radius: 1vw;
-}
-
-.tableHeader__tableHeaderRow--border {
-	/* for search bars and other inputs with labels */
-	padding-top: 10px;
-	border-right: 3px solid v-bind(color);
-	border-top: 3px solid v-bind(color);
 }
 
 .tableHeader__tableHeaderRow__headers {
@@ -120,8 +101,4 @@ export default defineComponent({
 	/* padding: 10px; */
 	padding-right: 2%;
 }
-
-/* .tableHeader__tableHeaderRow__headers .tableHeaderCell:nth-child(1) {
-	padding-left: 20px;
-} */
 </style>

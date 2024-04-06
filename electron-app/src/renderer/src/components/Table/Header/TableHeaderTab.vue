@@ -104,6 +104,8 @@ export default defineComponent({
 	cursor: pointer;
 	min-width: 25%;
 	text-align: center;
+	position: relative;
+	z-index: 2
 }
 
 .tableHeaderTab.regular {
@@ -120,7 +122,7 @@ export default defineComponent({
 	box-shadow: 0 0 25px v-bind(hoverColor);
 }
 
-.tableHeaderTab:nth-child(1) {
+.tableHeaderTab:nth-child(2) {
 	border-top-left-radius: min(1.2vw, 20px);
 }
 

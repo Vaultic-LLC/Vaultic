@@ -2,16 +2,12 @@
 	<div class="passwordValueTableContainer">
 		<TableTemplate id="passwordValueTable" ref="tableRef" :rowGap="0" class="shadow scrollbar" :color="color"
 			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
-			:showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0"
+			:showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0" :headerTabs="headerTabs"
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
-			<template #header>
-				<TableHeaderRow :color="color" :model="headerModels" :tabs="headerTabs">
-					<template #controls>
-						<SearchBar v-model="currentSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
-							:width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" />
-						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
-					</template>
-				</TableHeaderRow>
+			<template #headerControls>
+				<SearchBar v-model="currentSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
+					:width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" />
+				<AddDataTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
 			</template>
 			<template #body>
 				<CollapsibleTableRow :shadow="true" v-slot="props"

@@ -1,29 +1,40 @@
 <template>
 	<div class="tableTemplate">
-		<div class="tableTemplate__header">
-			<slot name="header"></slot>
+		<div class="tableTemplate__tableTabs">
+			<div class="tableTemplate__coverOverhandingBorder"></div>
+			<TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
 		</div>
-		<div class="tableContainer scrollbar" ref="tableContainer"
-			:class="{ small: scrollbarSize == 0, medium: scrollbarSize == 1, border: applyBorder }"
-			@scroll="checkScrollHeight">
-			<table class="tableContent">
-				<!-- Just used to force table row cell widths -->
-				<tr v-if="headers.length > 0">
-					<th v-for="(header, index) in headers" :key="index" :style="{ width: header.width, height: 0 }">
-					</th>
-				</tr>
-				<slot name="body">
-				</slot>
-			</table>
-			<Transition name="fade" mode="out-in">
-				<div v-if="showEmptyMessage == true" class="tableContainer__emptyMessageContainer">
-					<Transition name="fade" mode="out-in">
-						<div :key="key" class="tableContainer__emptyMessage">
-							{{ emptyMessage }}
-						</div>
-					</Transition>
-				</div>
-			</Transition>
+		<div class="tableTemplate__headerAndContent" :class="{
+				'tableTemplate__headerAndContent--border': border,
+				'tableTemplate__headerAndContent--noTabs': headerTabs?.length == 0
+			}">
+			<TableHeaderRow :model="headerModels">
+				<template #controls>
+					<slot name="headerControls"></slot>
+				</template>
+			</TableHeaderRow>
+			<div class="tableContainer scrollbar" ref="tableContainer"
+				:class="{ small: scrollbarSize == 0, medium: scrollbarSize == 1 }" @scroll="checkScrollHeight">
+				<table class="tableContent">
+					<!-- Just used to force table row cell widths -->
+					<tr v-if="headers.length > 0">
+						<th v-for="(header, index) in headers" :key="index" :style="{ width: header.width, height: 0 }">
+						</th>
+					</tr>
+					<slot name="body">
+					</slot>
+				</table>
+				<Transition name="fade" mode="out-in">
+					<div v-if="showEmptyMessage == true" class="tableContainer__emptyMessageContainer">
+						<Transition name="fade" mode="out-in">
+							<div :key="key" class="tableContainer__emptyMessage">
+								{{ emptyMessage }}
+							</div>
+						</Transition>
+					</div>
+				</Transition>
+			</div>
+
 		</div>
 	</div>
 </template>
@@ -31,7 +42,10 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, onMounted, onUpdated, Ref, ref, watch } from 'vue';
 
-import { SortableHeaderModel } from '@renderer/Types/Models';
+import TableHeaderTab from './Header/TableHeaderTab.vue';
+import TableHeaderRow from './Header/TableHeaderRow.vue';
+
+import { HeaderTabModel, SortableHeaderModel } from '@renderer/Types/Models';
 import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
@@ -40,8 +54,14 @@ import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "TableTemplate",
+	components:
+	{
+		TableHeaderTab,
+		TableHeaderRow
+	},
 	emits: ['scrolledToBottom'],
-	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor'],
+	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
+		'headerTabs'],
 	setup(props, ctx)
 	{
 		const resizeObserver: ResizeObserver = new ResizeObserver(calcScrollbarColor);
@@ -52,6 +72,7 @@ export default defineComponent({
 		const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels ?? []);
 		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
 		const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
+		const currentHeaderTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.headerTabs ?? []);
 
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);
 		let thumbColor: Ref<string> = ref(primaryColor.value);
@@ -174,6 +195,7 @@ export default defineComponent({
 			headers,
 			applyBorder,
 			backgroundColor,
+			currentHeaderTabs,
 			checkScrollHeight,
 			scrollToTop
 		}
@@ -186,7 +208,7 @@ export default defineComponent({
 	position: absolute;
 	display: flex;
 	flex-direction: column;
-	align-items: flex-end;
+	/* align-items: flex-end; */
 	border-top-right-radius: 20px;
 	border-top-left-radius: 20px;
 }
@@ -206,7 +228,7 @@ export default defineComponent({
 	direction: rtl;
 	overflow-y: scroll;
 	width: 100%;
-	height: 100%;
+	height: 90%;
 	background-color: v-bind(backgroundColor);
 	border-bottom-left-radius: 1vw;
 	border-bottom-right-radius: 1vw;
@@ -221,11 +243,6 @@ export default defineComponent({
 .tableContainer.medium {
 	border-bottom-left-radius: clamp(9px, 1vw, 13px);
 	border-bottom-right-radius: 1vw;
-}
-
-.tableContainer.border {
-	border-bottom: 3px solid v-bind(color);
-	border-right: 3px solid v-bind(color);
 }
 
 .tableContent {
@@ -282,5 +299,39 @@ export default defineComponent({
 	color: grey;
 	font-size: clamp(12px, 1.4vw, 24px);
 	text-align: center;
+}
+
+.tableTemplate__tableTabs {
+	width: calc(100% - 10px);
+	display: flex;
+	border-top-left-radius: 1vw;
+}
+
+.tableTemplate__headerAndContent {
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	overflow: hidden;
+}
+
+.tableTemplate__headerAndContent--border {
+	border-right: 3px solid v-bind(color);
+	border-top: 3px solid v-bind(color);
+	border-bottom: 3px solid v-bind(color);
+	border-bottom-left-radius: clamp(9px, 1vw, 13px);
+	border-bottom-right-radius: 1vw;
+	border-top-right-radius: 1vw;
+}
+
+.tableTemplate__headerAndContent--noTabs {
+	border-top-left-radius: 1vw;
+}
+
+.tableTemplate__coverOverhandingBorder {
+	width: 10px;
+	height: 100%;
+	background-color: var(--app-color);
+	transform: translateY(10px)
 }
 </style>

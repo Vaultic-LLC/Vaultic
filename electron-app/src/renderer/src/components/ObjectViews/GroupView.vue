@@ -1,27 +1,23 @@
 <template>
 	<ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
-		<ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color"
+		<TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name" :width="'8vw'" :height="'4vh'"
+			:minHeight="'30px'" :style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
+		<ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color" :width="'8vw'"
+			:height="'4vh'" :minHeight="'30px'" :minWidth="'125px'"
 			:style="{ 'grid-row': '3 / span 2', 'grid-column': '4 / span 2' }" />
-		<TableTemplate ref="tableRef"
-			:style="{ 'position': 'relative', 'grid-row': '5 / span 8', 'grid-column': '4 / span 9' }"
-			class="scrollbar border" :scrollbar-size="1" :color="groupColor" :border="true"
-			:headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
-			:showEmptyMessage="mounted && tableRowDatas.visualValues.length == 0"
+		<TableTemplate ref="tableRef" id="addGroupTable" class="scrollbar border" :scrollbar-size="1"
+			:color="groupColor" :border="true" :headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
+			:showEmptyMessage="mounted && tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
-			<template #header>
-				<TableHeaderRow :color="groupColor" :border="true" :model="tableHeaderModels" :tabs="headerTabs">
-					<template #controls>
-						<SearchBar v-model="searchText" :color="groupColor" />
-					</template>
-				</TableHeaderRow>
+			<template #headercontent>
+				<SearchBar v-model="searchText" :color="groupColor" :width="'10vw'" :maxWidth="'250px'"
+					:minWidth="'130px'" />
 			</template>
 			<template #body>
 				<SelectableTableRow v-for="(trd, index) in tableRowDatas.visualValues" class="hover" :key="trd.id"
 					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': '75px' }" :color="groupColor" />
+					:style="{ width: '5%', 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="groupColor" />
 			</template>
 		</TableTemplate>
 	</ObjectView>
@@ -118,10 +114,10 @@ export default defineComponent({
 
 		const gridDefinition: GridDefinition =
 		{
-			rows: 12,
-			rowHeight: '50px',
+			rows: 13,
+			rowHeight: 'clamp(10px, 2vw, 50px)',
 			columns: 15,
-			columnWidth: '100px'
+			columnWidth: 'clamp(20px, 4vw, 100px)'
 		};
 
 		const activePasswordHeader: Ref<number> = ref(1);
@@ -153,19 +149,19 @@ export default defineComponent({
 			{
 				backingProperty: "",
 				displayName: "  ",
-				width: '100px',
+				width: 'clamp(50px, 4vw, 100px)',
 				clickable: false
 			},
 			{
 				backingProperty: "passwordFor",
 				displayName: "Password For",
-				width: '150px',
+				width: 'clamp(100px, 7vw, 200px)',
 				clickable: true
 			},
 			{
 				backingProperty: "login",
 				displayName: "Username",
-				width: '150px',
+				width: 'clamp(100px, 7vw, 200px)',
 				clickable: true
 			}
 		];
@@ -174,19 +170,19 @@ export default defineComponent({
 			{
 				backingProperty: " ",
 				displayName: " ",
-				width: '100px',
+				width: 'clamp(50px, 4vw, 100px)',
 				clickable: false
 			},
 			{
 				backingProperty: "name",
 				displayName: "Name",
-				width: '150px',
+				width: 'clamp(100px, 7vw, 200px)',
 				clickable: true
 			},
 			{
 				displayName: "Type",
 				backingProperty: "valueType",
-				width: '150px',
+				width: 'clamp(100px, 7vw, 200px)',
 				clickable: true
 			}
 		];
@@ -203,13 +199,13 @@ export default defineComponent({
 								component: "TableRowTextValue",
 								value: nvp.name,
 								copiable: false,
-								width: '150px'
+								width: 'clamp(100px, 7vw, 200px)'
 							},
 							{
 								component: 'TableRowTextValue',
 								value: nvp.valueType ?? '',
 								copiable: false,
-								width: '150px'
+								width: 'clamp(100px, 7vw, 200px)'
 							}
 						]
 
@@ -242,13 +238,13 @@ export default defineComponent({
 								component: "TableRowTextValue",
 								value: p.passwordFor,
 								copiable: false,
-								width: '150px'
+								width: 'clamp(100px, 7vw, 200px)'
 							},
 							{
 								component: "TableRowTextValue",
 								value: p.login,
 								copiable: false,
-								width: '150px'
+								width: 'clamp(100px, 7vw, 200px)'
 							}
 						];
 
@@ -368,4 +364,12 @@ export default defineComponent({
 })
 </script>
 
-<style></style>
+<style>
+#addGroupTable {
+	position: relative;
+	grid-row: 6 / span 8;
+	grid-column: 4 / span 9;
+	min-width: 410px;
+	min-height: 182px;
+}
+</style>

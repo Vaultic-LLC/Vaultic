@@ -4,13 +4,10 @@
 		<TextInputField :label="'Name'" :color="color" v-model="filterState.name" :width="'8vw'" :height="'4vh'"
 			:minHeight="'35px'" :style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
 		<TableTemplate id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0"
-			:border="true" :emptyMessage="emptyMessage" :showEmptyMessage="filterState.conditions.length == 0 ?? true">
-			<template #header>
-				<TableHeaderRow :color="color" :tabs="headerTabs" :border="true">
-					<template #controls>
-						<AddButton :color="color" @click="onAdd" />
-					</template>
-				</TableHeaderRow>
+			:border="true" :emptyMessage="emptyMessage" :showEmptyMessage="filterState.conditions.length == 0 ?? true"
+			:headerTabs="headerTabs">
+			<template #headerControls>
+				<AddButton :color="color" @click="onAdd" />
 			</template>
 			<template #body>
 				<FilterConditionRow v-for="( fc, index ) in  filterState.conditions" :key="fc.id" :rowNumber="index"

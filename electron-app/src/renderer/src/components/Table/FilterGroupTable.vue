@@ -2,16 +2,12 @@
 	<div id="filterGroupTableContainer">
 		<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
 			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
-			:showEmptyMessage="tableRowDatas.visualValues.length == 0"
+			:showEmptyMessage="tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
-			<template #header>
-				<TableHeaderRow :model="headerModels" :tabs="headerTabs">
-					<template #controls>
-						<SearchBar v-model="currentSearchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
-							:minWidth="'100px'" />
-						<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
-					</template>
-				</TableHeaderRow>
+			<template #headerControls>
+				<SearchBar v-model="currentSearchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
+					:minWidth="'100px'" />
+				<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
 			</template>
 			<template #body>
 				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues"
