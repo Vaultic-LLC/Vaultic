@@ -2,44 +2,46 @@
 	<ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
 		<TextInputField :color="color" :label="'Password For'" v-model="passwordState.passwordFor"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 /span 2' }" />
+			:style="{ 'position': 'absolute', 'left': '10%' }" :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
 		<div class="vaulticPasswordContainer" v-if="passwordState.isVaultic"
 			:style="{ 'grid-row': '2 / span 1', 'grid-column': '2 / span 2', 'margin-top': '10px', 'margin-left': '5px' }">
 			<CheckboxInputField :label="'Vaultic Account'" :color="color" v-model="passwordState.isVaultic"
 				:fadeIn="true" :style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
-			<ToolTip :color="color" :size="20" :fadeIn="true"
+			<ToolTip :color="color" :size="'clamp(10px, 1vw, 20px)'" :fadeIn="true"
 				:message="'This password is the one used to Sign in with your Master Key. Updating it will automatically update your Vaultic Account'" />
 		</div>
 		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain" :showToolTip="true"
 			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is www.facebook.com'"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2' }" />
+			:toolTipSize="'clamp(15px, 1vw, 28px)'" :style="{ 'position': 'absolute', 'left': '30%' }" :width="'8vw'"
+			:height="'4vh'" :minHeight="'30px'" />
 		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
+			:style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(47px, 15%)' }" :width="'8vw'" :height="'4vh'"
+			:minHeight="'30px'" />
 		<TextInputField :color="color" :label="'Username'" v-model="passwordState.login"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }" />
+			:style="{ 'position': 'absolute', 'left': '30%', 'top': 'max(47px, 15%)' }" :width="'8vw'" :height="'4vh'"
+			:minHeight="'30px'" />
 		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordState.password"
 			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true"
-			:showUnlock="true" :required="true" showCopy="true"
-			:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" @onDirty="passwordIsDirty = true" />
+			:showUnlock="true" :required="true" showCopy="true" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
+			:style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(95px, 30%)' }"
+			@onDirty="passwordIsDirty = true" />
 		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
-			v-model="passwordState.additionalInformation" :width="500"
-			:style="{ 'grid-row': '8 / span 4', 'grid-column': '2 / span 5' }" />
-		<TableTemplate ref="tableRef" :color="color"
-			:style="{ 'position': 'relative', 'grid-row': '4 / span 8', 'grid-column': '9 / span 7' }" class="scrollbar"
-			:scrollbar-size="1" :headerModels="groupHeaderModels" :border="true" :row-gap="0"
-			:emptyMessage="emptyMessage" :showEmptyMessage="showEmptyMessage" @scrolled-to-bottom="scrolledToBottom">
-			<template #header>
-				<TableHeaderRow :color="color" :model="groupHeaderModels" :tabs="headerTabs" :border="true">
-					<template #controls>
-						<Transition name="fade" mode="out-in">
-							<div v-if="activeTab == 0" class="passwordViewTableHeaderControls">
-								<UnlockButton v-if="locked" :color="color" @onAuthSuccessful="locked = false" />
-								<AddButton :color="color" @click="onAddSecurityQuestion" />
-							</div>
-							<SearchBar v-else v-model="searchText" :color="color" />
-						</Transition>
-					</template>
-				</TableHeaderRow>
+			v-model="passwordState.additionalInformation" :width="'19vw'" :height="'15vh'" :minWidth="'216px'"
+			:minHeight="'91px'" :maxHeight="'203px'"
+			:style="{ 'position': 'absolute', 'left': '10%', 'bottom': '10%' }" />
+		<TableTemplate ref="tableRef" :color="color" id="passwordView__table"
+			:style="{ 'left': '50%', 'bottom': '10%' }" class="scrollbar" :scrollbar-size="1"
+			:headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
+			:showEmptyMessage="showEmptyMessage" :headerTabs="headerTabs" @scrolled-to-bottom="scrolledToBottom">
+			<template #headerControls>
+				<Transition name="fade" mode="out-in">
+					<div v-if="activeTab == 0" class="passwordViewTableHeaderControls">
+						<UnlockButton v-if="locked" :color="color" @onAuthSuccessful="locked = false" />
+						<AddButton :color="color" @click="onAddSecurityQuestion" />
+					</div>
+					<SearchBar v-else v-model="searchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
+						:minWidth="'110px'" />
+				</Transition>
 			</template>
 			<template #body>
 				<SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions"
@@ -48,7 +50,7 @@
 					@onDelete="onDeleteSecurityQuestion(sq.id)" :isInitiallyEncrypted="sq.question != ''" />
 				<SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
 					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': '75px' }" :color="color" />
+					:style="{ width: '5%', 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" />
 			</template>
 		</TableTemplate>
 	</ObjectView>
@@ -65,7 +67,6 @@ import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
 import SelectableTableRow from '../Table/SelectableTableRow.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
-import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import SecurityQuestionRow from '../Table/Rows/SecurityQuestionRow.vue';
 import UnlockButton from "../UnlockButton.vue"
@@ -94,7 +95,6 @@ export default defineComponent({
 		TextAreaInputField,
 		SearchBar,
 		TableTemplate,
-		TableHeaderRow,
 		AddButton,
 		SelectableTableRow,
 		SecurityQuestionRow,
@@ -130,11 +130,18 @@ export default defineComponent({
 		provide(DirtySecurityQuestionQuestionsKey, dirtySecurityQuestionQuestions);
 		provide(DirtySecurityQuestionAnswersKey, dirtySecurityQuestionAnswers);
 
+		// const gridDefinition: GridDefinition = {
+		// 	rows: 13,
+		// 	rowHeight: 'clamp(20px, 4vh, 50px)',
+		// 	columns: 16,
+		// 	columnWidth: 'clamp(45px, 4vw, 100px)'
+		// }
+
 		const gridDefinition: GridDefinition = {
-			rows: 13,
-			rowHeight: '50px',
-			columns: 16,
-			columnWidth: '100px'
+			rows: 1,
+			rowHeight: '100%',
+			columns: 1,
+			columnWidth: '100%'
 		}
 
 		let saveSucceeded: (value: boolean) => void;
@@ -159,19 +166,19 @@ export default defineComponent({
 			{
 				backingProperty: "",
 				displayName: " ",
-				width: '100px',
+				width: 'clamp(50px, 4vw, 100px)',
 				clickable: true
 			},
 			{
 				backingProperty: "name",
 				displayName: "Name",
-				width: '150px',
+				width: 'clamp(80px, 6vw, 150px)',
 				clickable: true
 			},
 			{
 				displayName: "Color",
 				backingProperty: "color",
-				width: "100px",
+				width: 'clamp(50px, 4vw, 100px)',
 				clickable: true
 			}
 		];
@@ -222,13 +229,13 @@ export default defineComponent({
 							component: "TableRowTextValue",
 							value: g.name,
 							copiable: false,
-							width: '150px'
+							width: 'clamp(80px, 6vw, 150px)'
 						},
 						{
 							component: "TableRowColorValue",
 							color: g.color,
 							copiable: true,
-							width: '100px',
+							width: 'clamp(50px, 4vw, 100px)',
 							margin: false
 						}
 					];
@@ -395,6 +402,14 @@ export default defineComponent({
 </script>
 
 <style>
+#passwordView__table {
+	transform: translateY(12px);
+	height: 29vh;
+	width: 27vw;
+	min-height: 174px;
+	min-width: 308px;
+}
+
 .passwordViewTableHeaderControls {
 	display: flex;
 	flex-direction: row;

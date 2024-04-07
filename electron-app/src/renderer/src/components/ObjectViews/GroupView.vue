@@ -10,7 +10,7 @@
 			:color="groupColor" :border="true" :headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
 			:showEmptyMessage="mounted && tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
-			<template #headercontent>
+			<template #headerControls>
 				<SearchBar v-model="searchText" :color="groupColor" :width="'10vw'" :maxWidth="'250px'"
 					:minWidth="'130px'" />
 			</template>
@@ -367,7 +367,7 @@ export default defineComponent({
 <style>
 #addGroupTable {
 	position: relative;
-	grid-row: 6 / span 8;
+	grid-row: 5 / span 8;
 	grid-column: 4 / span 9;
 	min-width: 410px;
 	min-height: 182px;

@@ -155,11 +155,11 @@ export default defineComponent({
 	display: grid;
 	row-gap: 0px;
 	column-gap: 0px;
+	position: relative
 }
 
 .objectViewContainer .createButtons {
-	position: absolute;
-	bottom: clamp(3%, 1.5vw, 10%);
+	margin-bottom: clamp(3%, 1.5vw, 10%);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

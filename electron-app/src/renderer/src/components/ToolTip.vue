@@ -16,14 +16,14 @@ import 'tippy.js/animations/scale.css';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
-	name: "TableRow",
+	name: "ToolTip",
 	props: ["message", "placement", "color", "size", "fadeIn"],
 	setup(props)
 	{
 		const toolTipIcon: Ref<HTMLElement | null> = ref(null);
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
 		const placement: ComputedRef<Placement> = computed(() => props.placement ? props.placement : "top");
-		const iconSize: ComputedRef<string> = computed(() => props.size ? props.size + "px" : "28px");
+		const iconSize: ComputedRef<string> = computed(() => props.size ?? "28px");
 
 		onMounted(() =>
 		{
@@ -65,9 +65,12 @@ export default defineComponent({
 }
 
 .toolTipContainer .toolTipIcon {
+	width: v-bind(iconSize);
+	height: v-bind(iconSize);
 	font-size: v-bind(iconSize);
 	color: white;
 	transition: 0.3s;
+	will-change: transform;
 }
 
 .toolTipContainer .toolTipIcon:hover {

@@ -67,7 +67,7 @@ export default defineComponent({
 	display: flex;
 	justify-content: flex-start;
 	align-items: center;
-	column-gap: 10px;
+	column-gap: clamp(5px, 0.4vw, 10px);
 }
 
 .checkboxInputContainer.fadeIn {

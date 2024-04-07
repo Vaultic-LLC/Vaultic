@@ -5,7 +5,7 @@
 			:disabled="disabled" :maxlength="200" />
 		<label class="textInputFieldLable">{{ label }}</label>
 		<div v-if="showToolTip" class="textInputFieldContainer__tooltipContainer">
-			<ToolTip :color="color" :message="toolTipMessage" />
+			<ToolTip :color="color" :message="toolTipMessage" :size="toolTipSize" />
 		</div>
 	</div>
 </template>
@@ -26,7 +26,7 @@ export default defineComponent({
 	},
 	emits: ["update:modelValue"],
 	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight',
-		"inputType", "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage'],
+		"inputType", "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);

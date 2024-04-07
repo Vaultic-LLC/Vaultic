@@ -220,7 +220,7 @@ export default defineComponent({
 	color: v-bind('colorModel.textColor');
 	background-color: v-bind(labelBackgroundColor);
 	pointer-events: none;
-	transform: translateY(1rem);
+	transform: translateY(min(1vw, 15px));
 	transition: var(--input-label-transition);
 	font-size: clamp(11px, 1.2vh, 25px);
 }

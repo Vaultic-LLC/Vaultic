@@ -19,9 +19,7 @@
 				</div>
 			</div>
 			<div v-if="!isLocked && !disabled && showRandom" class="randomize" @click="generateRandomValue">
-				<a>
-					<span>Random</span>
-				</a>
+				Random
 			</div>
 			<div v-if="showButtonsUnderneath == true" class="encryptedInputContainer__unlockIconsUnderneath">
 				<ion-icon class="encryptedInputIcon" v-if="isHidden" name="eye-outline"
@@ -342,13 +340,20 @@ export default defineComponent({
 	position: absolute;
 	top: 100%;
 	left: 0;
-	margin-top: 10px;
-	margin-left: 5px;
+	margin-top: clamp(7px, 0.3vw, 10px);
+	margin-left: clamp(1px, 0.1vw, 5px);
 	border: solid 1.5px v-bind('colorModel.borderColor');
-	border-radius: 0.5rem;
-	padding: 5px 10px 5px 10px;
+	border-radius: min(0.6vw, 0.6rem);
+	padding: clamp(2px, 0.4vw, 5px) clamp(5px, 0.4vw, 10px) clamp(2px, 0.4vw, 5px) clamp(5px, 0.4vw, 10px);
 	transition: 0.2s;
 	cursor: pointer;
+	will-change: transform;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	transition: 0.2s;
+	color: white;
+	font-size: clamp(7px, 0.7vw, 13px);
 }
 
 .textInputFieldContainer .randomize:hover {
@@ -356,14 +361,7 @@ export default defineComponent({
 	transform: scale(1.05);
 }
 
-.textInputFieldContainer .randomize span {
-	transition: 0.2s;
-	color: white;
-	font-size: 13px;
-}
-
-
-.textInputFieldContainer .randomize:hover span {
+.textInputFieldContainer .randomize:hover {
 	color: v-bind('colorModel.activeTextColor');
 }
 
