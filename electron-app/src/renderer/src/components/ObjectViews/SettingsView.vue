@@ -1,37 +1,39 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-			<div v-if="currentView == 0">
-				<EnumInputField :label="'Auto Lock Time'" :color="color" v-model="settingsState.autoLockTime"
-					:optionsEnum="AutoLockTime" fadeIn="true" :style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
-				<EnumInputField :label="'Multiple Filter Behavior'" :color="color" v-model="settingsState.multipleFilterBehavior"
-					:optionsEnum="FilterStatus" fadeIn="true" :style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2' }" />
-				<TextInputField :color="color" :label="'Login Records to Store Per Day'"
-					v-model="settingsState.loginRecordsToStorePerDay" :inputType="'number'"
-					:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }"
-					:additionalValidationFunction="enforceLoginRecordsPerDay" />
-				<TextInputField :color="color" :label="'Days to Store Login Records'"
-					v-model="settingsState.numberOfDaysToStoreLoginRecords" :inputType="'number'"
-					:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }"
-					:additionalValidationFunction="enforceDaysToStoreLoginRecords" />
-				<TextInputField :color="color" :label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
-					:inputType="'number'" :style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }"
-					:additionalValidationFunction="enforceMinRandomPasswordLength" />
-				<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
-					:inputType="'number'" :style="{ 'grid-row': '7 / span 2', 'grid-column': '2 / span 2' }"
-					:additionalValidationFunction="enforceOldPasswordDays" />
-				<TextInputField :color="color" :label="'% Filled Metric for Pulse'"
-					v-model.number="settingsState.percentMetricForPulse" :inputType="'number'"
-					:style="{ 'grid-row': '7 / span 2', 'grid-column': '5 / span 2' }"
-					:additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
-					:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breeched Passwords.'" />
-			</div>
-			<div v-else-if="currentView == 1">
-				syncing info
-			</div>
-			<div v-else-if="currentView == 2">
-				device table
-			</div>
+		<EnumInputField :label="'Auto Lock Time'" :color="color" v-model="settingsState.autoLockTime"
+			:optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'" :height="'4vh'" :minHeight="'30px'"
+			:minWidth="'190px'" :style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
+		<EnumInputField :label="'Multiple Filter Behavior'" :color="color"
+			v-model="settingsState.multipleFilterBehavior" :optionsEnum="FilterStatus" fadeIn="true" :width="'10vw'"
+			:minWidth="'190px'" :height="'4vh'" :minHeight="'30px'"
+			:style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2', 'z-index': '8' }" />
+		<TextInputField :color="color" :label="'Login Records to Store Per Day'"
+			v-model="settingsState.loginRecordsToStorePerDay" :inputType="'number'"
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
+			:additionalValidationFunction="enforceLoginRecordsPerDay" />
+		<TextInputField :color="color" :label="'Days to Store Login Records'"
+			v-model="settingsState.numberOfDaysToStoreLoginRecords" :inputType="'number'"
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
+			:additionalValidationFunction="enforceDaysToStoreLoginRecords" />
+		<TextInputField :color="color" :label="'Random Password Length'"
+			v-model.number="settingsState.randomValueLength" :inputType="'number'"
+			:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
+			:additionalValidationFunction="enforceMinRandomPasswordLength" />
+		<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
+			:inputType="'number'" :style="{ 'grid-row': '5 / span 2', 'grid-column': '5 / span 2' }" :width="'10vw'"
+			:minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'30px'"
+			:additionalValidationFunction="enforceOldPasswordDays" />
+		<TextInputField :color="color" :label="'% Filled Metric for Pulse'"
+			v-model.number="settingsState.percentMetricForPulse" :inputType="'number'"
+			:style="{ 'grid-row': '7 / span 2', 'grid-column': '2 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
+			:additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
+			:toolTipSize="'clamp(15px, 1vw, 28px)'"
+			:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breeched Passwords.'" />
 	</ObjectView>
 </template>
 <script lang="ts">
@@ -67,9 +69,9 @@ export default defineComponent({
 
 		const gridDefinition: GridDefinition = {
 			rows: 10,
-			rowHeight: '50px',
+			rowHeight: 'clamp(20px, 3vh, 50px)',
 			columns: 11,
-			columnWidth: '100px'
+			columnWidth: 'clamp(70px, 4vw, 100px)'
 		}
 
 		let saveSucceeded: (value: boolean) => void;
