@@ -9,9 +9,9 @@
 				:maxHeight="'135px'" :maxWidth="'300px'" />
 		</div>
 		<TableTemplate :color="textColor" :style="{ 'position': 'relative', 'flex-grow': '1' }"
-			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false"
-			:row-gap="securityQuestionRowGap" :emptyMessage="emptyMessage"
-			:showEmptyMessage="securityQuestions.length == 0" :backgroundColor="backgroundColor">
+			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false" :row-gap="'0px'"
+			:emptyMessage="emptyMessage" :hideHeader="true" :showEmptyMessage="securityQuestions.length == 0"
+			:backgroundColor="backgroundColor">
 			<template #body>
 				<SecurityQuestionRow v-for="(sq, index) in securityQuestions" :key="sq.id" :rowNumber="index"
 					:colorModel="colorModel" :model="sq" :disabled="true" :isInitiallyEncrypted="false" />

@@ -8,7 +8,7 @@
 				'tableTemplate__headerAndContent--border': border,
 				'tableTemplate__headerAndContent--noTabs': headerTabs?.length == 0
 			}">
-			<TableHeaderRow :model="headerModels">
+			<TableHeaderRow v-if="hideHeader != true" :model="headerModels" :height="headerHeight">
 				<template #controls>
 					<slot name="headerControls"></slot>
 				</template>
@@ -61,7 +61,7 @@ export default defineComponent({
 	},
 	emits: ['scrolledToBottom'],
 	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
-		'headerTabs'],
+		'headerTabs', 'headerHeight', 'hideHeader'],
 	setup(props, ctx)
 	{
 		const resizeObserver: ResizeObserver = new ResizeObserver(calcScrollbarColor);
@@ -305,6 +305,7 @@ export default defineComponent({
 	width: calc(100% - 10px);
 	display: flex;
 	border-top-left-radius: 1vw;
+	transform: translateY(1px);
 }
 
 .tableTemplate__headerAndContent {

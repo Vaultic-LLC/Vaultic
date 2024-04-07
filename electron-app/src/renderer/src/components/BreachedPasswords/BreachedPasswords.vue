@@ -234,7 +234,7 @@ export default defineComponent({
 	display: flex;
 	justify-content: center;
 	align-items: flex-start;
-	margin-top: 10%;
+	margin-top: max(20px, 1vw);
 	transform: translateX(-2%);
 }
 
@@ -247,7 +247,7 @@ export default defineComponent({
 .breachedPasswordsContainer__scanButton {
 	position: absolute;
 	top: 5%;
-	left: 5%;
+	left: 2%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -255,16 +255,17 @@ export default defineComponent({
 	width: 10%;
 	height: 7%;
 	color: white;
-	border-radius: 20px;
-	border: 2px solid v-bind(color);
+	border-radius: min(1vw, 1rem);
+	border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
 	transition: 0.3s;
 	font-size: clamp(10px, 0.8vw, 17px);
 }
 
 .breachedPasswordsContainer__scanButton.scanning {
 	color: grey;
-	border: 2px solid grey;
-	width: 14%;
+	border: clamp(1.5px, 0.1vw, 2px) solid grey;
+	width: 15%;
+	left: 3%
 }
 
 .breachedPasswordsContainer__scanButton:not(.scanning):hover {

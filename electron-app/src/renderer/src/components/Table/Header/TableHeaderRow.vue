@@ -87,6 +87,7 @@ export default defineComponent({
 	align-items: center;
 	background: rgb(44 44 51 / 16%);
 	border-top-right-radius: 1vw;
+	padding-top: 10px;
 }
 
 .tableHeader__tableHeaderRow__headers {

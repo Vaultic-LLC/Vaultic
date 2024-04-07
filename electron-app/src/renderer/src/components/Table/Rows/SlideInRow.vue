@@ -84,7 +84,8 @@ export default defineComponent({
 
 	transition: opacity 2s linear forwards;
 	opacity: 1;
-	padding: 30px 20px 0px 20px;
+	margin-top: 30px;
+	padding: 0px 20px 0px 20px;
 	transform: translateY(-10px);
 	box-shadow: -5px 5px 10px #070a0c,
 		5px 5px 10px #1b2630;

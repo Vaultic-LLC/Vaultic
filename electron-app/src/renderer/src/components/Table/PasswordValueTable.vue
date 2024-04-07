@@ -6,7 +6,7 @@
 			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #headerControls>
 				<SearchBar v-model="currentSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
-					:width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" />
+					:width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" :minHeight="'27px'" />
 				<AddDataTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
 			</template>
 			<template #body>

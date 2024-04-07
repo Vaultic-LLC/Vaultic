@@ -26,8 +26,8 @@
 			:showEmptyMessage="mounted && groupModels.visualValues.length == 0" :headerTabs="groupTab"
 			@scrolledToBottom="groupModels.loadNextChunk()">
 			<template #headerControls>
-				<SearchBar v-model="searchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
-					:minWidth="'110px'" />
+				<SearchBar v-model="searchText" :color="color" :width="'8vw'" :maxWidth="'250px'" :minWidth="'100px'"
+					:minHeight="'27px'" />
 			</template>
 			<template #body>
 				<SelectableTableRow v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
@@ -115,7 +115,7 @@ export default defineComponent({
 			{
 				backingProperty: "",
 				displayName: " ",
-				width: 'clamp(50px, 4vw, 100px)',
+				width: 'clamp(25px, 4vw, 100px)',
 				clickable: false
 			},
 			{

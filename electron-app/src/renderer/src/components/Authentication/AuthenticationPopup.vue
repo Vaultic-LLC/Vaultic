@@ -227,7 +227,7 @@ export default defineComponent({
 	left: 50%;
 	transform: translate(-50%, -50%);
 	border: 2px solid v-bind('primaryColor');
-	border-radius: 20px;
+	border-radius: min(1vw, 1rem);
 	display: flex;
 	justify-content: center;
 	align-items: center;

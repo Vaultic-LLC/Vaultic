@@ -50,7 +50,7 @@ export default defineComponent({
 	position: fixed;
 	width: 10%;
 	aspect-ratio: 1 / 0.75;
-	min-width: 100px;
+	min-width: 150px;
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);

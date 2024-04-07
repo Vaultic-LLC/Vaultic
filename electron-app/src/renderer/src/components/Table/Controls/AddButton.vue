@@ -7,14 +7,21 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { ComputedRef, computed, defineComponent } from 'vue';
 
 export default defineComponent({
 	name: "AddButton",
-	props: ['color'],
-	setup()
+	props: ['color', 'minSize', 'preferredSize', 'maxSize'],
+	setup(props)
 	{
+		const computedMinSize: ComputedRef<string> = computed(() => props.minSize ?? '15px');
+		const computedPreferredSize: ComputedRef<string> = computed(() => props.preferredSize ?? '1.8vw');
+		const computedMaxSize: ComputedRef<string> = computed(() => props.maxSize ?? '35px');
+
 		return {
+			computedMinSize,
+			computedPreferredSize,
+			computedMaxSize
 		}
 	}
 })
@@ -26,8 +33,8 @@ export default defineComponent({
 }
 
 .addRowButtonContainer__button {
-	height: clamp(15px, 2vw, 35px);
-	width: clamp(15px, 2vw, 35px);
+	height: clamp(v-bind(computedMinSize), v-bind(computedPreferredSize), v-bind(computedMaxSize));
+	width: clamp(v-bind(computedMinSize), v-bind(computedPreferredSize), v-bind(computedMaxSize));
 	display: flex;
 	justify-content: center;
 	align-items: center;

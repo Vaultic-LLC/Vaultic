@@ -17,11 +17,14 @@ import { defaultInputColor, defaultInputTextColor } from "../../../Types/Colors"
 export default defineComponent({
 	name: "SearchBar",
 	emits: ["update:modelValue"],
-	props: ["modelValue", "color", "width", 'minWidth', 'maxWidth', "labelBackground"],
+	props: ["modelValue", "color", 'height', 'minHeight', "width", 'minWidth', 'maxWidth', "labelBackground"],
 	setup(props)
 	{
 		const input: Ref<HTMLElement | null> = ref(null);
 		const computedWidth: ComputedRef<string> = computed(() => props.width ?? "300px");
+		const computedHeight: ComputedRef<string> = computed(() => props.height ?? '4vh');
+		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? '30px');
+
 		const modelValue: ComputedRef<Ref<string>> = computed(() => props.modelValue);
 		const active: Ref<boolean> = ref(false);
 
@@ -60,6 +63,8 @@ export default defineComponent({
 			defaultInputColor,
 			defaultInputTextColor,
 			computedWidth,
+			computedHeight,
+			computedMinHeight,
 			active,
 			onInput,
 			onFocus,
@@ -73,8 +78,8 @@ export default defineComponent({
 <style scoped>
 .searchBarContainer {
 	position: relative;
-	height: 4vh;
-	min-height: 30px;
+	height: v-bind(computedHeight);
+	min-height: v-bind(computedMinHeight);
 	max-height: 50px;
 	width: v-bind('computedWidth');
 	min-width: v-bind('minWidth');

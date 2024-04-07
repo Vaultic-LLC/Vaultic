@@ -32,22 +32,24 @@
 		<TableTemplate ref="tableRef" :color="color" id="passwordView__table"
 			:style="{ 'left': '50%', 'bottom': '10%' }" class="scrollbar" :scrollbar-size="1"
 			:headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
-			:showEmptyMessage="showEmptyMessage" :headerTabs="headerTabs" @scrolled-to-bottom="scrolledToBottom">
+			:showEmptyMessage="showEmptyMessage" :headerTabs="headerTabs" :headerHeight="'clamp(45px, 5.8vh, 80px)'"
+			@scrolled-to-bottom="scrolledToBottom">
 			<template #headerControls>
 				<Transition name="fade" mode="out-in">
 					<div v-if="activeTab == 0" class="passwordViewTableHeaderControls">
 						<UnlockButton v-if="locked" :color="color" @onAuthSuccessful="locked = false" />
 						<AddButton :color="color" @click="onAddSecurityQuestion" />
 					</div>
-					<SearchBar v-else v-model="searchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
-						:minWidth="'110px'" />
+					<SearchBar v-else v-model="searchText" :color="color" :width="'8vw'" :maxWidth="'250px'"
+						:minWidth="'100px'" :minHeight="'27px'" />
 				</Transition>
 			</template>
 			<template #body>
 				<SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions"
 					:key="sq.id" :rowNumber="index" :colorModel="colorModel" :model="sq" :disabled="false"
-					@onQuesitonDirty="onQuestionDirty(sq.id)" @onAnswerDirty="onAnswerDirty(sq.id)"
-					@onDelete="onDeleteSecurityQuestion(sq.id)" :isInitiallyEncrypted="sq.question != ''" />
+					:hideInitialRow="true" :moveButtonsToBottomRatio="1" @onQuesitonDirty="onQuestionDirty(sq.id)"
+					@onAnswerDirty="onAnswerDirty(sq.id)" @onDelete="onDeleteSecurityQuestion(sq.id)"
+					:isInitiallyEncrypted="sq.question != ''" />
 				<SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
 					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
 					:style="{ width: '5%', 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" />
@@ -166,7 +168,7 @@ export default defineComponent({
 			{
 				backingProperty: "",
 				displayName: " ",
-				width: 'clamp(50px, 4vw, 100px)',
+				width: 'clamp(25px, 4vw, 100px)',
 				clickable: true
 			},
 			{
@@ -213,6 +215,13 @@ export default defineComponent({
 			if (activeTab.value == 0)
 			{
 				return [];
+				return createSortableHeaderModels<Group>(
+					ref(0), [{
+						backingProperty: "",
+						displayName: " ",
+						width: 'clamp(25px, 4vw, 100px)',
+						clickable: false
+					}], groups.value, undefined, setGroupModels);
 			}
 
 			return createSortableHeaderModels<Group>(

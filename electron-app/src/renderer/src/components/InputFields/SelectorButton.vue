@@ -26,7 +26,7 @@ export default defineComponent({
 	width: clamp(14px, 1.1vw, 30px);
 	aspect-ratio: 1/ 1;
 	margin: 5px;
-	transition: 0.6s;
+	transition: 0.1s;
 	position: relative;
 	border: 0.12vw solid v-bind(primaryColor);
 	background: #11181e;

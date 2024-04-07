@@ -1,6 +1,6 @@
 <template>
 	<div class="addTableItem">
-		<AddButton :color="primaryColor" @click="doShowEditControlsPopup" />
+		<AddButton :color="primaryColor" @click="doShowEditControlsPopup" :minSize="minButtonSize" />
 		<Teleport to="#body">
 			<Transition name="fade">
 				<ObjectPopup v-if="showEditControlsPopup" :minWidth="'800px'" :minHeight="'480px'"
@@ -27,7 +27,7 @@ export default defineComponent({
 		AddObjectPopup,
 		AddButton
 	},
-	props: ['initalActiveContentOnClick', 'color'],
+	props: ['initalActiveContentOnClick', 'color', 'minButtonSize'],
 	setup(props)
 	{
 		let primaryColor: ComputedRef<string> = computed(() => props.color);

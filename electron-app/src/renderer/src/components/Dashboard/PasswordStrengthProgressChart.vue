@@ -490,9 +490,6 @@ export default defineComponent({
 	border-radius: 20px;
 	background: rgb(44 44 51 / 16%);
 	padding-top: 0.7vw;
-	/* margin: 10px;
-	margin-top: 50px;
-	padding-top: 1%; */
 }
 
 .strengthGraphContainer__header {
@@ -503,7 +500,7 @@ export default defineComponent({
 .strengthGraphContainer__resetButton {
 	position: absolute;
 	top: 5%;
-	left: 5%;
+	left: 2%;
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -511,8 +508,8 @@ export default defineComponent({
 	width: 10%;
 	height: 7%;
 	color: white;
-	border-radius: 20px;
-	border: 2px solid v-bind(color);
+	border-radius: min(1vw, 1rem);
+	border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
 	transition: 0.3s;
 	font-size: clamp(10px, 0.8vw, 17px);
 }

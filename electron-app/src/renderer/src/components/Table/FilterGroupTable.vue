@@ -5,9 +5,10 @@
 			:showEmptyMessage="tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #headerControls>
-				<SearchBar v-model="currentSearchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
-					:minWidth="'100px'" />
-				<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
+				<SearchBar v-model="currentSearchText" :color="color" :width="'9vw'" :maxWidth="'250px'"
+					:minWidth="'100px'" :minHeight="'25px'" />
+				<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd"
+					:minButtonSize="'10px'" />
 			</template>
 			<template #body>
 				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues"

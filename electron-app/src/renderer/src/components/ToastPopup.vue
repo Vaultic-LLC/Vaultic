@@ -34,25 +34,30 @@ export default defineComponent({
 <style>
 .toastContainer {
 	position: fixed;
-	width: 12.5%;
+	width: 10.5%;
+	min-width: 150px;
+	max-width: 235px;
 	height: 5%;
+	min-height: 40px;
 	bottom: 5%;
-	left: 40%;
+	left: 50%;
+	transform: translateX(-50%);
 	border: 2px solid v-bind('primaryColor');
-	border-radius: 20px;
+	border-radius: min(1vw, 1rem);
 	background-color: var(--app-color);
 	display: flex;
-	justify-content: space-evenly;
 	align-items: center;
+	justify-content: center;
 	box-shadow: 0 0 25px v-bind('primaryColor');
 	z-index: 20;
+	column-gap: clamp(5px, 5%, 20px);
 }
 
 .toastContainerIcons {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	font-size: 40px;
+	font-size: clamp(20px, 2vw, 40px);
 }
 
 .toastContainerIcons .toastIcon.success {
@@ -64,7 +69,7 @@ export default defineComponent({
 }
 
 .toastContainer .toastContainterText {
-	font-size: 18px;
+	font-size: clamp(13px, 1vw, 18px);
 	color: white;
 }
 </style>
