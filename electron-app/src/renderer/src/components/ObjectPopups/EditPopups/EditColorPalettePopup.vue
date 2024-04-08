@@ -5,10 +5,14 @@
 	<div class="cloneFromColorPalettesContainer">
 		<div class="cloneFromHeader">Clone From</div>
 		<div class="existingColorPalettes">
-			<div class="colorPalette" v-for="cp in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp)">
-				<div class="passwordColor" :style="{ backgroundColor: cp.passwordsColor.primaryColor }">
+			<div class="colorPalette" :class="{ hovering: hoveringColorPalette == index }"
+				v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp)"
+				@mouseenter="hoveringColorPalette = index" @mouseleave="hoveringColorPalette = -1">
+				<div class="passwordColor existingColorPalettes__colorPaletteCell"
+					:style="{ '--colorPaletteColor': cp.passwordsColor.primaryColor }">
 				</div>
-				<div class="valueColor" :style="{ backgroundColor: cp.valuesColor.primaryColor }">
+				<div class="valueColor existingColorPalettes__colorPaletteCell"
+					:style="{ '--colorPaletteColor': cp.valuesColor.primaryColor }">
 				</div>
 			</div>
 		</div>
@@ -34,6 +38,7 @@ export default defineComponent({
 	props: ['model'],
 	setup(props)
 	{
+		const hoveringColorPalette: Ref<number> = ref(-1);
 		// copy the object so that we don't edit the original one
 		const colorPaletteModel: Ref<ColorPalette> = ref(JSON.parse(JSON.stringify(props.model)));
 		const currentColorPalettes: ComputedRef<ColorPalette[]> = computed(() => stores.settingsStore.colorPalettes.filter(cp => cp.isCreated));
@@ -45,6 +50,7 @@ export default defineComponent({
 		}
 
 		return {
+			hoveringColorPalette,
 			colorPaletteModel,
 			currentColorPalettes,
 			cloneColorPalette
@@ -62,7 +68,7 @@ export default defineComponent({
 	margin: 5%;
 	margin-left: 11%;
 	margin-bottom: 0;
-	font-size: 25px;
+	font-size: clamp(15px, 1vw, 25px);
 }
 
 .colorPaletteViewContainer {
@@ -75,7 +81,7 @@ export default defineComponent({
 .cloneFromColorPalettesContainer {
 	position: absolute;
 	right: 15%;
-	width: 25%;
+	width: max(12vw, 150px);
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -83,7 +89,7 @@ export default defineComponent({
 	flex-wrap: wrap;
 	color: white;
 	border: 1px solid white;
-	border-radius: 20px;
+	border-radius: min(1vw, 1rem);
 	z-index: 20;
 }
 
@@ -91,9 +97,10 @@ export default defineComponent({
 	position: absolute;
 	top: 0;
 	left: 10%;
-	transform: translateY(-100%);
+	transform: translateY(-95%);
 	background-color: var(--app-color);
 	padding: 0 .2em;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 
 .cloneFromColorPalettesContainer .existingColorPalettes {
@@ -104,24 +111,40 @@ export default defineComponent({
 }
 
 .cloneFromColorPalettesContainer .existingColorPalettes .colorPalette {
-	width: 100px;
-	height: 50px;
+	width: max(4vw, 50px);
+	height: max(30px, 2vw);
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	transition: 0.3s;
+	will-change: transform;
+}
+
+.cloneFromColorPalettesContainer .existingColorPalettes .colorPalette:hover {
+	transform: scale(1.1);
 }
 
 .cloneFromColorPalettesContainer .existingColorPalettes .colorPalette .passwordColor {
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;
-	height: 30px;
-	width: 30px;
+	height: clamp(15px, 1.5vw, 30px);
+	width: clamp(15px, 1.5vw, 30px);
+	cursor: pointer;
 }
 
 .cloneFromColorPalettesContainer .existingColorPalettes .colorPalette .valueColor {
 	border-top-right-radius: 20px;
 	border-bottom-right-radius: 20px;
-	height: 30px;
-	width: 30px;
+	height: clamp(15px, 1.5vw, 30px);
+	width: clamp(15px, 1.5vw, 30px);
+	cursor: pointer;
+}
+
+.cloneFromColorPalettesContainer .existingColorPalettes .colorPalette.hovering .existingColorPalettes__colorPaletteCell {
+	box-shadow: 0 0 25px var(--colorPaletteColor);
+}
+
+.existingColorPalettes__colorPaletteCell {
+	background-color: var(--colorPaletteColor);
 }
 </style>

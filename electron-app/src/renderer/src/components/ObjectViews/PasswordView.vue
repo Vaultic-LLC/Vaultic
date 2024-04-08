@@ -16,7 +16,7 @@
 			:height="'4vh'" :minHeight="'30px'" />
 		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
 			:style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(47px, 15%)' }" :width="'8vw'" :height="'4vh'"
-			:minHeight="'30px'" />
+			:minHeight="'30px'" :isEmailField="true" />
 		<TextInputField :color="color" :label="'Username'" v-model="passwordState.login"
 			:style="{ 'position': 'absolute', 'left': '30%', 'top': 'max(47px, 15%)' }" :width="'8vw'" :height="'4vh'"
 			:minHeight="'30px'" />
@@ -424,7 +424,7 @@ export default defineComponent({
 	flex-direction: row;
 	justify-content: center;
 	align-items: center;
-	column-gap: 25px;
+	column-gap: clamp(10px, 1vw, 25px);
 }
 
 .domainContainer {

@@ -10,7 +10,7 @@
 						<TextInputField :color="color" :label="'Last Name'" v-model="lastName" :width="'80%'"
 							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 						<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email" :width="'80%'"
-							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :isEmailField="true" />
 					</div>
 				</div>
 			</Transition>

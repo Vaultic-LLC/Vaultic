@@ -5,15 +5,16 @@
 				<h2>Unregistered device detected</h2>
 			</div>
 			<div class="incorrectDevicePopup__content">
-				We've detected that you're using a device different than your registered one. For your safety, only requests from registered devices is allowed.
+				We've detected that you're using a device different than your registered one. For your safety, only
+				requests from registered devices is allowed.
 				Would you like to edit your registered devices?
 			</div>
 			<div class="incorrectDevicePopup__buttons">
-				<PopupButton :color="color" :text="'Edit Devices'" :width="'150px'" :height="'40px'"
-					:fontSize="'18px'" @onClick="showDevicePopup = true">
+				<PopupButton :color="color" :text="'Edit Devices'" :width="'150px'" :height="'40px'" :fontSize="'18px'"
+					@onClick="showDevicePopup = true">
 				</PopupButton>
-				<PopupButton :color="color" :text="'Cancel'" :width="'150px'" :height="'40px'"
-					:fontSize="'18px'" @onClick="close">
+				<PopupButton :color="color" :text="'Cancel'" :width="'150px'" :height="'40px'" :fontSize="'18px'"
+					@onClick="close">
 				</PopupButton>
 			</div>
 		</ObjectPopup>
@@ -26,9 +27,10 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref } from 'vue';
+import { Ref, defineComponent, onMounted, onUnmounted, ref } from 'vue';
 
 import DevicePopup from './DevicePopup.vue';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "IncorrectDevicePopup",
@@ -41,11 +43,22 @@ export default defineComponent({
 	setup(_, ctx)
 	{
 		const showDevicePopup: Ref<boolean> = ref(false);
+
 		function close()
 		{
 			showDevicePopup.value = false;
 			ctx.emit('onClose');
 		}
+
+		onMounted(() =>
+		{
+			stores.popupStore.addOnEnterHandler(1, close);
+		});
+
+		onUnmounted(() =>
+		{
+			stores.popupStore.removeOnEnterHandler(1);
+		});
 
 		return {
 			showDevicePopup,

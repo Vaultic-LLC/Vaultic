@@ -10,15 +10,15 @@
 			<PopupButton :color="color" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'125px'"
 				:maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'35px'" :height="'2vw'" :fontSize="'1vw'"
 				:minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSave" />
-			<PopupButton :color="color" :text="'Create and Close'" :disabled="disabled" :width="'10vw'"
-				:minWidth="'125px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'35px'" :height="'2vw'"
-				:fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
+			<PopupButton v-if="creating == true" :color="color" :text="'Create and Close'" :disabled="disabled"
+				:width="'10vw'" :minWidth="'125px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'35px'"
+				:height="'2vw'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
 				@onClick="onSaveAndClose" />
 		</div>
 	</div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, provide, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 
 import { ClosePopupFuncctionKey, ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Types/Keys';
 import { GridDefinition } from '../../Types/Models';
@@ -121,6 +121,16 @@ export default defineComponent({
 				onAuthenticationSuccessful, authenticationCancelled);
 
 			requestAuthorization.value = false;
+		});
+
+		onMounted(() =>
+		{
+			stores.popupStore.addOnEnterHandler(4, onSave);
+		});
+
+		onUnmounted(() =>
+		{
+			stores.popupStore.removeOnEnterHandler(4);
 		});
 
 		return {

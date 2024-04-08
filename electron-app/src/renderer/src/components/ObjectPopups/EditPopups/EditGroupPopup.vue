@@ -39,8 +39,8 @@ export default defineComponent({
 	color: white;
 	animation: fadeIn 1s linear forwards;
 	margin: 5%;
-	margin-left: 21.5%;
-	font-size: 25px;
+	margin-left: 22.3%;
+	font-size: clamp(15px, 1vw, 25px);
 }
 
 .groupViewContainer {

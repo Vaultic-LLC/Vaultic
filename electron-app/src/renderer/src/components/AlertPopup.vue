@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, computed, defineComponent } from 'vue';
+import { ComputedRef, computed, defineComponent, onMounted, onUnmounted } from 'vue';
 
 import ObjectPopup from './ObjectPopups/ObjectPopup.vue';
 import PopupButton from './InputFields/PopupButton.vue';
@@ -74,6 +74,16 @@ export default defineComponent({
 		{
 			ctx.emit('onOk');
 		}
+
+		onMounted(() =>
+		{
+			stores.popupStore.addOnEnterHandler(0, onOk);
+		});
+
+		onUnmounted(() =>
+		{
+			stores.popupStore.removeOnEnterHandler(0);
+		});
 
 		return {
 			title,

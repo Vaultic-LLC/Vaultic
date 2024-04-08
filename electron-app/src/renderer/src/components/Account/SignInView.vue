@@ -7,7 +7,8 @@
 					<div class="signInViewContainer__content">
 						<div v-if="failedAutoLogin" class="signInViewContainer__inputs">
 							<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
-								:width="'80%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+								:width="'80%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
+								:isEmailField="true" />
 							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
 								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
 								:showUnlock="true" :required="true" :showCopy="false" :width="'80%'" :maxWidth="'300px'"

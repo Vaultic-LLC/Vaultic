@@ -46,15 +46,13 @@ export default defineComponent({
 }
 
 .unlockButtonContainer__button {
-	height: 35px;
-	width: 35px;
+	height: clamp(15px, 1.8vw, 35px);
+	width: clamp(15px, 1.8vw, 35px);
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	font-size: 25px;
-
+	font-size: clamp(12px, 1.2vw, 25px);
 	border-radius: 50%;
-	/* background: v-bind(primaryColor); */
 	color: white;
 	transition: 0.5s;
 	border: 2px solid v-bind(color);

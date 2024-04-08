@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
 
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
@@ -53,7 +53,7 @@ export default defineComponent({
 	},
 	emits: ["onAuthenticationSuccessful", "onCanceled"],
 	props: ["allowCancel", "rubberbandOnUnlock", "showPulsing", "color", "beforeEntry",
-		"focusOnShow", "iconOnly"],
+		"focusOnShow", "iconOnly", 'popupIndex'],
 	setup(props, ctx)
 	{
 		const authenticationPopup: Ref<HTMLElement | null> = ref(null);
@@ -166,6 +166,8 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
+			stores.popupStore.addOnEnterHandler(props.popupIndex, onEnter);
+
 			if (authenticationPopup.value)
 			{
 				resizeObserver.observe(authenticationPopup.value);
@@ -179,6 +181,8 @@ export default defineComponent({
 				encryptedInputField.value.focus();
 			}
 		});
+
+		onUnmounted(() => stores.popupStore.removeOnEnterHandler(props.popupIndex));
 
 		return {
 			authenticationPopup,

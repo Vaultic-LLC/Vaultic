@@ -1,5 +1,5 @@
 <template>
-	<tr v-if="rowNumber != 0 || (hideInitalRow == true && rowNumber == 1)" :style="{ height: securityQuestionRowGap }">
+	<tr :style="{ height: securityQuestionRowGap }">
 	</tr>
 	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="colorModel.color" :allowDelete="!disabled"
 		:hideAtRisk="true" :animateDelete="true" :style="{ 'padding-bottom': '10px' }">
@@ -40,7 +40,8 @@ export default defineComponent({
 		EncryptedInputField
 	},
 	emits: ["onQuesitonDirty", "onAnswerDirty", "onDelete"],
-	props: ["model", "colorModel", "rowNumber", "disabled", "isInitiallyEncrypted", 'moveButtonsToBottomRatio', 'hideInitalRow'],
+	props: ["model", "colorModel", "rowNumber", "disabled", "isInitiallyEncrypted", 'moveButtonsToBottomRatio',
+		'hideInitialRow'],
 	setup(props, ctx)
 	{
 		const resizeObserver: ResizeObserver = new ResizeObserver(checkScreenWidth);
@@ -48,7 +49,10 @@ export default defineComponent({
 		const securityQuestion: Ref<SecurityQuestion> = ref(props.model);
 		const moveButtonsToBottomRatio: ComputedRef<number> = computed(() => props.moveButtonsToBottomRatio ?? 0.8);
 		const moveButtonsToBottom: Ref<boolean> = ref(screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value));
-		const securityQuestionRowGap: Ref<string> = ref(screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(25px, 1vh, 30px)' : 'clamp(10px, 1vh, 20px)');
+		const securityQuestionRowGap: Ref<string> = ref(
+			props.hideInitialRow && props.rowNumber == 0 ? '5px' :
+				screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(20px, 2.2vh, 33px)' :
+					'clamp(10px, 1vh, 20px)');
 
 		const tableRowData: Ref<TableRowData> = ref(
 			{
@@ -64,7 +68,9 @@ export default defineComponent({
 		function checkScreenWidth()
 		{
 			moveButtonsToBottom.value = screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value);
-			securityQuestionRowGap.value = screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(25px, 1vh, 30px)' : 'clamp(10px, 1vh, 20px)';
+			securityQuestionRowGap.value = props.hideInitialRow && props.rowNumber == 0 ? '5px' :
+				screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(20px, 2.2vh, 33px)' :
+					'clamp(10px, 1vh, 20px)';
 		}
 
 		onMounted(() =>

@@ -26,7 +26,7 @@ export default defineComponent({
 	},
 	emits: ["update:modelValue"],
 	props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight',
-		"inputType", "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize'],
+		"inputType", "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
@@ -52,6 +52,15 @@ export default defineComponent({
 			{
 				invalidate("Pleas enter a value");
 				return false;
+			}
+
+			if (props.isEmailField)
+			{
+				if (!/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(props.modelValue))
+				{
+					invalidate('Please enter a valid email');
+					return false;
+				}
 			}
 
 			if (additionalValidationFunction.value)

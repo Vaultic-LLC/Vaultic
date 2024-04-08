@@ -3,7 +3,7 @@
 		<div class="requestAuthGlass" @click="onCancel"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="onAuthSuccessful" :rubberbandOnUnlock="false"
 			:showPulsing="false" :allowCancel="true" @onCanceled="onCancel" :setupKey="needsToSetupKey" :title="title"
-			:color="color" :focusOnShow="true" />
+			:color="color" :focusOnShow="true" :popupIndex="3" />
 	</div>
 </template>
 

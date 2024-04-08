@@ -173,7 +173,7 @@ export default defineComponent({
 
 .pickedColor {
 	position: absolute;
-	border-radius: 0.75rem;
+	border-radius: min(0.7vw, 0.7rem);
 	width: 95%;
 	height: 90%;
 	top: 5%;

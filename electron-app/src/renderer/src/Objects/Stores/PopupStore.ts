@@ -7,6 +7,7 @@ export type PopupStore = ReturnType<typeof createPopupStore>
 
 export default function createPopupStore()
 {
+	const onEnterHandlers: ({ (): void } | undefined)[] = [];
 	const color: Ref<string> = ref('');
 
 	const loadingIndicatorIsShowing: Ref<boolean> = ref(false)
@@ -39,6 +40,31 @@ export default function createPopupStore()
 	const toastIsShowing: Ref<boolean> = ref(false);
 	const toastText: Ref<string> = ref('');
 	const toastSuccess: Ref<boolean> = ref(false);
+
+	function addOnEnterHandler(index: number, callback: () => void)
+	{
+		onEnterHandlers[index] = callback;
+	}
+
+	function removeOnEnterHandler(index)
+	{
+		onEnterHandlers[index] = undefined;
+	}
+
+	window.addEventListener("keyup", (e: KeyboardEvent) =>
+	{
+		if (e.key == 'Enter')
+		{
+			for (let i = 0; i < onEnterHandlers.length; i++)
+			{
+				if (onEnterHandlers[i])
+				{
+					(onEnterHandlers[i] as () => void)();
+					return;
+				}
+			}
+		}
+	});
 
 	function showLoadingIndicator(clr: string, text?: string, opacity?: number)
 	{
@@ -213,6 +239,8 @@ export default function createPopupStore()
 		get toastIsShowing() { return toastIsShowing.value },
 		get toastText() { return toastText.value },
 		get toastSuccess() { return toastSuccess.value },
+		addOnEnterHandler,
+		removeOnEnterHandler,
 		showLoadingIndicator,
 		hideLoadingIndicator,
 		showErrorResponseAlert,

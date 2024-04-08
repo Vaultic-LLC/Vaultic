@@ -2,27 +2,38 @@
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
 		<ColorPickerInputField :label="'Filter Color'" :color="color" v-model="colorPaletteState.filtersColor"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" />
+			:style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2' }" :width="'8vw'" :height="'4vh'"
+			:minHeight="'30px'" :minWidth="'125px'" />
 		<ColorPickerInputField :label="'Group Color'" :color="color" v-model="colorPaletteState.groupsColor"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" />
-		<div class="groupedColorPickers" :style="{ 'grid-row': '5 / span 3', 'grid-column': '2 / span 9' }">
+			:style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2' }" :width="'8vw'" :height="'4vh'"
+			:minHeight="'30px'" :minWidth="'125px'" />
+		<div class="groupedColorPickers" :style="{ 'grid-row': '7 / span 3', 'grid-column': '2 / span 9' }">
 			<label class="groupedColorPickerLabels">Password Colors</label>
 			<ColorPickerInputField :label="'Primary'" :color="color"
-				v-model="colorPaletteState.passwordsColor.primaryColor" />
+				v-model="colorPaletteState.passwordsColor.primaryColor" :width="'8vw'" :height="'4vh'"
+				:minHeight="'30px'" :minWidth="'125px'" />
 			<ColorPickerInputField :label="'Secondary One'" :color="color"
-				v-model="colorPaletteState.passwordsColor.secondaryColorOne" />
+				v-model="colorPaletteState.passwordsColor.secondaryColorOne" :width="'8vw'" :height="'4vh'"
+				:minHeight="'30px'" :minWidth="'125px'" />
 			<ColorPickerInputField :label="'Seconday Two'" :color="color"
-				v-model="colorPaletteState.passwordsColor.secondaryColorTwo" />
-			<ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'" />
+				v-model="colorPaletteState.passwordsColor.secondaryColorTwo" :width="'8vw'" :height="'4vh'"
+				:minHeight="'30px'" :minWidth="'125px'" />
+			<ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
+				:size="'clamp(18px, 1.7vw, 28px)'" />
 		</div>
-		<div class="groupedColorPickers" :style="{ 'grid-row': '9 / span 3', 'grid-column': '2 / span 9' }">
+		<div class="groupedColorPickers" :style="{ 'grid-row': '12 / span 3', 'grid-column': '2 / span 9' }">
 			<label class="groupedColorPickerLabels">Value Colors</label>
-			<ColorPickerInputField :label="'Primary'" :color="color" v-model="colorPaletteState.valuesColor.primaryColor" />
+			<ColorPickerInputField :label="'Primary'" :color="color"
+				v-model="colorPaletteState.valuesColor.primaryColor" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
+				:minWidth="'125px'" />
 			<ColorPickerInputField :label="'Secondary One'" :color="color"
-				v-model="colorPaletteState.valuesColor.secondaryColorOne" />
+				v-model="colorPaletteState.valuesColor.secondaryColorOne" :width="'8vw'" :height="'4vh'"
+				:minHeight="'30px'" :minWidth="'125px'" />
 			<ColorPickerInputField :label="'Secondary Two'" :color="color"
-				v-model="colorPaletteState.valuesColor.secondaryColorTwo" />
-			<ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'" />
+				v-model="colorPaletteState.valuesColor.secondaryColorTwo" :width="'8vw'" :height="'4vh'"
+				:minHeight="'30px'" :minWidth="'125px'" />
+			<ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
+				:size="'clamp(18px, 1.7vw, 28px)'" />
 		</div>
 	</ObjectView>
 </template>
@@ -57,12 +68,11 @@ export default defineComponent({
 
 		const gridDefinition: GridDefinition =
 		{
-			rows: 12,
-			rowHeight: '50px',
+			rows: 15,
+			rowHeight: 'clamp(10px, 3vh, 50px)',
 			columns: 11,
-			columnWidth: '100px'
+			columnWidth: 'clamp(20px, 4vw, 100px)'
 		};
-
 
 		function onSave()
 		{
@@ -116,8 +126,10 @@ export default defineComponent({
 	display: flex;
 	justify-content: space-around;
 	align-items: center;
-	border: 1px solid #d0d0d0;
-	border-radius: 20px;
+	border: 1.5px solid #d0d0d0;
+	border-radius: min(1vw, 1rem);
+	min-width: 493px;
+	min-height: 60px;
 }
 
 .groupedColorPickers .groupedColorPickerLabels {
@@ -128,5 +140,6 @@ export default defineComponent({
 	transform: translateY(-80%);
 	background: var(--app-color);
 	padding: 0 .2em;
+	font-size: clamp(11px, 1.2vh, 25px);
 }
 </style>

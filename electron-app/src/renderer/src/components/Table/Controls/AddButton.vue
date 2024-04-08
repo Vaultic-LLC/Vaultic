@@ -38,7 +38,7 @@ export default defineComponent({
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	font-size: 35px;
+	font-size: clamp(20px, 2vw, 35px);
 
 	border-radius: 50%;
 	/* background: v-bind(primaryColor); */

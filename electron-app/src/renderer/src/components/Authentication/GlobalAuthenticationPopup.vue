@@ -3,8 +3,8 @@
 		<div class="mainUICover"></div>
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
-			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true"
-			:iconOnly="false" />
+			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true" :iconOnly="false"
+			:popupIndex="2" />
 	</div>
 </template>
 
