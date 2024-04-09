@@ -117,7 +117,7 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 	if (response.success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
 		&& response.valueStoreState)
 	{
-		const results = await Promise.all([
+		await Promise.all([
 			stores.filterStore.updateState(key, response.filterStoreState),
 			stores.groupStore.updateState(key, response.groupStoreState),
 			stores.passwordStore.updateState(key, response.passwordStoreState),
