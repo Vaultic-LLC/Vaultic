@@ -53,3 +53,19 @@ const app = createApp(App);
 
 app.use(setupCalendar, {});
 app.mount("#app");
+
+const test = "test";
+const key = "TheCompositeMan$1234";
+const hash = window.api.utilities.hash.insecureHash(test);
+window.api.utilities.crypt.encrypt(key, test).then((value) =>
+{
+	if (value.success && value.value)
+	{
+		window.api.utilities.crypt.decrypt(key, "zm9ymI3Y3+lf85pMfs6/jKmN/jx3dUhT5aDNkvY9O68=").then((decryptValue) =>
+		{
+			console.log(hash);
+			console.log(value.value);
+			console.log(decryptValue.value);
+		});
+	}
+});

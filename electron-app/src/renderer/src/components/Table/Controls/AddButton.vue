@@ -7,7 +7,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, computed, defineComponent } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
 
 export default defineComponent({
 	name: "AddButton",
@@ -17,11 +17,19 @@ export default defineComponent({
 		const computedMinSize: ComputedRef<string> = computed(() => props.minSize ?? '15px');
 		const computedPreferredSize: ComputedRef<string> = computed(() => props.preferredSize ?? '1.8vw');
 		const computedMaxSize: ComputedRef<string> = computed(() => props.maxSize ?? '35px');
+		const transition: Ref<string> = ref('0');
+
+		onMounted(() =>
+		{
+			// used to fix bug where the icon will slowly grow when first rendered
+			transition.value = '0.5s';
+		});
 
 		return {
 			computedMinSize,
 			computedPreferredSize,
-			computedMaxSize
+			computedMaxSize,
+			transition
 		}
 	}
 })
@@ -39,11 +47,9 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	font-size: clamp(20px, 2vw, 35px);
-
 	border-radius: 50%;
-	/* background: v-bind(primaryColor); */
 	color: white;
-	transition: 0.5s;
+	transition: v-bind(transition);
 	border: 2px solid v-bind(color);
 }
 

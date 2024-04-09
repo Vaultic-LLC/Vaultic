@@ -82,25 +82,25 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		const addPasswordData = {
 			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
-			Key: key,
+			MasterKey: key,
 			Password: password,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.password.add(JSON.stringify(addPasswordData));
-		await stores.handleUpdateStoreResponse(key, data);
+		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
-		return true;
+		return succeeded;
 	}
 
 	async updatePassword(password: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
-		updatedSecurityQuestionAnswers: string[], key: string): Promise<void>
+		updatedSecurityQuestionAnswers: string[], key: string): Promise<boolean>
 	{
 		const updatedPasswordData = {
 			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
-			Key: key,
+			MasterKey: key,
 			Password: password,
 			PasswordWasUpdated: passwordWasUpdated,
 			UpdatedSecurityQuestionQuestions: updatedSecurityQuestionQuestions,
@@ -109,24 +109,27 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		};
 
 		const data: any = await window.api.server.password.update(JSON.stringify(updatedPasswordData));
-		await stores.handleUpdateStoreResponse(key, data);
+		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
+		return succeeded;
 	}
 
-	async deletePassword(key: string, password: ReactivePassword): Promise<void>
+	async deletePassword(key: string, password: ReactivePassword): Promise<boolean>
 	{
 		const deletePasswordData = {
 			Sync: false,
-			Key: key,
+			OldDays: stores.settingsStore.oldPasswordDays,
+			MasterKey: key,
 			Password: password,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.password.delete(JSON.stringify(deletePasswordData));
-		await stores.handleUpdateStoreResponse(key, data);
+		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
+		return succeeded;
 	}
 }
 

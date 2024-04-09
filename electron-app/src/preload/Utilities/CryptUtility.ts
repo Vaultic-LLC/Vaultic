@@ -69,6 +69,7 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	}
 	catch (e: any)
 	{
+		console.log(e);
 		// don't want to log here since everytime a user enters the wrong key an exception is thrown
 	}
 

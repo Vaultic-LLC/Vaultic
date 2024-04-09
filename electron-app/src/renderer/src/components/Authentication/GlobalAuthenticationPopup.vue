@@ -4,7 +4,7 @@
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
 			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true" :iconOnly="false"
-			:popupIndex="2" />
+			:popupIndex="2" :focusOnShow="focusInput" />
 	</div>
 </template>
 
@@ -22,7 +22,7 @@ export default defineComponent({
 		AuthenticationPopup
 	},
 	emits: ['onAuthenticationSuccessful'],
-	props: ['playUnlockAnimation', 'iconOnly'],
+	props: ['playUnlockAnimation', 'iconOnly', 'focusInput'],
 	setup(props, ctx)
 	{
 		const authPopup: Ref<AuthPopup | null> = ref(null);

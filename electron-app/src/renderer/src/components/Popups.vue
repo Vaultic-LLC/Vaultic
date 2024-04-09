@@ -21,6 +21,7 @@
 		<Teleport to="#body">
 			<Transition name="lockFade" mode="out-in">
 				<GlobalAuthenticationPopup ref="globalAuthPopup" v-if="popupStore.globalAuthIsShowing"
+					:focusInput="popupStore.focusGlobalAuthInput"
 					:playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
 					@onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
 			</Transition>

@@ -104,7 +104,7 @@ export default defineComponent({
 		}
 
 		let saveSucceeded: (value: boolean) => void;
-		let saveFaield: (value: boolean) => void;
+		let saveFailed: (value: boolean) => void;
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
@@ -202,7 +202,7 @@ export default defineComponent({
 			return new Promise((resolve, reject) =>
 			{
 				saveSucceeded = resolve;
-				saveFaield = reject;
+				saveFailed = reject;
 			});
 		}
 
@@ -211,24 +211,54 @@ export default defineComponent({
 			stores.popupStore.showLoadingIndicator(color.value, "Saving Value");
 			if (props.creating)
 			{
-				//valuesState.value.lastModifiedTime = Date.now();
-				await stores.valueStore.addNameValuePair(key, valuesState.value);
+				if (await stores.valueStore.addNameValuePair(key, valuesState.value))
+				{
+					valuesState.value = defaultValue();
+					refreshKey.value = Date.now().toString();
 
-				valuesState.value = defaultValue();
-				refreshKey.value = Date.now().toString();
+					handleSaveResponse(true);
+					return;
+				}
+
+				handleSaveResponse(false);
 			}
 			else
 			{
-				await stores.valueStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key);
+				if (await stores.valueStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key))
+				{
+					handleSaveResponse(true);
+					return;
+				}
+
+				handleSaveResponse(false);
 			}
 
 			stores.popupStore.hideLoadingIndicator();
 			saveSucceeded(true);
 		}
 
+		function handleSaveResponse(succeeded: boolean)
+		{
+			stores.popupStore.hideLoadingIndicator();
+			if (succeeded)
+			{
+				if (saveSucceeded)
+				{
+					saveSucceeded(true);
+				}
+			}
+			else
+			{
+				if (saveFailed)
+				{
+					saveFailed(true);
+				}
+			}
+		}
+
 		function onAuthenticationCanceled()
 		{
-			saveFaield(false);
+			saveFailed(false);
 		}
 
 		onMounted(() =>

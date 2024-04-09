@@ -21,24 +21,23 @@
 								:height="'4vh'" :minHeight="'35px'" />
 						</div>
 					</div>
-					<div class="signInViewContainer__contentBottom">
-						<div class="signInViewContainer__divider">
-							<div class="signInViewContainer__divider__line"></div>
-							<div class="signInViewContainer__divider__text">Or</div>
-							<div class="signInViewContainer__divider__line"></div>
-						</div>
-						<div class="signInViewContainer__limitedMode">
-							<ButtonLink :color="color" :text="'Continue in Offline Mode'"
-								@onClick="moveToLimitedMode" />
-						</div>
-						<div class="signInViewContainer__createAccountLink">Don't have an account?
-							<ButtonLink :color="color" :text="'Create One'" @onClick="moveToCreateAccount" />
-						</div>
-						<!-- Add an empty div so row gap acts as margin. Using margin causes the row-gap property to not work at some sizes -->
-						<div></div>
-					</div>
 				</div>
 			</Transition>
+			<template #footer>
+				<div class="signInViewContainer__contentBottom">
+					<div class="signInViewContainer__divider">
+						<div class="signInViewContainer__divider__line"></div>
+						<div class="signInViewContainer__divider__text">Or</div>
+						<div class="signInViewContainer__divider__line"></div>
+					</div>
+					<div class="signInViewContainer__limitedMode">
+						<ButtonLink :color="color" :text="'Continue in Offline Mode'" @onClick="moveToLimitedMode" />
+					</div>
+					<div class="signInViewContainer__createAccountLink">Don't have an account?
+						<ButtonLink :color="color" :text="'Create One'" @onClick="moveToCreateAccount" />
+					</div>
+				</div>
+			</template>
 		</AccountSetupView>
 	</div>
 </template>
@@ -92,7 +91,7 @@ export default defineComponent({
 		{
 			if (await stores.appStore.canAuthenticateKey())
 			{
-				stores.popupStore.showGlobalAuthentication(props.color);
+				stores.popupStore.showGlobalAuthentication(props.color, true);
 			}
 
 			ctx.emit('onMoveToLimitedMode');
@@ -110,6 +109,8 @@ export default defineComponent({
 
 		async function onSubmit()
 		{
+			didFailedAutoLogin();
+			return;
 			stores.popupStore.showLoadingIndicator(props.color);
 
 			if (!failedAutoLogin.value)
@@ -269,13 +270,14 @@ export default defineComponent({
 }
 
 .signInViewContainer__contentBottom {
-	height: 10vh;
+	/* height: 16vh; */
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
 	flex-direction: column;
-	row-gap: 8%;
+	row-gap: min(2.5vh, 40px);
 	flex-grow: 1;
+	margin-top: min(2vh, 30px);
 }
 
 .signInViewContainer__limitedMode {

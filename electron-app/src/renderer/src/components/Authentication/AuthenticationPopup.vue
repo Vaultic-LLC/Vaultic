@@ -124,7 +124,6 @@ export default defineComponent({
 			{
 				forceShowIcon.value = true;
 				await new Promise((resolve) => setTimeout(resolve, 100));
-				stores.popupStore.hideLoadingIndicator();
 				ctx.emit("onAuthenticationSuccessful", key.value);
 			}
 		}
@@ -134,8 +133,9 @@ export default defineComponent({
 			ctx.emit("onCanceled");
 		}
 
-		function playUnlockAnimation()
+		async function playUnlockAnimation()
 		{
+			stores.popupStore.hideLoadingIndicator();
 			unlocked.value = true;
 		}
 

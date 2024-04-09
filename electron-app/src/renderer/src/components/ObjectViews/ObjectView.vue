@@ -64,9 +64,12 @@ export default defineComponent({
 					}
 
 					stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
-				}).catch(() =>
+				}).catch((triedSaved: boolean) =>
 				{
-					// cancelled
+					if (triedSaved)
+					{
+						stores.popupStore.showToast(primaryColor.value, "Save Failed", false);
+					}
 				});
 			}
 
@@ -90,9 +93,12 @@ export default defineComponent({
 					}
 
 					stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
-				}).catch(() =>
+				}).catch((triedSaved: boolean) =>
 				{
-					// cancelled
+					if (triedSaved)
+					{
+						stores.popupStore.showToast(primaryColor.value, "Save Failed", false);
+					}
 				});
 			}
 

@@ -99,43 +99,43 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		return undefined;
 	}
 
-	async addFilter(key: string, filter: Filter): Promise<void>
+	async addFilter(key: string, filter: Filter): Promise<boolean>
 	{
 		const addFilterData = {
 			Sync: false,
-			Key: key,
+			MasterKey: key,
 			Filter: filter,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.filter.add(JSON.stringify(addFilterData));
-		await stores.handleUpdateStoreResponse(key, data);
+		return await stores.handleUpdateStoreResponse(key, data);
 	}
 
-	async updateFilter(key: string, updatedFilter: Filter): Promise<void>
+	async updateFilter(key: string, updatedFilter: Filter): Promise<boolean>
 	{
 		const addFilterData = {
 			Sync: false,
-			Key: key,
+			MasterKey: key,
 			Filter: updatedFilter,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.filter.update(JSON.stringify(addFilterData));
-		await stores.handleUpdateStoreResponse(key, data);
+		return await stores.handleUpdateStoreResponse(key, data);
 	}
 
-	async deleteFilter(key: string, filter: Filter): Promise<void>
+	async deleteFilter(key: string, filter: Filter): Promise<boolean>
 	{
 		const addFilterData = {
 			Sync: false,
-			Key: key,
+			MasterKey: key,
 			Filter: filter,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.filter.delete(JSON.stringify(addFilterData));
-		await stores.handleUpdateStoreResponse(key, data);
+		return await stores.handleUpdateStoreResponse(key, data);
 	}
 }
 

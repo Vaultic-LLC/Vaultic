@@ -226,6 +226,7 @@ export default defineComponent({
 	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 	cursor: pointer;
 	font-size: clamp(11px, 1.2vh, 25px);
+	will-change: transform;
 }
 
 .dropDownContainer.active .dropDownTitle .dropDownLabel {

@@ -29,6 +29,7 @@ export default function createPopupStore()
 	const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 
 	const globalAuthIsShowing: Ref<boolean> = ref(false);
+	const focusGlobalAuthInput: Ref<boolean> = ref(false);
 	const onlyShowLockIcon: Ref<boolean> = ref(false);
 	const playingUnlockAnimation: Ref<boolean> = ref(false);
 
@@ -162,9 +163,10 @@ export default function createPopupStore()
 		playingUnlockAnimation.value = true;
 	}
 
-	function showGlobalAuthentication(clr: string)
+	function showGlobalAuthentication(clr: string, focusInput: boolean)
 	{
 		color.value = clr;
+		focusGlobalAuthInput.value = focusInput;
 		globalAuthIsShowing.value = true;
 	}
 
@@ -230,6 +232,7 @@ export default function createPopupStore()
 		get accountSetupIsShowing() { return accountSetupIsShowing.value },
 		get accountSetupModel() { return accountSetupModel.value },
 		get globalAuthIsShowing() { return globalAuthIsShowing.value },
+		get focusGlobalAuthInput() { return focusGlobalAuthInput.value },
 		get onlyShowLockIcon() { return onlyShowLockIcon.value },
 		get playingUnlockAnimation() { return playingUnlockAnimation.value },
 		get requestAuthenticationIsShowing() { return requestAuthenticationIsShowing.value },

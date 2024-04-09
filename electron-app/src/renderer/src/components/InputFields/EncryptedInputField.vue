@@ -286,6 +286,7 @@ export default defineComponent({
 	transform: translateY(-50%);
 	transition: var(--input-label-transition);
 	font-size: clamp(11px, 1.2vh, 25px);
+	will-change: transform;
 }
 
 .textInputFieldContainer .textInputFieldInput:focus,
@@ -298,7 +299,7 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:focus~label,
 .textInputFieldContainer .textInputFieldInput:valid~label,
 .textInputFieldContainer .textInputFieldInput:disabled~label {
-	top: 0;
+	top: 10%;
 	transform: translateY(-80%) scale(0.8);
 	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;

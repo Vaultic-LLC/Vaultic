@@ -89,43 +89,43 @@ class GroupStore extends DataTypeStore<Group, GroupStoreState>
 		return this.internalActiveAtRiskValueGroupType;
 	}
 
-	async addGroup(key: string, group: Group): Promise<void>
+	async addGroup(key: string, group: Group): Promise<boolean>
 	{
 		const addGroupData = {
 			Sync: false,
-			Key: key,
+			MasterKey: key,
 			Group: group,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.group.add(JSON.stringify(addGroupData));
-		await stores.handleUpdateStoreResponse(key, data);
+		return await stores.handleUpdateStoreResponse(key, data);
 	}
 
-	async updateGroup(key: string, updatedGroup: Group): Promise<void>
+	async updateGroup(key: string, updatedGroup: Group): Promise<boolean>
 	{
 		const updateGroupData = {
 			Sync: false,
-			Key: key,
+			MasterKey: key,
 			Group: updatedGroup,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.group.update(JSON.stringify(updateGroupData));
-		await stores.handleUpdateStoreResponse(key, data);
+		return await stores.handleUpdateStoreResponse(key, data);
 	}
 
-	async deleteGroup(key: string, group: Group): Promise<void>
+	async deleteGroup(key: string, group: Group): Promise<boolean>
 	{
 		const deleteGroupData = {
 			Sync: false,
-			Key: key,
+			MasterKey: key,
 			Group: group,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.group.delete(JSON.stringify(deleteGroupData));
-		await stores.handleUpdateStoreResponse(key, data);
+		return await stores.handleUpdateStoreResponse(key, data);
 	}
 }
 

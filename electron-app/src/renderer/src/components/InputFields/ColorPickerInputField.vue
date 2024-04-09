@@ -12,7 +12,6 @@ import { Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref } f
 
 import { ValidationFunctionsKey } from '@renderer/Types/Keys';
 import tippy from 'tippy.js';
-import Coloris from '@melloware/coloris';
 
 export default defineComponent({
 	name: "ColorPickerInputField",
@@ -67,7 +66,6 @@ export default defineComponent({
 		function onColorSelected(color: string)
 		{
 			ctx.emit('update:modelValue', color);
-			Coloris.close();
 		}
 
 		onMounted(() =>

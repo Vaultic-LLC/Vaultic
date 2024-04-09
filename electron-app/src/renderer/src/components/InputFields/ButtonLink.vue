@@ -33,9 +33,12 @@ export default defineComponent({
 	cursor: pointer;
 	font-size: clamp(13px, 1vw, 20px);
 	padding: 0;
+	outline: none;
+	will-change: opacity;
 }
 
-.buttonLink:hover {
+.buttonLink:hover,
+.buttonLink:focus {
 	opacity: 0.8;
 }
 </style>

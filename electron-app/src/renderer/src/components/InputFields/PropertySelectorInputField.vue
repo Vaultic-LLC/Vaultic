@@ -226,6 +226,7 @@ export default defineComponent({
 	transition: var(--input-label-transition);
 	cursor: pointer;
 	font-size: clamp(11px, 1.2vh, 25px);
+	will-change: transform;
 }
 
 .dropDownContainer.active .dropDownTitle .dropDownLabel {

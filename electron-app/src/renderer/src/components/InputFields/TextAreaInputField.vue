@@ -200,7 +200,7 @@ export default defineComponent({
 	height: 100%;
 	left: 0;
 	color: white;
-	border-radius: 1rem;
+	border-radius: min(1vw, 1rem);
 	background: none;
 	font-size: clamp(11px, 1.2vh, 25px);
 	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -223,6 +223,7 @@ export default defineComponent({
 	transform: translateY(min(1vw, 15px));
 	transition: var(--input-label-transition);
 	font-size: clamp(11px, 1.2vh, 25px);
+	will-change: transform;
 }
 
 .textAreaInputFieldContainer__input:focus,
@@ -234,7 +235,7 @@ export default defineComponent({
 .textAreaInputFieldContainer__input:focus~label,
 .textAreaInputFieldContainer__input:valid~label,
 .textAreaInputFieldContainer__input:disabled~label {
-	transform: translateY(-80%) scale(0.8);
+	transform: translateY(-70%) scale(0.8);
 	background-color: v-bind(labelBackgroundColor);
 	padding: 0 .2em;
 	color: v-bind('colorModel.activeTextColor');

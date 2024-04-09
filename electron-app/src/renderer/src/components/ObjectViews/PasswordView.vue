@@ -292,22 +292,48 @@ export default defineComponent({
 			stores.popupStore.showLoadingIndicator(color.value, "Saving Password");
 			if (props.creating)
 			{
-				//passwordState.value.lastModifiedTime = Date.now();
-				await stores.passwordStore.addPassword(key, passwordState.value);
+				if (await stores.passwordStore.addPassword(key, passwordState.value))
+				{
+					passwordState.value = defaultPassword();
+					refreshKey.value = Date.now().toString();
 
-				passwordState.value = defaultPassword();
-				refreshKey.value = Date.now().toString();
+					handleSaveResponse(true);
+					return;
+				}
+
+				handleSaveResponse(false);
 			}
 			else
 			{
-				// passwordState.value.securityQuestions = securityQuestionInputField.value.securityQuestions;
-				await stores.passwordStore.updatePassword(
+				if (await stores.passwordStore.updatePassword(
 					passwordState.value, passwordIsDirty.value, dirtySecurityQuestionQuestions.value,
-					dirtySecurityQuestionAnswers.value, key);
-			}
+					dirtySecurityQuestionAnswers.value, key))
+				{
+					handleSaveResponse(true);
+					return;
+				}
 
+				handleSaveResponse(false);
+			}
+		}
+
+		function handleSaveResponse(succeeded: boolean)
+		{
 			stores.popupStore.hideLoadingIndicator();
-			saveSucceeded(true);
+			if (succeeded)
+			{
+				if (saveSucceeded)
+				{
+					saveSucceeded(true);
+				}
+			}
+			else
+			{
+				if (saveFailed)
+				{
+					saveFailed(true);
+				}
+			}
 		}
 
 		function onAuthenticationCanceled()

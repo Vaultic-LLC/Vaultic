@@ -103,8 +103,8 @@ export default defineComponent({
 		let showEditValuePopup: Ref<boolean> = ref(false);
 		let currentEditingValueModel: Ref<ReactiveValue | any> = ref({});
 
-		let deletePassword: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
-		let deleteValue: Ref<(key: string) => Promise<void>> = ref((_: string) => Promise.reject());
+		let deletePassword: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
+		let deleteValue: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
 
 		const passwordSearchText: Ref<string> = ref('');
 		const valueSearchText: Ref<string> = ref('');
@@ -385,7 +385,7 @@ export default defineComponent({
 		{
 			deletePassword.value = async (key: string) =>
 			{
-				await stores.passwordStore.deletePassword(key, password);
+				return await stores.passwordStore.deletePassword(key, password);
 			};
 
 			stores.popupStore.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
@@ -394,17 +394,24 @@ export default defineComponent({
 		async function onDeletePasswordConfirmed(key: string)
 		{
 			stores.popupStore.showLoadingIndicator(color.value, "Deleting Password");
-			await deletePassword.value(key);
+			const succeeded = await deletePassword.value(key);
 			stores.popupStore.hideLoadingIndicator();
 
-			stores.popupStore.showToast(color.value, "Password Deleted Successfully", true);
+			if (succeeded)
+			{
+				stores.popupStore.showToast(color.value, "Password Deleted Successfully", true);
+			}
+			else
+			{
+				stores.popupStore.showToast(color.value, "Password Delete Failed", false);
+			}
 		}
 
 		function onValueDeleteInitiated(value: ReactiveValue)
 		{
 			deleteValue.value = async (key: string) =>
 			{
-				await stores.valueStore.deleteNameValuePair(key, value);
+				return await stores.valueStore.deleteNameValuePair(key, value);
 			};
 
 			stores.popupStore.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });
@@ -413,10 +420,17 @@ export default defineComponent({
 		async function onDeleteValueConfirmed(key: string)
 		{
 			stores.popupStore.showLoadingIndicator(color.value, "Deleting Value");
-			await deleteValue.value(key);
+			const succeeded = await deleteValue.value(key);
 			stores.popupStore.hideLoadingIndicator();
 
-			stores.popupStore.showToast(color.value, "Value Deleted Successfully", true);
+			if (succeeded)
+			{
+				stores.popupStore.showToast(color.value, "Value Deleted Successfully", true);
+			}
+			else
+			{
+				stores.popupStore.showToast(color.value, "Value Delete Failed", false);
+			}
 		}
 
 		onMounted(() =>

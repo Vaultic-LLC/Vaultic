@@ -1,6 +1,6 @@
 <template>
 	<div class="duplicateFiledGroupGaugeContainer">
-		<SmallMetricGauge :model="model" />
+		<SmallMetricGauge :model="model" :key="model.key" />
 	</div>
 </template>
 

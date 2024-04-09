@@ -93,20 +93,45 @@ export default defineComponent({
 			stores.popupStore.showLoadingIndicator(color.value, "Saving Filter");
 			if (props.creating)
 			{
-				await stores.filterStore.addFilter(key, filterState.value);
+				if (await stores.filterStore.addFilter(key, filterState.value))
+				{
+					filterState.value = defaultFilter(filterState.value.type);
+					refreshKey.value = Date.now().toString();
 
-				filterState.value = defaultFilter(filterState.value.type);
-				refreshKey.value = Date.now().toString();
+					handleSaveResponse(true);
+					return;
+				}
+
+				handleSaveResponse(false);
 			}
 			else
 			{
-				await stores.filterStore.updateFilter(key, filterState.value);
-			}
+				if (await stores.filterStore.updateFilter(key, filterState.value))
+				{
+					handleSaveResponse(true);
+					return;
+				}
 
+				handleSaveResponse(false);
+			}
+		}
+
+		function handleSaveResponse(succeeded: boolean)
+		{
 			stores.popupStore.hideLoadingIndicator();
-			if (saveSucceeded)
+			if (succeeded)
 			{
-				saveSucceeded(true);
+				if (saveSucceeded)
+				{
+					saveSucceeded(true);
+				}
+			}
+			else
+			{
+				if (saveFailed)
+				{
+					saveFailed(true);
+				}
 			}
 		}
 

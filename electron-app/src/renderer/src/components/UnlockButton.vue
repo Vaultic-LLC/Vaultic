@@ -18,6 +18,7 @@ export default defineComponent({
 	{
 		const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
 		const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
+		const transition: Ref<string> = ref('0');
 
 		function onAuthSuccessful(_: string)
 		{
@@ -29,11 +30,18 @@ export default defineComponent({
 			requestAuthorization.value = true;
 		}
 
-		onMounted(() => decryptFunctions.value.push(onAuthSuccessful));
+		onMounted(() =>
+		{
+			decryptFunctions.value.push(onAuthSuccessful);
+
+			// used to fix bug where the icon will slowly grow when first rendered
+			transition.value = '0.5s';
+		});
 
 		onUnmounted(() => decryptFunctions.value.splice(decryptFunctions.value.indexOf(onAuthSuccessful), 1));
 
 		return {
+			transition,
 			onClick
 		}
 	}
@@ -54,7 +62,7 @@ export default defineComponent({
 	font-size: clamp(12px, 1.2vw, 25px);
 	border-radius: 50%;
 	color: white;
-	transition: 0.5s;
+	transition: v-bind(transition);
 	border: 2px solid v-bind(color);
 }
 

@@ -117,7 +117,7 @@ export default defineComponent({
 				FirstName: account.value.firstName,
 				LastName: account.value.lastName,
 				Email: account.value.email,
-				Key: key.value,
+				MasterKey: key.value,
 				...stores.getStates(),
 			}
 
@@ -210,6 +210,7 @@ export default defineComponent({
 	flex-grow: 1;
 	justify-content: center;
 	align-items: center;
+	margin-bottom: 15px;
 }
 
 .createMasterKeyViewContainer__content {
@@ -217,7 +218,6 @@ export default defineComponent({
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	row-gap: 15px;
 	height: 100%;
 	width: 100%;
 }

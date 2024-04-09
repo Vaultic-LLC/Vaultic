@@ -27,7 +27,7 @@ export interface Stores
 	resetStoresToDefault: () => void;
 	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
 	getStates: () => DataStoreStates;
-	handleUpdateStoreResponse: (key: string, response: any, suppressError?: boolean) => Promise<void>;
+	handleUpdateStoreResponse: (key: string, response: any, suppressError?: boolean) => Promise<boolean>;
 }
 
 // Is only called from GlobalAuthPopup and SignInView and should stay that way since readState doesn't do any
@@ -112,17 +112,20 @@ function getStates(): DataStoreStates
 	}
 }
 
-async function handleUpdateStoreResponse(key: string, response: any, suppressError: boolean = false): Promise<void>
+async function handleUpdateStoreResponse(key: string, response: any, suppressError: boolean = false): Promise<boolean>
 {
 	if (response.success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
 		&& response.valueStoreState)
 	{
-		await Promise.all([
+		const results = await Promise.all([
 			stores.filterStore.updateState(key, response.filterStoreState),
 			stores.groupStore.updateState(key, response.groupStoreState),
 			stores.passwordStore.updateState(key, response.passwordStoreState),
 			stores.valueStore.updateState(key, response.valueStoreState)
 		]);
+
+		// TODO: handel failed state updates?
+		return true;
 	}
 	else if (!suppressError)
 	{
@@ -135,6 +138,8 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 			stores.popupStore.showSessionExpired();
 		}
 	}
+
+	return false;
 }
 
 export const stores: Stores =

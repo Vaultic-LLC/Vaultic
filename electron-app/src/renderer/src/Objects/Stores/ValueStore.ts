@@ -77,48 +77,51 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 		const addValueData = {
 			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
-			Key: key,
+			MasterKey: key,
 			Value: value,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.value.add(JSON.stringify(addValueData));
-		await stores.handleUpdateStoreResponse(key, data);
+		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
-		return true;
+		return succeeded;
 	}
 
-	async updateNameValuePair(value: NameValuePair, valueWasUpdated: boolean, key: string): Promise<void>
+	async updateNameValuePair(value: NameValuePair, valueWasUpdated: boolean, key: string): Promise<boolean>
 	{
 		const updatedValueData = {
 			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
-			Key: key,
+			MasterKey: key,
 			Value: value,
 			ValueWasUpdated: valueWasUpdated,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.value.update(JSON.stringify(updatedValueData));
-		await stores.handleUpdateStoreResponse(key, data);
+		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
+		return succeeded;
 	}
 
-	async deleteNameValuePair(key: string, value: ReactiveValue): Promise<void>
+	async deleteNameValuePair(key: string, value: ReactiveValue): Promise<boolean>
 	{
 		const deleteValueData = {
 			Sync: false,
-			Key: key,
+			OldDays: stores.settingsStore.oldPasswordDays,
+			MasterKey: key,
 			Value: value,
 			...stores.getStates()
 		};
 
 		const data: any = await window.api.server.value.delete(JSON.stringify(deleteValueData));
-		await stores.handleUpdateStoreResponse(key, data);
+		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
+		return succeeded;
 	}
 }
 

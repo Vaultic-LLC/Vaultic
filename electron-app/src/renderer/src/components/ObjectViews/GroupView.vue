@@ -292,20 +292,46 @@ export default defineComponent({
 			stores.popupStore.showLoadingIndicator(groupColor.value, "Saving Group");
 			if (props.creating)
 			{
-				await stores.groupStore.addGroup(key, groupState.value);
-				groupState.value = defaultGroup(groupState.value.type);
-				setTableRows();
-				refreshKey.value = Date.now().toString();
+				if (await stores.groupStore.addGroup(key, groupState.value))
+				{
+					groupState.value = defaultGroup(groupState.value.type);
+					setTableRows();
+					refreshKey.value = Date.now().toString();
+
+					handleSaveResponse(true);
+					return;
+				}
+
+				handleSaveResponse(false);
 			}
 			else
 			{
-				await stores.groupStore.updateGroup(key, groupState.value);
-			}
+				if (await stores.groupStore.updateGroup(key, groupState.value))
+				{
+					handleSaveResponse(true);
+					return;
+				}
 
+				handleSaveResponse(false);
+			}
+		}
+
+		function handleSaveResponse(succeeded: boolean)
+		{
 			stores.popupStore.hideLoadingIndicator();
-			if (saveSucceeded)
+			if (succeeded)
 			{
-				saveSucceeded(true);
+				if (saveSucceeded)
+				{
+					saveSucceeded(true);
+				}
+			}
+			else
+			{
+				if (saveFailed)
+				{
+					saveFailed(true);
+				}
 			}
 		}
 
@@ -329,6 +355,9 @@ export default defineComponent({
 		{
 			setTableRows();
 		});
+
+		watch(() => stores.passwordStore.passwords.length, setTableRows);
+		watch(() => stores.valueStore.nameValuePairs.length, setTableRows);
 
 		watch(() => searchText.value.value, (newValue) =>
 		{
