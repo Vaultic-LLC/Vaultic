@@ -45,8 +45,6 @@ export default function createReactivePassword(password: Password): ReactivePass
 		set isDuplicate(value: boolean) { passwordState.isDuplicate = value; },
 		get passwordLength() { return passwordState.passwordLength; },
 		get isSafe() { return isSafe.value; },
-		get isPinned() { return passwordState.isPinned },
-		set isPinned(value: boolean) { passwordState.isPinned = value; },
 		get key() { return passwordState.key; },
 		get isVaultic() { return passwordState.isVaultic; }
 	}

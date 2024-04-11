@@ -77,15 +77,15 @@ export default defineComponent({
 
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
-				currentPrimaryColor = stores.settingsStore.currentColorPalette.passwordsColor.primaryColor;
-				currentSecondaryColorOne = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorOne;
-				currentSecondaryColorTwo = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorTwo;
+				currentPrimaryColor = stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor;
+				currentSecondaryColorOne = stores.userPreferenceStore.currentColorPalette.passwordsColor.secondaryColorOne;
+				currentSecondaryColorTwo = stores.userPreferenceStore.currentColorPalette.passwordsColor.secondaryColorTwo;
 			}
 			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
 			{
-				currentPrimaryColor = stores.settingsStore.currentColorPalette.valuesColor.primaryColor;
-				currentSecondaryColorOne = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorOne;
-				currentSecondaryColorTwo = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorTwo;
+				currentPrimaryColor = stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor;
+				currentSecondaryColorOne = stores.userPreferenceStore.currentColorPalette.valuesColor.secondaryColorOne;
+				currentSecondaryColorTwo = stores.userPreferenceStore.currentColorPalette.valuesColor.secondaryColorTwo;
 			}
 
 			let primaryColorTween = getColorTween(previousPrimaryColor.value, currentPrimaryColor, primaryColor)
@@ -171,6 +171,12 @@ export default defineComponent({
 			transitionColors();
 		});
 
+		watch(() => stores.userPreferenceStore.currentColorPalette, () =>
+		{
+			primaryColor.value = stores.userPreferenceStore.currentPrimaryColor.value;
+			transitionColors();
+		});
+
 		onMounted(() =>
 		{
 			if (objectPopup.value)
@@ -179,24 +185,24 @@ export default defineComponent({
 				checkWidthToHeightRatio();
 			}
 
-			previousPrimaryColor.value = stores.settingsStore.currentPrimaryColor.value;
-			primaryColor.value = stores.settingsStore.currentPrimaryColor.value;
+			previousPrimaryColor.value = stores.userPreferenceStore.currentPrimaryColor.value;
+			primaryColor.value = stores.userPreferenceStore.currentPrimaryColor.value;
 
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
-				previousSecondaryColorOne.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorOne;
-				secondaryColorOne.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorOne;
+				previousSecondaryColorOne.value = stores.userPreferenceStore.currentColorPalette.passwordsColor.secondaryColorOne;
+				secondaryColorOne.value = stores.userPreferenceStore.currentColorPalette.passwordsColor.secondaryColorOne;
 
-				previousSecondaryColorTwo.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorTwo;
-				secondaryColorTwo.value = stores.settingsStore.currentColorPalette.passwordsColor.secondaryColorTwo;
+				previousSecondaryColorTwo.value = stores.userPreferenceStore.currentColorPalette.passwordsColor.secondaryColorTwo;
+				secondaryColorTwo.value = stores.userPreferenceStore.currentColorPalette.passwordsColor.secondaryColorTwo;
 			}
 			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
 			{
-				previousSecondaryColorOne.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorOne;
-				secondaryColorOne.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorOne;
+				previousSecondaryColorOne.value = stores.userPreferenceStore.currentColorPalette.valuesColor.secondaryColorOne;
+				secondaryColorOne.value = stores.userPreferenceStore.currentColorPalette.valuesColor.secondaryColorOne;
 
-				previousSecondaryColorTwo.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorTwo;
-				secondaryColorTwo.value = stores.settingsStore.currentColorPalette.valuesColor.secondaryColorTwo;
+				previousSecondaryColorTwo.value = stores.userPreferenceStore.currentColorPalette.valuesColor.secondaryColorTwo;
+				secondaryColorTwo.value = stores.userPreferenceStore.currentColorPalette.valuesColor.secondaryColorTwo;
 			}
 
 			transitionColors();

@@ -20,11 +20,13 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 	private internalDuplicateNameValuePairs: ComputedRef<string[]>;
 	private internalDuplicateNameValuePairsLength: ComputedRef<number>;
 
+	private internalPinnedValues: ComputedRef<ReactiveValue[]>;
 	private internalUnpinnedValues: ComputedRef<ReactiveValue[]>;
 
 	private internalActiveAtRiskValueType: Ref<AtRiskType>;
 
 	get nameValuePairs() { return this.state.values; }
+	get pinnedValues() { return this.internalPinnedValues.value }
 	get unpinnedValues() { return this.internalUnpinnedValues.value; }
 	get oldNameValuePairs() { return this.internalOldNameValuePairs }
 	get duplicateNameValuePairs() { return this.internalDuplicateNameValuePairs }
@@ -45,7 +47,8 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 		this.internalDuplicateNameValuePairs = computed(() => this.state.values.filter(nvp => nvp.isDuplicate).map(nvp => nvp.id));
 		this.internalDuplicateNameValuePairsLength = computed(() => Object.keys(this.state.duplicateValues).length);
 
-		this.internalUnpinnedValues = computed(() => this.state.values.filter(nvp => !nvp.isPinned));
+		this.internalPinnedValues = computed(() => this.state.values.filter(nvp => stores.userPreferenceStore.pinnedValues.hasOwnProperty(nvp.id)));
+		this.internalUnpinnedValues = computed(() => this.state.values.filter(nvp => !stores.userPreferenceStore.pinnedValues.hasOwnProperty(nvp.id)));
 
 		this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 	}

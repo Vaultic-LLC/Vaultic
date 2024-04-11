@@ -28,6 +28,12 @@ class GroupStore extends DataTypeStore<Group, GroupStoreState>
 	private internalActiveAtRiskPasswordGroupType: Ref<AtRiskType>;
 	private internalActiveAtRiskValueGroupType: Ref<AtRiskType>;
 
+	private internalPinnedPasswordGroups: ComputedRef<Group[]>;
+	private internalUnpinnedPasswordGroups: ComputedRef<Group[]>;
+
+	private internalPinnedValueGroups: ComputedRef<Group[]>;
+	private internalUnpinnedValueGroups: ComputedRef<Group[]>;
+
 	get groups() { return this.state.values; }
 	get passwordGroups() { return this.internalPasswordGroups.value; }
 	get activeAtRiskPasswordGroupType() { return this.internalActiveAtRiskPasswordGroupType.value; }
@@ -41,6 +47,10 @@ class GroupStore extends DataTypeStore<Group, GroupStoreState>
 	get duplicateValueGroupLength() { return this.internalDuplicateValuesGroupsLength.value; }
 	get sortedPasswordsGroups() { return this.internalSortedPasswordsGroups.value; }
 	get sortedValuesGroups() { return this.internalSortedValuesGroups.value }
+	get pinnedPasswordGroups() { return this.internalPinnedPasswordGroups.value; }
+	get unpinnedPasswordGroups() { return this.internalUnpinnedPasswordGroups.value; }
+	get pinnedValueGroups() { return this.internalPinnedValueGroups.value; }
+	get unpinnedValueGroups() { return this.internalUnpinnedValueGroups.value; }
 
 	constructor()
 	{
@@ -57,6 +67,12 @@ class GroupStore extends DataTypeStore<Group, GroupStoreState>
 
 		this.internalActiveAtRiskPasswordGroupType = ref(AtRiskType.None);
 		this.internalActiveAtRiskValueGroupType = ref(AtRiskType.None);
+
+		this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
+		this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
+
+		this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
+		this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
 	}
 
 	protected defaultState()

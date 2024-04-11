@@ -1,4 +1,4 @@
-import { IIdentifiable, IPinnable } from "./EncryptedData";
+import { IIdentifiable } from "./EncryptedData";
 
 export enum DataType
 {
@@ -14,7 +14,7 @@ export enum FilterStatus
 	Or = "Or"
 }
 
-export interface Filter extends IIdentifiable, IPinnable
+export interface Filter extends IIdentifiable
 {
 	[key: string]: any;
 	name: string;
@@ -45,7 +45,7 @@ export enum FilterConditionType
 	EqualTo = "Equal To"
 }
 
-export interface Group extends IIdentifiable, IPinnable
+export interface Group extends IIdentifiable
 {
 	[key: string]: any;
 	passwords: string[];

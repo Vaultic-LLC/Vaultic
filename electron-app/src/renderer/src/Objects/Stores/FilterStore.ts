@@ -27,6 +27,12 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 	private internalActiveAtRiskPasswordFilterType: Ref<AtRiskType>;
 	private internalActiveAtRiskValueFilterType: Ref<AtRiskType>;
 
+	private internalPinnedPasswordFilters: ComputedRef<Filter[]>;
+	private internalUnpinnedPasswordFilters: ComputedRef<Filter[]>;
+
+	private internalPinnedValueFilters: ComputedRef<Filter[]>;
+	private internalUnpinnedValueFilters: ComputedRef<Filter[]>;
+
 	get passwordFilters() { return this.internalPasswordFilters.value; }
 	get activePasswordFilters() { return this.internalActivePasswordFilters.value; }
 	get nameValuePairFilters() { return this.internalNameValuePairFilters.value; }
@@ -39,6 +45,10 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 	get duplicatePasswordFiltersLength() { return this.internalDuplicatePasswordFiltersLength.value; }
 	get duplicateValueFilters() { return this.state.duplicateValueFilters; }
 	get duplicateValueFiltersLength() { return this.internalDuplicateValueFiltersLength.value; }
+	get pinnedPasswordFilters() { return this.internalPinnedPasswordFilters.value; }
+	get unpinnedPasswordFilters() { return this.internalUnpinnedPasswordFilters.value; }
+	get pinnedValueFilters() { return this.internalPinnedValueFilters.value; }
+	get unpinnedValueFitlers() { return this.internalUnpinnedValueFilters.value; }
 
 	constructor()
 	{
@@ -55,6 +65,12 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 
 		this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
 		this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);
+
+		this.internalPinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+		this.internalUnpinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => !stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+
+		this.internalPinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+		this.internalUnpinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => !stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
 	}
 
 	protected defaultState()

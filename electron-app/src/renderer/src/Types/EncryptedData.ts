@@ -16,11 +16,6 @@ export interface IGroupable
 	groups: string[];
 }
 
-export interface IPinnable
-{
-	isPinned: boolean;
-}
-
 export interface DisplayField
 {
 	backingProperty: string;
@@ -80,7 +75,7 @@ export const PasswordProperties: PropertySelectorDisplayFields[] = [
 	}
 ]
 
-export interface Password extends IFilterable, IIdentifiable, IGroupable, IPinnable
+export interface Password extends IFilterable, IIdentifiable, IGroupable
 {
 	[key: string]: any;
 	isVaultic: boolean;
@@ -141,7 +136,7 @@ export const ValueProperties: PropertySelectorDisplayFields[] = [
 	}
 ]
 
-export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, IPinnable
+export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable
 {
 	[key: string]: any;
 	name: string;
@@ -205,7 +200,6 @@ export function defaultPassword(): Password
 		additionalInformation: '',
 		lastModifiedTime: '',
 		isDuplicate: false,
-		isPinned: false,
 		isWeak: false,
 		isWeakMessage: '',
 		containsLogin: false,
@@ -225,7 +219,6 @@ export function defaultValue(): NameValuePair
 		additionalInformation: '',
 		lastModifiedTime: '',
 		isDuplicate: false,
-		isPinned: false,
 		filters: [],
 		groups: [],
 		isWeak: false,
@@ -241,7 +234,6 @@ export function defaultFilter(type: DataType): Filter
 		key: '',
 		passwords: [],
 		values: [],
-		isPinned: false,
 		type: type,
 		isActive: false,
 		name: '',
@@ -260,7 +252,6 @@ export function defaultGroup(type: DataType): Group
 		key: "",
 		passwords: [],
 		values: [],
-		isPinned: false,
 		name: '',
 		type: type,
 		color: ''

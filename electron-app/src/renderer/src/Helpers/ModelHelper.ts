@@ -2,7 +2,7 @@ import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
 import { CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowValue } from "../Types/Models";
 import { Ref, computed, ref } from "vue";
 import { v4 as uuidv4 } from 'uuid';
-import { AtRiskType, HeaderDisplayField, IIdentifiable, IPinnable } from "../Types/EncryptedData";
+import { AtRiskType, HeaderDisplayField, IIdentifiable } from "../Types/EncryptedData";
 import { DataType, Filter } from "../Types/Table";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
 import { stores } from "@renderer/Objects/Stores";
@@ -59,14 +59,17 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 	});
 }
 
-export function createPinnableSelectableTableRowModels<T extends { [key: string]: any } & IPinnable & IIdentifiable>(groupFilterType: DataType, passwordValueType: DataType,
+export function createPinnableSelectableTableRowModels<T extends { [key: string]: any } & IIdentifiable>(groupFilterType: DataType, passwordValueType: DataType,
 	selectableTableRowModels: Ref<InfiniteScrollCollection<SelectableTableRowData>>, sortedCollection: SortedCollection<T>, pinnedCollection: SortedCollection<T>,
 	getValues: (value: T) => TableRowValue[], selectable: boolean, isActiveProp: string, sortOnClick: boolean, onClick?: (value: T) => void, onEdit?: (value: T) => void, onDelete?: (value: T) => void)
 {
+	const isFilter = groupFilterType == DataType.Filters;
+	const isGroup = groupFilterType == DataType.Groups;
+
 	selectableTableRowModels.value.setValues([]);
 	const temp: SelectableTableRowData[] = [];
 
-	if (groupFilterType == DataType.Groups)
+	if (isGroup)
 	{
 		if (passwordValueType == DataType.Passwords)
 		{
@@ -105,7 +108,7 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 			}
 		}
 	}
-	else if (groupFilterType == DataType.Filters)
+	else if (isFilter)
 	{
 		if (passwordValueType == DataType.Passwords)
 		{
@@ -162,7 +165,8 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 			id: uuidv4(),
 			key: v.id,
 			selectable: selectable,
-			isPinned: v.isPinned,
+			isPinned: ((isFilter && stores.userPreferenceStore.pinnedFilters.hasOwnProperty(v.id)) ||
+				(isGroup && stores.userPreferenceStore.pinnedGroups.hasOwnProperty(v.id))),
 			isActive: ref(v[isActiveProp] ?? false),
 			values: getValues(v),
 			atRiskMessage: message,
@@ -187,13 +191,21 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 			},
 			onPin: function ()
 			{
-				if (v.isPinned)
+				if (((isFilter && stores.userPreferenceStore.pinnedFilters.hasOwnProperty(v.id)) ||
+					(isGroup && stores.userPreferenceStore.pinnedGroups.hasOwnProperty(v.id))))
 				{
-					v.isPinned = false;
+					if (isFilter)
+					{
+						stores.userPreferenceStore.removePinnedFilters(v.id);
+					}
+					else if (isGroup)
+					{
+						stores.userPreferenceStore.removePinnedGroups(v.id);
+					}
+
 					const index: number = pinnedCollection.values.indexOf(v);
 					pinnedCollection.values.splice(index, 1);
 
-					// TODO: Check search text
 					if (!sortedCollection.searchText || v[sortedCollection.property].toLowerCase().includes(sortedCollection.searchText.toLowerCase()))
 					{
 						sortedCollection.push(v);
@@ -206,7 +218,15 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 				}
 				else
 				{
-					v.isPinned = true;
+					if (isFilter)
+					{
+						stores.userPreferenceStore.addPinnedFilter(v.id);
+					}
+					else if (isGroup)
+					{
+						stores.userPreferenceStore.addPinnedGroup(v.id);
+					}
+
 					const index: number = sortedCollection.values.indexOf(v);
 
 					sortedCollection.values.splice(index, 1);
@@ -247,14 +267,17 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 	}
 }
 
-export function createCollapsibleTableRowModels<T extends { [key: string]: any } & IIdentifiable & IPinnable>(
+export function createCollapsibleTableRowModels<T extends { [key: string]: any } & IIdentifiable>(
 	dataType: DataType, collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>>, sortedCollection: SortedCollection<T>,
 	pinnedCollection: SortedCollection<T>, getValues: (value: T) => TableRowValue[], onEdit: (value: T) => void, onDelete: (value: T) => void)
 {
+	const isPassword = dataType == DataType.Passwords;
+	const isValue = dataType == DataType.NameValuePairs;
+
 	collapsibleTableRowModels.value.setValues([]);
 	const temp: CollapsibleTableRowModel[] = [];
 
-	if (dataType == DataType.Passwords)
+	if (isPassword)
 	{
 		switch (stores.passwordStore.activeAtRiskPasswordType)
 		{
@@ -285,7 +308,7 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 				break;
 		}
 	}
-	else if (dataType == DataType.NameValuePairs)
+	else if (isValue)
 	{
 		switch (stores.valueStore.activeAtRiskValueType)
 		{
@@ -334,7 +357,8 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 	{
 		return {
 			id: uuidv4(),
-			isPinned: v.isPinned,
+			isPinned: ((isPassword && stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(v.id)) ||
+				(isValue && stores.userPreferenceStore.pinnedValues.hasOwnProperty(v.id))),
 			data: v,
 			values: getValues(v),
 			atRiskMessage: atRiskMessage,
@@ -348,16 +372,30 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 			},
 			onPin: function ()
 			{
-				if (v.isPinned)
+				if (!isPassword && !isValue)
 				{
-					v.isPinned = false;
+					return;
+				}
+
+				if ((isPassword && stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(v.id)) ||
+					(isValue && stores.userPreferenceStore.pinnedValues.hasOwnProperty(v.id)))
+				{
+					if (isPassword)
+					{
+						stores.userPreferenceStore.removePinnedPasswords(v.id);
+					}
+					else if (isValue)
+					{
+						stores.userPreferenceStore.removePinnedValues(v.id);
+					}
+
 					const index: number = pinnedCollection.values.indexOf(v);
 					pinnedCollection.values.splice(index, 1);
 
 					let activeFilters: Filter[] = [];
-					if (dataType == DataType.Passwords || dataType == DataType.NameValuePairs)
+					if (isPassword || isValue)
 					{
-						activeFilters = dataType == DataType.Passwords ?
+						activeFilters = isPassword ?
 							stores.filterStore.activePasswordFilters : stores.filterStore.activeNameValuePairFilters;
 					}
 
@@ -381,7 +419,14 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 				}
 				else
 				{
-					v.isPinned = true;
+					if (isPassword)
+					{
+						stores.userPreferenceStore.addPinnedPassword(v.id);
+					}
+					else if (isValue)
+					{
+						stores.userPreferenceStore.addPinnedValue(v.id);
+					}
 					const index: number = sortedCollection.values.indexOf(v);
 
 					sortedCollection.values.splice(index, 1);

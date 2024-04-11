@@ -23,7 +23,6 @@ function createPasswords()
 			additionalInformation,
 			lastModifiedTime: '',
 			isDuplicate,
-			isPinned: false,
 			isWeak: false,
 			isWeakMessage: '',
 			containsLogin: false,
@@ -87,7 +86,6 @@ async function createNameValuePairs(): Promise<void>
 			additionalInformation,
 			lastModifiedTime: '',
 			isDuplicate,
-			isPinned: false,
 			isWeak: false,
 			isWeakMessage: '',
 			valueLength: 0
@@ -121,7 +119,6 @@ function createFilters()
 			key: '',
 			passwords: [],
 			nameValuePairs: [],
-			isPinned: false,
 			type,
 			isActive,
 			text,
@@ -162,7 +159,6 @@ function createGroups()
 			key: '',
 			passwords: [],
 			nameValuePairs: [],
-			isPinned: false,
 			type,
 			name,
 			color

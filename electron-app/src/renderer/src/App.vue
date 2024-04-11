@@ -74,13 +74,13 @@ export default defineComponent({
 		const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 		const finishedMounting: Ref<boolean> = ref(false);
 
-		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.currentColorPalette);
-		let backgroundColor: ComputedRef<string> = computed(() => stores.settingsStore.currentColorPalette.backgroundColor);
+		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
+		let backgroundColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.backgroundColor);
 		//let backgroundClr: Ref<string> = ref('#0f111d');
 
 		provide(OnSessionExpiredFunctionKey, onSessionExpired);
 
-		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.settingsStore.currentPrimaryColor.value));
+		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.userPreferenceStore.currentPrimaryColor.value));
 
 		function onSessionExpired(message: string = "Your session has expired. Please re sign in")
 		{

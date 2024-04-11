@@ -11,7 +11,6 @@ export interface SettingsStoreState extends StoreState
 	loadedFile: boolean;
 	readonly rowChunkAmount: number;
 	colorPalettes: ColorPalette[];
-	currentColorPalette: ColorPalette;
 	autoLockTime: AutoLockTime;
 	loginRecordsToStorePerDay: number;
 	numberOfDaysToStoreLoginRecords: number;
@@ -25,13 +24,10 @@ export interface SettingsStoreState extends StoreState
 
 class SettingsStore extends Store<SettingsStoreState>
 {
-	private internalCurrentPrimaryColor: Ref<string>;
 	private internalAutoLockNumberTime: ComputedRef<number>;
 
 	get rowChunkAmount() { return this.state.rowChunkAmount; }
 	get colorPalettes() { return this.state.colorPalettes; }
-	get currentColorPalette() { return this.state.currentColorPalette; }
-	set currentColorPalette(value: ColorPalette) { this.state.currentColorPalette = value; }
 	get autoLockTime() { return this.state.autoLockTime; }
 	get autoLockNumberTime() { return this.internalAutoLockNumberTime.value; }
 	get loginRecordsToStorePerDay() { return this.state.loginRecordsToStorePerDay; }
@@ -42,13 +38,11 @@ class SettingsStore extends Store<SettingsStoreState>
 	get percentMetricForPulse() { return this.state.percentMetricForPulse; }
 	get backupData() { return this.state.backupData; }
 	get automaticSyncing() { return this.state.automaticSyncing; }
-	get currentPrimaryColor() { return this.internalCurrentPrimaryColor }
 
 	constructor()
 	{
 		super();
 
-		this.internalCurrentPrimaryColor = ref('');
 		this.internalAutoLockNumberTime = computed(this.calcAutolockTime);
 	}
 
@@ -59,7 +53,6 @@ class SettingsStore extends Store<SettingsStoreState>
 			loadedFile: false,
 			rowChunkAmount: 10,
 			colorPalettes: colorPalettes,
-			currentColorPalette: colorPalettes[0],
 			autoLockTime: AutoLockTime.OneMinute,
 			loginRecordsToStorePerDay: 14,
 			numberOfDaysToStoreLoginRecords: 30,
@@ -75,21 +68,6 @@ class SettingsStore extends Store<SettingsStoreState>
 	protected getFile(): DataFile
 	{
 		return window.api.files.settings;
-	}
-
-	public init(stores: Stores)
-	{
-		watch(() => this.state.currentColorPalette, () =>
-		{
-			this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
-		});
-
-		watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
-		{
-			this.setCurrentPrimaryColor(newValue);
-		});
-
-		this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
 	}
 
 	private calcAutolockTime(): number
@@ -108,19 +86,6 @@ class SettingsStore extends Store<SettingsStoreState>
 		}
 	}
 
-	private setCurrentPrimaryColor(dataType: DataType)
-	{
-		switch (dataType)
-		{
-			case DataType.NameValuePairs:
-				this.currentPrimaryColor.value = this.state.currentColorPalette.valuesColor.primaryColor;
-				break;
-			case DataType.Passwords:
-			default:
-				this.currentPrimaryColor.value = this.state.currentColorPalette.passwordsColor.primaryColor;
-		}
-	}
-
 	public async updateColorPalette(key: string, colorPalette: ColorPalette): Promise<void>
 	{
 		const oldColorPalette: ColorPalette[] = this.state.colorPalettes.filter(cp => cp.id == colorPalette.id);
@@ -130,12 +95,9 @@ class SettingsStore extends Store<SettingsStoreState>
 		}
 
 		Object.assign(oldColorPalette[0], colorPalette);
-		if (this.state.currentColorPalette.id == oldColorPalette[0].id)
+		if (stores.userPreferenceStore.currentColorPalette.id == oldColorPalette[0].id)
 		{
-			this.state.currentColorPalette = emptyColorPalette;
-			this.state.currentColorPalette = oldColorPalette[0];
-
-			this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
+			stores.userPreferenceStore.updateCurrentColorPalette(oldColorPalette[0]);
 		}
 
 		await super.writeState(key);

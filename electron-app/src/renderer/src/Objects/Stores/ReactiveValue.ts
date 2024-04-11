@@ -43,8 +43,6 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
 		get isWeak() { return nameValuePairState.isWeak; },
 		get isWeakMessage() { return nameValuePairState.isWeakMessage; },
 		get isSafe() { return isSafe.value },
-		get isPinned() { return nameValuePairState.isPinned; },
-		set isPinned(value: boolean) { nameValuePairState.isPinned = value; },
 		get valueLength() { return nameValuePairState.valueLength; },
 		get key() { return nameValuePairState.key; },
 	};

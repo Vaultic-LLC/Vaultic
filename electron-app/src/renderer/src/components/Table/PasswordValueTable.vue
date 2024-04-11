@@ -86,13 +86,17 @@ export default defineComponent({
 		const tableRef: Ref<null> = ref(null);
 		const activeTable: Ref<number> = ref(stores.appStore.activePasswordValuesTable);
 		const color: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
-			stores.settingsStore.currentColorPalette.passwordsColor.primaryColor : stores.settingsStore.currentColorPalette.valuesColor.primaryColor);
+			stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor : stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor);
 
-		const passwords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
-		const pinnedPasswords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(DataType.Passwords, stores.passwordStore.passwords.filter(p => p.isPinned), "passwordFor");
+		const passwords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(
+			DataType.Passwords, [], "passwordFor");
+		const pinnedPasswords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(
+			DataType.Passwords, stores.passwordStore.pinnedPasswords, "passwordFor");
 
-		const nameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(DataType.NameValuePairs, [], "name");
-		const pinnedNameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(DataType.NameValuePairs, stores.valueStore.nameValuePairs.filter(nvp => nvp.isPinned), "name");
+		const nameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(
+			DataType.NameValuePairs, [], "name");
+		const pinnedNameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(
+			DataType.NameValuePairs, [], "name");
 
 		let rowComponent: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ? 'PasswordRow' : 'NameValuePairRow');
 		let collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>> = ref(new InfiniteScrollCollection<CollapsibleTableRowModel>());
@@ -144,14 +148,14 @@ export default defineComponent({
 				id: uuidv4(),
 				name: 'Passwords',
 				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
-				color: computed(() => stores.settingsStore.currentColorPalette.passwordsColor.primaryColor),
+				color: computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor),
 				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
 			},
 			{
 				id: uuidv4(),
 				name: 'Values',
 				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
-				color: computed(() => stores.settingsStore.currentColorPalette.valuesColor.primaryColor),
+				color: computed(() => stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor),
 				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.NameValuePairs; }
 			}
 		];
@@ -341,10 +345,29 @@ export default defineComponent({
 			}
 		}
 
+		function initPasswords()
+		{
+			filter(stores.filterStore.activePasswordFilters, [], passwords, stores.passwordStore.unpinnedPasswords);
+			pinnedPasswords.updateValues(stores.passwordStore.pinnedPasswords);
+
+			setModels();
+		}
+
+		function initValues()
+		{
+			filter(stores.filterStore.activeNameValuePairFilters, [], nameValuePairs, stores.valueStore.unpinnedValues);
+			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
+
+			setModels();
+		}
+
 		function init()
 		{
 			filter(stores.filterStore.activePasswordFilters, [], passwords, stores.passwordStore.unpinnedPasswords);
 			filter(stores.filterStore.activeNameValuePairFilters, [], nameValuePairs, stores.valueStore.unpinnedValues);
+
+			pinnedPasswords.updateValues(stores.passwordStore.pinnedPasswords);
+			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
 
 			setModels();
 		}
@@ -367,7 +390,7 @@ export default defineComponent({
 
 			if (saved)
 			{
-				init();
+				initPasswords();
 			}
 		}
 
@@ -377,7 +400,7 @@ export default defineComponent({
 
 			if (saved)
 			{
-				setModels();
+				initValues();
 			}
 		}
 
@@ -467,22 +490,22 @@ export default defineComponent({
 
 		watch(() => stores.passwordStore.passwords.length, () =>
 		{
-			init();
+			initPasswords();
 		});
 
 		watch(() => stores.valueStore.nameValuePairs.length, () =>
 		{
-			init();
+			initValues();
 		});
 
 		watch(() => stores.passwordStore.activeAtRiskPasswordType, () =>
 		{
-			init();
+			initPasswords();
 		});
 
 		watch(() => stores.valueStore.activeAtRiskValueType, () =>
 		{
-			init();
+			initValues();
 		});
 
 		watch(() => passwordSearchText.value, (newValue) =>

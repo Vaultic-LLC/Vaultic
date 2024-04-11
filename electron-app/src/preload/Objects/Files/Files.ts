@@ -8,7 +8,7 @@ export interface Files
 	value: File;
 	filter: File;
 	group: File;
-	license: File;
+	userPreferences: File;
 }
 
 const appFile = useFile("app");
@@ -17,7 +17,7 @@ const passwordFile = useFile("passwords");
 const valueFile = useFile("values");
 const filterFile = useFile("filters");
 const groupFile = useFile("groups");
-const licenseFile = useFile("license");
+const userPreferencesFile = useFile("userPreferences")
 
 const files: Files =
 {
@@ -27,7 +27,7 @@ const files: Files =
 	value: valueFile,
 	filter: filterFile,
 	group: groupFile,
-	license: licenseFile
+	userPreferences: userPreferencesFile
 }
 
 export default files;

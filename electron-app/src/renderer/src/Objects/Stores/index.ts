@@ -5,6 +5,7 @@ import settingStore, { SettingStoreType } from "./SettingsStore";
 import passwordStore, { PasswordStoreType, PasswordStoreState } from "./PasswordStore";
 import valueStore, { ValueStoreType, ValueStoreState } from "./ValueStore";
 import createPopupStore, { PopupStore } from "./PopupStore";
+import userPreferenceStore, { UserPreferenceStoreType } from "./UserPreferencesStore";
 
 export interface DataStoreStates
 {
@@ -23,6 +24,7 @@ export interface Stores
 	passwordStore: PasswordStoreType;
 	valueStore: ValueStoreType;
 	popupStore: PopupStore;
+	userPreferenceStore: UserPreferenceStoreType;
 	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
 	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
@@ -151,6 +153,7 @@ export const stores: Stores =
 	passwordStore: passwordStore,
 	valueStore: valueStore,
 	popupStore: createPopupStore(),
+	userPreferenceStore: userPreferenceStore,
 	loadStoreData,
 	resetStoresToDefault,
 	syncToServer,
@@ -159,4 +162,4 @@ export const stores: Stores =
 }
 
 // additional setup that requires another store. Prevents circular dependencies
-stores.settingsStore.init(stores);
+stores.userPreferenceStore.init(stores);

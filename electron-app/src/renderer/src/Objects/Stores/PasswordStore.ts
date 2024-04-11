@@ -20,6 +20,7 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 	private internalDuplicatePasswords: ComputedRef<string[]>;
 
 	private internalDuplicatePasswordsLength: ComputedRef<number>;
+	private internalPinnedPasswords: ComputedRef<ReactivePassword[]>;
 	private internalUnpinnedPasswords: ComputedRef<ReactivePassword[]>;
 
 	private internalActiveAtRiskPasswordType: Ref<AtRiskType>;
@@ -27,6 +28,7 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 	private internalHasVaulticPassword: ComputedRef<boolean>;
 
 	get passwords() { return this.state.values; }
+	get pinnedPasswords() { return this.internalPinnedPasswords.value; }
 	get unpinnedPasswords() { return this.internalUnpinnedPasswords.value; }
 	get oldPasswords() { return this.internalOldPasswords }
 	get weakPasswords() { return this.internalWeakPasswords }
@@ -48,7 +50,8 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		this.internalDuplicatePasswords = computed(() => this.state.values.filter(p => p.isDuplicate).map(p => p.id));
 
 		this.internalDuplicatePasswordsLength = computed(() => Object.keys(this.state.duplicatePasswords).length);
-		this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !p.isPinned));
+		this.internalPinnedPasswords = computed(() => this.state.values.filter(p => stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
+		this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
 
 		this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
 

@@ -49,6 +49,7 @@ window.addEventListener('unhandledrejection', (e) =>
 	}
 });
 
+
 const app = createApp(App);
 
 app.use(setupCalendar, {});

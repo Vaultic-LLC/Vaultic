@@ -73,17 +73,25 @@ export default defineComponent({
 		const tableRef: Ref<null> = ref(null);
 		const tabToOpenOnAdd: ComputedRef<number> = computed(() => stores.appStore.activeFilterGroupsTable);
 
-		const passwordFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.passwordFilters, "name");
-		const pinnedPasswordFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.passwordFilters.filter(f => f.isPinned), "name");
+		const passwordFilters: SortedCollection<Filter> = new SortedCollection(
+			stores.filterStore.passwordFilters, "name");
+		const pinnedPasswordFilters: SortedCollection<Filter> = new SortedCollection(
+			[], "name");
 
-		const passwordGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.passwordGroups, "name");
-		const pinnedPasswordGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.passwordGroups.filter(g => g.isPinned), "name");
+		const passwordGroups: SortedCollection<Group> = new SortedCollection(
+			stores.groupStore.passwordGroups, "name");
+		const pinnedPasswordGroups: SortedCollection<Group> = new SortedCollection(
+			[], "name");
 
-		const valueFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.nameValuePairFilters, "name");
-		const pinnedValueFilters: SortedCollection<Filter> = new SortedCollection(stores.filterStore.nameValuePairFilters.filter(f => f.isPinned), "name");
+		const valueFilters: SortedCollection<Filter> = new SortedCollection(
+			stores.filterStore.nameValuePairFilters, "name");
+		const pinnedValueFilters: SortedCollection<Filter> = new SortedCollection(
+			[], "name");
 
-		const valueGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.valuesGroups, "name");
-		const pinnedValueGroups: SortedCollection<Group> = new SortedCollection(stores.groupStore.valuesGroups.filter(g => g.isPinned), "name");
+		const valueGroups: SortedCollection<Group> = new SortedCollection(
+			stores.groupStore.valuesGroups, "name");
+		const pinnedValueGroups: SortedCollection<Group> = new SortedCollection(
+			[], "name");
 
 		const currentFilters: ComputedRef<SortedCollection<Filter>> = computed(() =>
 			stores.appStore.activePasswordValuesTable == DataType.Passwords ? passwordFilters : valueFilters);
@@ -121,10 +129,10 @@ export default defineComponent({
 			switch (stores.appStore.activeFilterGroupsTable)
 			{
 				case DataType.Groups:
-					return stores.settingsStore.currentColorPalette.groupsColor;
+					return stores.userPreferenceStore.currentColorPalette.groupsColor;
 				case DataType.Filters:
 				default:
-					return stores.settingsStore.currentColorPalette.filtersColor;
+					return stores.userPreferenceStore.currentColorPalette.filtersColor;
 			}
 		});
 
@@ -133,14 +141,14 @@ export default defineComponent({
 				id: uuidv4(),
 				name: 'Filters',
 				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters),
-				color: computed(() => stores.settingsStore.currentColorPalette.filtersColor),
+				color: computed(() => stores.userPreferenceStore.currentColorPalette.filtersColor),
 				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Filters; }
 			},
 			{
 				id: uuidv4(),
 				name: 'Groups',
 				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Groups),
-				color: computed(() => stores.settingsStore.currentColorPalette.groupsColor),
+				color: computed(() => stores.userPreferenceStore.currentColorPalette.groupsColor),
 				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Groups; }
 			}
 		];
@@ -258,11 +266,11 @@ export default defineComponent({
 
 			if (saved)
 			{
-				passwordGroups.updateValues(stores.groupStore.passwordGroups);
-				pinnedPasswordGroups.updateValues(stores.groupStore.passwordGroups.filter(g => g.isPinned));
+				passwordGroups.updateValues(stores.groupStore.unpinnedPasswordGroups);
+				pinnedPasswordGroups.updateValues(stores.groupStore.pinnedPasswordGroups);
 
-				valueGroups.updateValues(stores.groupStore.valuesGroups);
-				pinnedValueGroups.updateValues(stores.groupStore.valuesGroups.filter(g => g.isPinned));
+				valueGroups.updateValues(stores.groupStore.unpinnedValueGroups);
+				pinnedValueGroups.updateValues(stores.groupStore.pinnedValueGroups);
 
 				setTableRowDatas();
 			}
@@ -280,11 +288,11 @@ export default defineComponent({
 
 			if (saved)
 			{
-				passwordFilters.updateValues(stores.filterStore.passwordFilters);
-				pinnedPasswordFilters.updateValues(stores.filterStore.passwordFilters.filter(f => f.isPinned));
+				passwordFilters.updateValues(stores.filterStore.unpinnedPasswordFilters);
+				pinnedPasswordFilters.updateValues(stores.filterStore.pinnedPasswordFilters);
 
-				valueFilters.updateValues(stores.filterStore.nameValuePairFilters);
-				pinnedValueFilters.updateValues(stores.filterStore.nameValuePairFilters.filter(f => f.isPinned));
+				valueFilters.updateValues(stores.filterStore.unpinnedValueFitlers);
+				pinnedValueFilters.updateValues(stores.filterStore.pinnedValueFilters);
 
 				setTableRowDatas();
 			}
@@ -359,57 +367,57 @@ export default defineComponent({
 
 		watch(() => stores.filterStore.passwordFilters.length, () =>
 		{
-			passwordFilters.updateValues(stores.filterStore.passwordFilters);
+			passwordFilters.updateValues(stores.filterStore.unpinnedPasswordFilters);
+			pinnedPasswordFilters.updateValues(stores.filterStore.pinnedPasswordFilters)
 			setTableRowDatas();
 		});
 
 		watch(() => stores.filterStore.nameValuePairFilters.length, () =>
 		{
-			valueFilters.updateValues(stores.filterStore.nameValuePairFilters);
+			valueFilters.updateValues(stores.filterStore.unpinnedValueFitlers);
+			pinnedValueFilters.updateValues(stores.filterStore.pinnedValueFilters)
 			setTableRowDatas();
 		});
 
 		watch(() => stores.groupStore.passwordGroups.length, () =>
 		{
-			passwordGroups.updateValues(stores.groupStore.passwordGroups);
+			passwordGroups.updateValues(stores.groupStore.unpinnedPasswordGroups);
+			pinnedPasswordGroups.updateValues(stores.groupStore.pinnedPasswordGroups);
 			setTableRowDatas();
 		});
 
 		watch(() => stores.groupStore.valuesGroups.length, () =>
 		{
-			valueGroups.updateValues(stores.groupStore.valuesGroups);
+			valueGroups.updateValues(stores.groupStore.unpinnedValueGroups);
+			pinnedValueGroups.updateValues(stores.groupStore.pinnedValueGroups);
 			setTableRowDatas();
 		});
 
 		watch(() => stores.groupStore.activeAtRiskPasswordGroupType, () =>
 		{
-			passwordGroups.updateValues(stores.groupStore.passwordGroups);
-			pinnedPasswordGroups.updateValues(stores.groupStore.passwordGroups.filter(g => g.isPinned));
-
+			passwordGroups.updateValues(stores.groupStore.unpinnedPasswordGroups);
+			pinnedPasswordGroups.updateValues(stores.groupStore.pinnedPasswordGroups);
 			setTableRowDatas();
 		});
 
 		watch(() => stores.groupStore.activeAtRiskValueGroupType, () =>
 		{
-			valueGroups.updateValues(stores.groupStore.valuesGroups);
-			pinnedValueGroups.updateValues(stores.groupStore.valuesGroups.filter(g => g.isPinned));
-
+			valueGroups.updateValues(stores.groupStore.unpinnedValueGroups);
+			pinnedValueGroups.updateValues(stores.groupStore.pinnedValueGroups);
 			setTableRowDatas();
 		});
 
 		watch(() => stores.filterStore.activeAtRiskPasswordFilterType, () =>
 		{
-			passwordFilters.updateValues(stores.filterStore.passwordFilters);
-			pinnedPasswordFilters.updateValues(stores.filterStore.passwordFilters.filter(f => f.isPinned));
-
+			passwordFilters.updateValues(stores.filterStore.unpinnedPasswordFilters);
+			pinnedPasswordFilters.updateValues(stores.filterStore.pinnedPasswordFilters);
 			setTableRowDatas();
 		});
 
 		watch(() => stores.filterStore.activeAtRiskValueFilterType, () =>
 		{
-			valueFilters.updateValues(stores.filterStore.nameValuePairFilters);
-			pinnedValueFilters.updateValues(stores.filterStore.nameValuePairFilters.filter(f => f.isPinned));
-
+			valueFilters.updateValues(stores.filterStore.unpinnedValueFitlers);
+			pinnedValueFilters.updateValues(stores.filterStore.pinnedValueFilters);
 			setTableRowDatas();
 		});
 
