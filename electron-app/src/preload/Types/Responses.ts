@@ -67,3 +67,8 @@ export interface StoreResponse
 	passwordStoreState?: any;
 	valueStoreState?: any;
 }
+
+export interface UseSessionLicenseAndDeviceAuthenticationResposne extends LicenseResponse, IncorrectDeviceResponse, InvalidSessionResponse
+{
+
+}

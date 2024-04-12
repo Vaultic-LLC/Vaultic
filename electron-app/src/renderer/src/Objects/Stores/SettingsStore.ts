@@ -1,14 +1,14 @@
-import { ColorPalette, colorPalettes, emptyColorPalette } from "../../Types/Colors";
-import { ComputedRef, Ref, computed, ref, watch } from "vue";
-import { Stores, stores } from ".";
-import { DataType, FilterStatus } from "../../Types/Table";
+import { ColorPalette, colorPalettes } from "../../Types/Colors";
+import { ComputedRef, computed } from "vue";
+import { stores } from ".";
+import { FilterStatus } from "../../Types/Table";
 import { AutoLockTime } from "../../Types/Settings";
 import { Store, StoreState } from "./Base";
 import { DataFile } from "@renderer/Types/EncryptedData";
+import cryptHelper from "@renderer/Helpers/cryptHelper";
 
 export interface SettingsStoreState extends StoreState
 {
-	loadedFile: boolean;
 	readonly rowChunkAmount: number;
 	colorPalettes: ColorPalette[];
 	autoLockTime: AutoLockTime;
@@ -18,8 +18,6 @@ export interface SettingsStoreState extends StoreState
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
 	percentMetricForPulse: number;
-	backupData: boolean;
-	automaticSyncing: boolean;
 }
 
 class SettingsStore extends Store<SettingsStoreState>
@@ -36,8 +34,6 @@ class SettingsStore extends Store<SettingsStoreState>
 	get multipleFilterBehavior() { return this.state.multipleFilterBehavior; }
 	get oldPasswordDays() { return this.state.oldPasswordDays; }
 	get percentMetricForPulse() { return this.state.percentMetricForPulse; }
-	get backupData() { return this.state.backupData; }
-	get automaticSyncing() { return this.state.automaticSyncing; }
 
 	constructor()
 	{
@@ -50,7 +46,6 @@ class SettingsStore extends Store<SettingsStoreState>
 	{
 		return {
 			version: 0,
-			loadedFile: false,
 			rowChunkAmount: 10,
 			colorPalettes: colorPalettes,
 			autoLockTime: AutoLockTime.OneMinute,
@@ -60,14 +55,27 @@ class SettingsStore extends Store<SettingsStoreState>
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
 			percentMetricForPulse: 1,
-			backupData: true,
-			automaticSyncing: true
 		};
 	}
 
 	protected getFile(): DataFile
 	{
 		return window.api.files.settings;
+	}
+
+	protected async writeState(key: string): Promise<void>
+	{
+		this.state.version += 1;
+		await super.writeState(key);
+
+		if (stores.appStore.isOnline)
+		{
+			const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
+			if (state.success)
+			{
+				window.api.server.user.backupSetings(state.value!);
+			}
+		}
 	}
 
 	private calcAutolockTime(): number
@@ -101,9 +109,6 @@ class SettingsStore extends Store<SettingsStoreState>
 		}
 
 		await super.writeState(key);
-
-		// TODO
-		stores.syncToServer(key);
 	}
 }
 

@@ -118,7 +118,6 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 	async addFilter(key: string, filter: Filter): Promise<boolean>
 	{
 		const addFilterData = {
-			Sync: false,
 			MasterKey: key,
 			Filter: filter,
 			...stores.getStates()
@@ -131,7 +130,6 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 	async updateFilter(key: string, updatedFilter: Filter): Promise<boolean>
 	{
 		const addFilterData = {
-			Sync: false,
 			MasterKey: key,
 			Filter: updatedFilter,
 			...stores.getStates()
@@ -144,7 +142,6 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 	async deleteFilter(key: string, filter: Filter): Promise<boolean>
 	{
 		const addFilterData = {
-			Sync: false,
 			MasterKey: key,
 			Filter: filter,
 			...stores.getStates()

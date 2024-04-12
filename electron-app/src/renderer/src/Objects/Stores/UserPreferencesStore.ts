@@ -1,5 +1,5 @@
 import { ColorPalette, colorPalettes, emptyColorPalette } from "@renderer/Types/Colors";
-import { Store } from "./Base";
+import { Store, StoreState } from "./Base";
 import { DataFile } from "@renderer/Types/EncryptedData";
 import fileHelper from "@renderer/Helpers/fileHelper";
 import { Ref, ref, watch } from "vue";
@@ -7,7 +7,7 @@ import { DataType } from "@renderer/Types/Table";
 import { Stores, stores } from ".";
 import { Dictionary } from "@renderer/Types/DataStructures";
 
-interface UserPreferencesStoreState
+export interface UserPreferencesStoreState extends StoreState
 {
 	currentColorPalette: ColorPalette;
 	pinnedFilters: Dictionary<any>;
@@ -55,6 +55,7 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 	protected defaultState(): UserPreferencesStoreState
 	{
 		return {
+			version: 0,
 			currentColorPalette: colorPalettes[0],
 			pinnedFilters: {},
 			pinnedGroups: {},
@@ -94,9 +95,15 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 		return true;
 	}
 
-	protected writeState(_: string)
+	protected async writeState(_: string)
 	{
-		return fileHelper.writeUnencrypted<UserPreferencesStoreState>(this.state, this.getFile());
+		this.state.version += 1;
+		await fileHelper.writeUnencrypted<UserPreferencesStoreState>(this.state, this.getFile());
+
+		if (stores.appStore.isOnline)
+		{
+			window.api.server.user.backupUserPreferences(JSON.stringify(this.state));
+		}
 	}
 
 	private setCurrentPrimaryColor(dataType: DataType)

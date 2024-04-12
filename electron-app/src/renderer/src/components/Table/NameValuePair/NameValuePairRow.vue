@@ -6,7 +6,7 @@
 				:isOnWidget="true" />
 			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
 				v-model="nameValuePair.additionalInformation" :width="'12vw'" :height="'9vh'" :maxHeight="'135px'"
-				:maxWidth="'300px'" :isOnWidget="true" />
+				:maxWidth="'300px'" :isOnWidget="true" :disabled="true" />
 		</div>
 		<div class="nameValuePairRowContainer__right">
 			<img class="nameValuePairRowContainer__qrCode" :src="qrCodeUrl" />

@@ -17,7 +17,7 @@ export interface DataTypeStoreState<T> extends StoreState
 
 type StoreEvent = "onChanged";
 
-export class Store<T extends {}>
+export class Store<T extends {} & StoreState>
 {
 	protected state: T;
 	loadedFile: boolean;

@@ -83,7 +83,6 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 	async addPassword(key: string, password: Password): Promise<boolean>
 	{
 		const addPasswordData = {
-			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
 			MasterKey: key,
 			Password: password,
@@ -101,7 +100,6 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		updatedSecurityQuestionAnswers: string[], key: string): Promise<boolean>
 	{
 		const updatedPasswordData = {
-			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
 			MasterKey: key,
 			Password: password,
@@ -121,7 +119,6 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 	async deletePassword(key: string, password: ReactivePassword): Promise<boolean>
 	{
 		const deletePasswordData = {
-			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
 			MasterKey: key,
 			Password: password,

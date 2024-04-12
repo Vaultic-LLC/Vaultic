@@ -108,7 +108,7 @@ export enum NameValuePairType
 	Passcode = "Passcode",
 	Safe = "Safe",
 	Information = "Information",
-	MFAKey = "MFAKey",
+	MFAKey = "MFA Key",
 	Other = "Other",
 }
 

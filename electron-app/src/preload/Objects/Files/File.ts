@@ -143,7 +143,7 @@ export default function useFile(name: string): File
 			if (e?.error instanceof Error)
 			{
 				const error: Error = e?.error as Error;
-				await vaulticServer.app.log(error.message, error.stack ?? "");
+				await vaulticServer.app.log(error.message, "File.Empty");
 			}
 		}
 
@@ -181,7 +181,7 @@ export default function useFile(name: string): File
 			if (e?.error instanceof Error)
 			{
 				const error: Error = e?.error as Error;
-				const response = await vaulticServer.app.log(error.message, error.stack ?? "");
+				const response = await vaulticServer.app.log(error.message, "File.Write");
 				if (response.success)
 				{
 					logID = response.LogID;
@@ -228,7 +228,7 @@ export default function useFile(name: string): File
 			if (e?.error instanceof Error)
 			{
 				const error: Error = e?.error as Error;
-				const response = await vaulticServer.app.log(error.message, error.stack ?? "");
+				const response = await vaulticServer.app.log(error.message, "File.Read");
 				if (response.success)
 				{
 					logID = response.LogID;

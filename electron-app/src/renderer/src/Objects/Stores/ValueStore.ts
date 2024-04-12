@@ -78,7 +78,6 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 	async addNameValuePair(key: string, value: NameValuePair): Promise<boolean>
 	{
 		const addValueData = {
-			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
 			MasterKey: key,
 			Value: value,
@@ -95,7 +94,6 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 	async updateNameValuePair(value: NameValuePair, valueWasUpdated: boolean, key: string): Promise<boolean>
 	{
 		const updatedValueData = {
-			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
 			MasterKey: key,
 			Value: value,
@@ -113,7 +111,6 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 	async deleteNameValuePair(key: string, value: ReactiveValue): Promise<boolean>
 	{
 		const deleteValueData = {
-			Sync: false,
 			OldDays: stores.settingsStore.oldPasswordDays,
 			MasterKey: key,
 			Value: value,

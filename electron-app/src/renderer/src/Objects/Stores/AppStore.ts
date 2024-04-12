@@ -6,6 +6,7 @@ import { hideAll } from 'tippy.js';
 import { Store, StoreState } from "./Base";
 import { DataFile } from "@renderer/Types/EncryptedData";
 import { AccountSetupView } from "@renderer/Types/Models";
+import cryptHelper from "@renderer/Helpers/cryptHelper";
 
 interface AppStoreState extends StoreState
 {
@@ -13,7 +14,6 @@ interface AppStoreState extends StoreState
 	keyHash: string;
 	keySalt: string;
 	isOnline: boolean;
-	userDataVersion: number;
 	reloadMainUI: boolean;
 	loginHistory: Dictionary<number[]>;
 }
@@ -30,7 +30,6 @@ class AppStore extends Store<AppStoreState>
 	get isWindows() { return this.state.isWindows; }
 	get isOnline() { return this.state.isOnline; }
 	set isOnline(value: boolean) { this.state.isOnline = value; }
-	get userDataVersion() { return this.state.userDataVersion; }
 	get authenticated() { return this.internalAuthenticated; }
 	set authenticated(value: boolean) { this.internalAuthenticated = value; }
 	get reloadMainUI() { return this.state.reloadMainUI; }
@@ -81,10 +80,19 @@ class AppStore extends Store<AppStoreState>
 		return false;
 	}
 
-	protected writeState(key: string)
+	protected async writeState(key: string)
 	{
-		this.state.userDataVersion += 1;
-		return super.writeState(key);
+		this.state.version += 1;
+		await super.writeState(key);
+
+		if (this.state.isOnline)
+		{
+			const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
+			if (state.success)
+			{
+				window.api.server.user.backupAppStore(state.value!);
+			}
+		}
 	}
 
 	private async checkRemoveOldLoginRecords(key: string)
@@ -105,7 +113,6 @@ class AppStore extends Store<AppStoreState>
 		if (removedLogin)
 		{
 			await this.writeState(key);
-			stores.syncToServer(key, false);
 		}
 	}
 
@@ -177,8 +184,6 @@ class AppStore extends Store<AppStoreState>
 		}
 
 		this.writeState(key);
-		//TODO
-		stores.syncToServer(key, false);
 	}
 }
 

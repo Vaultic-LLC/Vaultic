@@ -108,7 +108,6 @@ class GroupStore extends DataTypeStore<Group, GroupStoreState>
 	async addGroup(key: string, group: Group): Promise<boolean>
 	{
 		const addGroupData = {
-			Sync: false,
 			MasterKey: key,
 			Group: group,
 			...stores.getStates()
@@ -121,7 +120,6 @@ class GroupStore extends DataTypeStore<Group, GroupStoreState>
 	async updateGroup(key: string, updatedGroup: Group): Promise<boolean>
 	{
 		const updateGroupData = {
-			Sync: false,
 			MasterKey: key,
 			Group: updatedGroup,
 			...stores.getStates()
@@ -134,7 +132,6 @@ class GroupStore extends DataTypeStore<Group, GroupStoreState>
 	async deleteGroup(key: string, group: Group): Promise<boolean>
 	{
 		const deleteGroupData = {
-			Sync: false,
 			MasterKey: key,
 			Group: group,
 			...stores.getStates()

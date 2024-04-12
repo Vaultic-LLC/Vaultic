@@ -109,8 +109,6 @@ export default defineComponent({
 
 		async function onSubmit()
 		{
-			didFailedAutoLogin();
-			return;
 			stores.popupStore.showLoadingIndicator(props.color);
 
 			if (!failedAutoLogin.value)
@@ -131,11 +129,11 @@ export default defineComponent({
 						return;
 					}
 
-					await stores.loadStoreData(masterKey.value);
+					await stores.passwordStore.readState(masterKey.value);
 					if (!stores.passwordStore.hasVaulticPassword)
 					{
 						didFailedAutoLogin();
-						stores.resetStoresToDefault();
+						stores.passwordStore.resetToDefault();
 
 						return;
 					}
@@ -145,6 +143,7 @@ export default defineComponent({
 
 					if (response.success)
 					{
+						await stores.loadStoreData(masterKey.value);
 						ctx.emit('onKeySuccess');
 					}
 					else
@@ -188,7 +187,7 @@ export default defineComponent({
 			else if (response.InvalidMasterKey)
 			{
 				masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
-				stores.resetStoresToDefault();
+				stores.passwordStore.resetToDefault();
 			}
 			else if (response.UnknownEmail)
 			{
@@ -201,7 +200,7 @@ export default defineComponent({
 					emailField.value?.invalidate("Incorrect Email. Please try again");
 				}
 
-				stores.resetStoresToDefault();
+				stores.passwordStore.resetToDefault();
 			}
 			else if (response.LicenseStatus && response.LicenseStatus != 1)
 			{
@@ -210,7 +209,7 @@ export default defineComponent({
 			else if (response.UnknownError)
 			{
 				stores.popupStore.showErrorResponseAlert(response);
-				stores.resetStoresToDefault();
+				stores.passwordStore.resetToDefault();
 			}
 		}
 

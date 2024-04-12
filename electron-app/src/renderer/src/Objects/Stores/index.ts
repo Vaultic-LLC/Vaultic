@@ -5,7 +5,9 @@ import settingStore, { SettingStoreType } from "./SettingsStore";
 import passwordStore, { PasswordStoreType, PasswordStoreState } from "./PasswordStore";
 import valueStore, { ValueStoreType, ValueStoreState } from "./ValueStore";
 import createPopupStore, { PopupStore } from "./PopupStore";
-import userPreferenceStore, { UserPreferenceStoreType } from "./UserPreferencesStore";
+import userPreferenceStore, { UserPreferenceStoreType, UserPreferencesStoreState } from "./UserPreferencesStore";
+import { Store, StoreState } from "./Base";
+import cryptHelper from "@renderer/Helpers/cryptHelper";
 
 export interface DataStoreStates
 {
@@ -27,7 +29,6 @@ export interface Stores
 	userPreferenceStore: UserPreferenceStoreType;
 	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
-	syncToServer: (key: string, incrementUserDataVersion?: boolean) => Promise<void>;
 	getStates: () => DataStoreStates;
 	handleUpdateStoreResponse: (key: string, response: any, suppressError?: boolean) => Promise<boolean>;
 }
@@ -45,37 +46,82 @@ async function loadStoreData(key: string): Promise<any>
 		stores.groupStore.readState(key)
 	]);
 
-	// 1) Need to check to see if we are online
-	// 2) If so, need to get data from server
-	// 3) Override the older of the two with the newer
-	// if (stores.appStore.isOnline && stores.settingsStore.backupData)
-	// {
-	// 	const response = await window.api.server.user.getUserData();
-	// 	if (response.success)
-	// 	{
-	// 		[[stores.appStore.getState(), response.appStoreState]].forEach((states) =>
-	// 		{
-	// 			const serverStateObj: StoreState = JSON.parse(states[1]);
+	// everythings good
+	if (result.every(r => r))
+	{
+		await checkUpdateStoresWithBackup(key);
+	}
+	else
+	{
+		stores.popupStore.showAlert("An Error has Occured", "Unable to use local data due to an unknown error. Falling back to backed up data.", false);
+		await checkUpdateStoresWithBackup(key);
+	}
+}
 
-	// 			if (states[0].version == serverStateObj.version)
-	// 			{
-	// 				return 0;
-	// 			}
-	// 			else if (states[0].version > serverStateObj.version)
-	// 			{
-	// 				return -1;
-	// 			}
-	// 			else
-	// 			{
-	// 				return 1;
-	// 			}
-	// 		});
-	// 	}
-	// 	else
-	// 	{
+async function checkUpdateStoresWithBackup(key: string)
+{
+	if (stores.appStore.isOnline)
+	{
+		const response = await window.api.server.user.getUserData();
+		if (response.success)
+		{
+			if (response.appStoreState)
+			{
+				await checkUpdateEncryptedStore(key, stores.appStore, response.appStoreState);
+			}
 
-	// 	}
-	// }
+			if (response.settingsStoreState)
+			{
+				await checkUpdateEncryptedStore(key, stores.settingsStore, response.settingsStoreState);
+			}
+
+			if (response.filterStoreState)
+			{
+				await checkUpdateEncryptedStore(key, stores.filterStore, response.filterStoreState);
+			}
+
+			if (response.groupStoreState)
+			{
+				await checkUpdateEncryptedStore(key, stores.groupStore, response.groupStoreState);
+			}
+
+			if (response.passwordStoreState)
+			{
+				await checkUpdateEncryptedStore(key, stores.passwordStore, response.passwordStoreState);
+			}
+
+			if (response.valueStoreState)
+			{
+				await checkUpdateEncryptedStore(key, stores.valueStore, response.valueStoreState);
+			}
+
+			if (response.userPreferenceStoreState)
+			{
+				const userPreferenceState = JSON.parse(response.userPreferenceStoreState) as UserPreferencesStoreState;
+				if (userPreferenceState.version > stores.userPreferenceStore.getState().version)
+				{
+					stores.userPreferenceStore.updateState(key, userPreferenceState);
+				}
+			}
+		}
+		else
+		{
+			stores.popupStore.showAlert("An Error has Occured", "An error has occured when trying to sync data. Please check your connection and try again", false);
+		}
+	}
+}
+
+async function checkUpdateEncryptedStore<T extends Store<U>, U extends StoreState>(key: string, store: T, storeState: string)
+{
+	const state = await cryptHelper.decrypt(key, storeState);
+	if (state.success)
+	{
+		const parsedState = JSON.parse(state.value!) as U;
+		if (parsedState.version > store.getState().version)
+		{
+			store.updateState(key, parsedState);
+		}
+	}
 }
 
 function resetStoresToDefault()
@@ -86,22 +132,6 @@ function resetStoresToDefault()
 	stores.valueStore.resetToDefault();
 	stores.filterStore.resetToDefault();
 	stores.groupStore.resetToDefault();
-}
-
-async function syncToServer(key: string, incrementUserDataVersion: boolean = true): Promise<void>
-{
-	if (!stores.settingsStore.backupData)
-	{
-		return;
-	}
-
-	if (incrementUserDataVersion)
-	{
-		//await stores.appStore.incrementUserDataVersion(key);
-	}
-
-	// window.api.server.syncUserData(key, stores.appStore.toString(), stores.settingsStore.toString(), stores.encryptedDataStore.toString(),
-	// 	stores.filterStore.toString(), stores.groupStore.toString());
 }
 
 function getStates(): DataStoreStates
@@ -156,7 +186,6 @@ export const stores: Stores =
 	userPreferenceStore: userPreferenceStore,
 	loadStoreData,
 	resetStoresToDefault,
-	syncToServer,
 	getStates,
 	handleUpdateStoreResponse
 }

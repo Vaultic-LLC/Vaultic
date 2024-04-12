@@ -35,7 +35,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 		if (e?.error instanceof Error)
 		{
 			const error: Error = e?.error as Error;
-			const response = await vaulticServer.app.log(error.message, error.stack ?? "");
+			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
 			if (response.success)
 			{
 				logID = response.LogID;
@@ -69,7 +69,6 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	}
 	catch (e: any)
 	{
-		console.log(e);
 		// don't want to log here since everytime a user enters the wrong key an exception is thrown
 	}
 
