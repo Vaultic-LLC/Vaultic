@@ -6,7 +6,7 @@
 			</div>
 			<div class="incorrectDevicePopup__content">
 				We've detected that you're using a device different than your registered one. For your safety, only
-				requests from registered devices is allowed.
+				requests from registered devices are allowed.
 				Would you like to edit your registered devices?
 			</div>
 			<div class="incorrectDevicePopup__buttons">

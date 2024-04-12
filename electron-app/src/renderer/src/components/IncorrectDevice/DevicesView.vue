@@ -15,9 +15,10 @@
 				:headerModels="headers" :scrollbar-size="1" :emptyMessage="''" :showEmptyMessage="false"
 				:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
 				@scrolledToBottom="tableRows.loadNextChunk()">
-				<template #header>
-					<TableHeaderRow :model="headers">
-					</TableHeaderRow>
+				<template #headerControls>
+					<div v-if="showRegisterThisDevice" class="deviceTable__registerThisDeviceButton">
+						<button @click="registerThisDevice">Register This Device</button>
+					</div>
 				</template>
 				<template #body>
 					<TableRow class="shadow hover" v-for="(row, index) in tableRows.visualValues" :key="row.id"
@@ -64,6 +65,7 @@ export default defineComponent({
 		const devices: ComputedRef<SortedCollection<Device>> = computed(() => new SortedCollection([], "Name"));
 		const activeHeader: Ref<number> = ref(1);
 		const tableRows: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection<TableRowData>());
+		const showRegisterThisDevice: ComputedRef<boolean> = computed(() => devices.value.values.some(d => d.MacAddress == window.api.device.mac));
 
 		const filterHeaderDisplayField: HeaderDisplayField[] = [
 			{
@@ -123,15 +125,17 @@ export default defineComponent({
 
 		async function doDelete(deviceID: string, desktopDeviceID?: number, mobileDeviceID?: number)
 		{
-			// TODO: show loading indicator
+			stores.popupStore.showLoadingIndicator(props.color, "Deleting Device");
 			const response = await window.api.server.user.deleteDevice(desktopDeviceID, mobileDeviceID);
 			if (response.success)
 			{
+				stores.popupStore.hideLoadingIndicator();
 				devices.value.remove(deviceID);
 				setTableRows();
 			}
 			else
 			{
+				stores.popupStore.hideLoadingIndicator();
 				if (response.UnknownError)
 				{
 					stores.popupStore.showErrorResponseAlert(response);
@@ -139,6 +143,27 @@ export default defineComponent({
 				}
 
 				if (response.InvalidSession)
+				{
+					stores.popupStore.showSessionExpired();
+				}
+			}
+		}
+
+		async function registerThisDevice()
+		{
+			const response = await window.api.server.user.registerDevice();
+			if (response.success)
+			{
+				stores.popupStore.showToast(props.color, 'Registered Device', true);
+				devices.value.push(response.Device!);
+			}
+			else
+			{
+				if (response.UnknownError)
+				{
+					stores.popupStore.showErrorResponseAlert(response);
+				}
+				else if (response.InvalidSession)
 				{
 					stores.popupStore.showSessionExpired();
 				}
@@ -158,13 +183,15 @@ export default defineComponent({
 			}
 
 			setTableRows();
-		})
+		});
 
 		return {
 			devices,
 			headers,
 			tableRows,
-			responseObj
+			responseObj,
+			showRegisterThisDevice,
+			registerThisDevice
 		}
 	}
 })

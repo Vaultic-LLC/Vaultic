@@ -6,7 +6,6 @@ import App from './App.vue'
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
-import { stores } from './Objects/Stores';
 
 Coloris.init();
 Coloris({
@@ -48,7 +47,6 @@ window.addEventListener('unhandledrejection', (e) =>
 		window.api.server.app.log(error.message, error.stack ?? "");
 	}
 });
-
 
 const app = createApp(App);
 

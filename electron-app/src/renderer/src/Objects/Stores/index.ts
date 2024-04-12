@@ -46,16 +46,19 @@ async function loadStoreData(key: string): Promise<any>
 		stores.groupStore.readState(key)
 	]);
 
-	// everythings good
-	if (result.every(r => r))
+	if (result.some(r => !r))
 	{
-		await checkUpdateStoresWithBackup(key);
+		if (!stores.appStore.isOnline)
+		{
+			stores.popupStore.showAlert("An Error has Occured", "Unable to use local data due to an unknown error. Please log in to load backed up data or try to continue using the application as normal.", false);
+		}
+		else
+		{
+			stores.popupStore.showAlert("An Error has Occured", "Unable to use local data due to an unknown error. Loading backed up data.", false);
+		}
 	}
-	else
-	{
-		stores.popupStore.showAlert("An Error has Occured", "Unable to use local data due to an unknown error. Falling back to backed up data.", false);
-		await checkUpdateStoresWithBackup(key);
-	}
+
+	await checkUpdateStoresWithBackup(key);
 }
 
 async function checkUpdateStoresWithBackup(key: string)
@@ -106,7 +109,18 @@ async function checkUpdateStoresWithBackup(key: string)
 		}
 		else
 		{
-			stores.popupStore.showAlert("An Error has Occured", "An error has occured when trying to sync data. Please check your connection and try again", false);
+			if (response.InvalidSession)
+			{
+				stores.popupStore.showSessionExpired();
+			}
+			else if (response.IncorrectDevice)
+			{
+				stores.popupStore.showIncorrectDevice(response);
+			}
+			else if (response.UnknownError)
+			{
+				stores.popupStore.showErrorResponseAlert(response)
+			}
 		}
 	}
 }

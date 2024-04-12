@@ -1,14 +1,15 @@
-import { BaseResponse, DeleteDeviceResponse, UseSessionLicenseAndDeviceAuthenticationResposne } from "../../Types/Responses";
+import { BaseResponse, DeleteDeviceResponse, LoadDataResponse, UpdateDeviceRespnose, UseSessionLicenseAndDeviceAuthenticationResposne } from "../../Types/Responses";
 import cryptUtility from "../../Utilities/CryptUtility";
 import { AxiosHelper } from "./AxiosHelper"
 
 export interface UserController
 {
 	deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-	backupSetings(settingsState: string): Promise<BaseResponse>;
-	backupAppStore(settingsState: string): Promise<BaseResponse>
-	backupUserPreferences(settingsState: string): Promise<BaseResponse>
-	getUserData: () => Promise<any>;
+	registerDevice: () => Promise<UpdateDeviceRespnose>;
+	backupSetings(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>;
+	backupAppStore(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
+	backupUserPreferences(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
+	getUserData: () => Promise<LoadDataResponse>;
 	test: (value: string) => Promise<any>
 }
 
@@ -20,6 +21,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 			UserDesktopDeviceID: desktopDeviceID,
 			UserMobileDeviceID: mobileDeviceID
 		})
+	}
+
+	function registerDevice(): Promise<UpdateDeviceRespnose>
+	{
+		return axiosHelper.get('User/RegisterDevice');
 	}
 
 	function backupSetings(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
@@ -43,7 +49,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		});
 	}
 
-	function getUserData(): Promise<any>
+	function getUserData(): Promise<LoadDataResponse>
 	{
 		return axiosHelper.get('User/GetUserData');
 	}
@@ -61,6 +67,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
 	return {
 		deleteDevice,
+		registerDevice,
 		backupSetings,
 		backupAppStore,
 		backupUserPreferences,

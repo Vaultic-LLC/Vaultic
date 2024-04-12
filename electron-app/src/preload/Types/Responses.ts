@@ -35,7 +35,7 @@ export interface ValidateEmailResponse extends BaseResponse
 	DeviceIsTaken?: boolean;
 }
 
-export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, StoreResponse
+export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, DataStoreResponse
 {
 }
 
@@ -60,7 +60,7 @@ export interface LogResponse extends BaseResponse
 	LogID?: number;
 }
 
-export interface StoreResponse
+export interface DataStoreResponse
 {
 	filterStoreState?: any;
 	groupStoreState?: any;
@@ -68,7 +68,18 @@ export interface StoreResponse
 	valueStoreState?: any;
 }
 
+export interface LoadDataResponse extends DataStoreResponse, InvalidSessionResponse, IncorrectDeviceResponse
+{
+	appStoreState?: any;
+	settingsStoreState?: any;
+	userPreferenceStoreState?: any;
+}
+
 export interface UseSessionLicenseAndDeviceAuthenticationResposne extends LicenseResponse, IncorrectDeviceResponse, InvalidSessionResponse
 {
+}
 
+export interface UpdateDeviceRespnose extends InvalidSessionResponse
+{
+	Device?: Device;
 }
