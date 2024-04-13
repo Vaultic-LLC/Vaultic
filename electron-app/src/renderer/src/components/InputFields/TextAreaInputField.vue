@@ -200,7 +200,7 @@ export default defineComponent({
 	height: 100%;
 	left: 0;
 	color: white;
-	border-radius: min(1vw, 1rem);
+	border-radius: var(--input-border-radius);
 	background: none;
 	font-size: clamp(11px, 1.2vh, 25px);
 	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);

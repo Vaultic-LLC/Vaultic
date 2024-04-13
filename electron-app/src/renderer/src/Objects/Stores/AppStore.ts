@@ -8,7 +8,7 @@ import { DataFile } from "@renderer/Types/EncryptedData";
 import { AccountSetupView } from "@renderer/Types/Models";
 import cryptHelper from "@renderer/Helpers/cryptHelper";
 
-interface AppStoreState extends StoreState
+export interface AppStoreState extends StoreState
 {
 	readonly isWindows: boolean;
 	keyHash: string;

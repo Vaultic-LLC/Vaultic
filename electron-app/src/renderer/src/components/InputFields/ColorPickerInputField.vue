@@ -118,7 +118,7 @@ export default defineComponent({
 	min-width: v-bind(minWidth);
 
 	border: solid 1.5px #9e9e9e;
-	border-radius: min(1vw, 1rem);
+	border-radius: var(--input-border-radius);
 	background: none;
 	font-size: clamp(13px, 1.2vh, 25px);
 	color: white;

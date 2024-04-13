@@ -66,7 +66,7 @@ export default defineComponent({
 	background-color: var(--app-color);
 	color: white;
 	border: 2px solid v-bind(color);
-	border-radius: 10px;
+	border-radius: var(--input-border-radius);
 	transition: 0.3s;
 	font-size: clamp(v-bind(minFontSize), v-bind(fontSize), v-bind(maxFontSize));
 	animation: fadeIn 1s linear forwards;

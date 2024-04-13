@@ -27,4 +27,5 @@
 
 	--test: #282525;
 
+	--input-border-radius: clamp(10px, 0.9vw, 0.85rem);
 }

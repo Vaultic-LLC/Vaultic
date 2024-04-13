@@ -196,7 +196,7 @@ export default defineComponent({
 	min-width: v-bind(minWidth);
 
 	border: solid 1.5px #9e9e9e;
-	border-radius: min(1vw, 1rem);
+	border-radius: var(--input-border-radius);
 	background: none;
 	color: white;
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);

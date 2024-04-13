@@ -1,24 +1,40 @@
 <template>
-	<div class="signInViewContainer">
+	<div class="signInViewContainer" ref="container">
 		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
-			:titleMargin="'4%'" :titleMarginTop="'5%'" @onSubmit="onSubmit">
+			:titleMargin="'clamp(15px, 0.8vw, 18px)'" :titleMarginTop="'clamp(15px, 0.8vw, 20px)'" @onSubmit="onSubmit">
 			<Transition name="fade" mode="out-in">
 				<div class="signInViewContainer__contentContainer" :key="refreshKey">
 					<div class="signInViewContainer__content">
-						<div v-if="failedAutoLogin" class="signInViewContainer__inputs">
+						<div v-if="showEmailField" class="signInViewContainer__inputs">
 							<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
-								:width="'80%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
+								:width="'70%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
 								:isEmailField="true" />
 							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
 								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
-								:showUnlock="true" :required="true" :showCopy="false" :width="'80%'" :maxWidth="'300px'"
+								:showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
 								:height="'4vh'" :minHeight="'35px'" />
 						</div>
 						<div v-else class="signInViewContainer__inputs">
 							<EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
 								v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
-								:showUnlock="true" :required="true" :showCopy="false" :width="'80%'" :maxWidth="'300px'"
+								:showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
 								:height="'4vh'" :minHeight="'35px'" />
+						</div>
+						<div class="signInViewContainer__navigation">
+							<div v-if="showEmailField" class="signInViewContainer__arrowLeft" @click="navigateLeft">
+								<ion-icon name="chevron-back-outline"></ion-icon>
+							</div>
+							<div class="signInViewContainer__dots">
+								<div class="signInViewContainer__dot"
+									:class="{ 'signInViewContainer__dot--active': !showEmailField }">
+								</div>
+								<div class="signInViewContainer__dot"
+									:class="{ 'signInViewContainer__dot--active': showEmailField }">
+								</div>
+							</div>
+							<div v-if="!showEmailField" class="signInViewContainer__arrowRight" @click="navigateRight">
+								<ion-icon name="chevron-forward-outline"></ion-icon>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -69,6 +85,8 @@ export default defineComponent({
 	setup(props, ctx)
 	{
 		const refreshKey: Ref<string> = ref('');
+		const container: Ref<HTMLElement | null> = ref(null);
+		const resizeHandler: ResizeObserver = new ResizeObserver(checkWidthHeightRatio);
 
 		const masterKeyField: Ref<InputComponent | null> = ref(null);
 		const masterKey: Ref<string> = ref('');
@@ -76,11 +94,11 @@ export default defineComponent({
 		const emailField: Ref<InputComponent | null> = ref(null);
 		const email: Ref<string> = ref('');
 
-		const failedAutoLogin: Ref<boolean> = ref(false);
+		const showEmailField: Ref<boolean> = ref(false);
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
-		const contentBottomRowGap: ComputedRef<string> = computed(() => failedAutoLogin.value ? "20%" : "20%");
-		const contentBottomMargin: ComputedRef<string> = computed(() => failedAutoLogin.value ? "15px" : "130px");
+		const contentBottomRowGap: Ref<string> = ref(showEmailField.value ? "min(1.5vh, 25px)" : "min(2.5vh, 40px)");
+		const contentBottomMargin: ComputedRef<string> = computed(() => showEmailField.value ? "15px" : "130px");
 
 		function moveToCreateAccount()
 		{
@@ -104,14 +122,14 @@ export default defineComponent({
 			await new Promise((resolve) => setTimeout(resolve, 300));
 
 			stores.popupStore.hideLoadingIndicator();
-			failedAutoLogin.value = true;
+			showEmailField.value = true;
 		}
 
 		async function onSubmit()
 		{
 			stores.popupStore.showLoadingIndicator(props.color);
 
-			if (!failedAutoLogin.value)
+			if (!showEmailField.value)
 			{
 				if (!(await stores.appStore.canAuthenticateKey()))
 				{
@@ -154,25 +172,63 @@ export default defineComponent({
 			}
 			else
 			{
-				const data = {
-					Email: email.value,
-					MasterKey: masterKey.value,
-					...stores.getStates()
-				};
-
-				const response = await window.api.server.session.validateEmailMasterKeyAndReAddVaulticAccount(JSON.stringify(data));
-
-				// no matter what try to add the vaultic password. We can fail but still need to add it ex. license isn't valid
-				await stores.handleUpdateStoreResponse(masterKey.value, response, true);
-
+				const response = await window.api.server.session.validateEmailAndMasterKey(email.value, masterKey.value);
 				if (response.success)
 				{
+					await overrideUserData();
 					ctx.emit('onKeySuccess');
 				}
 				else
 				{
 					handleFailedResponse(response);
 				}
+			}
+		}
+
+		async function overrideUserData()
+		{
+			const response = await window.api.server.user.getUserData();
+			if (response.success)
+			{
+				if (!(await stores.appStore.canAuthenticateKey()))
+				{
+					// user lost data files, force override all data
+					await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
+				}
+				else
+				{
+					const validKey = await stores.appStore.authenticateKey(masterKey.value);
+					if (!validKey)
+					{
+						// new user, force override all data
+						await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
+					}
+					else
+					{
+						// same user, just needed to re add vaultic password
+						// override data stores
+						await stores.checkUpdateStoresWithBackup(masterKey.value, {
+							...response,
+							settingsStoreState: undefined,
+							appStoreState: undefined,
+							userPreferenceStoreState: undefined
+						}, true);
+
+						// check version on settigns, app, and user preferences and update accordingly since they could
+						// be newer or not
+						await stores.checkUpdateStoresWithBackup(masterKey.value, {
+							...response,
+							filterStoreState: undefined,
+							groupStoreState: undefined,
+							passwordStoreState: undefined,
+							valueStoreState: undefined
+						});
+					}
+				}
+			}
+			else
+			{
+				handleFailedResponse(response);
 			}
 		}
 
@@ -191,9 +247,9 @@ export default defineComponent({
 			}
 			else if (response.UnknownEmail)
 			{
-				if (!failedAutoLogin.value)
+				if (!showEmailField.value)
 				{
-					failedAutoLogin.value = true;
+					showEmailField.value = true;
 				}
 				else
 				{
@@ -211,6 +267,57 @@ export default defineComponent({
 				stores.popupStore.showErrorResponseAlert(response);
 				stores.passwordStore.resetToDefault();
 			}
+			else if (response.InvalidSession)
+			{
+				stores.popupStore.showSessionExpired();
+			}
+		}
+
+		function navigateLeft()
+		{
+			showEmailField.value = false;
+			refreshKey.value = Date.now().toString();
+		}
+
+		function navigateRight()
+		{
+			showEmailField.value = true;
+			refreshKey.value = Date.now().toString();
+		}
+
+		function checkWidthHeightRatio()
+		{
+			if (container.value)
+			{
+				const containerDimensions = container.value.getBoundingClientRect();
+				// min dimensions of popup
+				if (containerDimensions.width < 225 && containerDimensions.height <= 345)
+				{
+					contentBottomRowGap.value = "min(2.5vh, 40px)"
+					return;
+				}
+			}
+
+			if (window.innerHeight < 1200)
+			{
+				const ratio = window.innerWidth / window.innerHeight;
+				if (ratio > 2)
+				{
+					contentBottomRowGap.value = "min(0.5vh, 10px)";
+				}
+				else if (ratio > 1.5)
+				{
+					contentBottomRowGap.value = "min(1.5vh, 25px)";
+				}
+				else
+				{
+					contentBottomRowGap.value = "min(2.5vh, 40px)"
+				}
+			}
+			else
+			{
+				contentBottomRowGap.value = "min(2.5vh, 40px)"
+			}
 		}
 
 		onMounted(() =>
@@ -219,21 +326,30 @@ export default defineComponent({
 			{
 				stores.popupStore.showAlert("Alert", props.infoMessage, false);
 			}
+
+			const body = document.getElementById('body');
+			if (body)
+			{
+				resizeHandler.observe(body);
+			}
 		});
 
 		return {
 			refreshKey,
+			container,
 			masterKeyField,
 			masterKey,
 			emailField,
 			email,
 			colorModel,
-			failedAutoLogin,
+			showEmailField,
 			contentBottomRowGap,
 			contentBottomMargin,
 			moveToCreateAccount,
 			moveToLimitedMode,
 			onSubmit,
+			navigateLeft,
+			navigateRight
 		};
 	}
 })
@@ -249,14 +365,20 @@ export default defineComponent({
 	width: 100%;
 	display: flex;
 	flex-direction: column;
+	margin-bottom: 10px;
 }
 
 .signInViewContainer__content {
-	row-gap: 20px;
+	row-gap: clamp(15px, 2vh, 25px);
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: flex-start;
 	align-items: center;
+	position: relative;
+	/* set the height so that the elements below it don't jump arround when showing email field at smaller screen sizes */
+	height: clamp(calc(90px + clamp(15px, 2vh, 25px) + clamp(7px, 0.5vw, 10px) + 10px),
+			calc(8vh + 20px + clamp(15px, 2vh, 25px) + clamp(7px, 0.5vw, 10px) + 10px),
+			calc(100px + 20px + clamp(15px, 2vh, 25px) + clamp(7px, 0.5vw, 10px) + 10px));
 }
 
 .signInViewContainer__inputs {
@@ -274,9 +396,9 @@ export default defineComponent({
 	justify-content: flex-end;
 	align-items: center;
 	flex-direction: column;
-	row-gap: min(2.5vh, 40px);
+	row-gap: v-bind(contentBottomRowGap);
 	flex-grow: 1;
-	margin-top: min(2vh, 30px);
+	/* margin-top: min(2vh, 30px); */
 }
 
 .signInViewContainer__limitedMode {
@@ -306,5 +428,83 @@ export default defineComponent({
 .signInViewContainer__divider__text {
 	color: gray;
 	font-size: clamp(13px, 1vw, 20px);
+}
+
+.signInViewContainer__arrowLeft {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	left: clamp(-80px, -3vw, -40px);
+	font-size: clamp(20px, 1.8vw, 30px);
+	color: gray;
+	display: flex;
+}
+
+.signInViewContainer__arrowRight {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	right: clamp(-80px, -3vw, -40px);
+	font-size: clamp(20px, 1.8vw, 30px);
+	color: gray;
+	display: flex;
+}
+
+/* @media (max-width: 2200px) {
+	.signInViewContainer__arrowLeft {
+		left: 5%;
+	}
+
+	.signInViewContainer__arrowRight {
+		right: 5%;
+		top: 100%;
+		transform: translateY(50%);
+	}
+}
+
+@media (max-width: 1900px) {
+	.signInViewContainer__arrowLeft {
+		left: 0%;
+	}
+
+	.signInViewContainer__arrowRight {
+		right: 0%
+	}
+}
+
+@media (max-width: 1600px) {
+	.signInViewContainer__arrowLeft {
+		left: -5%;
+	}
+
+	.signInViewContainer__arrowRight {
+		right: -5%
+	}
+} */
+
+.signInViewContainer__navigation {
+	display: flex;
+	position: relative;
+}
+
+.signInViewContainer__dots {
+	display: flex;
+	column-gap: 10px;
+	justify-content: center;
+	align-items: center;
+}
+
+.signInViewContainer__dot {
+	width: clamp(7px, 0.5vw, 10px);
+	height: clamp(7px, 0.5vw, 10px);
+	border: 1.5px solid v-bind(color);
+	background-color: transparent;
+	border-radius: 50%;
+	transition: 0.3s;
+}
+
+.signInViewContainer__dot--active {
+	background-color: v-bind(color);
+	box-shadow: 0 0 10px v-bind(color);
 }
 </style>
