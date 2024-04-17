@@ -1,4 +1,4 @@
-import { BaseResponse, DeleteDeviceResponse, LoadDataResponse, UpdateDeviceRespnose, UseSessionLicenseAndDeviceAuthenticationResposne } from "../../Types/Responses";
+import { BaseResponse, CreatePaymentIntentResposne, DeleteDeviceResponse, LoadDataResponse, UpdateDeviceRespnose, UseSessionLicenseAndDeviceAuthenticationResposne, UserSessionAndDeviceAuthenticationRespons } from "../../Types/Responses";
 import cryptUtility from "../../Utilities/CryptUtility";
 import { AxiosHelper } from "./AxiosHelper"
 
@@ -10,6 +10,7 @@ export interface UserController
 	backupAppStore(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
 	backupUserPreferences(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
 	getUserData: () => Promise<LoadDataResponse>;
+	createPaymentIntent: () => Promise<CreatePaymentIntentResposne>;
 	test: (value: string) => Promise<any>
 }
 
@@ -54,6 +55,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		return axiosHelper.get('User/GetUserData');
 	}
 
+	function createPaymentIntent(): Promise<CreatePaymentIntentResposne>
+	{
+		return axiosHelper.get("User/CreatePaymentIntent");
+	}
+
 	function test(value: string): Promise<any>
 	{
 		const methodResponse = cryptUtility.publicEncrypt(value);
@@ -72,6 +78,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		backupAppStore,
 		backupUserPreferences,
 		getUserData,
+		createPaymentIntent,
 		test
 	}
 }

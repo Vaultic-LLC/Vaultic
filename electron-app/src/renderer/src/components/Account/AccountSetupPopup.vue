@@ -15,8 +15,8 @@
 				<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
 					:color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
 				<CreateMasterKeyView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateMasterKey"
-					:color="primaryColor" :account="account" />
-				<PaymentInfoView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
+					:color="primaryColor" :account="account" @onSuccess="onCreateMasterKeySuccess" />
+				<CreateSubscriptionView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
 			accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
 			accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor" />
 			</Transition>
@@ -30,7 +30,7 @@ import { ComputedRef, Ref, computed, defineComponent, onUnmounted, provide, ref,
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import CreateAccountView from './CreateAccountView.vue';
 import SignInView from './SignInView.vue';
-import PaymentInfoView from './PaymentInfoView.vue';
+import CreateSubscriptionView from './CreateSubscriptionView.vue';
 import CreateMasterKeyView from './CreateMasterKeyView.vue';
 
 import { AccountSetupModel, AccountSetupView } from '@renderer/Types/Models';
@@ -45,7 +45,7 @@ export default defineComponent({
 		ObjectPopup,
 		CreateAccountView,
 		SignInView,
-		PaymentInfoView,
+		CreateSubscriptionView,
 		CreateMasterKeyView
 	},
 	emits: ['onClose'],
@@ -86,6 +86,11 @@ export default defineComponent({
 
 			creatingAccount.value = true;
 			accountSetupModel.value.currentView = AccountSetupView.CreateMasterKey;
+		}
+
+		async function onCreateMasterKeySuccess()
+		{
+			accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
 		}
 
 		function navigateBack()
@@ -152,7 +157,8 @@ export default defineComponent({
 			onCreateAccoutViewSucceeded,
 			navigateBack,
 			close,
-			closeWithAnimation
+			closeWithAnimation,
+			onCreateMasterKeySuccess
 		}
 	}
 })

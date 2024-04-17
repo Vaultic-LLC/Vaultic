@@ -1,10 +1,10 @@
 <template>
-	<button class="buttonLink" @click="doOnClick">
+	<button ref="button" class="buttonLink" @click="doOnClick">
 		{{ text }}
 	</button>
 </template>
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { Ref, defineComponent, ref } from 'vue';
 
 export default defineComponent({
 	name: "ButtonLink",
@@ -12,12 +12,16 @@ export default defineComponent({
 	props: ["color", "text"],
 	setup(_, ctx)
 	{
+		const button: Ref<HTMLElement | null> = ref(null);
+
 		function doOnClick()
 		{
 			ctx.emit("onClick");
+			button.value?.blur();
 		}
 
 		return {
+			button,
 			doOnClick
 		}
 	}

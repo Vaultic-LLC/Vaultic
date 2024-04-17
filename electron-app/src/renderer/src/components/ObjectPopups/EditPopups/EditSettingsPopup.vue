@@ -1,31 +1,94 @@
 <template>
 	<div class="editSettingsHeader">
-		<h2>Edit Settings</h2>
+		<TableSelector class="settingsPopupHeader__controls"
+			:singleSelectorItems="[settingsView, devicesView, paymentView]" />
 	</div>
 	<div class="settingViewContainer">
-		<SettingsView :creating="false" :model="currentSettings" />
+		<Transition>
+			<SettingsView v-if="activeSection == 0" :creating="false" :model="currentSettings" />
+			<DevicesView v-else-if="activeSection == 1" />
+			<div class="paymentView" v-else-if="activeSection == 2">
+				To view or update your payment information, please go to
+				<ButtonLink :color="currentPrimaryColor" :text="'https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk'"
+					@onClick="openPaymentInfoLink" />
+				and follow the instructions on screen
+			</div>
+		</Transition>
 	</div>
 </template>
 <script lang="ts">
-import { defineComponent, ref, Ref } from 'vue';
+import { computed, ComputedRef, defineComponent, ref, Ref } from 'vue';
 
 import SettingsView from '../../../components/ObjectViews/SettingsView.vue';
+import DevicesView from '@renderer/components/IncorrectDevice/DevicesView.vue';
+import TableSelector from '@renderer/components/TableSelector.vue';
+import ButtonLink from '@renderer/components/InputFields/ButtonLink.vue';
+
 import { SettingsStoreState } from '@renderer/Objects/Stores/SettingsStore';
+import { stores } from '@renderer/Objects/Stores';
+import { SingleSelectorItemModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "EditSettingsPopup",
 	components:
 	{
-		SettingsView
+		ButtonLink,
+		TableSelector,
+		SettingsView,
+		DevicesView
 	},
 	props: ['model'],
 	setup(props)
 	{
+		const activeSection: Ref<number> = ref(0);
+
 		// copy the object so that we don't edit the original one
 		const currentSettings: Ref<SettingsStoreState> = ref(JSON.parse(JSON.stringify(props.model)));
+		const currentPrimaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+
+		const settingsView: ComputedRef<SingleSelectorItemModel> = computed(() =>
+		{
+			return {
+				title: ref("Settings"),
+				color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+				isActive: computed(() => activeSection.value == 0),
+				onClick: () => { activeSection.value = 0; }
+			}
+		});
+
+		const devicesView: ComputedRef<SingleSelectorItemModel> = computed(() =>
+		{
+			return {
+				title: ref("Devices"),
+				color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+				isActive: computed(() => activeSection.value == 1),
+				onClick: () => { activeSection.value = 1; }
+			}
+		});
+
+		const paymentView: ComputedRef<SingleSelectorItemModel> = computed(() =>
+		{
+			return {
+				title: ref("Payment Info"),
+				color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+				isActive: computed(() => activeSection.value == 2),
+				onClick: () => { activeSection.value = 2; }
+			}
+		});
+
+		function openPaymentInfoLink()
+		{
+			window.open('https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk');
+		}
 
 		return {
-			currentSettings
+			currentSettings,
+			settingsView,
+			devicesView,
+			paymentView,
+			activeSection,
+			currentPrimaryColor,
+			openPaymentInfoLink
 		}
 	}
 })
@@ -37,10 +100,15 @@ export default defineComponent({
 	justify-content: flex-start;
 	color: white;
 	animation: fadeIn 1s linear forwards;
-	margin: 5%;
-	margin-left: 11%;
-	margin-bottom: 0;
-	font-size: 25px;
+	width: 100%;
+}
+
+.settingsPopupHeader__controls {
+	left: 50%;
+	transform: translateX(-50%);
+	top: 2.5%;
+	width: 50%;
+	z-index: 10;
 }
 
 .settingViewContainer {
@@ -48,5 +116,13 @@ export default defineComponent({
 	top: 20%;
 	width: 100%;
 	height: 80%;
+}
+
+.paymentView {
+	color: white;
+	font-size: 20px;
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
 }
 </style>

@@ -21,7 +21,8 @@
 								:height="'4vh'" :minHeight="'35px'" />
 						</div>
 						<div class="signInViewContainer__navigation">
-							<div v-if="showEmailField" class="signInViewContainer__arrowLeft" @click="navigateLeft">
+							<div v-if="showEmailField" class="signInViewContainer__arrow signInViewContainer__arrowLeft"
+								@click="navigateLeft">
 								<ion-icon name="chevron-back-outline"></ion-icon>
 							</div>
 							<div class="signInViewContainer__dots">
@@ -32,7 +33,9 @@
 									:class="{ 'signInViewContainer__dot--active': showEmailField }">
 								</div>
 							</div>
-							<div v-if="!showEmailField" class="signInViewContainer__arrowRight" @click="navigateRight">
+							<div v-if="!showEmailField"
+								class="signInViewContainer__arrow signInViewContainer__arrowRight"
+								@click="navigateRight">
 								<ion-icon name="chevron-forward-outline"></ion-icon>
 							</div>
 						</div>
@@ -430,57 +433,29 @@ export default defineComponent({
 	font-size: clamp(13px, 1vw, 20px);
 }
 
-.signInViewContainer__arrowLeft {
+.signInViewContainer__arrow {
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
-	left: clamp(-80px, -3vw, -40px);
-	font-size: clamp(20px, 1.8vw, 30px);
 	color: gray;
 	display: flex;
+	font-size: clamp(20px, 1.8vw, 30px);
+	will-change: transform;
+	transition: 0.3s;
+}
+
+.signInViewContainer__arrow:hover {
+	transform: translateY(-50%) scale(1.05);
+	color: rgb(177, 177, 177);
+}
+
+.signInViewContainer__arrowLeft {
+	left: clamp(-80px, -3vw, -40px);
 }
 
 .signInViewContainer__arrowRight {
-	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
 	right: clamp(-80px, -3vw, -40px);
-	font-size: clamp(20px, 1.8vw, 30px);
-	color: gray;
-	display: flex;
 }
-
-/* @media (max-width: 2200px) {
-	.signInViewContainer__arrowLeft {
-		left: 5%;
-	}
-
-	.signInViewContainer__arrowRight {
-		right: 5%;
-		top: 100%;
-		transform: translateY(50%);
-	}
-}
-
-@media (max-width: 1900px) {
-	.signInViewContainer__arrowLeft {
-		left: 0%;
-	}
-
-	.signInViewContainer__arrowRight {
-		right: 0%
-	}
-}
-
-@media (max-width: 1600px) {
-	.signInViewContainer__arrowLeft {
-		left: -5%;
-	}
-
-	.signInViewContainer__arrowRight {
-		right: -5%
-	}
-} */
 
 .signInViewContainer__navigation {
 	display: flex;

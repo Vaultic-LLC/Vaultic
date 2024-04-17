@@ -74,12 +74,21 @@ export interface LoadDataResponse extends DataStoreResponse, InvalidSessionRespo
 	settingsStoreState?: any;
 	userPreferenceStoreState?: any;
 }
+export interface UserSessionAndDeviceAuthenticationRespons extends InvalidSessionResponse, IncorrectDeviceResponse
+{
+}
 
-export interface UseSessionLicenseAndDeviceAuthenticationResposne extends LicenseResponse, IncorrectDeviceResponse, InvalidSessionResponse
+export interface UseSessionLicenseAndDeviceAuthenticationResposne extends LicenseResponse, UserSessionAndDeviceAuthenticationRespons
 {
 }
 
 export interface UpdateDeviceRespnose extends InvalidSessionResponse
 {
 	Device?: Device;
+}
+
+export interface CreatePaymentIntentResposne extends UserSessionAndDeviceAuthenticationRespons
+{
+	SubscriptionID?: string;
+	ClientSecret?: string;
 }

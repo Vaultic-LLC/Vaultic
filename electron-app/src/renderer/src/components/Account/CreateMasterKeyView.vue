@@ -128,7 +128,6 @@ export default defineComponent({
 				await stores.appStore.setKey(key.value);
 				await stores.handleUpdateStoreResponse(key.value, response);
 
-				stores.popupStore.hideLoadingIndicator();
 				ctx.emit('onSuccess');
 			}
 			else

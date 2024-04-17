@@ -17,7 +17,7 @@ const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 const deviceInfo = getDeviceInfo();
 
 const axiosInstance = axios.create({
-	baseURL: 'https://localhost:7007/',
+	baseURL: 'https://vaultic-api.vaulticserver.vaultic.co/',
 	timeout: 120000,
 	headers: { 'X-M': deviceInfo.mac, 'X-DN': deviceInfo.deviceName },
 });

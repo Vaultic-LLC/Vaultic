@@ -110,6 +110,12 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		};
 
 		const data: any = await window.api.server.password.update(JSON.stringify(updatedPasswordData));
+		if (data.EmailIsTaken)
+		{
+			stores.popupStore.showAlert("Unable to update password", "The new email is already in use. Please use a different one", false);
+			return false;
+		}
+
 		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
