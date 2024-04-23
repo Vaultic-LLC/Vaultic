@@ -132,13 +132,14 @@ export default defineComponent({
 			}
 			else
 			{
-				if (response.DeviceIsTaken)
+				stores.popupStore.hideLoadingIndicator();
+				if (response.deviceIsTaken)
 				{
 					showAlertMessage("There is already an account associated with this device. Please sign in using that account");
 					return;
 				}
 
-				if (response.EmailIsTaken)
+				if (response.emailIsTaken)
 				{
 					showAlertMessage("Email is already in use. Please use a different one");
 				}
@@ -163,6 +164,8 @@ export default defineComponent({
 			containesUpperAndLowerCase.value = window.api.helpers.validation.containsUppercaseAndLowercaseNumber(newValue);
 			hasNumber.value = window.api.helpers.validation.containsNumber(newValue);
 			hasSpecialCharacter.value = window.api.helpers.validation.containsSpecialCharacter(newValue);
+
+			matchesKey.value = newValue == reEnterKey.value;
 		});
 
 		watch(() => reEnterKey.value, (newValue) =>

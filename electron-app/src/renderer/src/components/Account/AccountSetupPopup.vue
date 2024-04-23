@@ -88,8 +88,12 @@ export default defineComponent({
 			accountSetupModel.value.currentView = AccountSetupView.CreateMasterKey;
 		}
 
+		// TODO: should add a way for users to get from the sign in page to the payment page
+		// already can do that, just need to let them know to try to sign in
 		async function onCreateMasterKeySuccess()
 		{
+			navigationStack.value = [];
+			navigationStack.value.push(AccountSetupView.SignIn);
 			accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
 		}
 

@@ -80,6 +80,8 @@ export default defineComponent({
 		onMounted(async () =>
 		{
 			const response = await window.api.server.user.createPaymentIntent();
+			stores.popupStore.hideLoadingIndicator();
+
 			if (response.success)
 			{
 				subscriptionID = response.SubscriptionID;

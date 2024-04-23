@@ -19,7 +19,7 @@ function createStoreController(path: string, axiosHelper: AxiosHelper): StoreCon
 		return axiosHelper.post(`${path}/Update`, data);
 	}
 
-	async function deleteFilter(data: string): Promise<any>
+	async function deleteValue(data: string): Promise<any>
 	{
 		return axiosHelper.post(`${path}/Delete`, data);
 	}
@@ -27,7 +27,7 @@ function createStoreController(path: string, axiosHelper: AxiosHelper): StoreCon
 	return {
 		add,
 		update,
-		delete: deleteFilter
+		delete: deleteValue
 	}
 }
 

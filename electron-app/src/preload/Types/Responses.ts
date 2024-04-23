@@ -1,5 +1,6 @@
 import { LicenseStatus } from "../Objects/License"
 import { Device } from "./Device";
+import { Session } from "./Session";
 
 export interface BaseResponse
 {
@@ -12,7 +13,7 @@ export interface BaseResponse
 
 export interface CreateSessionResponse extends BaseResponse
 {
-	AntiCSRFToken?: string;
+	session?: Session;
 }
 
 interface IncorrectDeviceResponse extends BaseResponse
@@ -31,8 +32,8 @@ interface LicenseResponse
 
 export interface ValidateEmailResponse extends BaseResponse
 {
-	EmailIsTaken?: boolean;
-	DeviceIsTaken?: boolean;
+	emailIsTaken?: boolean;
+	deviceIsTaken?: boolean;
 }
 
 export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, DataStoreResponse

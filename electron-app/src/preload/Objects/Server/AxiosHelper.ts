@@ -1,8 +1,9 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { getDeviceInfo } from '../DeviceInfo';
-import { BaseResponse, CreateSessionResponse } from '../../Types/Responses';
+import { BaseResponse } from '../../Types/Responses';
 import cryptUtility from '../../Utilities/CryptUtility';
 import { MethodResponse } from '../../Types/MethodResponse';
+import { Session } from '../../Types/Session';
 
 export interface AxiosHelper
 {
@@ -11,15 +12,17 @@ export interface AxiosHelper
 	get: <T extends BaseResponse>(serverPath: string) => Promise<T | BaseResponse>;
 }
 
+let currentSession: Session;
+
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
 const deviceInfo = getDeviceInfo();
 
+const url = 'https://vaultic-api.vaulticserver.vaultic.co/';
 const axiosInstance = axios.create({
-	baseURL: 'https://vaultic-api.vaulticserver.vaultic.co/',
-	timeout: 120000,
-	headers: { 'X-M': deviceInfo.mac, 'X-DN': deviceInfo.deviceName },
+	baseURL: url,
+	timeout: 120000
 });
 
 async function getAPIKey()
@@ -31,23 +34,15 @@ async function getAPIKey()
 	return encrypt.value ?? "";
 }
 
-function isCreateSessionResponse(response: any): response is CreateSessionResponse
-{
-	return 'AntiCSRFToken' in response;
-}
-
 async function post<T extends BaseResponse>(serverPath: string, data: any): Promise<T | BaseResponse>
 {
 	try
 	{
-		const apiKey = await getAPIKey();
-		const response = await axiosInstance.post(serverPath, data, { headers: { "X-AK": apiKey } });
+		const requestData = await getRequestData(data);
+		console.log(requestData);
+		const response = await axiosInstance.post(serverPath, requestData);
 
-		if (isCreateSessionResponse(response) && response.AntiCSRFToken)
-		{
-			axiosInstance.defaults.headers.common['X-ACSRF-TOKEN'] = response.AntiCSRFToken;
-		}
-
+		handleResponse<T>(response.data);
 		return response.data;
 	}
 	catch (e)
@@ -65,8 +60,9 @@ async function get<T extends BaseResponse>(serverPath: string): Promise<T | Base
 {
 	try
 	{
-		const apiKey = await getAPIKey();
-		const response = await axiosInstance.get(serverPath, { headers: { "X-AK": apiKey } });
+		const response = await axiosInstance.get(serverPath);
+
+		handleResponse<T>(response.data);
 		return response.data;
 	}
 	catch (e)
@@ -78,6 +74,47 @@ async function get<T extends BaseResponse>(serverPath: string): Promise<T | Base
 	}
 
 	return { success: false, UnknownError: true };
+}
+
+async function getRequestData(data: any)
+{
+	let newData = data;
+	try
+	{
+		if (typeof data === 'string')
+		{
+			newData = JSON.parse(data);
+		}
+	}
+	catch (e)
+	{
+
+	}
+
+	newData.Session = currentSession;
+	newData.APIKey = await getAPIKey();
+	newData.MacAddress = deviceInfo.mac;
+	newData.DeviceName = deviceInfo.deviceName;
+
+	const encryptedData = await cryptUtility.hybridEncrypt(JSON.stringify(newData));
+	if (!encryptedData.success)
+	{
+		// handle
+	}
+
+	return { Key: encryptedData.key, Data: encryptedData.value };
+}
+
+function handleResponse<T extends BaseResponse>(response: T)
+{
+	if ('session' in response)
+	{
+		const session: Session = response.session as Session;
+		if (session.id && session.token)
+		{
+			currentSession = session;
+		}
+	}
 }
 
 const axiosHelper: AxiosHelper =

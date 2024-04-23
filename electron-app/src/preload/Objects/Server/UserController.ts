@@ -60,15 +60,10 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		return axiosHelper.get("User/CreatePaymentIntent");
 	}
 
-	function test(value: string): Promise<any>
+	async function test(value: string): Promise<any>
 	{
-		const methodResponse = cryptUtility.publicEncrypt(value);
-		console.log(methodResponse);
-
-		return axiosHelper.post("User/Test",
-			{
-				encryption: methodResponse.value
-			});
+		const result = await cryptUtility.hybridEncrypt("Test");
+		return axiosHelper.post("User/Test", { key: result.key, data: result.value });
 	}
 
 	return {

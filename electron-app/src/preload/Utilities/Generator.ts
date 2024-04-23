@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from "crypto"
 
 export interface GeneratorUtility
 {
 	uniqueId: () => string;
 	randomValue: (length: number) => string;
+	randomValueOfByteLength: (byteLength: number) => string;
 }
 
 function uniqueId(): string
@@ -34,10 +36,16 @@ function randomValue(length: number): string
 	return randomPassword;
 }
 
+function randomValueOfByteLength(bytes: number)
+{
+	return randomBytes(bytes).toString('hex');
+}
+
 const generatorUtility: GeneratorUtility =
 {
 	uniqueId,
-	randomValue
+	randomValue,
+	randomValueOfByteLength
 };
 
 export default generatorUtility;

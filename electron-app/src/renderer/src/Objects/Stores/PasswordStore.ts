@@ -110,7 +110,7 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		};
 
 		const data: any = await window.api.server.password.update(JSON.stringify(updatedPasswordData));
-		if (data.EmailIsTaken)
+		if (data.emailIsTaken)
 		{
 			stores.popupStore.showAlert("Unable to update password", "The new email is already in use. Please use a different one", false);
 			return false;
@@ -124,6 +124,12 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 
 	async deletePassword(key: string, password: ReactivePassword): Promise<boolean>
 	{
+		if (password.isVaultic)
+		{
+			stores.popupStore.showAlert("Error", "Can't delete the username / password used for signing into Vaultic Services", false);
+			return false;
+		}
+
 		const deletePasswordData = {
 			OldDays: stores.settingsStore.oldPasswordDays,
 			MasterKey: key,

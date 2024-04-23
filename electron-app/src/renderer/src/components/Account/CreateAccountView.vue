@@ -64,33 +64,29 @@ export default defineComponent({
 
 		async function createAccount()
 		{
-			ctx.emit('onSuccess', firstName.value, lastName.value, email.value);
-			return;
-
+			stores.popupStore.showLoadingIndicator(props.color, 'Loading');
 			const response = await window.api.server.session.validateEmail(email.value);
+			stores.popupStore.hideLoadingIndicator();
 
 			if (response.success)
 			{
-				stores.popupStore.hideLoadingIndicator();
 				ctx.emit('onSuccess', firstName.value, lastName.value, email.value);
 			}
 			else
 			{
-				stores.popupStore.hideLoadingIndicator();
-
 				if (response.UnknownError)
 				{
 					stores.popupStore.showErrorResponseAlert(response);
 					return;
 				}
 
-				if (response.DeviceIsTaken)
+				if (response.deviceIsTaken)
 				{
 					showAlertMessage();
 					return;
 				}
 
-				if (response.EmailIsTaken)
+				if (response.emailIsTaken)
 				{
 					emailField.value?.invalidate("Email is already in use. Please use a different one");
 				}

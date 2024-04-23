@@ -1,19 +1,21 @@
 import crypto from "crypto";
 import hashUtility from "./HashUtility";
 import vaulticServer from "../Objects/Server/VaulticServer";
-import { MethodResponse } from "../Types/MethodResponse";
+import { HybridEncrypionResponse, MethodResponse } from "../Types/MethodResponse";
+import generatorUtility from "./Generator";
 
 export interface CryptUtility
 {
 	encrypt: (key: string, value: string) => Promise<MethodResponse>;
 	decrypt: (key: string, value: string) => Promise<MethodResponse>;
-	publicEncrypt: (value: string) => MethodResponse;
+	hybridEncrypt: (value: string) => Promise<HybridEncrypionResponse>;
 }
 
 const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
-const VaulticPublicKey = "-----BEGIN PUBLIC KEY----- \nw/BNE+8BC9VgO0Hezp7Z6LKPPqPDewuvPA8uby1m6MIHvsq4aLpSrKq5alRgUYe3xTMNhGJQjgLO3Ol6r8olYsD1WviUhS3tGj1iTOthGBcmWaTFfeLyCGiXI11vCUnccV/yHYEJxRgir1WlvZovNorkkhYOm5w4oJWAwJ2MmkE=\n-----END PUBLIC KEY-----";
+
+const hybridPublicKey = "-----BEGIN RSA PUBLIC KEY-----\nMIGJAoGBAMPwTRPvAQvVYDtB3s6e2eiyjz6jw3sLrzwPLm8tZujCB77KuGi6Uqyq\nuWpUYFGHt8UzDYRiUI4Cztzpeq/KJWLA9Vr4lIUt7Ro9YkzrYRgXJlmkxX3i8gho\nlyNdbwlJ3HFf8h2BCcUYIq9Vpb2aLzaK5JIWDpucOKCVgMCdjJpBAgMBAAE=\n-----END RSA PUBLIC KEY-----";
 
 async function encrypt(key: string, value: string): Promise<MethodResponse>
 {
@@ -75,15 +77,25 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	return { success: false };
 }
 
-function publicEncrypt(value: string): MethodResponse
+async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
 {
 	try
 	{
-		const bytes = Buffer.from(value);
-		return { success: true, value: crypto.publicEncrypt(VaulticPublicKey, bytes).toString("ascii") };
+		const aesKey = generatorUtility.randomValueOfByteLength(32);
+		const aesResult = await encrypt(aesKey, value);
+		if (!aesResult.success)
+		{
+			return aesResult;
+		}
+
+		const keyBytes = Buffer.from(aesKey);
+		const encryptedKey = crypto.publicEncrypt(hybridPublicKey, keyBytes).toString("base64");
+
+		return { success: true, key: encryptedKey, value: aesResult.value };
 	}
 	catch (e)
 	{
+		console.log(value);
 		console.log(e);
 	}
 
@@ -94,7 +106,7 @@ const cryptUtility: CryptUtility =
 {
 	encrypt,
 	decrypt,
-	publicEncrypt
+	hybridEncrypt
 };
 
 export default cryptUtility;

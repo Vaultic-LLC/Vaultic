@@ -4,3 +4,8 @@ export interface MethodResponse
 	logID?: number;
 	value?: string;
 }
+
+export interface HybridEncrypionResponse extends MethodResponse
+{
+	key?: string;
+}
