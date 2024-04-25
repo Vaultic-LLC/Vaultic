@@ -88,8 +88,8 @@ export interface UpdateDeviceRespnose extends InvalidSessionResponse
 	Device?: Device;
 }
 
-export interface CreatePaymentIntentResposne extends UserSessionAndDeviceAuthenticationRespons
+export interface CreatePaymentIntentResponse extends UserSessionAndDeviceAuthenticationRespons
 {
-	SubscriptionID?: string;
-	ClientSecret?: string;
+	subscriptionID?: string;
+	clientSecret?: string;
 }

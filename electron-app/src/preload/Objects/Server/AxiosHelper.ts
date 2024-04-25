@@ -39,7 +39,6 @@ async function post<T extends BaseResponse>(serverPath: string, data: any): Prom
 	try
 	{
 		const requestData = await getRequestData(data);
-		console.log(requestData);
 		const response = await axiosInstance.post(serverPath, requestData);
 
 		handleResponse<T>(response.data);
@@ -60,7 +59,8 @@ async function get<T extends BaseResponse>(serverPath: string): Promise<T | Base
 {
 	try
 	{
-		const response = await axiosInstance.get(serverPath);
+		const requestData = await getRequestData({});
+		const response = await axiosInstance.post(serverPath, requestData);
 
 		handleResponse<T>(response.data);
 		return response.data;

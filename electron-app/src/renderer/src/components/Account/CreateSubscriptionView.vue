@@ -5,12 +5,15 @@
 			<!-- TODO should show the price of the subscription somewhere here as well -->
 			<div id="payment-element">
 			</div>
+			<div class="paymentInfoView__content">
+				<div class="paymentInfoView__subscription">$5.00 / Month</div>
+			</div>
 		</AccountSetupView>
 	</div>
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted } from 'vue';
+import { Ref, defineComponent, onMounted, ref } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import { stores } from '@renderer/Objects/Stores';
@@ -30,9 +33,13 @@ export default defineComponent({
 
 		let subscriptionID: string | undefined = '';
 		let clientSecret: string | undefined = '';
+		const url: Ref<string> = ref('');
 
 		async function onSubmit()
 		{
+			window.open(url.value);
+			return;
+
 			stores.popupStore.showLoadingIndicator(props.color, "Loading");
 			const { error } = await stripe.confirmPayment({
 				elements,
@@ -79,29 +86,32 @@ export default defineComponent({
 
 		onMounted(async () =>
 		{
-			const response = await window.api.server.user.createPaymentIntent();
+			const response = await window.api.server.user.createCheckout();
+
+			//const response = await window.api.server.user.createPaymentIntent();
 			stores.popupStore.hideLoadingIndicator();
 
 			if (response.success)
 			{
-				subscriptionID = response.SubscriptionID;
-				clientSecret = response.ClientSecret;
+				url.value = response.url;
+				// subscriptionID = response.subscriptionID;
+				// clientSecret = response.clientSecret;
 
-				const options = {
-					business: "Vaultic LLC",
-					clientSecret: clientSecret,
-					appearance: {
-						theme: 'night',
-						type: 'tabs',
-						defaultCollapsed: false,
-					},
-				};
+				// const options = {
+				// 	business: "Vaultic LLC",
+				// 	clientSecret: clientSecret,
+				// 	appearance: {
+				// 		theme: 'night',
+				// 		type: 'tabs',
+				// 		defaultCollapsed: false,
+				// 	},
+				// };
 
 				// Set up Stripe.js and Elements to use in checkout form, passing the client secret obtained in step 5
-				elements = stripe.elements(options);
+				//elements = stripe.elements(options);
 
-				const paymentElement = elements.create('payment');
-				paymentElement.mount('#payment-element');
+				//const paymentElement = elements.create('payment');
+				//paymentElement.mount('#payment-element');
 			}
 			else
 			{

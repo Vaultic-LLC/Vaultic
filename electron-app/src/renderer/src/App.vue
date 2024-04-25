@@ -16,7 +16,7 @@
 			<PasswordStrengthProgressChart />
 		</div>
 		<div class="tempWidget loginHistoryCalendarWidget">
-			<LoginHistoryCalendar :refresh="false" />
+			<LoginHistoryCalendar />
 		</div>
 		<MenuWidget />
 	</div>
