@@ -9,9 +9,11 @@ export interface CryptUtility
 {
 	encrypt: (key: string, value: string) => Promise<MethodResponse>;
 	decrypt: (key: string, value: string) => Promise<MethodResponse>;
-	hybridEncrypt: (publicKey: string, value: string) => Promise<HybridEncrypionResponse>;
+	hybridEncrypt: (value: string) => Promise<HybridEncrypionResponse>;
 	hybridDecrypt: (privateKey: string, encryptedResponse: EncryptedResponse) => Promise<MethodResponse>;
 }
+
+const vaulticPublicKey = "-----BEGIN RSA PUBLIC KEY-----\nMIICCgKCAgEAoHTMLCg0A3Mr3GIxF/xcPhCDDcp/4OG5wox8bUsWIXExtFKJmLew\nswVRFUxRhUtgyz4O+auJmiDvEgaFHVw4KQ3Fve3K9wjbQ0N51tqTipyj/DMrrJHu\nlUx2cB6JZhgHRiUQb3o+Bhu4CQ6HZd/8QDILAHMtH7eTcx0h6cA4azAWy/1xnc+G\nv71imLyGhRg/FnR3YoegkIuOSRSK9rjBsrw7k7M8Asp0A3FZSRL/Cs82SkadVcEA\nc8VcWEnf9Bdc/exArIgV0H6jA0exPteJK+mts4u8/L0drxMSnXaRYJf8vPckz8M2\n1BuaugZ8uY7ZAVtqB4QQ3C9kZ/0kuYSNE7Dg/oaTWnylOqPQX5Yr/xwU1/QaK7nA\nyrXlVajJhUB+b5QK0L4invuMWarq6bddOldaC4yqMmum+SCLZzEkiYE0CSFX5XIB\nGVI9O3RDdZrt0wx1fsIGCGNBWhinsqxtPw96P9MC1KMGgNIdw/Fc2nFV4NbuwmDM\n3/1X0MJXNt1y22YkFJfXXDmJJuC9naxeK/etasy5uDEpCDxOG6Kww+L54UJmr0o3\neZw7aRcDXrvrDXaalWFHV/JMSxzivTpBeD1MdcBK53JMrZEOuslvWYqo8MapdKfl\na76OBNLXIv4t3E4ARbw7oqkXN9wbn0JZ0PkEjoSKp0aDq/fiNObO3vkCAwEAAQ==\n-----END RSA PUBLIC KEY-----";
 
 const ivLength: number = 12;
 const authTagLength: number = 16;
@@ -83,7 +85,7 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	return { success: false, errorMessage: errorMessage };
 }
 
-async function hybridEncrypt(publicKey: string, value: string): Promise<HybridEncrypionResponse>
+async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
 {
 	let logID: number | undefined;
 
@@ -97,7 +99,7 @@ async function hybridEncrypt(publicKey: string, value: string): Promise<HybridEn
 		}
 
 		const keyBytes = Buffer.from(aesKey);
-		const encryptedKey = crypto.publicEncrypt(publicKey, keyBytes).toString("base64");
+		const encryptedKey = crypto.publicEncrypt(vaulticPublicKey, keyBytes).toString("base64");
 
 		return { success: true, key: encryptedKey, value: aesResult.value };
 	}

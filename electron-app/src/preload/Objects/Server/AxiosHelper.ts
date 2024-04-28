@@ -10,7 +10,6 @@ import generatorUtility from '../../Utilities/Generator';
 
 let requestCallStackDepth: number = 0;
 let currentSession: Session;
-let vaulticPublicKey: string;
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
@@ -32,34 +31,8 @@ async function getAPIKey()
 	return encrypt.value ?? "";
 }
 
-async function getVaulticPublicKey()
-{
-	const apiKey = await getAPIKey();
-	const response = await axiosInstance.post("App/GetVaulticPublicKey", {
-		APIKey: apiKey
-	});
-
-	if (!response.data.success)
-	{
-		return false;
-	}
-
-	if ("vaulticPublicKey" in response.data)
-	{
-		vaulticPublicKey = response.data.vaulticPublicKey;
-		return true;
-	}
-
-	return false;
-}
-
 async function post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
 {
-	if (!vaulticPublicKey && !(await getVaulticPublicKey()))
-	{
-		return { success: false, unknownError: true, logID: -102 };
-	}
-
 	requestCallStackDepth += 1;
 	try
 	{
@@ -131,7 +104,7 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 	newData.MacAddress = deviceInfo.mac;
 	newData.DeviceName = deviceInfo.deviceName;
 
-	const encryptedData = await cryptUtility.hybridEncrypt(vaulticPublicKey, JSON.stringify(newData));
+	const encryptedData = await cryptUtility.hybridEncrypt(JSON.stringify(newData));
 	if (!encryptedData.success)
 	{
 		return [encryptedData, { Key: '', Data: '' }]
