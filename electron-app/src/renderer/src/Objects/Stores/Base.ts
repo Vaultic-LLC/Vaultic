@@ -56,6 +56,11 @@ export class Store<T extends {} & StoreState>
 		Object.assign(this.state, this.defaultState());
 	}
 
+	public getVersion(): number
+	{
+		return this.state.version;
+	}
+
 	public getState(): T
 	{
 		return this.state;

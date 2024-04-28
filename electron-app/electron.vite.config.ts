@@ -11,8 +11,7 @@ export default defineConfig({
 			{
 				protectedStrings:
 					[
-						'X-AK',
-						'12fasjkdF2owsnFvkwnvwe23dFSDfio2',
+						'12fasjkdF2owsnFvkwnvwe23dFSDfio2',	// API Encryption Key
 						'ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321',
 						'a;lfasl;fjklavnaklsfhsadkfhsaklfsaflasdknvasdklfwefhw;IFKSNVKLASDJNVH234]21O51[2[2112[24215'
 					]

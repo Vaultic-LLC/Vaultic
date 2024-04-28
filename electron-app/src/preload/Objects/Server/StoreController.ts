@@ -1,4 +1,4 @@
-import { AxiosHelper } from "./AxiosHelper";
+import { AxiosHelper } from "../../Types/ServerTypes";
 
 export interface StoreController
 {

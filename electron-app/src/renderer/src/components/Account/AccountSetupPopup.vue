@@ -11,7 +11,8 @@
 			<Transition name="fade" mode="out-in">
 				<SignInView v-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
 					:infoMessage="accountSetupModel.infoMessage" @onKeySuccess="closeWithAnimation"
-					@onMoveToCreateAccount="moveToCreateAccount" @onMoveToLimitedMode="close" />
+					@onMoveToCreateAccount="moveToCreateAccount" @onMoveToLimitedMode="close"
+					@onMoveToSetupPayment="moveToCreatePayment" />
 				<CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
 					:color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
 				<CreateMasterKeyView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateMasterKey"
@@ -88,6 +89,12 @@ export default defineComponent({
 			accountSetupModel.value.currentView = AccountSetupView.CreateMasterKey;
 		}
 
+		function moveToCreatePayment()
+		{
+			navigationStack.value.push(AccountSetupView.SignIn);
+			accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
+		}
+
 		// TODO: should add a way for users to get from the sign in page to the payment page
 		// already can do that, just need to let them know to try to sign in
 		async function onCreateMasterKeySuccess()
@@ -159,6 +166,7 @@ export default defineComponent({
 			disableBack,
 			moveToCreateAccount,
 			onCreateAccoutViewSucceeded,
+			moveToCreatePayment,
 			navigateBack,
 			close,
 			closeWithAnimation,

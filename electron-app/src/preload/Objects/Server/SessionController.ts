@@ -1,12 +1,11 @@
 import { ValidateEmailResponse, CreateAccountResponse, BaseResponse, ValidateUserResponse } from "../../Types/Responses";
-import { AxiosHelper } from "./AxiosHelper";
+import { AxiosHelper } from "../../Types/ServerTypes";
 
 export interface SessionController
 {
 	validateEmail: (email: string) => Promise<ValidateEmailResponse>;
 	createAccount: (data: string) => Promise<CreateAccountResponse>;
 	validateEmailAndMasterKey: (email: string, key: string) => Promise<ValidateUserResponse>;
-	validateEmailMasterKeyAndReAddVaulticAccount(data: string): Promise<ValidateUserResponse>;
 	expire: () => Promise<BaseResponse>;
 }
 
@@ -32,11 +31,6 @@ export function createSessionController(axiosHelper: AxiosHelper)
 		});
 	}
 
-	function validateEmailMasterKeyAndReAddVaulticAccount(data: string): Promise<ValidateUserResponse>
-	{
-		return axiosHelper.post('Session/ValidateEmailMasterKeyAndReAddVaulticAccount', data);
-	}
-
 	function expire(): Promise<BaseResponse>
 	{
 		return axiosHelper.post('Session/Expire', {});
@@ -46,7 +40,6 @@ export function createSessionController(axiosHelper: AxiosHelper)
 		validateEmail,
 		createAccount,
 		validateEmailAndMasterKey,
-		validateEmailMasterKeyAndReAddVaulticAccount,
 		expire,
 	}
 }

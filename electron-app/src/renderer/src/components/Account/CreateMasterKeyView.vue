@@ -143,7 +143,7 @@ export default defineComponent({
 				{
 					showAlertMessage("Email is already in use. Please use a different one");
 				}
-				else if (response.UnknownError)
+				else if (response.unknownError)
 				{
 					stores.popupStore.showErrorResponseAlert(response);
 				}

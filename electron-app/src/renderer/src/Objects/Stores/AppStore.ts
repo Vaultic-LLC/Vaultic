@@ -11,8 +11,8 @@ import cryptHelper from "@renderer/Helpers/cryptHelper";
 export interface AppStoreState extends StoreState
 {
 	readonly isWindows: boolean;
-	keyHash: string;
-	keySalt: string;
+	masterKeyHash: string;
+	masterKeySalt: string;
 	isOnline: boolean;
 	reloadMainUI: boolean;
 	loginHistory: Dictionary<number[]>;
@@ -54,14 +54,26 @@ class AppStore extends Store<AppStoreState>
 	{
 		return {
 			version: 0,
-			keyHash: '',
-			keySalt: '',
+			masterKeyHash: '',
+			masterKeySalt: '',
+			privateKey: '',
 			isWindows: window.api.device.platform === "win32",
 			isOnline: false,
 			userDataVersion: 0,
 			reloadMainUI: false,
 			loginHistory: {},
 		};
+	}
+
+	// don't need app state anywhere so don't expose it
+	public getState()
+	{
+		return this.defaultState();
+	}
+
+	public resetToDefault()
+	{
+		super.resetToDefault();
 	}
 
 	protected getFile(): DataFile
@@ -74,6 +86,7 @@ class AppStore extends Store<AppStoreState>
 		if (await super.readState(key))
 		{
 			this.checkRemoveOldLoginRecords(key);
+
 			return true;
 		}
 
@@ -116,15 +129,15 @@ class AppStore extends Store<AppStoreState>
 		}
 	}
 
-	public async setKey(key: string)
+	public async setKey(masterKey: string)
 	{
-		if (!this.state.keyHash)
+		if (!this.state.masterKeyHash)
 		{
 			const salt = window.api.utilities.generator.randomValue(30);
-			this.state.keyHash = await window.api.utilities.hash.hash(key, salt);
-			this.state.keySalt = salt;
+			this.state.masterKeyHash = await window.api.utilities.hash.hash(masterKey, salt);
+			this.state.masterKeySalt = salt;
 
-			await this.writeState(key);
+			await this.writeState(masterKey);
 		}
 	}
 
@@ -140,7 +153,7 @@ class AppStore extends Store<AppStoreState>
 			return false;
 		}
 
-		return this.state.keyHash === await window.api.utilities.hash.hash(key, this.state.keySalt);
+		return this.state.masterKeyHash === await window.api.utilities.hash.hash(key, this.state.masterKeySalt);
 	}
 
 	public lock()

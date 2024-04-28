@@ -1,5 +1,5 @@
 import { LogResponse } from "../../Types/Responses";
-import { AxiosHelper } from "./AxiosHelper";
+import { AxiosHelper } from "../../Types/ServerTypes";
 
 export interface AppController
 {

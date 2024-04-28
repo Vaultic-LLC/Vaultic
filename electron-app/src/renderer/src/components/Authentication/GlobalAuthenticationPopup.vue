@@ -120,6 +120,7 @@ export default defineComponent({
 	z-index: 90;
 	top: 0;
 	left: 0;
+	will-change: transform;
 }
 
 .globalAuthGlass.unlocked {

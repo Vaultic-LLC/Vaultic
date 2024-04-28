@@ -1,117 +1,85 @@
 <template>
 	<div class="paymentInfoView">
-		<AccountSetupView :color="color" :title="'Sign Up'" :buttonText="'Subscribe'" :displayGrid="false"
+		<AccountSetupView :color="color" :title="title" :buttonText="buttonText" :displayGrid="false"
 			:titleMargin="'clamp(15px, 0.8vw, 18px)'" :titleMarginTop="'clamp(15px, 0.8vw, 20px)'" @onSubmit="onSubmit">
-			<!-- TODO should show the price of the subscription somewhere here as well -->
-			<div id="payment-element">
-			</div>
 			<div class="paymentInfoView__content">
-				<div class="paymentInfoView__subscription">$5.00 / Month</div>
+				<div v-if="alreadyCreated == false">
+					<h3 class="paymentInfoView__content__header">Subscribe to finish setting up your account and enable:
+					</h3>
+					<div class="paymentInfoView__features">
+						<div class="paymentInfoView__feature">
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<div>Tracking of Breached Passwords</div>
+						</div>
+						<div class="paymentInfoView__feature">
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<div>Adding Passwords / Values</div>
+						</div>
+						<div class="paymentInfoView__feature">
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<div>Updating Passwords / Values</div>
+						</div>
+						<div class="paymentInfoView__feature">
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<div>Deleting Passwords / Values</div>
+						</div>
+						<div class="paymentInfoView__feature">
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<div>Premium Widgets</div>
+						</div>
+					</div>
+				</div>
+				<div v-else-if="alreadyCreated == true">
+					<h3 class="paymentInfoView__content__header">
+						There is an issue with your subscription. Please click the button below to view and
+						update your payment information.
+					</h3>
+				</div>
 			</div>
 		</AccountSetupView>
 	</div>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import { stores } from '@renderer/Objects/Stores';
+import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 
 export default defineComponent({
 	name: "CreateSubscriptionView",
 	components:
 	{
-		AccountSetupView
+		AccountSetupView,
+		CheckboxInputField
 	},
 	props: ['color'],
-	setup(props)
+	setup()
 	{
-		//@ts-ignore
-		const stripe = Stripe('pk_live_51Oo8kfLqVElHE0XY0ZBfiZEXBD60wiR9twJc3epBTLpe06Z1KQqIuwc8qjDpCH2NjRPSfszImK8dv9aMs8Y4gwqy00XoDfpmEB');
-		let elements: any;
+		const url: Ref<string | undefined> = ref('');
+		const alreadyCreated: Ref<boolean | undefined> = ref(undefined);
 
-		let subscriptionID: string | undefined = '';
-		let clientSecret: string | undefined = '';
-		const url: Ref<string> = ref('');
+		const title: ComputedRef<string> = computed(() => alreadyCreated.value == true ? "Update Subscription" : "Sign Up");
+		const buttonText: ComputedRef<string> = computed(() => alreadyCreated.value == true ? "View" : "Subscribe");
 
 		async function onSubmit()
 		{
-			window.open(url.value);
-			return;
-
-			stores.popupStore.showLoadingIndicator(props.color, "Loading");
-			const { error } = await stripe.confirmPayment({
-				elements,
-				confirmParams: {
-					return_url: "", // TODO: This is suppose to redirect the user to an optional authorization step if needed. How
-					// do I handle that? Would all of this just be easier using a link? Could I just use an IFrame instead and
-					// load the link in there so the user doesn't have to leave the app?
-				}
-			});
-
-			if (error)
+			if (url.value && alreadyCreated.value != undefined)
 			{
-				stores.popupStore.hideLoadingIndicator();
-				stores.popupStore.showAlert("An Error has occured", error.message, false);
+				window.open(url.value);
 			}
-			else
-			{
-				checkPaymentStatus();
-			}
-		}
-
-		function checkPaymentStatus()
-		{
-			stripe.retrievePaymentIntent(clientSecret).then(({ paymentIntent }) =>
-			{
-				switch (paymentIntent.status)
-				{
-					case 'succeeded':
-						stores.popupStore.hideLoadingIndicator();
-						stores.popupStore.showToast(props.color, "Success", true);
-						break;
-					case 'processing':
-						// TODO: this might not work if the user needs to authenticate and i'm just waiting on them
-						setTimeout(checkPaymentStatus, 3000);
-						break;
-					case 'requires_payment_method':
-					default:
-						stores.popupStore.hideLoadingIndicator();
-						stores.popupStore.showAlert("An Error has Occured", 'Payment failed. Please try another payment method.', false);
-						break;
-				}
-			});
 		}
 
 		onMounted(async () =>
 		{
 			const response = await window.api.server.user.createCheckout();
-
-			//const response = await window.api.server.user.createPaymentIntent();
 			stores.popupStore.hideLoadingIndicator();
 
 			if (response.success)
 			{
+				alreadyCreated.value = response.alreadyCreated;
 				url.value = response.url;
-				// subscriptionID = response.subscriptionID;
-				// clientSecret = response.clientSecret;
-
-				// const options = {
-				// 	business: "Vaultic LLC",
-				// 	clientSecret: clientSecret,
-				// 	appearance: {
-				// 		theme: 'night',
-				// 		type: 'tabs',
-				// 		defaultCollapsed: false,
-				// 	},
-				// };
-
-				// Set up Stripe.js and Elements to use in checkout form, passing the client secret obtained in step 5
-				//elements = stripe.elements(options);
-
-				//const paymentElement = elements.create('payment');
-				//paymentElement.mount('#payment-element');
 			}
 			else
 			{
@@ -128,14 +96,37 @@ export default defineComponent({
 					stores.popupStore.showErrorResponseAlert(response);
 				}
 			}
-
 		});
 
 		return {
-			onSubmit
+			onSubmit,
+			alreadyCreated,
+			buttonText,
+			title
 		}
 	}
 })
 </script>
 
-<style></style>
+<style>
+.paymentInfoView__content {
+	margin-bottom: 30%;
+}
+
+.paymentInfoView__content__header {
+	color: white;
+}
+
+.paymentInfoView__features {
+	color: white;
+	display: flex;
+	flex-direction: column;
+	row-gap: 10px;
+	/* width: 50%;
+	margin: auto; */
+}
+
+.paymentInfoView__feature {
+	display: flex;
+}
+</style>

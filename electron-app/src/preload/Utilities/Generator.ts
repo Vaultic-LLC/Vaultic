@@ -1,11 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import { randomBytes } from "crypto"
+import { randomBytes, generateKeyPairSync, KeyPairSyncResult } from "crypto"
 
 export interface GeneratorUtility
 {
 	uniqueId: () => string;
 	randomValue: (length: number) => string;
 	randomValueOfByteLength: (byteLength: number) => string;
+	publicPrivateKey: () => KeyPairSyncResult<string, string>;
 }
 
 function uniqueId(): string
@@ -41,11 +42,27 @@ function randomValueOfByteLength(bytes: number)
 	return randomBytes(bytes).toString('hex');
 }
 
+function publicPrivateKey(): KeyPairSyncResult<string, string>
+{
+	return generateKeyPairSync('rsa', {
+		modulusLength: 4096,
+		publicKeyEncoding: {
+			type: 'spki',
+			format: 'pem'
+		},
+		privateKeyEncoding: {
+			type: 'pkcs8',
+			format: 'pem'
+		}
+	});
+}
+
 const generatorUtility: GeneratorUtility =
 {
 	uniqueId,
 	randomValue,
-	randomValueOfByteLength
+	randomValueOfByteLength,
+	publicPrivateKey
 };
 
 export default generatorUtility;

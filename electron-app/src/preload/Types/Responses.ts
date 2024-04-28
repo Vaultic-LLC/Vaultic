@@ -2,13 +2,19 @@ import { LicenseStatus } from "../Objects/License"
 import { Device } from "./Device";
 import { Session } from "./Session";
 
+export interface EncryptedResponse
+{
+	key?: string;
+	data?: string;
+}
+
 export interface BaseResponse
 {
 	success: boolean;
-	UnknownError?: boolean;
-	ErrorID?: string;
-	StatusCode?: number;
-	AxiosCode?: string;
+	unknownError?: boolean;
+	logID?: number;
+	statusCode?: number;
+	axiosCode?: string;
 }
 
 export interface CreateSessionResponse extends BaseResponse
@@ -27,7 +33,7 @@ interface IncorrectDeviceResponse extends BaseResponse
 
 interface LicenseResponse
 {
-	LicenseStatus?: LicenseStatus;
+	licenseStatus?: LicenseStatus;
 }
 
 export interface ValidateEmailResponse extends BaseResponse
@@ -88,8 +94,8 @@ export interface UpdateDeviceRespnose extends InvalidSessionResponse
 	Device?: Device;
 }
 
-export interface CreatePaymentIntentResponse extends UserSessionAndDeviceAuthenticationRespons
+export interface CreateCheckoutResponse extends UserSessionAndDeviceAuthenticationRespons
 {
-	subscriptionID?: string;
-	clientSecret?: string;
+	alreadyCreated?: boolean;
+	url?: string;
 }

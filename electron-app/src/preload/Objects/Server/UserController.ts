@@ -1,6 +1,5 @@
-import { BaseResponse, CreatePaymentIntentResponse, DeleteDeviceResponse, LoadDataResponse, UpdateDeviceRespnose, UseSessionLicenseAndDeviceAuthenticationResposne, UserSessionAndDeviceAuthenticationRespons } from "../../Types/Responses";
-import cryptUtility from "../../Utilities/CryptUtility";
-import { AxiosHelper } from "./AxiosHelper"
+import { CreateCheckoutResponse, DeleteDeviceResponse, LoadDataResponse, UpdateDeviceRespnose, UseSessionLicenseAndDeviceAuthenticationResposne, UserSessionAndDeviceAuthenticationRespons } from "../../Types/Responses";
+import { AxiosHelper } from "../../Types/ServerTypes";
 
 export interface UserController
 {
@@ -10,9 +9,8 @@ export interface UserController
 	backupAppStore(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
 	backupUserPreferences(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
 	getUserData: () => Promise<LoadDataResponse>;
-	createPaymentIntent: () => Promise<CreatePaymentIntentResponse>;
-	createCheckout: () => Promise<any>;
-	test: (value: string) => Promise<any>
+	createCheckout: () => Promise<CreateCheckoutResponse>;
+	test: (key: string) => Promise<any>
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -27,7 +25,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
 	function registerDevice(): Promise<UpdateDeviceRespnose>
 	{
-		return axiosHelper.get('User/RegisterDevice');
+		return axiosHelper.post('User/RegisterDevice');
 	}
 
 	function backupSetings(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResposne>
@@ -53,23 +51,17 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
 	function getUserData(): Promise<LoadDataResponse>
 	{
-		return axiosHelper.get('User/GetUserData');
+		return axiosHelper.post('User/GetUserData');
 	}
 
-	function createPaymentIntent(): Promise<CreatePaymentIntentResponse>
+	function createCheckout(): Promise<CreateCheckoutResponse>
 	{
-		return axiosHelper.get("User/CreatePaymentIntent");
+		return axiosHelper.post("User/CreateCheckout");
 	}
 
-	function createCheckout(): Promise<any>
+	async function test(key: string): Promise<any>
 	{
-		return axiosHelper.get("User/CreateCheckout");
-	}
-
-	async function test(value: string): Promise<any>
-	{
-		const result = await cryptUtility.hybridEncrypt("Test");
-		return axiosHelper.post("User/Test", { key: result.key, data: result.value });
+		return axiosHelper.post("User/Test", { key });
 	}
 
 	return {
@@ -79,7 +71,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		backupAppStore,
 		backupUserPreferences,
 		getUserData,
-		createPaymentIntent,
 		createCheckout,
 		test
 	}

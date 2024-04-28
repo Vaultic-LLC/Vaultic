@@ -83,7 +83,7 @@ export default defineComponent({
 		AccountSetupView,
 		ButtonLink,
 	},
-	emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToCreateOTP'],
+	emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToSetupPayment'],
 	props: ['color', 'infoMessage'],
 	setup(props, ctx)
 	{
@@ -146,6 +146,7 @@ export default defineComponent({
 					{
 						stores.popupStore.hideLoadingIndicator();
 						masterKeyField.value?.invalidate("Master Key is incorrect");
+						resetToDefault();
 
 						return;
 					}
@@ -154,7 +155,7 @@ export default defineComponent({
 					if (!stores.passwordStore.hasVaulticPassword)
 					{
 						didFailedAutoLogin();
-						stores.passwordStore.resetToDefault();
+						resetToDefault();
 
 						return;
 					}
@@ -246,7 +247,7 @@ export default defineComponent({
 			else if (response.InvalidMasterKey)
 			{
 				masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
-				stores.passwordStore.resetToDefault();
+				resetToDefault();
 			}
 			else if (response.UnknownEmail)
 			{
@@ -259,21 +260,27 @@ export default defineComponent({
 					emailField.value?.invalidate("Incorrect Email. Please try again");
 				}
 
-				stores.passwordStore.resetToDefault();
+				resetToDefault();
 			}
-			else if (response.LicenseStatus && response.LicenseStatus != 1)
+			else if (response.licenseStatus != undefined && response.licenseStatus != 1)
 			{
-				// TODO move to setup payment page
+				ctx.emit('onMoveToSetupPayment');
 			}
-			else if (response.UnknownError)
+			else if (response.unknownError)
 			{
 				stores.popupStore.showErrorResponseAlert(response);
-				stores.passwordStore.resetToDefault();
+				resetToDefault();
 			}
 			else if (response.InvalidSession)
 			{
 				stores.popupStore.showSessionExpired();
 			}
+		}
+
+		async function resetToDefault()
+		{
+			stores.appStore.resetToDefault();
+			stores.passwordStore.resetToDefault();
 		}
 
 		function navigateLeft()

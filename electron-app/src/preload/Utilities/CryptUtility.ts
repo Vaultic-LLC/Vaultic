@@ -3,19 +3,19 @@ import hashUtility from "./HashUtility";
 import vaulticServer from "../Objects/Server/VaulticServer";
 import { HybridEncrypionResponse, MethodResponse } from "../Types/MethodResponse";
 import generatorUtility from "./Generator";
+import { EncryptedResponse } from "../Types/Responses";
 
 export interface CryptUtility
 {
 	encrypt: (key: string, value: string) => Promise<MethodResponse>;
 	decrypt: (key: string, value: string) => Promise<MethodResponse>;
-	hybridEncrypt: (value: string) => Promise<HybridEncrypionResponse>;
+	hybridEncrypt: (publicKey: string, value: string) => Promise<HybridEncrypionResponse>;
+	hybridDecrypt: (privateKey: string, encryptedResponse: EncryptedResponse) => Promise<MethodResponse>;
 }
 
 const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
-
-const hybridPublicKey = "-----BEGIN RSA PUBLIC KEY-----\nMIGJAoGBAMPwTRPvAQvVYDtB3s6e2eiyjz6jw3sLrzwPLm8tZujCB77KuGi6Uqyq\nuWpUYFGHt8UzDYRiUI4Cztzpeq/KJWLA9Vr4lIUt7Ro9YkzrYRgXJlmkxX3i8gho\nlyNdbwlJ3HFf8h2BCcUYIq9Vpb2aLzaK5JIWDpucOKCVgMCdjJpBAgMBAAE=\n-----END RSA PUBLIC KEY-----";
 
 async function encrypt(key: string, value: string): Promise<MethodResponse>
 {
@@ -50,6 +50,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 
 async function decrypt(key: string, value: string): Promise<MethodResponse>
 {
+	let errorMessage: string = "";
 	try
 	{
 		const cipher: Buffer = Buffer.from(value, "base64");
@@ -72,13 +73,20 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 	catch (e: any)
 	{
 		// don't want to log here since everytime a user enters the wrong key an exception is thrown
+		if (e?.error instanceof Error)
+		{
+			const error: Error = e?.error as Error;
+			errorMessage = error.message;
+		}
 	}
 
-	return { success: false };
+	return { success: false, errorMessage: errorMessage };
 }
 
-async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
+async function hybridEncrypt(publicKey: string, value: string): Promise<HybridEncrypionResponse>
 {
+	let logID: number | undefined;
+
 	try
 	{
 		const aesKey = generatorUtility.randomValueOfByteLength(32);
@@ -89,24 +97,73 @@ async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
 		}
 
 		const keyBytes = Buffer.from(aesKey);
-		const encryptedKey = crypto.publicEncrypt(hybridPublicKey, keyBytes).toString("base64");
+		const encryptedKey = crypto.publicEncrypt(publicKey, keyBytes).toString("base64");
 
 		return { success: true, key: encryptedKey, value: aesResult.value };
 	}
-	catch (e)
+	catch (e: any)
 	{
-		console.log(value);
-		console.log(e);
+		if (e?.error instanceof Error)
+		{
+			const error: Error = e?.error as Error;
+			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
+			if (response.success)
+			{
+				logID = response.LogID;
+			}
+		}
 	}
 
-	return { success: false }
+	return { success: false, logID: logID }
+}
+
+async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<MethodResponse>
+{
+	let logID: number | undefined;
+
+	try
+	{
+		const encryptedSymmetricKey = Buffer.from(encryptedResponse.key!, "base64");
+		const symmetricKey = crypto.privateDecrypt({
+			key: privateKey,
+			padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+		}, encryptedSymmetricKey).toString("ascii");
+
+		const response = await decrypt(symmetricKey, encryptedResponse.data!);
+		if (!response.success)
+		{
+			const logResponse = await vaulticServer.app.log(response.errorMessage ?? "Error while decrypting",
+				"CryptUtility.HybridDecrypt");
+			if (logResponse.success)
+			{
+				logID = logResponse.LogID;
+			}
+		}
+
+		return response;
+	}
+	catch (e: any)
+	{
+		if (e?.error instanceof Error)
+		{
+			const error: Error = e?.error as Error;
+			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
+			if (response.success)
+			{
+				logID = response.LogID;
+			}
+		}
+	}
+
+	return { success: false, logID: logID }
 }
 
 const cryptUtility: CryptUtility =
 {
 	encrypt,
 	decrypt,
-	hybridEncrypt
+	hybridEncrypt,
+	hybridDecrypt
 };
 
 export default cryptUtility;

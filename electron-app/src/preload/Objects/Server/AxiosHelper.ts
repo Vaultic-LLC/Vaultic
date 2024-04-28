@@ -1,18 +1,16 @@
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getDeviceInfo } from '../DeviceInfo';
-import { BaseResponse } from '../../Types/Responses';
+import { BaseResponse, EncryptedResponse } from '../../Types/Responses';
 import cryptUtility from '../../Utilities/CryptUtility';
 import { MethodResponse } from '../../Types/MethodResponse';
 import { Session } from '../../Types/Session';
+import { AxiosHelper, EncryptedRequest } from '../../Types/ServerTypes';
+import vaulticServer from './VaulticServer';
+import generatorUtility from '../../Utilities/Generator';
 
-export interface AxiosHelper
-{
-	instance: AxiosInstance;
-	post: <T extends BaseResponse>(serverPath: string, data: any) => Promise<T | BaseResponse>;
-	get: <T extends BaseResponse>(serverPath: string) => Promise<T | BaseResponse>;
-}
-
+let requestCallStackDepth: number = 0;
 let currentSession: Session;
+let vaulticPublicKey: string;
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
@@ -34,49 +32,77 @@ async function getAPIKey()
 	return encrypt.value ?? "";
 }
 
-async function post<T extends BaseResponse>(serverPath: string, data: any): Promise<T | BaseResponse>
+async function getVaulticPublicKey()
 {
+	const apiKey = await getAPIKey();
+	const response = await axiosInstance.post("App/GetVaulticPublicKey", {
+		APIKey: apiKey
+	});
+
+	if (!response.data.success)
+	{
+		return false;
+	}
+
+	if ("vaulticPublicKey" in response.data)
+	{
+		vaulticPublicKey = response.data.vaulticPublicKey;
+		return true;
+	}
+
+	return false;
+}
+
+async function post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
+{
+	if (!vaulticPublicKey && !(await getVaulticPublicKey()))
+	{
+		return { success: false, unknownError: true, logID: -102 };
+	}
+
+	requestCallStackDepth += 1;
 	try
 	{
-		const requestData = await getRequestData(data);
-		const response = await axiosInstance.post(serverPath, requestData);
+		// we are startin to form a (probably) infinte loop of failed requests (probably due to failing to log), stop it
+		if (requestCallStackDepth > 2)
+		{
+			return { success: false, unknownError: true, logID: -101 };
+		}
 
-		handleResponse<T>(response.data);
-		return response.data;
+		const responseKeys = generatorUtility.publicPrivateKey();
+		const requestData = await getRequestData(responseKeys.publicKey, data);
+		if (!requestData[0].success)
+		{
+			requestCallStackDepth -= 1;
+			return { success: false, unknownError: true, logID: requestData[0].logID };
+		}
+
+		const response = await axiosInstance.post(serverPath, requestData[1]);
+
+		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
+		if (!responseResult[0].success)
+		{
+			requestCallStackDepth -= 1;
+			return { success: false, unknownError: true, logID: responseResult[0].logID };
+		}
+
+		requestCallStackDepth -= 1;
+		return responseResult[1];
 	}
 	catch (e)
 	{
 		if (e instanceof AxiosError)
 		{
-			return { success: false, UnknownError: true, StatusCode: e.status, AxiosCode: e.code };
+			requestCallStackDepth -= 1;
+			return { success: false, unknownError: true, statusCode: e.status, axiosCode: e.code };
 		}
 	}
 
-	return { success: false, UnknownError: true };
+	requestCallStackDepth -= 1;
+	return { success: false, unknownError: true };
 }
 
-async function get<T extends BaseResponse>(serverPath: string): Promise<T | BaseResponse>
-{
-	try
-	{
-		const requestData = await getRequestData({});
-		const response = await axiosInstance.post(serverPath, requestData);
-
-		handleResponse<T>(response.data);
-		return response.data;
-	}
-	catch (e)
-	{
-		if (e instanceof AxiosError)
-		{
-			return { success: false, UnknownError: true, StatusCode: e.status, AxiosCode: e.code };
-		}
-	}
-
-	return { success: false, UnknownError: true };
-}
-
-async function getRequestData(data: any)
+async function getRequestData(publicKey: string, data: any): Promise<[MethodResponse, EncryptedRequest]>
 {
 	let newData = data;
 	try
@@ -86,42 +112,66 @@ async function getRequestData(data: any)
 			newData = JSON.parse(data);
 		}
 	}
-	catch (e)
+	catch (e: any)
 	{
-
+		if (e?.error instanceof Error)
+		{
+			const error: Error = e?.error as Error;
+			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
+			if (response.success)
+			{
+				return [{ success: false, logID: response.logID }, { Key: '', Data: '' }]
+			}
+		}
 	}
 
+	newData.ResponsePublicKey = publicKey;
 	newData.Session = currentSession;
 	newData.APIKey = await getAPIKey();
 	newData.MacAddress = deviceInfo.mac;
 	newData.DeviceName = deviceInfo.deviceName;
 
-	const encryptedData = await cryptUtility.hybridEncrypt(JSON.stringify(newData));
+	const encryptedData = await cryptUtility.hybridEncrypt(vaulticPublicKey, JSON.stringify(newData));
 	if (!encryptedData.success)
 	{
-		// handle
+		return [encryptedData, { Key: '', Data: '' }]
 	}
 
-	return { Key: encryptedData.key, Data: encryptedData.value };
+	return [{ success: true }, { Key: encryptedData.key!, Data: encryptedData.value! }];
 }
 
-function handleResponse<T extends BaseResponse>(response: T)
+async function handleResponse<T extends BaseResponse>(privateKey: string, response: any): Promise<[MethodResponse, T]>
 {
-	if ('session' in response)
+	let responseData: T = {} as T;
+	if ('key' in response && 'data' in response)
 	{
-		const session: Session = response.session as Session;
+		const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
+		const decryptedResponse = await cryptUtility.hybridDecrypt(privateKey, encryptedResponse);
+
+		if (!decryptedResponse.success)
+		{
+			return [decryptedResponse, responseData];
+		}
+
+		responseData = JSON.parse(decryptedResponse.value!) as T;
+	}
+
+	if ('session' in responseData)
+	{
+		const session: Session = responseData.session as Session;
 		if (session.id && session.token)
 		{
 			currentSession = session;
 		}
 	}
+
+	return [{ success: true }, responseData];
 }
 
 const axiosHelper: AxiosHelper =
 {
 	instance: axiosInstance,
-	post,
-	get
+	post
 }
 
 export default axiosHelper;

@@ -81,7 +81,7 @@ async function loadBackupData(key: string)
 			{
 				stores.popupStore.showIncorrectDevice(response);
 			}
-			else if (response.UnknownError)
+			else if (response.unknownError)
 			{
 				stores.popupStore.showErrorResponseAlert(response)
 			}
@@ -126,7 +126,7 @@ async function checkUpdateStoresWithBackup(key: string, userDataResponse: any, o
 		if (userDataResponse.userPreferenceStoreState)
 		{
 			const userPreferenceState = JSON.parse(userDataResponse.userPreferenceStoreState) as UserPreferencesStoreState;
-			if (overrideVersionCheck || userPreferenceState.version > stores.userPreferenceStore.getState().version)
+			if (overrideVersionCheck || userPreferenceState.version > stores.userPreferenceStore.getVersion())
 			{
 				stores.userPreferenceStore.updateState(key, userPreferenceState);
 			}
@@ -142,7 +142,7 @@ async function checkUpdateStoresWithBackup(key: string, userDataResponse: any, o
 		{
 			stores.popupStore.showIncorrectDevice(userDataResponse);
 		}
-		else if (userDataResponse.UnknownError)
+		else if (userDataResponse.unknownError)
 		{
 			stores.popupStore.showErrorResponseAlert(userDataResponse)
 		}
@@ -155,7 +155,7 @@ async function checkUpdateEncryptedStore<T extends Store<U>, U extends StoreStat
 	if (state.success)
 	{
 		const parsedState = JSON.parse(state.value!) as U;
-		if (overrideVersionCheck || parsedState.version > store.getState().version)
+		if (overrideVersionCheck || parsedState.version > store.getVersion())
 		{
 			store.updateState(key, parsedState);
 		}
@@ -199,9 +199,9 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 	}
 	else if (!suppressError)
 	{
-		if (response.UnknownError)
+		if (response.unknownError)
 		{
-			stores.popupStore.showErrorResponseAlert(response.StatusCode);
+			stores.popupStore.showErrorResponseAlert(response.statusCode);
 		}
 		else if (response.InvalidSession)
 		{

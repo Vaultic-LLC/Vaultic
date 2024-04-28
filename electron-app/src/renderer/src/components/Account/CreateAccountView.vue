@@ -74,7 +74,7 @@ export default defineComponent({
 			}
 			else
 			{
-				if (response.UnknownError)
+				if (response.unknownError)
 				{
 					stores.popupStore.showErrorResponseAlert(response);
 					return;

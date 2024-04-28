@@ -86,8 +86,8 @@ export default function createPopupStore()
 		alertMessage.value = undefined;
 
 		showContactSupport.value = true;
-		statusCode.value = response?.StatusCode;
-		axiosCode.value = response?.AxiosCode;
+		statusCode.value = response?.statusCode;
+		axiosCode.value = response?.axiosCode;
 		alertIsShowing.value = true;
 	}
 
