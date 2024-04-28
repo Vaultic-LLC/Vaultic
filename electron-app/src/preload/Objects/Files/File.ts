@@ -182,7 +182,7 @@ export default function useFile(name: string): File
 			{
 				const error: Error = e?.error as Error;
 				const response = await vaulticServer.app.log(error.message, "File.Write");
-				if (response.success)
+				if (response.Success)
 				{
 					logID = response.LogID;
 				}
@@ -229,7 +229,7 @@ export default function useFile(name: string): File
 			{
 				const error: Error = e?.error as Error;
 				const response = await vaulticServer.app.log(error.message, "File.Read");
-				if (response.success)
+				if (response.Success)
 				{
 					logID = response.LogID;
 				}

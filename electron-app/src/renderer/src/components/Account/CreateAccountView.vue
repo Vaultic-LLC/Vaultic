@@ -68,7 +68,7 @@ export default defineComponent({
 			const response = await window.api.server.session.validateEmail(email.value);
 			stores.popupStore.hideLoadingIndicator();
 
-			if (response.success)
+			if (response.Success)
 			{
 				ctx.emit('onSuccess', firstName.value, lastName.value, email.value);
 			}

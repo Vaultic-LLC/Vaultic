@@ -8,23 +8,28 @@
 					</h3>
 					<div class="paymentInfoView__features">
 						<div class="paymentInfoView__feature">
-							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
+								:minHeight="'10px'" />
 							<div>Tracking of Breached Passwords</div>
 						</div>
 						<div class="paymentInfoView__feature">
-							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
+								:minHeight="'10px'" />
 							<div>Adding Passwords / Values</div>
 						</div>
 						<div class="paymentInfoView__feature">
-							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
+								:minHeight="'10px'" />
 							<div>Updating Passwords / Values</div>
 						</div>
 						<div class="paymentInfoView__feature">
-							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
+								:minHeight="'10px'" />
 							<div>Deleting Passwords / Values</div>
 						</div>
 						<div class="paymentInfoView__feature">
-							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" />
+							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
+								:minHeight="'10px'" />
 							<div>Premium Widgets</div>
 						</div>
 					</div>
@@ -73,16 +78,18 @@ export default defineComponent({
 
 		onMounted(async () =>
 		{
-			const response = await window.api.server.user.createCheckout();
-			stores.popupStore.hideLoadingIndicator();
 
-			if (response.success)
+			const response = await window.api.server.user.createCheckout();
+
+			if (response.Success)
 			{
-				alreadyCreated.value = response.alreadyCreated;
-				url.value = response.url;
+				alreadyCreated.value = response.AlreadyCreated;
+				url.value = response.Url;
+				stores.popupStore.hideLoadingIndicator();
 			}
 			else
 			{
+				stores.popupStore.hideLoadingIndicator();
 				if (response.InvalidSession)
 				{
 					stores.popupStore.showSessionExpired();
@@ -109,8 +116,8 @@ export default defineComponent({
 </script>
 
 <style>
-.paymentInfoView__content {
-	margin-bottom: 30%;
+.paymentInfoView {
+	height: 100%;
 }
 
 .paymentInfoView__content__header {
@@ -121,9 +128,7 @@ export default defineComponent({
 	color: white;
 	display: flex;
 	flex-direction: column;
-	row-gap: 10px;
-	/* width: 50%;
-	margin: auto; */
+	row-gap: 1.5vh;
 }
 
 .paymentInfoView__feature {

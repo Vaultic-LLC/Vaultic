@@ -123,7 +123,7 @@ export default defineComponent({
 
 			stores.popupStore.showLoadingIndicator(props.color);
 			const response = await window.api.server.session.createAccount(JSON.stringify(data));
-			if (response.success)
+			if (response.Success)
 			{
 				await stores.appStore.setKey(key.value);
 				await stores.handleUpdateStoreResponse(key.value, response);

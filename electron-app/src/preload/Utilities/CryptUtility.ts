@@ -40,7 +40,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 		{
 			const error: Error = e?.error as Error;
 			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
-			if (response.success)
+			if (response.Success)
 			{
 				logID = response.LogID;
 			}
@@ -109,7 +109,7 @@ async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
 		{
 			const error: Error = e?.error as Error;
 			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
-			if (response.success)
+			if (response.Success)
 			{
 				logID = response.LogID;
 			}
@@ -136,7 +136,7 @@ async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedRes
 		{
 			const logResponse = await vaulticServer.app.log(response.errorMessage ?? "Error while decrypting",
 				"CryptUtility.HybridDecrypt");
-			if (logResponse.success)
+			if (logResponse.Success)
 			{
 				logID = logResponse.LogID;
 			}
@@ -150,7 +150,7 @@ async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedRes
 		{
 			const error: Error = e?.error as Error;
 			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
-			if (response.success)
+			if (response.Success)
 			{
 				logID = response.LogID;
 			}

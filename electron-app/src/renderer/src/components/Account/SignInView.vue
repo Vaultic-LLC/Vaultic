@@ -163,7 +163,7 @@ export default defineComponent({
 					const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
 					const response = await window.api.server.session.validateEmailAndMasterKey(password.email, masterKey.value);
 
-					if (response.success)
+					if (response.Success)
 					{
 						await stores.loadStoreData(masterKey.value);
 						ctx.emit('onKeySuccess');
@@ -177,7 +177,7 @@ export default defineComponent({
 			else
 			{
 				const response = await window.api.server.session.validateEmailAndMasterKey(email.value, masterKey.value);
-				if (response.success)
+				if (response.Success)
 				{
 					await overrideUserData();
 					ctx.emit('onKeySuccess');
@@ -192,7 +192,7 @@ export default defineComponent({
 		async function overrideUserData()
 		{
 			const response = await window.api.server.user.getUserData();
-			if (response.success)
+			if (response.Success)
 			{
 				if (!(await stores.appStore.canAuthenticateKey()))
 				{
@@ -238,19 +238,22 @@ export default defineComponent({
 
 		function handleFailedResponse(response: any)
 		{
-			stores.popupStore.hideLoadingIndicator();
-
 			if (response.IncorrectDevice)
 			{
+				stores.popupStore.hideLoadingIndicator();
 				stores.popupStore.showIncorrectDevice(response);
 			}
 			else if (response.InvalidMasterKey)
 			{
+				stores.popupStore.hideLoadingIndicator();
+
 				masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
 				resetToDefault();
 			}
 			else if (response.UnknownEmail)
 			{
+				stores.popupStore.hideLoadingIndicator();
+
 				if (!showEmailField.value)
 				{
 					showEmailField.value = true;
@@ -262,17 +265,20 @@ export default defineComponent({
 
 				resetToDefault();
 			}
-			else if (response.licenseStatus != undefined && response.licenseStatus != 1)
+			else if (response.LicenseStatus != undefined && response.LicenseStatus != 1)
 			{
 				ctx.emit('onMoveToSetupPayment');
 			}
 			else if (response.unknownError)
 			{
+				stores.popupStore.hideLoadingIndicator();
+
 				stores.popupStore.showErrorResponseAlert(response);
 				resetToDefault();
 			}
 			else if (response.InvalidSession)
 			{
+				stores.popupStore.hideLoadingIndicator();
 				stores.popupStore.showSessionExpired();
 			}
 		}

@@ -67,7 +67,7 @@ async function loadBackupData(key: string)
 	if (stores.appStore.isOnline)
 	{
 		const response = await window.api.server.user.getUserData();
-		if (response.success)
+		if (response.Success)
 		{
 			await checkUpdateStoresWithBackup(key, response);
 		}

@@ -10,7 +10,7 @@ export interface EncryptedResponse
 
 export interface BaseResponse
 {
-	success: boolean;
+	Success: boolean;
 	unknownError?: boolean;
 	logID?: number;
 	statusCode?: number;
@@ -96,6 +96,6 @@ export interface UpdateDeviceRespnose extends InvalidSessionResponse
 
 export interface CreateCheckoutResponse extends UserSessionAndDeviceAuthenticationRespons
 {
-	alreadyCreated?: boolean;
-	url?: string;
+	AlreadyCreated?: boolean;
+	Url?: string;
 }

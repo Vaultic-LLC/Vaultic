@@ -11,7 +11,7 @@ export enum LicenseStatus
 
 export interface BaseResponse
 {
-	success: boolean;
+	Success: boolean;
 	unknownError?: boolean;
 	logID?: number;
 	statusCode?: number;

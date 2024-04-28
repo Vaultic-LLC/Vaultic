@@ -22,6 +22,8 @@ const axiosInstance = axios.create({
 	timeout: 120000
 });
 
+const responseKeys = generatorUtility.publicPrivateKey();
+
 async function getAPIKey()
 {
 	const date = new Date();
@@ -39,24 +41,24 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		// we are startin to form a (probably) infinte loop of failed requests (probably due to failing to log), stop it
 		if (requestCallStackDepth > 2)
 		{
-			return { success: false, unknownError: true, logID: -101 };
+			return { Success: false, unknownError: true, logID: -101 };
 		}
 
-		const responseKeys = generatorUtility.publicPrivateKey();
 		const requestData = await getRequestData(responseKeys.publicKey, data);
+
 		if (!requestData[0].success)
 		{
 			requestCallStackDepth -= 1;
-			return { success: false, unknownError: true, logID: requestData[0].logID };
+			return { Success: false, unknownError: true, logID: requestData[0].logID };
 		}
 
 		const response = await axiosInstance.post(serverPath, requestData[1]);
-
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
+
 		if (!responseResult[0].success)
 		{
 			requestCallStackDepth -= 1;
-			return { success: false, unknownError: true, logID: responseResult[0].logID };
+			return { Success: false, unknownError: true, logID: responseResult[0].logID };
 		}
 
 		requestCallStackDepth -= 1;
@@ -67,17 +69,18 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		if (e instanceof AxiosError)
 		{
 			requestCallStackDepth -= 1;
-			return { success: false, unknownError: true, statusCode: e.status, axiosCode: e.code };
+			return { Success: false, unknownError: true, statusCode: e.status, axiosCode: e.code };
 		}
 	}
 
 	requestCallStackDepth -= 1;
-	return { success: false, unknownError: true };
+	return { Success: false, unknownError: true };
 }
 
 async function getRequestData(publicKey: string, data: any): Promise<[MethodResponse, EncryptedRequest]>
 {
-	let newData = data;
+	let newData = data ?? {};
+
 	try
 	{
 		if (typeof data === 'string')
@@ -91,7 +94,7 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 		{
 			const error: Error = e?.error as Error;
 			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
-			if (response.success)
+			if (response.Success)
 			{
 				return [{ success: false, logID: response.logID }, { Key: '', Data: '' }]
 			}
@@ -129,10 +132,12 @@ async function handleResponse<T extends BaseResponse>(privateKey: string, respon
 		responseData = JSON.parse(decryptedResponse.value!) as T;
 	}
 
-	if ('session' in responseData)
+	console.log(responseData);
+
+	if ('Session' in responseData)
 	{
-		const session: Session = responseData.session as Session;
-		if (session.id && session.token)
+		const session: Session = responseData.Session as Session;
+		if (session.ID && session.Token)
 		{
 			currentSession = session;
 		}
