@@ -41,7 +41,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		// we are startin to form a (probably) infinte loop of failed requests (probably due to failing to log), stop it
 		if (requestCallStackDepth > 2)
 		{
-			return { Success: false, unknownError: true, logID: -101 };
+			return { Success: false, UnknownError: true, logID: -101 };
 		}
 
 		const requestData = await getRequestData(responseKeys.publicKey, data);
@@ -49,7 +49,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		if (!requestData[0].success)
 		{
 			requestCallStackDepth -= 1;
-			return { Success: false, unknownError: true, logID: requestData[0].logID };
+			return { Success: false, UnknownError: true, logID: requestData[0].logID };
 		}
 
 		const response = await axiosInstance.post(serverPath, requestData[1]);
@@ -58,7 +58,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		if (!responseResult[0].success)
 		{
 			requestCallStackDepth -= 1;
-			return { Success: false, unknownError: true, logID: responseResult[0].logID };
+			return { Success: false, UnknownError: true, logID: responseResult[0].logID };
 		}
 
 		requestCallStackDepth -= 1;
@@ -69,12 +69,12 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		if (e instanceof AxiosError)
 		{
 			requestCallStackDepth -= 1;
-			return { Success: false, unknownError: true, statusCode: e.status, axiosCode: e.code };
+			return { Success: false, UnknownError: true, statusCode: e.status, axiosCode: e.code };
 		}
 	}
 
 	requestCallStackDepth -= 1;
-	return { Success: false, unknownError: true };
+	return { Success: false, UnknownError: true };
 }
 
 async function getRequestData(publicKey: string, data: any): Promise<[MethodResponse, EncryptedRequest]>

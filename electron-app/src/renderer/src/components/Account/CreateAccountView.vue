@@ -1,7 +1,7 @@
 <template>
 	<div class="createAccountViewContainer">
 		<AccountSetupView :color="color" :title="'Create Account'" :buttonText="'Create'" :displayGrid="false"
-			@onSubmit="createAccount">
+			:titleMargin="'3%'" :titleMarginTop="'1.5%'" @onSubmit="createAccount">
 			<Transition name="fade" mode="out-in">
 				<div :key="refreshKey" class="createAccountViewContainer__content">
 					<div class="createAccountViewContainer__inputs">
@@ -11,6 +11,9 @@
 							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 						<TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email" :width="'80%'"
 							:maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :isEmailField="true" />
+						<TextInputField ref="emailField" :color="color" :label="'Confirm Email'" v-model="reEnterEmail"
+							:width="'80%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :isEmailField="true"
+							:additionalValidationFunction="emailsMatch" />
 					</div>
 				</div>
 			</Transition>
@@ -48,6 +51,7 @@ export default defineComponent({
 		const firstName: Ref<string> = ref(props.account.firstName);
 		const lastName: Ref<string> = ref(props.account.lastName);
 		const email: Ref<string> = ref(props.account.email);
+		const reEnterEmail: Ref<string> = ref('');
 
 		const alertMessage: Ref<string> = ref('');
 
@@ -74,24 +78,30 @@ export default defineComponent({
 			}
 			else
 			{
-				if (response.unknownError)
+				if (response.UnknownError)
 				{
 					stores.popupStore.showErrorResponseAlert(response);
 					return;
 				}
 
-				if (response.deviceIsTaken)
+				if (response.DeviceIsTaken)
 				{
 					showAlertMessage();
 					return;
 				}
 
-				if (response.emailIsTaken)
+				if (response.EmailIsTaken)
 				{
 					emailField.value?.invalidate("Email is already in use. Please use a different one");
 				}
 			}
 		}
+
+		function emailsMatch()
+		{
+			return [email.value === reEnterEmail.value, "Email does not match"];
+		}
+
 		return {
 			refreshKey,
 			firstName,
@@ -100,7 +110,9 @@ export default defineComponent({
 			colorModel,
 			emailField,
 			alertMessage,
-			createAccount
+			reEnterEmail,
+			createAccount,
+			emailsMatch
 		};
 	}
 })
@@ -129,7 +141,7 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	flex-direction: column;
-	row-gap: 30px;
+	row-gap: clamp(20px, 2vh, 30px);
 	width: 100%;
 }
 

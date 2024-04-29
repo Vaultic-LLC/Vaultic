@@ -11,7 +11,7 @@ export interface EncryptedResponse
 export interface BaseResponse
 {
 	Success: boolean;
-	unknownError?: boolean;
+	UnknownError?: boolean;
 	logID?: number;
 	statusCode?: number;
 	axiosCode?: string;
@@ -38,8 +38,8 @@ interface LicenseResponse
 
 export interface ValidateEmailResponse extends BaseResponse
 {
-	emailIsTaken?: boolean;
-	deviceIsTaken?: boolean;
+	EmailIsTaken?: boolean;
+	DeviceIsTaken?: boolean;
 }
 
 export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, DataStoreResponse

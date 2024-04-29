@@ -12,7 +12,7 @@
 		</div>
 		<div class="accountSetupViewContainer__footer">
 			<PopupButton :color="color" :disabled="disabled" :text="buttonText" :width="'7vw'" :minWidth="'75px'"
-				:maxWidth="'150px'" :height="'4.5vh'" :minHeight="'30px'" :maxHeight="'45px'" :fontSize="'1.2vw'"
+				:maxWidth="'150px'" :height="'4vh'" :minHeight="'30px'" :maxHeight="'45px'" :fontSize="'1.2vw'"
 				:minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSubmit">
 			</PopupButton>
 			<slot name="footer"></slot>

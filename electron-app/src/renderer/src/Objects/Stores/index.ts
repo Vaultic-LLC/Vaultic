@@ -81,7 +81,7 @@ async function loadBackupData(key: string)
 			{
 				stores.popupStore.showIncorrectDevice(response);
 			}
-			else if (response.unknownError)
+			else if (response.UnknownError)
 			{
 				stores.popupStore.showErrorResponseAlert(response)
 			}

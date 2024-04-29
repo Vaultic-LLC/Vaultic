@@ -133,17 +133,17 @@ export default defineComponent({
 			else
 			{
 				stores.popupStore.hideLoadingIndicator();
-				if (response.deviceIsTaken)
+				if (response.DeviceIsTaken)
 				{
 					showAlertMessage("There is already an account associated with this device. Please sign in using that account");
 					return;
 				}
 
-				if (response.emailIsTaken)
+				if (response.EmailIsTaken)
 				{
 					showAlertMessage("Email is already in use. Please use a different one");
 				}
-				else if (response.unknownError)
+				else if (response.UnknownError)
 				{
 					stores.popupStore.showErrorResponseAlert(response);
 				}
