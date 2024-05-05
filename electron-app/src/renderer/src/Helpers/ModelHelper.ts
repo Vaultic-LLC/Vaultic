@@ -169,7 +169,10 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 				(isGroup && stores.userPreferenceStore.pinnedGroups.hasOwnProperty(v.id))),
 			isActive: ref(v[isActiveProp] ?? false),
 			values: getValues(v),
-			atRiskMessage: message,
+			atRiskModel:
+			{
+				message: message ?? "",
+			},
 			onClick: function ()
 			{
 				if (onClick)
@@ -306,6 +309,18 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 					addAtRiskValues("This Password contains its Username", stores.passwordStore.passwords.filter(pw => pw.id == p)[0]);
 				});
 				break;
+			case AtRiskType.Breached:
+				stores.passwordStore.breachedPasswords.forEach(p =>
+				{
+					const onClick = () =>
+					{
+						stores.popupStore.showBreachedPasswordPopup(p);
+					};
+
+					addAtRiskValues("This domain had a data breach. Click to learn more!",
+						stores.passwordStore.passwords.filter(pw => pw.id == p)[0], onClick);
+				});
+				break;
 		}
 	}
 	else if (isValue)
@@ -345,15 +360,15 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 
 	collapsibleTableRowModels.value.setValues(temp);
 
-	function addAtRiskValues<U extends IIdentifiable>(message: string, value: U)
+	function addAtRiskValues<U extends IIdentifiable>(message: string, value: U, onClick?: () => void)
 	{
 		pinnedCollection.remove(value.id);
 		sortedCollection.remove(value.id);
 
-		temp.push(buildModel(value as any as T, message))
+		temp.push(buildModel(value as any as T, message, onClick))
 	}
 
-	function buildModel(v: T, atRiskMessage?: string): CollapsibleTableRowModel
+	function buildModel(v: T, atRiskMessage?: string, onAtRiskClicked?: () => void): CollapsibleTableRowModel
 	{
 		return {
 			id: uuidv4(),
@@ -361,7 +376,11 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 				(isValue && stores.userPreferenceStore.pinnedValues.hasOwnProperty(v.id))),
 			data: v,
 			values: getValues(v),
-			atRiskMessage: atRiskMessage,
+			atRiskModel:
+			{
+				message: atRiskMessage ?? "",
+				onClick: onAtRiskClicked
+			},
 			onEdit: function ()
 			{
 				onEdit(v);
@@ -435,15 +454,15 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 
 				collapsibleTableRowModels.value.visualValues.sort((a, b) =>
 				{
-					if (a.atRiskMessage != undefined && b.atRiskMessage != undefined)
+					if (a.atRiskModel != undefined && b.atRiskModel != undefined)
 					{
 						return collapsibleTableRowModels.value.visualValues.indexOf(a) >= collapsibleTableRowModels.value.visualValues.indexOf(b) ? 1 : -1;
 					}
-					else if (a.atRiskMessage != undefined)
+					else if (a.atRiskModel != undefined)
 					{
 						return -1;
 					}
-					else if (b.atRiskMessage != undefined)
+					else if (b.atRiskModel != undefined)
 					{
 						return 1;
 					}

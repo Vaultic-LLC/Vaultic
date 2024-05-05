@@ -108,6 +108,7 @@ export default defineComponent({
 			{
 				return;
 			}
+
 			validationFunction?.value.push(validate);
 			tippyInstance = tippy(container.value, {
 				inertia: true,
@@ -187,7 +188,7 @@ export default defineComponent({
 
 .textInputFieldContainer .textInputFieldLable {
 	position: absolute;
-	left: 10px;
+	left: var(--input-label-left);
 	top: 50%;
 	color: v-bind(defaultInputTextColor);
 	pointer-events: none;
@@ -207,11 +208,11 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:valid~label,
 .textInputFieldContainer .textInputFieldInput:disabled~label {
 	top: 10%;
+	transform-origin: left;
 	transform: translateY(-80%) scale(0.8);
 	background-color: v-bind(labelBackgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
-	left: 10px;
 }
 
 .textInputFieldContainer__tooltipContainer {

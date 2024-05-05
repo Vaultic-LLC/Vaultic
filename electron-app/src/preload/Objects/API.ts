@@ -6,6 +6,7 @@ import generatorUtility, { GeneratorUtility } from '../Utilities/Generator';
 import files, { Files } from './Files/Files';
 import { DeviceInfo } from '../Types/Device';
 import vaulticServer, { VaulticServer } from "./Server/VaulticServer"
+import vaulticHelper, { VaulticHelper } from '../Helpers/VaulticHelper';
 
 export interface Utilities
 {
@@ -17,6 +18,7 @@ export interface Utilities
 export interface Helpers
 {
 	validation: ValidationHelper;
+	vaultic: VaulticHelper;
 }
 
 export interface API
@@ -30,17 +32,18 @@ export interface API
 
 const api: API = {
 	device: getDeviceInfo(),
-	server: vaulticServer,	// TODO: Is this needed? yes, but only certain endpoints. Don't expose the whole server if we don't need to
+	server: vaulticServer,
 	files: files,
 	utilities:
 	{
 		crypt: cryptUtility,
 		hash: hashUtility,
-		generator: generatorUtility
+		generator: generatorUtility,
 	},
 	helpers:
 	{
 		validation: validationHelper,
+		vaultic: vaulticHelper
 	}
 }
 

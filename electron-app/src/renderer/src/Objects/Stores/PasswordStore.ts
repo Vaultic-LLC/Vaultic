@@ -24,8 +24,9 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 	private internalUnpinnedPasswords: ComputedRef<ReactivePassword[]>;
 
 	private internalActiveAtRiskPasswordType: Ref<AtRiskType>;
-
 	private internalHasVaulticPassword: ComputedRef<boolean>;
+
+	private internalBreachedPasswords: ComputedRef<string[]>;
 
 	get passwords() { return this.state.values; }
 	get pinnedPasswords() { return this.internalPinnedPasswords.value; }
@@ -38,6 +39,7 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 	get currentAndSafePasswords() { return this.state.currentAndSafePasswords; }
 	get activeAtRiskPasswordType() { return this.internalActiveAtRiskPasswordType.value; }
 	get hasVaulticPassword() { return this.internalHasVaulticPassword.value; }
+	get breachedPasswords() { return this.internalBreachedPasswords.value; }
 
 	constructor()
 	{
@@ -54,8 +56,10 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
 
 		this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
-
 		this.internalHasVaulticPassword = computed(() => this.state.values.filter(p => p.isVaultic).length > 0);
+
+		this.internalBreachedPasswords = computed(() => !stores.userDataBreachStore.userDataBreaches ? [] :
+			this.state.values.filter(p => stores.userDataBreachStore.userDataBreaches.filter(b => b.PasswordID == p.id).length > 0).map(p => p.id));
 	}
 
 	protected defaultState()

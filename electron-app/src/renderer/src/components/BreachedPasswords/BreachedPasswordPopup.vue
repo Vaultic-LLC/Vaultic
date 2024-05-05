@@ -1,0 +1,223 @@
+<template>
+	<div class="breachedPasswordPopup">
+		<ObjectPopup :height="'35%'" :width="'20%'" :minHeight="'300px'" :minWidth="'230px'" :preventClose="false"
+			:showPulsing="false" :closePopup="closePopup">
+			<div class="breachedPasswordPopup__content">
+				<h2 class="breachedPasswordPopup__title">Breached Data</h2>
+				<div class="breachedPasswordPopup__infoRows">
+					<ul class="breachedPasswordPopup__infoRowsList">
+						<li class="breachedPasswordPopup__listRow">
+							<div class="breachedPasswordPopup__row">
+								<div class="breachedPasswordPopup__rowTitle">Domain:</div>
+								<div class="breachedPasswordPopup__rowValue">{{ password?.domain }}</div>
+							</div>
+						</li>
+						<li class="breachedPasswordPopup__listRow">
+							<div class="breachedPasswordPopup__row">
+								<div class="breachedPasswordPopup__rowTitle">Date:</div>
+								<div class="breachedPasswordPopup__rowValue">{{ dateString }}</div>
+							</div>
+						</li>
+						<li class="breachedPasswordPopup__listRow">
+							<div class="breachedPasswordPopup__row">
+								<div class="breachedPasswordPopup__rowTitle">Data:</div>
+								<div class="breachedPasswordPopup__rowValue">{{ userDataBreach?.BreachedDataTypes }}
+								</div>
+							</div>
+						</li>
+					</ul>
+				</div>
+				<ButtonLink :color="primaryColor" :text="'What to do after a data breach'"
+					:fontSize="'clamp(10px, 0.7vw, 20px)'" @onClick="whatToDoAfterADataBreach" />
+				<div class="breachedPasswordPopup__footer">
+					<div class="breachedPasswordPopup__dismissMessage">
+						Once all necessary precautions have been taken you can click 'Dismiss Breach'
+					</div>
+					<PopupButton :color="primaryColor" :fadeIn="false" :disabled="disabled" :text="'Dismiss Breach'"
+						:width="'7vw'" :minWidth="'100px'" :maxWidth="'175px'" :height="'4vh'" :minHeight="'30px'"
+						:maxHeight="'45px'" :fontSize="'0.8vw'" :minFontSize="'10px'" :maxFontSize="'20px'"
+						@onClick="onDismissBreach" />
+				</div>
+			</div>
+		</ObjectPopup>
+	</div>
+</template>
+
+<script lang="ts">
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
+
+import PopupButton from '../InputFields/PopupButton.vue';
+import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
+import ButtonLink from '../InputFields/ButtonLink.vue';
+
+import { stores } from '@renderer/Objects/Stores';
+import { UserDataBreach } from '@renderer/Types/SharedTypes';
+import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
+
+export default defineComponent({
+	name: "DeviceView",
+	components:
+	{
+		ObjectPopup,
+		PopupButton,
+		ButtonLink
+	},
+	emits: ['onClose'],
+	props: ['passwordID'],
+	setup(props, ctx)
+	{
+		const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+		const userDataBreach: Ref<UserDataBreach | undefined> = ref(undefined);
+		const password: Ref<ReactivePassword | undefined> = ref(undefined);
+		const disabled: Ref<boolean> = ref(false);
+		const dateString: Ref<string> = ref('');
+
+		function closePopup()
+		{
+			ctx.emit('onClose');
+		}
+
+		async function onDismissBreach()
+		{
+			stores.popupStore.showLoadingIndicator(primaryColor.value);
+			disabled.value = true;
+
+			const succeeded = await stores.userDataBreachStore.dismissUserDataBreach(userDataBreach.value?.UserDataBreachID!);
+			stores.popupStore.hideLoadingIndicator();
+
+			if (succeeded)
+			{
+				stores.popupStore.showToast(primaryColor.value, "Dismissed Breached", true);
+				ctx.emit('onClose');
+			}
+
+			disabled.value = false;
+		}
+
+		function whatToDoAfterADataBreach()
+		{
+			window.open('https://www.vaultic.org/post/what-to-do-after-a-data-breach');
+		}
+
+		onMounted(() =>
+		{
+			const dataBreach: UserDataBreach[] = stores.userDataBreachStore.userDataBreaches.filter(b => b.PasswordID == props.passwordID)
+			if (dataBreach.length == 1)
+			{
+				userDataBreach.value = dataBreach[0];
+				const dateBreached = new Date(userDataBreach.value.BreachedDate);
+				dateString.value = `${dateBreached.getUTCMonth() + 1}/${dateBreached.getUTCDay() + 1}/${dateBreached.getUTCFullYear()}`;
+			}
+
+			const passwords: ReactivePassword[] = stores.passwordStore.passwords.filter(p => p.id == props.passwordID);
+			if (passwords.length == 1)
+			{
+				password.value = passwords[0];
+			}
+		});
+
+		watch(() => stores.appStore.isOnline, (newValue) =>
+		{
+			if (!newValue)
+			{
+				ctx.emit('onClose');
+			}
+		});
+
+		return {
+			primaryColor,
+			userDataBreach,
+			password,
+			disabled,
+			dateString,
+			closePopup,
+			onDismissBreach,
+			whatToDoAfterADataBreach
+		}
+	}
+})
+</script>
+
+<style>
+.breachedPasswordPopup {
+	width: 100%;
+	height: 100%;
+	top: 0%;
+	position: fixed;
+	z-index: 5;
+}
+
+.breachedPasswordPopup__content {
+	color: white;
+	width: 80%;
+	margin: auto;
+	margin-top: 5%;
+	display: flex;
+	flex-direction: column;
+	height: 95%;
+	justify-content: center;
+	align-items: center;
+	row-gap: clamp(5px, 0.5vw, 15px);
+}
+
+.breachedPasswordPopup__title {
+	font-size: clamp(15px, 1.5vw, 25px);
+}
+
+.breachedPasswordPopup__infoRows {
+	display: flex;
+	flex-direction: column;
+}
+
+.breachedPasswordPopup__listRow {
+	margin: clamp(5px, 0.6vw, 15px) 0px;
+}
+
+.breachedPasswordPopup__listRow:first-child {
+	margin-top: 0;
+}
+
+.breachedPasswordPopup__listRow:last-child {
+	margin-bottom: 0;
+}
+
+.breachedPasswordPopup__infoRowsList {
+	padding: 0;
+	margin: 0;
+}
+
+.breachedPasswordPopup__row {
+	display: flex;
+	font-size: clamp(10px, 0.7vw, 20px);
+}
+
+.breachedPasswordPopup__rowTitle {
+	width: 30%;
+	text-align: left;
+}
+
+.breachedPasswordPopup__rowValue {
+	width: 70%;
+	text-align: left;
+}
+
+.breachedPasswordPopup__message {
+	width: 80%;
+	font-size: clamp(10px, 0.7vw, 20px);
+	font-weight: bold;
+}
+
+.breachedPasswordPopup__footer {
+	width: 95%;
+	font-size: clamp(10px, 0.7vw, 20px);
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	margin-bottom: 5%;
+	row-gap: clamp(5px, 0.2vw, 10px);
+}
+
+;
+</style>

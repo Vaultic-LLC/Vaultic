@@ -1,6 +1,6 @@
 import { LicenseStatus } from "../Objects/License"
 import { Device } from "./Device";
-import { Session } from "./Session";
+import { Session, UserDataBreach } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -98,4 +98,20 @@ export interface CreateCheckoutResponse extends UserSessionAndDeviceAuthenticati
 {
 	AlreadyCreated?: boolean;
 	Url?: string;
+}
+
+export interface GetUserDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResposne
+{
+	DataBreaches?: UserDataBreach[];
+}
+
+export interface GetUserDeactivationKeyResponse extends UseSessionLicenseAndDeviceAuthenticationResposne
+{
+	DeactivationKey?: string;
+}
+
+export interface DeactivateUserSubscriptionResponse extends BaseResponse
+{
+	UnknownEmail?: boolean;
+	IncorrectDeactivationKey?: boolean;
 }

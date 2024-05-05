@@ -7,8 +7,8 @@
 				</div>
 				<DeviceView :response="response" />
 				<div>
-					<PopupButton :color="color" :text="'Close'" :width="'150px'" :height="'40px'"
-						:fontSize="'18px'" @onClick="closePopup">
+					<PopupButton :color="color" :text="'Close'" :width="'150px'" :height="'40px'" :fontSize="'18px'"
+						@onClick="closePopup">
 					</PopupButton>
 				</div>
 			</div>
@@ -23,7 +23,7 @@ import DeviceView from './DevicesView.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 
-import { IncorrectDeviceResponse } from '@renderer/Types/AccountSetup';
+import { IncorrectDeviceResponse } from '@renderer/Types/SharedTypes';
 
 export default defineComponent({
 	name: "DeviceView",
@@ -53,3 +53,4 @@ export default defineComponent({
 </script>
 
 <style></style>
+@renderer/Types/SharedTypes

@@ -198,3 +198,4 @@ export default defineComponent({
 </script>
 
 <style></style>
+@renderer/Types/SharedTypes

@@ -1,9 +1,9 @@
 <template>
 	<div class="objectPopupContainer">
-		<div class="objectPopupGlass" @click.stop="closePopup">
+		<div class="objectPopupGlass" @click.stop="doClosePopup">
 		</div>
 		<div ref="objectPopup" class="objectyPopup">
-			<div v-if="!doPreventClose" class="closeIconContainer" @click.stop="closePopup">
+			<div v-if="!doPreventClose" class="closeIconContainer" @click.stop="doClosePopup">
 				<ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
 			</div>
 			<div class="objectyPopupContent">
@@ -133,7 +133,7 @@ export default defineComponent({
 			}).start();
 		}
 
-		function closePopup()
+		function doClosePopup()
 		{
 			if (doPreventClose.value)
 			{
@@ -223,7 +223,7 @@ export default defineComponent({
 			computedMinHeight,
 			computedMinWidth,
 			pulsingWidth,
-			closePopup,
+			doClosePopup,
 		};
 	}
 })

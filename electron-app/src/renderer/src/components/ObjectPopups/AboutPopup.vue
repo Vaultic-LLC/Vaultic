@@ -107,7 +107,7 @@ export default defineComponent({
 	{
 		const activeSection: Ref<number> = ref(0);
 		const scrollbarColor: Ref<string> = ref('#0f111d');
-		const thumbColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value)
+		const thumbColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
 
 		const featuresTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
 		{

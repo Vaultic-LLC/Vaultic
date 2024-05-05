@@ -54,7 +54,7 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 import { InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
-import { Account } from '@renderer/Types/AccountSetup';
+import { Account } from '@renderer/Types/SharedTypes';
 
 export default defineComponent({
 	name: "CreateOTPView",
@@ -246,3 +246,4 @@ export default defineComponent({
 	margin-top: 5px;
 }
 </style>
+@renderer/Types/SharedTypes

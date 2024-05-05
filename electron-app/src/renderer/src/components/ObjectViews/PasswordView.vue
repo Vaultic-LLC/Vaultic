@@ -11,7 +11,7 @@
                 :message="'This password is the one used to Sign in with your Master Key. Updating it will automatically update your Vaultic Account'" />
         </div> -->
 		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain" :showToolTip="true"
-			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is www.facebook.com'"
+			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
 			:toolTipSize="'clamp(15px, 1vw, 28px)'" :style="{ 'position': 'absolute', 'left': '30%' }" :width="'8vw'"
 			:height="'4vh'" :minHeight="'30px'" />
 		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
@@ -132,13 +132,6 @@ export default defineComponent({
 		provide(DirtySecurityQuestionQuestionsKey, dirtySecurityQuestionQuestions);
 		provide(DirtySecurityQuestionAnswersKey, dirtySecurityQuestionAnswers);
 
-		// const gridDefinition: GridDefinition = {
-		// 	rows: 13,
-		// 	rowHeight: 'clamp(20px, 4vh, 50px)',
-		// 	columns: 16,
-		// 	columnWidth: 'clamp(45px, 4vw, 100px)'
-		// }
-
 		const gridDefinition: GridDefinition = {
 			rows: 1,
 			rowHeight: '100%',
@@ -214,6 +207,7 @@ export default defineComponent({
 		{
 			if (activeTab.value == 0)
 			{
+				// TODO: what is this?
 				return [];
 				return createSortableHeaderModels<Group>(
 					ref(0), [{

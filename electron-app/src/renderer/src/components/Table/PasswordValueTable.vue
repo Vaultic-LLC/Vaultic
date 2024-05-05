@@ -40,7 +40,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import SlideInRow from './Rows/SlideInRow.vue';
@@ -459,6 +459,12 @@ export default defineComponent({
 		onMounted(() =>
 		{
 			init();
+			stores.userDataBreachStore.addEvent('onBreachDismissed', initPasswords);
+		});
+
+		onUnmounted(() =>
+		{
+			stores.userDataBreachStore.removeEvent('onBreachDismissed', initPasswords);
 		});
 
 		watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>

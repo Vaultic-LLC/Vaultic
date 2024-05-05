@@ -7,13 +7,28 @@ import { MethodResponse } from '../../Types/MethodResponse';
 export interface File
 {
 	exists: () => Promise<boolean>;
-	empty: () => Promise<void>;
 	write: (data: string) => Promise<MethodResponse>;
 	read: () => Promise<MethodResponse>;
 }
 
 let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
 directory += "\\Vaultic\\DataStores";
+
+export function writeFile(fullPath: string, data: string): Promise<void>
+{
+	return new Promise<void>((resolve, reject) =>
+	{
+		fs.writeFile(fullPath, data, { encoding: 'utf8' }, (err) =>
+		{
+			if (err != null)
+			{
+				reject(err);
+			}
+
+			resolve();
+		});
+	});
+}
 
 export default function useFile(name: string): File
 {
@@ -104,57 +119,9 @@ export default function useFile(name: string): File
 		});
 	}
 
-	function writeFile(data: string): Promise<void>
-	{
-		return new Promise<void>((resolve, reject) =>
-		{
-			fs.writeFile(fullPath, data, { encoding: 'utf8' }, (err) =>
-			{
-				if (err != null)
-				{
-					reject(err);
-				}
-
-				resolve();
-			});
-		});
-	}
-
 	function exists(): Promise<boolean>
 	{
 		return fileExistsAndHasData();
-	}
-
-	async function empty(): Promise<void>
-	{
-		let unlocked: boolean = false;
-		try
-		{
-			await unlock();
-			unlocked = true;
-
-			await writeFile("");
-			await lock();
-
-			unlocked = false;
-		}
-		catch (e: any)
-		{
-			if (e?.error instanceof Error)
-			{
-				const error: Error = e?.error as Error;
-				await vaulticServer.app.log(error.message, "File.Empty");
-			}
-		}
-
-		if (unlocked)
-		{
-			try
-			{
-				await lock();
-			}
-			catch { }
-		}
 	}
 
 	async function write(data: string): Promise<MethodResponse>
@@ -168,7 +135,7 @@ export default function useFile(name: string): File
 			await unlock();
 			unlocked = true;
 
-			await writeFile(data);
+			await writeFile(fullPath, data);
 			wrote = true;
 
 			await lock();
@@ -252,7 +219,6 @@ export default function useFile(name: string): File
 
 	return {
 		exists,
-		empty,
 		read,
 		write
 	}

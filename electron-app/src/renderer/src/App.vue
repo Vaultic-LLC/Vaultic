@@ -126,11 +126,11 @@ export default defineComponent({
 @import './Constants/animations.css';
 @import './Constants/transitions.css';
 
-@media (max-width: 1000px) {
+/* @media (max-width: 1000px) {
 	html {
 		font-size: 10px;
 	}
-}
+} */
 
 #app {
 	font-family: Avenir, Helvetica, Arial, sans-serif;

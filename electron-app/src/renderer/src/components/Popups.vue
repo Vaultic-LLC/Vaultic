@@ -37,6 +37,12 @@
 					@onClose="popupStore.hideAccountSetup()" />
 			</Transition>
 		</Teleport>
+		<Teleport to="#body">
+			<Transition name="fade">
+				<BreachedPasswordPopup v-if="popupStore.breachedPasswordIsShowing"
+					:passwordID="popupStore.breachedPasswordID" @onClose="popupStore.hideBreachedPasswordPopup()" />
+			</Transition>
+		</Teleport>
 		<Transition name="fade" mode="out-in">
 			<ToastPopup v-if="popupStore.toastIsShowing" :color="popupStore.color" :text="popupStore.toastText"
 				:success="popupStore.toastSuccess" />
@@ -54,6 +60,7 @@ import LoadingPopup from './Loading/LoadingPopup.vue';
 import AccountSetupPopup from "./Account/AccountSetupPopup.vue"
 import IncorrectDevicePopup from './IncorrectDevice/IncorrectDevicePopup.vue';
 import AlertPopup from './AlertPopup.vue';
+import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue"
 
 import { stores } from '..//Objects/Stores';
 
@@ -67,7 +74,8 @@ export default defineComponent({
 		LoadingPopup,
 		AccountSetupPopup,
 		AlertPopup,
-		IncorrectDevicePopup
+		IncorrectDevicePopup,
+		BreachedPasswordPopup
 	},
 	setup()
 	{

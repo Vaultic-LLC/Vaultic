@@ -8,6 +8,7 @@ import createPopupStore, { PopupStore } from "./PopupStore";
 import userPreferenceStore, { UserPreferenceStoreType, UserPreferencesStoreState } from "./UserPreferencesStore";
 import { Store, StoreState } from "./Base";
 import cryptHelper from "@renderer/Helpers/cryptHelper";
+import userDataBreachStore, { UserDataBreachStoreType } from "./UserDataBreachStore";
 
 export interface DataStoreStates
 {
@@ -27,6 +28,7 @@ export interface Stores
 	valueStore: ValueStoreType;
 	popupStore: PopupStore;
 	userPreferenceStore: UserPreferenceStoreType;
+	userDataBreachStore: UserDataBreachStoreType;
 	loadStoreData: (key: string) => Promise<any>;
 	resetStoresToDefault: () => void;
 	getStates: () => DataStoreStates;
@@ -170,6 +172,7 @@ function resetStoresToDefault()
 	stores.valueStore.resetToDefault();
 	stores.filterStore.resetToDefault();
 	stores.groupStore.resetToDefault();
+	stores.userDataBreachStore.resetToDefault();
 }
 
 function getStates(): DataStoreStates
@@ -184,14 +187,14 @@ function getStates(): DataStoreStates
 
 async function handleUpdateStoreResponse(key: string, response: any, suppressError: boolean = false): Promise<boolean>
 {
-	if (response.success && response.filterStoreState && response.groupStoreState && response.passwordStoreState
-		&& response.valueStoreState)
+	if (response.Success && response.FilterStoreState && response.GroupStoreState && response.PasswordStoreState
+		&& response.ValueStoreState)
 	{
 		await Promise.all([
-			stores.filterStore.updateState(key, response.filterStoreState),
-			stores.groupStore.updateState(key, response.groupStoreState),
-			stores.passwordStore.updateState(key, response.passwordStoreState),
-			stores.valueStore.updateState(key, response.valueStoreState)
+			stores.filterStore.updateState(key, response.FilterStoreState),
+			stores.groupStore.updateState(key, response.GroupStoreState),
+			stores.passwordStore.updateState(key, response.PasswordStoreState),
+			stores.valueStore.updateState(key, response.ValueStoreState)
 		]);
 
 		// TODO: handel failed state updates?
@@ -199,7 +202,7 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 	}
 	else if (!suppressError)
 	{
-		if (response.unknownError)
+		if (response.UnknownError)
 		{
 			stores.popupStore.showErrorResponseAlert(response.statusCode);
 		}
@@ -222,6 +225,7 @@ export const stores: Stores =
 	valueStore: valueStore,
 	popupStore: createPopupStore(),
 	userPreferenceStore: userPreferenceStore,
+	userDataBreachStore: userDataBreachStore,
 	loadStoreData,
 	resetStoresToDefault,
 	getStates,

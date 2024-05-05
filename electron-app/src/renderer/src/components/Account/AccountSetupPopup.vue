@@ -19,7 +19,11 @@
 					:color="primaryColor" :account="account" @onSuccess="onCreateMasterKeySuccess" />
 				<CreateSubscriptionView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
 			accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
-			accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor" />
+			accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor" :creating="creatingAccount"
+					@onSubscriptionCreated="onSubscriptionCreated" />
+				<DownloadDeactivationKeyView :color="primaryColor"
+					v-else-if="accountSetupModel.currentView == AccountSetupView.DownloadDeactivationKey"
+					@onDownloaded="closeWithAnimation" />
 			</Transition>
 		</ObjectPopup>
 	</div>
@@ -33,9 +37,10 @@ import CreateAccountView from './CreateAccountView.vue';
 import SignInView from './SignInView.vue';
 import CreateSubscriptionView from './CreateSubscriptionView.vue';
 import CreateMasterKeyView from './CreateMasterKeyView.vue';
+import DownloadDeactivationKeyView from "./DownloadDeactivationKeyView.vue"
 
 import { AccountSetupModel, AccountSetupView } from '@renderer/Types/Models';
-import { Account } from '@renderer/Types/AccountSetup';
+import { Account } from '@renderer/Types/SharedTypes';
 import { stores } from '@renderer/Objects/Stores';
 import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey } from '@renderer/Types/Keys';
 
@@ -47,7 +52,8 @@ export default defineComponent({
 		CreateAccountView,
 		SignInView,
 		CreateSubscriptionView,
-		CreateMasterKeyView
+		CreateMasterKeyView,
+		DownloadDeactivationKeyView
 	},
 	emits: ['onClose'],
 	props: ['model'],
@@ -97,11 +103,18 @@ export default defineComponent({
 
 		// TODO: should add a way for users to get from the sign in page to the payment page
 		// already can do that, just need to let them know to try to sign in
-		async function onCreateMasterKeySuccess()
+		function onCreateMasterKeySuccess()
 		{
 			navigationStack.value = [];
 			navigationStack.value.push(AccountSetupView.SignIn);
 			accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
+		}
+
+		function onSubscriptionCreated()
+		{
+			// clear the navigation stack so the user can't go back without downloading deactivation key
+			navigationStack.value = [];
+			accountSetupModel.value.currentView = AccountSetupView.DownloadDeactivationKey;
 		}
 
 		function navigateBack()
@@ -170,7 +183,8 @@ export default defineComponent({
 			navigateBack,
 			close,
 			closeWithAnimation,
-			onCreateMasterKeySuccess
+			onCreateMasterKeySuccess,
+			onSubscriptionCreated
 		}
 	}
 })

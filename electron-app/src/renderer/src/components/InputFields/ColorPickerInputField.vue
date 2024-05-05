@@ -143,6 +143,7 @@ export default defineComponent({
 
 .colorPickerInputFieldContainer.active .colorPickerLabel {
 	top: 0;
+	transform-origin: left;
 	transform: translateY(-80%) scale(0.8);
 	background-color: var(--app-color);
 	padding: 0 .2em;
@@ -152,7 +153,7 @@ export default defineComponent({
 .colorPickerLabel {
 	position: absolute;
 	color: white;
-	left: 10px;
+	left: var(--input-label-left);
 	top: 50%;
 	color: #e8e8e8;
 	pointer-events: none;

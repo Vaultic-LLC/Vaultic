@@ -4,15 +4,16 @@
 	</button>
 </template>
 <script lang="ts">
-import { Ref, defineComponent, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 export default defineComponent({
 	name: "ButtonLink",
 	emits: ["onClick"],
-	props: ["color", "text"],
-	setup(_, ctx)
+	props: ["color", "text", "fontSize"],
+	setup(props, ctx)
 	{
 		const button: Ref<HTMLElement | null> = ref(null);
+		const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ? props.fontSize : 'clamp(13px, 1vw, 20px)');
 
 		function doOnClick()
 		{
@@ -22,6 +23,7 @@ export default defineComponent({
 
 		return {
 			button,
+			computedFontSize,
 			doOnClick
 		}
 	}
@@ -35,7 +37,7 @@ export default defineComponent({
 	text-decoration: underline;
 	border: none;
 	cursor: pointer;
-	font-size: clamp(13px, 1vw, 20px);
+	font-size: v-bind(computedFontSize);
 	padding: 0;
 	outline: none;
 	will-change: opacity;

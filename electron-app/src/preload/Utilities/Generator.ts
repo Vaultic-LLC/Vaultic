@@ -1,10 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import { randomBytes, generateKeyPairSync, KeyPairSyncResult } from "crypto"
+import validationHelper from '../Helpers/ValidationHelper';
 
 export interface GeneratorUtility
 {
 	uniqueId: () => string;
 	randomValue: (length: number) => string;
+	randomPassword: (length: number) => string;
 	randomValueOfByteLength: (byteLength: number) => string;
 	publicPrivateKey: () => KeyPairSyncResult<string, string>;
 }
@@ -37,6 +39,25 @@ function randomValue(length: number): string
 	return randomPassword;
 }
 
+function randomPassword(length: number): string
+{
+	let generateAgain = true;
+	let randomPassword = "";
+
+	while (generateAgain)
+	{
+		randomPassword = randomValue(length);
+		const [isWeak, _] = validationHelper.isWeak(randomPassword, "");
+
+		generateAgain = isWeak ||
+			!validationHelper.containsSpecialCharacter(randomPassword) ||
+			!validationHelper.containsUppercaseAndLowercaseNumber(randomPassword) ||
+			!validationHelper.containsNumber(randomPassword);
+	}
+
+	return randomPassword;
+}
+
 function randomValueOfByteLength(bytes: number)
 {
 	return randomBytes(bytes).toString('hex');
@@ -61,6 +82,7 @@ const generatorUtility: GeneratorUtility =
 {
 	uniqueId,
 	randomValue,
+	randomPassword,
 	randomValueOfByteLength,
 	publicPrivateKey
 };

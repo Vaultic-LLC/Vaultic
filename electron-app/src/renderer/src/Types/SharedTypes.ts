@@ -60,3 +60,11 @@ export interface Account
 	masterKey: string;
 }
 
+export interface UserDataBreach
+{
+	UserDataBreachID: number;
+	PasswordID: string;
+	BreachedDate: number;
+	PasswordsWereBreached: boolean;
+	BreachedDataTypes: string;
+};

@@ -16,7 +16,7 @@ export default function createReactivePassword(password: Password): ReactivePass
 
 	const isOld: ComputedRef<boolean> = computed(() =>
 	{
-		const today = Date.now();
+		const today = new Date().getTime();
 		const lastModifiedTime = Date.parse(passwordState.lastModifiedTime);
 		const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 

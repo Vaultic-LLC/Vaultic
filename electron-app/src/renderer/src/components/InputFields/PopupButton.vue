@@ -1,5 +1,5 @@
 <template>
-	<button ref="button" class="popupButton" :disabled="disabled" @click.stop="doOnClick">
+	<button ref="button" class="popupButton" :class="{ fadeIn: doFadeIn }" :disabled="disabled" @click.stop="doOnClick">
 		{{ text }}
 	</button>
 </template>
@@ -11,10 +11,11 @@ export default defineComponent({
 	name: "PopupButton",
 	emits: ['onClick'],
 	props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize', 'minFontSize', 'maxFontSize',
-		'disabled', 'isSubmit'],
+		'disabled', 'isSubmit', 'fadeIn'],
 	setup(props, ctx)
 	{
 		const button: Ref<HTMLElement | null> = ref(null);
+		const doFadeIn: Ref<boolean> = ref(props.fadeIn !== false);
 
 		function doOnClick()
 		{
@@ -49,6 +50,7 @@ export default defineComponent({
 
 		return {
 			button,
+			doFadeIn,
 			doOnClick
 		}
 	}
@@ -69,10 +71,14 @@ export default defineComponent({
 	border-radius: var(--input-border-radius);
 	transition: 0.3s;
 	font-size: clamp(v-bind(minFontSize), v-bind(fontSize), v-bind(maxFontSize));
-	animation: fadeIn 1s linear forwards;
 	cursor: pointer;
 	outline: none;
 	padding: 2px;
+}
+
+.popupButton.fadeIn {
+	animation: fadeIn 1s linear forwards;
+
 }
 
 .popupButton:hover,

@@ -7,6 +7,9 @@
 			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'" :isOnWidget="true"
 				v-model="pword.additionalInformation" :disabled="true" :width="'12vw'" :height="'9vh'"
 				:maxHeight="'135px'" :maxWidth="'300px'" />
+			<PopupButton :color="color" :disabled="false" :text="'Handled Breach'" :width="'5vw'" :minWidth="'75px'"
+				:maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'" :fontSize="'0.5vw'"
+				:minFontSize="'13px'" :maxFontSize="'20px'" @onClick="" />
 		</div>
 		<TableTemplate :color="textColor" :style="{ 'position': 'relative', 'flex-grow': '1' }"
 			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false" :row-gap="'0px'"
@@ -35,6 +38,7 @@ import { defaultInputColor } from '@renderer/Types/Colors';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import cryptHelper from '@renderer/Helpers/cryptHelper';
 import { screenWidthIsAtRatioOfMax } from '@renderer/Helpers/screenSizeHelepr';
+import PopupButton from '@renderer/components/InputFields/PopupButton.vue';
 
 export default defineComponent({
 	name: "PasswordRow",
@@ -43,7 +47,8 @@ export default defineComponent({
 		TextAreaInputField,
 		EncryptedInputField,
 		TableTemplate,
-		SecurityQuestionRow
+		SecurityQuestionRow,
+		PopupButton
 	},
 	props: ["value", "authenticationPromise", "color", 'isShowing'],
 	setup(props)

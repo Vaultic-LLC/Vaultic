@@ -164,6 +164,7 @@ export enum AtRiskType
 	Weak,
 	WeakVerabl,
 	ContainsLogin,
+	Breached,
 	Empty,
 	None
 }
@@ -261,7 +262,6 @@ export function defaultGroup(type: DataType): Group
 export interface DataFile
 {
 	exists: () => Promise<boolean>;
-	empty: () => Promise<void>;
 	write: (data: string) => Promise<MethodResponse>;
 	read: () => Promise<MethodResponse>;
 }

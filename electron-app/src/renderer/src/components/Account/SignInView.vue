@@ -257,19 +257,17 @@ export default defineComponent({
 				if (!showEmailField.value)
 				{
 					showEmailField.value = true;
-				}
-				else
-				{
-					emailField.value?.invalidate("Incorrect Email. Please try again");
+					stores.popupStore.showAlert("Unable to auto log in", "The email for your Vaultic account stored on your computer is incorrect. Please enter it manually in order to log in and update it locally.", false);
 				}
 
+				emailField.value?.invalidate("Incorrect Email. Please try again");
 				resetToDefault();
 			}
 			else if (response.LicenseStatus != undefined && response.LicenseStatus != 1)
 			{
 				ctx.emit('onMoveToSetupPayment');
 			}
-			else if (response.unknownError)
+			else if (response.UnknownError)
 			{
 				stores.popupStore.hideLoadingIndicator();
 

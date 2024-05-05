@@ -4,15 +4,10 @@
 			:singleSelectorItems="[settingsView, devicesView, paymentView]" />
 	</div>
 	<div class="settingViewContainer">
-		<Transition>
+		<Transition name="fade" mode="out-in">
 			<SettingsView v-if="activeSection == 0" :creating="false" :model="currentSettings" />
 			<DevicesView v-else-if="activeSection == 1" />
-			<div class="paymentView" v-else-if="activeSection == 2">
-				To view or update your payment information, please go to
-				<ButtonLink :color="currentPrimaryColor" :text="'https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk'"
-					@onClick="openPaymentInfoLink" />
-				and follow the instructions on screen
-			</div>
+			<AccountInfoView v-else-if="activeSection == 2" />
 		</Transition>
 	</div>
 </template>
@@ -23,6 +18,7 @@ import SettingsView from '../../../components/ObjectViews/SettingsView.vue';
 import DevicesView from '@renderer/components/IncorrectDevice/DevicesView.vue';
 import TableSelector from '@renderer/components/TableSelector.vue';
 import ButtonLink from '@renderer/components/InputFields/ButtonLink.vue';
+import AccountInfoView from '@renderer/components/Account/AccountInfoView.vue';
 
 import { SettingsStoreState } from '@renderer/Objects/Stores/SettingsStore';
 import { stores } from '@renderer/Objects/Stores';
@@ -35,7 +31,8 @@ export default defineComponent({
 		ButtonLink,
 		TableSelector,
 		SettingsView,
-		DevicesView
+		DevicesView,
+		AccountInfoView
 	},
 	props: ['model'],
 	setup(props)
@@ -69,17 +66,12 @@ export default defineComponent({
 		const paymentView: ComputedRef<SingleSelectorItemModel> = computed(() =>
 		{
 			return {
-				title: ref("Payment Info"),
+				title: ref("Account"),
 				color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
 				isActive: computed(() => activeSection.value == 2),
 				onClick: () => { activeSection.value = 2; }
 			}
 		});
-
-		function openPaymentInfoLink()
-		{
-			window.open('https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk');
-		}
 
 		return {
 			currentSettings,
@@ -87,8 +79,7 @@ export default defineComponent({
 			devicesView,
 			paymentView,
 			activeSection,
-			currentPrimaryColor,
-			openPaymentInfoLink
+			currentPrimaryColor
 		}
 	}
 })

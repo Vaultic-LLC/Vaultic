@@ -122,10 +122,16 @@ export default defineComponent({
 
 			});
 
-		function updateData(data)
+		function updateData()
 		{
-			doughnutChart.value.chart.data.datasets[0].data = data;
+			if (!doughnutChart?.value?.chart?.data?.datasets[0]?.data)
+			{
+				return;
+			}
+
+			doughnutChart.value.chart.data.datasets[0].data = [props.model.filledAmount, props.model.totalAmount - props.model.filledAmount];
 			doughnutChart.value.chart.data.datasets[0].backgroundColor = [primaryColor.value, '#191919'];
+			doughnutChart.value.chart.data.datasets[0].borderColor = 'transparent';
 
 			doughnutChart.value.chart.update();
 		}
@@ -141,19 +147,13 @@ export default defineComponent({
 		watch(() => props.model.color, (newValue) =>
 		{
 			primaryColor.value = newValue;
-			data.value = {
-				labels: [props.model.title, ""],
-				datasets: [
-					{
-						data: [props.model.filledAmount, props.model.totalAmount - props.model.filledAmount],
-						backgroundColor: [primaryColor.value, '#191919'],
-						borderColor: 'transparent'
-					}
-				]
+			updateData();
+			animationHelper.syncAnimations('pulseMetricGauge');
+		});
 
-			};
-
-			updateData([props.model.filledAmount, props.model.totalAmount - props.model.filledAmount])
+		watch(() => props.model.filledAmount, () =>
+		{
+			updateData();
 			animationHelper.syncAnimations('pulseMetricGauge');
 		});
 

@@ -1,4 +1,4 @@
-import { BaseResponse, IncorrectDeviceResponse } from "@renderer/Types/AccountSetup";
+import { BaseResponse, IncorrectDeviceResponse } from "@renderer/Types/SharedTypes";
 import { AccountSetupModel, AccountSetupView } from "@renderer/Types/Models";
 import { Ref, ref } from "vue";
 import { stores } from ".";
@@ -41,6 +41,9 @@ export default function createPopupStore()
 	const toastIsShowing: Ref<boolean> = ref(false);
 	const toastText: Ref<string> = ref('');
 	const toastSuccess: Ref<boolean> = ref(false);
+
+	const breachedPasswordIsShowing: Ref<boolean> = ref(false);
+	const breachedPasswordID: Ref<string> = ref('');
 
 	function addOnEnterHandler(index: number, callback: () => void)
 	{
@@ -147,6 +150,11 @@ export default function createPopupStore()
 		accountSetupIsShowing.value = true;
 	}
 
+	function showPaymentSetup()
+	{
+		showAccountSetup(AccountSetupView.SetupPayment);
+	}
+
 	function hideAccountSetup()
 	{
 		accountSetupIsShowing.value = false;
@@ -213,7 +221,18 @@ export default function createPopupStore()
 		toastSuccess.value = success;
 		toastIsShowing.value = true;
 
-		setTimeout(() => toastIsShowing.value = false, 2000);
+		setTimeout(() => toastIsShowing.value = false, 3000);
+	}
+
+	function showBreachedPasswordPopup(passwordID: string)
+	{
+		breachedPasswordID.value = passwordID;
+		breachedPasswordIsShowing.value = true;
+	}
+
+	function hideBreachedPasswordPopup()
+	{
+		breachedPasswordIsShowing.value = false;
 	}
 
 	return {
@@ -243,6 +262,8 @@ export default function createPopupStore()
 		get toastIsShowing() { return toastIsShowing.value },
 		get toastText() { return toastText.value },
 		get toastSuccess() { return toastSuccess.value },
+		get breachedPasswordIsShowing() { return breachedPasswordIsShowing.value },
+		get breachedPasswordID() { return breachedPasswordID.value },
 		addOnEnterHandler,
 		removeOnEnterHandler,
 		showLoadingIndicator,
@@ -255,6 +276,7 @@ export default function createPopupStore()
 		hideIncorrectDevice,
 		showSessionExpired,
 		showAccountSetup,
+		showPaymentSetup,
 		hideAccountSetup,
 		showGlobalAuthWithLockIcon,
 		playUnlockAnimation,
@@ -262,6 +284,8 @@ export default function createPopupStore()
 		hideGlobalAuthentication,
 		showRequestAuthentication,
 		hideRequesetAuthentication,
-		showToast
+		showToast,
+		showBreachedPasswordPopup,
+		hideBreachedPasswordPopup
 	}
 }

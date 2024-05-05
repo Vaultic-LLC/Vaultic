@@ -15,9 +15,9 @@ export interface DataTypeStoreState<T> extends StoreState
 	values: T[];
 }
 
-type StoreEvent = "onChanged";
+export type StoreEvents = "onChanged";
 
-export class Store<T extends {} & StoreState>
+export class Store<T extends {} & StoreState, U extends string = StoreEvents>
 {
 	protected state: T;
 	loadedFile: boolean;
@@ -100,7 +100,7 @@ export class Store<T extends {} & StoreState>
 		return true;
 	}
 
-	public addEvent(event: StoreEvent, callback: () => void)
+	public addEvent(event: U, callback: () => void)
 	{
 		if (this.events[event])
 		{
@@ -111,7 +111,7 @@ export class Store<T extends {} & StoreState>
 		this.events[event] = [callback];
 	}
 
-	public removeEvent(event: StoreEvent, callback: () => void)
+	public removeEvent(event: U, callback: () => void)
 	{
 		if (!this.events[event])
 		{
@@ -127,6 +127,13 @@ export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends Store<T>
 	constructor()
 	{
 		super()
+	}
+
+	public resetToDefault()
+	{
+		super.resetToDefault();
+		this.getPasswordAtRiskType().value = AtRiskType.None;
+		this.getValueAtRiskType().value = AtRiskType.None;
 	}
 
 	protected getPasswordAtRiskType(): Ref<AtRiskType>

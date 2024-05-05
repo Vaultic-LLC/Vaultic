@@ -222,7 +222,7 @@ export default defineComponent({
 .dropDownContainer .dropDownTitle .dropDownLabel {
 	position: absolute;
 	top: 30%;
-	left: 5%;
+	left: var(--input-label-left);
 	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 	cursor: pointer;
 	font-size: clamp(11px, 1.2vh, 25px);
@@ -230,6 +230,7 @@ export default defineComponent({
 }
 
 .dropDownContainer.active .dropDownTitle .dropDownLabel {
+	transform-origin: left;
 	transform: translateY(-150%) scale(0.8);
 	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;

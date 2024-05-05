@@ -3,7 +3,7 @@ import { getDeviceInfo } from '../DeviceInfo';
 import { BaseResponse, EncryptedResponse } from '../../Types/Responses';
 import cryptUtility from '../../Utilities/CryptUtility';
 import { MethodResponse } from '../../Types/MethodResponse';
-import { Session } from '../../Types/Session';
+import { Session } from '../../Types/ClientServerTypes';
 import { AxiosHelper, EncryptedRequest } from '../../Types/ServerTypes';
 import vaulticServer from './VaulticServer';
 import generatorUtility from '../../Utilities/Generator';
@@ -44,6 +44,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 			return { Success: false, UnknownError: true, logID: -101 };
 		}
 
+		console.log(serverPath);
 		const requestData = await getRequestData(responseKeys.publicKey, data);
 
 		if (!requestData[0].success)
@@ -51,6 +52,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 			requestCallStackDepth -= 1;
 			return { Success: false, UnknownError: true, logID: requestData[0].logID };
 		}
+
 
 		const response = await axiosInstance.post(serverPath, requestData[1]);
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
@@ -106,7 +108,7 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 	newData.APIKey = await getAPIKey();
 	newData.MacAddress = deviceInfo.mac;
 	newData.DeviceName = deviceInfo.deviceName;
-
+	console.log(newData);
 	const encryptedData = await cryptUtility.hybridEncrypt(JSON.stringify(newData));
 	if (!encryptedData.success)
 	{
@@ -139,6 +141,7 @@ async function handleResponse<T extends BaseResponse>(privateKey: string, respon
 		const session: Session = responseData.Session as Session;
 		if (session.ID && session.Token)
 		{
+			console.log('setting session');
 			currentSession = session;
 		}
 	}

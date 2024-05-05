@@ -145,7 +145,7 @@ export default defineComponent({
 
 		function generateRandomValue()
 		{
-			onInput(window.api.utilities.generator.randomValue(stores.settingsStore.randomValueLength));
+			onInput(window.api.utilities.generator.randomPassword(stores.settingsStore.randomValueLength));
 		}
 
 		function copyValue()
@@ -279,7 +279,7 @@ export default defineComponent({
 
 .textInputFieldContainer .textInputFieldLable {
 	position: absolute;
-	left: 5%;
+	left: var(--input-label-left);
 	top: 50%;
 	color: v-bind('colorModel.textColor');
 	pointer-events: none;
@@ -300,6 +300,7 @@ export default defineComponent({
 .textInputFieldContainer .textInputFieldInput:valid~label,
 .textInputFieldContainer .textInputFieldInput:disabled~label {
 	top: 10%;
+	transform-origin: left;
 	transform: translateY(-80%) scale(0.8);
 	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;

@@ -1,7 +1,7 @@
 import { ComputedRef, Ref, ref } from "vue";
 import { v4 as uuidv4 } from 'uuid';
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
-import { Device } from "./AccountSetup";
+import { Device } from "./SharedTypes";
 
 export interface SmallMetricGaugeModel
 {
@@ -35,7 +35,7 @@ export interface TableRowData
 	id: string;
 	isPinned?: boolean;
 	values: TableRowValue[];
-	atRiskMessage?: string;
+	atRiskModel?: AtRiskModel;
 	onPin?: () => void;
 	onEdit?: () => void;
 	onDelete?: () => void;
@@ -47,6 +47,12 @@ export interface TableRowValue
 	copiable: boolean;
 	width: string;
 	margin?: boolean;
+}
+
+export interface AtRiskModel
+{
+	message: string;
+	onClick?: () => void;
 }
 
 export interface TextTableRowValue extends TableRowValue
@@ -116,13 +122,6 @@ export function emptyHeader(): SortableHeaderModel
 	}
 }
 
-export interface AtRiskModel
-{
-	title: string;
-	checked: boolean;
-	message: string;
-}
-
 export interface GridDefinition
 {
 	rows: number;
@@ -163,12 +162,11 @@ export enum AccountSetupView
 	NotSet,
 	SignIn,
 	CreateAccount,
-	MFA,
 	SetupPayment,
 	UpdatePayment,
 	ReActivate,
-	CreateOTP,
-	CreateMasterKey
+	CreateMasterKey,
+	DownloadDeactivationKey
 }
 
 export interface AccountSetupModel
