@@ -5,6 +5,31 @@ import { stores } from ".";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
+type PopupName = "loading" | "alert" | "incorrectDevice" | "globalAuth" | "requestAuth" | "accountSetup" |
+	"breachedPasswords" | "toast";
+
+interface PopupInfo
+{
+	zIndex: number;
+	enterOrder?: number;
+}
+
+type Popups = {
+	[key in PopupName]: PopupInfo;
+}
+
+export const popups: Popups =
+{
+	"loading": { zIndex: 200 },
+	"alert": { zIndex: 170, enterOrder: 0 },
+	"incorrectDevice": { zIndex: 160, enterOrder: 1 },
+	"accountSetup": { zIndex: 150, enterOrder: 2 },
+	"globalAuth": { zIndex: 100, enterOrder: 3 },
+	"requestAuth": { zIndex: 90, enterOrder: 4 },
+	"breachedPasswords": { zIndex: 50 },
+	"toast": { zIndex: 20 }
+}
+
 export default function createPopupStore()
 {
 	const onEnterHandlers: ({ (): void } | undefined)[] = [];
@@ -50,7 +75,7 @@ export default function createPopupStore()
 		onEnterHandlers[index] = callback;
 	}
 
-	function removeOnEnterHandler(index)
+	function removeOnEnterHandler(index: number)
 	{
 		onEnterHandlers[index] = undefined;
 	}

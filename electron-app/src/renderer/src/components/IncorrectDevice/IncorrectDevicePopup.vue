@@ -29,20 +29,27 @@
 <script lang="ts">
 import { Ref, defineComponent, onMounted, onUnmounted, ref } from 'vue';
 
+import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import DevicePopup from './DevicePopup.vue';
+import PopupButton from '../InputFields/PopupButton.vue';
+
 import { stores } from '@renderer/Objects/Stores';
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: "IncorrectDevicePopup",
 	components:
 	{
-		DevicePopup
+		DevicePopup,
+		ObjectPopup,
+		PopupButton
 	},
 	emits: ['onClose'],
 	props: ['response', 'color'],
 	setup(_, ctx)
 	{
 		const showDevicePopup: Ref<boolean> = ref(false);
+		const popupInfo = popups.incorrectDevice;
 
 		function close()
 		{
@@ -52,16 +59,17 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
-			stores.popupStore.addOnEnterHandler(1, close);
+			stores.popupStore.addOnEnterHandler(popupInfo.enterOrder!, close);
 		});
 
 		onUnmounted(() =>
 		{
-			stores.popupStore.removeOnEnterHandler(1);
+			stores.popupStore.removeOnEnterHandler(popupInfo.enterOrder!);
 		});
 
 		return {
 			showDevicePopup,
+			zIndex: popupInfo.zIndex,
 			close
 		}
 	}
@@ -71,5 +79,11 @@ export default defineComponent({
 <style>
 .incorrectDevicePopup {
 	color: white;
+	position: fixed;
+	width: 100%;
+	left: 100%;
+	top: 0;
+	left: 0;
+	z-index: v-bind(zIndex);
 }
 </style>

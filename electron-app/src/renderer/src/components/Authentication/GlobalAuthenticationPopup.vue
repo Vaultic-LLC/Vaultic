@@ -4,7 +4,7 @@
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
 			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true"
-			:iconOnly="iconOnly" :popupIndex="2" :focusOnShow="focusInput" />
+			:iconOnly="iconOnly" :popupIndex="enterOrder" :focusOnShow="focusInput" />
 	</div>
 </template>
 
@@ -14,6 +14,7 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } fr
 import AuthenticationPopup from "./AuthenticationPopup.vue"
 import { stores } from '@renderer/Objects/Stores';
 import { AuthPopup } from '@renderer/Types/Components';
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: "GlobalAuthenticationPopup",
@@ -25,6 +26,8 @@ export default defineComponent({
 	props: ['playUnlockAnimation', 'iconOnly', 'focusInput'],
 	setup(props, ctx)
 	{
+		const popupInfo = popups.globalAuth;
+
 		const authPopup: Ref<AuthPopup | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
 		const unlocked: Ref<boolean> = ref(false);
@@ -71,6 +74,8 @@ export default defineComponent({
 			unlocked,
 			primaryColor,
 			authPopup,
+			zIndex: popupInfo.zIndex,
+			enterOrder: popupInfo.enterOrder,
 			authenticationSuccessful,
 			playUnlockAnimation
 		}
@@ -82,7 +87,7 @@ export default defineComponent({
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	z-index: 100;
+	z-index: v-bind(zIndex);
 	top: 0;
 	left: 0;
 }

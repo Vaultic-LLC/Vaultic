@@ -12,6 +12,7 @@
 import { ComputedRef, computed, defineComponent } from 'vue';
 
 import LoadingIndicator from './LoadingIndicator.vue';
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: "LoadingPopup",
@@ -26,10 +27,13 @@ export default defineComponent({
 		const textToUse: ComputedRef<string> = computed(() => props.text ? props.text : "Loading...");
 		const computedGlassOpacity: ComputedRef<number> = computed(() => props.glassOpacity ? props.glassOpacity : 0.92);
 
+		const zIndex: number = popups.loading.zIndex;
+
 		return {
 			primaryColor,
 			textToUse,
-			computedGlassOpacity
+			computedGlassOpacity,
+			zIndex
 		}
 	}
 })
@@ -41,7 +45,7 @@ export default defineComponent({
 	left: 100%;
 	top: 0;
 	left: 0;
-	z-index: 200;
+	z-index: v-bind(zIndex);
 }
 
 .loadingPopupContainer__popup {

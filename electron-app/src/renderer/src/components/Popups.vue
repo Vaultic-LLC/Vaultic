@@ -53,14 +53,14 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import GlobalAuthenticationPopup from './Authentication/GlobalAuthenticationPopup.vue';
-import ToastPopup from './ToastPopup.vue';
-import RequestedAuthenticationPopup from './Authentication/RequestedAuthenticationPopup.vue';
 import LoadingPopup from './Loading/LoadingPopup.vue';
-import AccountSetupPopup from "./Account/AccountSetupPopup.vue"
-import IncorrectDevicePopup from './IncorrectDevice/IncorrectDevicePopup.vue';
 import AlertPopup from './AlertPopup.vue';
+import IncorrectDevicePopup from './IncorrectDevice/IncorrectDevicePopup.vue';
+import AccountSetupPopup from "./Account/AccountSetupPopup.vue"
+import GlobalAuthenticationPopup from './Authentication/GlobalAuthenticationPopup.vue';
+import RequestedAuthenticationPopup from './Authentication/RequestedAuthenticationPopup.vue';
 import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue"
+import ToastPopup from './ToastPopup.vue';
 
 import { stores } from '..//Objects/Stores';
 
@@ -68,14 +68,14 @@ export default defineComponent({
 	name: 'Popups',
 	components:
 	{
-		GlobalAuthenticationPopup,
-		ToastPopup,
-		RequestedAuthenticationPopup,
 		LoadingPopup,
-		AccountSetupPopup,
 		AlertPopup,
 		IncorrectDevicePopup,
-		BreachedPasswordPopup
+		AccountSetupPopup,
+		GlobalAuthenticationPopup,
+		RequestedAuthenticationPopup,
+		BreachedPasswordPopup,
+		ToastPopup
 	},
 	setup()
 	{

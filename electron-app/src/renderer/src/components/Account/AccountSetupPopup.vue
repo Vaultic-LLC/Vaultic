@@ -43,6 +43,7 @@ import { AccountSetupModel, AccountSetupView } from '@renderer/Types/Models';
 import { Account } from '@renderer/Types/SharedTypes';
 import { stores } from '@renderer/Objects/Stores';
 import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey } from '@renderer/Types/Keys';
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: "AccountSetupPopup",
@@ -60,6 +61,7 @@ export default defineComponent({
 	setup(props, ctx)
 	{
 		const objectPopup: Ref<null> = ref(null);
+		const popupInfo = popups.accountSetup;
 
 		const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
 		const accountSetupModel: Ref<AccountSetupModel> = ref(props.model);
@@ -177,6 +179,7 @@ export default defineComponent({
 			primaryColor,
 			navigationStack,
 			disableBack,
+			zIndex: popupInfo.zIndex,
 			moveToCreateAccount,
 			onCreateAccoutViewSucceeded,
 			moveToCreatePayment,
@@ -196,7 +199,7 @@ export default defineComponent({
 	height: 100%;
 	top: 0%;
 	position: fixed;
-	z-index: 150;
+	z-index: v-bind(zIndex);
 }
 
 .accountSetupPopupContainer__backButton {

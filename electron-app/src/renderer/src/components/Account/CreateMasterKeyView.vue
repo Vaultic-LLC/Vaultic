@@ -57,7 +57,7 @@ import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models'
 import { Account } from '@renderer/Types/SharedTypes';
 
 export default defineComponent({
-	name: "CreateOTPView",
+	name: "CreateMasterKeyView",
 	components:
 	{
 		AccountSetupView,

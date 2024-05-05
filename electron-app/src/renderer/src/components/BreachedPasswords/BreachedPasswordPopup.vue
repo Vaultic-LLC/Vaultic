@@ -53,6 +53,7 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 import { stores } from '@renderer/Objects/Stores';
 import { UserDataBreach } from '@renderer/Types/SharedTypes';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: "DeviceView",
@@ -66,6 +67,8 @@ export default defineComponent({
 	props: ['passwordID'],
 	setup(props, ctx)
 	{
+		const popupInfo = popups.breachedPasswords;
+
 		const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
 		const userDataBreach: Ref<UserDataBreach | undefined> = ref(undefined);
 		const password: Ref<ReactivePassword | undefined> = ref(undefined);
@@ -130,6 +133,7 @@ export default defineComponent({
 			password,
 			disabled,
 			dateString,
+			zIndex: popupInfo.zIndex,
 			closePopup,
 			onDismissBreach,
 			whatToDoAfterADataBreach
@@ -144,7 +148,7 @@ export default defineComponent({
 	height: 100%;
 	top: 0%;
 	position: fixed;
-	z-index: 5;
+	z-index: v-bind(zIndex);
 }
 
 .breachedPasswordPopup__content {

@@ -23,12 +23,14 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, provide, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, provide, ref } from 'vue';
 
 import PopupButton from '../InputFields/PopupButton.vue';
 
 import { GridDefinition } from '@renderer/Types/Models';
 import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey, ValidationFunctionsKey } from '@renderer/Types/Keys';
+import { popups } from '@renderer/Objects/Stores/PopupStore';
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "AccountSetupViewPopup",
@@ -40,6 +42,8 @@ export default defineComponent({
 	props: ['color', 'title', 'buttonText', 'displayGrid', 'gridDefinition', 'titleMargin', 'titleMarginTop'],
 	setup(props, ctx)
 	{
+		const popupInfo = popups.accountSetup;
+
 		const disabled: Ref<boolean> = ref(false);
 		const display: ComputedRef<string> = computed(() => props.displayGrid ? "grid" : "flex");
 		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
@@ -70,6 +74,16 @@ export default defineComponent({
 			disabled.value = false;
 			enableBackButton();
 		}
+
+		onMounted(() =>
+		{
+			stores.popupStore.addOnEnterHandler(popupInfo.enterOrder!, onSubmit);
+		});
+
+		onUnmounted(() =>
+		{
+			stores.popupStore.removeOnEnterHandler(popupInfo.enterOrder!);
+		});
 
 		return {
 			display,

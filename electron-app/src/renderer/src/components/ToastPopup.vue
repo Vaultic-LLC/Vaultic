@@ -11,6 +11,7 @@
 </template>
 
 <script lang="ts">
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 import { ComputedRef, computed, defineComponent } from 'vue';
 
 export default defineComponent({
@@ -18,6 +19,7 @@ export default defineComponent({
 	props: ['color', 'text', 'success'],
 	setup(props)
 	{
+		const popupInfo = popups.toast;
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const toastText: ComputedRef<string> = computed(() => props.text);
 		const isSuccess: ComputedRef<boolean> = computed(() => props.success);
@@ -25,7 +27,8 @@ export default defineComponent({
 		return {
 			toastText,
 			isSuccess,
-			primaryColor
+			primaryColor,
+			zIndex: popupInfo.zIndex
 		}
 	}
 });
@@ -49,7 +52,7 @@ export default defineComponent({
 	align-items: center;
 	justify-content: center;
 	box-shadow: 0 0 25px v-bind('primaryColor');
-	z-index: 20;
+	z-index: v-bind(zIndex);
 	column-gap: clamp(5px, 5%, 20px);
 }
 
