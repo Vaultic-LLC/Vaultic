@@ -33,7 +33,6 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 		super();
 
 		this.internalCurrentPrimaryColor = ref('');
-		this.readState('');
 		this.setCurrentPrimaryColor(DataType.Passwords);
 	}
 
