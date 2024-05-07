@@ -6,6 +6,7 @@ import App from './App.vue'
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
+import { stores } from './Objects/Stores';
 
 Coloris.init();
 Coloris({
@@ -48,7 +49,13 @@ window.addEventListener('unhandledrejection', (e) =>
 	}
 });
 
-const app = createApp(App);
+// read userpreferences before any UI elements for themeing
+stores.userPreferenceStore.readState('').then(initApp).catch(initApp);
 
-app.use(setupCalendar, {});
-app.mount("#app");
+function initApp()
+{
+	const app = createApp(App);
+
+	app.use(setupCalendar, {});
+	app.mount("#app");
+}
