@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, provide } from 'vue';
+import { Ref, defineComponent, onMounted, ref, ComputedRef, computed } from 'vue';
 
 import TableSelector from "./components/TableSelector.vue"
 import FilterGroupTable from './components/Table/FilterGroupTable.vue';
@@ -42,8 +42,7 @@ import Popups from './components/Popups.vue';
 import StatusBar from './components/StatusBar.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 
-import { AccountSetupModel, AccountSetupView } from './Types/Models';
-import { OnSessionExpiredFunctionKey } from './Types/Keys';
+import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import { stores } from './Objects/Stores';
@@ -71,22 +70,13 @@ export default defineComponent({
 	},
 	setup()
 	{
-		const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
 		const finishedMounting: Ref<boolean> = ref(false);
 
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
 		let backgroundColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.backgroundColor);
 		//let backgroundClr: Ref<string> = ref('#0f111d');
 
-		provide(OnSessionExpiredFunctionKey, onSessionExpired);
-
 		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.userPreferenceStore.currentPrimaryColor.value));
-
-		function onSessionExpired(message: string = "Your session has expired. Please re sign in")
-		{
-			accountSetupModel.value.infoMessage = message;
-			accountSetupModel.value.currentView = AccountSetupView.SignIn;
-		}
 
 		let lastMouseover: number = 0;
 		const threshold: number = 1000;
@@ -110,7 +100,6 @@ export default defineComponent({
 
 		let clr = "#0f111d";
 		return {
-			accountSetupModel,
 			backgroundColor,
 			currentColorPalette,
 			clr,

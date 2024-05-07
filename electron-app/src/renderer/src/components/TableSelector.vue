@@ -29,7 +29,7 @@ export default defineComponent({
 .tableSelector {
 	margin: auto;
 	margin-top: clamp(20px, 2vw, 50px);
-	height: clamp(20px, 2.5vw, 50px);
+	height: clamp(25px, 2.5vw, 50px);
 	background-color: var(--app-color);
 	box-shadow: 0 5px 25px rgba(255, 255, 255, 0.25);
 	border-radius: 2vw;

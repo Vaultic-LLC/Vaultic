@@ -11,6 +11,7 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import AuthenticationPopup from "./AuthenticationPopup.vue"
+
 import { AuthPopup } from '@renderer/Types/Components';
 import { popups } from '@renderer/Objects/Stores/PopupStore';
 

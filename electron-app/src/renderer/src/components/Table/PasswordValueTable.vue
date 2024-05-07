@@ -1,9 +1,9 @@
 <template>
 	<div class="passwordValueTableContainer">
-		<TableTemplate id="passwordValueTable" ref="tableRef" :rowGap="0" class="shadow scrollbar" :color="color"
-			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
-			:showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0" :headerTabs="headerTabs"
-			@scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
+		<TableTemplate :name="'passwordValue'" id="passwordValueTable" ref="tableRef" :rowGap="0"
+			class="shadow scrollbar" :color="color" :headerModels="headerModels" :scrollbar-size="1"
+			:emptyMessage="emptyTableMessage" :showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0"
+			:headerTabs="headerTabs" @scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
 			<template #headerControls>
 				<SearchBar v-model="currentSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
 					:width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" :minHeight="'27px'" />

@@ -1,7 +1,7 @@
 <template>
 	<div id="filterGroupTableContainer">
-		<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
-			:headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
+		<TableTemplate :name="'filterGroup'" ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable"
+			:color="color" :headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
 			:showEmptyMessage="tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
 			@scrolledToBottom="tableRowDatas.loadNextChunk()">
 			<template #headerControls>

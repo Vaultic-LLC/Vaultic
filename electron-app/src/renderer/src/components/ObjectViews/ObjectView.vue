@@ -7,11 +7,11 @@
 			<slot></slot>
 		</div>
 		<div class="createButtons">
-			<PopupButton :color="color" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'125px'"
-				:maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'35px'" :height="'2vw'" :fontSize="'1vw'"
+			<PopupButton :color="color" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
+				:maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" :fontSize="'1vw'"
 				:minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSave" />
 			<PopupButton v-if="creating == true" :color="color" :text="'Create and Close'" :disabled="disabled"
-				:width="'10vw'" :minWidth="'125px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'35px'"
+				:width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'"
 				:height="'2vw'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
 				@onClick="onSaveAndClose" />
 		</div>

@@ -1,7 +1,8 @@
 <template>
-	<button ref="button" class="popupButton" :class="{ fadeIn: doFadeIn }" :disabled="disabled" @click.stop="doOnClick">
+	<div ref="button" tabindex="0" class="popupButton" :class="{ fadeIn: doFadeIn }" :disabled="disabled"
+		@click.stop="doOnClick">
 		{{ text }}
-	</button>
+	</div>
 </template>
 
 <script lang="ts">
@@ -16,6 +17,7 @@ export default defineComponent({
 	{
 		const button: Ref<HTMLElement | null> = ref(null);
 		const doFadeIn: Ref<boolean> = ref(props.fadeIn !== false);
+		const transition: Ref<string> = ref('0s');
 
 		function doOnClick()
 		{
@@ -27,30 +29,29 @@ export default defineComponent({
 		{
 			if (e.key === 'Enter' && document.activeElement == button.value)
 			{
-				e.stopPropagation();
-				doOnClick();
+				button.value?.blur();
+				if (props.isSubmit)
+				{
+					doOnClick();
+				}
 			}
 		}
 
 		onMounted(() =>
 		{
-			if (props.isSubmit)
-			{
-				window.addEventListener("keyup", onKeyUp);
-			}
+			transition.value = '0.3s';
+			window.addEventListener("keyup", onKeyUp);
 		});
 
 		onUnmounted(() =>
 		{
-			if (props.isSubmit)
-			{
-				window.removeEventListener("keyup", onKeyUp)
-			}
+			window.removeEventListener("keyup", onKeyUp)
 		});
 
 		return {
 			button,
 			doFadeIn,
+			transition,
 			doOnClick
 		}
 	}
@@ -69,11 +70,14 @@ export default defineComponent({
 	color: white;
 	border: 2px solid v-bind(color);
 	border-radius: var(--input-border-radius);
-	transition: 0.3s;
+	transition: v-bind(transition);
 	font-size: clamp(v-bind(minFontSize), v-bind(fontSize), v-bind(maxFontSize));
 	cursor: pointer;
 	outline: none;
 	padding: 2px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .popupButton.fadeIn {

@@ -1,6 +1,6 @@
 <template>
 	<div class="unknownResponsePopup">
-		<ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :minWidth="'200px'" :minHeight="'200px'"
+		<ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :minWidth="'300px'" :minHeight="'200px'"
 			:closePopup="onOk">
 			<div class="unknownResponsePopup__content">
 				<div class="unknownResponsePopup__title">
@@ -19,8 +19,8 @@
 					</div>
 				</div>
 				<div class="unknownResponsePopup__buttons">
-					<PopupButton :color="primaryColor" :text="'Ok'" :width="'7vw'" :minWidth="'75px'"
-						:maxWidth="'100px'" :height="'40%'" :minHeight="'30px'" :maxHeight="'35px'" :fontSize="'0.7vw'"
+					<PopupButton :color="primaryColor" :text="'Ok'" :width="'6vw'" :minWidth="'75px'"
+						:maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'" :fontSize="'0.7vw'"
 						:minFontSize="'15px'" :maxFontSize="'20px'" @onClick="onOk">
 					</PopupButton>
 				</div>

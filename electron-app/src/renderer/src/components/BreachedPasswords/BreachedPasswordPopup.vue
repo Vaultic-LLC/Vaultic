@@ -34,8 +34,8 @@
 						Once all necessary precautions have been taken you can click 'Dismiss Breach'
 					</div>
 					<PopupButton :color="primaryColor" :fadeIn="false" :disabled="disabled" :text="'Dismiss Breach'"
-						:width="'7vw'" :minWidth="'100px'" :maxWidth="'175px'" :height="'4vh'" :minHeight="'30px'"
-						:maxHeight="'45px'" :fontSize="'0.8vw'" :minFontSize="'10px'" :maxFontSize="'20px'"
+						:width="'7vw'" :minWidth="'100px'" :maxWidth="'175px'" :height="'3vh'" :minHeight="'25px'"
+						:maxHeight="'45px'" :fontSize="'0.8vw'" :minFontSize="'11px'" :maxFontSize="'20px'"
 						@onClick="onDismissBreach" />
 				</div>
 			</div>
@@ -220,7 +220,7 @@ export default defineComponent({
 	align-items: center;
 	justify-content: flex-end;
 	margin-bottom: 5%;
-	row-gap: clamp(5px, 0.2vw, 10px);
+	row-gap: clamp(7px, 0.4vw, 10px);
 }
 
 ;

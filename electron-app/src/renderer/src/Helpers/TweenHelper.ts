@@ -8,43 +8,39 @@ export interface TweenObject<T extends Record<string, any>>
 	onUpdate: (obj: T) => void;
 }
 
-export function tween<T extends Record<string, any>>(from: T, to: T, length: number, onUpdate: (obj: T) => void): Promise<void>
+export function tween<T extends Record<string, any>>(from: T, to: T, length: number, onUpdate: (obj: T) => void): TWEEN.Group
 {
-	return new Promise((resolve, _) =>
+	const tweenGroup = new TWEEN.Group();
+	new TWEEN.Tween(from, tweenGroup).to(to, length).onUpdate(onUpdate).start();
+
+	let startTime: number;
+	function animate(time)
 	{
-		const tweenGroup = new TWEEN.Group();
-		new TWEEN.Tween(from, tweenGroup).to(to, length).onUpdate(onUpdate).start();
-
-		let startTime: number;
-		function animate(time)
+		if (!startTime)
 		{
-			if (!startTime)
-			{
-				startTime = time;
-			}
+			startTime = time;
+		}
 
-			const elapsedTime = time - startTime;
-			if (elapsedTime < length + 100)
+		const elapsedTime = time - startTime;
+		if (elapsedTime < length + 100)
+		{
+			if (tweenGroup.update(time))
 			{
-				if (tweenGroup.update(time))
-				{
-					requestAnimationFrame(animate);
-				}
-				else
-				{
-					tweenGroup.removeAll();
-					resolve();
-				}
+				requestAnimationFrame(animate);
 			}
 			else
 			{
 				tweenGroup.removeAll();
-				resolve();
 			}
 		}
+		else
+		{
+			tweenGroup.removeAll();
+		}
+	}
 
-		requestAnimationFrame(animate);
-	});
+	requestAnimationFrame(animate);
+	return tweenGroup;
 }
 
 export function tweenInfinite<T extends Record<string, any>>(from: T, to: T, length: number, group: TWEEN.Group, onUpdate: (obj: T) => void)

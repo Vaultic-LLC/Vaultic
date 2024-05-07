@@ -50,7 +50,7 @@ import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
 import { RGBColor } from '@renderer/Types/Colors';
 import { hexToRgb } from '@renderer/Helpers/ColorHelper';
 import { tween } from '@renderer/Helpers/TweenHelper';
-import { stores } from '@renderer/Objects/Stores';
+import * as TWEEN from '@tweenjs/tween.js'
 
 export default defineComponent({
 	name: "TableTemplate",
@@ -60,11 +60,11 @@ export default defineComponent({
 		TableHeaderRow
 	},
 	emits: ['scrolledToBottom'],
-	props: ['color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
+	props: ['name', 'color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
 		'headerTabs', 'headerHeight', 'hideHeader'],
 	setup(props, ctx)
 	{
-		const resizeObserver: ResizeObserver = new ResizeObserver(calcScrollbarColor);
+		const resizeObserver: ResizeObserver = new ResizeObserver(onResize);
 		const key: Ref<string> = ref('');
 		const table: Ref<HTMLElement | null> = ref(null);
 		const tableContainer: Ref<HTMLElement | null> = ref(null);
@@ -75,11 +75,28 @@ export default defineComponent({
 		const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
 		const currentHeaderTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.headerTabs ?? []);
 
+		let tweenGroup: TWEEN.Group | undefined = undefined;
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);
 		let thumbColor: Ref<string> = ref(primaryColor.value);
 
 		let lastColor: Ref<string> = ref(primaryColor.value);
 		let lastScrollHeight: number = Number.MAX_VALUE;
+
+		let lastClientHeight: number | undefined = 0;
+		let lastClientWidth: number | undefined = 0;
+
+		function onResize()
+		{
+			// make sure we actually resized and didn't just change table headers
+			if (tableContainer.value?.clientHeight == lastClientHeight &&
+				tableContainer.value?.clientWidth == lastClientWidth)
+			{
+				return;
+			}
+
+			calcScrollbarColor();
+		}
+
 		function calcScrollbarColor()
 		{
 			if (!primaryColor?.value)
@@ -87,15 +104,20 @@ export default defineComponent({
 				return;
 			}
 
+			// cancle the current tween so it doesn't interfere with the new one
+			// otherwise the filter / group table scrollbar won't transition properly when clicking
+			// between the passwords / values fast
+			tweenGroup?.removeAll();
+
 			if (tableContainer.value?.scrollHeight && tableContainer.value.clientHeight)
 			{
 				const from: RGBColor | null = hexToRgb(lastColor.value);
 				const to: RGBColor | null = hexToRgb(primaryColor.value);
-				stores.userPreferenceStore.currentPrimaryColor.value;
+
 				if (tableContainer.value?.scrollHeight <= tableContainer.value?.clientHeight)
 				{
 					scrollbarColor.value = lastColor.value;
-					tween<RGBColor>(from!, to!, 500, (object) =>
+					tweenGroup = tween<RGBColor>(from!, to!, 500, (object) =>
 					{
 						scrollbarColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
 					});
@@ -106,7 +128,7 @@ export default defineComponent({
 						tableContainer.value?.scrollHeight > lastScrollHeight)
 					{
 						thumbColor.value = lastColor.value;
-						tween<RGBColor>(from!, to!, 500, (object) =>
+						tweenGroup = tween<RGBColor>(from!, to!, 500, (object) =>
 						{
 							thumbColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
 						});
@@ -115,20 +137,31 @@ export default defineComponent({
 						// flash the from color
 						if (primaryColor.value != lastColor.value && tableContainer.value?.clientHeight == lastScrollHeight)
 						{
-							tween<RGBColor>(from!, hexToRgb('#0f111d')!, 500, (object) =>
+							tweenGroup = tween<RGBColor>(from!, hexToRgb('#0f111d')!, 500, (object) =>
 							{
 								scrollbarColor.value = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
 							});
 						}
 						else
 						{
+							// pretty sure we should only be here when resizing the table smaller than all the rows,
+							// so the scrollbar thumb should show up
+							thumbColor.value = lastColor.value;
 							scrollbarColor.value = '#0f111d';
 						}
+					}
+					else
+					{
+
+						scrollbarColor.value = '#0f111d';
 					}
 				}
 
 				lastScrollHeight = tableContainer.value?.scrollHeight;
 			}
+
+			lastClientHeight = tableContainer.value?.clientHeight;
+			lastClientWidth = tableContainer.value?.clientWidth;
 
 			lastColor.value = primaryColor.value;
 		}
@@ -159,15 +192,6 @@ export default defineComponent({
 			}
 		}
 
-		// we want to resize after authenticating since we are going from hidden to visible
-		// watch(() => stores.appStore.reloadMainUI, (newValue) =>
-		// {
-		// 	if (newValue)
-		// 	{
-		// 		calcScrollbarColor();
-		// 	}
-		// });
-
 		watch(() => props.emptyMessage, () =>
 		{
 			key.value = Date.now().toString();
@@ -175,9 +199,9 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
-			if (table.value)
+			if (tableContainer.value)
 			{
-				resizeObserver.observe(table.value);
+				resizeObserver.observe(tableContainer.value);
 			}
 		});
 

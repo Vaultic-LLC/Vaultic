@@ -10,8 +10,8 @@
 					follow the instructions on screen.
 				</div>
 				<PopupButton :color="currentPrimaryColor" :disabled="disableButtons" :text="'View Subscription'"
-					:width="'12vw'" :minWidth="'120px'" :maxWidth="'200px'" :height="'4vh'" :minHeight="'30px'"
-					:maxHeight="'45px'" :fontSize="'1.2vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
+					:width="'12vw'" :minWidth="'120px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+					:maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
 					@onClick="openPaymentInfoLink" />
 			</div>
 		</div>
@@ -32,8 +32,8 @@
 						v-model="deactivationKey" :width="'330px'" :maxWidth="'330px'" :minWidth="'330px'"
 						:height="'4vh'" :minHeight="'35px'" :additionalValidationFunction="isValidGuid" />
 					<PopupButton :color="currentPrimaryColor" :disabled="disableButtons" :text="'Deactivate'"
-						:width="'7vw'" :minWidth="'75px'" :maxWidth="'150px'" :height="'4vh'" :minHeight="'30px'"
-						:maxHeight="'45px'" :fontSize="'1.2vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
+						:width="'8vw'" :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
+						:maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
 						@onClick="deactivateSubscription" />
 				</div>
 			</div>
@@ -42,10 +42,9 @@
 					If you lost your deactivation key, you can re download it by clicking 'Download'. Note, you can only
 					download your deactivation key while signed in.
 				</div>
-				<PopupButton :color="currentPrimaryColor" :disabled="disableButtons" :text="'Download'" :width="'7vw'"
-					:minWidth="'75px'" :maxWidth="'150px'" :height="'4vh'" :minHeight="'30px'" :maxHeight="'45px'"
-					:fontSize="'1.2vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-					@onClick="downloadDeactivationKey" />
+				<PopupButton :color="currentPrimaryColor" :disabled="disableButtons" :text="'Download'" :width="'8vw'"
+					:minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+					:fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="downloadDeactivationKey" />
 			</div>
 		</div>
 	</div>
