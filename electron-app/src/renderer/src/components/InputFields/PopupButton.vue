@@ -69,7 +69,7 @@ export default defineComponent({
 	background-color: var(--app-color);
 	color: white;
 	border: 2px solid v-bind(color);
-	border-radius: var(--input-border-radius);
+	border-radius: var(--responsive-border-radius);
 	transition: v-bind(transition);
 	font-size: clamp(v-bind(minFontSize), v-bind(fontSize), v-bind(maxFontSize));
 	cursor: pointer;

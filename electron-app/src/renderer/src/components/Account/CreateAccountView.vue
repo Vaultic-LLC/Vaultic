@@ -54,17 +54,7 @@ export default defineComponent({
 		const reEnterEmail: Ref<string> = ref('');
 
 		const alertMessage: Ref<string> = ref('');
-
 		const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
-
-		async function showAlertMessage()
-		{
-			stores.popupStore.showAlert("Unable to create account",
-				"There is already an account associated with this device. Please sign in using that account", false);
-			refreshKey.value = Date.now().toString();
-			await new Promise((resolve) => setTimeout(resolve, 300));
-			stores.popupStore.hideLoadingIndicator();
-		}
 
 		async function createAccount()
 		{
@@ -81,12 +71,6 @@ export default defineComponent({
 				if (response.UnknownError)
 				{
 					stores.popupStore.showErrorResponseAlert(response);
-					return;
-				}
-
-				if (response.DeviceIsTaken)
-				{
-					showAlertMessage();
 					return;
 				}
 

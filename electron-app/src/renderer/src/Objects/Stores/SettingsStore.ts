@@ -63,19 +63,28 @@ class SettingsStore extends Store<SettingsStoreState>
 		return window.api.files.settings;
 	}
 
-	protected async writeState(key: string): Promise<void>
+	protected async writeState(key: string): Promise<boolean>
 	{
 		this.state.version += 1;
-		await super.writeState(key);
-
-		if (stores.appStore.isOnline)
+		const success = await super.writeState(key);
+		if (!success)
 		{
-			const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
-			if (state.success)
-			{
-				window.api.server.user.backupSetings(state.value!);
-			}
+			return false;
 		}
+
+		if (!stores.appStore.isOnline)
+		{
+			return true;
+		}
+
+		const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
+		if (state.success)
+		{
+			const response = await window.api.server.user.backupSetings(state.value!);
+			return response.Success;
+		}
+
+		return false;
 	}
 
 	private calcAutolockTime(): number

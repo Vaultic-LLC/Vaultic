@@ -21,7 +21,8 @@
 			<div v-if="!isLocked && !disabled && showRandom" class="randomize" @click="generateRandomValue">
 				Random
 			</div>
-			<div v-if="showButtonsUnderneath == true" class="encryptedInputContainer__unlockIconsUnderneath">
+			<div v-if="!isLocked && showButtonsUnderneath == true"
+				class="encryptedInputContainer__unlockIconsUnderneath">
 				<ion-icon class="encryptedInputIcon" v-if="isHidden" name="eye-outline"
 					@click="toggleHidden(false)"></ion-icon>
 				<ion-icon class="encryptedInputIcon" v-else name="eye-off-outline"
@@ -271,7 +272,7 @@ export default defineComponent({
 	left: 0;
 	border: solid 1.5px v-bind('colorModel.borderColor');
 	color: white;
-	border-radius: var(--input-border-radius);
+	border-radius: var(--responsive-border-radius);
 	background: none;
 	font-size: clamp(13px, 1.2vh, 25px);
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);

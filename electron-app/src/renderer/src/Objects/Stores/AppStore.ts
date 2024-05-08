@@ -13,8 +13,6 @@ export interface AppStoreState extends StoreState
 	readonly isWindows: boolean;
 	masterKeyHash: string;
 	masterKeySalt: string;
-	isOnline: boolean;
-	reloadMainUI: boolean;
 	loginHistory: Dictionary<number[]>;
 }
 
@@ -22,18 +20,14 @@ class AppStore extends Store<AppStoreState>
 {
 	private autoLockTimeoutID: NodeJS.Timeout | undefined;
 
-	private internalAuthenticated: boolean;
-
 	private internalActivePasswordValueTable: Ref<DataType> = ref(DataType.Passwords);
 	private internalActiveFilterGroupTable: Ref<DataType> = ref(DataType.Filters);
 
+	private internalIsOnline: Ref<boolean>;
+
 	get isWindows() { return this.state.isWindows; }
-	get isOnline() { return this.state.isOnline; }
-	set isOnline(value: boolean) { this.state.isOnline = value; }
-	get authenticated() { return this.internalAuthenticated; }
-	set authenticated(value: boolean) { this.internalAuthenticated = value; }
-	get reloadMainUI() { return this.state.reloadMainUI; }
-	set reloadMainUI(value: boolean) { this.state.reloadMainUI = value; }
+	get isOnline() { return this.internalIsOnline.value; }
+	set isOnline(value: boolean) { this.internalIsOnline.value = value; }
 	get activePasswordValuesTable() { return this.internalActivePasswordValueTable.value; }
 	set activePasswordValuesTable(value: DataType) { this.internalActivePasswordValueTable.value = value; }
 	get activeFilterGroupsTable() { return this.internalActiveFilterGroupTable.value; }
@@ -44,8 +38,7 @@ class AppStore extends Store<AppStoreState>
 	{
 		super();
 
-		this.internalAuthenticated = false;
-
+		this.internalIsOnline = ref(false);
 		this.internalActivePasswordValueTable = ref(DataType.Passwords);
 		this.internalActiveFilterGroupTable = ref(DataType.Filters);
 	}
@@ -60,7 +53,6 @@ class AppStore extends Store<AppStoreState>
 			isWindows: window.api.device.platform === "win32",
 			isOnline: false,
 			userDataVersion: 0,
-			reloadMainUI: false,
 			loginHistory: {},
 		};
 	}
@@ -93,19 +85,29 @@ class AppStore extends Store<AppStoreState>
 		return false;
 	}
 
-	protected async writeState(key: string)
+	protected async writeState(key: string): Promise<boolean>
 	{
 		this.state.version += 1;
-		await super.writeState(key);
-
-		if (this.state.isOnline)
+		const success = await super.writeState(key);
+		if (!success)
 		{
-			const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
-			if (state.success)
-			{
-				window.api.server.user.backupAppStore(state.value!);
-			}
+			return false;
 		}
+
+		if (!this.internalIsOnline.value)
+		{
+			return true;
+		}
+
+		const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
+		if (state.success)
+		{
+			const response = await window.api.server.user.backupAppStore(state.value!);
+			return response.Success;
+		}
+
+		return false;
+
 	}
 
 	private async checkRemoveOldLoginRecords(key: string)

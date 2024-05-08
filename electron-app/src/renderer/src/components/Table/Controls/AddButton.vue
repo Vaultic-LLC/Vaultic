@@ -14,7 +14,7 @@ export default defineComponent({
 	props: ['color', 'minSize', 'preferredSize', 'maxSize'],
 	setup(props)
 	{
-		const computedMinSize: ComputedRef<string> = computed(() => props.minSize ?? '15px');
+		const computedMinSize: ComputedRef<string> = computed(() => props.minSize ?? '20px');
 		const computedPreferredSize: ComputedRef<string> = computed(() => props.preferredSize ?? '1.8vw');
 		const computedMaxSize: ComputedRef<string> = computed(() => props.maxSize ?? '35px');
 		const transition: Ref<string> = ref('0');

@@ -27,6 +27,6 @@
 
 	--test: #282525;
 
-	--input-border-radius: clamp(10px, 0.9vw, 0.85rem);
+	--responsive-border-radius: clamp(10px, 0.8vw, 0.85rem);
 	--input-label-left: 15px;
 }

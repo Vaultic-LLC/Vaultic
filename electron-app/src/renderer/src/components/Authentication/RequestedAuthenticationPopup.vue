@@ -36,7 +36,7 @@ export default defineComponent({
 			setTimeout(() =>
 			{
 				props.authenticationSuccessful(key)
-			}, 600);
+			}, 800);
 		}
 
 		function onCancel()

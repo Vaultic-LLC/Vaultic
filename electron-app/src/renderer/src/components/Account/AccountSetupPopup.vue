@@ -103,8 +103,6 @@ export default defineComponent({
 			accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
 		}
 
-		// TODO: should add a way for users to get from the sign in page to the payment page
-		// already can do that, just need to let them know to try to sign in
 		function onCreateMasterKeySuccess()
 		{
 			navigationStack.value = [];

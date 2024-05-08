@@ -43,7 +43,6 @@ export default defineComponent({
 	},
 	setup()
 	{
-		let refreshed: number = 0;
 		const refreshKey: Ref<string> = ref('');
 		const key: Ref<string> = ref('');
 		const chartContainer: Ref<HTMLElement | null> = ref(null);
@@ -60,9 +59,9 @@ export default defineComponent({
 		let max: Ref<number> = ref(Math.max(...stores.passwordStore.currentAndSafePasswords.safe));
 
 		const height: Ref<string> = ref('100%');
-		const width: Ref<string> = ref('85%');
+		const width: Ref<string> = ref('100%');
 
-		const resizeObserver: ResizeObserver = new ResizeObserver(() => refreshChart());
+		const resizeObserver: ResizeObserver = new ResizeObserver(refreshChart);
 
 		let options: Ref<any> = ref({});
 
@@ -133,6 +132,7 @@ export default defineComponent({
 
 			options.value = {
 				responsive: true,
+				maintainAspectRatio: false,
 				elements:
 				{
 					point:
@@ -242,7 +242,7 @@ export default defineComponent({
 			return emaArray;
 		}
 
-		const defaultLegendBoxWidth = 40;
+		const defaultLegendBoxWidth = 35;
 		const defaultLegendBoxHeight = 10;
 		const maxChartContainerWidth = 538;
 
@@ -270,15 +270,8 @@ export default defineComponent({
 				{
 					lineChart.value.chart.options.plugins.legend.labels.boxWidth = boxSize[0];
 					lineChart.value.chart.options.plugins.legend.labels.boxHeight = boxSize[1];
-					lineChart.value.chart.update();
+					reset();
 				}
-			}
-
-			// seems like we need to refresh it twice so that the chart loads witht he correct width / height inline styles
-			if (refreshed < 2)
-			{
-				refreshed += 1;
-				refreshKey.value = Date.now().toString();
 			}
 		}
 
@@ -307,6 +300,7 @@ export default defineComponent({
 		function reset()
 		{
 			setOptions(500);
+			updateData(color.value, color.value);
 		}
 
 		function recalcData()
@@ -376,12 +370,6 @@ export default defineComponent({
 		{
 			recalcData();
 		});
-
-		watch(() => stores.appStore.authenticated, () =>
-		{
-			recalcData();
-		});
-
 
 		// don't think these work well since updating one will mess up the chart since the data arrays now have different lengths i.e. x and y axis
 		// watch(() => stores.encryptedDataStore.currentAndSafePasswords.current.length, () =>
@@ -514,7 +502,7 @@ export default defineComponent({
 	border-radius: min(1vw, 1rem);
 	border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
 	transition: 0.3s;
-	font-size: clamp(10px, 0.8vw, 17px);
+	font-size: clamp(10px, 0.7vw, 17px);
 }
 
 .strengthGraphContainer__resetButton:hover {

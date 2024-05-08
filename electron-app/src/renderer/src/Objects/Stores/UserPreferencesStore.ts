@@ -94,15 +94,24 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 		return true;
 	}
 
-	protected async writeState(_: string)
+	protected async writeState(_: string): Promise<boolean>
 	{
 		this.state.version += 1;
-		await fileHelper.writeUnencrypted<UserPreferencesStoreState>(this.state, this.getFile());
 
-		if (stores.appStore.isOnline)
+		const success = await fileHelper.writeUnencrypted<UserPreferencesStoreState>(this.state, this.getFile());
+		if (!success)
 		{
-			window.api.server.user.backupUserPreferences(JSON.stringify(this.state));
+			return false;
 		}
+
+		if (!stores.appStore.isOnline)
+		{
+			return true;
+		}
+
+		const response = await window.api.server.user.backupUserPreferences(JSON.stringify(this.state));
+		return response.Success;
+
 	}
 
 	private setCurrentPrimaryColor(dataType: DataType)

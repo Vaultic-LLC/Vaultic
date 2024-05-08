@@ -200,7 +200,7 @@ export default function createPopupStore()
 	function showGlobalAuthentication(clr: string, focusInput: boolean)
 	{
 		color.value = clr;
-		onlyShowLockIcon.value = false;
+		onlyShowLockIcon.value = true;
 		focusGlobalAuthInput.value = focusInput;
 		globalAuthIsShowing.value = true;
 	}

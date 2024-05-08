@@ -141,11 +141,6 @@ export default defineComponent({
 	z-index: calc(999999 - v-bind(rowNumber));
 }
 
-.tableRow.shadow.pinned {
-	border: 10px solid v-bind(primaryColor);
-	box-shadow: 0 0px 10px v-bind(primaryColor);
-}
-
 .tableRow.clickable {
 	cursor: pointer;
 }

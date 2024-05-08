@@ -42,6 +42,7 @@ import PopupButton from '../InputFields/PopupButton.vue';
 import { ColorPalette } from '../../Types/Colors';
 import { defaultInputColorModel, InputColorModel } from '@renderer/Types/Models';
 import { stores } from '@renderer/Objects/Stores';
+import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
 
 export default defineComponent({
 	name: "AuthenticationPopup",
@@ -184,6 +185,8 @@ export default defineComponent({
 
 		onUnmounted(() => stores.popupStore.removeOnEnterHandler(props.popupIndex));
 
+		const backgroundGradient = getLinearGradientFromColor(colorModel.value.color);
+
 		return {
 			authenticationPopup,
 			loadingIndicator,
@@ -204,6 +207,7 @@ export default defineComponent({
 			disabled,
 			pulsingWidth,
 			showIcon,
+			backgroundGradient,
 			onEnter,
 			onCancel,
 			playUnlockAnimation
@@ -431,17 +435,24 @@ export default defineComponent({
 .authenticationPopupIcon__circle {
 	width: 20%;
 	aspect-ratio: 1 /1;
-	background: v-bind(color);
+	background: v-bind(backgroundGradient);
 	border-radius: 50%;
 	margin-bottom: -20%;
 }
 
-.authenticationPopupIcon__triangle {
+/* .authenticationPopupIcon__triangle {
 	background: transparent;
 	border-left: 25px solid transparent;
 	border-right: 25px solid transparent;
 	border-bottom: clamp(85px, 4vw, 100px) solid v-bind(color);
 	width: 0;
 	aspect-ratio: 1/ 1;
+} */
+
+.authenticationPopupIcon__triangle {
+	background-image: v-bind(backgroundGradient);
+	clip-path: polygon(50% 0, 100% 100%, 0 100%);
+	width: 50px;
+	height: 100px;
 }
 </style>

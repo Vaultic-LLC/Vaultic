@@ -106,7 +106,7 @@ export default defineComponent({
 	justify-content: center;
 	align-items: center;
 	opacity: 0;
-	width: clamp(5px, 1vw, 20px);
+	width: clamp(10px, 1vw, 20px);
 	transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, transform 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 	transform: rotate(0);
 	cursor: pointer;

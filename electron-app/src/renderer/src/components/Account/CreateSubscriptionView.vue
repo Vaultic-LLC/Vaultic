@@ -10,7 +10,7 @@
 						<div class="paymentInfoView__feature">
 							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
 								:minHeight="'10px'" />
-							<div>Tracking of Breached Passwords</div>
+							<div>Monitoring for Data Breaches</div>
 						</div>
 						<div class="paymentInfoView__feature">
 							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"

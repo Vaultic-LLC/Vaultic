@@ -7,7 +7,7 @@
 					:model="filterCondition.property" :displayFieldOptions="displayFieldOptions" :isOnWidget="true"
 					:fadeIn="true" @propertyTypeChanged="onPropertyTypeChanged" :width="'8vw'" :height="'4vh'"
 					:minHeight="'35px'" :maxHeight="'50px'" :minWidth="'100px'" />
-				<EnumInputField :label="'Condition Type'" :color="color" v-model="filterCondition.filterType"
+				<EnumInputField :label="'Condition'" :color="color" v-model="filterCondition.filterType"
 					:optionsEnum="filterConditionType" fadeIn="true" :isOnWidget="true" :width="'8vw'" :height="'4vh'"
 					:minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
 				<TextInputField v-if="inputType == 0" :label="'Value'" :color="color" v-model="filterCondition.value"

@@ -39,7 +39,6 @@ interface LicenseResponse
 export interface ValidateEmailResponse extends BaseResponse
 {
 	EmailIsTaken?: boolean;
-	DeviceIsTaken?: boolean;
 }
 
 export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, DataStoreResponse

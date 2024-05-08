@@ -1,8 +1,8 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import fs from "fs";
-import child_process from 'child_process';
 import vaulticServer from '../Server/VaulticServer';
 import { MethodResponse } from '../../Types/MethodResponse';
+import { FileLocker, getFileLocker } from './FileLocker';
 
 export interface File
 {
@@ -35,6 +35,8 @@ export default function useFile(name: string): File
 	const fileName = `${name}.json`;
 	const fullPath = directory + "\\" + fileName;
 
+	const fileLocker: FileLocker = getFileLocker();
+
 	function checkMakeDataDirectory(): void
 	{
 		if (!fs.existsSync(directory))
@@ -49,7 +51,7 @@ export default function useFile(name: string): File
 
 	async function fileExistsAndHasData(): Promise<boolean>
 	{
-		await unlock();
+		await fileLocker.unlock(fileName, directory);
 
 		if (!fs.existsSync(fullPath))
 		{
@@ -58,49 +60,8 @@ export default function useFile(name: string): File
 
 		const size = fs.statSync(fullPath).size;
 
-		await lock();
+		await fileLocker.lock(fileName, directory);
 		return size > 0;
-	}
-
-	// TODO: These won't work on Mac
-	function unlock(): Promise<void>
-	{
-		return new Promise<void>((resolve) =>
-		{
-			const child = child_process.spawn("icacls", [fileName, "/remove:d", "everyone"], {
-				shell: true, windowsHide: true, stdio: [
-					'pipe', // stdin: changed from the default `pipe`
-					'inherit', // stdout
-					'inherit' // stderr: changed from the default `pipe`
-				],
-				cwd: directory
-			});
-
-			child.on('exit', () =>
-			{
-				resolve();
-			});
-		});
-	}
-
-	function lock(): Promise<void>
-	{
-		return new Promise<void>((resolve) =>
-		{
-			const child = child_process.spawn("icacls", [fileName, "/deny", "everyone:f"], {
-				shell: true, windowsHide: true, stdio: [
-					'pipe', // stdin: changed from the default `pipe`
-					'inherit', // stdout
-					'inherit' // stderr: changed from the default `pipe`
-				],
-				cwd: directory
-			});
-
-			child.on('exit', () =>
-			{
-				resolve();
-			});
-		});
 	}
 
 	function readFile(): Promise<string>
@@ -132,13 +93,13 @@ export default function useFile(name: string): File
 
 		try
 		{
-			await unlock();
+			await fileLocker.unlock(fileName, directory);
 			unlocked = true;
 
 			await writeFile(fullPath, data);
 			wrote = true;
 
-			await lock();
+			await fileLocker.lock(fileName, directory);
 			unlocked = false;
 
 			return { success: true }
@@ -160,7 +121,7 @@ export default function useFile(name: string): File
 		{
 			try
 			{
-				await lock();
+				await fileLocker.lock(fileName, directory);
 			}
 			catch { }
 		}
@@ -180,12 +141,12 @@ export default function useFile(name: string): File
 		let logID: number | undefined;
 		try
 		{
-			await unlock();
+			await fileLocker.unlock(fileName, directory);
 			unlocked = true;
 
 			data = await readFile();
 
-			await lock();
+			await fileLocker.lock(fileName, directory);
 			unlocked = false;
 
 			return { success: true, value: data };
@@ -207,7 +168,7 @@ export default function useFile(name: string): File
 		{
 			try
 			{
-				await lock();
+				await fileLocker.lock(fileName, directory);
 			}
 			catch { }
 		}

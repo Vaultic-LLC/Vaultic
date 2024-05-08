@@ -41,7 +41,7 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
 		return {} as DataFile;
 	}
 
-	protected writeState(key: string): Promise<void>
+	protected writeState(key: string): Promise<boolean>
 	{
 		return fileHelper.write<T>(key, this.state, this.getFile());
 	}
@@ -66,12 +66,17 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
 		return this.state;
 	}
 
-	public async updateState(key: string, state: T)
+	public async updateState(key: string, state: T): Promise<boolean>
 	{
 		Object.assign(this.state, state);
-		await this.writeState(key);
+		const success = await this.writeState(key);
+		if (!success)
+		{
+			return false;
+		}
 
 		this.events['onChanged']?.forEach(f => f());
+		return true;
 	}
 
 	public async readState(key: string): Promise<boolean>

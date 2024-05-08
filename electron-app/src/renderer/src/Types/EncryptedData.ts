@@ -191,13 +191,7 @@ export function defaultPassword(): Password
 		email: '',
 		password: '',
 		passwordLength: 0,
-		securityQuestions: [{
-			id: uuidv4(),
-			question: '',
-			questionLength: 0,
-			answer: '',
-			answerLength: 0
-		}],
+		securityQuestions: [],
 		additionalInformation: '',
 		lastModifiedTime: '',
 		isDuplicate: false,

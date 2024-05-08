@@ -166,6 +166,8 @@ export default defineComponent({
 					if (response.Success)
 					{
 						await stores.loadStoreData(masterKey.value);
+						await stores.appStore.recordLogin(masterKey.value, Date.now());
+
 						ctx.emit('onKeySuccess');
 					}
 					else

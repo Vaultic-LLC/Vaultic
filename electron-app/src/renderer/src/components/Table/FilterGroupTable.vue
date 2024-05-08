@@ -7,8 +7,7 @@
 			<template #headerControls>
 				<SearchBar v-model="currentSearchText" :color="color" :width="'9vw'" :maxWidth="'250px'"
 					:minWidth="'100px'" :minHeight="'25px'" />
-				<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd"
-					:minButtonSize="'10px'" />
+				<AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
 			</template>
 			<template #body>
 				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues"
@@ -19,14 +18,16 @@
 		</TableTemplate>
 		<Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="showEditGroupPopup" :closePopup="onEditGroupPopupClosed">
+				<ObjectPopup v-if="showEditGroupPopup" :closePopup="onEditGroupPopupClosed" :minWidth="'800px'"
+					:minHeight="'480px'">
 					<EditGroupPopup :model="currentlyEditingGroupModel" />
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
 		<Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="showEditFilterPopup" :closePopup="onEditFilterPopupClosed">
+				<ObjectPopup v-if="showEditFilterPopup" :closePopup="onEditFilterPopupClosed" :minWidth="'800px'"
+					:minHeight="'480px'">
 					<EditFilterPopup :model="currentlyEditingFilterModel" />
 				</ObjectPopup>
 			</Transition>

@@ -8,9 +8,9 @@ import { stores } from "@renderer/Objects/Stores";
 export interface FileHelper
 {
 	read: <T>(key: string, file: DataFile) => Promise<[boolean, T]>;
-	write: <T>(key: string, data: T, file: DataFile) => Promise<void>;
+	write: <T>(key: string, data: T, file: DataFile) => Promise<boolean>;
 	readUnencrypted: <T>(file: DataFile) => Promise<[boolean, T]>;
-	writeUnencrypted: <T>(data: T, file: DataFile) => Promise<void>;
+	writeUnencrypted: <T>(data: T, file: DataFile) => Promise<boolean>;
 }
 
 async function read<T>(key: string, file: DataFile): Promise<[boolean, T]>
@@ -56,31 +56,37 @@ async function readUnencrypted<T>(file: DataFile): Promise<[boolean, T]>
 	return [false, {} as T];
 }
 
-async function write<T>(key: string, data: T, file: DataFile): Promise<void>
+async function write<T>(key: string, data: T, file: DataFile): Promise<boolean>
 {
 	const jsonData: string = JSON.stringify(data);
 	const encryptedData = await cryptHelper.encrypt(key, jsonData);
 	if (!encryptedData.success)
 	{
 		stores.popupStore.showErrorAlert(encryptedData.logID);
-		return;
+		return false;
 	}
 
 	const result = await file.write(encryptedData.value!);
 	if (!result.success)
 	{
 		stores.popupStore.showErrorAlert(result.logID);
+		return false;
 	}
+
+	return true;
 }
 
-async function writeUnencrypted<T>(data: T, file: DataFile): Promise<void>
+async function writeUnencrypted<T>(data: T, file: DataFile): Promise<boolean>
 {
 	const jsonData: string = JSON.stringify(data);
 	const result = await file.write(jsonData);
 	if (!result.success)
 	{
 		stores.popupStore.showErrorAlert(result.logID);
+		return false;
 	}
+
+	return true;
 }
 
 const fileHelper: FileHelper =

@@ -252,7 +252,19 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 	{
 		selectableTableRowModels.value.visualValues.sort((a, b) =>
 		{
-			if (pinnedCollection.values.find(pc => pc.id == a.key) && pinnedCollection.values.find(pc => pc.id == b.key))
+			if (a.atRiskModel?.message && b.atRiskModel?.message)
+			{
+				return selectableTableRowModels.value.visualValues.indexOf(a) >= selectableTableRowModels.value.visualValues.indexOf(b) ? 1 : -1;
+			}
+			else if (a.atRiskModel?.message)
+			{
+				return -1;
+			}
+			else if (b.atRiskModel?.message)
+			{
+				return 1;
+			}
+			else if (pinnedCollection.values.find(pc => pc.id == a.key) && pinnedCollection.values.find(pc => pc.id == b.key))
 			{
 				return pinnedCollection.values.findIndex(pc => pc.id == a.key) >= pinnedCollection.values.findIndex(pc => pc.id == b.key) ? 1 : -1;
 			}
@@ -454,15 +466,15 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 
 				collapsibleTableRowModels.value.visualValues.sort((a, b) =>
 				{
-					if (a.atRiskModel != undefined && b.atRiskModel != undefined)
+					if (a.atRiskModel?.message && b.atRiskModel?.message)
 					{
 						return collapsibleTableRowModels.value.visualValues.indexOf(a) >= collapsibleTableRowModels.value.visualValues.indexOf(b) ? 1 : -1;
 					}
-					else if (a.atRiskModel != undefined)
+					else if (a.atRiskModel?.message)
 					{
 						return -1;
 					}
-					else if (b.atRiskModel != undefined)
+					else if (b.atRiskModel?.message)
 					{
 						return 1;
 					}

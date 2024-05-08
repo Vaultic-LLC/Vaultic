@@ -190,15 +190,14 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 	if (response.Success && response.FilterStoreState && response.GroupStoreState && response.PasswordStoreState
 		&& response.ValueStoreState)
 	{
-		await Promise.all([
+		const results = await Promise.all([
 			stores.filterStore.updateState(key, response.FilterStoreState),
 			stores.groupStore.updateState(key, response.GroupStoreState),
 			stores.passwordStore.updateState(key, response.PasswordStoreState),
 			stores.valueStore.updateState(key, response.ValueStoreState)
 		]);
 
-		// TODO: handel failed state updates?
-		return true;
+		return results.every(r => r);
 	}
 	else if (!suppressError)
 	{

@@ -108,7 +108,6 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		if (filterIndex >= 0)
 		{
 			this.state.values[filterIndex].isActive = !this.state.values[filterIndex].isActive;
-			// TODO Write State to file
 			return this.state.values[filterIndex].isActive;
 		}
 

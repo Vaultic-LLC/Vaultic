@@ -53,6 +53,20 @@ export default defineComponent({
 		let fillAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 0 : props.model.filledAmount / props.model.totalAmount * 100);
 		let amountOutOfTotal: ComputedRef<string> = computed(() => `${props.model.filledAmount} / ${props.model.totalAmount}`);
 		const textColor: Ref<string> = computed(() => fillAmount.value == 0 ? "white" : "white");
+		const textWidth: ComputedRef<string> = computed(() =>
+		{
+			const digits = props.model.filledAmount.toString().length + props.model.totalAmount.toString().length;
+			if (digits > 5)
+			{
+				return "1vw";
+			}
+			else if (digits > 4)
+			{
+				return "1.25vw";
+			}
+
+			return "1.5vw";
+		});
 
 		const options: any =
 		{
@@ -139,7 +153,11 @@ export default defineComponent({
 		async function onClick()
 		{
 			props.model.onClick();
+			syncAnimations();
+		}
 
+		function syncAnimations()
+		{
 			// use a timeout so the animation actually starts. Otherwise it won't be found
 			setTimeout(() => animationHelper.syncAnimations('pulseMetricGauge'), 100);
 		}
@@ -148,20 +166,20 @@ export default defineComponent({
 		{
 			primaryColor.value = newValue;
 			updateData();
-			animationHelper.syncAnimations('pulseMetricGauge');
+			syncAnimations();
 		});
 
 		watch(() => props.model.filledAmount, () =>
 		{
 			updateData();
-			animationHelper.syncAnimations('pulseMetricGauge');
+			syncAnimations();
 		});
 
 		watch(() => pulse.value, (newValue) =>
 		{
 			if (newValue)
 			{
-				animationHelper.syncAnimations('pulseMetricGauge');
+				syncAnimations();
 			}
 		});
 
@@ -169,7 +187,7 @@ export default defineComponent({
 		{
 			if (pulse.value)
 			{
-				animationHelper.syncAnimations('pulseMetricGauge');
+				syncAnimations();
 			}
 		});
 
@@ -187,6 +205,7 @@ export default defineComponent({
 			data,
 			pulse,
 			pulseColor,
+			textWidth,
 			onClick
 		}
 	}
@@ -196,8 +215,7 @@ export default defineComponent({
 <style scoped>
 .smallMetricContainer {
 	position: relative;
-	width: clamp(50px, 6vw, 150px);
-	/* height: 150px; */
+	width: clamp(67px, 6vw, 150px);
 	aspect-ratio: 1 / 1;
 	display: flex;
 	justify-content: center;
@@ -268,6 +286,7 @@ export default defineComponent({
 }
 
 .smallMetricContainer__amount {
+	width: 80%;
 	opacity: 0;
 	position: absolute;
 	left: 50%;
@@ -275,7 +294,7 @@ export default defineComponent({
 	transform: translate(-50%, -65%);
 	color: v-bind(textColor);
 	font-weight: 700;
-	font-size: clamp(13px, 1.5vw, 36px);
+	font-size: clamp(12px, v-bind(textWidth), 36px);
 	transition: 0.2s;
 	user-select: none;
 	animation: fadeIn 1s linear forwards;

@@ -8,7 +8,7 @@
 			</div>
 			<div class="breachedPasswordsContainer__title">
 				<h2>
-					Breached Passwords
+					Data Breaches
 				</h2>
 			</div>
 			<div class="breachedPasswordsContainer__items">
@@ -191,7 +191,7 @@ export default defineComponent({
 	width: 25%;
 	height: 24.5%;
 	min-width: 280px;
-	min-height: 180px;
+	min-height: 190px;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;

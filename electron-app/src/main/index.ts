@@ -74,15 +74,6 @@ app.whenReady().then(() =>
 		optimizer.watchWindowShortcuts(window)
 	});
 
-	// TODO: Should create specific loading indicator window. Can just re use one already created
-	// Then, if the user has a license file, send a request to check the license
-	// if ok, store expiration and create main app
-	// if not ok, send them to update their payment info
-	// if they don't have a license file, send them to username / password page to authenticate
-	// check to see if they have a valid licensee
-	// if so, send them to main app and store license / expiration date
-	// if not, send them to update their payment info
-
 	createWindow()
 
 	app.on('activate', function ()

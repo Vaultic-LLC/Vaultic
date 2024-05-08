@@ -187,7 +187,6 @@ export default defineComponent({
 
 						let tempClr: string = toSolidHex(color.value);
 
-						// TODO: This needs to end the same as the other gradient
 						gradient.addColorStop(0, tempClr);
 						gradient.addColorStop(Math.max(x - 0.01, 0), tempClr + "11");
 						gradient.addColorStop(Math.max(x - 0.01, 0), tempClr);

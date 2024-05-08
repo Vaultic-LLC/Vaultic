@@ -207,15 +207,8 @@ export default defineComponent({
 		{
 			if (activeTab.value == 0)
 			{
-				// TODO: what is this?
+				// don't need headers for security questions
 				return [];
-				return createSortableHeaderModels<Group>(
-					ref(0), [{
-						backingProperty: "",
-						displayName: " ",
-						width: 'clamp(25px, 4vw, 100px)',
-						clickable: false
-					}], groups.value, undefined, setGroupModels);
 			}
 
 			return createSortableHeaderModels<Group>(

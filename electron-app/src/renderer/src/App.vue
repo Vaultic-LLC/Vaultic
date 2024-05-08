@@ -127,7 +127,6 @@ export default defineComponent({
 	-moz-osx-font-smoothing: grayscale;
 	text-align: center;
 	color: var(--app-color);
-	/* TODO: Doesn't work */
 	min-width: 1140px;
 	min-height: 600px;
 }
@@ -170,7 +169,7 @@ h2 {
 	left: 58%;
 	width: 21%;
 	height: 25%;
-	min-height: 180px;
+	min-height: 190px;
 	min-width: 250px;
 }
 

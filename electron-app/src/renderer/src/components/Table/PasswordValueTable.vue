@@ -24,14 +24,16 @@
 		</TableTemplate>
 		<Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="showEditPasswordPopup" :closePopup="onEditPasswordPopupClose">
+				<ObjectPopup v-if="showEditPasswordPopup" :closePopup="onEditPasswordPopupClose" :minWidth="'800px'"
+					:minHeight="'480px'">
 					<EditPasswordPopup :model="currentEditingPasswordModel" />
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
 		<Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="showEditValuePopup" :closePopup="onEditValuePopupClose">
+				<ObjectPopup v-if="showEditValuePopup" :closePopup="onEditValuePopupClose" :minWidth="'800px'"
+					:minHeight="'480px'">
 					<EditValuePopup :model="currentEditingValueModel" />
 				</ObjectPopup>
 			</Transition>
@@ -180,7 +182,7 @@ export default defineComponent({
 			{
 				displayName: "Username",
 				backingProperty: "login",
-				width: 'clamp(100px, 7.5vw, 250px)',
+				width: 'clamp(100px, 9vw, 300px)',
 				clickable: true
 			}
 		];
@@ -202,7 +204,7 @@ export default defineComponent({
 			{
 				displayName: "Type",
 				backingProperty: "valueType",
-				width: 'clamp(100px, 7.5vw, 250px)',
+				width: 'clamp(100px, 9vw, 300px)',
 				clickable: true
 			}
 		];
@@ -316,7 +318,7 @@ export default defineComponent({
 									component: 'TableRowTextValue', value: v.name, copiable: false, width: 'clamp(100px, 7vw, 150px)'
 								},
 								{
-									component: 'TableRowTextValue', value: v.valueType ?? '', copiable: false, width: 'clamp(100px, 7vw, 150px)'
+									component: 'TableRowTextValue', value: v.valueType ?? '', copiable: false, width: 'clamp(100px, 9vw, 300px)'
 								}]
 						}, onEditValue, onValueDeleteInitiated);
 					break;
@@ -332,7 +334,7 @@ export default defineComponent({
 									component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: 'clamp(100px, 7vw, 150px)',
 								},
 								{
-									component: 'TableRowTextValue', value: p.login, copiable: true, width: 'clamp(100px, 7.5vw, 250px)'
+									component: 'TableRowTextValue', value: p.login, copiable: true, width: 'clamp(100px, 9vw, 300px)'
 								}]
 						},
 						onEditPassword, onPasswordDeleteInitiated);
