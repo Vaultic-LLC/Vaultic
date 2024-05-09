@@ -9,6 +9,7 @@ import userPreferenceStore, { UserPreferenceStoreType, UserPreferencesStoreState
 import { Store, StoreState } from "./Base";
 import cryptHelper from "@renderer/Helpers/cryptHelper";
 import userDataBreachStore, { UserDataBreachStoreType } from "./UserDataBreachStore";
+import { defaultHandleFailedResponse } from "@renderer/Helpers/ResponseHelper";
 
 export interface DataStoreStates
 {
@@ -75,18 +76,7 @@ async function loadBackupData(key: string)
 		}
 		else
 		{
-			if (response.InvalidSession)
-			{
-				stores.popupStore.showSessionExpired();
-			}
-			else if (response.IncorrectDevice)
-			{
-				stores.popupStore.showIncorrectDevice(response);
-			}
-			else if (response.UnknownError)
-			{
-				stores.popupStore.showErrorResponseAlert(response)
-			}
+			defaultHandleFailedResponse(response);
 		}
 	}
 }
@@ -201,14 +191,7 @@ async function handleUpdateStoreResponse(key: string, response: any, suppressErr
 	}
 	else if (!suppressError)
 	{
-		if (response.UnknownError)
-		{
-			stores.popupStore.showErrorResponseAlert(response.statusCode);
-		}
-		else if (response.InvalidSession)
-		{
-			stores.popupStore.showSessionExpired();
-		}
+		defaultHandleFailedResponse(response);
 	}
 
 	return false;

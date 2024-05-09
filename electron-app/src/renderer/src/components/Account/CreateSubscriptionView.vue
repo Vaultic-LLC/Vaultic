@@ -51,6 +51,7 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue
 import AccountSetupView from './AccountSetupView.vue';
 import { stores } from '@renderer/Objects/Stores';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
+import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
 
 export default defineComponent({
 	name: "CreateSubscriptionView",
@@ -95,18 +96,7 @@ export default defineComponent({
 			else
 			{
 				stores.popupStore.hideLoadingIndicator();
-				if (response.InvalidSession)
-				{
-					stores.popupStore.showSessionExpired();
-				}
-				else if (response.IncorrectDevice)
-				{
-					stores.popupStore.showIncorrectDevice(response);
-				}
-				else
-				{
-					stores.popupStore.showErrorResponseAlert(response);
-				}
+				defaultHandleFailedResponse(response);
 			}
 		});
 

@@ -31,6 +31,7 @@ import AccountSetupView from './AccountSetupView.vue';
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
 import { InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
+import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
 
 export default defineComponent({
 	name: "CreateAccountView",
@@ -68,15 +69,13 @@ export default defineComponent({
 			}
 			else
 			{
-				if (response.UnknownError)
-				{
-					stores.popupStore.showErrorResponseAlert(response);
-					return;
-				}
-
 				if (response.EmailIsTaken)
 				{
 					emailField.value?.invalidate("Email is already in use. Please use a different one");
+				}
+				else
+				{
+					defaultHandleFailedResponse(response);
 				}
 			}
 		}

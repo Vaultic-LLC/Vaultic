@@ -1,10 +1,11 @@
+import { MutateStoreResponse } from "../../Types/Responses";
 import { AxiosHelper } from "../../Types/ServerTypes";
 
 export interface StoreController
 {
-	add: (data: string) => Promise<any>;
-	update: (data: string) => Promise<any>;
-	delete: (data: string) => Promise<any>
+	add: (data: string) => Promise<MutateStoreResponse>;
+	update: (data: string) => Promise<MutateStoreResponse>;
+	delete: (data: string) => Promise<MutateStoreResponse>
 }
 
 function createStoreController(path: string, axiosHelper: AxiosHelper): StoreController

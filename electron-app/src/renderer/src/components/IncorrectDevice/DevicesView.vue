@@ -47,6 +47,7 @@ import { HeaderDisplayField } from '@renderer/Types/EncryptedData';
 import { v4 as uuidv4 } from 'uuid';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
+import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
 
 export default defineComponent({
 	name: "DevicesView",
@@ -136,22 +137,16 @@ export default defineComponent({
 			else
 			{
 				stores.popupStore.hideLoadingIndicator();
-				if (response.UnknownError)
-				{
-					stores.popupStore.showErrorResponseAlert(response);
-					return;
-				}
-
-				if (response.InvalidSession)
-				{
-					stores.popupStore.showSessionExpired();
-				}
+				defaultHandleFailedResponse(response);
 			}
 		}
 
 		async function registerThisDevice()
 		{
+			stores.popupStore.showLoadingIndicator(props.color, "Registering");
 			const response = await window.api.server.user.registerDevice();
+
+			stores.popupStore.hideLoadingIndicator();
 			if (response.Success)
 			{
 				stores.popupStore.showToast(props.color, 'Registered Device', true);
@@ -159,14 +154,7 @@ export default defineComponent({
 			}
 			else
 			{
-				if (response.UnknownError)
-				{
-					stores.popupStore.showErrorResponseAlert(response);
-				}
-				else if (response.InvalidSession)
-				{
-					stores.popupStore.showSessionExpired();
-				}
+				defaultHandleFailedResponse(response);
 			}
 		}
 

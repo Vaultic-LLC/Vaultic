@@ -73,6 +73,7 @@ import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models'
 import { InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
 import { Password } from '@renderer/Types/EncryptedData';
+import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
 
 export default defineComponent({
 	name: "SignInView",
@@ -240,12 +241,8 @@ export default defineComponent({
 
 		function handleFailedResponse(response: any)
 		{
-			if (response.IncorrectDevice)
-			{
-				stores.popupStore.hideLoadingIndicator();
-				stores.popupStore.showIncorrectDevice(response);
-			}
-			else if (response.InvalidMasterKey)
+			stores.popupStore.hideLoadingIndicator();
+			if (response.InvalidMasterKey)
 			{
 				stores.popupStore.hideLoadingIndicator();
 
@@ -265,21 +262,9 @@ export default defineComponent({
 				emailField.value?.invalidate("Incorrect Email. Please try again");
 				resetToDefault();
 			}
-			else if (response.LicenseStatus != undefined && response.LicenseStatus != 1)
+			else
 			{
-				ctx.emit('onMoveToSetupPayment');
-			}
-			else if (response.UnknownError)
-			{
-				stores.popupStore.hideLoadingIndicator();
-
-				stores.popupStore.showErrorResponseAlert(response);
-				resetToDefault();
-			}
-			else if (response.InvalidSession)
-			{
-				stores.popupStore.hideLoadingIndicator();
-				stores.popupStore.showSessionExpired();
+				defaultHandleFailedResponse(response);
 			}
 		}
 

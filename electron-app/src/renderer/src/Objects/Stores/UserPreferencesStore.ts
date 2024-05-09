@@ -6,6 +6,7 @@ import { Ref, ref, watch } from "vue";
 import { DataType } from "@renderer/Types/Table";
 import { Stores, stores } from ".";
 import { Dictionary } from "@renderer/Types/DataStructures";
+import { defaultHandleFailedResponse } from "@renderer/Helpers/ResponseHelper";
 
 export interface UserPreferencesStoreState extends StoreState
 {
@@ -110,6 +111,11 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 		}
 
 		const response = await window.api.server.user.backupUserPreferences(JSON.stringify(this.state));
+		if (!response.Success)
+		{
+			defaultHandleFailedResponse(response);
+		}
+
 		return response.Success;
 
 	}

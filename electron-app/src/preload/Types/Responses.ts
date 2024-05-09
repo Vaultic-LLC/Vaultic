@@ -17,9 +17,14 @@ export interface BaseResponse
 	axiosCode?: string;
 }
 
-export interface CreateSessionResponse extends BaseResponse
+interface InvalidLicenseResponse
 {
-	session?: Session;
+	LicenseStatus?: LicenseStatus;
+}
+
+export interface InvalidSessionResponse extends BaseResponse
+{
+	InvalidSession?: boolean;
 }
 
 interface IncorrectDeviceResponse extends BaseResponse
@@ -31,9 +36,31 @@ interface IncorrectDeviceResponse extends BaseResponse
 	MobileDevices?: Device[];
 }
 
-interface LicenseResponse
+interface EmailIsTakenResposne
 {
-	licenseStatus?: LicenseStatus;
+	EmailIsTaken?: boolean;
+}
+
+export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse, IncorrectDeviceResponse
+{
+}
+
+export interface UseSessionLicenseAndDeviceAuthenticationResponse extends InvalidLicenseResponse, UserSessionAndDeviceAuthenticationRespons
+{
+}
+
+export interface UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
+{
+	InvalidMasterKey?: boolean;
+}
+
+export interface MutateStoreResponse extends UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse, EmailIsTakenResposne
+{
+}
+
+export interface CreateSessionResponse extends BaseResponse
+{
+	session?: Session;
 }
 
 export interface ValidateEmailResponse extends BaseResponse
@@ -45,15 +72,10 @@ export interface CreateAccountResponse extends ValidateEmailResponse, CreateSess
 {
 }
 
-export interface ValidateUserResponse extends LicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
+export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
 {
 	InvalidMasterKey?: boolean;
 	UnknownEmail?: boolean;
-}
-
-export interface InvalidSessionResponse extends BaseResponse
-{
-	InvalidSession?: boolean;
 }
 
 export interface DeleteDeviceResponse extends InvalidSessionResponse
@@ -80,13 +102,6 @@ export interface LoadDataResponse extends DataStoreResponse, InvalidSessionRespo
 	settingsStoreState?: any;
 	userPreferenceStoreState?: any;
 }
-export interface UserSessionAndDeviceAuthenticationRespons extends InvalidSessionResponse, IncorrectDeviceResponse
-{
-}
-
-export interface UseSessionLicenseAndDeviceAuthenticationResposne extends LicenseResponse, UserSessionAndDeviceAuthenticationRespons
-{
-}
 
 export interface UpdateDeviceRespnose extends InvalidSessionResponse
 {
@@ -99,12 +114,12 @@ export interface CreateCheckoutResponse extends UserSessionAndDeviceAuthenticati
 	Url?: string;
 }
 
-export interface GetUserDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResposne
+export interface GetUserDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
 	DataBreaches?: UserDataBreach[];
 }
 
-export interface GetUserDeactivationKeyResponse extends UseSessionLicenseAndDeviceAuthenticationResposne
+export interface GetUserDeactivationKeyResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
 	DeactivationKey?: string;
 }

@@ -2,7 +2,7 @@ import { stores } from "@renderer/Objects/Stores";
 
 export function defaultHandleFailedResponse(response: any)
 {
-	if (response.licenseStatus != undefined && response.licenseStatus != 1)
+	if (response.LicenseStatus != undefined && response.LicenseStatus != 1)
 	{
 		stores.popupStore.showPaymentSetup();
 	}

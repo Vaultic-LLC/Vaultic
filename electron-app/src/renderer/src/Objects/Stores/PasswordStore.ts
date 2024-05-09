@@ -93,7 +93,7 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 			...stores.getStates()
 		};
 
-		const data: any = await window.api.server.password.add(JSON.stringify(addPasswordData));
+		const data = await window.api.server.password.add(JSON.stringify(addPasswordData));
 		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());
@@ -113,8 +113,8 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 			...stores.getStates()
 		};
 
-		const data: any = await window.api.server.password.update(JSON.stringify(updatedPasswordData));
-		if (data.emailIsTaken)
+		const data = await window.api.server.password.update(JSON.stringify(updatedPasswordData));
+		if (data.EmailIsTaken)
 		{
 			stores.popupStore.showAlert("Unable to update password", "The new email is already in use. Please use a different one", false);
 			return false;
@@ -141,7 +141,7 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 			...stores.getStates()
 		};
 
-		const data: any = await window.api.server.password.delete(JSON.stringify(deletePasswordData));
+		const data = await window.api.server.password.delete(JSON.stringify(deletePasswordData));
 		const succeeded = await stores.handleUpdateStoreResponse(key, data);
 
 		this.events["onChange"]?.forEach(c => c());

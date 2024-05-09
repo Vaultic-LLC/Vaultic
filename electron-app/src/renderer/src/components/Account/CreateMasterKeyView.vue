@@ -55,6 +55,7 @@ import { InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
 import { Account } from '@renderer/Types/SharedTypes';
+import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
 
 export default defineComponent({
 	name: "CreateMasterKeyView",
@@ -137,9 +138,9 @@ export default defineComponent({
 				{
 					showAlertMessage("Email is already in use. Please use a different one");
 				}
-				else if (response.UnknownError)
+				else
 				{
-					stores.popupStore.showErrorResponseAlert(response);
+					defaultHandleFailedResponse(response);
 				}
 			}
 		}

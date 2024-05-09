@@ -6,6 +6,7 @@ import { AutoLockTime } from "../../Types/Settings";
 import { Store, StoreState } from "./Base";
 import { DataFile } from "@renderer/Types/EncryptedData";
 import cryptHelper from "@renderer/Helpers/cryptHelper";
+import { defaultHandleFailedResponse } from "@renderer/Helpers/ResponseHelper";
 
 export interface SettingsStoreState extends StoreState
 {
@@ -81,6 +82,11 @@ class SettingsStore extends Store<SettingsStoreState>
 		if (state.success)
 		{
 			const response = await window.api.server.user.backupSetings(state.value!);
+			if (!response.Success)
+			{
+				defaultHandleFailedResponse(response);
+			}
+
 			return response.Success;
 		}
 

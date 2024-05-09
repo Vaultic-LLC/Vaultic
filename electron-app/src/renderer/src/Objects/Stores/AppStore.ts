@@ -7,6 +7,7 @@ import { Store, StoreState } from "./Base";
 import { DataFile } from "@renderer/Types/EncryptedData";
 import { AccountSetupView } from "@renderer/Types/Models";
 import cryptHelper from "@renderer/Helpers/cryptHelper";
+import { defaultHandleFailedResponse } from "@renderer/Helpers/ResponseHelper";
 
 export interface AppStoreState extends StoreState
 {
@@ -103,6 +104,11 @@ class AppStore extends Store<AppStoreState>
 		if (state.success)
 		{
 			const response = await window.api.server.user.backupAppStore(state.value!);
+			if (!response.Success)
+			{
+				defaultHandleFailedResponse(response);
+			}
+
 			return response.Success;
 		}
 
