@@ -95,6 +95,8 @@ export interface SortableHeaderModel
 	clickable: boolean;
 	width: string;
 	padding?: string;
+	centered?: boolean;
+	headerSpaceRight?: string;
 	onClick: () => void;
 }
 
@@ -175,4 +177,10 @@ export interface AccountSetupModel
 	updateDevicesLeft?: number;
 	devices?: Device[];
 	infoMessage?: string;
+}
+
+export interface ButtonModel
+{
+	text: string;
+	onClick: () => void;
 }

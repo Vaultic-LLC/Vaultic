@@ -19,9 +19,13 @@
 					</div>
 				</div>
 				<div class="unknownResponsePopup__buttons">
-					<PopupButton :color="primaryColor" :text="'Ok'" :width="'6vw'" :minWidth="'75px'"
+					<PopupButton :color="primaryColor" :text="leftButton.text" :width="'6vw'" :minWidth="'75px'"
 						:maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'" :fontSize="'0.7vw'"
-						:minFontSize="'15px'" :maxFontSize="'20px'" @onClick="onOk">
+						:minFontSize="'15px'" :maxFontSize="'20px'" @onClick="onLeftButtonClick">
+					</PopupButton>
+					<PopupButton v-if="rightButton" :color="primaryColor" :text="rightButton?.text" :width="'6vw'"
+						:minWidth="'75px'" :maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'"
+						:fontSize="'0.7vw'" :minFontSize="'15px'" :maxFontSize="'20px'" @onClick="onRightButtonClick">
 					</PopupButton>
 				</div>
 			</div>
@@ -38,6 +42,7 @@ import ButtonLink from './InputFields/ButtonLink.vue';
 
 import { stores } from '@renderer/Objects/Stores';
 import { popups } from '@renderer/Objects/Stores/PopupStore';
+import { ButtonModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "AlertPopup",
@@ -48,13 +53,16 @@ export default defineComponent({
 		ButtonLink
 	},
 	emits: ['onOk'],
-	props: ['title', 'message', 'showContactSupport', 'statusCode', 'logID', 'axiosCode'],
+	props: ['title', 'message', 'showContactSupport', 'statusCode', 'logID', 'axiosCode', 'leftButton', 'rightButton'],
 	setup(props, ctx)
 	{
+		const okButtonModel: ButtonModel = { text: "Ok", onClick: () => { } };
 		const title: ComputedRef<string> = computed(() => props.title ? props.title : "An Error has occured");
 		const message: ComputedRef<string> = computed(getMessage);
 		const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
 		const popupInfo = popups.alert;
+
+		const leftButton: ComputedRef<ButtonModel> = computed(() => props.leftButton ?? okButtonModel);
 
 		function getMessage()
 		{
@@ -77,9 +85,21 @@ export default defineComponent({
 			ctx.emit('onOk');
 		}
 
+		function onLeftButtonClick()
+		{
+			leftButton.value.onClick();
+			onOk();
+		}
+
+		function onRightButtonClick()
+		{
+			props.rightButton?.onClick();
+			onOk();
+		}
+
 		onMounted(() =>
 		{
-			stores.popupStore.addOnEnterHandler(popupInfo.enterOrder!, onOk);
+			stores.popupStore.addOnEnterHandler(popupInfo.enterOrder!, onLeftButtonClick);
 		});
 
 		onUnmounted(() =>
@@ -92,6 +112,9 @@ export default defineComponent({
 			primaryColor,
 			message,
 			zIndex: popupInfo.zIndex,
+			leftButton,
+			onLeftButtonClick,
+			onRightButtonClick,
 			onOk
 		}
 	}
@@ -137,5 +160,6 @@ export default defineComponent({
 	display: flex;
 	justify-content: center;
 	align-items: flex-end;
+	column-gap: max(10px, 2vw);
 }
 </style>

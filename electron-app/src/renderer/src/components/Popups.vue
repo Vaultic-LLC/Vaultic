@@ -9,6 +9,7 @@
 				<AlertPopup v-if="popupStore.alertIsShowing" :showContactSupport="popupStore.showContactSupport"
 					:title="popupStore.alertTitle" :message="popupStore.alertMessage"
 					:statusCode="popupStore.statusCode" :logID="popupStore.logID" :axiosCode="popupStore.axiosCode"
+					:leftButton="popupStore.alertLeftButton" :rightButton="popupStore.alertRightButton"
 					@onOk="popupStore.hideAlert()" />
 			</Transition>
 		</Teleport>

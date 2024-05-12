@@ -1,7 +1,6 @@
 <template>
-	<td>
-		<div class="rowValue"
-			:style="{ 'width': rowValue.width, 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
+	<td class="tableCell">
+		<div class="rowValue" :style="{ 'width': rowValue.width }">
 			<slot></slot>
 			<div v-if="rowValue.copiable" class="copyIcon" @click.stop="copyText(rowValue.value)">
 				<ion-icon name="clipboard-outline"></ion-icon>
@@ -40,6 +39,10 @@ export default defineComponent({
 })
 </script>
 <style>
+.tableCell {
+	padding: 0;
+}
+
 .rowValue {
 	display: flex;
 	justify-content: flex-start;

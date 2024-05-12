@@ -39,7 +39,6 @@ class SettingsStore extends Store<SettingsStoreState>
 	constructor()
 	{
 		super();
-
 		this.internalAutoLockNumberTime = computed(this.calcAutolockTime);
 	}
 
@@ -52,7 +51,7 @@ class SettingsStore extends Store<SettingsStoreState>
 			autoLockTime: AutoLockTime.OneMinute,
 			loginRecordsToStorePerDay: 14,
 			numberOfDaysToStoreLoginRecords: 30,
-			randomValueLength: 20,
+			randomValueLength: 25,
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
 			percentMetricForPulse: 1,

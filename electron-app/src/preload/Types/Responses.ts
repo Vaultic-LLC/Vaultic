@@ -27,18 +27,27 @@ export interface InvalidSessionResponse extends BaseResponse
 	InvalidSession?: boolean;
 }
 
-interface IncorrectDeviceResponse extends BaseResponse
+export interface DeviceResponse extends BaseResponse
 {
-	IncorrectDevice?: boolean;
 	DesktopDeviceUpdatesLeft?: number;
 	MobileDeviceUpdatesLeft?: number;
 	DesktopDevices?: Device[];
 	MobileDevices?: Device[];
 }
 
+interface IncorrectDeviceResponse extends DeviceResponse
+{
+	IncorrectDevice?: boolean;
+}
+
 interface EmailIsTakenResposne
 {
 	EmailIsTaken?: boolean;
+}
+
+interface InvalidMasterKeyResponse
+{
+	InvalidMasterKey?: boolean;
 }
 
 export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse, IncorrectDeviceResponse
@@ -49,9 +58,13 @@ export interface UseSessionLicenseAndDeviceAuthenticationResponse extends Invali
 {
 }
 
-export interface UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
+export interface UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse extends UseSessionLicenseAndDeviceAuthenticationResponse, InvalidMasterKeyResponse
 {
-	InvalidMasterKey?: boolean;
+}
+
+export interface UserSessionLicenseAndMasterKeyAuthentication extends InvalidSessionResponse, InvalidLicenseResponse, InvalidMasterKeyResponse
+{
+
 }
 
 export interface MutateStoreResponse extends UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse, EmailIsTakenResposne
@@ -78,9 +91,15 @@ export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectD
 	UnknownEmail?: boolean;
 }
 
-export interface DeleteDeviceResponse extends InvalidSessionResponse
+export interface DeleteDeviceResponse extends UserSessionLicenseAndMasterKeyAuthentication
 {
 	DeviceNotFound?: boolean;
+	Url?: string;
+}
+
+export interface GetDevicesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
+{
+
 }
 
 export interface LogResponse extends BaseResponse

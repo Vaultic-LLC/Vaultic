@@ -11,11 +11,11 @@
 					<div class="aboutPopupContainer__section__text">
 						It seems like almost everyone is using Multi Factor Authentication these days. Luckily, you can
 						easily store your MFA Key in case you ever need to re set it up. Simply creat a Value with Type
-						set to MFA Key and you'll be able to see the original QR Code in the Value Row.
+						set to MFA Key and you'll be able to see the original QR Code in the Value Row
 					</div>
 					<div>
 						<img class="aboutPopupContainer__image" src="../../assets/Files/pickMFAKey.png"
-							:style="{ position: 'absolute', left: '0', width: '20vw', height: '11vw' }" />
+							:style="{ position: 'absolute', left: '0', width: '20vw', height: '11vw', 'min-width': '170px' }" />
 						<img class="aboutPopupContainer__image" src="../../assets/Files/selectRow.png"
 							:style="{ position: 'absolute', left: '25%', width: '25vw', height: '11vw' }" />
 						<img class="aboutPopupContainer__image" src="../../assets/Files/qrCode.png"
@@ -45,7 +45,7 @@
 						is that ony the current sorted header column will be searched. If you want to search for a value
 						in
 						a different column,
-						you'll have to sort on it first.
+						you'll have to sort on it first
 					</div>
 					<div>
 						<img class="aboutPopupContainer__image" src="../../assets/Files/clickingOnHeader.png"

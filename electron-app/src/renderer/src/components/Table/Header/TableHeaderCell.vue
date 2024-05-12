@@ -1,7 +1,9 @@
 <template>
-	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }">
+	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }"
+		:style="{ 'margin-right': headerModel.headerSpaceRight }">
 		<Transition name="fade" mode="out-in">
-			<div :key="key" class="tableHeaderContent" :style="{ 'padding-left': headerModel.padding ?? '0' }">
+			<div :key="key" class="tableHeaderContent" :class="{ centered: headerModel.centered }"
+				:style="{ 'padding-left': headerModel.padding ?? '0' }">
 				<span class="tableHeaderText" :class="{ hover: hoveringIcon || hoveringText }"
 					@mouseover="hoveringText = true" @mouseleave="hoveringText = false">
 					{{ headerModel.name }}</span>
@@ -87,6 +89,10 @@ export default defineComponent({
 	align-items: center;
 }
 
+.tableHeaderContent.centered {
+	justify-content: center;
+}
+
 .tableHeaderContent.padding {
 	padding-left: 25px;
 }
@@ -99,6 +105,11 @@ export default defineComponent({
 
 .tableHeaderCell.clickable .tableHeaderContent .tableHeaderText {
 	cursor: pointer;
+}
+
+/* move the text over the width of the sort icon  */
+.tableHeaderContent.centered .tableHeaderText {
+	margin-left: clamp(10px, 1vw, 20px);
 }
 
 .iconContainer {

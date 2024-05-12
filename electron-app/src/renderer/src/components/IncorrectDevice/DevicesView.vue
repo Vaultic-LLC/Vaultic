@@ -1,30 +1,28 @@
 <template>
-	<div class="deviceViewContainer">
-		<div>
-			<div>
-				Automatic desktop device updates left: {{ responseObj.DesktopDeviceUpdatesLeft }}
+	<div class="deviceView">
+		<div class="deviceView__deviceUpdateInfo" v-if="hasDesktopDeviceUpdates">
+			<div class="deviceView__deviceUpdatesLeft">
+				<label class="deviceView__deviceUpdatesLeftTitle">Automatic Device Updates Left</label>
+				<div class="deviceView__desktopDeviceUpdatesLeft" v-if="hasDesktopDeviceUpdates">
+					Desktop: {{ responseObj?.DesktopDeviceUpdatesLeft }}
+				</div>
+				<!-- <div class="deviceView__mobileDeviceUpdatesLeft" v-if="responseObj?.MobileDeviceUpdatesLeft">
+					Mobile: {{ responseObj?.MobileDeviceUpdatesLeft }}
+				</div> -->
 			</div>
-			<div>
-				Automatic mobile device updates left: {{ responseObj.MobileDeviceUpdatesLeft }}
-			</div>
-			<ToolTip :color="color"
-				:message="`Once you run out of automatic updates, you'll have to pay for any additional updates or reach out to customer service.`" />
+			<ToolTip :color="color" :size="'clamp(18px, 2vw, 30px)'" :message="`Devices are automatically registered if you have an open device spot on your account.
+				Deleting a device uses up 1 automatic update. Once you run out of automatic updates, you'll have to pay for any
+				additional updates or reach out to customer service.`" />
 		</div>
 		<div class="deviceTable">
-			<TableTemplate ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable" :color="color"
-				:headerModels="headers" :scrollbar-size="1" :emptyMessage="''" :showEmptyMessage="false"
-				:style="{ height: '43%', width: '25%', left: '3%', top: '42%' }"
-				@scrolledToBottom="tableRows.loadNextChunk()">
-				<template #headerControls>
-					<div v-if="showRegisterThisDevice" class="deviceTable__registerThisDeviceButton">
-						<button @click="registerThisDevice">Register This Device</button>
-					</div>
-				</template>
+			<TableTemplate ref="tableRef" id="devicesTable" :rowGap="0" class="border scrollbar" :color="color"
+				:headerModels="headers" :border="true" :scrollbar-size="1" :emptyMessage="''" :showEmptyMessage="false"
+				:headerTabs="headerTabs" @scrolledToBottom="tableRows.loadNextChunk()">
 				<template #body>
 					<TableRow class="shadow hover" v-for="(row, index) in tableRows.visualValues" :key="row.id"
 						:rowNumber="index" :model="row" :preventDeselect="false"
-						:style="{ width: '5%', 'height': '100px' }" :color="color" :allowPin="false" :allowEdit="false"
-						:allowDelete="true" />
+						:style="{ 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" :allowPin="false"
+						:allowEdit="false" :allowDelete="true" />
 				</template>
 			</TableTemplate>
 		</div>
@@ -40,7 +38,7 @@ import TableRow from '../Table/Rows/TableRow.vue';
 import ToolTip from '../ToolTip.vue';
 
 import { Device, IncorrectDeviceResponse } from '@renderer/Types/SharedTypes';
-import { SortableHeaderModel, TableRowData, TextTableRowValue } from '@renderer/Types/Models';
+import { ButtonModel, HeaderTabModel, SortableHeaderModel, TableRowData, TextTableRowValue } from '@renderer/Types/Models';
 import { createSortableHeaderModels } from '@renderer/Helpers/ModelHelper';
 import { SortedCollection } from '@renderer/Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '@renderer/Types/EncryptedData';
@@ -64,37 +62,49 @@ export default defineComponent({
 	{
 		const responseObj: Ref<IncorrectDeviceResponse> = ref(props.response);
 		const devices: ComputedRef<SortedCollection<Device>> = computed(() => new SortedCollection([], "Name"));
-		const activeHeader: Ref<number> = ref(1);
+		const activeHeader: Ref<number> = ref(0);
 		const tableRows: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection<TableRowData>());
-		const showRegisterThisDevice: ComputedRef<boolean> = computed(() => devices.value.values.some(d => d.MacAddress == window.api.device.mac));
 
-		const filterHeaderDisplayField: HeaderDisplayField[] = [
+		const hasDesktopDeviceUpdates: ComputedRef<boolean> = computed(() => responseObj.value?.DesktopDeviceUpdatesLeft != undefined);
+
+		const headerDisplayFields: HeaderDisplayField[] = [
 			{
 				displayName: "Name",
 				backingProperty: "Name",
-				width: '75px',
-				clickable: true
+				width: 'clamp(75px, 8vw, 180px)',
+				clickable: true,
+				padding: '10px'
 			},
 			{
 				displayName: "Type",
 				backingProperty: "Type",
-				width: '75px',
+				width: 'clamp(75px, 8vw, 180px)',
 				clickable: true
 			},
 			{
 				displayName: "Model",
 				backingProperty: "Model",
-				width: '75px',
+				width: 'clamp(75px, 8vw, 180px)',
 				clickable: true
 			},
 			{
 				displayName: "Version",
 				backingProperty: "Version",
-				width: '75px',
+				width: 'clamp(75px, 8vw, 180px)',
 				clickable: true
 			}];
 
-		const headers: SortableHeaderModel[] = createSortableHeaderModels<Device>(activeHeader, filterHeaderDisplayField,
+		const headerTabs: HeaderTabModel[] = [
+			{
+				id: uuidv4(),
+				name: 'Devices',
+				active: computed(() => true),
+				color: computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor),
+				onClick: () => { }
+			}
+		];
+
+		const headers: SortableHeaderModel[] = createSortableHeaderModels<Device>(activeHeader, headerDisplayFields,
 			devices.value, undefined, setTableRows);
 
 		function setTableRows()
@@ -103,10 +113,10 @@ export default defineComponent({
 			{
 				d.id = uuidv4();
 				const values: TextTableRowValue[] = [
-					{ component: "TextTableRowValue", value: d.Name, copiable: false, width: '75px' },
-					{ component: "TestTableRowValue", value: d.Type, copiable: false, width: '75px' },
-					{ component: "TextTableRowValue", value: d.Model, copiable: false, width: '75px' },
-					{ component: "TextTableRowValue", value: d.Verison, copiable: false, width: '75px' }
+					{ component: "TableRowTextValue", value: d.Name, copiable: false, width: 'clamp(75px, 8vw, 180px)', margin: true },
+					{ component: "TableRowTextValue", value: d.Type, copiable: false, width: 'clamp(75px, 8vw, 180px)' },
+					{ component: "TableRowTextValue", value: d.Model, copiable: false, width: 'clamp(75px, 8vw, 180px)' },
+					{ component: "TableRowTextValue", value: d.Version, copiable: false, width: 'clamp(75px, 8vw, 180px)' }
 				]
 
 				let tableRow: TableRowData =
@@ -115,8 +125,10 @@ export default defineComponent({
 					values: values,
 					onDelete: function ()
 					{
-						// TODO: This should require master key
-						doDelete(d.id, d.UserDesktopDeviceID, d.UserMobileDeviceID)
+						stores.popupStore.showRequestAuthentication(props.color, (key: string) =>
+						{
+							doDelete(key, d);
+						}, () => { });
 					}
 				}
 
@@ -124,19 +136,32 @@ export default defineComponent({
 			}));
 		}
 
-		async function doDelete(deviceID: string, desktopDeviceID?: number, mobileDeviceID?: number)
+		async function doDelete(masterKey: string, device: Device)
 		{
 			stores.popupStore.showLoadingIndicator(props.color, "Deleting Device");
-			const response = await window.api.server.user.deleteDevice(desktopDeviceID, mobileDeviceID);
+			const response = await window.api.server.user.deleteDevice(masterKey, device.UserDesktopDeviceID, device.UserMobileDeviceID);
+
+			stores.popupStore.hideLoadingIndicator();
 			if (response.Success)
 			{
-				stores.popupStore.hideLoadingIndicator();
-				devices.value.remove(deviceID);
+				if (response.Url)
+				{
+					const purchaseButtonModel: ButtonModel = { text: "Purchase", onClick: () => { window.open(response.Url); } }
+					const cancelButtonModel: ButtonModel = { text: "Cancel", onClick: () => { } };
+					stores.popupStore.showAlert("Unable to delete device",
+						"You do not have any more automatic device updates left. Please purchase more in order to remove this device",
+						false, purchaseButtonModel, cancelButtonModel);
+
+					return;
+				}
+
+				devices.value.remove(device.id);
 				setTableRows();
+
+				stores.popupStore.showToast(props.color, "Deleted Device", true);
 			}
 			else
 			{
-				stores.popupStore.hideLoadingIndicator();
 				defaultHandleFailedResponse(response);
 			}
 		}
@@ -158,15 +183,45 @@ export default defineComponent({
 			}
 		}
 
-		onMounted(() =>
+		function setDeviceType(devices: Device[] | undefined, desktop: boolean): Device[]
+		{
+			if (!devices)
+			{
+				return [];
+			}
+
+			return devices.map((d) =>
+			{
+				d.Type = desktop ? "Desktop" : "Mobile"
+				return d;
+			});
+		}
+
+		onMounted(async () =>
 		{
 			if (!responseObj.value)
 			{
-				// request devices from server
+				const response = await window.api.server.user.getDevices();
+				if (response.Success)
+				{
+					responseObj.value = response;
+
+					const d: Device[] = [...setDeviceType(responseObj.value.DesktopDevices!, true),
+					...setDeviceType(responseObj.value.MobileDevices!, false)];
+
+					devices.value.updateValues(d);
+				}
+				else
+				{
+					// shouldn't ever be able to hit another incorrect device response here
+					defaultHandleFailedResponse(response);
+				}
 			}
 			else
 			{
-				const d: Device[] = [...responseObj.value.DesktopDevices!, ...responseObj.value.MobileDevices!];
+				const d: Device[] = [...setDeviceType(responseObj.value.DesktopDevices!, true),
+				...setDeviceType(responseObj.value.MobileDevices!, false)];
+
 				devices.value.updateValues(d);
 			}
 
@@ -178,11 +233,71 @@ export default defineComponent({
 			headers,
 			tableRows,
 			responseObj,
-			showRegisterThisDevice,
+			headerTabs,
+			hasDesktopDeviceUpdates,
 			registerThisDevice
 		}
 	}
 })
 </script>
 
-<style></style>
+<style>
+.deviceView {
+	width: 80%;
+	height: 100%;
+	min-height: 340px;
+	margin: auto;
+	position: relative;
+}
+
+.deviceView__deviceUpdateInfo {
+	color: white;
+	width: max(30%, 220px);
+	height: clamp(40px, 7vh, 75px);
+	position: absolute;
+	right: 10%;
+	display: flex;
+	column-gap: clamp(5px, 1vw, 20px);
+}
+
+.deviceView__deviceUpdatesLeft {
+	border: 2px solid white;
+	border-radius: var(--responsive-border-radius);
+	width: 100%;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	row-gap: 10px;
+}
+
+.deviceView__deviceUpdatesLeftTitle {
+	position: absolute;
+	bottom: 98%;
+	left: 5%;
+	background: var(--app-color);
+	padding: 0 .2em;
+	font-size: clamp(11px, 0.8vw, 20px);
+}
+
+.deviceView__desktopDeviceUpdatesLeft {
+	margin-top: 10px;
+	margin-left: 10px;
+	font-size: clamp(11px, 0.8vw, 25px);
+}
+
+.deviceView__mobileDeviceUpdatesLeft {
+	margin-left: 10px;
+	font-size: clamp(11px, 0.8vw, 25px);
+}
+
+#devicesTable {
+	height: 60%;
+	width: 70%;
+	min-width: 410px;
+	min-height: 182px;
+	top: 20%;
+	left: 50%;
+	transform: translateX(-50%);
+}
+</style>

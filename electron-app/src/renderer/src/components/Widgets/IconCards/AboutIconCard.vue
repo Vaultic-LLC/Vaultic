@@ -3,7 +3,8 @@
 		<IconCard :icon="'alert-circle-outline'" :text="'About'" @click="showAboutPopup = true" />
 		<Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="showAboutPopup" :closePopup="onAboutPopupclose">
+				<ObjectPopup v-if="showAboutPopup" :closePopup="onAboutPopupclose" :minWidth="'800px'"
+					:minHeight="'480px'">
 					<AboutPopup />
 				</ObjectPopup>
 			</Transition>

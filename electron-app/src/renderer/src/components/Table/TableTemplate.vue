@@ -1,26 +1,30 @@
 <template>
 	<div class="tableTemplate">
 		<div class="tableTemplate__tableTabs">
-			<div class="tableTemplate__coverOverhandingBorder"></div>
+			<div class="tableTemplate__coverOverhandingBorder" :class="scrollbarClass"></div>
 			<TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
 		</div>
 		<div class="tableTemplate__headerAndContent" :class="{
 				'tableTemplate__headerAndContent--border': border,
 				'tableTemplate__headerAndContent--noTabs': headerTabs?.length == 0
 			}">
-			<TableHeaderRow v-if="hideHeader != true" :model="headerModels" :height="headerHeight">
+			<TableHeaderRow v-if="hideHeader != true" :class="scrollbarClass" :model="headerModels"
+				:height="headerHeight">
 				<template #controls>
 					<slot name="headerControls"></slot>
 				</template>
 			</TableHeaderRow>
-			<div class="tableContainer scrollbar" ref="tableContainer"
-				:class="{ small: scrollbarSize == 0, medium: scrollbarSize == 1 }" @scroll="checkScrollHeight">
+			<div class="tableContainer scrollbar" ref="tableContainer" :class="scrollbarClass"
+				@scroll="checkScrollHeight">
 				<table class="tableContent" ref="table">
 					<!-- Just used to force table row cell widths -->
 					<tr v-if="headers.length > 0">
-						<th v-for="(header, index) in headers" :key="index" :style="{ width: header.width, height: 0 }">
+						<th v-for="(header, index) in headers" :key="index"
+							:style="{ width: header.width, height: 0, padding: 0 }">
 						</th>
 					</tr>
+					<!-- Used so that the header doesn't cover the first rows hover effect -->
+					<tr :style="{ height: '5px' }"></tr>
 					<slot name="body">
 					</slot>
 				</table>
@@ -74,6 +78,7 @@ export default defineComponent({
 		const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
 		const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
 		const currentHeaderTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.headerTabs ?? []);
+		const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
 
 		let tweenGroup: TWEEN.Group | undefined = undefined;
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);
@@ -222,6 +227,7 @@ export default defineComponent({
 			applyBorder,
 			backgroundColor,
 			currentHeaderTabs,
+			scrollbarClass,
 			checkScrollHeight,
 			scrollToTop
 		}
@@ -285,11 +291,11 @@ export default defineComponent({
 
 
 .tableContainer.small::-webkit-scrollbar {
-	width: 5px;
+	width: var(--scrollbar-width-small);
 }
 
 .tableContainer.medium::-webkit-scrollbar {
-	width: clamp(7px, 0.7vw, 10px);
+	width: var(--scrollbar-width-medium);
 }
 
 .tableContainer.border::-webkit-scrollbar-track {
@@ -360,5 +366,13 @@ export default defineComponent({
 	height: 100%;
 	background-color: var(--app-color);
 	transform: translateY(10px)
+}
+
+.tableTemplate__coverOverhandingBorder.small {
+	width: var(--scrollbar-width-small);
+}
+
+.tableTemplate__coverOverhandingBorder.medium {
+	width: var(--scrollbar-width-medium);
 }
 </style>

@@ -24,8 +24,9 @@
 			</div>
 		</ObjectPopup>
 		<Teleport to="#body">
-			<Transition>
-				<DevicePopup v-if="showDevicePopup" :response="response" @onClose="close" />
+			<Transition name="fade">
+				<DevicePopup v-if="showDevicePopup" :incorrectDeviceResponse="response" :color="currentPrimaryColor"
+					@onClose="close" />
 			</Transition>
 		</Teleport>
 	</div>
@@ -88,7 +89,7 @@ export default defineComponent({
 	color: white;
 	position: fixed;
 	width: 100%;
-	left: 100%;
+	height: 100%;
 	top: 0;
 	left: 0;
 	z-index: v-bind(zIndex);

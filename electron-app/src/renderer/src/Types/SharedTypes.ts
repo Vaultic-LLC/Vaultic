@@ -26,7 +26,6 @@ export interface Device extends IIdentifiable
 	Name: string;
 	Model: string;
 	Version: string;
-	MacAddress: string;
 	Type: string;
 }
 

@@ -33,7 +33,7 @@
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
 			:toolTipSize="'clamp(15px, 1vw, 28px)'"
-			:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breeched Passwords.'" />
+			:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
 	</ObjectView>
 </template>
 <script lang="ts">

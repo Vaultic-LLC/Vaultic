@@ -171,6 +171,7 @@ class AppStore extends Store<AppStoreState>
 		if (this.isOnline === true)
 		{
 			window.api.server.session.expire();
+			this.isOnline = false;
 		}
 
 		stores.resetStoresToDefault();

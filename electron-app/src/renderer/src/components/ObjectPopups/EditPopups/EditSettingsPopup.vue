@@ -6,7 +6,7 @@
 	<div class="settingViewContainer">
 		<Transition name="fade" mode="out-in">
 			<SettingsView v-if="activeSection == 0" :creating="false" :model="currentSettings" />
-			<DevicesView v-else-if="activeSection == 1" />
+			<DevicesView v-else-if="activeSection == 1" :color="currentPrimaryColor" />
 			<AccountInfoView v-else-if="activeSection == 2" />
 		</Transition>
 	</div>

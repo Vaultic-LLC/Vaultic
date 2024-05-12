@@ -90,6 +90,14 @@ export default defineComponent({
 	padding-top: 10px;
 }
 
+.tableHeader__tableHeaderRow.small {
+	width: calc(100% - var(--scrollbar-width-small));
+}
+
+.tableHeader__tableHeaderRow.medium {
+	width: calc(100% - var(--scrollbar-width-medium));
+}
+
 .tableHeader__tableHeaderRow__headers {
 	display: flex;
 }

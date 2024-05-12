@@ -1,15 +1,12 @@
 <template>
 	<div class="devicePopup">
-		<ObjectPopup>
-			<div>
-				<div>
+		<ObjectPopup :closePopup="closePopup" :minWidth="'800px'" :minHeight="'480px'">
+			<div class="devicePopup__content">
+				<div class="devicePopup__title">
 					<h2>Trusted Devices</h2>
 				</div>
-				<DeviceView :response="response" />
-				<div>
-					<PopupButton :color="color" :text="'Close'" :width="'150px'" :height="'40px'" :fontSize="'18px'"
-						@onClick="closePopup">
-					</PopupButton>
+				<div class="devicePopup__body">
+					<DevicesView :response="response" :color="color" />
 				</div>
 			</div>
 		</ObjectPopup>
@@ -19,18 +16,19 @@
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from 'vue';
 
-import DeviceView from './DevicesView.vue';
+import DevicesView from './DevicesView.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 
 import { IncorrectDeviceResponse } from '@renderer/Types/SharedTypes';
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: "DeviceView",
 	components:
 	{
 		ObjectPopup,
-		DeviceView,
+		DevicesView,
 		PopupButton
 	},
 	emits: ['onClose'],
@@ -38,6 +36,7 @@ export default defineComponent({
 	setup(props, ctx)
 	{
 		const response: ComputedRef<IncorrectDeviceResponse> = computed(() => props.incorrectDeviceResponse);
+		const popupInfo = popups.devicePopup;
 
 		function closePopup()
 		{
@@ -46,11 +45,34 @@ export default defineComponent({
 
 		return {
 			response,
+			zIndex: popupInfo.zIndex,
 			closePopup
 		}
 	}
 })
 </script>
 
-<style></style>
-@renderer/Types/SharedTypes
+<style>
+.devicePopup {
+	position: relative;
+	z-index: v-bind(zIndex);
+}
+
+.devicePopup__content {
+	color: white;
+}
+
+.devicePopup__title {
+	position: absolute;
+	margin: 5%;
+	margin-left: 22.3%;
+	font-size: clamp(15px, 1vw, 25px);
+}
+
+.devicePopup__body {
+	position: absolute;
+	top: 20%;
+	width: 100%;
+	height: 80%;
+}
+</style>

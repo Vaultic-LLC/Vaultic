@@ -6,13 +6,14 @@ export interface Device
 	Name: string;
 	Model: string;
 	Version: string;
-	MacAddress: string;
 	Type: string;
 }
 
 export interface DeviceInfo
 {
 	deviceName: string;
+	model: string;
+	version: string;
 	platform: string;
 	mac: string;
 }

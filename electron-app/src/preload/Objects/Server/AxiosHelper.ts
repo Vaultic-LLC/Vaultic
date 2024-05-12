@@ -46,7 +46,6 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 
 		console.log(serverPath);
 		const requestData = await getRequestData(responseKeys.publicKey, data);
-
 		if (!requestData[0].success)
 		{
 			requestCallStackDepth -= 1;
@@ -95,7 +94,7 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 		if (e?.error instanceof Error)
 		{
 			const error: Error = e?.error as Error;
-			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
+			const response = await vaulticServer.app.log(error.message, "AxiosHelper.GetRequestData");
 			if (response.Success)
 			{
 				return [{ success: false, logID: response.logID }, { Key: '', Data: '' }]
@@ -108,6 +107,9 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 	newData.APIKey = await getAPIKey();
 	newData.MacAddress = deviceInfo.mac;
 	newData.DeviceName = deviceInfo.deviceName;
+	newData.Model = deviceInfo.model;
+	newData.Version = deviceInfo.version;
+
 	console.log(newData);
 	const encryptedData = await cryptUtility.hybridEncrypt(JSON.stringify(newData));
 	if (!encryptedData.success)

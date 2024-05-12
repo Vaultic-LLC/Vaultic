@@ -169,14 +169,15 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: 'clamp(75px, 7vw, 175px)',
-				padding: 'clamp(10px, 1vw, 25px)',
+				width: 'clamp(75px, 5vw, 150px)',
 				clickable: true,
+				centered: true,
+				headerSpaceRight: '20px'
 			},
 			{
 				displayName: "Password For",
 				backingProperty: "passwordFor",
-				width: 'clamp(100px, 7vw, 250px)',
+				width: 'clamp(110px, 7vw, 250px)',
 				clickable: true
 			},
 			{
@@ -198,7 +199,7 @@ export default defineComponent({
 			{
 				displayName: "Name",
 				backingProperty: "name",
-				width: 'clamp(100px, 7vw, 250px)',
+				width: 'clamp(110px, 7vw, 250px)',
 				clickable: true
 			},
 			{
@@ -315,7 +316,7 @@ export default defineComponent({
 						{
 							return [
 								{
-									component: 'TableRowTextValue', value: v.name, copiable: false, width: 'clamp(100px, 7vw, 150px)'
+									component: 'TableRowTextValue', value: v.name, copiable: false, width: 'clamp(110px, 7vw, 150px)'
 								},
 								{
 									component: 'TableRowTextValue', value: v.valueType ?? '', copiable: false, width: 'clamp(100px, 9vw, 300px)'
@@ -331,7 +332,7 @@ export default defineComponent({
 						{
 							return [
 								{
-									component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: 'clamp(100px, 7vw, 150px)',
+									component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: 'clamp(110px, 7vw, 150px)',
 								},
 								{
 									component: 'TableRowTextValue', value: p.login, copiable: true, width: 'clamp(100px, 9vw, 300px)'

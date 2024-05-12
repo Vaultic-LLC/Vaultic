@@ -1,6 +1,6 @@
 <template>
 	<TableRowValue :model="model" :color="color">
-		<div class="tableRowTextValueValue">
+		<div class="tableRowTextValueValue" :style="{ 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
 			{{ rowValue.value }}
 		</div>
 	</TableRowValue>

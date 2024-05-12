@@ -29,4 +29,7 @@
 
 	--responsive-border-radius: clamp(10px, 0.8vw, 0.85rem);
 	--input-label-left: 15px;
+
+	--scrollbar-width-small: 5px;
+	--scrollbar-width-medium: clamp(7px, 0.7vw, 10px);
 }

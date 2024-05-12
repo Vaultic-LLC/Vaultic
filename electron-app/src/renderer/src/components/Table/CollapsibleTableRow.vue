@@ -144,5 +144,8 @@ export default defineComponent({
 	align-items: center;
 	overflow: hidden;
 	flex-wrap: wrap;
+
+	/* this cell is centered so give it some extra space to the right so the next cell doesn't seem so close */
+	margin-right: 20px;
 }
 </style>

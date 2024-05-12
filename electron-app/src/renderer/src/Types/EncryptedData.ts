@@ -27,6 +27,8 @@ export interface HeaderDisplayField extends DisplayField
 	width: string;
 	clickable: boolean;
 	padding?: string;
+	centered?: boolean;
+	headerSpaceRight?: string;
 }
 
 export enum PropertyType

@@ -209,6 +209,7 @@ export default defineComponent({
 	color: white;
 	text-align: left;
 	z-index: 2;
+	padding: 0;
 }
 
 .tableRow td.hideCell {

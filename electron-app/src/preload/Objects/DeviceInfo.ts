@@ -19,12 +19,31 @@ function getComputerName()
 	}
 }
 
+function getOS()
+{
+	switch (process.platform)
+	{
+		case "win32":
+			return 'Windows';
+		case "darwin":
+			return "Mac";
+		case "linux":
+			return "Linux";
+	}
+
+	return "";
+}
+
 const deviceName = getComputerName() ?? "";
+const model = getOS();
+const version = os.release();
 
 export function getDeviceInfo(): DeviceInfo
 {
 	return {
 		deviceName,
+		model,
+		version,
 		platform: os.platform(),
 		//@ts-ignore
 		mac: getMAC.default()
