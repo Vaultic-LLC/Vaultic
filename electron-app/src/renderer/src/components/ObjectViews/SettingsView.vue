@@ -1,35 +1,39 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
+		<div class="settingsView__sectionTitle"
+			:style="{ 'grid-row': '1 / span 2', 'grid-column': '3 / span 3', 'z-index': '8' }">App Settings</div>
 		<EnumInputField :label="'Auto Lock Time'" :color="color" v-model="settingsState.autoLockTime"
 			:optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'" :height="'4vh'" :minHeight="'30px'"
-			:minWidth="'190px'" :style="{ 'grid-row': '1 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
+			:minWidth="'190px'" :style="{ 'grid-row': '3 / span 2', 'grid-column': '3 / span 2', 'z-index': '8' }" />
 		<EnumInputField :label="'Multiple Filter Behavior'" :color="color"
 			v-model="settingsState.multipleFilterBehavior" :optionsEnum="FilterStatus" fadeIn="true" :width="'10vw'"
 			:minWidth="'190px'" :height="'4vh'" :minHeight="'30px'"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '5 / span 2', 'z-index': '8' }" />
-		<TextInputField :color="color" :label="'Login Records to Store Per Day'"
+			:style="{ 'grid-row': '3 / span 2', 'grid-column': '6 / span 2', 'z-index': '8' }" />
+		<TextInputField :color="color" :label="'Max Login Records Per Day'"
 			v-model="settingsState.loginRecordsToStorePerDay" :inputType="'number'"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '2 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:style="{ 'grid-row': '5 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceLoginRecordsPerDay" />
 		<TextInputField :color="color" :label="'Days to Store Login Records'"
 			v-model="settingsState.numberOfDaysToStoreLoginRecords" :inputType="'number'"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '5 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:style="{ 'grid-row': '5 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceDaysToStoreLoginRecords" />
+		<div class="settingsView__sectionTitle" :style="{ 'grid-row': '8 / span 1', 'grid-column': '3 / span 3' }">
+			Security Settings</div>
 		<TextInputField :color="color" :label="'Random Password Length'"
 			v-model.number="settingsState.randomValueLength" :inputType="'number'"
-			:style="{ 'grid-row': '5 / span 2', 'grid-column': '2 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:style="{ 'grid-row': '10 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceMinRandomPasswordLength" />
 		<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
-			:inputType="'number'" :style="{ 'grid-row': '5 / span 2', 'grid-column': '5 / span 2' }" :width="'10vw'"
+			:inputType="'number'" :style="{ 'grid-row': '10 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'"
 			:minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceOldPasswordDays" />
 		<TextInputField :color="color" :label="'% Filled Metric for Pulse'"
 			v-model.number="settingsState.percentMetricForPulse" :inputType="'number'"
-			:style="{ 'grid-row': '7 / span 2', 'grid-column': '2 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:style="{ 'grid-row': '12 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
 			:toolTipSize="'clamp(15px, 1vw, 28px)'"
@@ -68,11 +72,18 @@ export default defineComponent({
 		const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
 
 		const gridDefinition: GridDefinition = {
-			rows: 10,
+			rows: 16,
 			rowHeight: 'clamp(20px, 3vh, 50px)',
 			columns: 11,
 			columnWidth: 'clamp(70px, 4vw, 100px)'
 		}
+
+		// const gridDefinition: GridDefinition = {
+		// 	rows: 1,
+		// 	rowHeight: '100%',
+		// 	columns: 1,
+		// 	columnWidth: '100%'
+		// }
 
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
@@ -200,4 +211,11 @@ export default defineComponent({
 })
 </script>
 
-<style></style>
+<style>
+.settingsView__sectionTitle {
+	color: white;
+	margin-left: 5%;
+	text-align: left;
+	font-size: clamp(15px, 1vw, 25px);
+}
+</style>
