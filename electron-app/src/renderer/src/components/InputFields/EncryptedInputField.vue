@@ -18,9 +18,11 @@
 						@click="copyValue"></ion-icon>
 				</div>
 			</div>
-			<div v-if="!isLocked && !disabled && showRandom" class="randomize" @click="generateRandomValue">
-				Random
-			</div>
+			<Transition name="fade">
+				<div v-if="!isLocked && !disabled && showRandom" class="randomize" @click="generateRandomValue">
+					Random
+				</div>
+			</Transition>
 			<div v-if="!isLocked && showButtonsUnderneath == true"
 				class="encryptedInputContainer__unlockIconsUnderneath">
 				<ion-icon class="encryptedInputIcon" v-if="isHidden" name="eye-outline"
@@ -44,13 +46,14 @@ import tippy from 'tippy.js';
 import { InputColorModel } from '@renderer/Types/Models';
 import { stores } from '@renderer/Objects/Stores';
 import cryptHelper from '@renderer/Helpers/cryptHelper';
+import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
 
 export default defineComponent({
 	name: "EncryptedInputField",
 	emits: ["update:modelValue", "onDirty"],
 	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
 		"showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
-		"minHeight", "maxHeight", 'isOnWidget', 'showButtonsUnderneath'],
+		"minHeight", "maxHeight", 'isOnWidget', 'showButtonsUnderneath', 'randomValueType'],
 	setup(props, ctx)
 	{
 		const container: Ref<HTMLElement | null> = ref(null);
@@ -144,8 +147,26 @@ export default defineComponent({
 			}
 		}
 
-		function generateRandomValue()
+		async function generateRandomValue()
 		{
+			if (props.randomValueType == 0)
+			{
+				stores.popupStore.showLoadingIndicator(colorModel.value.color, "Generating Phrase");
+				const response = await window.api.server.value.generateRandomPhrase(stores.settingsStore.randomPhraseLength);
+				stores.popupStore.hideLoadingIndicator();
+
+				if (response.Success)
+				{
+					onInput(response.Phrase!);
+				}
+				else
+				{
+					defaultHandleFailedResponse(response);
+				}
+
+				return;
+			}
+
 			onInput(window.api.utilities.generator.randomPassword(stores.settingsStore.randomValueLength));
 		}
 

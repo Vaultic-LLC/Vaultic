@@ -81,7 +81,7 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 			return true;
 		}
 
-		const [succeeded, state] = await fileHelper.readUnencrypted<UserPreferencesStoreState>(window.api.files.userPreferences);
+		const [succeeded, state] = await fileHelper.readUnencrypted<UserPreferencesStoreState>(this.getFile());
 		if (!succeeded)
 		{
 			return false;
@@ -110,7 +110,12 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 			return true;
 		}
 
-		const response = await window.api.server.user.backupUserPreferences(JSON.stringify(this.state));
+		const data =
+		{
+			UserPreferencesStoreState: this.state
+		};
+
+		const response = await window.api.server.user.backupUserPreferences(JSON.stringify(data));
 		if (!response.Success)
 		{
 			defaultHandleFailedResponse(response);

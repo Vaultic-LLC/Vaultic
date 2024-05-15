@@ -50,7 +50,7 @@ export default function createPopupStore()
 	const logID: Ref<number | undefined> = ref(undefined);
 	const axiosCode: Ref<string | undefined> = ref('');
 
-	const incorrectDeviceIsShowing: Ref<boolean> = ref(true);
+	const incorrectDeviceIsShowing: Ref<boolean> = ref(false);
 	const response: Ref<IncorrectDeviceResponse> = ref({});
 
 	const accountSetupIsShowing: Ref<boolean> = ref(true);

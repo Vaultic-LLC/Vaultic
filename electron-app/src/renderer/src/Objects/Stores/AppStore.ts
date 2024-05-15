@@ -103,7 +103,13 @@ class AppStore extends Store<AppStoreState>
 		const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
 		if (state.success)
 		{
-			const response = await window.api.server.user.backupAppStore(state.value!);
+			const data =
+			{
+				MasterKey: key,
+				AppStoreState: state.value
+			};
+
+			const response = await window.api.server.user.backupAppStore(JSON.stringify(data));
 			if (!response.Success)
 			{
 				defaultHandleFailedResponse(response);

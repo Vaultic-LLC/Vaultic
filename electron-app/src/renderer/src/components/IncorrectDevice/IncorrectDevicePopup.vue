@@ -7,8 +7,8 @@
 				</div>
 				<div class="incorrectDevicePopup__content">
 					We've detected that you're using a device different than your registered one. For your safety, only
-					requests from registered devices are allowed.
-					Would you like to edit your registered devices?
+					requests from registered devices are allowed. If you want to trust this device, delete one of your
+					old devices.
 				</div>
 				<div class="incorrectDevicePopup__buttons">
 					<PopupButton :color="currentPrimaryColor" :text="'Edit Devices'" :width="'6vw'" :minWidth="'80px'"

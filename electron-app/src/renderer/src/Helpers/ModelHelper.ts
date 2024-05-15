@@ -353,8 +353,8 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 					addAtRiskValues("This Value is used more than once", stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
 				});
 				break;
-			case AtRiskType.WeakVerabl:
-				stores.valueStore.weakVerbalValues.value.forEach(v =>
+			case AtRiskType.WeakPhrase:
+				stores.valueStore.weakPassphraseValues.value.forEach(v =>
 				{
 					const valueStore: ReactiveValue = stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
 					addAtRiskValues(valueStore.isWeakMessage, stores.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);

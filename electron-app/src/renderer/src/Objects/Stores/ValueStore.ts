@@ -14,7 +14,7 @@ export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 {
 	private internalOldNameValuePairs: ComputedRef<string[]>;
-	private internalWeakVerbalValues: ComputedRef<string[]>;
+	private internalWeakPassphraseValues: ComputedRef<string[]>;
 	private internalWeakPasscodeValues: ComputedRef<string[]>;
 
 	private internalDuplicateNameValuePairs: ComputedRef<string[]>;
@@ -31,7 +31,7 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 	get oldNameValuePairs() { return this.internalOldNameValuePairs }
 	get duplicateNameValuePairs() { return this.internalDuplicateNameValuePairs }
 	get duplicateNameValuePairsLength() { return this.internalDuplicateNameValuePairsLength.value; }
-	get weakVerbalValues() { return this.internalWeakVerbalValues }
+	get weakPassphraseValues() { return this.internalWeakPassphraseValues }
 	get weakPasscodeValues() { return this.internalWeakPasscodeValues }
 	get currentAndSafeValues() { return this.state.currentAndSafeValues; }
 	get activeAtRiskValueType() { return this.internalActiveAtRiskValueType.value; }
@@ -41,7 +41,7 @@ class ValueStore extends DataTypeStore<ReactiveValue, ValueStoreState>
 		super();
 
 		this.internalOldNameValuePairs = computed(() => this.state.values.filter(nvp => nvp.isOld).map(nvp => nvp.id));
-		this.internalWeakVerbalValues = computed(() => this.state.values.filter(nvp => nvp.valueType == NameValuePairType.Verbal && nvp.isWeak).map(nvp => nvp.id));
+		this.internalWeakPassphraseValues = computed(() => this.state.values.filter(nvp => nvp.valueType == NameValuePairType.Passphrase && nvp.isWeak).map(nvp => nvp.id));
 		this.internalWeakPasscodeValues = computed(() => this.state.values.filter(nvp => nvp.valueType == NameValuePairType.Passcode && nvp.isWeak).map(nvp => nvp.id));
 
 		this.internalDuplicateNameValuePairs = computed(() => this.state.values.filter(nvp => nvp.isDuplicate).map(nvp => nvp.id));

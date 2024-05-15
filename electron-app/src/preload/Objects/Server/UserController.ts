@@ -5,9 +5,9 @@ export interface UserController
 {
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
 	registerDevice: () => Promise<UpdateDeviceRespnose>;
-	backupSetings(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
-	backupAppStore(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-	backupUserPreferences(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	backupSetings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+	backupAppStore(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	backupUserPreferences(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	getUserData: () => Promise<LoadDataResponse>;
 	createCheckout: () => Promise<CreateCheckoutResponse>;
 	getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
@@ -38,25 +38,19 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		return axiosHelper.post('User/GetDevices');
 	}
 
-	function backupSetings(settingsState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	function backupSetings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
-		return axiosHelper.post('User/BackupSettings', {
-			SettingsStoreState: settingsState
-		});
+		return axiosHelper.post('User/BackupSettings', data);
 	}
 
-	function backupAppStore(appStoreState: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	function backupAppStore(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
-		return axiosHelper.post('User/BackupAppStore', {
-			AppStoreState: appStoreState
-		});
+		return axiosHelper.post('User/BackupAppStore', data);
 	}
 
-	function backupUserPreferences(userPreferences: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	function backupUserPreferences(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
-		return axiosHelper.post('User/BackupSettings', {
-			UserPreferencesStoreState: userPreferences
-		});
+		return axiosHelper.post('User/BackupSettings', data);
 	}
 
 	function getUserData(): Promise<LoadDataResponse>

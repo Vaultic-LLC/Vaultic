@@ -27,13 +27,18 @@
 			:style="{ 'grid-row': '10 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceMinRandomPasswordLength" />
+		<TextInputField :color="color" :label="'Random Passphrase Length'"
+			v-model.number="settingsState.randomPhraseLength" :inputType="'number'"
+			:style="{ 'grid-row': '10 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
+			:additionalValidationFunction="enforceMinRandomPassphraseLength" />
 		<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
-			:inputType="'number'" :style="{ 'grid-row': '10 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'"
+			:inputType="'number'" :style="{ 'grid-row': '12 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'"
 			:minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceOldPasswordDays" />
 		<TextInputField :color="color" :label="'% Filled Metric for Pulse'"
 			v-model.number="settingsState.percentMetricForPulse" :inputType="'number'"
-			:style="{ 'grid-row': '12 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:style="{ 'grid-row': '12 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
 			:toolTipSize="'clamp(15px, 1vw, 28px)'"
@@ -76,14 +81,7 @@ export default defineComponent({
 			rowHeight: 'clamp(20px, 3vh, 50px)',
 			columns: 11,
 			columnWidth: 'clamp(70px, 4vw, 100px)'
-		}
-
-		// const gridDefinition: GridDefinition = {
-		// 	rows: 1,
-		// 	rowHeight: '100%',
-		// 	columns: 1,
-		// 	columnWidth: '100%'
-		// }
+		};
 
 		let saveSucceeded: (value: boolean) => void;
 		let saveFaield: (value: boolean) => void;
@@ -159,6 +157,11 @@ export default defineComponent({
 			return [Number.parseInt(input) >= 20, "Value must be greater than or equal to 20"];
 		}
 
+		function enforceMinRandomPassphraseLength(input: string): [boolean, string]
+		{
+			return [Number.parseInt(input) >= 4, "Value must be greater than or equal to 4"];
+		}
+
 		function enforceOldPasswordDays(input: string): [boolean, string]
 		{
 			const numb: number = Number.parseInt(input);
@@ -203,6 +206,7 @@ export default defineComponent({
 			onAuthenticationSuccessful,
 			enforceLoginRecordsPerDay,
 			enforceMinRandomPasswordLength,
+			enforceMinRandomPassphraseLength,
 			enforceOldPasswordDays,
 			enforcePercentMetricForPulse,
 			enforceDaysToStoreLoginRecords

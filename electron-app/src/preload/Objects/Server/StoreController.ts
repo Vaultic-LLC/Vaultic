@@ -8,7 +8,7 @@ export interface StoreController
 	delete: (data: string) => Promise<MutateStoreResponse>
 }
 
-function createStoreController(path: string, axiosHelper: AxiosHelper): StoreController
+export function createStoreController(path: string, axiosHelper: AxiosHelper): StoreController
 {
 	async function add(data: string): Promise<any>
 	{
@@ -45,9 +45,4 @@ export function createGroupController(axiosHelper: AxiosHelper): StoreController
 export function createPasswordController(axiosHelper: AxiosHelper): StoreController
 {
 	return createStoreController('Password', axiosHelper);
-}
-
-export function createValueController(axiosHelper: AxiosHelper): StoreController
-{
-	return createStoreController('Value', axiosHelper);
 }

@@ -148,3 +148,8 @@ export interface DeactivateUserSubscriptionResponse extends BaseResponse
 	UnknownEmail?: boolean;
 	IncorrectDeactivationKey?: boolean;
 }
+
+export interface GenerateRandomPhraseResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
+{
+	Phrase?: string;
+}

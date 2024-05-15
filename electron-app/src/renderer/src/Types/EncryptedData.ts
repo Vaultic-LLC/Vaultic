@@ -106,7 +106,7 @@ export interface SecurityQuestion extends IIdentifiable
 
 export enum NameValuePairType
 {
-	Verbal = "Verbal Code",
+	Passphrase = "Passphrase",
 	Passcode = "Passcode",
 	Safe = "Safe",
 	Information = "Information",
@@ -164,7 +164,7 @@ export enum AtRiskType
 	Old,
 	Duplicate,
 	Weak,
-	WeakVerabl,
+	WeakPhrase,
 	ContainsLogin,
 	Breached,
 	Empty,

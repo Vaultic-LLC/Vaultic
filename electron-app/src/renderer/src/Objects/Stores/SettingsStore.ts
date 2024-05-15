@@ -16,6 +16,7 @@ export interface SettingsStoreState extends StoreState
 	loginRecordsToStorePerDay: number;
 	numberOfDaysToStoreLoginRecords: number;
 	randomValueLength: number;
+	randomPhraseLength: number;
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
 	percentMetricForPulse: number;
@@ -32,6 +33,7 @@ class SettingsStore extends Store<SettingsStoreState>
 	get loginRecordsToStorePerDay() { return this.state.loginRecordsToStorePerDay; }
 	get numberOfDaysToStoreLoginRecords() { return this.state.numberOfDaysToStoreLoginRecords }
 	get randomValueLength() { return this.state.randomValueLength; }
+	get randomPhraseLength() { return this.state.randomPhraseLength; }
 	get multipleFilterBehavior() { return this.state.multipleFilterBehavior; }
 	get oldPasswordDays() { return this.state.oldPasswordDays; }
 	get percentMetricForPulse() { return this.state.percentMetricForPulse; }
@@ -52,6 +54,7 @@ class SettingsStore extends Store<SettingsStoreState>
 			loginRecordsToStorePerDay: 14,
 			numberOfDaysToStoreLoginRecords: 30,
 			randomValueLength: 25,
+			randomPhraseLength: 7,
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
 			percentMetricForPulse: 1,
@@ -80,7 +83,13 @@ class SettingsStore extends Store<SettingsStoreState>
 		const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
 		if (state.success)
 		{
-			const response = await window.api.server.user.backupSetings(state.value!);
+			const data =
+			{
+				MasterKey: key,
+				SettingsStoreState: state.value
+			};
+
+			const response = await window.api.server.user.backupSetings(JSON.stringify(data));
 			if (!response.Success)
 			{
 				defaultHandleFailedResponse(response);

@@ -22,8 +22,8 @@
 			:minHeight="'30px'" />
 		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordState.password"
 			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true"
-			:showUnlock="true" :required="true" showCopy="true" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
-			:style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(95px, 30%)' }"
+			:showUnlock="true" :required="true" showCopy="true" :width="'11vw'" :maxWidth="'285px'" :height="'4vh'"
+			:minHeight="'30px'" :style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(95px, 30%)' }"
 			@onDirty="passwordIsDirty = true" />
 		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
 			v-model="passwordState.additionalInformation" :width="'19vw'" :height="'15vh'" :minWidth="'216px'"
