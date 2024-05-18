@@ -4,7 +4,9 @@
 	<div id="mainUI" class="mainUI">
 		<div class="center">
 			<ColorPaletteContainer />
-			<BreachedPasswords />
+			<Transition name="fade">
+				<BreachedPasswords v-if="isOnline" />
+			</Transition>
 			<div id="tables">
 				<FilterGroupTable />
 				<PasswordValueTable />
@@ -12,9 +14,11 @@
 		</div>
 		<PasswordValueGauges />
 		<FilterGroupGauges />
-		<div class="tempWidget secureProgressChartWidget">
-			<PasswordStrengthProgressChart />
-		</div>
+		<Transition name="fade">
+			<div v-if="isOnline" class="tempWidget secureProgressChartWidget">
+				<PasswordStrengthProgressChart />
+			</div>
+		</Transition>
 		<div class="tempWidget loginHistoryCalendarWidget">
 			<LoginHistoryCalendar />
 		</div>
@@ -70,6 +74,7 @@ export default defineComponent({
 	},
 	setup()
 	{
+		const isOnline: ComputedRef<boolean> = computed(() => stores.appStore.isOnline);
 		const finishedMounting: Ref<boolean> = ref(false);
 
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
@@ -105,6 +110,7 @@ export default defineComponent({
 			clr,
 			gradient,
 			finishedMounting,
+			isOnline
 		}
 	}
 });
@@ -168,7 +174,7 @@ h2 {
 	top: 4%;
 	left: 58%;
 	width: 21%;
-	height: 25%;
+	height: 24.7%;
 	min-height: 190px;
 	min-width: 250px;
 }

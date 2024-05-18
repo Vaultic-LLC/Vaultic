@@ -166,6 +166,7 @@ export default defineComponent({
 
 					if (response.Success)
 					{
+						stores.appStore.isOnline = true;
 						await stores.loadStoreData(masterKey.value);
 						await stores.appStore.recordLogin(masterKey.value, Date.now());
 

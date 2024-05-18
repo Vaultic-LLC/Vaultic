@@ -12,3 +12,11 @@ export interface UserDataBreach
 	PasswordsWereBreached: boolean;
 	BreachedDataTypes: string;
 };
+
+export interface ChartData
+{
+	Y: number[];
+	DataX: number[];
+	TargetX: number[];
+	Max: number;
+}

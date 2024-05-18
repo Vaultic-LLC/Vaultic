@@ -84,6 +84,24 @@
 				<div>
 					Copywrite
 				</div>
+				<div class="aboutPopupContainer__section">
+					<h3 class="aboutPopupContainer__section__header">Report a Bug</h3>
+					<div class="aboutPopupContainer__reportBugSection">
+						<TextAreaInputField :colorModel="colorModel" :label="'Description'" v-model="bugDescription"
+							:width="'19vw'" :height="'15vh'" :minWidth="'216px'" :minHeight="'91px'"
+							:maxHeight="'203px'" />
+						<PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Report Bug'"
+							:width="'8vw'" :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
+							:maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
+							@onClick="reportBug" />
+					</div>
+				</div>
+				<div class="aboutPopupContainer__section">
+					<h3 class="aboutPopupContainer__section__header">Reach out to Customer Support</h3>
+					<div class="aboutPopupContainer__section__text">
+						vaultic.help@outlook.com
+					</div>
+				</div>
 			</div>
 		</Transition>
 	</div>
@@ -92,22 +110,32 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import TableSelector from '../TableSelector.vue';
+import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
+import PopupButton from '../InputFields/PopupButton.vue';
 
-import { SingleSelectorItemModel } from '@renderer/Types/Models';
+import { InputColorModel, SingleSelectorItemModel, defaultInputColorModel } from '@renderer/Types/Models';
 import { defaultInputTextColor } from '@renderer/Types/Colors';
 import { stores } from '@renderer/Objects/Stores';
+import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
 
 export default defineComponent({
 	name: "AboutPopup",
 	components:
 	{
-		TableSelector
+		TableSelector,
+		TextAreaInputField,
+		PopupButton
 	},
 	setup()
 	{
 		const activeSection: Ref<number> = ref(0);
 		const scrollbarColor: Ref<string> = ref('#0f111d');
-		const thumbColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+		const primaryColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+
+		const bugDescription: Ref<string> = ref('');
+		const colorModel: Ref<InputColorModel> = ref(defaultInputColorModel(primaryColor.value));
+
+		const disableButtons: Ref<boolean> = ref(false);
 
 		const featuresTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
 		{
@@ -129,13 +157,34 @@ export default defineComponent({
 			}
 		});
 
+		async function reportBug()
+		{
+			stores.popupStore.showLoadingIndicator(primaryColor.value, "Reporting Bug");
+			const response = await window.api.server.user.reportBug(bugDescription.value);
+			stores.popupStore.hideLoadingIndicator();
+
+			if (response.Success)
+			{
+				stores.popupStore.showToast(primaryColor.value, "Reported Bug", true);
+				bugDescription.value = "";
+			}
+			else
+			{
+				defaultHandleFailedResponse(response);
+			}
+		}
+
 		return {
 			featuresTableControl,
 			infoTableControl,
 			activeSection,
 			defaultInputTextColor,
 			scrollbarColor,
-			thumbColor
+			primaryColor,
+			bugDescription,
+			colorModel,
+			disableButtons,
+			reportBug
 		}
 	}
 })
@@ -171,8 +220,13 @@ export default defineComponent({
 	width: 90%;
 	height: 90%;
 	overflow-y: scroll;
+	overflow-x: hidden;
 	direction: rtl;
 	padding: 5px;
+}
+
+.aboutPopupContainer__section {
+	direction: ltr;
 }
 
 .aboutPopupContainer__section__header {
@@ -207,9 +261,13 @@ export default defineComponent({
 .aboutPopupContainer__sections::-webkit-scrollbar-thumb {
 	max-width: 50%;
 	transition: 0.3s;
-	background: v-bind(thumbColor);
+	background: v-bind(primaryColor);
 	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;
+}
+
+.aboutPopupContainer__reportBugSection {
+	display: flex;
 }
 </style>

@@ -6,8 +6,6 @@
 		<ColorPaletteDisplay :colorPalette="cpFour" :index="3" :style="{ 'grid-row': 1, 'grid-column': 2 }" />
 		<ColorPaletteDisplay :colorPalette="cpFive" :index="4" :style="{ 'grid-row': 2, 'grid-column': 2 }" />
 		<ColorPaletteDisplay :colorPalette="cpSix" :index="5" :style="{ 'grid-row': 3, 'grid-column': 2 }" />
-		<!-- <ColorPaletteDisplay :colorPalette="cpSeven" :index="6" :style="{ 'grid-row': 3, 'grid-column': 2 }" />
-		<ColorPaletteDisplay :colorPalette="cpEight" :index="7" :style="{ 'grid-row': 4, 'grid-column': 2 }" /> -->
 	</div>
 </template>
 
@@ -30,8 +28,6 @@ export default defineComponent({
 		const cpFour: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[3]);
 		const cpFive: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[4]);
 		const cpSix: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[5]);
-		const cpSeven: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[6]);
-		const cpEight: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[7]);
 
 		return {
 			cpOne,
@@ -39,9 +35,7 @@ export default defineComponent({
 			cpThree,
 			cpFour,
 			cpFive,
-			cpSix,
-			cpSeven,
-			cpEight
+			cpSix
 		}
 	}
 })

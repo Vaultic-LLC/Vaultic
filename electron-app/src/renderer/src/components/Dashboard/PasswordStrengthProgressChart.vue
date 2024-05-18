@@ -10,11 +10,17 @@
 		</div>
 		<div ref="chartContainer" class="strengthGraphContainer__chart">
 			<Transition name="fade" mode="out-in">
-				<div :key="key" v-if="showNoData" class="strengthGraphContainer__noData">
-					{{ noDataMessage }}
+				<div :key="key" v-if="showStatusMessage" class="strengthGraphContainer__noData">
+					{{ statusMessage }}
 				</div>
 			</Transition>
-			<Line :key="refreshKey" ref="lineChart" :data="data" :options="options"
+			<Transition name="fade" mode="out-in">
+				<div v-if="loading" class="strengthGraphContainer__loadingIndicator">
+					<div>Loading</div>
+					<LoadingIndicator :color="color" />
+				</div>
+			</Transition>
+			<Line v-if="!showStatusMessage" :key="refreshKey" ref="lineChart" :data="data" :options="options"
 				:style="{ width: width, height: height }">
 			</Line>
 		</div>
@@ -22,7 +28,9 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, watch, toRaw, ComputedRef, computed, onUnmounted } from 'vue';
+import { Ref, defineComponent, onMounted, ref, watch, toRaw, onUnmounted } from 'vue';
+
+import LoadingIndicator from '../Loading/LoadingIndicator.vue';
 
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
@@ -39,10 +47,12 @@ export default defineComponent({
 	name: "PasswordStrengthProgressChart",
 	components:
 	{
-		Line
+		Line,
+		LoadingIndicator
 	},
 	setup()
 	{
+		const loading: Ref<boolean> = ref(false);
 		const refreshKey: Ref<string> = ref('');
 		const key: Ref<string> = ref('');
 		const chartContainer: Ref<HTMLElement | null> = ref(null);
@@ -65,8 +75,8 @@ export default defineComponent({
 
 		let options: Ref<any> = ref({});
 
-		const showNoData: ComputedRef<boolean> = computed(() => chartOneArray.value.length == 0);
-		const noDataMessage: ComputedRef<string> = computed(() => `No data. Add a ${stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Password" : "Value"} to get started.`);
+		const showStatusMessage: Ref<boolean> = ref(false);
+		const statusMessage: Ref<string> = ref('');
 
 		const data: Ref<any> = ref({
 			labels: toRaw(lableArray.value),
@@ -75,6 +85,11 @@ export default defineComponent({
 
 		function updateData(newColor?: string, oldColor?: string)
 		{
+			if (!lineChart.value)
+			{
+				return;
+			}
+
 			lineChart.value.chart.options.animation.duration = 1000;
 			lineChart.value.chart.update();
 
@@ -98,6 +113,11 @@ export default defineComponent({
 
 		function updateColors(newColor: string, oldColor: string, length: number)
 		{
+			if (!lineChart.value)
+			{
+				return;
+			}
+
 			const from: RGBColor | null = hexToRgb(oldColor);
 			const to: RGBColor | null = hexToRgb(newColor);
 
@@ -106,6 +126,12 @@ export default defineComponent({
 
 			tween<RGBColor>(from!, to!, 500, (object) =>
 			{
+				// this becomes null for some reason on first load
+				if (!lineChart.value)
+				{
+					return;
+				}
+
 				object.r = Math.round(object.r);
 				object.g = Math.round(object.g);
 				object.b = Math.round(object.b);
@@ -199,7 +225,7 @@ export default defineComponent({
 			return [
 				{
 					label: 'Secure ' + table.value,
-					data: EMACalc(chartOneArray.value, 2),
+					data: [],
 					backgroundColor: function (context)
 					{
 						const chart = context.chart;
@@ -213,7 +239,7 @@ export default defineComponent({
 				},
 				{
 					label: "Target",
-					data: target,
+					data: [],
 					borderColor: mixHexes(color.value, "888888"),
 					fill: false,
 					pointBackgroundColor: mixHexes(color.value, "888888"),
@@ -222,24 +248,6 @@ export default defineComponent({
 					hidden: true,
 				}
 			]
-		}
-
-		function EMACalc(mArray: number[], mRange: number): number[]
-		{
-			if (mArray.length == 0)
-			{
-				return [];
-			}
-
-			var k = 2 / (mRange + 1);
-			let emaArray = [mArray[0]];
-
-			for (var i = 1; i < mArray.length; i++)
-			{
-				emaArray.push(mArray[i] * k + emaArray[i - 1] * (1 - k));
-			}
-
-			return emaArray;
 		}
 
 		const defaultLegendBoxWidth = 35;
@@ -303,58 +311,46 @@ export default defineComponent({
 			updateData(color.value, color.value);
 		}
 
-		function recalcData()
+		async function recalcData()
 		{
+			if (!stores.appStore.isOnline)
+			{
+				return;
+			}
+
 			let newColor: string = "";
+			let requestData: any = {};
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
+				requestData.Values = stores.passwordStore.currentAndSafePasswords;
 				newColor = stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor;
-				lableArray.value = stores.passwordStore.currentAndSafePasswords.current.map((_, i) => i);
-				chartOneArray.value = EMACalc([...stores.passwordStore.currentAndSafePasswords.safe], 2);
 				table.value = "Passwords";
-
-				// show the target at the last 1/3 of the data unless we are less than 4. Les than 4 means a third won't give us 2 data points so just show the whole line
-				const targetPoint: number = stores.passwordStore.currentAndSafePasswords.current.length < 4
-					? 0 :
-					Math.floor(stores.passwordStore.currentAndSafePasswords.current.length - stores.passwordStore.currentAndSafePasswords.current.length / 3);
-
-				// if the user has all safe passwords, make sure the two graphs are at the same point so that it looks like they can't make them any safer
-				if (stores.passwordStore.currentAndSafePasswords.safe[stores.passwordStore.currentAndSafePasswords.safe.length - 1] ==
-					stores.passwordStore.currentAndSafePasswords.current[stores.passwordStore.currentAndSafePasswords.current.length - 1])
-				{
-					target.value = stores.passwordStore.currentAndSafePasswords.current.map((_, i) => i >= targetPoint ? chartOneArray.value[chartOneArray.value.length - 1] : undefined)
-				}
-				else
-				{
-					target.value = stores.passwordStore.currentAndSafePasswords.current.map((_, i) => i >= targetPoint ? stores.passwordStore.passwords.length : undefined)
-				}
-
-				max.value = Math.max(...[...chartOneArray.value, ...(target.value.filter(v => v != undefined) as number[])]) + 0.5;
 			}
 			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
 			{
+				requestData.Values = stores.valueStore.currentAndSafeValues;
 				newColor = stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor;
-				lableArray.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i);
-				chartOneArray.value = EMACalc([...stores.valueStore.currentAndSafeValues.safe], 2);
 				table.value = "Values";
+			}
 
-				const targetPoint: number = stores.valueStore.currentAndSafeValues.current.length < 4
-					? 0 :
-					Math.floor(stores.valueStore.currentAndSafeValues.current.length - stores.valueStore.currentAndSafeValues.current.length / 3);
-				target.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? stores.valueStore.nameValuePairs.length : undefined)
+			loading.value = true;
+			const response = await window.api.server.user.getChartData(JSON.stringify(requestData));
+			loading.value = false;
 
-				// if the user has all safe values, make sure the two graphs are at the same point so that it looks like they can't make them any safer
-				if (stores.valueStore.currentAndSafeValues.safe[stores.valueStore.currentAndSafeValues.safe.length - 1] ==
-					stores.valueStore.currentAndSafeValues.current[stores.valueStore.currentAndSafeValues.current.length - 1])
-				{
-					target.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? chartOneArray.value[chartOneArray.value.length - 1] : undefined)
-				}
-				else
-				{
-					target.value = stores.valueStore.currentAndSafeValues.current.map((_, i) => i >= targetPoint ? stores.valueStore.nameValuePairs.length : undefined)
-				}
+			if (response.Success)
+			{
+				showStatusMessage.value = false;
+				statusMessage.value = "";
 
-				max.value = Math.max(...[...chartOneArray.value, ...(target.value.filter(v => v != undefined) as number[])]) + 0.5;
+				lableArray.value = response.ChartData!.Y;
+				chartOneArray.value = response.ChartData!.DataX;
+				target.value = response.ChartData!.TargetX;
+				max.value = response.ChartData!.Max;
+			}
+			else
+			{
+				showStatusMessage.value = true;
+				statusMessage.value = "Unable to load data";
 			}
 
 			updateData(newColor, color.value);
@@ -371,44 +367,6 @@ export default defineComponent({
 			recalcData();
 		});
 
-		// don't think these work well since updating one will mess up the chart since the data arrays now have different lengths i.e. x and y axis
-		// watch(() => stores.encryptedDataStore.currentAndSafePasswords.current.length, () =>
-		// {
-		// 	//lableArray.value = [...stores.encryptedDataStore.currentAndSafePasswords.current];
-		// 	lableArray.value = stores.encryptedDataStore.currentAndSafePasswords.current.map((_, i) => i);
-		// 	target.value = EMACalc([...stores.encryptedDataStore.currentAndSafePasswords.current], 2);
-
-		// 	// resizeChart();
-		// 	updateData();
-		// });
-
-		// watch(() => stores.encryptedDataStore.currentAndSafePasswords.safe.length, () =>
-		// {
-		// 	chartOneArray.value = [...stores.encryptedDataStore.currentAndSafePasswords.safe];
-		// 	max.value = Math.max(...stores.encryptedDataStore.currentAndSafePasswords.safe);
-
-		// 	//resizeChart();
-		// 	updateData();
-		// });
-
-		// watch(() => stores.encryptedDataStore.currentAndSafeValues.current.length, () =>
-		// {
-		// 	lableArray.value = [...stores.encryptedDataStore.currentAndSafeValues.current];
-		// 	target.value = EMACalc(stores.encryptedDataStore.currentAndSafeValues.current, 2);
-
-		// 	//resizeChart();
-		// 	updateData();
-		// });
-
-		// watch(() => stores.encryptedDataStore.currentAndSafeValues.safe.length, () =>
-		// {
-		// 	chartOneArray.value = [...stores.encryptedDataStore.currentAndSafeValues.safe];
-		// 	max.value = Math.max(...stores.encryptedDataStore.currentAndSafeValues.safe);
-
-		// 	//resizeChart();
-		// 	updateData();
-		// });
-
 		watch(() => stores.userPreferenceStore.currentColorPalette, (newValue, oldValue) =>
 		{
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
@@ -421,22 +379,25 @@ export default defineComponent({
 				updateColors(newValue.valuesColor.primaryColor, oldValue.valuesColor.primaryColor, 0);
 				color.value = newValue.valuesColor.primaryColor;
 			}
-			// if (color.value == newValue)
-			// {
-			// 	return;
-			// }
-
-			// color.value = newValue;
-			// updateColors(newValue, oldValue);
 		});
 
-		watch(() => noDataMessage.value, () =>
+		watch(() => statusMessage.value, () =>
 		{
 			key.value = Date.now().toString();
 		});
 
+		watch(() => chartOneArray.value.length, (newValue) =>
+		{
+			if (newValue <= 1)
+			{
+				showStatusMessage.value = true;
+				statusMessage.value = `Not enough data. Add at least 2 ${stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"} to get started.`;
+			}
+		});
+
 		onMounted(() =>
 		{
+			// TODO: we should only be doing anyting if we are online. hide widgets when we are offline since they won't work? This and breached passwords
 			if (chartContainer.value)
 			{
 				resizeObserver.observe(chartContainer.value)
@@ -463,9 +424,10 @@ export default defineComponent({
 			color,
 			height,
 			width,
-			showNoData,
-			noDataMessage,
+			showStatusMessage,
+			statusMessage,
 			refreshKey,
+			loading,
 			updateData,
 			reset
 		}
@@ -475,7 +437,6 @@ export default defineComponent({
 
 <style>
 .strengthGraphContainer {
-	position: relative;
 	width: 100%;
 	height: 100%;
 	border-radius: 20px;
@@ -503,6 +464,7 @@ export default defineComponent({
 	border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
 	transition: 0.3s;
 	font-size: clamp(10px, 0.7vw, 17px);
+	cursor: pointer;
 }
 
 .strengthGraphContainer__resetButton:hover {
@@ -533,5 +495,19 @@ export default defineComponent({
 	left: 50%;
 	transform: translate(-50%, -50%);
 	width: 80%;
+}
+
+.strengthGraphContainer__loadingIndicator {
+	color: white;
+	width: 50%;
+	height: 50%;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 </style>

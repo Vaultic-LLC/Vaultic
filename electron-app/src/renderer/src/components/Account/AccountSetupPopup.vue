@@ -143,7 +143,6 @@ export default defineComponent({
 
 		async function closeWithAnimation()
 		{
-			stores.appStore.isOnline = true;
 			stores.popupStore.showGlobalAuthWithLockIcon(primaryColor.value);
 
 			ctx.emit('onClose');

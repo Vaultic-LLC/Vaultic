@@ -40,7 +40,7 @@ export default defineComponent({
 	components:
 	{
 		WorldMap,
-		SmallMetricGauge
+		SmallMetricGauge,
 	},
 	setup()
 	{
@@ -138,11 +138,6 @@ export default defineComponent({
 		// should request the data breeches once when the app first loads and store them somewhere
 		onMounted(() =>
 		{
-			if (!stores.appStore.isOnline)
-			{
-				return;
-			}
-
 			if (stores.passwordStore.passwords.length > 0)
 			{
 				startScan(false);
@@ -151,11 +146,6 @@ export default defineComponent({
 
 		watch(() => stores.passwordStore.passwords.length, (newValue, oldValue) =>
 		{
-			if (!stores.appStore.isOnline)
-			{
-				return;
-			}
-
 			if (newValue > oldValue)
 			{
 				startScan(false);
@@ -283,6 +273,7 @@ export default defineComponent({
 	border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
 	transition: 0.3s;
 	font-size: clamp(10px, 0.8vw, 17px);
+	cursor: pointer;
 }
 
 .breachedPasswordsContainer__scanButton.scanning {

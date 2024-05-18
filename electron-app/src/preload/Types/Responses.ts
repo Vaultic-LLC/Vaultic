@@ -1,6 +1,6 @@
 import { LicenseStatus } from "../Objects/License"
 import { Device } from "./Device";
-import { Session, UserDataBreach } from "./ClientServerTypes";
+import { ChartData, Session, UserDataBreach } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -152,4 +152,9 @@ export interface DeactivateUserSubscriptionResponse extends BaseResponse
 export interface GenerateRandomPhraseResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
 	Phrase?: string;
+}
+
+export interface GetChartDataResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
+{
+	ChartData?: ChartData;
 }

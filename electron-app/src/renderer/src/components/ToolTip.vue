@@ -9,21 +9,19 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
 
-import { ColorPalette } from '../Types/Colors';
 import tippy, { Placement } from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import 'tippy.js/animations/scale.css';
-import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "ToolTip",
-	props: ["message", "placement", "color", "size", "fadeIn"],
+	props: ["message", "placement", "color", "size", "fadeIn", 'iconColor'],
 	setup(props)
 	{
 		const toolTipIcon: Ref<HTMLElement | null> = ref(null);
-		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
 		const placement: ComputedRef<Placement> = computed(() => props.placement ? props.placement : "top");
 		const iconSize: ComputedRef<string> = computed(() => props.size ?? "28px");
+		const computedIconColor: ComputedRef<string> = computed(() => props.iconColor ? props.iconColor : "white");
 
 		onMounted(() =>
 		{
@@ -40,9 +38,9 @@ export default defineComponent({
 		});
 
 		return {
-			currentColorPalette,
 			toolTipIcon,
-			iconSize
+			iconSize,
+			computedIconColor
 		};
 	}
 })
@@ -69,7 +67,7 @@ export default defineComponent({
 	width: v-bind(iconSize);
 	height: v-bind(iconSize);
 	font-size: v-bind(iconSize);
-	color: white;
+	color: v-bind(computedIconColor);
 	transition: 0.3s;
 	will-change: transform;
 }

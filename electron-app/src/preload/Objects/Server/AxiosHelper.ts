@@ -39,10 +39,10 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 	try
 	{
 		// we are startin to form a (probably) infinte loop of failed requests (probably due to failing to log), stop it
-		if (requestCallStackDepth > 2)
-		{
-			return { Success: false, UnknownError: true, logID: -101 };
-		}
+		// if (requestCallStackDepth > 2)
+		// {
+		// 	return { Success: false, UnknownError: true, logID: -101 };
+		// }
 
 		console.log(serverPath);
 		const requestData = await getRequestData(responseKeys.publicKey, data);

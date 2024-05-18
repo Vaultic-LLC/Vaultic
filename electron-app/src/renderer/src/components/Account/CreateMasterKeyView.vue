@@ -126,6 +126,7 @@ export default defineComponent({
 			const response = await window.api.server.session.createAccount(JSON.stringify(data));
 			if (response.Success)
 			{
+				stores.appStore.isOnline = true;
 				await stores.appStore.setKey(key.value);
 				await stores.handleUpdateStoreResponse(key.value, response);
 

@@ -83,7 +83,7 @@ async function loadBackupData(key: string)
 
 async function checkUpdateStoresWithBackup(key: string, userDataResponse: any, overrideVersionCheck: boolean = false)
 {
-	if (userDataResponse.success)
+	if (userDataResponse.Success)
 	{
 		if (userDataResponse.appStoreState)
 		{
@@ -126,18 +126,7 @@ async function checkUpdateStoresWithBackup(key: string, userDataResponse: any, o
 	}
 	else
 	{
-		if (userDataResponse.InvalidSession)
-		{
-			stores.popupStore.showSessionExpired();
-		}
-		else if (userDataResponse.IncorrectDevice)
-		{
-			stores.popupStore.showIncorrectDevice(userDataResponse);
-		}
-		else if (userDataResponse.unknownError)
-		{
-			stores.popupStore.showErrorResponseAlert(userDataResponse)
-		}
+		defaultHandleFailedResponse(userDataResponse);
 	}
 }
 

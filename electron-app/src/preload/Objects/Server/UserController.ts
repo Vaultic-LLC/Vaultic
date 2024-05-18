@@ -1,19 +1,21 @@
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetDevicesResponse, GetUserDataBreachesResponse, LoadDataResponse, UpdateDeviceRespnose, UseSessionLicenseAndDeviceAuthenticationResponse, UserSessionAndDeviceAuthenticationRespons } from "../../Types/Responses";
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, LoadDataResponse, UpdateDeviceRespnose, UseSessionLicenseAndDeviceAuthenticationResponse } from "../../Types/Responses";
 import { AxiosHelper } from "../../Types/ServerTypes";
 
 export interface UserController
 {
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
 	registerDevice: () => Promise<UpdateDeviceRespnose>;
-	backupSetings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
-	backupAppStore(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-	backupUserPreferences(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	backupSetings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+	backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	backupUserPreferences: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	getUserData: () => Promise<LoadDataResponse>;
 	createCheckout: () => Promise<CreateCheckoutResponse>;
+	getChartData: (data: string) => Promise<GetChartDataResponse>;
 	getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
 	dismissUserDataBreach: (breachID: number) => Promise<BaseResponse>;
 	deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
 	getDevices: () => Promise<GetDevicesResponse>;
+	reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
 	test: (key: string) => Promise<any>
 }
 
@@ -63,6 +65,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		return axiosHelper.post("User/CreateCheckout");
 	}
 
+	function getChartData(data: string): Promise<GetChartDataResponse>
+	{
+		return axiosHelper.post("User/GetChartData", data);
+	}
+
 	function getUserDataBreaches(passwordStoreState: string): Promise<GetUserDataBreachesResponse>
 	{
 		return axiosHelper.post("User/GetUserDataBreaches", passwordStoreState);
@@ -83,6 +90,13 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		});
 	}
 
+	function reportBug(description: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	{
+		return axiosHelper.post('User/ReportBug', {
+			Description: description
+		});
+	}
+
 	async function test(key: string): Promise<any>
 	{
 		return axiosHelper.post("User/Test", { key });
@@ -97,9 +111,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		backupUserPreferences,
 		getUserData,
 		createCheckout,
+		getChartData,
 		getUserDataBreaches,
 		dismissUserDataBreach,
 		deactivateUserSubscription,
+		reportBug,
 		test
 	}
 }
