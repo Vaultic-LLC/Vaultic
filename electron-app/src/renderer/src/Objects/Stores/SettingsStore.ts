@@ -89,7 +89,7 @@ class SettingsStore extends Store<SettingsStoreState>
 				SettingsStoreState: state.value
 			};
 
-			const response = await window.api.server.user.backupSetings(JSON.stringify(data));
+			const response = await window.api.server.user.backupSettings(JSON.stringify(data));
 			if (!response.Success)
 			{
 				defaultHandleFailedResponse(response);

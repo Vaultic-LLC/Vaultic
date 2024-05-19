@@ -166,23 +166,6 @@ export default defineComponent({
 			}
 		}
 
-		async function registerThisDevice()
-		{
-			stores.popupStore.showLoadingIndicator(props.color, "Registering");
-			const response = await window.api.server.user.registerDevice();
-
-			stores.popupStore.hideLoadingIndicator();
-			if (response.Success)
-			{
-				stores.popupStore.showToast(props.color, 'Registered Device', true);
-				devices.value.push(response.Device!);
-			}
-			else
-			{
-				defaultHandleFailedResponse(response);
-			}
-		}
-
 		function setDeviceType(devices: Device[] | undefined, desktop: boolean): Device[]
 		{
 			if (!devices)
@@ -234,8 +217,7 @@ export default defineComponent({
 			tableRows,
 			responseObj,
 			headerTabs,
-			hasDesktopDeviceUpdates,
-			registerThisDevice
+			hasDesktopDeviceUpdates
 		}
 	}
 })

@@ -10,7 +10,8 @@
 		</template>
 		<template #body>
 			<FilterConditionRow v-for="( fc, index ) in  filterConditions " :key="fc.id" :rowNumber="index"
-				:color="primaryColor" :model="fc" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc.id)" />
+				:color="primaryColor" :model="fc" :displayFieldOptions="displayFieldOptions"
+				@onDelete="onDelete(fc.id)" />
 		</template>
 	</TableTemplate>
 </template>
@@ -57,10 +58,10 @@ export default defineComponent({
 			}
 		];
 
-		function onAdd()
+		async function onAdd()
 		{
 			filterConditions.value.push({
-				id: generateUniqueID(filterConditions.value),
+				id: await generateUniqueID(filterConditions.value),
 				property: '',
 				value: ''
 			});

@@ -1,8 +1,8 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import fs from "fs";
-import vaulticServer from '../Server/VaulticServer';
 import { MethodResponse } from '../../Types/MethodResponse';
 import { FileLocker, getFileLocker } from './FileLocker';
+import vaulticServer from '../Server/VaulticServer';
 
 export interface File
 {

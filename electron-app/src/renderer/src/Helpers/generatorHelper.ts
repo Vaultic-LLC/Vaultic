@@ -1,14 +1,14 @@
 import { IIdentifiable } from "@renderer/Types/EncryptedData";
 import qrCode from "qrcode";
 
-export function generateUniqueID<T extends IIdentifiable>(existingItems: T[]): string
+export async function generateUniqueID<T extends IIdentifiable>(existingItems: T[]): Promise<string>
 {
 	let hasDuplicate: boolean = true;
 	let id: string = "";
 
 	while (hasDuplicate)
 	{
-		id = window.api.utilities.generator.uniqueId();
+		id = await window.api.utilities.generator.uniqueId();
 		hasDuplicate = existingItems.some(i => i.id == id);
 	}
 

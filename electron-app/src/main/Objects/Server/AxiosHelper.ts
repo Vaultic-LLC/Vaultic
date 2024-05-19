@@ -8,7 +8,6 @@ import { AxiosHelper, EncryptedRequest } from '../../Types/ServerTypes';
 import vaulticServer from './VaulticServer';
 import generatorUtility from '../../Utilities/Generator';
 
-let requestCallStackDepth: number = 0;
 let currentSession: Session;
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
@@ -35,46 +34,33 @@ async function getAPIKey()
 
 async function post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
 {
-	requestCallStackDepth += 1;
 	try
 	{
-		// we are startin to form a (probably) infinte loop of failed requests (probably due to failing to log), stop it
-		// if (requestCallStackDepth > 2)
-		// {
-		// 	return { Success: false, UnknownError: true, logID: -101 };
-		// }
-
 		console.log(serverPath);
 		const requestData = await getRequestData(responseKeys.publicKey, data);
 		if (!requestData[0].success)
 		{
-			requestCallStackDepth -= 1;
 			return { Success: false, UnknownError: true, logID: requestData[0].logID };
 		}
-
 
 		const response = await axiosInstance.post(serverPath, requestData[1]);
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
 
 		if (!responseResult[0].success)
 		{
-			requestCallStackDepth -= 1;
 			return { Success: false, UnknownError: true, logID: responseResult[0].logID };
 		}
 
-		requestCallStackDepth -= 1;
 		return responseResult[1];
 	}
-	catch (e)
+	catch (e: any)
 	{
 		if (e instanceof AxiosError)
 		{
-			requestCallStackDepth -= 1;
 			return { Success: false, UnknownError: true, statusCode: e.status, axiosCode: e.code };
 		}
 	}
 
-	requestCallStackDepth -= 1;
 	return { Success: false, UnknownError: true };
 }
 

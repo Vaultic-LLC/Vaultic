@@ -11,7 +11,6 @@ import { defaultHandleFailedResponse } from "@renderer/Helpers/ResponseHelper";
 
 export interface AppStoreState extends StoreState
 {
-	readonly isWindows: boolean;
 	masterKeyHash: string;
 	masterKeySalt: string;
 	loginHistory: Dictionary<number[]>;
@@ -26,7 +25,6 @@ class AppStore extends Store<AppStoreState>
 
 	private internalIsOnline: Ref<boolean>;
 
-	get isWindows() { return this.state.isWindows; }
 	get isOnline() { return this.internalIsOnline.value; }
 	set isOnline(value: boolean) { this.internalIsOnline.value = value; }
 	get activePasswordValuesTable() { return this.internalActivePasswordValueTable.value; }
@@ -51,7 +49,6 @@ class AppStore extends Store<AppStoreState>
 			masterKeyHash: '',
 			masterKeySalt: '',
 			privateKey: '',
-			isWindows: window.api.device.platform === "win32",
 			isOnline: false,
 			userDataVersion: 0,
 			loginHistory: {},
@@ -147,7 +144,7 @@ class AppStore extends Store<AppStoreState>
 	{
 		if (!this.state.masterKeyHash)
 		{
-			const salt = window.api.utilities.generator.randomValue(30);
+			const salt = await window.api.utilities.generator.randomValue(30);
 			this.state.masterKeyHash = await window.api.utilities.hash.hash(masterKey, salt);
 			this.state.masterKeySalt = salt;
 

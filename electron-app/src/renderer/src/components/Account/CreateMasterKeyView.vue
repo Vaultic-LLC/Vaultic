@@ -148,18 +148,15 @@ export default defineComponent({
 
 		function openCreateStrongAndMemorablePasswords()
 		{
-			// TODO: Make sure website mentions how much better it is to create a key that is
-			// at least 32 digits long, even though we don't require it.
-			// Also mention the benefit of replacing letters in words with numbers to prevent
-			// dictionary attacks
+			window.open('https://www.vaultic.org/post/creating-a-strong-and-memorable-master-key');
 		}
 
-		watch(() => key.value, (newValue) =>
+		watch(() => key.value, async (newValue) =>
 		{
 			greaterThanTwentyCharacters.value = newValue.length >= 20;
-			containesUpperAndLowerCase.value = window.api.helpers.validation.containsUppercaseAndLowercaseNumber(newValue);
-			hasNumber.value = window.api.helpers.validation.containsNumber(newValue);
-			hasSpecialCharacter.value = window.api.helpers.validation.containsSpecialCharacter(newValue);
+			containesUpperAndLowerCase.value = await window.api.helpers.validation.containsUppercaseAndLowercaseNumber(newValue);
+			hasNumber.value = await window.api.helpers.validation.containsNumber(newValue);
+			hasSpecialCharacter.value = await window.api.helpers.validation.containsSpecialCharacter(newValue);
 
 			matchesKey.value = newValue == reEnterKey.value;
 		});

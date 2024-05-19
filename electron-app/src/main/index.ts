@@ -2,20 +2,7 @@ import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-
-async function selectDirectory()
-{
-	const { canceled, filePaths } = await dialog.showOpenDialog({
-		properties: ['openDirectory']
-	});
-
-	if (!canceled)
-	{
-		return filePaths[0];
-	}
-
-	return '';
-}
+import setupIPC from './ipcSetup';
 
 function createWindow(): void
 {
@@ -25,8 +12,9 @@ function createWindow(): void
 		autoHideMenuBar: true,
 		...(process.platform === 'linux' ? { icon } : {}),
 		webPreferences: {
+			contextIsolation: true,
 			preload: join(__dirname, '../preload/index.js'),
-			sandbox: false,
+			//sandbox: false,
 			backgroundThrottling: false,
 			devTools: is.dev
 		},
@@ -61,7 +49,7 @@ function createWindow(): void
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() =>
 {
-	ipcMain.handle('dialog:selectDirectory', selectDirectory)
+	setupIPC();
 
 	// Set app user model id for windows
 	electronApp.setAppUserModelId('com.electron')

@@ -3,9 +3,11 @@ import getMAC from 'getmac'
 import child from "child_process"
 import { DeviceInfo } from "../Types/Device";
 
+const platform = os.platform();
+
 function getComputerName()
 {
-	switch (process.platform)
+	switch (platform)
 	{
 		case "win32":
 			return process.env.COMPUTERNAME;
@@ -21,7 +23,7 @@ function getComputerName()
 
 function getOS()
 {
-	switch (process.platform)
+	switch (platform)
 	{
 		case "win32":
 			return 'Windows';
@@ -37,6 +39,8 @@ function getOS()
 const deviceName = getComputerName() ?? "";
 const model = getOS();
 const version = os.release();
+//@ts-ignore
+const mac = getMAC.default();
 
 export function getDeviceInfo(): DeviceInfo
 {
@@ -44,8 +48,7 @@ export function getDeviceInfo(): DeviceInfo
 		deviceName,
 		model,
 		version,
-		platform: os.platform(),
-		//@ts-ignore
-		mac: getMAC.default()
+		platform,
+		mac
 	}
 }

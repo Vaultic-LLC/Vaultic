@@ -167,7 +167,7 @@ export default defineComponent({
 				return;
 			}
 
-			onInput(window.api.utilities.generator.randomPassword(stores.settingsStore.randomValueLength));
+			onInput(await window.api.utilities.generator.randomPassword(stores.settingsStore.randomValueLength));
 		}
 
 		function copyValue()

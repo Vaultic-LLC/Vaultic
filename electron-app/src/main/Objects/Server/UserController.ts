@@ -4,8 +4,7 @@ import { AxiosHelper } from "../../Types/ServerTypes";
 export interface UserController
 {
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-	registerDevice: () => Promise<UpdateDeviceRespnose>;
-	backupSetings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+	backupSettings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
 	backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	backupUserPreferences: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	getUserData: () => Promise<LoadDataResponse>;
@@ -16,7 +15,6 @@ export interface UserController
 	deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
 	getDevices: () => Promise<GetDevicesResponse>;
 	reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
-	test: (key: string) => Promise<any>
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -30,17 +28,12 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		});
 	}
 
-	function registerDevice(): Promise<UpdateDeviceRespnose>
-	{
-		return axiosHelper.post('User/RegisterDevice');
-	}
-
 	function getDevices(): Promise<GetDevicesResponse>
 	{
 		return axiosHelper.post('User/GetDevices');
 	}
 
-	function backupSetings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+	function backupSettings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
 		return axiosHelper.post('User/BackupSettings', data);
 	}
@@ -97,16 +90,10 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		});
 	}
 
-	async function test(key: string): Promise<any>
-	{
-		return axiosHelper.post("User/Test", { key });
-	}
-
 	return {
 		deleteDevice,
-		registerDevice,
 		getDevices,
-		backupSetings,
+		backupSettings,
 		backupAppStore,
 		backupUserPreferences,
 		getUserData,
@@ -116,6 +103,5 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 		dismissUserDataBreach,
 		deactivateUserSubscription,
 		reportBug,
-		test
 	}
 }

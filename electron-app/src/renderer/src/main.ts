@@ -36,7 +36,7 @@ window.addEventListener('error', (e: ErrorEvent) =>
 	if (e?.error instanceof Error)
 	{
 		const error: Error = e.error as Error
-		window.api.server.app.log(error.message, error.stack ?? "");
+		window.api.server.app.log(error.message, error.stack ?? "ErrorHandler");
 	}
 });
 
@@ -45,7 +45,7 @@ window.addEventListener('unhandledrejection', (e) =>
 	if (e?.reason instanceof Error)
 	{
 		const error: Error = e.reason as Error
-		window.api.server.app.log(error.message, error.stack ?? "");
+		window.api.server.app.log(error.message, error.stack ?? "UnhandlerRejectionHandler");
 	}
 });
 

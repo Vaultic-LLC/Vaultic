@@ -7,8 +7,8 @@ import { ValueController, createValueController } from "./ValueController";
 
 export interface VaulticServer
 {
-	session: SessionController;
 	app: AppController;
+	session: SessionController;
 	user: UserController;
 	filter: StoreController;
 	group: StoreController;
@@ -18,8 +18,8 @@ export interface VaulticServer
 
 const vaulticServer: VaulticServer =
 {
-	session: createSessionController(axiosHelper),
 	app: createAppController(axiosHelper),
+	session: createSessionController(axiosHelper),
 	user: createUserController(axiosHelper),
 	filter: createFilterController(axiosHelper),
 	group: createGroupController(axiosHelper),

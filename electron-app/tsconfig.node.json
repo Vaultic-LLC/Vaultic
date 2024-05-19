@@ -3,15 +3,14 @@
 	"include": [
 		"electron.vite.config.*",
 		"src/main/*",
+		"src/main/Objects/Files/*",
+		"src/main/Objects/Server/*",
+		"src/main/Types/*",
+		"src/main/Objects/*",
+		"src/main/Helpers/*",
+		"src/main/Utilities/*",
 		"src/preload/*",
-		"src/preload/Objects/API.ts",
-		"src/preload/Objects/Server/*",
-		"src/preload/Objects/DeviceInfo.ts",
-		"src/preload/Objects/Files/*",
-		"src/preload/Objects/License.ts",
-		"src/preload/Utilities/*",
-		"src/preload/Helpers/*",
-		"src/preload/Types/*"
+		"src/preload/Types/*",
 	],
 	"compilerOptions": {
 		"composite": true,

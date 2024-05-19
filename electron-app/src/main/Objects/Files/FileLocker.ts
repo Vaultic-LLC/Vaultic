@@ -1,8 +1,6 @@
 import child_process from 'child_process';
 import os from "os";
 
-const platform = os.platform();
-
 export interface FileLocker
 {
 	lock: (fileName: string, directory: string) => Promise<void>;
@@ -109,6 +107,7 @@ const unixLocker: FileLocker =
 
 export function getFileLocker(): FileLocker
 {
+	const platform = os.platform();
 	if (platform === "win32")
 	{
 		return windowsLocker;

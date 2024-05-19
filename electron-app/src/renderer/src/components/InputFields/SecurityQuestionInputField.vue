@@ -34,10 +34,10 @@ export default defineComponent({
 		const dirtySecurityQuestionQuestions: Ref<string[]> = inject(DirtySecurityQuestionQuestionsKey, ref([]));
 		const dirtySecurityQuestionAnswers: Ref<string[]> = inject(DirtySecurityQuestionAnswersKey, ref([]));
 
-		function onAdd()
+		async function onAdd()
 		{
 			securityQuestions.value.push({
-				id: generateUniqueID(securityQuestions.value),
+				id: await generateUniqueID(securityQuestions.value),
 				question: '',
 				questionLength: 0,
 				answer: '',

@@ -19,7 +19,7 @@ const filterFile = useFile("filters");
 const groupFile = useFile("groups");
 const userPreferencesFile = useFile("userPreferences")
 
-const files: Files =
+const vaulticFiles: Files =
 {
 	app: appFile,
 	settings: settingsFile,
@@ -30,4 +30,4 @@ const files: Files =
 	userPreferences: userPreferencesFile
 }
 
-export default files;
+export default vaulticFiles;

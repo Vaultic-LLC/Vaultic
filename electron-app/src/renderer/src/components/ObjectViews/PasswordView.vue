@@ -328,10 +328,10 @@ export default defineComponent({
 			saveFailed(false);
 		}
 
-		function onAddSecurityQuestion()
+		async function onAddSecurityQuestion()
 		{
 			passwordState.value.securityQuestions.push({
-				id: generateUniqueID(passwordState.value.securityQuestions),
+				id: await generateUniqueID(passwordState.value.securityQuestions),
 				question: '',
 				questionLength: 0,
 				answer: '',

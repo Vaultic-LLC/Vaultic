@@ -1,4 +1,4 @@
-import { ipcRenderer } from "electron";
+import { dialog, ipcRenderer } from "electron";
 import { writeFile } from "../Objects/Files/File";
 import axiosHelper from "../Objects/Server/AxiosHelper";
 import { GetUserDeactivationKeyResponse } from "../Types/Responses";
@@ -8,6 +8,21 @@ export interface VaulticHelper
 	downloadDeactivationKey: () => Promise<GetUserDeactivationKeyResponse>;
 }
 
+async function selectDirectory()
+{
+	const { canceled, filePaths } = await dialog.showOpenDialog({
+		properties: ['openDirectory']
+	});
+
+	if (!canceled)
+	{
+		return filePaths[0];
+	}
+
+	return '';
+}
+
+
 export async function downloadDeactivationKey()
 {
 	const response: GetUserDeactivationKeyResponse = await axiosHelper.post("User/GetUserDeactivationKey");
@@ -16,7 +31,7 @@ export async function downloadDeactivationKey()
 		return response;
 	}
 
-	const filePath = await ipcRenderer.invoke('dialog:selectDirectory')
+	const filePath = await selectDirectory();
 	if (!filePath)
 	{
 		response.Success = false;
