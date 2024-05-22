@@ -45,6 +45,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 
 		const response = await axiosInstance.post(serverPath, requestData[1]);
 		console.log(response.headers['set-cookie']);
+
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
 
 		if (!responseResult[0].success)
@@ -56,7 +57,6 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 	}
 	catch (e: any)
 	{
-		console.log(e);
 		if (e instanceof AxiosError)
 		{
 			return { Success: false, UnknownError: true, statusCode: e.status, axiosCode: e.code };

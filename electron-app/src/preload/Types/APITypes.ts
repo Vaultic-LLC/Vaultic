@@ -18,6 +18,7 @@ export interface HashUtility
 {
 	hash: (value: string, salt: string) => Promise<string>;
 	insecureHash: (value: string) => Promise<string>;
+	compareHashes: (a: string, b: string) => Promise<boolean>;
 }
 
 export interface Utilities

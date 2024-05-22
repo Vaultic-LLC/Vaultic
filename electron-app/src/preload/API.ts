@@ -74,7 +74,8 @@ const cryptUtility: CryptUtility =
 const hashUtility: HashUtility =
 {
 	hash: (value: string, salt: string) => ipcRenderer.invoke('hashUtility:hash', value, salt),
-	insecureHash: (value: string) => ipcRenderer.invoke('hashUtility:insecureHash', value)
+	insecureHash: (value: string) => ipcRenderer.invoke('hashUtility:insecureHash', value),
+	compareHashes: (a: string, b: string) => ipcRenderer.invoke('hashUtility:compareHashes', a, b)
 };
 
 const generatorUtility: GeneratorUtility =

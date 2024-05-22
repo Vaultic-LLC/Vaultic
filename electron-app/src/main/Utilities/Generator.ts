@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
 import { randomBytes, generateKeyPairSync, KeyPairSyncResult } from "crypto"
 import validationHelper from '../Helpers/ValidationHelper';
+import crypto from "crypto";
 
 export interface GeneratorUtility
 {
@@ -13,7 +13,7 @@ export interface GeneratorUtility
 
 function uniqueId(): string
 {
-	return uuidv4();
+	return crypto.randomUUID();
 }
 
 function randomValue(length: number): string

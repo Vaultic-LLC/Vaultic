@@ -11,8 +11,8 @@
 						{{ message }}
 						<ButtonLink v-if="showContactSupport" :color="primaryColor" :text="'Contact Support'" />
 					</div>
-					<div v-if="statusCode">
-						Staus Code: {{ statusCode ?? -1 }}
+					<div v-if="axiosCode">
+						Staus Code: {{ axiosCode ?? -1 }}
 					</div>
 					<div v-if="logID">
 						Log ID: {{ logID }}

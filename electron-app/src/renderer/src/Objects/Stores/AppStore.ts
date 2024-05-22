@@ -164,7 +164,8 @@ class AppStore extends Store<AppStoreState>
 			return false;
 		}
 
-		return this.state.masterKeyHash === await window.api.utilities.hash.hash(key, this.state.masterKeySalt);
+		const computedHash = await window.api.utilities.hash.hash(key, this.state.masterKeySalt);
+		return await window.api.utilities.hash.compareHashes(this.state.masterKeyHash, computedHash);
 	}
 
 	public lock()
