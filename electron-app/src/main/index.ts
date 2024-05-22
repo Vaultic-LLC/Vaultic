@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -14,11 +14,25 @@ function createWindow(): void
 		webPreferences: {
 			contextIsolation: true,
 			preload: join(__dirname, '../preload/index.js'),
-			//sandbox: false,
 			backgroundThrottling: false,
 			devTools: is.dev
 		},
-	})
+	});
+
+	const cookie = { url: 'https://vaultic-api.vaulticserver.vaultic.co', name: 'VaulticCookie', value: 'cookie' }
+	session.defaultSession.cookies.set(cookie).then(() =>
+	{
+		fetch('https://vaultic-api.vaulticserver.vaultic.co/Session/ValidateEmail', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				username: 'user@example.com',
+				loggedIn: true,
+			})
+		});
+	});
 
 	mainWindow.on('ready-to-show', () =>
 	{
@@ -83,5 +97,36 @@ app.on('window-all-closed', () =>
 	}
 });
 
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
+app.on('web-contents-created', (event, contents) =>
+{
+	// disable all attempted webviews
+	contents.on('will-attach-webview', (event, webPreferences, params) =>
+	{
+		// Strip away preload scripts if unused or verify their location is legitimate
+		delete webPreferences.preload;
+
+		// Secure
+		webPreferences.nodeIntegration = false
+		webPreferences.allowRunningInsecureContent = false;
+		webPreferences.contextIsolation = true;
+		webPreferences.enableBlinkFeatures = undefined;
+		webPreferences.experimentalFeatures = false;
+		webPreferences.sandbox = true;
+		webPreferences.webSecurity = true;
+
+		// prevent webview
+		event.preventDefault();
+	});
+
+	// disable all attempted navigation
+	contents.on('will-navigate', (event) =>
+	{
+		event.preventDefault();
+	});
+
+	// no new windows should be opened
+	contents.setWindowOpenHandler(() =>
+	{
+		return { action: 'deny' }
+	});
+})

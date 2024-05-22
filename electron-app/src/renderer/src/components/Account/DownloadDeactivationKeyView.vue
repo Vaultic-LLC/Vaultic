@@ -1,7 +1,7 @@
 <template>
 	<div class="downloadDeactivationKeyView">
 		<AccountSetupView :color="color" :title="'Download Deactivation Key'" :buttonText="'Download'"
-			:displayGrid="false" :titleMargin="'clamp(15px, 1.2vw, 25px)'" :titleMarginTop="'clamp(15px, 1.2vw, 30px)'"
+			:titleMargin="'clamp(15px, 1.2vw, 25px)'" :titleMarginTop="'clamp(15px, 1.2vw, 30px)'"
 			@onSubmit="onDownload">
 			<div class="downloadDeactivationKeyView__content">
 				<div>

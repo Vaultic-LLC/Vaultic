@@ -8,12 +8,8 @@
 			<div class="colorPalette" :class="{ hovering: hoveringColorPalette == index }"
 				v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp)"
 				@mouseenter="hoveringColorPalette = index" @mouseleave="hoveringColorPalette = -1">
-				<div class="passwordColor existingColorPalettes__colorPaletteCell"
-					:style="{ '--colorPaletteColor': cp.passwordsColor.primaryColor }">
-				</div>
-				<div class="valueColor existingColorPalettes__colorPaletteCell"
-					:style="{ '--colorPaletteColor': cp.valuesColor.primaryColor }">
-				</div>
+				<ColorPalettePill :leftColor="cp.passwordsColor.primaryColor" :rightColor="cp.valuesColor.primaryColor"
+					:hovering="hoveringColorPalette == index" />
 			</div>
 		</div>
 	</div>
@@ -25,6 +21,7 @@
 import { defineComponent, ComputedRef, computed, ref, Ref } from 'vue';
 
 import ColorPaletteView from '../../../components/ObjectViews/ColorPaletteView.vue';
+import ColorPalettePill from "../../ColorPalette/ColorPalettePill.vue"
 
 import { ColorPalette } from '../../../Types/Colors';
 import { stores } from '@renderer/Objects/Stores';
@@ -33,7 +30,8 @@ export default defineComponent({
 	name: "EditColorPalettePopup",
 	components:
 	{
-		ColorPaletteView
+		ColorPaletteView,
+		ColorPalettePill
 	},
 	props: ['model'],
 	setup(props)
@@ -108,43 +106,5 @@ export default defineComponent({
 	justify-content: flex-start;
 	align-items: center;
 	flex-wrap: wrap;
-}
-
-.cloneFromColorPalettesContainer .existingColorPalettes .colorPalette {
-	width: max(4vw, 50px);
-	height: max(30px, 2vw);
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	transition: 0.3s;
-	will-change: transform;
-}
-
-.cloneFromColorPalettesContainer .existingColorPalettes .colorPalette:hover {
-	transform: scale(1.1);
-}
-
-.cloneFromColorPalettesContainer .existingColorPalettes .colorPalette .passwordColor {
-	border-top-left-radius: 20px;
-	border-bottom-left-radius: 20px;
-	height: clamp(15px, 1.5vw, 30px);
-	width: clamp(15px, 1.5vw, 30px);
-	cursor: pointer;
-}
-
-.cloneFromColorPalettesContainer .existingColorPalettes .colorPalette .valueColor {
-	border-top-right-radius: 20px;
-	border-bottom-right-radius: 20px;
-	height: clamp(15px, 1.5vw, 30px);
-	width: clamp(15px, 1.5vw, 30px);
-	cursor: pointer;
-}
-
-.cloneFromColorPalettesContainer .existingColorPalettes .colorPalette.hovering .existingColorPalettes__colorPaletteCell {
-	box-shadow: 0 0 25px var(--colorPaletteColor);
-}
-
-.existingColorPalettes__colorPaletteCell {
-	background-color: var(--colorPaletteColor);
 }
 </style>

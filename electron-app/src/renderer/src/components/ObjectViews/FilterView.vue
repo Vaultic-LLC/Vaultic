@@ -1,8 +1,8 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<TextInputField :label="'Name'" :color="color" v-model="filterState.name" :width="'8vw'" :height="'4vh'"
-			:minHeight="'35px'" :style="{ 'grid-row': '1 / span 2', 'grid-column': '4 / span 2' }" />
+		<TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name"
+			:width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
 		<TableTemplate id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0"
 			:border="true" :emptyMessage="emptyMessage" :showEmptyMessage="filterState.conditions.length == 0 ?? true"
 			:headerTabs="headerTabs">
@@ -21,7 +21,6 @@ import { defineComponent, ComputedRef, computed, Ref, ref } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
-import FilterConditionInputField from '../InputFields/FilterConditionInputField.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
@@ -40,7 +39,6 @@ export default defineComponent({
 	components: {
 		ObjectView,
 		TextInputField,
-		FilterConditionInputField,
 		TableTemplate,
 		TableHeaderRow,
 		AddButton,
@@ -179,5 +177,10 @@ export default defineComponent({
 	height: 110%;
 	min-width: 410px;
 	min-height: 200px;
+}
+
+.filterView__name {
+	grid-row: 1 / span 2;
+	grid-column: 4 / span 2;
 }
 </style>

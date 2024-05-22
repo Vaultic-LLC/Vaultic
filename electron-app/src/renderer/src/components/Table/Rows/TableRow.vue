@@ -4,7 +4,7 @@
 		<slot></slot>
 		<component v-for="(rowValue, index) in tableRowData.values" :key="index" :is="rowValue.component"
 			:model="rowValue" :color="color" />
-		<td class="gapRow" :style="{ 'width': 'auto' }"></td>
+		<td class="tableRow__gapCell"></td>
 		<td v-if="allowPin || allowEdit || allowDelete" class="gapData"></td>
 		<td v-if="!hideAtRiskCell" class="tableRowIconCell" :class="{ hideCell: !tableRowData.atRiskModel?.message }"
 			@click.stop="tableRowData.atRiskModel?.onClick">
@@ -42,7 +42,7 @@ export default defineComponent({
 		TableRowColorValue
 	},
 	props: ["model", "rowNumber", "color", "allowPin", "allowEdit", "allowDelete",
-		'clickable', 'hideAtRisk', 'zIndexing', 'animateDelete'],
+		'clickable', 'hideAtRisk', 'zIndexing', 'animateDelete', 'height'],
 	setup(props)
 	{
 		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
@@ -55,6 +55,8 @@ export default defineComponent({
 		setAnimationDelay(rowNumb.value);
 		const hideAtRiskCell: ComputedRef<boolean> = computed(() => props.hideAtRisk === true);
 		const deletingRow: Ref<boolean> = ref(false);
+
+		const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : 'clamp(40px, 3.5vw, 100px)');
 
 		function setAnimationDelay(numb: number)
 		{
@@ -115,6 +117,7 @@ export default defineComponent({
 			animationDelay,
 			hideAtRiskCell,
 			deletingRow,
+			computedHeight,
 			onPin,
 			onEdit,
 			onDelete,
@@ -132,7 +135,7 @@ export default defineComponent({
 	border-top-right-radius: 1vw;
 	border-bottom-right-radius: 1vw;
 	transition: box-shadow 0.3s;
-
+	height: v-bind(computedHeight);
 	border: 10px solid transparent;
 	/* background-color: #121a20; */
 }
@@ -264,5 +267,9 @@ export default defineComponent({
 .tableRow .tableRowIconCell {
 	text-align: center;
 	width: 10%
+}
+
+.tableRow__gapCell {
+	width: auto;
 }
 </style>

@@ -1,36 +1,24 @@
 <template>
 	<ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<TextInputField :color="color" :label="'Password For'" v-model="passwordState.passwordFor"
-			:style="{ 'position': 'absolute', 'left': '10%' }" :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
-		<!-- <div class="vaulticPasswordContainer" v-if="passwordState.isVaultic"
-            :style="{ 'grid-row': '2 / span 1', 'grid-column': '2 / span 2', 'margin-top': '10px', 'margin-left': '5px' }">
-            <CheckboxInputField :label="'Vaultic Account'" :color="color" v-model="passwordState.isVaultic"
-                :fadeIn="true" :style="{ 'grid-row': '4 / span 2', 'grid-column': '2 / span 2', 'z-index': '8' }" />
-            <ToolTip :color="color" :size="'clamp(10px, 1vw, 20px)'" :fadeIn="true"
-                :message="'This password is the one used to Sign in with your Master Key. Updating it will automatically update your Vaultic Account'" />
-        </div> -->
-		<TextInputField :color="color" :label="'Domain'" v-model="passwordState.domain" :showToolTip="true"
+		<TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
+			v-model="passwordState.passwordFor" :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
+		<TextInputField class="passwordView__domain" :color="color" :label="'Domain'" v-model="passwordState.domain"
+			:showToolTip="true"
 			:toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
-			:toolTipSize="'clamp(15px, 1vw, 28px)'" :style="{ 'position': 'absolute', 'left': '30%' }" :width="'8vw'"
-			:height="'4vh'" :minHeight="'30px'" />
-		<TextInputField :color="color" :label="'Email'" v-model="passwordState.email"
-			:style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(47px, 15%)' }" :width="'8vw'" :height="'4vh'"
-			:minHeight="'30px'" :isEmailField="true" />
-		<TextInputField :color="color" :label="'Username'" v-model="passwordState.login"
-			:style="{ 'position': 'absolute', 'left': '30%', 'top': 'max(47px, 15%)' }" :width="'8vw'" :height="'4vh'"
-			:minHeight="'30px'" />
-		<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordState.password"
-			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true"
-			:showUnlock="true" :required="true" showCopy="true" :width="'11vw'" :maxWidth="'285px'" :height="'4vh'"
-			:minHeight="'30px'" :style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(95px, 30%)' }"
-			@onDirty="passwordIsDirty = true" />
-		<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
-			v-model="passwordState.additionalInformation" :width="'19vw'" :height="'15vh'" :minWidth="'216px'"
-			:minHeight="'91px'" :maxHeight="'203px'"
-			:style="{ 'position': 'absolute', 'left': '10%', 'bottom': '10%' }" />
-		<TableTemplate ref="tableRef" :color="color" id="passwordView__table"
-			:style="{ 'left': '50%', 'bottom': '10%' }" class="scrollbar" :scrollbar-size="1"
+			:toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
+		<TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email"
+			:width="'8vw'" :height="'4vh'" :minHeight="'30px'" :isEmailField="true" />
+		<TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login"
+			:width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
+		<EncryptedInputField class="passwordView__password" :colorModel="colorModel" :label="'Password'"
+			v-model="passwordState.password" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
+			:showRandom="true" :showUnlock="true" :required="true" showCopy="true" :width="'11vw'" :maxWidth="'285px'"
+			:height="'4vh'" :minHeight="'30px'" @onDirty="passwordIsDirty = true" />
+		<TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
+			:label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'19vw'"
+			:height="'15vh'" :minWidth="'216px'" :minHeight="'91px'" :maxHeight="'203px'" />
+		<TableTemplate ref="tableRef" :color="color" id="passwordView__table" class="scrollbar" :scrollbar-size="1"
 			:headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
 			:showEmptyMessage="showEmptyMessage" :headerTabs="headerTabs" :headerHeight="'clamp(45px, 5.8vh, 80px)'"
 			@scrolled-to-bottom="scrolledToBottom">
@@ -51,8 +39,7 @@
 					@onAnswerDirty="onAnswerDirty(sq.id)" @onDelete="onDeleteSecurityQuestion(sq.id)"
 					:isInitiallyEncrypted="sq.question != ''" />
 				<SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
-					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" />
+					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="color" />
 			</template>
 		</TableTemplate>
 	</ObjectView>
@@ -62,8 +49,6 @@ import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, provide, w
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
-import SecurityQuestionInputField from '../InputFields/SecurityQuestionInputField.vue';
-import ObjectSelectorInputField from '../InputFields/ObjectSelectorInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
@@ -91,8 +76,6 @@ export default defineComponent({
 	components: {
 		ObjectView,
 		TextInputField,
-		SecurityQuestionInputField,
-		ObjectSelectorInputField,
 		EncryptedInputField,
 		TextAreaInputField,
 		SearchBar,
@@ -108,7 +91,6 @@ export default defineComponent({
 	setup(props)
 	{
 		const tableRef: Ref<HTMLElement | null> = ref(null);
-		const securityQuestionInputField: Ref<null> = ref(null);
 		const refreshKey: Ref<string> = ref("");
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor);
@@ -392,7 +374,6 @@ export default defineComponent({
 		});
 
 		return {
-			securityQuestionInputField,
 			color,
 			groupHeaderModels,
 			groupModels,
@@ -425,6 +406,8 @@ export default defineComponent({
 
 <style>
 #passwordView__table {
+	left: 50%;
+	bottom: 10%;
 	transform: translateY(12px);
 	height: 29vh;
 	width: 27vw;
@@ -440,15 +423,37 @@ export default defineComponent({
 	column-gap: clamp(10px, 1vw, 25px);
 }
 
-.domainContainer {
-	display: flex;
-	flex-direction: row;
+.passwordView__passwordFor {
+	position: absolute !important;
+	left: 10%;
 }
 
-.vaulticPasswordContainer {
-	display: flex;
-	justify-content: flex-start;
-	align-items: flex-start;
-	column-gap: 10px;
+.passwordView__domain {
+	position: absolute !important;
+	left: 30%;
+}
+
+.passwordView__email {
+	position: absolute !important;
+	left: 10%;
+	top: max(47px, 15%);
+}
+
+.passwordView__username {
+	position: absolute !important;
+	left: 30%;
+	top: max(47px, 15%);
+}
+
+.passwordView__password {
+	position: absolute !important;
+	left: 10%;
+	top: max(95px, 30%);
+}
+
+.passwordView__additionalInformation {
+	position: absolute !important;
+	left: 10%;
+	bottom: 10%;
 }
 </style>

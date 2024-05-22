@@ -1,9 +1,8 @@
 <template>
 	<div class="menuWidgetContainer">
-		<LockIconCard :style="{ 'grid-row': '1', 'grid-column': 1 }" />
-		<SettingsIconCard :style="{ 'grid-row': '1', 'grid-column': 2 }" />
-		<!-- <LayoutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" /> -->
-		<AboutIconCard :style="{ 'grid-row': '1', 'grid-column': 3 }" />
+		<LockIconCard id="lockIconCard" />
+		<SettingsIconCard id="settingsIconCard" />
+		<AboutIconCard id="aboutIconCard" />
 	</div>
 </template>
 
@@ -44,5 +43,20 @@ export default defineComponent({
 	.menuWidgetContainer {
 		left: max(11px, 1%);
 	}
+}
+
+#lockIconCard {
+	grid-row: 1;
+	grid-column: 1;
+}
+
+#settingsIconCard {
+	grid-row: 1;
+	grid-column: 2;
+}
+
+#aboutIconCard {
+	grid-row: 1;
+	grid-column: 3;
 }
 </style>

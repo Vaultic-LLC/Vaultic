@@ -1,6 +1,6 @@
 <template>
 	<div class="paymentInfoView">
-		<AccountSetupView :color="color" :title="title" :buttonText="buttonText" :displayGrid="false"
+		<AccountSetupView :color="color" :title="title" :buttonText="buttonText"
 			:titleMargin="'clamp(15px, 1.2vw, 25px)'" :titleMarginTop="'clamp(15px, 1.2vw, 30px)'" @onSubmit="onSubmit">
 			<div class="paymentInfoView__content">
 				<div v-if="alreadyCreated == false">

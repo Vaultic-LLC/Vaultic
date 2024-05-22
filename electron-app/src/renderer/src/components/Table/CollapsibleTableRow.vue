@@ -2,7 +2,7 @@
 	<TableRow class="hover" :class="{ shadow: shadow, isOpen: showCollapseRow || stayOpen }"
 		@click="toggleCollapseContent" :model="model" :rowNumber="rowNumber" :color="primaryColor" :allowPin="true"
 		:allowEdit="true" :allowDelete="true" :hideAtRisk="false" :clickable="true"
-		:style="{ 'height': 'clamp(40px, 3.7vw, 100px)' }">
+		:height="'clamp(40px, 3.7vw, 100px)'">
 		<td class="tableRow__groupCell">
 			<GroupIcon v-for="(model) in groupIconModels" :key="model.toolTipText" :model="model" />
 		</td>

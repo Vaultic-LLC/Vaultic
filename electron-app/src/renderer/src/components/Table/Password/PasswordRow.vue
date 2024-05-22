@@ -8,10 +8,9 @@
 				v-model="pword.additionalInformation" :disabled="true" :width="'12vw'" :height="'9vh'"
 				:maxHeight="'135px'" :maxWidth="'300px'" />
 		</div>
-		<TableTemplate :color="textColor" :style="{ 'position': 'relative', 'flex-grow': '1' }"
-			class="scrollbar passwordRowContainer__table--fadeIn" :scrollbar-size="1" :border="false" :row-gap="'0px'"
-			:emptyMessage="emptyMessage" :hideHeader="true" :showEmptyMessage="securityQuestions.length == 0"
-			:backgroundColor="backgroundColor">
+		<TableTemplate :color="textColor" class="scrollbar passwordRowContainer__table" :scrollbar-size="1"
+			:border="false" :row-gap="'0px'" :emptyMessage="emptyMessage" :hideHeader="true"
+			:showEmptyMessage="securityQuestions.length == 0" :backgroundColor="backgroundColor">
 			<template #body>
 				<SecurityQuestionRow v-for="(sq, index) in securityQuestions" :key="sq.id" :rowNumber="index"
 					:colorModel="colorModel" :model="sq" :disabled="true" :isInitiallyEncrypted="false" />
@@ -172,7 +171,9 @@ export default defineComponent({
 	margin-right: clamp(50px, 5vw, 100px);
 }
 
-.passwordRowContainer__table--fadeIn {
+.passwordRowContainer__table {
+	position: relative !important;
+	flex-grow: 1;
 	opacity: 0;
 	animation: fadeIn 1s linear forwards;
 }

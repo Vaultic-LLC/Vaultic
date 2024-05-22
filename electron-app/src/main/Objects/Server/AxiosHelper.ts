@@ -18,7 +18,8 @@ const deviceInfo = getDeviceInfo();
 const url = 'https://vaultic-api.vaulticserver.vaultic.co/';
 const axiosInstance = axios.create({
 	baseURL: url,
-	timeout: 120000
+	timeout: 120000,
+	withCredentials: true
 });
 
 const responseKeys = generatorUtility.publicPrivateKey();
@@ -36,7 +37,6 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 {
 	try
 	{
-		console.log(serverPath);
 		const requestData = await getRequestData(responseKeys.publicKey, data);
 		if (!requestData[0].success)
 		{
@@ -44,6 +44,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		}
 
 		const response = await axiosInstance.post(serverPath, requestData[1]);
+		console.log(response.headers['set-cookie']);
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
 
 		if (!responseResult[0].success)
@@ -55,6 +56,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 	}
 	catch (e: any)
 	{
+		console.log(e);
 		if (e instanceof AxiosError)
 		{
 			return { Success: false, UnknownError: true, statusCode: e.status, axiosCode: e.code };
@@ -96,7 +98,6 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 	newData.Model = deviceInfo.model;
 	newData.Version = deviceInfo.version;
 
-	console.log(newData);
 	const encryptedData = await cryptUtility.hybridEncrypt(JSON.stringify(newData));
 	if (!encryptedData.success)
 	{
@@ -122,14 +123,11 @@ async function handleResponse<T extends BaseResponse>(privateKey: string, respon
 		responseData = JSON.parse(decryptedResponse.value!) as T;
 	}
 
-	console.log(responseData);
-
 	if ('Session' in responseData)
 	{
 		const session: Session = responseData.Session as Session;
 		if (session.ID && session.Token)
 		{
-			console.log('setting session');
 			currentSession = session;
 		}
 	}

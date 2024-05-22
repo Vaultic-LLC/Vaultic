@@ -1,11 +1,11 @@
 <template>
 	<div class="colorPalettesContainer">
-		<ColorPaletteDisplay :colorPalette="cpOne" :index="0" :style="{ 'grid-row': 1, 'grid-column': 1 }" />
-		<ColorPaletteDisplay :colorPalette="cpTwo" :index="1" :style="{ 'grid-row': 2, 'grid-column': 1 }" />
-		<ColorPaletteDisplay :colorPalette="cpThree" :index="2" :style="{ 'grid-row': 3, 'grid-column': 1 }" />
-		<ColorPaletteDisplay :colorPalette="cpFour" :index="3" :style="{ 'grid-row': 1, 'grid-column': 2 }" />
-		<ColorPaletteDisplay :colorPalette="cpFive" :index="4" :style="{ 'grid-row': 2, 'grid-column': 2 }" />
-		<ColorPaletteDisplay :colorPalette="cpSix" :index="5" :style="{ 'grid-row': 3, 'grid-column': 2 }" />
+		<ColorPaletteDisplay class="colorPalettesContainer__displayOne" :colorPalette="cpOne" :index="0" />
+		<ColorPaletteDisplay class="colorPalettesContainer__displayTwo" :colorPalette="cpTwo" :index="1" />
+		<ColorPaletteDisplay class="colorPalettesContainer__displayThree" :colorPalette="cpThree" :index="2" />
+		<ColorPaletteDisplay class="colorPalettesContainer__displayFour" :colorPalette="cpFour" :index="3" />
+		<ColorPaletteDisplay class="colorPalettesContainer__displayFive" :colorPalette="cpFive" :index="4" />
+		<ColorPaletteDisplay class="colorPalettesContainer__displaySix" :colorPalette="cpSix" :index="5" />
 	</div>
 </template>
 
@@ -64,5 +64,35 @@ export default defineComponent({
 	.colorPalettesContainer {
 		left: 1%;
 	}
+}
+
+.colorPalettesContainer__displayOne {
+	grid-row: 1;
+	grid-column: 1;
+}
+
+.colorPalettesContainer__displayTwo {
+	grid-row: 2;
+	grid-column: 1;
+}
+
+.colorPalettesContainer__displayThree {
+	grid-row: 3;
+	grid-column: 1;
+}
+
+.colorPalettesContainer__displayFour {
+	grid-row: 1;
+	grid-column: 2;
+}
+
+.colorPalettesContainer__displayFive {
+	grid-row: 2;
+	grid-column: 2;
+}
+
+.colorPalettesContainer__displaySix {
+	grid-row: 3;
+	grid-column: 2;
 }
 </style>

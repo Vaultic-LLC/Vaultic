@@ -1,16 +1,16 @@
 <template>
-	<tr :style="{ height: securityQuestionRowGap }">
+	<tr class="securityQuestionRowPrefixGap">
 	</tr>
 	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="colorModel.color" :allowDelete="!disabled"
-		:hideAtRisk="true" :animateDelete="true" :style="{ 'padding-bottom': '10px' }">
-		<td class="securityQuestionCellOne">
+		:hideAtRisk="true" :animateDelete="true">
+		<td class="securityQuestionRow__firstCell">
 			<EncryptedInputField :colorModel="colorModel" :label="'Question'" v-model="securityQuestion.question"
 				:initialLength="securityQuestion.questionLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="false"
 				:isOnWidget="true" :required="true" @onDirty="$emit('onQuesitonDirty')" :width="'10vw'"
 				:maxWidth="'250px'" :height="'4vh'" :minHeight="'30px'" :showButtonsUnderneath="moveButtonsToBottom" />
 		</td>
-		<td class="gap">
+		<td class="securityQuestionRow__cellGap">
 		</td>
 		<td>
 			<EncryptedInputField :colorModel="colorModel" :label="'Answer'" v-model="securityQuestion.answer"
@@ -93,12 +93,16 @@ export default defineComponent({
 </script>
 
 <style>
-.gap {
+.securityQuestionRowPrefixGap {
+	height: v-bind(securityQuestionRowGap);
+}
+
+.securityQuestionRow__cellGap {
 	width: clamp(30px, 0.5vw, 50px);
 }
 
 /* this will put padding around the whole row */
-.securityQuestionCellOne {
-	padding: 10px
+.securityQuestionRow__firstCell {
+	padding: clamp(1px, 0.4vw, 10px) !important;
 }
 </style>

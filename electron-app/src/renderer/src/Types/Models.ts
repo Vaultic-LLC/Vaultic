@@ -10,7 +10,6 @@ export interface SmallMetricGaugeModel
 	filledAmount: number;
 	totalAmount: number;
 	color: string;
-	style?: { [style: string]: string; };
 	active: boolean;
 	pulse?: boolean;
 	pulseColor?: string;
@@ -78,12 +77,6 @@ export interface SelectorButtonModel
 	isActive: Ref<boolean>;
 	color: Ref<string>;
 	onClick: () => void;
-}
-
-export interface ObjectSelectorInputFieldModel
-{
-	text: string;
-	selectorButtonModel: SelectorButtonModel;
 }
 
 export interface SortableHeaderModel

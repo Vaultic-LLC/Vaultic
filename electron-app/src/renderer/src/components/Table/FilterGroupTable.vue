@@ -12,8 +12,7 @@
 			<template #body>
 				<SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues"
 					:key="trd.id" :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" :allowPin="true"
-					:allowEdit="true" :allowDelete="true" />
+					:color="color" :allowPin="true" :allowEdit="true" :allowDelete="true" />
 			</template>
 		</TableTemplate>
 		<Teleport to="#body">

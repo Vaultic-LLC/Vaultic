@@ -1,8 +1,13 @@
 <template>
 	<div class="passwordValueGaugesWidget">
 		<CombinedMetricGaugeContainer :refreshKey="refreshKey" :title="title">
-			<SmallMetricGauge v-for="model in passwordValueMetricGaugeModels" :key="model.key" :model="model"
-				:style="model.style" />
+			<SmallMetricGauge v-for="(model, index) in passwordValueMetricGaugeModels" :key="model.key" :model="model"
+				:class="{
+			'passwordValueGaugesWidget__gaugeOne': index == 0,
+			'passwordValueGaugesWidget__gaugeTwo': index == 1,
+			'passwordValueGaugesWidget__gaugeThree': index == 2,
+			'passwordValueGaugesWidget__gaugeFour': index == 3,
+		}" />
 		</CombinedMetricGaugeContainer>
 	</div>
 </template>
@@ -47,7 +52,6 @@ export default defineComponent({
 							filledAmount: stores.valueStore.oldNameValuePairs.value.length,
 							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-							style: { 'grid-row': '1', 'grid-column': '1' },
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Old,
 							onClick: function ()
 							{
@@ -61,7 +65,6 @@ export default defineComponent({
 							filledAmount: stores.valueStore.duplicateNameValuePairsLength,
 							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-							style: { 'grid-row': '1', 'grid-column': '2' },
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Duplicate,
 							onClick: function ()
 							{
@@ -75,7 +78,6 @@ export default defineComponent({
 							filledAmount: stores.valueStore.weakPassphraseValues.value.length,
 							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-							style: { 'grid-row': '2', 'grid-column': '1' },
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.WeakPhrase,
 							onClick: function ()
 							{
@@ -89,7 +91,6 @@ export default defineComponent({
 							filledAmount: stores.valueStore.weakPasscodeValues.value.length,
 							totalAmount: stores.valueStore.nameValuePairs.length,
 							color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-							style: { 'grid-row': '2', 'grid-column': '2' },
 							active: stores.valueStore.activeAtRiskValueType == AtRiskType.Weak,
 							onClick: function ()
 							{
@@ -106,7 +107,6 @@ export default defineComponent({
 							filledAmount: stores.passwordStore.oldPasswords.value.length,
 							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-							style: { 'grid-row': '1', 'grid-column': '1' },
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Old,
 							onClick: function ()
 							{
@@ -120,7 +120,6 @@ export default defineComponent({
 							filledAmount: stores.passwordStore.duplicatePasswordsLength,
 							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-							style: { 'grid-row': '1', 'grid-column': '2' },
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Duplicate,
 							onClick: function ()
 							{
@@ -134,7 +133,6 @@ export default defineComponent({
 							filledAmount: stores.passwordStore.weakPasswords.value.length,
 							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-							style: { 'grid-row': '2', 'grid-column': '1' },
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Weak,
 							onClick: function ()
 							{
@@ -148,7 +146,6 @@ export default defineComponent({
 							filledAmount: stores.passwordStore.containsLoginPasswords.value.length,
 							totalAmount: stores.passwordStore.passwords.length,
 							color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-							style: { 'grid-row': '2', 'grid-column': '2' },
 							active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.ContainsLogin,
 							onClick: function ()
 							{
@@ -188,5 +185,25 @@ export default defineComponent({
 	.passwordValueGaugesWidget {
 		top: max(12px, 2%);
 	}
+}
+
+.passwordValueGaugesWidget__gaugeOne {
+	grid-row: 1;
+	grid-column: 1;
+}
+
+.passwordValueGaugesWidget__gaugeTwo {
+	grid-row: 1;
+	grid-column: 2;
+}
+
+.passwordValueGaugesWidget__gaugeThree {
+	grid-row: 2;
+	grid-column: 1;
+}
+
+.passwordValueGaugesWidget__gaugeFour {
+	grid-row: 2;
+	grid-column: 2;
 }
 </style>

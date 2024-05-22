@@ -1,8 +1,8 @@
 <template>
 	<div class="filterGroupGaugesWidget">
 		<CombinedMetricGaugeContainer :refreshKey="refreshKey" :title="title">
-			<EmptyFilterGroupGauge :style="{ 'grid-row': 1, 'grid-column': 1 }" />
-			<DuplicateFilterGroupGauge :style="{ 'grid-row': 1, 'grid-column': 2 }" />
+			<EmptyFilterGroupGauge class="filterGroupGaugesWidget__emptyFilerGroupGauge" />
+			<DuplicateFilterGroupGauge class="filterGroupGaugesWidget__duplicateFilterGroupGauge" />
 		</CombinedMetricGaugeContainer>
 	</div>
 </template>
@@ -64,5 +64,15 @@ export default defineComponent({
 	.filterGroupGaugesWidget {
 		top: max(258px, 43%);
 	}
+}
+
+.filterGroupGaugesWidget__emptyFilerGroupGauge {
+	grid-row: 1;
+	grid-column: 1;
+}
+
+.filterGroupGaugesWidget__duplicateFilterGroupGauge {
+	grid-row: 1;
+	grid-column: 2;
 }
 </style>

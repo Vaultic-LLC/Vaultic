@@ -1,13 +1,11 @@
 <template>
-	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }"
-		:style="{ 'margin-right': headerModel.headerSpaceRight }">
+	<div class="tableHeaderCell" @click="onClick()" :class="{ clickable: headerModel.clickable }">
 		<Transition name="fade" mode="out-in">
-			<div :key="key" class="tableHeaderContent" :class="{ centered: headerModel.centered }"
-				:style="{ 'padding-left': headerModel.padding ?? '0' }">
-				<span class="tableHeaderText" :class="{ hover: hoveringIcon || hoveringText }"
+			<div :key="key" class="tableHeaderCell__content" :class="{ centered: headerModel.centered }">
+				<span class="tableHeaderCell__text" :class="{ hover: hoveringIcon || hoveringText }"
 					@mouseover="hoveringText = true" @mouseleave="hoveringText = false">
 					{{ headerModel.name }}</span>
-				<span v-if="showIcon" class="iconContainer"
+				<span v-if="showIcon" class="tableHeaderCell__iconContainer"
 					:class="{ descending: headerModel.descending?.value, active: headerModel.isActive.value, hover: hoveringIcon || hoveringText }"
 					@mouseover="hoveringIcon = true" @mouseleave="hoveringIcon = false">
 					<ion-icon class="sortIcon" name="arrow-up-outline"></ion-icon>
@@ -31,6 +29,7 @@ export default defineComponent({
 		const headerModel: ComputedRef<SortableHeaderModel> = computed(() => props.model);
 		const background: Ref<string> = ref(props.backgroundColor);
 		const showIcon: Ref<boolean> = ref(headerModel.value.clickable);
+		const headerPadding: ComputedRef<string> = computed(() => headerModel.value.padding ?? "0");
 
 		let hoveringIcon: Ref<boolean> = ref(false);
 		let hoveringText: Ref<boolean> = ref(false);
@@ -52,6 +51,7 @@ export default defineComponent({
 			hoveringText,
 			background,
 			showIcon,
+			headerPadding,
 			onClick
 		}
 	}
@@ -72,6 +72,7 @@ export default defineComponent({
 	z-index: 1;
 	opacity: 1;
 	width: v-bind('headerModel.width');
+	margin-right: v-bind('headerModel.headerSpaceRight');
 }
 
 @keyframes fadeIn {
@@ -84,35 +85,32 @@ export default defineComponent({
 	}
 }
 
-.tableHeaderContent {
+.tableHeaderCell__content {
 	display: flex;
 	align-items: center;
+	padding-left: v-bind(headerPadding);
 }
 
-.tableHeaderContent.centered {
+.tableHeaderCell__content.centered {
 	justify-content: center;
 }
 
-.tableHeaderContent.padding {
-	padding-left: 25px;
-}
-
-.tableHeaderText {
+.tableHeaderCell__text {
 	opacity: 1;
 	transition: opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 	font-size: clamp(10px, 0.8vw, 18px);
 }
 
-.tableHeaderCell.clickable .tableHeaderContent .tableHeaderText {
+.tableHeaderCell.clickable .tableHeaderCell__content .tableHeaderCell__text {
 	cursor: pointer;
 }
 
 /* move the text over the width of the sort icon  */
-.tableHeaderContent.centered .tableHeaderText {
+.tableHeaderCell__content.centered .tableHeaderCell__text {
 	margin-left: clamp(10px, 1vw, 20px);
 }
 
-.iconContainer {
+.tableHeaderCell__iconContainer {
 	display: flex;
 	justify-content: center;
 	align-items: center;
@@ -124,17 +122,17 @@ export default defineComponent({
 	/* margin-left: 5px; */
 }
 
-.iconContainer.active {
+.tableHeaderCell__iconContainer.active {
 	opacity: 1;
 }
 
-.iconContainer.descending {
+.tableHeaderCell__iconContainer.descending {
 	transform: rotate(-180deg);
 }
 
-.tableHeaderText.hover,
-.tableHeaderCell.clickable .tableHeaderContent .iconContainer.hover,
-.tableHeaderCell.clickable .tableHeaderContent .iconContainer.active.hover {
+.tableHeaderCell__text.hover,
+.tableHeaderCell.clickable .tableHeaderCell__content .tableHeaderCell__iconContainer.hover,
+.tableHeaderCell.clickable .tableHeaderCell__content .tableHeaderCell__iconContainer.active.hover {
 	opacity: 0.7;
 }
 </style>

@@ -19,7 +19,7 @@
 		"build:mac": "npm run build && electron-builder --mac --config",
 		"build:linux": "npm run build && electron-builder --linux --config",
 		"package": "electron-vite build --outDir=dist && electron-forge package",
-		"make ": "electron-vite build --outDir=dist && electron-forge make"
+		"make": "electron-vite build --outDir=dist && electron-forge make"
 	},
 	"dependencies": {
 		"@electron-toolkit/preload": "^2.0.0",
@@ -27,7 +27,7 @@
 		"@electron/asar": "^3.2.8",
 		"@esbuild-plugins/node-globals-polyfill": "^0.2.3",
 		"@esbuild-plugins/node-modules-polyfill": "^0.2.2",
-		"@melloware/coloris": "^0.22.0",
+		"@melloware/coloris": "^0.24.0",
 		"@popperjs/core": "^2.11.8",
 		"@tweenjs/tween.js": "^21.0.0",
 		"@types/uuid": "^9.0.7",

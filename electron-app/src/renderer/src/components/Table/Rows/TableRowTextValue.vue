@@ -1,6 +1,6 @@
 <template>
 	<TableRowValue :model="model" :color="color">
-		<div class="tableRowTextValueValue" :style="{ 'margin-left': rowValue.margin == true ? '10px' : '0px' }">
+		<div class="tableRowTextValueValue">
 			{{ rowValue.value }}
 		</div>
 	</TableRowValue>
@@ -23,9 +23,11 @@ export default defineComponent({
 	setup(props)
 	{
 		const rowValue: ComputedRef<TextTableRowValue> = computed(() => props.model);
+		const margin: ComputedRef<string> = computed(() => rowValue.value.margin == true ? '10px' : '0px');
 
 		return {
 			rowValue,
+			margin
 		};
 	},
 })
@@ -35,5 +37,6 @@ export default defineComponent({
 	overflow: hidden;
 	text-overflow: ellipsis;
 	font-size: clamp(10px, 0.6vw, 16px);
+	margin-left: v-bind(margin);
 }
 </style>

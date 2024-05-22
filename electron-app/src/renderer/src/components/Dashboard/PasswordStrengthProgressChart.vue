@@ -20,8 +20,8 @@
 					<LoadingIndicator :color="color" />
 				</div>
 			</Transition>
-			<Line v-if="!showStatusMessage" :key="refreshKey" ref="lineChart" :data="data" :options="options"
-				:style="{ width: width, height: height }">
+			<Line v-if="!showStatusMessage" class="strengthGraphContainer__chartCanvas" :key="refreshKey"
+				ref="lineChart" :data="data" :options="options">
 			</Line>
 		</div>
 	</div>
@@ -67,9 +67,6 @@ export default defineComponent({
 		let table: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values")
 		let target: Ref<(number | undefined)[]> = ref(stores.passwordStore.currentAndSafePasswords.current.map(_ => stores.passwordStore.passwords.length));
 		let max: Ref<number> = ref(Math.max(...stores.passwordStore.currentAndSafePasswords.safe));
-
-		const height: Ref<string> = ref('100%');
-		const width: Ref<string> = ref('100%');
 
 		const resizeObserver: ResizeObserver = new ResizeObserver(refreshChart);
 
@@ -422,8 +419,6 @@ export default defineComponent({
 			options,
 			data,
 			color,
-			height,
-			width,
 			showStatusMessage,
 			statusMessage,
 			refreshKey,
@@ -509,5 +504,10 @@ export default defineComponent({
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
+}
+
+.strengthGraphContainer__chartCanvas {
+	width: 100% !important;
+	height: 100% !important;
 }
 </style>

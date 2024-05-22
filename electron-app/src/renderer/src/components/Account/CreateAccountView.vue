@@ -1,7 +1,7 @@
 <template>
 	<div class="createAccountViewContainer">
-		<AccountSetupView :color="color" :title="'Create Account'" :buttonText="'Create'" :displayGrid="false"
-			:titleMargin="'3%'" :titleMarginTop="'1.5%'" @onSubmit="createAccount">
+		<AccountSetupView :color="color" :title="'Create Account'" :buttonText="'Create'" :titleMargin="'3%'"
+			:titleMarginTop="'1.5%'" @onSubmit="createAccount">
 			<Transition name="fade" mode="out-in">
 				<div :key="refreshKey" class="createAccountViewContainer__content">
 					<div class="createAccountViewContainer__inputs">

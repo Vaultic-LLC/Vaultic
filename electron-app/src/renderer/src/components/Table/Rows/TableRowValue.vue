@@ -1,8 +1,8 @@
 <template>
-	<td class="tableCell">
-		<div class="rowValue" :style="{ 'width': rowValue.width }">
+	<td class="tableRowValue">
+		<div class="tableRowValue__content">
 			<slot></slot>
-			<div v-if="rowValue.copiable" class="copyIcon" @click.stop="copyText(rowValue.value)">
+			<div v-if="rowValue.copiable" class="tableRowValue__copyIcon" @click.stop="copyText(rowValue.value)">
 				<ion-icon name="clipboard-outline"></ion-icon>
 			</div>
 		</div>
@@ -39,23 +39,18 @@ export default defineComponent({
 })
 </script>
 <style>
-.tableCell {
+.tableRowValue {
 	padding: 0;
 }
 
-.rowValue {
+.tableRowValue__content {
 	display: flex;
 	justify-content: flex-start;
 	align-items: center;
-	width: 100px;
+	width: v-bind('rowValue.width');
 }
 
-.rowValue .rowValueValue {
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.rowValue .copyIcon {
+.tableRowValue__copyIcon {
 	color: white;
 	transition: 0.3s;
 	font-size: clamp(13px, 1.2vw, 25px);
@@ -63,7 +58,7 @@ export default defineComponent({
 	transform: translate(50%, -50%);
 }
 
-.rowValue .copyIcon:hover {
+.tableRowValue__copyIcon:hover {
 	color: v-bind(primaryColor);
 	transform: translate(50%, -50%) scale(1.1);
 }

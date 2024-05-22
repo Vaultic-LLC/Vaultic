@@ -4,7 +4,7 @@
 			openContainer: openContainer, keepStylesWhileMoving: keepStylesWhileMoving,
 			noAnimation: noAnimation
 		}">
-			<div :style="{ 'display': showInputs ? 'grid' : 'none', 'max-height': 'inherit' }">
+			<div class="slideInContainer__content">
 				<slot></slot>
 			</div>
 		</div>
@@ -24,6 +24,8 @@ export default defineComponent({
 		const rowHeight: ComputedRef<string> = computed(() => props.defaultHeight + "px");
 		const openContainer: Ref<boolean> = ref(props.isShowing);
 		const showInputs: Ref<boolean> = ref(false);
+		const display: ComputedRef<string> = computed(() => showInputs.value ? 'grid' : 'none');
+
 		let keepStylesWhileMoving: Ref<boolean> = ref(false);
 		let noAnimation: Ref<boolean> = ref(true);
 
@@ -50,7 +52,8 @@ export default defineComponent({
 			showInputs,
 			keepStylesWhileMoving,
 			noAnimation,
-			rowHeight
+			rowHeight,
+			display
 		}
 	}
 })
@@ -116,5 +119,10 @@ export default defineComponent({
 	100% {
 		max-height: 10px;
 	}
+}
+
+.slideInContainer__content {
+	max-height: inherit;
+	display: v-bind(display);
 }
 </style>

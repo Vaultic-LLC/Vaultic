@@ -1,6 +1,6 @@
 <template>
 	<div class="signInViewContainer" ref="container">
-		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'" :displayGrid="false"
+		<AccountSetupView :color="color" :title="'Sign In'" :buttonText="'Sign In'"
 			:titleMargin="'clamp(15px, 0.8vw, 18px)'" :titleMarginTop="'clamp(15px, 0.8vw, 20px)'" @onSubmit="onSubmit">
 			<Transition name="fade" mode="out-in">
 				<div class="signInViewContainer__contentContainer" :key="refreshKey">

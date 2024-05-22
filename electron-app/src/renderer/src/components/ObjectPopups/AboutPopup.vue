@@ -6,7 +6,7 @@
 	<div class="aboutPopupContainer">
 		<Transition name="fade" mode="out-in">
 			<div v-if="activeSection == 0" class="aboutPopupContainer__sections">
-				<div class="aboutPopupContainer__section" :style="{ height: '50%', 'margin-top': '2%' }">
+				<div class="aboutPopupContainer__section aboutPopupContainer__storingMultifactorAuthKeysSection">
 					<h3 class="aboutPopupContainer__section__header">Storing Multi Factor Authentication Keys</h3>
 					<div class="aboutPopupContainer__section__text">
 						It seems like almost everyone is using Multi Factor Authentication these days. Luckily, you can
@@ -14,15 +14,15 @@
 						set to MFA Key and you'll be able to see the original QR Code in the Value Row
 					</div>
 					<div>
-						<img class="aboutPopupContainer__image" src="../../assets/Files/pickMFAKey.png"
-							:style="{ position: 'absolute', left: '0', width: '20vw', height: '11vw', 'min-width': '170px' }" />
-						<img class="aboutPopupContainer__image" src="../../assets/Files/selectRow.png"
-							:style="{ position: 'absolute', left: '25%', width: '25vw', height: '11vw' }" />
-						<img class="aboutPopupContainer__image" src="../../assets/Files/qrCode.png"
-							:style="{ position: 'absolute', left: '63%', width: '20vw', height: '11vw' }" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__pickMFAKeyImage"
+							src="../../assets/Files/pickMFAKey.png" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__selectRowImage"
+							src="../../assets/Files/selectRow.png" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__qrCodeImage"
+							src="../../assets/Files/qrCode.png" />
 					</div>
 				</div>
-				<div class="aboutPopupContainer__section" :style="{ height: '50%' }">
+				<div class="aboutPopupContainer__section aboutPopupContainer__sectionHalfHeight">
 					<h3 class="aboutPopupContainer__section__header">Metrics</h3>
 					<div class="aboutPopupContainer__section__text">
 						The Metric Gauges track important information about your data. But that's not all! Upon
@@ -31,12 +31,12 @@
 						identify
 						and fix it
 					</div>
-					<img class="aboutPopupContainer__image" src="../../assets/Files/metrics.png"
-						:style="{ position: 'absolute', left: '5%', width: '25vw', height: '13vw' }" />
-					<img class="aboutPopupContainer__image" src="../../assets/Files/hoverAtRiskIcon.png"
-						:style="{ position: 'absolute', left: '47%', width: '25vw', height: '13vw' }" />
+					<img class="aboutPopupContainer__image aboutPopupContainer__metricsImage"
+						src="../../assets/Files/metrics.png" />
+					<img class="aboutPopupContainer__image aboutPopupContainer__hoverAtRiskIconImage"
+						src="../../assets/Files/hoverAtRiskIcon.png" />
 				</div>
-				<div class="aboutPopupContainer__section" :style="{ height: '50%' }">
+				<div class="aboutPopupContainer__section aboutPopupContainer__sectionHalfHeight">
 					<h3 class="aboutPopupContainer__section__header">Searching</h3>
 					<div class="aboutPopupContainer__section__text">
 						Searching allows you to quickly find a record by one of its values. The one thing to remember
@@ -48,12 +48,12 @@
 						you'll have to sort on it first
 					</div>
 					<div>
-						<img class="aboutPopupContainer__image" src="../../assets/Files/clickingOnHeader.png"
-							:style="{ position: 'absolute', left: '0', width: '20vw', height: '11vw' }" />
-						<img class="aboutPopupContainer__image" src="../../assets/Files/searching.png"
-							:style="{ position: 'absolute', left: '33%', width: '20vw', height: '11vw' }" />
-						<img class="aboutPopupContainer__image" src="../../assets/Files/searchedValue.png"
-							:style="{ position: 'absolute', left: '63%', width: '20vw', height: '11vw' }" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__clickingOnHeaderImage"
+							src="../../assets/Files/clickingOnHeader.png" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__searchingImage"
+							src="../../assets/Files/searching.png" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__searchedValueImage"
+							src="../../assets/Files/searchedValue.png" />
 					</div>
 				</div>
 				<div class="aboutPopupContainer__section">
@@ -65,10 +65,10 @@
 						it on by clicking on the Target Legend Icon.
 					</div>
 					<div>
-						<img class="aboutPopupContainer__image" src="../../assets/Files/graphHideTarget.png"
-							:style="{ position: 'absolute', left: '5%', width: '25vw', height: '13vw' }" />
-						<img class="aboutPopupContainer__image" src="../../assets/Files/graphShowTarget.png"
-							:style="{ position: 'absolute', left: '47%', width: '25vw', height: '13vw' }" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__graphHideTargetImage"
+							src="../../assets/Files/graphHideTarget.png" />
+						<img class="aboutPopupContainer__image aboutPopupContainer__graphShowTargetImage"
+							src="../../assets/Files/graphShowTarget.png" />
 					</div>
 				</div>
 			</div>
@@ -229,6 +229,10 @@ export default defineComponent({
 	direction: ltr;
 }
 
+.aboutPopupContainer__sectionHalfHeight {
+	height: 50%;
+}
+
 .aboutPopupContainer__section__header {
 	font-size: clamp(15px, 1vw, 20px)
 }
@@ -269,5 +273,81 @@ export default defineComponent({
 
 .aboutPopupContainer__reportBugSection {
 	display: flex;
+}
+
+.aboutPopupContainer__storingMultifactorAuthKeysSection {
+	height: 50%;
+	margin-top: 2%;
+}
+
+.aboutPopupContainer__pickMFAKeyImage {
+	position: absolute;
+	left: 0;
+	width: 20vw;
+	height: 11vw;
+	min-width: 170px;
+}
+
+.aboutPopupContainer__selectRowImage {
+	position: absolute;
+	left: 25%;
+	width: 25vw;
+	height: 11vw;
+}
+
+.aboutPopupContainer__qrCodeImage {
+	position: absolute;
+	left: 63%;
+	width: 20vw;
+	height: 11vw;
+}
+
+.aboutPopupContainer__metricsImage {
+	position: absolute;
+	left: 5%;
+	width: 25vw;
+	height: 13vw;
+}
+
+.aboutPopupContainer__hoverAtRiskIconImage {
+	position: absolute;
+	left: 47%;
+	width: 25vw;
+	height: 13vw;
+}
+
+.aboutPopupContainer__clickingOnHeaderImage {
+	position: absolute;
+	left: 0;
+	width: 20vw;
+	height: 11vw;
+}
+
+.aboutPopupContainer__searchingImage {
+	position: absolute;
+	left: 33%;
+	width: 20vw;
+	height: 11vw;
+}
+
+.aboutPopupContainer__searchedValueImage {
+	position: absolute;
+	left: 63%;
+	width: 20vw;
+	height: 11vw;
+}
+
+.aboutPopupContainer__graphHideTargetImage {
+	position: absolute;
+	left: 5%;
+	width: 25vw;
+	height: 13vw;
+}
+
+.aboutPopupContainer__graphShowTargetImage {
+	position: absolute;
+	left: 47%;
+	width: 25vw;
+	height: 13vw;
 }
 </style>

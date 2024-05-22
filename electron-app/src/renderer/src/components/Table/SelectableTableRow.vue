@@ -2,8 +2,7 @@
 	<TableRow @click="onRowClicked" :rowNumber="rowNumber" :model="selectableTableRowData" :color="color"
 		:clickable="selectable">
 		<td class="indicatorRow" v-if="selectable">
-			<SelectorButton :selectorButtonModel="selectorButtonModel"
-				:style="{ 'margin-left': 'clamp(5px, 0.5vw, 12px)' }" />
+			<SelectorButton class="selectableTableRow__button" :selectorButtonModel="selectorButtonModel" />
 		</td>
 	</TableRow>
 </template>
@@ -65,4 +64,8 @@ export default defineComponent({
 });
 </script>
 
-<style></style>
+<style>
+.selectableTableRow__button {
+	margin-left: clamp(5px, 0.5vw, 12px);
+}
+</style>

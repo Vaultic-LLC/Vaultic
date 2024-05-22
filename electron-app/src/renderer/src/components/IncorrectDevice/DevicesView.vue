@@ -20,8 +20,7 @@
 				:headerTabs="headerTabs" @scrolledToBottom="tableRows.loadNextChunk()">
 				<template #body>
 					<TableRow class="shadow hover" v-for="(row, index) in tableRows.visualValues" :key="row.id"
-						:rowNumber="index" :model="row" :preventDeselect="false"
-						:style="{ 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" :allowPin="false"
+						:rowNumber="index" :model="row" :preventDeselect="false" :color="color" :allowPin="false"
 						:allowEdit="false" :allowDelete="true" />
 				</template>
 			</TableTemplate>

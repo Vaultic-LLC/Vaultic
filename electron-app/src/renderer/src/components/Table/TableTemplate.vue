@@ -19,12 +19,10 @@
 				<table class="tableContent" ref="table">
 					<!-- Just used to force table row cell widths -->
 					<tr v-if="headers.length > 0">
-						<th v-for="(header, index) in headers" :key="index"
-							:style="{ width: header.width, height: 0, padding: 0 }">
-						</th>
+						<SizingHeaderCell v-for="(header, index) in headers" :key="index" :width="header.width" />
 					</tr>
 					<!-- Used so that the header doesn't cover the first rows hover effect -->
-					<tr :style="{ height: '5px' }"></tr>
+					<tr class="tableTemplate__paddingRow"></tr>
 					<slot name="body">
 					</slot>
 				</table>
@@ -48,6 +46,7 @@ import { computed, ComputedRef, defineComponent, onMounted, onUpdated, Ref, ref,
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
+import SizingHeaderCell from "./Header/SizingHeaderCell.vue"
 
 import { HeaderTabModel, SortableHeaderModel } from '@renderer/Types/Models';
 import { widgetBackgroundHexString } from '@renderer/Constants/Colors';
@@ -61,7 +60,8 @@ export default defineComponent({
 	components:
 	{
 		TableHeaderTab,
-		TableHeaderRow
+		TableHeaderRow,
+		SizingHeaderCell
 	},
 	emits: ['scrolledToBottom'],
 	props: ['name', 'color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
@@ -374,5 +374,9 @@ export default defineComponent({
 
 .tableTemplate__coverOverhandingBorder.medium {
 	width: var(--scrollbar-width-medium);
+}
+
+.tableTemplate__paddingRow {
+	height: 5px;
 }
 </style>

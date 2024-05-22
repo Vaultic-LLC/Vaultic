@@ -3,11 +3,7 @@
 		<div class="accountSetupViewContainer__header">
 			<h2 class="accountSetupViewContainer__title">{{ title }}</h2>
 		</div>
-		<div class="accountSetupViewContainer__content"
-			:class="{ flex: displayGrid == false, grid: displayGrid == true }" :style="{
-				'grid-template-rows': `repeat(${gridDef?.rows}, ${gridDef?.rowHeight})`,
-				'grid-template-columns': `repeat(${gridDef?.columns}, ${gridDef?.columnWidth})`
-			}">
+		<div class="accountSetupViewContainer__content">
 			<slot></slot>
 		</div>
 		<div class="accountSetupViewContainer__footer">
@@ -27,27 +23,22 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import PopupButton from '../InputFields/PopupButton.vue';
 
-import { GridDefinition } from '@renderer/Types/Models';
 import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey, ValidationFunctionsKey } from '@renderer/Types/Keys';
 import { popups } from '@renderer/Objects/Stores/PopupStore';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
-	name: "AccountSetupViewPopup",
+	name: "AccountSetupView",
 	components:
 	{
 		PopupButton
 	},
 	emits: ['onSubmit'],
-	props: ['color', 'title', 'buttonText', 'displayGrid', 'gridDefinition', 'titleMargin', 'titleMarginTop'],
+	props: ['color', 'title', 'buttonText', 'titleMargin', 'titleMarginTop'],
 	setup(props, ctx)
 	{
 		const popupInfo = popups.accountSetup;
-
 		const disabled: Ref<boolean> = ref(false);
-		const display: ComputedRef<string> = computed(() => props.displayGrid ? "grid" : "flex");
-		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
-
 		const computedTitleMargin: ComputedRef<string> = computed(() => props.titleMargin ? props.titleMargin : "3%");
 		const computedTitleMarginTop: ComputedRef<string> = computed(() => props.titleMarginTop ? props.titleMarginTop : "5%");
 
@@ -86,8 +77,6 @@ export default defineComponent({
 		});
 
 		return {
-			display,
-			gridDef,
 			disabled,
 			computedTitleMargin,
 			computedTitleMarginTop,
@@ -119,26 +108,19 @@ export default defineComponent({
 	height: 100%;
 	width: 80%;
 	margin-top: v-bind(computedTitleMargin);
-	display: v-bind(display);
+	display: flex;
 	position: relative;
 	z-index: 3;
-}
-
-@media (max-width: 900px) {
-	.accountSetupViewContainer__content {
-		width: 90%;
-	}
-}
-
-.accountSetupViewContainer__content.flex {
 	flex-direction: column;
 	row-gap: 50px;
 	justify-content: flex-start;
 	align-items: center;
 }
 
-.accountSetupViewContainer__content.grid {
-	column-gap: 10px;
+@media (max-width: 900px) {
+	.accountSetupViewContainer__content {
+		width: 90%;
+	}
 }
 
 .accountSetupViewContainer__footer {

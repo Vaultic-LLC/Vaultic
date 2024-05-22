@@ -1,46 +1,38 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<div class="settingsView__sectionTitle"
-			:style="{ 'grid-row': '1 / span 2', 'grid-column': '3 / span 3', 'z-index': '8' }">App Settings</div>
-		<EnumInputField :label="'Auto Lock Time'" :color="color" v-model="settingsState.autoLockTime"
-			:optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'" :height="'4vh'" :minHeight="'30px'"
-			:minWidth="'190px'" :style="{ 'grid-row': '3 / span 2', 'grid-column': '3 / span 2', 'z-index': '8' }" />
-		<EnumInputField :label="'Multiple Filter Behavior'" :color="color"
+		<div class="settingsView__sectionTitle settingsView__appSettings">App Settings</div>
+		<EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
+			v-model="settingsState.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
+			:height="'4vh'" :minHeight="'30px'" :minWidth="'190px'" />
+		<EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'" :color="color"
 			v-model="settingsState.multipleFilterBehavior" :optionsEnum="FilterStatus" fadeIn="true" :width="'10vw'"
-			:minWidth="'190px'" :height="'4vh'" :minHeight="'30px'"
-			:style="{ 'grid-row': '3 / span 2', 'grid-column': '6 / span 2', 'z-index': '8' }" />
-		<TextInputField :color="color" :label="'Max Login Records Per Day'"
-			v-model="settingsState.loginRecordsToStorePerDay" :inputType="'number'"
-			:style="{ 'grid-row': '5 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+			:minWidth="'190px'" :height="'4vh'" :minHeight="'30px'" />
+		<TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color" :label="'Max Login Records Per Day'"
+			v-model="settingsState.loginRecordsToStorePerDay" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceLoginRecordsPerDay" />
-		<TextInputField :color="color" :label="'Days to Store Login Records'"
-			v-model="settingsState.numberOfDaysToStoreLoginRecords" :inputType="'number'"
-			:style="{ 'grid-row': '5 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'" :minWidth="'190px'"
-			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
-			:additionalValidationFunction="enforceDaysToStoreLoginRecords" />
-		<div class="settingsView__sectionTitle" :style="{ 'grid-row': '8 / span 1', 'grid-column': '3 / span 3' }">
-			Security Settings</div>
-		<TextInputField :color="color" :label="'Random Password Length'"
-			v-model.number="settingsState.randomValueLength" :inputType="'number'"
-			:style="{ 'grid-row': '10 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+		<TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
+			:label="'Days to Store Login Records'" v-model="settingsState.numberOfDaysToStoreLoginRecords"
+			:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+			:minHeight="'30px'" :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
+		<div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
+		<TextInputField class="settingsView__randomPasswordLength" :color="color" :label="'Random Password Length'"
+			v-model.number="settingsState.randomValueLength" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceMinRandomPasswordLength" />
-		<TextInputField :color="color" :label="'Random Passphrase Length'"
-			v-model.number="settingsState.randomPhraseLength" :inputType="'number'"
-			:style="{ 'grid-row': '10 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'" :minWidth="'190px'"
+		<TextInputField class="settingsView__randomPassphraseLength" :color="color" :label="'Random Passphrase Length'"
+			v-model.number="settingsState.randomPhraseLength" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
 			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceMinRandomPassphraseLength" />
-		<TextInputField :color="color" :label="'Old Password Days'" v-model.number="settingsState.oldPasswordDays"
-			:inputType="'number'" :style="{ 'grid-row': '12 / span 2', 'grid-column': '3 / span 2' }" :width="'10vw'"
-			:minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'30px'"
+		<TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
+			v-model.number="settingsState.oldPasswordDays" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
+			:maxWidth="'300px'" :height="'4vh'" :minHeight="'30px'"
 			:additionalValidationFunction="enforceOldPasswordDays" />
-		<TextInputField :color="color" :label="'% Filled Metric for Pulse'"
-			v-model.number="settingsState.percentMetricForPulse" :inputType="'number'"
-			:style="{ 'grid-row': '12 / span 2', 'grid-column': '6 / span 2' }" :width="'10vw'" :minWidth="'190px'"
-			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
-			:additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
+		<TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
+			:label="'% Filled Metric for Pulse'" v-model.number="settingsState.percentMetricForPulse"
+			:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+			:minHeight="'30px'" :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
 			:toolTipSize="'clamp(15px, 1vw, 28px)'"
 			:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
 	</ObjectView>
@@ -221,5 +213,58 @@ export default defineComponent({
 	margin-left: 5%;
 	text-align: left;
 	font-size: clamp(15px, 1vw, 25px);
+}
+
+.settingsView__appSettings {
+	grid-row: 1 / span 2;
+	grid-column: 3 / span 3;
+	z-index: 8;
+}
+
+.settingsView__autoLockTime {
+	grid-row: 3 / span 2;
+	grid-column: 3 / span 2;
+	z-index: 8;
+}
+
+.settingsView__multipleFilterBehavior {
+	grid-row: 3 / span 2;
+	grid-column: 6 / span 2;
+	z-index: 8;
+}
+
+.settingsView__maxLoginRecordsPerDay {
+	grid-row: 5 / span 2;
+	grid-column: 3 / span 2;
+}
+
+.settingsView__daysToStoreLoginRecords {
+	grid-row: 5 / span 2;
+	grid-column: 6 / span 2;
+}
+
+.settingsView__securitySettings {
+	grid-row: 8 / span 1;
+	grid-column: 3 / span 3;
+}
+
+.settingsView__randomPasswordLength {
+	grid-row: 10 / span 2;
+	grid-column: 3 / span 2;
+}
+
+.settingsView__randomPassphraseLength {
+	grid-row: 10 / span 2;
+	grid-column: 6 / span 2;
+}
+
+.settingsView__oldPasswordDays {
+	grid-row: 12 / span 2;
+	grid-column: 3 / span 2;
+}
+
+.settingsView__percentFilledMetricForPulse {
+	grid-row: 12 / span 2;
+	grid-column: 6 / span 2;
 }
 </style>

@@ -1,26 +1,26 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<TextInputField :color="color" :label="'Name'" v-model="valuesState.name" :width="'8vw'" :height="'4vh'"
-			:minHeight="'35px'" :style="{ 'position': 'absolute', 'left': '10%' }" />
-		<div :style="{ 'position': 'absolute', 'left': '31%' }">
-			<EnumInputField :label="'Type'" :color="color" v-model="valuesState.valueType"
+		<TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name" :width="'8vw'"
+			:height="'4vh'" :minHeight="'35px'" />
+		<div class="valueView__valueTypeContainer">
+			<EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType"
 				:optionsEnum="NameValuePairType" :fadeIn="true" :width="'8vw'" :height="'4vh'" :minHeight="'40px'"
-				:minWidth="'130px'" :maxHeight="'50px'" :showRandom="showRandom" :style="{ 'z-index': '9' }" />
+				:minWidth="'130px'" :maxHeight="'50px'" :showRandom="showRandom" />
 			<Transition name="fade">
 				<div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
-					<CheckboxInputField :label="'Notify if Weak'" :color="color" v-model="valuesState.notifyIfWeak"
-						:fadeIn="false" :width="''" :height="'0.7vw'" :minHeight="'12px'" :style="{ 'z-index': '8' }" />
+					<CheckboxInputField class="valueView__notifyIfWeak" :label="'Notify if Weak'" :color="color"
+						v-model="valuesState.notifyIfWeak" :fadeIn="false" :width="''" :height="'0.7vw'"
+						:minHeight="'12px'" />
 					<ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
 						:message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
 				</div>
 			</Transition>
 		</div>
-		<EncryptedInputField :colorModel="colorModel" :label="'Value'" v-model="valuesState.value"
-			:initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted" :showUnlock="true"
-			:showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType" :required="true"
-			:width="'11vw'" :maxWidth="'300px'" :minWidth="'150px'" :height="'4vh'" :minHeight="'35px'"
-			:style="{ 'position': 'absolute', 'left': '10%', 'top': 'max(75px, 15%)' }"
+		<EncryptedInputField class="valueView__value" :colorModel="colorModel" :label="'Value'"
+			v-model="valuesState.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
+			:showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
+			:required="true" :width="'11vw'" :maxWidth="'300px'" :minWidth="'150px'" :height="'4vh'" :minHeight="'35px'"
 			@onDirty="valueIsDirty = true" />
 		<TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
 			v-model="valuesState.additionalInformation" :width="'19vw'" :height="'18vh'" :maxHeight="'238px'"
@@ -35,8 +35,7 @@
 			</template>
 			<template #body>
 				<SelectableTableRow v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
-					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-					:style="{ width: '5%', 'height': 'clamp(40px, 3.5vw, 100px)' }" :color="color" />
+					:rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="color" />
 			</template>
 		</TableTemplate>
 	</ObjectView>
@@ -47,7 +46,6 @@ import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch } fr
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
-import ObjectSelectorInputField from '../InputFields/ObjectSelectorInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
@@ -71,7 +69,6 @@ export default defineComponent({
 		ObjectView,
 		TextInputField,
 		EncryptedInputField,
-		ObjectSelectorInputField,
 		TextAreaInputField,
 		EnumInputField,
 		CheckboxInputField,
@@ -356,5 +353,29 @@ export default defineComponent({
 	width: 27vw;
 	min-height: 174px;
 	min-width: 308px;
+}
+
+.valueView__name {
+	position: absolute !important;
+	left: 10%;
+}
+
+.valueView__valueTypeContainer {
+	position: absolute !important;
+	left: 31%;
+}
+
+.valueView__valueType {
+	z-index: 9;
+}
+
+.valueView__notifyIfWeak {
+	z-index: 8;
+}
+
+.valueView__value {
+	position: absolute !important;
+	left: 10%;
+	top: max(75px, 15%);
 }
 </style>

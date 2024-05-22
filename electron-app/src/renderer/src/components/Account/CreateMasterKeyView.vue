@@ -1,16 +1,14 @@
 <template>
 	<div class="createMasterKeyViewContainer">
 		<Transition name="fade" mode="out-in">
-			<AccountSetupView :color="color" :title="'Create Master Key'" :buttonText="'Submit'" :displayGrid="false"
-				:titleMargin="'0%'" :titleMarginTop="'1.5%'" @onSubmit="onSubmit">
+			<AccountSetupView :color="color" :title="'Create Master Key'" :buttonText="'Submit'" :titleMargin="'0%'"
+				:titleMarginTop="'1.5%'" @onSubmit="onSubmit">
 				<div class="createMasterKeyViewContainer__content">
 					<div class="createMasterKeyViewContainer__inputs">
-						<EncryptedInputField ref="encryptedInputField" class="key" :label="'Master Key'"
-							:colorModel="colorModel" v-model="key" :required="true" :width="'12vw'" :maxWidth="'300px'"
-							:height="'4vh'" :minHeight="'35px'"
-							:style="{ 'grid-row': '1 / span 2', 'grid-column': '3' }" />
-						<div class="createMasterKeyViewContainer__keyRequirements"
-							:style="{ 'grid-row': '3 / span 4', 'grid-column': '3 / span 12' }">
+						<EncryptedInputField ref="encryptedInputField" class="createMasterKeyViewContainer__masterKey"
+							:label="'Master Key'" :colorModel="colorModel" v-model="key" :required="true"
+							:width="'12vw'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+						<div class="createMasterKeyViewContainer__keyRequirements">
 							<CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
 								:color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
 								:height="'1.25vh'" :minHeight="'10px'" :disabled="true" />
@@ -24,14 +22,13 @@
 								:color="color" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
 								:height="'1.25vh'" :minHeight="'10px'" :disabled="true" />
 						</div>
-						<EncryptedInputField ref="confirmEncryptedInputField" :label="'Confirm Key'"
+						<EncryptedInputField ref="confirmEncryptedInputField"
+							class="createMasterKeyViewContainer__confirmKey" :label="'Confirm Key'"
 							:colorModel="colorModel" v-model="reEnterKey" :width="'12vw'" :maxWidth="'300px'"
-							:height="'4vh'" :minHeight="'35px'"
-							:style="{ 'grid-row': '7 / span 2', 'grid-column': '3', 'margin-top': '5px' }" />
+							:height="'4vh'" :minHeight="'35px'" />
 						<CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'"
 							:color="color" v-model="matchesKey" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
-							:minHeight="'10px'" :disabled="true"
-							:style="{ 'grid-row': '9', 'grid-column': '3 / span 12' }" />
+							:minHeight="'10px'" :disabled="true" />
 					</div>
 					<div class="createMasterKeyViewContainer__info">
 						<ButtonLink :color="color" :text="'Help Creating a Strong and Memorable Key'"
@@ -224,6 +221,11 @@ export default defineComponent({
 	grid-template-columns: repeat(14, clamp(12px, 1.25vw, 30px));
 }
 
+.createMasterKeyViewContainer__masterKey {
+	grid-row: 1 / span 2;
+	grid-column: 3;
+}
+
 .createMasterKeyViewContainer__keyRequirements {
 	min-height: 50px;
 	grid-area: 3 / 3 / span 4 / span 12;
@@ -234,9 +236,16 @@ export default defineComponent({
 	margin-top: 5px;
 }
 
+.createMasterKeyViewContainer__confirmKey {
+	grid-row: 7 / span 2;
+	grid-column: 3;
+	margin-top: 5px;
+}
+
 .createMasterKeyViewContainer__matchesKey {
 	transform: translate(15px, 5px);
 	margin-top: 5px;
+	grid-row: 9;
+	grid-column: 3 / span 12;
 }
 </style>
-@renderer/Types/SharedTypes

@@ -1,9 +1,6 @@
 <template>
 	<div class="objectViewContainer">
-		<div class="objectViewForm" :style="{
-			'grid-template-rows': `repeat(${gridDef.rows}, ${gridDef.rowHeight})`,
-			'grid-template-columns': `repeat(${gridDef.columns}, ${gridDef.columnWidth})`
-		}">
+		<div class="objectViewContainer__form">
 			<slot></slot>
 		</div>
 		<div class="createButtons">
@@ -21,7 +18,6 @@
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 
 import { ClosePopupFuncctionKey, ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Types/Keys';
-import { GridDefinition } from '../../Types/Models';
 import PopupButton from '../InputFields/PopupButton.vue';
 import { stores } from '@renderer/Objects/Stores';
 
@@ -30,13 +26,14 @@ export default defineComponent({
 	props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition'],
 	setup(props)
 	{
-		const objectViewForm: Ref<HTMLElement | null> = ref(null);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 		const buttonText: Ref<string> = ref(props.creating ? "Create" : "Save and Close");
 		const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
 		const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
 		const disabled: Ref<boolean> = ref(false);
-		const gridDef: ComputedRef<GridDefinition> = computed(() => props.gridDefinition);
+		const gridRows: ComputedRef<string> = computed(() => `repeat(${props.gridDefinition.rows}, ${props.gridDefinition.rowHeight})`);
+		const gridColumns: ComputedRef<string> = computed(() => `repeat(${props.gridDefinition.columns}, ${props.gridDefinition.columnWidth})`)
+
 		const showAuthPopup: Ref<boolean> = ref(false);
 
 		let validationFunctions: Ref<{ (): boolean; }[]> = ref([]);
@@ -141,8 +138,8 @@ export default defineComponent({
 
 		return {
 			buttonText,
-			objectViewForm,
-			gridDef,
+			gridRows,
+			gridColumns,
 			showAuthPopup,
 			disabled,
 			onAuthenticationSuccessful,
@@ -165,13 +162,15 @@ export default defineComponent({
 	align-items: center;
 }
 
-.objectViewContainer .objectViewForm {
+.objectViewContainer__form {
 	height: 90%;
 	width: 100%;
 	display: grid;
 	row-gap: 0px;
 	column-gap: 0px;
-	position: relative
+	position: relative;
+	grid-template-rows: v-bind(gridRows);
+	grid-template-columns: v-bind(gridColumns);
 }
 
 .objectViewContainer .createButtons {
