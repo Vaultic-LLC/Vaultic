@@ -41,7 +41,6 @@ import { ButtonModel, HeaderTabModel, SortableHeaderModel, TableRowData, TextTab
 import { createSortableHeaderModels } from '@renderer/Helpers/ModelHelper';
 import { SortedCollection } from '@renderer/Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '@renderer/Types/EncryptedData';
-import { v4 as uuidv4 } from 'uuid';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
 import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
@@ -95,7 +94,6 @@ export default defineComponent({
 
 		const headerTabs: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Devices',
 				active: computed(() => true),
 				color: computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor),
@@ -106,11 +104,11 @@ export default defineComponent({
 		const headers: SortableHeaderModel[] = createSortableHeaderModels<Device>(activeHeader, headerDisplayFields,
 			devices.value, undefined, setTableRows);
 
-		function setTableRows()
+		async function setTableRows()
 		{
-			tableRows.value.setValues(devices.value.calculatedValues.map((d) =>
+			const pendingRows = devices.value.calculatedValues.map(async (d) =>
 			{
-				d.id = uuidv4();
+				d.id = await window.api.utilities.generator.uniqueId();
 				const values: TextTableRowValue[] = [
 					{ component: "TableRowTextValue", value: d.Name, copiable: false, width: 'clamp(75px, 8vw, 180px)', margin: true },
 					{ component: "TableRowTextValue", value: d.Type, copiable: false, width: 'clamp(75px, 8vw, 180px)' },
@@ -118,9 +116,10 @@ export default defineComponent({
 					{ component: "TableRowTextValue", value: d.Version, copiable: false, width: 'clamp(75px, 8vw, 180px)' }
 				]
 
+				const id = await window.api.utilities.generator.uniqueId();
 				let tableRow: TableRowData =
 				{
-					id: uuidv4(),
+					id: id,
 					values: values,
 					onDelete: function ()
 					{
@@ -132,7 +131,12 @@ export default defineComponent({
 				}
 
 				return tableRow;
-			}));
+			});
+
+			Promise.all(pendingRows).then((rows) =>
+			{
+				tableRows.value.setValues(rows);
+			});
 		}
 
 		async function doDelete(masterKey: string, device: Device)

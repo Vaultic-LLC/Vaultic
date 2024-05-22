@@ -1,5 +1,4 @@
 import { DataType, Filter, Group } from "./Table";
-import { v4 as uuidv4 } from 'uuid';
 
 export interface IIdentifiable
 {
@@ -234,11 +233,7 @@ export function defaultFilter(type: DataType): Filter
 		type: type,
 		isActive: false,
 		name: '',
-		conditions: [{
-			id: uuidv4(),
-			property: '',
-			value: ''
-		}]
+		conditions: []
 	}
 }
 

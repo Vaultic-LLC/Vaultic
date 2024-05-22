@@ -62,7 +62,6 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 
 import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
-import { v4 as uuidv4 } from 'uuid';
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Types/Keys';
 import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
@@ -163,7 +162,6 @@ export default defineComponent({
 		const activeTab: Ref<number> = ref(0);
 		const headerTabs: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Security Questions',
 				active: computed(() => activeTab.value == 0),
 				color: color,
@@ -173,7 +171,6 @@ export default defineComponent({
 				}
 			},
 			{
-				id: uuidv4(),
 				name: 'Groups',
 				active: computed(() => activeTab.value == 1),
 				color: color,
@@ -199,7 +196,7 @@ export default defineComponent({
 
 		function setGroupModels()
 		{
-			groupModels.value.setValues(groups.value.calculatedValues.map(g =>
+			const pendingRows = groups.value.calculatedValues.map(async g =>
 			{
 				const values: any[] =
 					[
@@ -218,8 +215,9 @@ export default defineComponent({
 						}
 					];
 
+				const id = await window.api.utilities.generator.uniqueId();
 				const model: SelectableTableRowData = {
-					id: uuidv4(),
+					id: id,
 					key: g.id,
 					values: values,
 					isActive: ref(passwordState.value.groups.includes(g.id)),
@@ -237,13 +235,17 @@ export default defineComponent({
 					}
 				}
 				return model;
-			}));
+			});
 
-			if (tableRef.value)
+			Promise.all(pendingRows).then((rows) =>
 			{
-				// @ts-ignore
-				tableRef.value.scrollToTop();
-			}
+				groupModels.value.setValues(rows);
+				if (tableRef.value)
+				{
+					// @ts-ignore
+					tableRef.value.scrollToTop();
+				}
+			});
 		}
 
 		function onSave()

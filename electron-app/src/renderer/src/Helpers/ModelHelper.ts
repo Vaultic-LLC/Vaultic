@@ -1,7 +1,6 @@
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
 import { CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowValue } from "../Types/Models";
 import { Ref, computed, ref } from "vue";
-import { v4 as uuidv4 } from 'uuid';
 import { AtRiskType, HeaderDisplayField, IIdentifiable } from "../Types/EncryptedData";
 import { DataType, Filter } from "../Types/Table";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
@@ -16,7 +15,6 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 	{
 		const sortableHeaderModel: SortableHeaderModel =
 		{
-			id: uuidv4(),
 			isActive: computed(() => activeHeaderTracker.value == index),
 			name: header.displayName,
 			descending: ref(true),
@@ -69,7 +67,7 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 	const isGroup = groupFilterType == DataType.Groups;
 
 	selectableTableRowModels.value.setValues([]);
-	const temp: SelectableTableRowData[] = [];
+	const temp: Promise<SelectableTableRowData>[] = [];
 
 	if (isGroup)
 	{
@@ -151,7 +149,10 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 	temp.push(...pinnedCollection.values.map(v => buildModel(v)));
 	temp.push(...sortedCollection.calculatedValues.map(v => buildModel(v)));
 
-	selectableTableRowModels.value.setValues(temp);
+	Promise.all(temp).then((rows) =>
+	{
+		selectableTableRowModels.value.setValues(rows);
+	});
 
 	function addAtRiskValues<U extends IIdentifiable>(message: string, value: U)
 	{
@@ -161,10 +162,11 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 		temp.push(buildModel(value as any as T, message));
 	}
 
-	function buildModel(v: T, message?: string): SelectableTableRowData
+	async function buildModel(v: T, message?: string): Promise<SelectableTableRowData>
 	{
+		const id = await window.api.utilities.generator.uniqueId();
 		return {
-			id: uuidv4(),
+			id: id,
 			key: v.id,
 			selectable: selectable,
 			isPinned: ((isFilter && stores.userPreferenceStore.pinnedFilters.hasOwnProperty(v.id)) ||
@@ -292,7 +294,7 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 	const isValue = dataType == DataType.NameValuePairs;
 
 	collapsibleTableRowModels.value.setValues([]);
-	const temp: CollapsibleTableRowModel[] = [];
+	const temp: Promise<CollapsibleTableRowModel>[] = [];
 
 	if (isPassword)
 	{
@@ -372,7 +374,10 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 	temp.push(...pinnedCollection.values.map(v => buildModel(v)));
 	temp.push(...sortedCollection.calculatedValues.map(v => buildModel(v)));
 
-	collapsibleTableRowModels.value.setValues(temp);
+	Promise.all(temp).then((rows) =>
+	{
+		collapsibleTableRowModels.value.setValues(rows);
+	});
 
 	function addAtRiskValues<U extends IIdentifiable>(message: string, value: U, onClick?: () => void)
 	{
@@ -382,10 +387,11 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 		temp.push(buildModel(value as any as T, message, onClick))
 	}
 
-	function buildModel(v: T, atRiskMessage?: string, onAtRiskClicked?: () => void): CollapsibleTableRowModel
+	async function buildModel(v: T, atRiskMessage?: string, onAtRiskClicked?: () => void): Promise<CollapsibleTableRowModel>
 	{
+		const id = await window.api.utilities.generator.uniqueId();
 		return {
-			id: uuidv4(),
+			id: id,
 			isPinned: ((isPassword && stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(v.id)) ||
 				(isValue && stores.userPreferenceStore.pinnedValues.hasOwnProperty(v.id))),
 			data: v,

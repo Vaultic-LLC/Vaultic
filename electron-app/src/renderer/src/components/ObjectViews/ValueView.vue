@@ -55,7 +55,6 @@ import ToolTip from '../ToolTip.vue';
 
 import { NameValuePair, defaultValue, NameValuePairType, HeaderDisplayField } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
-import { v4 as uuidv4 } from 'uuid';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
@@ -138,7 +137,6 @@ export default defineComponent({
 
 		const groupTab: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Groups',
 				active: computed(() => true),
 				color: color,
@@ -152,7 +150,7 @@ export default defineComponent({
 
 		function setGroupModels()
 		{
-			groupModels.value.setValues(groups.value.calculatedValues.map(g =>
+			const pendingRows = groups.value.calculatedValues.map(async g =>
 			{
 				const values: any[] =
 					[
@@ -171,9 +169,10 @@ export default defineComponent({
 						}
 					];
 
+				const id = await window.api.utilities.generator.uniqueId();
 				const model: SelectableTableRowData =
 				{
-					id: uuidv4(),
+					id: id,
 					key: g.id,
 					values: values,
 					isActive: ref(valuesState.value.groups.includes(g.id)),
@@ -191,13 +190,17 @@ export default defineComponent({
 					}
 				}
 				return model;
-			}));
+			});
 
-			if (tableRef.value)
+			Promise.all(pendingRows).then((rows) =>
 			{
-				// @ts-ignore
-				tableRef.value.scrollToTop();
-			}
+				groupModels.value.setValues(rows);
+				if (tableRef.value)
+				{
+					// @ts-ignore
+					tableRef.value.scrollToTop();
+				}
+			});
 		}
 
 		function onSave()

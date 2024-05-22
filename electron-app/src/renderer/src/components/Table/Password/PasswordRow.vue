@@ -28,7 +28,6 @@ import SecurityQuestionRow from '../Rows/SecurityQuestionRow.vue';
 import TextAreaInputField from '../../../components/InputFields/TextAreaInputField.vue';
 import EncryptedInputField from '../../../components/InputFields/EncryptedInputField.vue';
 import { SecurityQuestion } from '../../../Types/EncryptedData';
-import { v4 as uuidv4 } from 'uuid';
 import { HeaderTabModel, InputColorModel } from '@renderer/Types/Models';
 import { defaultInputColor } from '@renderer/Types/Colors';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
@@ -69,7 +68,6 @@ export default defineComponent({
 
 		const headerTabs: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Security Questions',
 				active: computed(() => true),
 				color: computed(() => textColor),

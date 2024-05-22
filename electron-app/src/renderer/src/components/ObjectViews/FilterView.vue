@@ -17,7 +17,7 @@
 	</ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -30,7 +30,6 @@ import { DataType, Filter } from '../../Types/Table';
 import { DisplayField, PasswordProperties, ValueProperties, defaultFilter } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
-import { v4 as uuidv4 } from 'uuid';
 import { stores } from '@renderer/Objects/Stores';
 import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
 
@@ -68,7 +67,6 @@ export default defineComponent({
 
 		const headerTabs: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Filter Conditions',
 				active: computed(() => true),
 				color: color,
@@ -93,7 +91,8 @@ export default defineComponent({
 			{
 				if (await stores.filterStore.addFilter(key, filterState.value))
 				{
-					filterState.value = defaultFilter(filterState.value.type);
+					filterState.value = await defaultFilter(filterState.value.type);
+					await onAdd();
 					refreshKey.value = Date.now().toString();
 
 					handleSaveResponse(true);
@@ -152,6 +151,14 @@ export default defineComponent({
 		{
 			filterState.value.conditions = filterState.value.conditions.filter(f => f.id != id);
 		}
+
+		onMounted(() =>
+		{
+			if (filterState.value.conditions.length == 0)
+			{
+				onAdd();
+			}
+		})
 
 		return {
 			color,

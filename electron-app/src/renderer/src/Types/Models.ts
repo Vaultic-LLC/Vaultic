@@ -1,5 +1,4 @@
 import { ComputedRef, Ref, ref } from "vue";
-import { v4 as uuidv4 } from 'uuid';
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "./SharedTypes";
 
@@ -81,7 +80,6 @@ export interface SelectorButtonModel
 
 export interface SortableHeaderModel
 {
-	id: string;
 	isActive: Ref<boolean>;
 	name?: string;
 	descending?: Ref<boolean>;
@@ -95,7 +93,6 @@ export interface SortableHeaderModel
 
 export interface HeaderTabModel
 {
-	id: string;
 	name: string;
 	active: ComputedRef<boolean>;
 	color: ComputedRef<string>;
@@ -106,7 +103,6 @@ export interface HeaderTabModel
 export function emptyHeader(): SortableHeaderModel
 {
 	return {
-		id: uuidv4(),
 		isActive: ref(false),
 		name: '',
 		descending: ref(false),

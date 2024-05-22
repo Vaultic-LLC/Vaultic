@@ -121,11 +121,6 @@ export default defineComponent({
 			}
 		});
 
-		watch(() => props.initalActiveContent, (newValue) =>
-		{
-			activeContent.value = newValue;
-		});
-
 		function updatePasswordsValuesTable(tableItem: number)
 		{
 			hideAll();
@@ -144,6 +139,11 @@ export default defineComponent({
 			activeContent.value = tableItem;
 			stores.appStore.activeFilterGroupsTable = tableItem;
 		}
+
+		watch(() => props.initalActiveContent, (newValue) =>
+		{
+			activeContent.value = newValue;
+		});
 
 		return {
 			activeContent,

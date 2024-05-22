@@ -62,7 +62,6 @@ import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHea
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
-import { v4 as uuidv4 } from 'uuid';
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
@@ -147,14 +146,12 @@ export default defineComponent({
 
 		const headerTabs: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Passwords',
 				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
 				color: computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor),
 				onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
 			},
 			{
-				id: uuidv4(),
 				name: 'Values',
 				active: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
 				color: computed(() => stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor),

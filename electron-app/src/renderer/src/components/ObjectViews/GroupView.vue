@@ -34,7 +34,6 @@ import SelectableTableRow from '../Table/SelectableTableRow.vue';
 import { DataType, Group } from '../../Types/Table';
 import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
 import { HeaderDisplayField, defaultGroup } from '../../Types/EncryptedData';
-import { v4 as uuidv4 } from 'uuid';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
@@ -123,7 +122,6 @@ export default defineComponent({
 
 		const passwordHeaderTab: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Passwords',
 				active: computed(() => true),
 				color: groupColor,
@@ -133,7 +131,6 @@ export default defineComponent({
 
 		const valueHeaderTab: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Values',
 				active: computed(() => true),
 				color: groupColor,
@@ -183,12 +180,13 @@ export default defineComponent({
 			}
 		];
 
-		function setTableRows(): void
+		function setTableRows()
 		{
+			let pendingRows: Promise<SelectableTableRowData>[] = [];
 			switch (stores.appStore.activePasswordValuesTable)
 			{
 				case DataType.NameValuePairs:
-					tableRowDatas.value.setValues(valueSortedCollection.calculatedValues.map(nvp =>
+					pendingRows = valueSortedCollection.calculatedValues.map(async nvp =>
 					{
 						const values: TextTableRowValue[] = [
 							{
@@ -205,8 +203,9 @@ export default defineComponent({
 							}
 						]
 
+						const id = await window.api.utilities.generator.uniqueId();
 						return {
-							id: uuidv4(),
+							id: id,
 							key: nvp.id,
 							values: values,
 							isActive: ref(groupState.value.values.includes(nvp.id)),
@@ -223,11 +222,11 @@ export default defineComponent({
 								}
 							}
 						}
-					}));
+					});
 					break;
 				case DataType.Passwords:
 				default:
-					tableRowDatas.value.setValues(passwordSortedCollection.calculatedValues.map(p =>
+					pendingRows = passwordSortedCollection.calculatedValues.map(async p =>
 					{
 						const values: TextTableRowValue[] = [
 							{
@@ -244,8 +243,9 @@ export default defineComponent({
 							}
 						];
 
+						const id = await window.api.utilities.generator.uniqueId();
 						const model: SelectableTableRowData = {
-							id: uuidv4(),
+							id: id,
 							key: p.id,
 							values: values,
 							isActive: ref(groupState.value.passwords.includes(p.id)),
@@ -263,13 +263,20 @@ export default defineComponent({
 							}
 						}
 						return model;
-					}));
+					});
 			}
 
-			if (tableRef.value)
+			if (pendingRows.length > 0)
 			{
-				// @ts-ignore
-				tableRef.value.scrollToTop();
+				Promise.all(pendingRows).then((rows) =>
+				{
+					tableRowDatas.value.setValues(rows);
+					if (tableRef.value)
+					{
+						// @ts-ignore
+						tableRef.value.scrollToTop();
+					}
+				});
 			}
 		}
 

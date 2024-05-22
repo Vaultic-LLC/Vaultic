@@ -52,7 +52,6 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
-import { v4 as uuidv4 } from 'uuid';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
@@ -138,14 +137,12 @@ export default defineComponent({
 
 		const headerTabs: HeaderTabModel[] = [
 			{
-				id: uuidv4(),
 				name: 'Filters',
 				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters),
 				color: computed(() => stores.userPreferenceStore.currentColorPalette.filtersColor),
 				onClick: () => { stores.appStore.activeFilterGroupsTable = DataType.Filters; }
 			},
 			{
-				id: uuidv4(),
 				name: 'Groups',
 				active: computed(() => stores.appStore.activeFilterGroupsTable == DataType.Groups),
 				color: computed(() => stores.userPreferenceStore.currentColorPalette.groupsColor),
