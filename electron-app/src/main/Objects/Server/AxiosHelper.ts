@@ -15,7 +15,7 @@ const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
 const deviceInfo = getDeviceInfo();
 
-const url = 'https://vaultic-api.vaulticserver.vaultic.co/';
+const url = 'https://vaultic-sts.vaulticserver.vaultic.co/';
 const axiosInstance = axios.create({
 	baseURL: url,
 	timeout: 120000,
@@ -43,9 +43,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 			return { Success: false, UnknownError: true, logID: requestData[0].logID };
 		}
 
-		const response = await axiosInstance.post(serverPath, requestData[1]);
-		console.log(response.headers['set-cookie']);
-
+		const response = await axiosInstance.post(serverPath, requestData[1], { withCredentials: true });
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
 
 		if (!responseResult[0].success)
@@ -59,7 +57,7 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 	{
 		if (e instanceof AxiosError)
 		{
-			return { Success: false, UnknownError: true, statusCode: e.status, axiosCode: e.code };
+			return { Success: false, UnknownError: true, statusCode: e.status, axiosCode: e.message };
 		}
 	}
 

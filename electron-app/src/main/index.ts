@@ -19,41 +19,6 @@ function createWindow(): void
 		},
 	});
 
-	const cookie: Electron.CookiesSetDetails =
-	{
-		url: 'https://vaultic-api.vaulticserver.vaultic.co',
-		name: 'VaulticCookie',
-		value: 'cookie',
-		sameSite: 'no_restriction'
-	};
-
-	session.defaultSession.cookies.on('changed', (e, cookie, cause) =>
-	{
-		console.log(cookie.name);
-		console.log(cause);
-	})
-
-	session.defaultSession.cookies.set(cookie).then(async () =>
-	{
-		await session.defaultSession.cookies.flushStore();
-		session.defaultSession.cookies.get({}).then((cookie) =>
-		{
-			console.log(cookie);
-		});
-
-		fetch('https://vaultic-api.vaulticserver.vaultic.co/Session/ValidateEmail', {
-			method: 'POST',
-			credentials: 'include',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({
-				username: 'user@example.com',
-				loggedIn: true,
-			})
-		});
-	});
-
 	mainWindow.on('ready-to-show', () =>
 	{
 		mainWindow.maximize();
