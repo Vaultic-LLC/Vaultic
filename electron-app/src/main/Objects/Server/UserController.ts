@@ -7,7 +7,7 @@ export interface UserController
 	backupSettings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
 	backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	backupUserPreferences: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-	getUserData: () => Promise<LoadDataResponse>;
+	getUserData: (masterKey: string) => Promise<LoadDataResponse>;
 	createCheckout: () => Promise<CreateCheckoutResponse>;
 	getChartData: (data: string) => Promise<GetChartDataResponse>;
 	getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
@@ -21,7 +21,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 {
 	function deleteDevice(masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
 	{
-		return axiosHelper.post('User/DeleteDevice', {
+		return axiosHelper.postAPI('User/DeleteDevice', {
 			MasterKey: masterKey,
 			UserDesktopDeviceID: desktopDeviceID,
 			UserMobileDeviceID: mobileDeviceID
@@ -30,54 +30,56 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
 	function getDevices(): Promise<GetDevicesResponse>
 	{
-		return axiosHelper.post('User/GetDevices');
+		return axiosHelper.postAPI('User/GetDevices');
 	}
 
 	function backupSettings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
-		return axiosHelper.post('User/BackupSettings', data);
+		return axiosHelper.postAPI('User/BackupSettings', data);
 	}
 
 	function backupAppStore(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
-		return axiosHelper.post('User/BackupAppStore', data);
+		return axiosHelper.postAPI('User/BackupAppStore', data);
 	}
 
 	function backupUserPreferences(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
-		return axiosHelper.post('User/BackupSettings', data);
+		return axiosHelper.postAPI('User/BackupSettings', data);
 	}
 
-	function getUserData(): Promise<LoadDataResponse>
+	function getUserData(masterKey: string): Promise<LoadDataResponse>
 	{
-		return axiosHelper.post('User/GetUserData');
+		return axiosHelper.postAPI('User/GetUserData', {
+			MasterKey: masterKey
+		});
 	}
 
 	function createCheckout(): Promise<CreateCheckoutResponse>
 	{
-		return axiosHelper.post("User/CreateCheckout");
+		return axiosHelper.postAPI("User/CreateCheckout");
 	}
 
 	function getChartData(data: string): Promise<GetChartDataResponse>
 	{
-		return axiosHelper.post("User/GetChartData", data);
+		return axiosHelper.postAPI("User/GetChartData", data);
 	}
 
 	function getUserDataBreaches(passwordStoreState: string): Promise<GetUserDataBreachesResponse>
 	{
-		return axiosHelper.post("User/GetUserDataBreaches", passwordStoreState);
+		return axiosHelper.postAPI("User/GetUserDataBreaches", passwordStoreState);
 	}
 
 	function dismissUserDataBreach(userDataBreachID: number): Promise<BaseResponse>
 	{
-		return axiosHelper.post("User/DismissUserDataBreach", {
+		return axiosHelper.postAPI("User/DismissUserDataBreach", {
 			UserDataBreachID: userDataBreachID
 		});
 	}
 
 	function deactivateUserSubscription(email: string, deactivationKey: string): Promise<DeactivateUserSubscriptionResponse>
 	{
-		return axiosHelper.post("User/DeactivateUserSubscription", {
+		return axiosHelper.postSTS("User/DeactivateUserSubscription", {
 			Email: email,
 			DeactivationKey: deactivationKey
 		});
@@ -85,7 +87,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
 	function reportBug(description: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	{
-		return axiosHelper.post('User/ReportBug', {
+		return axiosHelper.postAPI('User/ReportBug', {
 			Description: description
 		});
 	}

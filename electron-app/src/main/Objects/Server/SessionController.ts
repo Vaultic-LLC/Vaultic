@@ -13,19 +13,19 @@ export function createSessionController(axiosHelper: AxiosHelper)
 {
 	function validateEmail(email: string): Promise<ValidateEmailResponse>
 	{
-		return axiosHelper.post('Session/ValidateEmail', {
+		return axiosHelper.postSTS('Session/ValidateEmail', {
 			Email: email,
 		});
 	}
 
 	function createAccount(data: string): Promise<CreateAccountResponse>
 	{
-		return axiosHelper.post('Session/CreateAccount', data);
+		return axiosHelper.postSTS('Session/CreateAccount', data);
 	}
 
 	function validateEmailAndMasterKey(email: string, key: string): Promise<ValidateUserResponse>
 	{
-		return axiosHelper.post('Session/ValidateEmailAndMasterKey', {
+		return axiosHelper.postSTS('Session/ValidateEmailAndMasterKey', {
 			Email: email,
 			MasterKey: key,
 		});
@@ -33,7 +33,7 @@ export function createSessionController(axiosHelper: AxiosHelper)
 
 	function expire(): Promise<BaseResponse>
 	{
-		return axiosHelper.post('Session/Expire', {});
+		return axiosHelper.postAPI('Session/Expire', {});
 	}
 
 	return {

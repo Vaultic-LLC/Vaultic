@@ -4,7 +4,8 @@ import { BaseResponse } from "./Responses";
 export interface AxiosHelper
 {
 	instance: AxiosInstance;
-	post: <T extends BaseResponse>(serverPath: string, data?: any) => Promise<T | BaseResponse>;
+	postSTS: <T extends BaseResponse>(serverPath: string, data?: any) => Promise<T | BaseResponse>;
+	postAPI: <T extends BaseResponse>(serverPath: string, data?: any) => Promise<T | BaseResponse>;
 }
 
 export interface EncryptedRequest

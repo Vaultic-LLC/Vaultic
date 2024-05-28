@@ -10,7 +10,7 @@ export function createAppController(axiosHelper: AxiosHelper): AppController
 {
 	function log(exception: string, stack: string)
 	{
-		return axiosHelper.post('App/ReportError', {
+		return axiosHelper.postAPI('App/ReportError', {
 			Exception: exception,
 			Stack: stack
 		});

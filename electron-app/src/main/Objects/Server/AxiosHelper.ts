@@ -7,19 +7,24 @@ import { Session } from '../../Types/ClientServerTypes';
 import { AxiosHelper, EncryptedRequest } from '../../Types/ServerTypes';
 import vaulticServer from './VaulticServer';
 import generatorUtility from '../../Utilities/Generator';
+import { session } from "electron"
 
-let currentSession: Session;
+let sessionHash: string;
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
 const deviceInfo = getDeviceInfo();
 
-const url = 'https://vaultic-sts.vaulticserver.vaultic.co/';
+const stsURL = 'https://vaultic-sts.vaulticserver.vaultic.co/';
+const apiURL = 'https://vaultic-api.vaulticserver.vaultic.co/';
+
 const axiosInstance = axios.create({
-	baseURL: url,
 	timeout: 120000,
-	withCredentials: true
+	validateStatus: (status: number) =>
+	{
+		return (status >= 200 && status < 300) || status == 401 || status == 403;
+	}
 });
 
 const responseKeys = generatorUtility.publicPrivateKey();
@@ -33,8 +38,24 @@ async function getAPIKey()
 	return encrypt.value ?? "";
 }
 
-async function post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
+async function postSTS<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
 {
+	return post<T>(`${stsURL}${serverPath}`, data);
+}
+
+async function postAPI<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
+{
+	return post<T>(`${apiURL}${serverPath}`, data);
+}
+
+async function post<T extends BaseResponse>(url: string, data?: any): Promise<T | BaseResponse>
+{
+	const passedData = {
+		...data,
+		url
+	};
+
+	let message = "start";
 	try
 	{
 		const requestData = await getRequestData(responseKeys.publicKey, data);
@@ -42,22 +63,31 @@ async function post<T extends BaseResponse>(serverPath: string, data?: any): Pro
 		{
 			return { Success: false, UnknownError: true, logID: requestData[0].logID };
 		}
+		message = "got request data. " + url;
 
-		const response = await axiosInstance.post(serverPath, requestData[1], { withCredentials: true });
+		const response = await axiosInstance.post(url, requestData[1], { headers: { 'X-STH': sessionHash } });
+		message = "sent response";
+
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
+		message = "handled response " + responseResult[0].errorMessage;
 
 		if (!responseResult[0].success)
 		{
-			return { Success: false, UnknownError: true, logID: responseResult[0].logID };
+			return { Success: false, UnknownError: true, logID: responseResult[0].logID, axiosCode: responseResult[0].errorMessage };
 		}
 
+		message = "succeeded";
 		return responseResult[1];
 	}
 	catch (e: any)
 	{
 		if (e instanceof AxiosError)
 		{
-			return { Success: false, UnknownError: true, statusCode: e.status, axiosCode: e.message };
+			return { Success: false, UnknownError: true, statusCode: e.response?.status, axiosCode: 'hi' };
+		}
+		else
+		{
+			return { Success: false, UnknownError: true, statusCode: e.response?.status, axiosCode: 'hi' };
 		}
 	}
 
@@ -88,8 +118,10 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 		}
 	}
 
+	const sessionCookie = await session.defaultSession.cookies.get({ url: 'http://www.vaultic.co' });
+
 	newData.ResponsePublicKey = publicKey;
-	newData.Session = currentSession;
+	newData.SessionToken = sessionCookie.length > 0 ? sessionCookie[0].value ?? "" : "";
 	newData.APIKey = await getAPIKey();
 	newData.MacAddress = deviceInfo.mac;
 	newData.DeviceName = deviceInfo.deviceName;
@@ -108,8 +140,13 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 async function handleResponse<T extends BaseResponse>(privateKey: string, response: any): Promise<[MethodResponse, T]>
 {
 	let responseData: T = {} as T;
-	if ('key' in response && 'data' in response)
+	try
 	{
+		if (!('Key' in response) || !('Data' in response))
+		{
+			return [{ success: false, errorMessage: "No Key or Data" }, responseData]
+		}
+
 		const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
 		const decryptedResponse = await cryptUtility.hybridDecrypt(privateKey, encryptedResponse);
 
@@ -119,24 +156,31 @@ async function handleResponse<T extends BaseResponse>(privateKey: string, respon
 		}
 
 		responseData = JSON.parse(decryptedResponse.value!) as T;
-	}
 
-	if ('Session' in responseData)
-	{
-		const session: Session = responseData.Session as Session;
-		if (session.ID && session.Token)
+		if ('Session' in responseData)
 		{
-			currentSession = session;
+			const clientSession: Session = responseData.Session as Session;
+			if (clientSession.Token && clientSession.Hash)
+			{
+				sessionHash = clientSession.Hash;
+				const sessionTokenCookie = { url: 'http://www.vaultic.co', name: 'SessionToken', value: clientSession.Token }
+				await session.defaultSession.cookies.set(sessionTokenCookie);
+			}
 		}
-	}
 
-	return [{ success: true }, responseData];
+		return [{ success: true }, responseData];
+	}
+	catch (e)
+	{
+		return [{ success: false, errorMessage: 'error' }, responseData]
+	}
 }
 
 const axiosHelper: AxiosHelper =
 {
 	instance: axiosInstance,
-	post
+	postSTS,
+	postAPI
 }
 
 export default axiosHelper;

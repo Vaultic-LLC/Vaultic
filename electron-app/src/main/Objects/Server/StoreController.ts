@@ -12,17 +12,17 @@ export function createStoreController(path: string, axiosHelper: AxiosHelper): S
 {
 	async function add(data: string): Promise<any>
 	{
-		return axiosHelper.post(`${path}/Add`, data);
+		return axiosHelper.postAPI(`${path}/Add`, data);
 	}
 
 	async function update(data: string): Promise<any>
 	{
-		return axiosHelper.post(`${path}/Update`, data);
+		return axiosHelper.postAPI(`${path}/Update`, data);
 	}
 
 	async function deleteValue(data: string): Promise<any>
 	{
-		return axiosHelper.post(`${path}/Delete`, data);
+		return axiosHelper.postAPI(`${path}/Delete`, data);
 	}
 
 	return {

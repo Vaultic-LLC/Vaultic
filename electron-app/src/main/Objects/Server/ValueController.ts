@@ -11,7 +11,7 @@ export function createValueController(axiosHelper: AxiosHelper): ValueController
 {
 	async function generateRandomPhrase(length: number): Promise<GenerateRandomPhraseResponse>
 	{
-		return axiosHelper.post('Value/GenerateRandomPhrase', {
+		return axiosHelper.postAPI('Value/GenerateRandomPhrase', {
 			PhraseLength: length
 		});
 	}

@@ -3,8 +3,8 @@ import { ChartData, LicenseStatus, Session, UserDataBreach } from "./ClientServe
 
 export interface EncryptedResponse
 {
-	key?: string;
-	data?: string;
+	Key?: string;
+	Data?: string;
 }
 
 export interface BaseResponse

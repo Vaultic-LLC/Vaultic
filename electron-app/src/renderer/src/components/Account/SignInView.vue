@@ -195,7 +195,7 @@ export default defineComponent({
 
 		async function overrideUserData()
 		{
-			const response = await window.api.server.user.getUserData();
+			const response = await window.api.server.user.getUserData(masterKey.value);
 			if (response.Success)
 			{
 				if (!(await stores.appStore.canAuthenticateKey()))

@@ -1,7 +1,7 @@
 export interface Session
 {
-	ID?: number;
 	Token?: string;
+	Hash?: string;
 }
 
 export interface UserDataBreach

@@ -82,7 +82,7 @@ export interface UserController
 	backupSettings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
 	backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
 	backupUserPreferences: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-	getUserData: () => Promise<LoadDataResponse>;
+	getUserData: (masterKey: string) => Promise<LoadDataResponse>;
 	createCheckout: () => Promise<CreateCheckoutResponse>;
 	getChartData: (data: string) => Promise<GetChartDataResponse>;
 	getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;

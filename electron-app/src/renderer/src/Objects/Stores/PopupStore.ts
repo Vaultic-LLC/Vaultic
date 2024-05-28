@@ -170,6 +170,7 @@ export default function createPopupStore()
 
 	function showSessionExpired()
 	{
+		stores.appStore.lock(false, false);
 		showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'");
 	}
 

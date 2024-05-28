@@ -23,7 +23,7 @@ export default function setupIPC()
 	ipcMain.handle('userController:backupSettings', (e, data: string) => validateSender(e, () => vaulticServer.user.backupSettings(data)));
 	ipcMain.handle('userController:backupAppStore', (e, data: string) => validateSender(e, () => vaulticServer.user.backupAppStore(data)));
 	ipcMain.handle('userController:backupUserPreferences', (e, data: string) => validateSender(e, () => vaulticServer.user.backupUserPreferences(data)));
-	ipcMain.handle('userController:getUserData', (e) => validateSender(e, () => vaulticServer.user.getUserData()));
+	ipcMain.handle('userController:getUserData', (e, masterKey: string) => validateSender(e, () => vaulticServer.user.getUserData(masterKey)));
 	ipcMain.handle('userController:createCheckout', (e) => validateSender(e, () => vaulticServer.user.createCheckout()));
 	ipcMain.handle('userController:getChartData', (e, data: string) => validateSender(e, () => vaulticServer.user.getChartData(data)));
 	ipcMain.handle('userController:getUserDataBreaches', (e, passwordStoreState: string) => validateSender(e, () => vaulticServer.user.getUserDataBreaches(passwordStoreState)));

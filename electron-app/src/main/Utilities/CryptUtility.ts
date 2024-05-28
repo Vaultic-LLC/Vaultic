@@ -125,13 +125,13 @@ async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedRes
 
 	try
 	{
-		const encryptedSymmetricKey = Buffer.from(encryptedResponse.key!, "base64");
+		const encryptedSymmetricKey = Buffer.from(encryptedResponse.Key!, "base64");
 		const symmetricKey = crypto.privateDecrypt({
 			key: privateKey,
 			padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
 		}, encryptedSymmetricKey).toString("ascii");
 
-		const response = await decrypt(symmetricKey, encryptedResponse.data!);
+		const response = await decrypt(symmetricKey, encryptedResponse.Data!);
 		if (!response.success)
 		{
 			const logResponse = await vaulticServer.app.log(response.errorMessage ?? "Error while decrypting",

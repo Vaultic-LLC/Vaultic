@@ -109,7 +109,7 @@ class AppStore extends Store<AppStoreState>
 			const response = await window.api.server.user.backupAppStore(JSON.stringify(data));
 			if (!response.Success)
 			{
-				defaultHandleFailedResponse(response);
+				//defaultHandleFailedResponse(response);
 			}
 
 			return response.Success;
@@ -168,16 +168,21 @@ class AppStore extends Store<AppStoreState>
 		return await window.api.utilities.hash.compareHashes(this.state.masterKeyHash, computedHash);
 	}
 
-	public lock()
+	public lock(redirect: boolean = true, expireSession: boolean = true)
 	{
 		hideAll();
-		stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
-		if (this.isOnline === true)
+
+		if (redirect)
 		{
-			window.api.server.session.expire();
-			this.isOnline = false;
+			stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
 		}
 
+		if (expireSession && this.isOnline === true)
+		{
+			window.api.server.session.expire();
+		}
+
+		this.isOnline = false;
 		stores.resetStoresToDefault();
 	}
 
