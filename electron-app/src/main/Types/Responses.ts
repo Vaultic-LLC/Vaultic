@@ -11,9 +11,11 @@ export interface BaseResponse
 {
 	Success: boolean;
 	UnknownError?: boolean;
+	InvalidRequest?: boolean;
 	logID?: number;
 	statusCode?: number;
 	axiosCode?: string;
+	message?: string;
 }
 
 interface InvalidLicenseResponse

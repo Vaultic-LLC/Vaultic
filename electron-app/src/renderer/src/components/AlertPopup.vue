@@ -69,11 +69,15 @@ export default defineComponent({
 
 		function getMessage()
 		{
-			if (props.message)
+			if (props.axiosCode && (props.axiosCode == "ERR_NETWORK" || props.axiosCode == "ECONNABORTED"))
+			{
+				return "Please check your connection and try again. If the issue persists";
+			}
+			else if (props.message)
 			{
 				return props.message;
 			}
-			else if (props.statusCode || (props.axiosCode && (props.axiosCode == "ERR_NETWORK" || props.axiosCode == "ECONNABORTED")))
+			else if (props.statusCode)
 			{
 				return "Please check your connection and try again. If the issue persists";
 			}

@@ -16,6 +16,7 @@ export interface BaseResponse
 	logID?: number;
 	statusCode?: number;
 	axiosCode?: string;
+	message?: string;
 }
 
 export interface Device extends IIdentifiable

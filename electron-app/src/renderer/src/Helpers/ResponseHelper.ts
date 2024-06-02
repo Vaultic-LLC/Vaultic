@@ -2,19 +2,28 @@ import { stores } from "@renderer/Objects/Stores";
 
 export function defaultHandleFailedResponse(response: any)
 {
-	if (response.LicenseStatus != undefined && response.LicenseStatus != 1)
+	if (response.InvalidLicense === true)
 	{
 		stores.popupStore.showPaymentSetup();
 	}
-	else if (response.IncorrectDevice)
+	else if (response.IncorrectDevice === true)
 	{
 		stores.popupStore.showIncorrectDevice(response);
 	}
-	else if (response.InvalidSession)
+	else if (response.InvalidSession === true)
 	{
 		stores.popupStore.showSessionExpired();
 	}
-	else if (response.UnknownError)
+	// technically this shouldn't ever happen with requests that come from the app
+	else if (response.InvalidRequest === true)
+	{
+		stores.popupStore.showAlert("Unexpected Error", "An unexpected error has occured. Please try again or", true);
+	}
+	else if (response.IncorrectAPIKey === true)
+	{
+		stores.popupStore.showAlert("Unable to complete request", "Unable to complete the request. Please try again or", true);
+	}
+	else if (response.UnknownError === true)
 	{
 		stores.popupStore.showErrorResponseAlert(response);
 	}

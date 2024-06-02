@@ -163,7 +163,6 @@ export default defineComponent({
 
 					const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
 					const response = await window.api.server.session.validateEmailAndMasterKey(password.email, masterKey.value);
-
 					if (response.Success)
 					{
 						stores.appStore.isOnline = true;
@@ -183,6 +182,7 @@ export default defineComponent({
 				const response = await window.api.server.session.validateEmailAndMasterKey(email.value, masterKey.value);
 				if (response.Success)
 				{
+					stores.appStore.isOnline = true;
 					await overrideUserData();
 					ctx.emit('onKeySuccess');
 				}

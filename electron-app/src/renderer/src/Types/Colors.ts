@@ -14,7 +14,6 @@ export interface TableColorScheme
 	primaryColor: string;
 	secondaryColorOne: string;
 	secondaryColorTwo: string;
-	alertColor: string;
 }
 
 export interface ColorPalette
@@ -27,11 +26,9 @@ export interface ColorPalette
 	valuesColor: TableColorScheme;
 	filtersColor: string;
 	groupsColor: string;
-	deleteColor: string;
 	backgroundColor: string;
 	tableColor: string;
-	sideDrawerColor: string;
-	metricDrawerColor: string;
+	widgetColor: string;
 }
 
 export const emptyColorPalette: ColorPalette =
@@ -44,21 +41,17 @@ export const emptyColorPalette: ColorPalette =
 		primaryColor: "",
 		secondaryColorOne: "",
 		secondaryColorTwo: "",
-		alertColor: ""
 	},
 	valuesColor: {
 		primaryColor: "",
 		secondaryColorOne: "",
 		secondaryColorTwo: "",
-		alertColor: "",
 	},
 	filtersColor: "",
 	groupsColor: "",
-	deleteColor: '',
 	backgroundColor: "#0f111d",
 	tableColor: "#161e29",
-	sideDrawerColor: "#161b2e",
-	metricDrawerColor: "#161b2e"
+	widgetColor: "rgb(44 44 51 / 16%)"
 }
 
 export const colorPalettes: ColorPalette[] = [
@@ -71,21 +64,17 @@ export const colorPalettes: ColorPalette[] = [
 			primaryColor: "#bb29ff",
 			secondaryColorOne: "#6612ec",
 			secondaryColorTwo: "#2419bf",
-			alertColor: "#c94eb0"
 		},
 		valuesColor: {
 			primaryColor: "#03C4A1",
 			secondaryColorOne: "#03a7c4",
 			secondaryColorTwo: "#0374c4",
-			alertColor: "#42e2db"
 		},
 		filtersColor: "#7752FE",
 		groupsColor: "#19A7CE",
-		deleteColor: 'red',
 		backgroundColor: "#0f111d",
 		tableColor: "#161e29",
-		sideDrawerColor: "#0c0f16",
-		metricDrawerColor: "#0f141a"
+		widgetColor: "rgb(44 44 51 / 16%)"
 	},
 	{
 		id: -2,
@@ -96,21 +85,17 @@ export const colorPalettes: ColorPalette[] = [
 			primaryColor: "#9A031E",
 			secondaryColorOne: "#a712ec",
 			secondaryColorTwo: "#530101",
-			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "#BF3131",
 			secondaryColorOne: "#5d0ca6",
 			secondaryColorTwo: "#a712ec",
-			alertColor: ""
 		},
 		filtersColor: "#FB8B24",
 		groupsColor: "#E36414",
-		deleteColor: 'red',
 		backgroundColor: "#0f111d",
 		tableColor: "#161e29",
-		sideDrawerColor: "#0c0f16",
-		metricDrawerColor: "#0f141a"
+		widgetColor: "rgb(44 44 51 / 16%)"
 	},
 	{
 		id: -3,
@@ -121,21 +106,17 @@ export const colorPalettes: ColorPalette[] = [
 			primaryColor: "#777777",
 			secondaryColorOne: "#bbbbbb",
 			secondaryColorTwo: "#111111",
-			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "#888888",
 			secondaryColorOne: "#bbbbbb",
 			secondaryColorTwo: "#111111",
-			alertColor: ""
 		},
 		filtersColor: "#a9b3bb",
 		groupsColor: "#8e9a98",
-		deleteColor: '#777272',
 		backgroundColor: "#0f111d",
 		tableColor: "#161e29",
-		sideDrawerColor: "#0c0f16",
-		metricDrawerColor: "#0f141a"
+		widgetColor: "rgb(44 44 51 / 16%)"
 	},
 	{
 		id: -5,
@@ -146,21 +127,17 @@ export const colorPalettes: ColorPalette[] = [
 			primaryColor: "",
 			secondaryColorOne: "",
 			secondaryColorTwo: "",
-			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
 			secondaryColorTwo: "",
-			alertColor: ""
 		},
 		filtersColor: "",
 		groupsColor: "",
-		deleteColor: '',
 		backgroundColor: "#0f111d",
 		tableColor: "#161e29",
-		sideDrawerColor: "#0c0f16",
-		metricDrawerColor: "#0f141a"
+		widgetColor: "rgb(44 44 51 / 16%)"
 	},
 	{
 		id: -6,
@@ -171,21 +148,17 @@ export const colorPalettes: ColorPalette[] = [
 			primaryColor: "",
 			secondaryColorOne: "",
 			secondaryColorTwo: "",
-			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
 			secondaryColorTwo: "",
-			alertColor: ""
 		},
 		filtersColor: "",
 		groupsColor: "",
-		deleteColor: '',
 		backgroundColor: "#0f111d",
 		tableColor: "#161e29",
-		sideDrawerColor: "#0c0f16",
-		metricDrawerColor: "#0f141a"
+		widgetColor: "rgb(44 44 51 / 16%)"
 	},
 	{
 		id: -7,
@@ -196,20 +169,16 @@ export const colorPalettes: ColorPalette[] = [
 			primaryColor: "",
 			secondaryColorOne: "",
 			secondaryColorTwo: "",
-			alertColor: ""
 		},
 		valuesColor: {
 			primaryColor: "",
 			secondaryColorOne: "",
 			secondaryColorTwo: "",
-			alertColor: ""
 		},
 		filtersColor: "",
 		groupsColor: "",
-		deleteColor: '',
 		backgroundColor: "#0f111d",
 		tableColor: "#161e29",
-		sideDrawerColor: "#0c0f16",
-		metricDrawerColor: "#0f141a"
+		widgetColor: "rgb(44 44 51 / 16%)"
 	}
 ];

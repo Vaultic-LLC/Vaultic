@@ -14,6 +14,8 @@ export interface BaseResponse
 	logID?: number;
 	statusCode?: number;
 	axiosCode?: string;
+	message?: string;
+	InvalidRequest?: boolean;
 }
 
 interface InvalidLicenseResponse

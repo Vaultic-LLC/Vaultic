@@ -114,7 +114,7 @@ export default function createPopupStore()
 	function showErrorResponseAlert(response: BaseResponse)
 	{
 		alertTitle.value = undefined;
-		alertMessage.value = undefined;
+		alertMessage.value = response.message;
 		alertLeftButton.value = undefined;
 		alertRightButton.value = undefined;
 
@@ -188,7 +188,8 @@ export default function createPopupStore()
 
 	function showPaymentSetup()
 	{
-		showAccountSetup(AccountSetupView.SetupPayment);
+		accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
+		accountSetupIsShowing.value = true;
 	}
 
 	function hideAccountSetup()

@@ -19,6 +19,9 @@ const deviceInfo = getDeviceInfo();
 const stsURL = 'https://vaultic-sts.vaulticserver.vaultic.co/';
 const apiURL = 'https://vaultic-api.vaulticserver.vaultic.co/';
 
+// const stsURL = 'https://localhost:7088/';
+// const apiURL = 'https://localhost:7007/'
+
 const axiosInstance = axios.create({
 	timeout: 120000,
 	validateStatus: (status: number) =>
@@ -50,12 +53,6 @@ async function postAPI<T extends BaseResponse>(serverPath: string, data?: any): 
 
 async function post<T extends BaseResponse>(url: string, data?: any): Promise<T | BaseResponse>
 {
-	const passedData = {
-		...data,
-		url
-	};
-
-	let message = "start";
 	try
 	{
 		const requestData = await getRequestData(responseKeys.publicKey, data);
@@ -63,35 +60,43 @@ async function post<T extends BaseResponse>(url: string, data?: any): Promise<T 
 		{
 			return { Success: false, UnknownError: true, logID: requestData[0].logID };
 		}
-		message = "got request data. " + url;
 
 		const response = await axiosInstance.post(url, requestData[1], { headers: { 'X-STH': sessionHash } });
-		message = "sent response";
-
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
-		message = "handled response " + responseResult[0].errorMessage;
 
 		if (!responseResult[0].success)
 		{
-			return { Success: false, UnknownError: true, logID: responseResult[0].logID, axiosCode: responseResult[0].errorMessage };
+			return { Success: false, UnknownError: true, logID: responseResult[0].logID };
 		}
 
-		message = "succeeded";
 		return responseResult[1];
 	}
 	catch (e: any)
 	{
 		if (e instanceof AxiosError)
 		{
-			return { Success: false, UnknownError: true, statusCode: e.response?.status, axiosCode: 'hi' };
+			// Bad request data response, we can handle that
+			if (e.status == 400)
+			{
+				return { Success: false, InvalidRequest: true };
+			}
+
+			if (e.response)
+			{
+				return { Success: false, UnknownError: true, statusCode: e?.response?.status, axiosCode: e?.code, message: "Invalid response, please try again. If the issue persists, check your connection, restart the app or" };
+			}
+
+			if (e.request)
+			{
+				return { Success: false, UnknownError: true, axiosCode: e?.code, message: "Invalid request, please try again. If the issue persists, check your connection, restart the app or" };
+			}
 		}
-		else
-		{
-			return { Success: false, UnknownError: true, statusCode: e.response?.status, axiosCode: 'hi' };
-		}
+
+		return {
+			Success: false, UnknownError: true, message: e?.message + ". If the issue persists, check your connection, restart the app or"
+		};
 	}
 
-	return { Success: false, UnknownError: true };
 }
 
 async function getRequestData(publicKey: string, data: any): Promise<[MethodResponse, EncryptedRequest]>
