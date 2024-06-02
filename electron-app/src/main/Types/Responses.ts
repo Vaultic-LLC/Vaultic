@@ -16,6 +16,7 @@ export interface BaseResponse
 	statusCode?: number;
 	axiosCode?: string;
 	message?: string;
+	vaulticCode?: number;
 }
 
 interface InvalidLicenseResponse

@@ -8,14 +8,14 @@
 				</div>
 				<div class="unknownResponsePopup__body">
 					<div>
-						{{ message }}
+						{{ computedMessage }}
 						<ButtonLink v-if="showContactSupport" :color="primaryColor" :text="'Contact Support'" />
 					</div>
 					<div v-if="statusCode">
 						Staus Code: {{ statusCode }}
 					</div>
 					<div v-if="axiosCode">
-						Code: {{ axiosCode }}
+						Network Code: {{ axiosCode }}
 					</div>
 					<div v-if="logID">
 						Log ID: {{ logID }}
@@ -61,7 +61,7 @@ export default defineComponent({
 	{
 		const okButtonModel: ButtonModel = { text: "Ok", onClick: () => { } };
 		const title: ComputedRef<string> = computed(() => props.title ? props.title : "An Error has occured");
-		const message: ComputedRef<string> = computed(getMessage);
+		const computedMessage: ComputedRef<string> = computed(getMessage);
 		const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
 		const popupInfo = popups.alert;
 
@@ -117,7 +117,7 @@ export default defineComponent({
 		return {
 			title,
 			primaryColor,
-			message,
+			computedMessage,
 			zIndex: popupInfo.zIndex,
 			leftButton,
 			onLeftButtonClick,

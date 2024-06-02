@@ -9,7 +9,7 @@ import vaulticServer from './VaulticServer';
 import generatorUtility from '../../Utilities/Generator';
 import { session } from "electron"
 
-let sessionHash: string;
+let sessionToken: string;
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
@@ -41,32 +41,48 @@ async function getAPIKey()
 	return encrypt.value ?? "";
 }
 
+async function getHeaders(sts: boolean): Promise<any>
+{
+	let headers = {};
+	if (!sts)
+	{
+		const sessionHashCookie = await session.defaultSession.cookies.get({ url: 'http://www.vaultic.co' });
+		if (sessionHashCookie.length > 0)
+		{
+			headers["X-STH"] = sessionHashCookie[0].value ?? ""
+		}
+	}
+
+	return headers
+}
+
 async function postSTS<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
 {
-	return post<T>(`${stsURL}${serverPath}`, data);
+	return post<T>(`${stsURL}${serverPath}`, true, data);
 }
 
 async function postAPI<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse>
 {
-	return post<T>(`${apiURL}${serverPath}`, data);
+	return post<T>(`${apiURL}${serverPath}`, false, data);
 }
 
-async function post<T extends BaseResponse>(url: string, data?: any): Promise<T | BaseResponse>
+async function post<T extends BaseResponse>(url: string, sts: boolean, data?: any): Promise<T | BaseResponse>
 {
 	try
 	{
 		const requestData = await getRequestData(responseKeys.publicKey, data);
 		if (!requestData[0].success)
 		{
-			return { Success: false, UnknownError: true, logID: requestData[0].logID };
+			return { Success: false, UnknownError: true, logID: requestData[0].logID, message: 'request error' };
 		}
 
-		const response = await axiosInstance.post(url, requestData[1], { headers: { 'X-STH': sessionHash } });
+		const headers: any = await getHeaders(sts);
+		const response = await axiosInstance.post(url, requestData[1], { headers: headers });
 		const responseResult = await handleResponse<T>(responseKeys.privateKey, response.data);
 
 		if (!responseResult[0].success)
 		{
-			return { Success: false, UnknownError: true, logID: responseResult[0].logID };
+			return { Success: false, UnknownError: true, logID: responseResult[0].logID, message: responseResult[0].errorMessage };
 		}
 
 		return responseResult[1];
@@ -92,11 +108,15 @@ async function post<T extends BaseResponse>(url: string, data?: any): Promise<T 
 			}
 		}
 
-		return {
-			Success: false, UnknownError: true, message: e?.message + ". If the issue persists, check your connection, restart the app or"
-		};
-	}
+		if (e?.message)
+		{
+			return {
+				Success: false, UnknownError: true, message: e.message + ". If the issue persists, check your connection, restart the app or"
+			};
+		}
 
+		return { Success: false, UnknownError: true };
+	}
 }
 
 async function getRequestData(publicKey: string, data: any): Promise<[MethodResponse, EncryptedRequest]>
@@ -123,10 +143,8 @@ async function getRequestData(publicKey: string, data: any): Promise<[MethodResp
 		}
 	}
 
-	const sessionCookie = await session.defaultSession.cookies.get({ url: 'http://www.vaultic.co' });
-
 	newData.ResponsePublicKey = publicKey;
-	newData.SessionToken = sessionCookie.length > 0 ? sessionCookie[0].value ?? "" : "";
+	newData.SessionToken = sessionToken;
 	newData.APIKey = await getAPIKey();
 	newData.MacAddress = deviceInfo.mac;
 	newData.DeviceName = deviceInfo.deviceName;
@@ -149,7 +167,7 @@ async function handleResponse<T extends BaseResponse>(privateKey: string, respon
 	{
 		if (!('Key' in response) || !('Data' in response))
 		{
-			return [{ success: false, errorMessage: "No Key or Data" }, responseData]
+			return [{ success: false }, responseData]
 		}
 
 		const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
@@ -167,9 +185,11 @@ async function handleResponse<T extends BaseResponse>(privateKey: string, respon
 			const clientSession: Session = responseData.Session as Session;
 			if (clientSession.Token && clientSession.Hash)
 			{
-				sessionHash = clientSession.Hash;
-				const sessionTokenCookie = { url: 'http://www.vaultic.co', name: 'SessionToken', value: clientSession.Token }
-				await session.defaultSession.cookies.set(sessionTokenCookie);
+				sessionToken = clientSession.Token;
+				// an exception will be thrown when trying to set a cookie with a ';' character. Use the hash
+				// to make sure this doesn't happen
+				const sessionTokenHashCookie = { url: 'http://www.vaultic.co', name: 'SessionTokenHash', value: clientSession.Hash }
+				await session.defaultSession.cookies.set(sessionTokenHashCookie);
 			}
 		}
 
@@ -177,7 +197,7 @@ async function handleResponse<T extends BaseResponse>(privateKey: string, respon
 	}
 	catch (e)
 	{
-		return [{ success: false, errorMessage: 'error' }, responseData]
+		return [{ success: false }, responseData]
 	}
 }
 
