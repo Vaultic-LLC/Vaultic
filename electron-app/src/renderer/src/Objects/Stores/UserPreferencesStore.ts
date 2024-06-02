@@ -118,7 +118,7 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 		const response = await window.api.server.user.backupUserPreferences(JSON.stringify(data));
 		if (!response.Success)
 		{
-			defaultHandleFailedResponse(response);
+			defaultHandleFailedResponse(response, false);
 		}
 
 		return response.Success;

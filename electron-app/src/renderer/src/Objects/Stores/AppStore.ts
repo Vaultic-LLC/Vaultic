@@ -109,7 +109,7 @@ class AppStore extends Store<AppStoreState>
 			const response = await window.api.server.user.backupAppStore(JSON.stringify(data));
 			if (!response.Success)
 			{
-				//defaultHandleFailedResponse(response);
+				defaultHandleFailedResponse(response, false);
 			}
 
 			return response.Success;

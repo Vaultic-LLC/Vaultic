@@ -1,6 +1,6 @@
 import { stores } from "@renderer/Objects/Stores";
 
-export function defaultHandleFailedResponse(response: any)
+export function defaultHandleFailedResponse(response: any, showAlerts: boolean = true)
 {
 	if (response.InvalidLicense === true)
 	{
@@ -14,17 +14,20 @@ export function defaultHandleFailedResponse(response: any)
 	{
 		stores.popupStore.showSessionExpired();
 	}
-	// technically this shouldn't ever happen with requests that come from the app
-	else if (response.InvalidRequest === true)
+	else if (showAlerts)
 	{
-		stores.popupStore.showAlert("Unexpected Error", "An unexpected error has occured. Please try again or", true);
-	}
-	else if (response.IncorrectAPIKey === true)
-	{
-		stores.popupStore.showAlert("Unable to complete request", "Unable to complete the request. Please try again or", true);
-	}
-	else if (response.UnknownError === true)
-	{
-		stores.popupStore.showErrorResponseAlert(response);
+		// technically this shouldn't ever happen with requests that come from the app
+		if (response.InvalidRequest === true)
+		{
+			stores.popupStore.showAlert("Unexpected Error", "An unexpected error has occured. Please try again or", true);
+		}
+		else if (response.IncorrectAPIKey === true)
+		{
+			stores.popupStore.showAlert("Unable to complete request", "Unable to complete the request. Please try again or", true);
+		}
+		else if (response.UnknownError === true)
+		{
+			stores.popupStore.showErrorResponseAlert(response);
+		}
 	}
 }
