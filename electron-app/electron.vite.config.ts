@@ -1,22 +1,6 @@
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin, bytecodePlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
-import crypto from 'crypto'
-
-let nonce = crypto.randomBytes(16).toString('base64');
-
-const transformHtmlPlugin = data => ({
-	name: 'transform-html',
-	transformIndexHtml: {
-		transform(html)
-		{
-			return html.replace(
-				/<%=\s*(\w+)\s*%>/gi,
-				(match, p1) => data[p1] || ''
-			);
-		}
-	}
-});
 
 export default defineConfig({
 	main: {
@@ -54,12 +38,8 @@ export default defineConfig({
 						isCustomElement: tag => tag.startsWith('ion-')
 					}
 				}
-			}),
-			transformHtmlPlugin({ nonce: nonce })
+			})
 		],
-		html: {
-			cspNonce: nonce
-		},
 		server: {
 			port: 33633,
 			strictPort: true
