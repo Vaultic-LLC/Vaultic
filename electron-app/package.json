@@ -29,6 +29,7 @@
 		"@esbuild-plugins/node-modules-polyfill": "^0.2.2",
 		"@melloware/coloris": "^0.24.0",
 		"@popperjs/core": "^2.11.8",
+		"@serenity-kit/opaque": "^0.8.4",
 		"@tweenjs/tween.js": "^21.0.0",
 		"axios": "^1.6.7",
 		"chart.js": "^4.4.0",
