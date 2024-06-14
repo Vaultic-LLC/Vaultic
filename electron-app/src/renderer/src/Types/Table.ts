@@ -14,13 +14,19 @@ export enum FilterStatus
 	Or = "Or"
 }
 
-export interface Filter extends IIdentifiable
+export type PrimaryDataObjectCollection = "passwords" | "values";
+
+interface ISecondaryDataObject
 {
-	[key: string]: any;
-	name: string;
 	passwords: string[];
 	values: string[];
 	type: DataType;
+}
+
+export interface Filter extends IIdentifiable, ISecondaryDataObject
+{
+	[key: string]: any;
+	name: string;
 	isActive: boolean;
 	conditions: FilterCondition[];
 }
@@ -45,12 +51,9 @@ export enum FilterConditionType
 	EqualTo = "Equal To"
 }
 
-export interface Group extends IIdentifiable
+export interface Group extends IIdentifiable, ISecondaryDataObject
 {
 	[key: string]: any;
-	passwords: string[];
-	values: string[];
-	type: DataType;
 	name: string;
 	color: string; // hex value
 }
