@@ -1,6 +1,7 @@
 import { Password } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
+import cryptHelper from "@renderer/Helpers/cryptHelper";
 
 export interface ReactivePassword extends Password
 {
@@ -8,7 +9,7 @@ export interface ReactivePassword extends Password
 	isSafe: boolean;
 }
 
-export default function createReactivePassword(password: Password): ReactivePassword
+export default async function createReactivePassword(masterKey: string, password: Password): Promise<ReactivePassword>
 {
 	const passwordState: Password = reactive({
 		...password
@@ -24,6 +25,40 @@ export default function createReactivePassword(password: Password): ReactivePass
 	});
 
 	const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !passwordState.isWeak && !passwordState.containsLogin && !passwordState.isDuplicate);
+
+	if (!password.isVaultic)
+	{
+		password.passwordLength = password.password.length;
+		password.lastModifiedTime = new Date().getTime().toString();
+
+		const [isWeak, isWeakMessage] = await window.api.helpers.validation.isWeak(password.password, "Password");
+		password.isWeak = isWeak;
+		password.isWeakMessage = isWeakMessage;
+
+		if (password.password.includes(password.login))
+		{
+			password.containsLogin = true;
+		}
+
+		const response = await cryptHelper.encrypt(masterKey, password.password);
+		if (!response)
+		{
+			password.password = "";
+		}
+		else
+		{
+			password.password = response.value!;
+		}
+	}
+
+	for (let i = 0; i < password.securityQuestions.length; i++)
+	{
+		password.securityQuestions[i].questionLength = password.securityQuestions[i].question.length;
+		password.securityQuestions[i].question = (await cryptHelper.encrypt(masterKey, password.securityQuestions[i].question)).value ?? "";
+
+		password.securityQuestions[i].answerLength = password.securityQuestions[i].answer.length;
+		password.securityQuestions[i].answer = ((await cryptHelper.encrypt(masterKey, password.securityQuestions[i].answer)).value ?? "");
+	}
 
 	return {
 		get id() { return passwordState.id; },

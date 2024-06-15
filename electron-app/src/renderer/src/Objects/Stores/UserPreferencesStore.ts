@@ -95,7 +95,7 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 		return true;
 	}
 
-	protected async writeState(_: string): Promise<boolean>
+	public async writeState(_: string): Promise<boolean>
 	{
 		this.state.version += 1;
 

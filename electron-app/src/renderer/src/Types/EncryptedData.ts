@@ -5,6 +5,9 @@ export interface IIdentifiable
 	id: string;
 }
 
+export type SecondaryDataObjectCollection = "filters" | "groups";
+export type SecretProperty = "password" | "value";
+
 export interface IFilterable
 {
 	filters: string[];

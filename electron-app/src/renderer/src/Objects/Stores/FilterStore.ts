@@ -3,7 +3,7 @@ import { ComputedRef, Ref, computed, ref } from "vue";
 import { stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
 import { AtRiskType, DataFile, IFilterable, IGroupable, IIdentifiable, NameValuePair, Password } from "../../Types/EncryptedData";
-import { DataTypeStore, DataTypeStoreState } from "./Base";
+import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
@@ -14,7 +14,7 @@ export interface FilterStoreState extends DataTypeStoreState<Filter>
 	duplicateValueFilters: Dictionary<string[]>;
 }
 
-class FilterStore extends DataTypeStore<Filter, FilterStoreState>
+class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 {
 	private internalPasswordFilters: ComputedRef<Filter[]>;
 	private internalActivePasswordFilters: ComputedRef<Filter[]>;
@@ -115,7 +115,7 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		return undefined;
 	}
 
-	async addFilter(key: string, filter: Filter): Promise<boolean>
+	async addFilter(masterKey: string, filter: Filter): Promise<boolean>
 	{
 		filter.id = await generateUniqueID(this.state.values);
 		this.state.values.push(filter);
@@ -123,13 +123,25 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		if (filter.type == DataType.Passwords)
 		{
 			this.syncFiltersForPasswords([filter], stores.passwordStore.passwords);
+			if (!(await stores.passwordStore.writeState(masterKey)))
+			{
+				// TODO: notify user of issue
+				// this would be a good time to create Vaultic Errors like how I did for the trading framework
+				return false;
+			}
 		}
 		else
 		{
 			this.syncFiltersForValues([filter], stores.valueStore.nameValuePairs);
+			if (!(await stores.valueStore.writeState(masterKey)))
+			{
+				// TODO: notify user of issue
+				// this would be a good time to create Vaultic Errors like how I did for the trading framework
+				return false;
+			}
 		}
 
-		const succeeded = await this.writeState(key);
+		const succeeded = await this.writeState(masterKey);
 		if (!succeeded)
 		{
 			// TODO: Make sure user gets notified correctly
@@ -151,7 +163,7 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		// return await stores.handleUpdateStoreResponse(key, data);
 	}
 
-	async updateFilter(key: string, updatedFilter: Filter): Promise<boolean>
+	async updateFilter(masterKey: string, updatedFilter: Filter): Promise<boolean>
 	{
 		let filter: Filter[] = this.state.values.filter(f => f.id == updatedFilter.id);
 		if (filter.length != 1)
@@ -165,13 +177,25 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		if (updatedFilter.type == DataType.Passwords)
 		{
 			this.syncFiltersForPasswords([updatedFilter], stores.passwordStore.passwords);
+			if (!(await stores.passwordStore.writeState(masterKey)))
+			{
+				// TODO: notify user of issue
+				// this would be a good time to create Vaultic Errors like how I did for the trading framework
+				return false;
+			}
 		}
 		else if (updatedFilter.type == DataType.NameValuePairs)
 		{
 			this.syncFiltersForValues([updatedFilter], stores.valueStore.nameValuePairs);
+			if (!(await stores.valueStore.writeState(masterKey)))
+			{
+				// TODO: notify user of issue
+				// this would be a good time to create Vaultic Errors like how I did for the trading framework
+				return false;
+			}
 		}
 
-		const succeeded = await this.writeState(key);
+		const succeeded = await this.writeState(masterKey);
 		if (!succeeded)
 		{
 			// TODO: Make sure user gets notified correctly
@@ -193,25 +217,36 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		// return await stores.handleUpdateStoreResponse(key, data);
 	}
 
-	async deleteFilter(key: string, filter: Filter): Promise<boolean>
+	async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
 	{
 		this.state.values.splice(this.state.values.indexOf(filter), 1);
 
 		if (filter.type == DataType.Passwords)
 		{
-			// TODO: need to remove filter from all passwords that have it
-			this.removeFilterFromEmptyFilters(filter.id, this.emptyPasswordFilters);
-			this.removeFilterFromDuplicateFilters(filter.id, this.duplicatePasswordFilters);
+			stores.passwordStore.removeSecondaryObjectFromValues(filter.id, "filters");
+			if (!(await stores.passwordStore.writeState(masterKey)))
+			{
+				// TODO: notify user of issue
+				// this would be a good time to create Vaultic Errors like how I did for the trading framework
+				return false;
+			}
+
+			this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, this.emptyPasswordFilters);
+			this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, this.duplicatePasswordFilters);
 		}
 		else if (filter.type == DataType.NameValuePairs)
 		{
-			// TODO: need to remove filter form all values that have it
-			this.removeFilterFromEmptyFilters(filter.id, this.emptyValueFilters);
-			this.removeFilterFromDuplicateFilters(filter.id, this.duplicateValueFilters);
+			stores.valueStore.removeSecondaryObjectFromValues(filter.id, "filters");
+			if (!(await stores.valueStore.writeState(masterKey)))
+			{
+				return false;
+			}
+
+			this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, this.emptyValueFilters);
+			this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, this.duplicateValueFilters);
 		}
 
-
-		const succeeded = await this.writeState(key);
+		const succeeded = await this.writeState(masterKey);
 		if (!succeeded)
 		{
 			// TODO: Make sure user gets notified correctly
@@ -235,18 +270,48 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 
 	syncFiltersForPasswords(filtersToSync: Filter[], passwords: Password[])
 	{
-		this.syncFiltersForPrimaryDataObject(filtersToSync, passwords, "passwords", this.emptyPasswordFilters, this.duplicatePasswordFilters, this.passwordFilters);
+		this.syncFiltersForPrimaryDataObject(filtersToSync, passwords, "passwords",
+			this.emptyPasswordFilters, this.duplicatePasswordFilters, this.passwordFilters, stores.groupStore.passwordGroups);
 	}
 
 	syncFiltersForValues(filtersToSync: Filter[], values: NameValuePair[])
 	{
-		this.syncFiltersForPrimaryDataObject(filtersToSync, values, "values", this.emptyValueFilters, this.duplicateValueFilters, this.nameValuePairFilters);
+		this.syncFiltersForPrimaryDataObject(filtersToSync, values, "values",
+			this.emptyValueFilters, this.duplicateValueFilters, this.nameValuePairFilters, stores.groupStore.valuesGroups);
 	}
 
-	private filterAppliesToDataObject<T extends IGroupable>(filter: Filter, dataObject: T): boolean
+	recalcGroupFilters(dataType: DataType)
+	{
+		if (dataType == DataType.Passwords)
+		{
+			this.passwordFilters.forEach(f =>
+			{
+				if (f.conditions.filter(c => c.property == "group").length == 0)
+				{
+					return;
+				}
+
+				this.syncFiltersForPasswords([f], stores.passwordStore.passwords)
+			});
+		}
+		else
+		{
+			this.nameValuePairFilters.forEach(f =>
+			{
+				if (f.conditions.filter(c => c.property == "group").length == 0)
+				{
+					return;
+				}
+
+				this.syncFiltersForValues([f], stores.valueStore.nameValuePairs)
+			});
+		}
+	}
+
+	private filterAppliesToDataObject<T extends IGroupable>(filter: Filter, dataObject: T, groups: Group[]): boolean
 	{
 		let allFilterConditionsApply: boolean = true;
-		const groupsForObject: Group[] = stores.groupStore.groups.filter(g => dataObject.groups.includes(g.id));
+		const groupsForObject: Group[] = groups.filter(g => dataObject.groups.includes(g.id));
 
 		filter.conditions.forEach(fc =>
 		{
@@ -300,175 +365,20 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 		return allFilterConditionsApply;
 	}
 
-	// checks / handles emptiness for a single filter
-	// filterID: the id of the filter
-	// primaryObjectIDsForFilter: the primary objects the filter has. Either filter.passwords or filter.values
-	// currentEmptyFilters: the list of current empty filters. Either this.emptyPasswordFilters or this.emptyValueFilters
-	private checkUpdateEmptyFilters(filterID: string, primaryObjectIDsForFilter: string[], currentEmptyFilters: string[])
-	{
-		// check to see if this filter has any passwords or values
-		if (primaryObjectIDsForFilter.length == 0)
-		{
-			// if it doesn't, then add it to the list of empty filters
-			if (!currentEmptyFilters.includes(filterID))
-			{
-				currentEmptyFilters.push(filterID);
-			}
-		}
-		else
-		{
-			// since we do have passwords or values, remove the filter from the empty list if its in there
-			this.removeFilterFromEmptyFilters(filterID, currentEmptyFilters);
-		}
-	}
-
-	private removeFilterFromEmptyFilters(filterID: string, currentEmptyFilters: string[])
-	{
-		const filterIndex = currentEmptyFilters.indexOf(filterID);
-		if (filterIndex >= 0)
-		{
-			currentEmptyFilters.splice(filterIndex, 1);
-		}
-	}
-
-	private getDuplicateFilters(filter: Filter, primaryDataObjectCollection: PrimaryDataObjectCollection, allFilters: Filter[]): string[]
-	{
-		if (filter[primaryDataObjectCollection].length == 0)
-		{
-			return allFilters.filter(f => f[primaryDataObjectCollection].length == 0).map(f => f.id);
-		}
-
-		let potentiallyDuplicateFilters: Filter[] = allFilters.filter(f => f[primaryDataObjectCollection].length == filter[primaryDataObjectCollection].length);
-		for (let i = 0; i < filter[primaryDataObjectCollection].length; i++)
-		{
-			if (potentiallyDuplicateFilters.length == 0)
-			{
-				return [];
-			}
-
-			potentiallyDuplicateFilters = potentiallyDuplicateFilters.filter(f => f[primaryDataObjectCollection].includes(filter[primaryDataObjectCollection][i]));
-		}
-
-		return potentiallyDuplicateFilters.map(f => f.id);
-	}
-
-	// checks / handles duplicates for a single filter
-	// filter: the filter to check / handle for
-	// potentiallyNewDuplicateFilters: re calced duplicate filters from getDuplicatePasswordFilters() or getDuplicateValueFilters()
-	// currentDuplicateFilters: last saved duplicate filters. either this.duplicatePasswordFilers or this.duplicateValueFilters
-	private checkUpdateDuplicateFilters(filter: Filter, potentiallyNewDuplicateFilters: string[], currentDuplicateFilters: Dictionary<string[]>)
-	{
-		// setup so that we don't get any exceptions
-		if (!currentDuplicateFilters[filter.id])
-		{
-			currentDuplicateFilters[filter.id] = [];
-		}
-
-		// there are no duplicate filters anywhere, so nothing to do
-		if (potentiallyNewDuplicateFilters.length == 0 && currentDuplicateFilters[filter.id].length == 0)
-		{
-			delete currentDuplicateFilters[filter.id];
-			return;
-		}
-
-		const addedDuplicateFilters: string[] = potentiallyNewDuplicateFilters.filter(f => !currentDuplicateFilters[filter.id].includes(f));
-		const removedDuplicateFilters: string[] = currentDuplicateFilters[filter.id].filter(f => !potentiallyNewDuplicateFilters.includes(f));
-
-		addedDuplicateFilters.forEach(f =>
-		{
-			// add added filter to current filter's duplicate list
-			if (!currentDuplicateFilters[filter.id].includes(f))
-			{
-				currentDuplicateFilters[filter.id].push(f);
-			}
-
-			// need to create a list for the added filter if it doesn't exist. Duplicate filters go both ways
-			if (!currentDuplicateFilters[f])
-			{
-				currentDuplicateFilters[f] = [];
-			}
-
-			// add cuurent filter to added filters duplicate list
-			if (!currentDuplicateFilters[f].includes(filter.id))
-			{
-				currentDuplicateFilters[f].push(filter.id);
-			}
-		});
-
-		removedDuplicateFilters.forEach(f =>
-		{
-			// remove removed filter from current filter's duplicate list
-			const index1 = currentDuplicateFilters[filter.id].indexOf(f);
-			if (index1 >= 0)
-			{
-				currentDuplicateFilters[filter.id].splice(index1, 1);
-			}
-
-			if (!currentDuplicateFilters[f])
-			{
-				return;
-			}
-
-			// remove current filter from removedFilter's list
-			const index2 = currentDuplicateFilters[f].indexOf(filter.id);
-			if (index2 >= 0)
-			{
-				currentDuplicateFilters[f].splice(index2, 1);
-				if (currentDuplicateFilters[f].length == 0)
-				{
-					delete currentDuplicateFilters[f];
-				}
-			}
-		});
-
-		if (currentDuplicateFilters[filter.id].length == 0)
-		{
-			delete currentDuplicateFilters[filter.id];
-		}
-	}
-
-	private removeFilterFromDuplicateFilters(filterID: string, currentDuplicateFilters: Dictionary<string[]>)
-	{
-		if (!currentDuplicateFilters[filterID])
-		{
-			return;
-		}
-
-		currentDuplicateFilters[filterID].forEach(f =>
-		{
-			if (!currentDuplicateFilters[f])
-			{
-				return;
-			}
-
-			const currentFilterIndexInDuplicateFilterFilters = currentDuplicateFilters[f].indexOf(filterID);
-			if (currentFilterIndexInDuplicateFilterFilters >= 0)
-			{
-				currentDuplicateFilters[f].splice(currentFilterIndexInDuplicateFilterFilters, 1);
-			}
-
-			if (currentDuplicateFilters[f].length == 0)
-			{
-				delete currentDuplicateFilters[f];
-			}
-		});
-
-		delete currentDuplicateFilters[filterID];
-	}
-
 	private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable>(
 		filtersToSync: Filter[],
 		primaryDataObjects: T[],
 		primaryDataObjectCollection: PrimaryDataObjectCollection,
 		currentEmptyFilters: string[],
 		currentDuplicateFilters: Dictionary<string[]>,
-		allFilters: Filter[])
+		allFilters: Filter[],
+		allGroups: Group[])
 	{
 		filtersToSync.forEach(f =>
 		{
 			primaryDataObjects.forEach(p =>
 			{
-				if (this.filterAppliesToDataObject(f, p))
+				if (this.filterAppliesToDataObject(f, p, allGroups))
 				{
 					if (!p.filters.includes(f.id))
 					{
@@ -496,8 +406,8 @@ class FilterStore extends DataTypeStore<Filter, FilterStoreState>
 				}
 			});
 
-			this.checkUpdateEmptyFilters(f.id, f[primaryDataObjectCollection], currentEmptyFilters);
-			this.checkUpdateDuplicateFilters(f, this.getDuplicateFilters(f, primaryDataObjectCollection, allFilters), currentDuplicateFilters);
+			this.checkUpdateEmptySecondaryObject(f.id, f[primaryDataObjectCollection], currentEmptyFilters);
+			this.checkUpdateDuplicateSecondaryObjects(f, primaryDataObjectCollection, currentDuplicateFilters, allFilters);
 		});
 	}
 }

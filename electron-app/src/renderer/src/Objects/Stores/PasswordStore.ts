@@ -1,9 +1,10 @@
 import { Password, CurrentAndSafeStructure, AtRiskType, DataFile } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { ReactivePassword } from "./ReactivePassword";
+import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
 import { Dictionary } from "../../Types/DataStructures";
 import { stores } from ".";
-import { DataTypeStore, DataTypeStoreState } from "./Base";
+import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
+import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
 
 export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 {
@@ -11,7 +12,7 @@ export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 	currentAndSafePasswords: CurrentAndSafeStructure;
 }
 
-class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
+class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordStoreState>
 {
 	private internalOldPasswords: ComputedRef<string[]>;
 	private internalWeakPasswords: ComputedRef<string[]>;
@@ -49,7 +50,7 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		this.internalWeakPasswords = computed(() => this.state.values.filter(p => p.isWeak).map(p => p.id));
 
 		this.internalContainsLoginPasswords = computed(() => this.state.values.filter(p => p.containsLogin).map(p => p.id));
-		this.internalDuplicatePasswords = computed(() => this.state.values.filter(p => p.isDuplicate).map(p => p.id));
+		this.internalDuplicatePasswords = computed(() => Object.keys(this.state.duplicatePasswords));
 
 		this.internalDuplicatePasswordsLength = computed(() => Object.keys(this.state.duplicatePasswords).length);
 		this.internalPinnedPasswords = computed(() => this.state.values.filter(p => stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
@@ -84,20 +85,41 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 		return this.internalActiveAtRiskPasswordType;
 	}
 
-	async addPassword(key: string, password: Password): Promise<boolean>
+	async addPassword(masterKey: string, password: Password): Promise<boolean>
 	{
-		const addPasswordData = {
-			OldDays: stores.settingsStore.oldPasswordDays,
-			MasterKey: key,
-			Password: password,
-			...stores.getStates()
-		};
+		password.id = await generateUniqueID(this.state.values);
 
-		const data = await window.api.server.password.add(JSON.stringify(addPasswordData));
-		const succeeded = await stores.handleUpdateStoreResponse(key, data);
+		// doing this before adding saves us from having to remove the current password from the list of potential duplicates
+		this.checkUpdateDuplicatePrimaryObjects(masterKey, password, this.passwords, "password", this.state.duplicatePasswords);
+
+		const reactivePassword = await createReactivePassword(masterKey, password);
+		this.state.values.push(reactivePassword);
+		this.incrementCurrentAndSafePasswords();
+
+		// update groups before filters
+		stores.groupStore.syncGroupsForPasswords(reactivePassword.id, reactivePassword.groups, []);
+		stores.filterStore.syncFiltersForPasswords(stores.filterStore.passwordFilters, [reactivePassword]);
+
+		if (!(await stores.groupStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await stores.filterStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await this.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
 
 		this.events["onChange"]?.forEach(c => c());
-		return succeeded;
+		return true;
 	}
 
 	async updatePassword(password: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
@@ -146,6 +168,16 @@ class PasswordStore extends DataTypeStore<ReactivePassword, PasswordStoreState>
 
 		this.events["onChange"]?.forEach(c => c());
 		return succeeded;
+	}
+
+	private incrementCurrentAndSafePasswords()
+	{
+		this.state.currentAndSafePasswords.current.push(this.state.values.length);
+
+		const safePasswords = this.state.values.filter(
+			p => !p.isWeak && !this.duplicatePasswords[p.id] && !p.containsLogin && !p.isOld);
+
+		this.state.currentAndSafePasswords.safe.push(safePasswords.length);
 	}
 }
 

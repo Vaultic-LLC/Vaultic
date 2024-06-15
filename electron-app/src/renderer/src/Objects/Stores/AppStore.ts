@@ -83,7 +83,7 @@ class AppStore extends Store<AppStoreState>
 		return false;
 	}
 
-	protected async writeState(key: string): Promise<boolean>
+	public async writeState(key: string): Promise<boolean>
 	{
 		this.state.version += 1;
 		const success = await super.writeState(key);

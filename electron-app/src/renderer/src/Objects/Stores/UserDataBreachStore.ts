@@ -27,7 +27,7 @@ class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBreachStor
 	}
 
 	// this store isn't written to a file, we request the data on each new load
-	protected writeState(_: string): Promise<boolean>
+	public writeState(_: string): Promise<boolean>
 	{
 		return Promise.resolve(true)
 	}
