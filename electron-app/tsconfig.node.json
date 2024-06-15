@@ -19,5 +19,9 @@
 		],
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
+		"rootDirs": [
+			"src",
+			"../common"
+		]
 	}
 }

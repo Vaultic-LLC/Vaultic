@@ -276,9 +276,9 @@ export default defineComponent({
 			}
 			else
 			{
-				if (await stores.passwordStore.updatePassword(
+				if (await stores.passwordStore.updatePassword(key,
 					passwordState.value, passwordIsDirty.value, dirtySecurityQuestionQuestions.value,
-					dirtySecurityQuestionAnswers.value, key))
+					dirtySecurityQuestionAnswers.value))
 				{
 					handleSaveResponse(true);
 					return;

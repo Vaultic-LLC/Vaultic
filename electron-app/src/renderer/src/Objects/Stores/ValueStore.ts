@@ -1,9 +1,11 @@
 import { NameValuePair, CurrentAndSafeStructure, AtRiskType, NameValuePairType, DataFile } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { ReactiveValue } from "./ReactiveValue";
+import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
 import { Dictionary } from "../../Types/DataStructures";
 import { stores } from ".";
 import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
+import { generateUniqueID } from "@renderer/Helpers/generatorHelper";
+import cryptHelper from "@renderer/Helpers/cryptHelper";
 
 export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 {
@@ -75,53 +77,194 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 		return this.internalActiveAtRiskValueType;
 	}
 
-	async addNameValuePair(key: string, value: NameValuePair): Promise<boolean>
+	async addNameValuePair(masterKey: string, value: NameValuePair): Promise<boolean>
 	{
-		const addValueData = {
-			OldDays: stores.settingsStore.oldPasswordDays,
-			MasterKey: key,
-			Value: value,
-			...stores.getStates()
-		};
+		value.id = await generateUniqueID(this.state.values);
 
-		const data: any = await window.api.server.value.add(JSON.stringify(addValueData));
-		const succeeded = await stores.handleUpdateStoreResponse(key, data);
+		// doing this before adding saves us from having to remove the current password from the list of potential duplicates
+		this.checkUpdateDuplicatePrimaryObjects(masterKey, value, this.state.values, "value", this.state.duplicateValues);
+
+		if (!(await this.setValueProperties(masterKey, value)))
+		{
+			return false;
+		}
+
+		const reactiveValue = createReactiveValue(value);
+		this.state.values.push(reactiveValue);
+		this.incrementCurrentAndSafeValues();
+
+		// update groups before filters
+		stores.groupStore.syncGroupsForValues(value.id, value.groups, []);
+		stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [value]);
+
+		if (!(await stores.groupStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await stores.filterStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await this.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
 
 		this.events["onChange"]?.forEach(c => c());
-		return succeeded;
+		return true;
 	}
 
-	async updateNameValuePair(value: NameValuePair, valueWasUpdated: boolean, key: string): Promise<boolean>
+	async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>
 	{
-		const updatedValueData = {
-			OldDays: stores.settingsStore.oldPasswordDays,
-			MasterKey: key,
-			Value: value,
-			ValueWasUpdated: valueWasUpdated,
-			...stores.getStates()
-		};
+		let currentValues = this.state.values.filter(v => v.id == updatedValue.id);
+		if (currentValues.length != 1)
+		{
+			return false;
+		}
 
-		const data: any = await window.api.server.value.update(JSON.stringify(updatedValueData));
-		const succeeded = await stores.handleUpdateStoreResponse(key, data);
+		let currentValue = currentValues[0];
+		const addedGroups = updatedValue.groups.filter(g => !currentValue.groups.includes(g));
+		const removedGroups = currentValue.gorups.filter(g => !updatedValue.groups.includes(g));
+
+		if (valueWasUpdated)
+		{
+			this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, this.state.values, "value", this.state.duplicateValues);
+			this.setValueProperties(masterKey, updatedValue);
+		}
+		else
+		{
+			const response = await cryptHelper.decrypt(masterKey, updatedValue.value);
+			if (!response.success)
+			{
+				return false;
+			}
+
+			// we want to re check this in case the type was changed
+			this.checkIfValueIsWeak(response.value!, updatedValue);
+		}
+
+		this.incrementCurrentAndSafeValues();
+		Object.assign(this.state.values.filter(v => v.id == updatedValue.id), updatedValue);
+
+		stores.groupStore.syncGroupsForValues(updatedValue.id, addedGroups, removedGroups);
+		stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [updatedValue]);
+
+		if (!(await stores.groupStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await stores.filterStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await this.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
 
 		this.events["onChange"]?.forEach(c => c());
-		return succeeded;
+		return true;
 	}
 
-	async deleteNameValuePair(key: string, value: ReactiveValue): Promise<boolean>
+	async deleteNameValuePair(masterKey: string, value: ReactiveValue): Promise<boolean>
 	{
-		const deleteValueData = {
-			OldDays: stores.settingsStore.oldPasswordDays,
-			MasterKey: key,
-			Value: value,
-			...stores.getStates()
-		};
+		const valueIndex = this.state.values.indexOf(value);
+		if (valueIndex < 0)
+		{
+			return false;
+		}
 
-		const data: any = await window.api.server.value.delete(JSON.stringify(deleteValueData));
-		const succeeded = await stores.handleUpdateStoreResponse(key, data);
+		this.state.values.splice(valueIndex, 1);
+		this.incrementCurrentAndSafeValues();
+
+		stores.groupStore.syncGroupsForValues(value.id, [], value.groups);
+		stores.filterStore.removeValuesFromFilters(value.id);
+
+		if (!(await stores.groupStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await stores.filterStore.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
+
+		if (!(await this.writeState(masterKey)))
+		{
+			// TODO:
+			return false;
+		}
 
 		this.events["onChange"]?.forEach(c => c());
-		return succeeded;
+		return true;
+	}
+
+	private async setValueProperties(masterKey: string, value: NameValuePair): Promise<boolean>
+	{
+		value.valueLength = value.value.length;
+		value.lastModifiedTime = new Date().getTime().toString();
+		this.checkIfValueIsWeak(value.value, value);
+
+		const response = await cryptHelper.encrypt(masterKey, value.value);
+		if (!response.success)
+		{
+			return false;
+		}
+
+		value.value = response.value!;
+		return true;
+	}
+
+	// checks if value is weak
+	// pass in value seperately from the object so that we don't have to decrypt it, assign it to the value, re encrypt it, and then re assign.
+	// if we fail on the re encrypt, we would be in trouble
+	private async checkIfValueIsWeak(value: string, nameValuePair: NameValuePair)
+	{
+		if (nameValuePair.valueType == NameValuePairType.Passphrase)
+		{
+			const wordCount = value.split(' ').length;
+			if (wordCount < 5)
+			{
+				nameValuePair.isWeak = true;
+				nameValuePair.isWeakMessage = "Passphrase has less than 5 words in it. For best security, create a Passphrase that is longer than 5 words";
+
+				return;
+			}
+		}
+		else if (nameValuePair.valueType == NameValuePairType.Passcode && nameValuePair.notifyIfWeak)
+		{
+			const [isWeak, isWeakMessage] = await window.api.helpers.validation.isWeak(value, "Value");
+			nameValuePair.isWeak = isWeak;
+			nameValuePair.isWeakMessage = isWeakMessage;
+
+			return;
+		}
+
+		nameValuePair.isWeak = false;
+		nameValuePair.isWeakMessage = "";
+	}
+
+	private incrementCurrentAndSafeValues()
+	{
+		this.state.currentAndSafeValues.current.push(this.state.values.length);
+
+		const safeValues = this.state.values.filter(
+			v => !v.isWeak && !this.duplicateNameValuePairs[v.id] && !v.isOld);
+
+		this.state.currentAndSafeValues.safe.push(safeValues.length);
 	}
 }
 

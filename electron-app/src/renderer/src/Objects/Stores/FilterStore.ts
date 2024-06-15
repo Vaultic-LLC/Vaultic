@@ -308,6 +308,38 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 		}
 	}
 
+	removePasswordFromFilters(passwordID: string)
+	{
+		this.removePrimaryObjectFromValues(passwordID, "passwords", this.state.emptyPasswordFilters,
+			this.state.duplicatePasswordFilters, this.passwordFilters);
+	}
+
+	removeValuesFromFilters(valueID: string)
+	{
+		this.removePrimaryObjectFromValues(valueID, "values", this.state.emptyValueFilters,
+			this.state.duplicateValueFilters, this.nameValuePairFilters);
+	}
+
+	private removePrimaryObjectFromValues(
+		primaryObjectID: string,
+		primaryDataObjectCollection: PrimaryDataObjectCollection,
+		allEmptyFilters: string[],
+		allDuplicateFilters: Dictionary<string[]>,
+		allFilters: Filter[])
+	{
+		this.state.values.forEach(v =>
+		{
+			const primaryObjectIndex = v[primaryDataObjectCollection].indexOf(primaryObjectID);
+			if (primaryObjectIndex >= 0)
+			{
+				v[primaryDataObjectCollection].splice(primaryObjectIndex, 1);
+			}
+
+			this.checkUpdateEmptySecondaryObject(v.id, v[primaryDataObjectCollection], allEmptyFilters);
+			this.checkUpdateDuplicateSecondaryObjects(v, primaryDataObjectCollection, allDuplicateFilters, allFilters);
+		});
+	}
+
 	private filterAppliesToDataObject<T extends IGroupable>(filter: Filter, dataObject: T, groups: Group[]): boolean
 	{
 		let allFilterConditionsApply: boolean = true;

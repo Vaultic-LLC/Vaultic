@@ -231,7 +231,7 @@ export default defineComponent({
 			}
 			else
 			{
-				if (await stores.valueStore.updateNameValuePair(valuesState.value, valueIsDirty.value, key))
+				if (await stores.valueStore.updateNameValuePair(key, valuesState.value, valueIsDirty.value))
 				{
 					handleSaveResponse(true);
 					return;
