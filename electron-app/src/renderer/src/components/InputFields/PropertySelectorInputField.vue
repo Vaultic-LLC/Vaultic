@@ -77,8 +77,12 @@ export default defineComponent({
 			focused.value = false;
 		}
 
-		function onEnter()
+		function onEnter(e: KeyboardEvent)
 		{
+			// Prevent the popup from capturing the enter handler and trying to save / do whatever its doing
+			e.preventDefault();
+			e.stopPropagation();
+
 			if (!opened.value)
 			{
 				opened.value = true;
