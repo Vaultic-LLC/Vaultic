@@ -164,10 +164,10 @@ export default defineComponent({
 				thumbHeightNumber.value = currentScrollElement.value.clientHeight / currentScrollElement.value.scrollHeight
 					* currentScrollElement.value.clientHeight;
 
-				// we scrolled to the bottom, make the thumb look like its on the bottom
+				// we scrolled to the bottom, make the thumb look like its on the bottom otherwise it'll be 3 px off
 				if (currentScrollElement.value.scrollHeight - currentScrollElement.value.scrollTop - currentScrollElement.value.clientHeight <= 2)
 				{
-					thumbTopNumber.value = currentScrollElement.value.clientHeight - thumbHeightNumber.value + 1;
+					thumbTopNumber.value = currentScrollElement.value.clientHeight - thumbHeightNumber.value + 3;
 					return;
 				}
 
