@@ -173,3 +173,15 @@ export interface ButtonModel
 	text: string;
 	onClick: () => void;
 }
+
+interface ToggleRadioButton
+{
+	text: string;
+	active: boolean;
+}
+
+export interface ToggleRadioButtonModel
+{
+	buttonOne: ToggleRadioButton;
+	buttonTwo: ToggleRadioButton;
+}

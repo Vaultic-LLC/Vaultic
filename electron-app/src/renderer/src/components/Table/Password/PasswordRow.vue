@@ -6,7 +6,7 @@
 				:isOnWidget="true" :width="'11vw'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
 			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'" :isOnWidget="true"
 				v-model="pword.additionalInformation" :disabled="true" :width="'12vw'" :height="'9vh'"
-				:maxHeight="'135px'" :maxWidth="'300px'" />
+				:maxHeight="'135px'" :maxWidth="'300px'" :minWidth="'120px'" :isEditing="true" />
 		</div>
 		<TableTemplate :color="textColor" class="scrollbar passwordRowContainer__table" :scrollbar-size="1"
 			:border="false" :row-gap="'0px'" :emptyMessage="emptyMessage" :hideHeader="true"

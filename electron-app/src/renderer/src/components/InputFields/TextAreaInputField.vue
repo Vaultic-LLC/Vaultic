@@ -3,25 +3,38 @@
 		<div class="textAreaInputFieldContainer__scrollbar">
 			<div ref="scrollThumb" class="textAreaInputFieldContainer__scrollthumb"></div>
 		</div>
-		<textarea ref="textArea" required="false" class="textAreaInputFieldContainer__input"
+		<textarea v-if="!markdownFormat" ref="textArea" required="false" class="textAreaInputFieldContainer__input"
 			:class="{ 'textAreaInputFieldContainer__input--noBorderRadius': textAreaStraightBorder }" name="text"
 			autocomplete="off" :value="modelValue" @input="onInput(($event.target as HTMLInputElement).value)"
 			:disabled="disabled" :maxlength="600" />
+		<div v-else v-html="markdownHTML" class="textAreaInputFieldContainer__mdView"></div>
 		<label class="textAreaInputFieldContainer__label">{{ label }}</label>
+		<div class="textAreaInputFieldContainer__formatButton">
+			<ToggleRadioButton :height="'clamp(15px, 1vw, 25px)'" :model="toggleRadioButtonModel" @onButtonClicked="onFormatChange" />
+		</div>
 	</div>
 </template>
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, ref } from 'vue';
 
+import ToggleRadioButton from './ToggleRadioButton.vue';
+
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
-import { InputColorModel } from '@renderer/Types/Models';
+import { InputColorModel, ToggleRadioButtonModel } from '@renderer/Types/Models';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '@renderer/Constants/Colors';
+import { marked } from 'marked';
+import DOMPurify from "dompurify"
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
-
 	name: "TextAreaInputField",
+	components:
+	{
+		ToggleRadioButton
+	},
 	emits: ["update:modelValue"],
-	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isOnWidget", "width", 'minWidth', 'maxWidth', "height", 'minHeight', 'maxHeight'],
+	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isOnWidget", "width",
+		'minWidth', 'maxWidth', "height", 'minHeight', 'maxHeight', 'isEditing'],
 	setup(props, ctx)
 	{
 		const textArea: Ref<HTMLElement | null> = ref(null);
@@ -43,6 +56,21 @@ export default defineComponent({
 
 		const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 		let body: HTMLElement | null = null;
+
+		const isOnEditScreen: ComputedRef<boolean> = computed(() => props.isEditing === true);
+
+		const markdownFormat: Ref<boolean> = ref(isOnEditScreen.value && stores.settingsStore.defaultMarkdownInEditScreens);
+		const markdownHTML: ComputedRef<string> = computed(() => DOMPurify.sanitize(marked.parse(props.modelValue)));
+		const toggleRadioButtonModel: Ref<ToggleRadioButtonModel> = ref({
+			buttonOne: {
+				text: "Raw",
+				active: !markdownFormat.value
+			},
+			buttonTwo: {
+				text: "Md",
+				active: markdownFormat.value
+			}
+		});
 
 		function onScroll(e: any)
 		{
@@ -100,7 +128,7 @@ export default defineComponent({
 			calcScrollbar();
 		}
 
-		function onInput(value: string)
+		async function onInput(value: string)
 		{
 			ctx.emit("update:modelValue", value);
 			calcScrollbar();
@@ -120,6 +148,19 @@ export default defineComponent({
 
 				thumbTopNumber.value = Math.floor(textArea.value.scrollTop / textArea.value.scrollHeight * textArea.value.clientHeight);
 				thumbHeightNumber.value = Math.floor(textArea.value.clientHeight / textArea.value.scrollHeight * textArea.value.clientHeight);
+			}
+		}
+
+		async function onFormatChange(index: number)
+		{
+			if (index == 0)
+			{
+				markdownFormat.value = false;
+			}
+			else
+			{
+				//markdownHTML.value = DOMPurify.sanitize(await marked.parse(props.modelValue));
+				markdownFormat.value = true;
 			}
 		}
 
@@ -160,6 +201,10 @@ export default defineComponent({
 			textAreaStraightBorder,
 			scrollThumb,
 			labelBackgroundColor,
+			markdownFormat,
+			markdownHTML,
+			toggleRadioButtonModel,
+			onFormatChange,
 			onInput
 		}
 	}
@@ -193,7 +238,8 @@ export default defineComponent({
 	}
 }
 
-.textAreaInputFieldContainer__input {
+.textAreaInputFieldContainer__input,
+.textAreaInputFieldContainer__mdView {
 	position: absolute;
 	width: 100%;
 	height: 100%;
@@ -212,6 +258,10 @@ export default defineComponent({
 	-moz-osx-font-smoothing: grayscale;
 }
 
+.textAreaInputFieldContainer__mdView {
+	text-align: left;
+}
+
 .textAreaInputFieldContainer__label {
 	position: absolute;
 	left: 10px;
@@ -226,14 +276,16 @@ export default defineComponent({
 }
 
 .textAreaInputFieldContainer__input:focus,
-.textAreaInputFieldContainer__input:valid {
+.textAreaInputFieldContainer__input:valid,
+.textAreaInputFieldContainer__mdView {
 	outline: none;
 	border: 1.5px solid v-bind('colorModel.activeBorderColor');
 }
 
 .textAreaInputFieldContainer__input:focus~label,
 .textAreaInputFieldContainer__input:valid~label,
-.textAreaInputFieldContainer__input:disabled~label {
+.textAreaInputFieldContainer__input:disabled~label,
+.textAreaInputFieldContainer__mdView~label {
 	transform: translateY(-70%) scale(0.8);
 	background-color: v-bind(labelBackgroundColor);
 	padding: 0 .2em;
@@ -264,5 +316,10 @@ export default defineComponent({
 	border-top-left-radius: 20px;
 	border-bottom-left-radius: 20px;
 	transition: 0.3s;
+}
+
+.textAreaInputFieldContainer__formatButton {
+	position: absolute;
+	bottom: min(-35px, -3.5vh);
 }
 </style>
