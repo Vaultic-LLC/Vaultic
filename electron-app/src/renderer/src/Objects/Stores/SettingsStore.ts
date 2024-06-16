@@ -20,6 +20,7 @@ export interface SettingsStoreState extends StoreState
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
 	percentMetricForPulse: number;
+	defaultMarkdownInEditScreens: boolean;
 }
 
 class SettingsStore extends Store<SettingsStoreState>
@@ -37,6 +38,7 @@ class SettingsStore extends Store<SettingsStoreState>
 	get multipleFilterBehavior() { return this.state.multipleFilterBehavior; }
 	get oldPasswordDays() { return this.state.oldPasswordDays; }
 	get percentMetricForPulse() { return this.state.percentMetricForPulse; }
+	get defaultMarkdownInEditScreens() { return this.state.defaultMarkdownInEditScreens; }
 
 	constructor()
 	{
@@ -58,6 +60,7 @@ class SettingsStore extends Store<SettingsStoreState>
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
 			percentMetricForPulse: 1,
+			defaultMarkdownInEditScreens: true
 		};
 	}
 

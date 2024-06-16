@@ -24,7 +24,7 @@
 			@onDirty="valueIsDirty = true" />
 		<TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
 			v-model="valuesState.additionalInformation" :width="'19vw'" :height="'18vh'" :maxHeight="'238px'"
-			:minWidth="'216px'" :minHeight="'100px'" />
+			:minWidth="'216px'" :minHeight="'100px'" :isEditing="!creating" />
 		<TableTemplate ref="tableRef" id="valueView__addGroupsTable" class="scrollbar" :scrollbar-size="1"
 			:color="color" :headerModels="groupHeaderModels" :border="true" :emptyMessage="emptyMessage"
 			:showEmptyMessage="mounted && groupModels.visualValues.length == 0" :headerTabs="groupTab"

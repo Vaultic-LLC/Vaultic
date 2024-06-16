@@ -17,7 +17,7 @@
 			:height="'4vh'" :minHeight="'30px'" @onDirty="passwordIsDirty = true" />
 		<TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
 			:label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'19vw'"
-			:height="'15vh'" :minWidth="'216px'" :minHeight="'91px'" :maxHeight="'203px'" />
+			:height="'15vh'" :minWidth="'216px'" :minHeight="'91px'" :maxHeight="'203px'" :isEditing="!creating" />
 		<TableTemplate ref="tableRef" :color="color" id="passwordView__table" class="scrollbar" :scrollbar-size="1"
 			:headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
 			:showEmptyMessage="showEmptyMessage" :headerTabs="headerTabs" :headerHeight="'clamp(45px, 5.8vh, 80px)'"

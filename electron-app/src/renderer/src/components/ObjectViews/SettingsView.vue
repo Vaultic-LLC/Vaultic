@@ -16,6 +16,8 @@
 			:label="'Days to Store Login Records'" v-model="settingsState.numberOfDaysToStoreLoginRecords"
 			:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
 			:minHeight="'30px'" :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
+		<CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :label="'Default Additional Information to Markdown on Edit Screens'"
+			v-model="settingsState.defaultMarkdownInEditScreens" />
 		<div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
 		<TextInputField class="settingsView__randomPasswordLength" :color="color" :label="'Random Password Length'"
 			v-model.number="settingsState.randomValueLength" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
@@ -243,28 +245,33 @@ export default defineComponent({
 	grid-column: 6 / span 2;
 }
 
+.settingsView__defaultMarkdown {
+	grid-row: 7 / span 1;
+	grid-column: 3 / span 3;
+}
+
 .settingsView__securitySettings {
-	grid-row: 8 / span 1;
+	grid-row: 10 / span 1;
 	grid-column: 3 / span 3;
 }
 
 .settingsView__randomPasswordLength {
-	grid-row: 10 / span 2;
+	grid-row: 13 / span 2;
 	grid-column: 3 / span 2;
 }
 
 .settingsView__randomPassphraseLength {
-	grid-row: 10 / span 2;
+	grid-row: 13 / span 2;
 	grid-column: 6 / span 2;
 }
 
 .settingsView__oldPasswordDays {
-	grid-row: 12 / span 2;
+	grid-row: 15 / span 2;
 	grid-column: 3 / span 2;
 }
 
 .settingsView__percentFilledMetricForPulse {
-	grid-row: 12 / span 2;
+	grid-row: 15 / span 2;
 	grid-column: 6 / span 2;
 }
 </style>
