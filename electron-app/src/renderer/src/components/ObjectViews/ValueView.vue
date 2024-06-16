@@ -5,7 +5,7 @@
 			:height="'4vh'" :minHeight="'35px'" />
 		<div class="valueView__valueTypeContainer">
 			<EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType"
-				:optionsEnum="NameValuePairType" :fadeIn="true" :width="'8vw'" :height="'4vh'" :minHeight="'40px'"
+				:optionsEnum="NameValuePairType" :fadeIn="true" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
 				:minWidth="'130px'" :maxHeight="'50px'" :showRandom="showRandom" />
 			<Transition name="fade">
 				<div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">

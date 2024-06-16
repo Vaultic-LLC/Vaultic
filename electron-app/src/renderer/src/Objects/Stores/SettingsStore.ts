@@ -43,7 +43,7 @@ class SettingsStore extends Store<SettingsStoreState>
 	constructor()
 	{
 		super();
-		this.internalAutoLockNumberTime = computed(this.calcAutolockTime);
+		this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.autoLockTime));
 	}
 
 	protected defaultState()
@@ -104,9 +104,9 @@ class SettingsStore extends Store<SettingsStoreState>
 		return false;
 	}
 
-	private calcAutolockTime(): number
+	private calcAutolockTime(time: AutoLockTime): number
 	{
-		switch (this?.state?.autoLockTime)
+		switch (time)
 		{
 			case AutoLockTime.FiveMinutes:
 				return 1000 * 60 * 5;

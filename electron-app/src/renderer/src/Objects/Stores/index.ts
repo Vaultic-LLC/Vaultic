@@ -206,3 +206,4 @@ export const stores: Stores =
 
 // additional setup that requires another store. Prevents circular dependencies
 stores.userPreferenceStore.init(stores);
+stores.appStore.init(stores);

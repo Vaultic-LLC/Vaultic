@@ -189,9 +189,10 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: 'clamp(75px, 7vw, 175px)',
-				padding: 'clamp(10px, 1vw, 25px)',
-				clickable: true
+				width: 'clamp(75px, 5vw, 150px)',
+				clickable: true,
+				centered: true,
+				headerSpaceRight: '20px'
 			},
 			{
 				displayName: "Name",
