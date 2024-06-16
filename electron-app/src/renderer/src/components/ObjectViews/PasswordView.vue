@@ -52,7 +52,7 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
-import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import SecurityQuestionRow from '../Table/Rows/SecurityQuestionRow.vue';

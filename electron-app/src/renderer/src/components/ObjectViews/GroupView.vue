@@ -29,7 +29,7 @@ import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
-import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 
 import { DataType, Group } from '../../Types/Table';
 import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';

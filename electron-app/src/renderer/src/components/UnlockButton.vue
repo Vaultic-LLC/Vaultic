@@ -7,8 +7,9 @@
 </template>
 
 <script lang="ts">
-import { DecryptFunctionsKey, RequestAuthorizationKey } from '@renderer/Types/Keys';
 import { Ref, defineComponent, inject, onMounted, onUnmounted, ref } from 'vue';
+
+import { DecryptFunctionsKey, RequestAuthorizationKey } from '@renderer/Types/Keys';
 
 export default defineComponent({
 	name: "UnlockButton",

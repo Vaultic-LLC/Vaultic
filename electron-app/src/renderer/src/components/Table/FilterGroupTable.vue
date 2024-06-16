@@ -39,7 +39,7 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } fr
 
 import TableTemplate from './TableTemplate.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
-import SelectableTableRow from './SelectableTableRow.vue';
+import SelectableTableRow from './Rows/SelectableTableRow.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import EditGroupPopup from '../ObjectPopups/EditPopups/EditGroupPopup.vue';
 import EditFilterPopup from '../ObjectPopups/EditPopups/EditFilterPopup.vue';

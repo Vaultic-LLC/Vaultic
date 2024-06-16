@@ -46,11 +46,11 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, re
 
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import SlideInRow from './Rows/SlideInRow.vue';
-import PasswordRow from "./Password/PasswordRow.vue"
-import NameValuePairRow from './NameValuePair/NameValuePairRow.vue';
+import PasswordRow from "./Rows/PasswordRow.vue"
+import NameValuePairRow from './Rows/NameValuePairRow.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
 import TableTemplate from './TableTemplate.vue';
-import CollapsibleTableRow from './CollapsibleTableRow.vue';
+import CollapsibleTableRow from './Rows/CollapsibleTableRow.vue';
 import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue';
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';

@@ -11,8 +11,9 @@
 </template>
 
 <script lang="ts">
-import { popups } from '@renderer/Objects/Stores/PopupStore';
 import { ComputedRef, computed, defineComponent } from 'vue';
+
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: 'ToastPopup',

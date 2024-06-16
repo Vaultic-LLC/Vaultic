@@ -49,7 +49,7 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
-import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import ToolTip from '../ToolTip.vue';
 

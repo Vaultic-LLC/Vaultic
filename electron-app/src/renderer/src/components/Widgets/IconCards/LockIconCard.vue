@@ -6,6 +6,7 @@
 import { defineComponent } from 'vue';
 
 import IconCard from "../../IconCard.vue"
+
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({

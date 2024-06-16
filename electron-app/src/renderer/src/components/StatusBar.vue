@@ -13,8 +13,9 @@
 </template>
 
 <script lang="ts">
-import { stores } from '@renderer/Objects/Stores';
 import { Ref, defineComponent, ref, watch } from 'vue';
+
+import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({
 	name: "StatusBar",

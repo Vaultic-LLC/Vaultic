@@ -19,7 +19,7 @@ import { RGBColor } from '@renderer/Types/Colors';
 import { tween } from '@renderer/Helpers/TweenHelper';
 
 export default defineComponent({
-	name: "TableSelector",
+	name: "SingleSelectorItem",
 	props: ["item", "isFirst", "isLast"],
 	setup(props)
 	{

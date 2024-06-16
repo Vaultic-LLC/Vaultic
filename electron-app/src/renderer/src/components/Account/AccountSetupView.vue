@@ -12,8 +12,6 @@
 				:minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSubmit">
 			</PopupButton>
 			<slot name="footer"></slot>
-			<!-- <div class="accountSetupViewContainer__buttons">
-			</div> -->
 		</div>
 	</div>
 </template>
