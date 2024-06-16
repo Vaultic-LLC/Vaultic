@@ -19,6 +19,7 @@
 			</div>
 		</td>
 	</TableRow>
+	<tr class="filterConditionRowSpace"></tr>
 </template>
 
 <script lang="ts">
@@ -109,5 +110,16 @@ export default defineComponent({
 .filterConditionCell__content {
 	display: flex;
 	justify-content: space-evenly
+}
+
+.filterConditionRowSpace {
+	height: 0px;
+}
+
+/* make sure the labels on the rows don't overlap at smaller sizes */
+@media (max-width: 1250px) {
+	.filterConditionRowSpace {
+		height: 5px;
+	}
 }
 </style>

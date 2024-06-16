@@ -10,10 +10,10 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, ref, } from 'vue';
 
-import TableRow from './Rows/TableRow.vue';
-import SelectorButton from '../InputFields/SelectorButton.vue';
+import TableRow from './TableRow.vue';
+import SelectorButton from '../../InputFields/SelectorButton.vue';
 
-import { SelectorButtonModel } from '../../Types/Models';
+import { SelectorButtonModel } from '../../../Types/Models';
 
 export default defineComponent({
 	name: 'SelectableTableRow',
