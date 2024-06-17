@@ -6,7 +6,7 @@
 		<textarea v-if="!markdownFormat" ref="textArea" required="false" class="textAreaInputFieldContainer__input"
 			:class="{ 'textAreaInputFieldContainer__input--noBorderRadius': textAreaStraightBorder }" name="text"
 			autocomplete="off" :value="modelValue" @input="onInput(($event.target as HTMLInputElement).value)"
-			:disabled="disabled" :maxlength="600" />
+			:disabled="disabled" :maxlength="600" @keyup.enter="onEnter" />
 		<div v-else ref="markdownContainer" v-html="markdownHTML" class="textAreaInputFieldContainer__mdView"
 			:class="{ 'textAreaInputFieldContainer__input--noBorderRadius': textAreaStraightBorder }"></div>
 		<label class="textAreaInputFieldContainer__label">{{ label }}</label>
@@ -205,6 +205,12 @@ export default defineComponent({
 			}
 		}
 
+		function onEnter(e: KeyboardEvent)
+		{
+			e.preventDefault();
+			e.stopPropagation();
+		}
+
 		onMounted(() =>
 		{
 			body = document.getElementById('body');
@@ -244,7 +250,8 @@ export default defineComponent({
 			toggleRadioButtonModel,
 			markdownContainer,
 			onFormatChange,
-			onInput
+			onInput,
+			onEnter
 		}
 	}
 })
