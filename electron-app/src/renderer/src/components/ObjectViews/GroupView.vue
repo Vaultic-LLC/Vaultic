@@ -80,11 +80,11 @@ export default defineComponent({
 		{
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
-				return getObjectPopupEmptyTableMessage("Passwords", "Group", "Password");
+				return getObjectPopupEmptyTableMessage("Passwords", "Group", "Password", props.creating);
 			}
 			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
 			{
-				return getObjectPopupEmptyTableMessage("Values", "Group", "Value");
+				return getObjectPopupEmptyTableMessage("Values", "Group", "Value", props.creating);
 			}
 
 			return "";

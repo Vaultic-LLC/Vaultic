@@ -516,7 +516,12 @@ export function getNoValuesApplyToFilterMessage(dataName: string)
 	return `There are no ${dataName} that apply to all active filters. Please try deactivating some filters or add more ${dataName}`
 }
 
-export function getObjectPopupEmptyTableMessage(emptyDataName: string, currentDataName: string, tab: string)
+export function getObjectPopupEmptyTableMessage(emptyDataName: string, currentDataName: string, tab: string, creating: boolean)
 {
-	return `You don't have any ${emptyDataName} to add to this ${currentDataName}. Click on the 'Add ${tab}' tab to add one`;
+	if (creating)
+	{
+		return `You don't have any ${emptyDataName} to add to this ${currentDataName}. Click on the 'Add ${tab}' tab to add one`;
+	}
+
+	return `You don't have any ${emptyDataName} to add to this ${currentDataName}`;
 }

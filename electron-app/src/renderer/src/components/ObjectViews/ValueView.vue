@@ -113,7 +113,7 @@ export default defineComponent({
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
-		const emptyMessage: Ref<string> = ref(getObjectPopupEmptyTableMessage('Groups', "Value", "Group"));
+		const emptyMessage: Ref<string> = ref(getObjectPopupEmptyTableMessage('Groups', "Value", "Group", props.creating));
 
 		const activeGroupHeader: Ref<number> = ref(1);
 		const groupHeaderDisplayFields: HeaderDisplayField[] = [

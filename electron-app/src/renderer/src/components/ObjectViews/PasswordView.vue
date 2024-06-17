@@ -138,7 +138,7 @@ export default defineComponent({
 				return getEmptyTableMessage("Security Questions");
 			}
 
-			return getObjectPopupEmptyTableMessage("Groups", "Password", "Group");
+			return getObjectPopupEmptyTableMessage("Groups", "Password", "Group", props.creating);
 		});
 
 		const activeGroupHeader: Ref<number> = ref(1);
