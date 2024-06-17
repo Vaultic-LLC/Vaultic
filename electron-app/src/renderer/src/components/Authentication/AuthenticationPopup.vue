@@ -43,6 +43,7 @@ import { ColorPalette } from '../../Types/Colors';
 import { defaultInputColorModel, InputColorModel } from '@renderer/Types/Models';
 import { stores } from '@renderer/Objects/Stores';
 import { getLinearGradientFromColor } from '@renderer/Helpers/ColorHelper';
+import { EncryptedInputFieldComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "AuthenticationPopup",
@@ -60,7 +61,7 @@ export default defineComponent({
 		const authenticationPopup: Ref<HTMLElement | null> = ref(null);
 		const resizeObserver: ResizeObserver = new ResizeObserver(() => onResize());
 
-		const encryptedInputField: Ref<null> = ref(null);
+		const encryptedInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 		const loadingIndicator: Ref<null> = ref(null);
 
 		const key: Ref<string> = ref("");
@@ -91,6 +92,8 @@ export default defineComponent({
 			{
 				return;
 			}
+
+			encryptedInputField.value?.toggleHidden(true);
 
 			stores.popupStore.showLoadingIndicator(primaryColor.value, "Checking Key");
 			disabled.value = true;

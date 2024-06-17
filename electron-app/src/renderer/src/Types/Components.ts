@@ -14,3 +14,8 @@ export interface AuthPopup extends Component
 {
 	playUnlockAnimation: () => void;
 }
+
+export interface EncryptedInputFieldComponent extends InputComponent
+{
+	toggleHidden: (hide: boolean) => void;
+}

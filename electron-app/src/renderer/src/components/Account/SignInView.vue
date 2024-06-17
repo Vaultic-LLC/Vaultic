@@ -70,7 +70,7 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import { InputColorModel, defaultInputColorModel } from '@renderer/Types/Models';
-import { InputComponent } from '@renderer/Types/Components';
+import { EncryptedInputFieldComponent, InputComponent } from '@renderer/Types/Components';
 import { stores } from '@renderer/Objects/Stores';
 import { Password } from '@renderer/Types/EncryptedData';
 import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
@@ -92,7 +92,7 @@ export default defineComponent({
 		const container: Ref<HTMLElement | null> = ref(null);
 		const resizeHandler: ResizeObserver = new ResizeObserver(checkWidthHeightRatio);
 
-		const masterKeyField: Ref<InputComponent | null> = ref(null);
+		const masterKeyField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 		const masterKey: Ref<string> = ref('');
 
 		const emailField: Ref<InputComponent | null> = ref(null);
@@ -131,6 +131,7 @@ export default defineComponent({
 
 		async function onSubmit()
 		{
+			masterKeyField.value?.toggleHidden(true);
 			stores.popupStore.showLoadingIndicator(props.color);
 
 			if (!showEmailField.value)

@@ -11,10 +11,11 @@
 			:width="'8vw'" :height="'4vh'" :minHeight="'30px'" :isEmailField="true" />
 		<TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login"
 			:width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
-		<EncryptedInputField class="passwordView__password" :colorModel="colorModel" :label="'Password'"
-			v-model="passwordState.password" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
-			:showRandom="true" :showUnlock="true" :required="true" showCopy="true" :width="'11vw'" :maxWidth="'285px'"
-			:height="'4vh'" :minHeight="'30px'" @onDirty="passwordIsDirty = true" />
+		<EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
+			:label="'Password'" v-model="passwordState.password" :initialLength="initalLength"
+			:isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true" :required="true"
+			showCopy="true" :width="'11vw'" :maxWidth="'285px'" :height="'4vh'" :minHeight="'30px'"
+			@onDirty="passwordIsDirty = true" />
 		<TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
 			:label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'19vw'"
 			:height="'15vh'" :minWidth="'216px'" :minHeight="'91px'" :maxHeight="'203px'" :isEditing="!creating" />
@@ -69,6 +70,7 @@ import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
 import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
+import { EncryptedInputFieldComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "PasswordView",
@@ -89,6 +91,8 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
+		const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
+
 		const tableRef: Ref<HTMLElement | null> = ref(null);
 		const refreshKey: Ref<string> = ref("");
 		const passwordState: Ref<Password> = ref(props.model);
@@ -250,7 +254,9 @@ export default defineComponent({
 
 		function onSave()
 		{
+			passwordInputField.value?.toggleHidden(true);
 			stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+
 			return new Promise((resolve, reject) =>
 			{
 				saveSucceeded = resolve;
@@ -376,6 +382,7 @@ export default defineComponent({
 		});
 
 		return {
+			passwordInputField,
 			color,
 			groupHeaderModels,
 			groupModels,

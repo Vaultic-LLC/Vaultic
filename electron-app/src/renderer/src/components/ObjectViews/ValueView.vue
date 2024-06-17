@@ -17,7 +17,7 @@
 				</div>
 			</Transition>
 		</div>
-		<EncryptedInputField class="valueView__value" :colorModel="colorModel" :label="'Value'"
+		<EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
 			v-model="valuesState.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 			:showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
 			:required="true" :width="'11vw'" :maxWidth="'300px'" :minWidth="'150px'" :height="'4vh'" :minHeight="'35px'"
@@ -61,6 +61,7 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
+import { EncryptedInputFieldComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "ValueView",
@@ -79,6 +80,7 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
+		const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 		const tableRef: Ref<HTMLElement | null> = ref(null);
 		const mounted: Ref<boolean> = ref(false);
 		const refreshKey: Ref<string> = ref("");
@@ -205,7 +207,9 @@ export default defineComponent({
 
 		function onSave()
 		{
+			valueInputField.value?.toggleHidden(true);
 			stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+
 			return new Promise((resolve, reject) =>
 			{
 				saveSucceeded = resolve;
@@ -286,6 +290,7 @@ export default defineComponent({
 		});
 
 		return {
+			valueInputField,
 			initalLength,
 			isInitiallyEncrypted,
 			valueIsDirty,
