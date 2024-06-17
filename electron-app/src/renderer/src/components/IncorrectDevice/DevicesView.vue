@@ -96,7 +96,7 @@ export default defineComponent({
 			{
 				name: 'Devices',
 				active: computed(() => true),
-				color: computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor),
+				color: computed(() => props.color),
 				onClick: () => { }
 			}
 		];
@@ -156,6 +156,11 @@ export default defineComponent({
 						false, purchaseButtonModel, cancelButtonModel);
 
 					return;
+				}
+
+				if (responseObj.value.DesktopDeviceUpdatesLeft)
+				{
+					responseObj.value.DesktopDeviceUpdatesLeft -= 1;
 				}
 
 				devices.value.remove(device.id);
