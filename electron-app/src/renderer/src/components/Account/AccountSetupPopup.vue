@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onUnmounted, provide, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import CreateAccountView from './CreateAccountView.vue';
@@ -112,7 +112,7 @@ export default defineComponent({
 
 		function onSubscriptionCreated()
 		{
-			// clear the navigation stack so the user can't go back without downloading deactivation key
+			// clear the navigation stack so the user can't go back without downloading their deactivation key
 			navigationStack.value = [];
 			accountSetupModel.value.currentView = AccountSetupView.DownloadDeactivationKey;
 		}
@@ -157,9 +157,28 @@ export default defineComponent({
 			ctx.emit('onClose');
 		}
 
+		// make sure we didn't trap the user on a screen. Like if they need to update their payment info but
+		// just want to use the app offline instead. We can exclude the download deactivation key screen since
+		// the user will never go back to it besides the inital setup
+		function checkSetBackNavigation()
+		{
+			if (accountSetupModel.value.currentView != AccountSetupView.SignIn &&
+				accountSetupModel.value.currentView != AccountSetupView.DownloadDeactivationKey &&
+				navigationStack.value.length == 0)
+			{
+				navigationStack.value.push(AccountSetupView.SignIn);
+			}
+		}
+
 		watch(() => props.model.currentView, () =>
 		{
 			accountSetupModel.value = props.model;
+			checkSetBackNavigation();
+		});
+
+		onMounted(() =>
+		{
+			checkSetBackNavigation();
 		});
 
 		onUnmounted(() =>
