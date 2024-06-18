@@ -10,22 +10,17 @@
 						<div class="paymentInfoView__feature">
 							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
 								:minHeight="'10px'" />
-							<div>Monitoring for Data Breaches</div>
+							<div>Monitoring for Data Breaches!</div>
 						</div>
 						<div class="paymentInfoView__feature">
 							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
 								:minHeight="'10px'" />
-							<div>Tracking of Weak Passwords</div>
+							<div>Securely Backing up Data!</div>
 						</div>
 						<div class="paymentInfoView__feature">
 							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
 								:minHeight="'10px'" />
-							<div>Premium Widgets</div>
-						</div>
-						<div class="paymentInfoView__feature">
-							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
-								:minHeight="'10px'" />
-							<div>Adding Passwords / Values</div>
+							<div>Premium Widgets!</div>
 						</div>
 						<div class="paymentInfoView__feature">
 							<CheckboxInputField :color="color" :disabled="true" :modelValue="true" :height="'1.25vh'"
@@ -85,6 +80,7 @@ export default defineComponent({
 
 		onMounted(async () =>
 		{
+			stores.popupStore.showLoadingIndicator(props.color);
 			const response = await window.api.server.user.createCheckout();
 
 			if (response.Success)
