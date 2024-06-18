@@ -39,7 +39,7 @@ export default defineComponent({
 			ctx.emit('onButtonClicked', index);
 		}
 
-		function onInputEnter(e: KeyboardEvent)
+		function onInputEnter()
 		{
 			if (checkedIndex.value == 0)
 			{

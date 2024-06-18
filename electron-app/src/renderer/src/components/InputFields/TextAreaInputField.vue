@@ -10,7 +10,7 @@
 		<div v-else ref="markdownContainer" v-html="markdownHTML" class="textAreaInputFieldContainer__mdView"
 			:class="{ 'textAreaInputFieldContainer__input--noBorderRadius': textAreaStraightBorder }"></div>
 		<label class="textAreaInputFieldContainer__label">{{ label }}</label>
-		<div class="textAreaInputFieldContainer__formatButton">
+		<div v-if="enableMarkdown" class="textAreaInputFieldContainer__formatButton">
 			<ToggleRadioButton :height="'clamp(15px, 1vw, 25px)'" :model="toggleRadioButtonModel"
 				@onButtonClicked="onFormatChange" />
 		</div>
@@ -36,7 +36,7 @@ export default defineComponent({
 	},
 	emits: ["update:modelValue"],
 	props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isOnWidget", "width",
-		'minWidth', 'maxWidth', "height", 'minHeight', 'maxHeight', 'isEditing'],
+		'minWidth', 'maxWidth', "height", 'minHeight', 'maxHeight', 'isEditing', 'enableMarkdown'],
 	setup(props, ctx)
 	{
 		const textArea: Ref<HTMLElement | null> = ref(null);
@@ -62,6 +62,7 @@ export default defineComponent({
 
 		const isOnEditScreen: ComputedRef<boolean> = computed(() => props.isEditing === true);
 
+		const enableMarkdown: Ref<boolean> = computed(() => props.enableMarkdown != undefined ? props.enableMarkdown : true);
 		const markdownFormat: Ref<boolean> = ref(isOnEditScreen.value && stores.settingsStore.defaultMarkdownInEditScreens);
 		const markdownHTML: ComputedRef<string> = computed(() => DOMPurify.sanitize(marked.parse(props.modelValue)));
 		const toggleRadioButtonModel: Ref<ToggleRadioButtonModel> = ref({
@@ -249,6 +250,7 @@ export default defineComponent({
 			markdownHTML,
 			toggleRadioButtonModel,
 			markdownContainer,
+			enableMarkdown,
 			onFormatChange,
 			onInput,
 			onEnter
