@@ -134,6 +134,7 @@ export default defineComponent({
 
 		function onCancel()
 		{
+			key.value = "";
 			ctx.emit("onCanceled");
 		}
 
