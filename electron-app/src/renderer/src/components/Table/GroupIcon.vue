@@ -53,7 +53,8 @@ export default defineComponent({
 	margin-right: 5px;
 	transition: 0.5s;
 	background: v-bind('groupModel.color');
-	box-shadow: 0 0 10px v-bind('groupModel.color');
+	/* looks better without the glow */
+	/* box-shadow: 0 0 10px v-bind('groupModel.color'); */
 }
 
 .groupIcon:hover {
