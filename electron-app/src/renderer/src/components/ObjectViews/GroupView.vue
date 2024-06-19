@@ -40,6 +40,7 @@ import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteS
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
+import { TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "GroupView",
@@ -57,7 +58,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const refreshKey: Ref<string> = ref("");
-		const tableRef: Ref<HTMLElement | null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const mounted: Ref<boolean> = ref(false);
 		const groupState: Ref<Group> = ref(props.model);
 		const groupColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.groupsColor);
@@ -275,6 +276,7 @@ export default defineComponent({
 					{
 						// @ts-ignore
 						tableRef.value.scrollToTop();
+						setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 					}
 				});
 			}

@@ -1,7 +1,8 @@
 <template>
 	<td>
 		<div class="slideInContainer" :class="{
-			openContainer: openContainer, keepStylesWhileMoving: keepStylesWhileMoving,
+			openContainer: openContainer,
+			keepStylesWhileMoving: keepStylesWhileMoving,
 			noAnimation: noAnimation
 		}">
 			<div class="slideInContainer__content">

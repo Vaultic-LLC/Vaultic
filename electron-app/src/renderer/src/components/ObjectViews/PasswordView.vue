@@ -70,7 +70,7 @@ import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
 import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
-import { EncryptedInputFieldComponent } from '@renderer/Types/Components';
+import { EncryptedInputFieldComponent, TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "PasswordView",
@@ -93,7 +93,7 @@ export default defineComponent({
 	{
 		const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 
-		const tableRef: Ref<HTMLElement | null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const refreshKey: Ref<string> = ref("");
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor);
@@ -248,6 +248,7 @@ export default defineComponent({
 				{
 					// @ts-ignore
 					tableRef.value.scrollToTop();
+					setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 				}
 			});
 		}
@@ -327,6 +328,8 @@ export default defineComponent({
 				answer: '',
 				answerLength: 0
 			});
+
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function onQuestionDirty(id: string)
@@ -358,6 +361,8 @@ export default defineComponent({
 			{
 				dirtySecurityQuestionAnswers.value.splice(dirtySecurityQuestionAnswers.value.indexOf(id), 1);
 			}
+
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function scrolledToBottom()

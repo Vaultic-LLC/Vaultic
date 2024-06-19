@@ -61,7 +61,7 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
-import { EncryptedInputFieldComponent } from '@renderer/Types/Components';
+import { EncryptedInputFieldComponent, TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "ValueView",
@@ -81,7 +81,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
-		const tableRef: Ref<HTMLElement | null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const mounted: Ref<boolean> = ref(false);
 		const refreshKey: Ref<string> = ref("");
 		const valuesState: Ref<NameValuePair> = ref(props.model);
@@ -201,6 +201,7 @@ export default defineComponent({
 				{
 					// @ts-ignore
 					tableRef.value.scrollToTop();
+					setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 				}
 			});
 		}

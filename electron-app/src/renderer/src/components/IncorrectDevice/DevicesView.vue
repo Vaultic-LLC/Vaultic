@@ -44,6 +44,7 @@ import { HeaderDisplayField } from '@renderer/Types/EncryptedData';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
 import { defaultHandleFailedResponse } from '@renderer/Helpers/ResponseHelper';
+import { TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "DevicesView",
@@ -58,6 +59,7 @@ export default defineComponent({
 	props: ['response', 'color'],
 	setup(props)
 	{
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const responseObj: Ref<IncorrectDeviceResponse> = ref(props.response);
 		const devices: ComputedRef<SortedCollection<Device>> = computed(() => new SortedCollection([], "Name"));
 		const activeHeader: Ref<number> = ref(0);
@@ -136,6 +138,7 @@ export default defineComponent({
 			Promise.all(pendingRows).then((rows) =>
 			{
 				tableRows.value.setValues(rows);
+				setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 			});
 		}
 
@@ -220,6 +223,7 @@ export default defineComponent({
 		});
 
 		return {
+			tableRef,
 			devices,
 			headers,
 			tableRows,

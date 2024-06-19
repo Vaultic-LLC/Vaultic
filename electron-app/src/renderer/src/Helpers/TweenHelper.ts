@@ -11,11 +11,16 @@ export interface TweenObject<T extends Record<string, any>>
 export function tween<T extends Record<string, any>>(from: T, to: T, length: number, onUpdate: (obj: T) => void): TWEEN.Group
 {
 	const tweenGroup = new TWEEN.Group();
-	new TWEEN.Tween(from, tweenGroup).to(to, length).onUpdate(onUpdate).start();
+	const tween = new TWEEN.Tween(from, tweenGroup).to(to, length).onUpdate(onUpdate).start();
 
 	let startTime: number;
 	function animate(time)
 	{
+		if (!tween.isPlaying())
+		{
+			return;
+		}
+
 		if (!startTime)
 		{
 			startTime = time;

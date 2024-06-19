@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, onUpdated, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, Ref, ref, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
@@ -55,6 +55,15 @@ import { hexToRgb } from '@renderer/Helpers/ColorHelper';
 import { tween } from '@renderer/Helpers/TweenHelper';
 import * as TWEEN from '@tweenjs/tween.js'
 
+// Base Component for all Tables.
+// --- Scrollbar Color Usage ---
+// The scrollbar color is very finicky. You must ensure that any update that needs to update the scrollbar color
+// only calls calcScrollbarColor once. Otherwise the transition will not work.
+// Automatic Handling:
+// onResize handles resizing
+// watch(() => props.color)) handles if just the prop color changes
+// Anything else needs to be done manually, i.e. if the number of rows is being changed, by calling calcScrollbarColor
+// on a ref of the TableTemplate that is wrapped in a setTimeout, but only if it isn't already handled by the automatic ones above.
 export default defineComponent({
 	name: "TableTemplate",
 	components:
@@ -157,7 +166,6 @@ export default defineComponent({
 					}
 					else
 					{
-
 						scrollbarColor.value = '#0f111d';
 					}
 				}
@@ -202,6 +210,11 @@ export default defineComponent({
 			key.value = Date.now().toString();
 		});
 
+		watch(() => props.color, () =>
+		{
+			setTimeout(calcScrollbarColor, 1);
+		})
+
 		onMounted(() =>
 		{
 			if (tableContainer.value)
@@ -210,10 +223,12 @@ export default defineComponent({
 			}
 		});
 
-		onUpdated(() =>
-		{
-			calcScrollbarColor();
-		});
+		// Don't use this. It causes multiple and unexpected calls to calcScrollbarColor, which will cause Tweens to not function
+		// correctly. calcScrollbarColor should only be called when known that it will only call once per needed update.
+		// onUpdated(() =>
+		// {
+		// 		calcScrollbarColor();
+		// });
 
 		return {
 			key,
@@ -229,7 +244,8 @@ export default defineComponent({
 			currentHeaderTabs,
 			scrollbarClass,
 			checkScrollHeight,
-			scrollToTop
+			scrollToTop,
+			calcScrollbarColor
 		}
 	},
 })

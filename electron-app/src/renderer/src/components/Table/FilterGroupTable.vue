@@ -53,6 +53,7 @@ import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
+import { TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: 'FilterGroupTable',
@@ -69,7 +70,7 @@ export default defineComponent({
 	},
 	setup()
 	{
-		const tableRef: Ref<null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const tabToOpenOnAdd: ComputedRef<number> = computed(() => stores.appStore.activeFilterGroupsTable);
 
 		const passwordFilters: SortedCollection<Filter> = new SortedCollection(
@@ -367,6 +368,7 @@ export default defineComponent({
 			passwordFilters.updateValues(stores.filterStore.unpinnedPasswordFilters);
 			pinnedPasswordFilters.updateValues(stores.filterStore.pinnedPasswordFilters)
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.filterStore.nameValuePairFilters.length, () =>
@@ -374,6 +376,7 @@ export default defineComponent({
 			valueFilters.updateValues(stores.filterStore.unpinnedValueFitlers);
 			pinnedValueFilters.updateValues(stores.filterStore.pinnedValueFilters)
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.groupStore.passwordGroups.length, () =>
@@ -381,6 +384,7 @@ export default defineComponent({
 			passwordGroups.updateValues(stores.groupStore.unpinnedPasswordGroups);
 			pinnedPasswordGroups.updateValues(stores.groupStore.pinnedPasswordGroups);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.groupStore.valuesGroups.length, () =>
@@ -388,6 +392,7 @@ export default defineComponent({
 			valueGroups.updateValues(stores.groupStore.unpinnedValueGroups);
 			pinnedValueGroups.updateValues(stores.groupStore.pinnedValueGroups);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.groupStore.activeAtRiskPasswordGroupType, () =>
@@ -395,6 +400,7 @@ export default defineComponent({
 			passwordGroups.updateValues(stores.groupStore.unpinnedPasswordGroups);
 			pinnedPasswordGroups.updateValues(stores.groupStore.pinnedPasswordGroups);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.groupStore.activeAtRiskValueGroupType, () =>
@@ -402,6 +408,7 @@ export default defineComponent({
 			valueGroups.updateValues(stores.groupStore.unpinnedValueGroups);
 			pinnedValueGroups.updateValues(stores.groupStore.pinnedValueGroups);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.filterStore.activeAtRiskPasswordFilterType, () =>
@@ -409,6 +416,7 @@ export default defineComponent({
 			passwordFilters.updateValues(stores.filterStore.unpinnedPasswordFilters);
 			pinnedPasswordFilters.updateValues(stores.filterStore.pinnedPasswordFilters);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.filterStore.activeAtRiskValueFilterType, () =>
@@ -416,18 +424,21 @@ export default defineComponent({
 			valueFilters.updateValues(stores.filterStore.unpinnedValueFitlers);
 			pinnedValueFilters.updateValues(stores.filterStore.pinnedValueFilters);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => filterSearchText.value, (newValue) =>
 		{
 			currentFilters.value.search(newValue);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => groupSearchText.value, (newValue) =>
 		{
 			currentGroups.value.search(newValue);
 			setTableRowDatas();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		return {

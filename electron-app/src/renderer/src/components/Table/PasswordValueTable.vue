@@ -65,6 +65,7 @@ import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrol
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
+import { TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "PasswordValueTable",
@@ -84,7 +85,7 @@ export default defineComponent({
 	},
 	setup()
 	{
-		const tableRef: Ref<null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const activeTable: Ref<number> = ref(stores.appStore.activePasswordValuesTable);
 		const color: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor : stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor);
@@ -344,6 +345,9 @@ export default defineComponent({
 				// @ts-ignore
 				tableRef.value.scrollToTop();
 			}
+
+			// use a timeout so that the color prop can update before we calculate the new color.
+			//setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function initPasswords()
@@ -352,6 +356,7 @@ export default defineComponent({
 			pinnedPasswords.updateValues(stores.passwordStore.pinnedPasswords);
 
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function initValues()
@@ -360,6 +365,7 @@ export default defineComponent({
 			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
 
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function init()
@@ -371,6 +377,7 @@ export default defineComponent({
 			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
 
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function onEditPassword(password: ReactivePassword)
@@ -519,18 +526,25 @@ export default defineComponent({
 		{
 			passwords.search(newValue);
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => valueSearchText.value, (newValue) =>
 		{
 			nameValuePairs.search(newValue);
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.settingsStore.multipleFilterBehavior, () =>
 		{
 			init();
 		});
+
+		// watch(() => color.value, () =>
+		// {
+		// 	setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
+		// });
 
 		return {
 			tableRef,
