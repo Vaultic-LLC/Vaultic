@@ -20,8 +20,8 @@
 					<LoadingIndicator :color="color" />
 				</div>
 			</Transition>
-			<Line v-if="!showStatusMessage" class="strengthGraphContainer__chartCanvas" :key="refreshKey"
-				ref="lineChart" :data="data" :options="options">
+			<Line class="strengthGraphContainer__chartCanvas" :key="refreshKey" ref="lineChart" :data="data"
+				:options="options">
 			</Line>
 		</div>
 	</div>
@@ -134,14 +134,23 @@ export default defineComponent({
 				object.b = Math.round(object.b);
 
 				const hexColor: string = rgbToHex(object.r, object.g, object.b);
-
-				lineChart.value.chart.data.datasets[0].borderColor = `rgba(${object.r}, ${object.g}, ${object.b}, ${object.alpha})`;
-				lineChart.value.chart.data.datasets[1].borderColor = mixHexes(hexColor, "888888");
-
-				lineChart.value.chart.data.datasets[0].backgroundColor = getGradient(lineChart.value.chart, hexColor);
-
-				lineChart.value.chart.update();
+				setChartColorsAndUpdate(`rgba(${object.r}, ${object.g}, ${object.b}, ${object.alpha})`, hexColor, hexColor);
 			});
+		}
+
+		function setChartColorsAndUpdate(chartOneBorderColor: string, chartTwoBorderColor: string, backgroundColor: string)
+		{
+			if (!lineChart.value)
+			{
+				return;
+			}
+
+			lineChart.value.chart.data.datasets[0].borderColor = chartOneBorderColor;
+			lineChart.value.chart.data.datasets[1].borderColor = mixHexes(chartTwoBorderColor, "888888");
+
+			lineChart.value.chart.data.datasets[0].backgroundColor = getGradient(lineChart.value.chart, backgroundColor);
+
+			lineChart.value.chart.update();
 		}
 
 		// should only be called when first loading. Otherwise just update the options through the line chart
@@ -319,12 +328,32 @@ export default defineComponent({
 			let requestData: any = {};
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
+				// no need to send the request since we don't have enough data anyways
+				if (stores.passwordStore.currentAndSafePasswords.current.length < 2)
+				{
+					// make sure there isn't any old data in the way of the message
+					chartOneArray.value = [];
+					updateData();
+
+					return;
+				}
+
 				requestData.Values = stores.passwordStore.currentAndSafePasswords;
 				newColor = stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor;
 				table.value = "Passwords";
 			}
 			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
 			{
+				// no need to send the request since we don't have enough data anyways
+				if (stores.valueStore.currentAndSafeValues.current.length < 2)
+				{
+					// make sure there isn't any old data in the way of the message
+					chartOneArray.value = [];
+					updateData();
+
+					return;
+				}
+
 				requestData.Values = stores.valueStore.currentAndSafeValues;
 				newColor = stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor;
 				table.value = "Values";
@@ -350,8 +379,15 @@ export default defineComponent({
 				statusMessage.value = "Unable to load data";
 			}
 
-			updateData(newColor, color.value);
-			color.value = newColor;
+			// if the previous chart didn't have enough data, then the chart won't be loaded. Set a timeout so the chart
+			// can load and then update to the new data
+			setTimeout(() =>
+			{
+				setChartColorsAndUpdate(newColor, newColor, newColor);
+				color.value = newColor;
+
+				updateData();
+			}, 1);
 		}
 
 		function onDataChange()
@@ -394,7 +430,6 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
-			// TODO: we should only be doing anyting if we are online. hide widgets when we are offline since they won't work? This and breached passwords
 			if (chartContainer.value)
 			{
 				resizeObserver.observe(chartContainer.value)
