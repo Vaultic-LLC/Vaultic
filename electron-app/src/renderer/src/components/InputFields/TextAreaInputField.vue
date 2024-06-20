@@ -295,7 +295,7 @@ export default defineComponent({
 	color: white;
 	border-radius: var(--responsive-border-radius);
 	background: none;
-	font-size: clamp(11px, 1.2vh, 25px);
+	font-size: var(--input-font-size);
 	transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 	resize: none;
 	padding: 5px;

@@ -22,7 +22,7 @@
 		<TableTemplate ref="tableRef" :color="color" id="passwordView__table" class="scrollbar" :scrollbar-size="1"
 			:headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
 			:showEmptyMessage="showEmptyMessage" :headerTabs="headerTabs" :headerHeight="'clamp(45px, 5.8vh, 80px)'"
-			@scrolled-to-bottom="scrolledToBottom">
+			:initialPaddingRow="activeTab == 1" @scrolled-to-bottom="scrolledToBottom">
 			<template #headerControls>
 				<Transition name="fade" mode="out-in">
 					<div v-if="activeTab == 0" class="passwordViewTableHeaderControls">

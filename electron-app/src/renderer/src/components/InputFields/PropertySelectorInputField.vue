@@ -229,7 +229,7 @@ export default defineComponent({
 	left: var(--input-label-left);
 	transition: var(--input-label-transition);
 	cursor: pointer;
-	font-size: clamp(11px, 1.2vh, 25px);
+	font-size: var(--input-font-size);
 	will-change: transform;
 }
 
@@ -239,7 +239,7 @@ export default defineComponent({
 	background-color: v-bind(backgroundColor);
 	padding: 0 .2em;
 	color: v-bind(color);
-	font-size: clamp(11px, 1.2vh, 25px);
+	font-size: var(--input-font-size);
 }
 
 .dropDownContainer .dropDownTitle .dropDownIcon {

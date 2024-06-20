@@ -88,8 +88,10 @@ export default defineComponent({
 
 	transition: opacity 2s linear forwards;
 	opacity: 1;
-	margin-top: 30px;
-	padding: 0px 20px 0px 20px;
+	/* margin is so the box shadow doesn't overlap any icons / text in the row, but only 8px and use padding top for the rest
+	so that the box shadow on the side of the slide row combines with the box shadow on the side of the actual table row */
+	margin-top: 8px;
+	padding: 22px 20px 0px 20px;
 	transform: translateY(-10px);
 	box-shadow: -5px 5px 10px #070a0c,
 		5px 5px 10px #1b2630;

@@ -295,7 +295,7 @@ export default defineComponent({
 	color: white;
 	border-radius: var(--responsive-border-radius);
 	background: none;
-	font-size: clamp(13px, 1.2vh, 25px);
+	font-size: var(--input-font-size);
 	transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -307,7 +307,7 @@ export default defineComponent({
 	pointer-events: none;
 	transform: translateY(-50%);
 	transition: var(--input-label-transition);
-	font-size: clamp(11px, 1.2vh, 25px);
+	font-size: var(--input-font-size);
 	will-change: transform;
 }
 

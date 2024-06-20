@@ -25,10 +25,10 @@
 	--input-field-label-color: #15151b;
 	--input-label-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
-	--test: #282525;
-
 	--responsive-border-radius: clamp(10px, 0.8vw, 0.85rem);
 	--input-label-left: clamp(5px, 1vw, 15px);
+
+	--input-font-size: clamp(11px, 1.2vh, 25px);
 
 	--scrollbar-width-small: 5px;
 	--scrollbar-width-medium: clamp(7px, 0.7vw, 10px);

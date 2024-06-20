@@ -22,7 +22,7 @@
 						<SizingHeaderCell v-for="(header, index) in headers" :key="index" :width="header.width" />
 					</tr>
 					<!-- Used so that the header doesn't cover the first rows hover effect -->
-					<tr class="tableTemplate__paddingRow"></tr>
+					<tr v-if="useInitalPaddingRow" class="tableTemplate__paddingRow"></tr>
 					<slot name="body">
 					</slot>
 				</table>
@@ -74,7 +74,7 @@ export default defineComponent({
 	},
 	emits: ['scrolledToBottom'],
 	props: ['name', 'color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
-		'headerTabs', 'headerHeight', 'hideHeader'],
+		'headerTabs', 'headerHeight', 'hideHeader', 'initialPaddingRow'],
 	setup(props, ctx)
 	{
 		const resizeObserver: ResizeObserver = new ResizeObserver(onResize);
@@ -88,6 +88,7 @@ export default defineComponent({
 		const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
 		const currentHeaderTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.headerTabs ?? []);
 		const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
+		const useInitalPaddingRow: ComputedRef<boolean> = computed(() => props.initialPaddingRow === false ? false : true);
 
 		let tweenGroup: TWEEN.Group | undefined = undefined;
 		let scrollbarColor: Ref<string> = ref(primaryColor.value);
@@ -243,6 +244,7 @@ export default defineComponent({
 			backgroundColor,
 			currentHeaderTabs,
 			scrollbarClass,
+			useInitalPaddingRow,
 			checkScrollHeight,
 			scrollToTop,
 			calcScrollbarColor
