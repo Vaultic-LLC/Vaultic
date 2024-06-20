@@ -5,7 +5,7 @@
 	</div>
 	<div class="aboutPopupContainer">
 		<Transition name="fade" mode="out-in">
-			<div v-if="activeSection == 0" class="aboutPopupContainer__sections">
+			<ScrollView v-if="activeSection == 0" class="aboutPopupContainer__sections" :color="primaryColor">
 				<div class="aboutPopupContainer__section aboutPopupContainer__storingMultifactorAuthKeysSection">
 					<h3 class="aboutPopupContainer__section__header">Storing Multi Factor Authentication Keys</h3>
 					<div class="aboutPopupContainer__section__text">
@@ -71,8 +71,8 @@
 							src="../../assets/Files/graphShowTarget.png" />
 					</div>
 				</div>
-			</div>
-			<div v-else class="aboutPopupContainer__sections">
+			</ScrollView>
+			<ScrollView v-else class="aboutPopupContainer__sections" :color="primaryColor">
 				<div class="aboutPopupContainer__section">
 					<h3>Terms and Conditions</h3>
 					// link to terms and conditions on website
@@ -102,7 +102,7 @@
 						vaultic.help@outlook.com
 					</div>
 				</div>
-			</div>
+			</ScrollView>
 		</Transition>
 	</div>
 </template>
@@ -112,6 +112,7 @@ import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 import TableSelector from '../TableSelector.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
+import ScrollView from "../ObjectViews/ScrollView.vue"
 
 import { InputColorModel, SingleSelectorItemModel, defaultInputColorModel } from '@renderer/Types/Models';
 import { defaultInputTextColor } from '@renderer/Types/Colors';
@@ -124,7 +125,8 @@ export default defineComponent({
 	{
 		TableSelector,
 		TextAreaInputField,
-		PopupButton
+		PopupButton,
+		ScrollView
 	},
 	setup()
 	{
@@ -219,9 +221,6 @@ export default defineComponent({
 	margin-top: 0;
 	width: 90%;
 	height: 90%;
-	overflow-y: scroll;
-	overflow-x: hidden;
-	direction: rtl;
 	padding: 5px;
 }
 
@@ -244,31 +243,6 @@ export default defineComponent({
 .aboutPopupContainer__image {
 	border-radius: min(1vw, 1rem);
 	transform: scale(0.75);
-}
-
-.aboutPopupContainer__sections::-webkit-scrollbar {
-	width: clamp(7px, 0.7vw, 10px);
-}
-
-.aboutPopupContainer__sections::-webkit-scrollbar-track {
-	background: transparent;
-}
-
-.aboutPopupContainer__sections::-webkit-scrollbar-track {
-	transition: 0.3s;
-	background: v-bind(scrollbarColor);
-	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
-	border-top-left-radius: 20px;
-	border-bottom-left-radius: 20px;
-}
-
-.aboutPopupContainer__sections::-webkit-scrollbar-thumb {
-	max-width: 50%;
-	transition: 0.3s;
-	background: v-bind(primaryColor);
-	box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
-	border-top-left-radius: 20px;
-	border-bottom-left-radius: 20px;
 }
 
 .aboutPopupContainer__reportBugSection {

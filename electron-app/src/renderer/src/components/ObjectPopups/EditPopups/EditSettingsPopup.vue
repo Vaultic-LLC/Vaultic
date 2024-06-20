@@ -3,7 +3,7 @@
 		<TableSelector class="settingsPopupHeader__controls"
 			:singleSelectorItems="[settingsView, devicesView, paymentView]" />
 	</div>
-	<div class="settingViewContainer">
+	<div class="settingPopupContainer">
 		<Transition name="fade" mode="out-in">
 			<SettingsView v-if="activeSection == 0" :creating="false" :model="currentSettings" />
 			<DevicesView v-else-if="activeSection == 1" :color="currentPrimaryColor" />
@@ -102,7 +102,7 @@ export default defineComponent({
 	z-index: 10;
 }
 
-.settingViewContainer {
+.settingPopupContainer {
 	position: absolute;
 	top: 20%;
 	width: 100%;

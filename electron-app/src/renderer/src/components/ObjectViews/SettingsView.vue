@@ -1,42 +1,56 @@
 <template>
 	<ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
 		:gridDefinition="gridDefinition">
-		<div class="settingsView__sectionTitle settingsView__appSettings">App Settings</div>
-		<EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
-			v-model="settingsState.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
-			:height="'4vh'" :minHeight="'30px'" :minWidth="'190px'" />
-		<EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'" :color="color"
-			v-model="settingsState.multipleFilterBehavior" :optionsEnum="FilterStatus" fadeIn="true" :width="'10vw'"
-			:minWidth="'190px'" :height="'4vh'" :minHeight="'30px'" />
-		<TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color" :label="'Max Login Records Per Day'"
-			v-model="settingsState.loginRecordsToStorePerDay" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
-			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
-			:additionalValidationFunction="enforceLoginRecordsPerDay" />
-		<TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
-			:label="'Days to Store Login Records'" v-model="settingsState.numberOfDaysToStoreLoginRecords"
-			:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-			:minHeight="'30px'" :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
-		<CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :label="'Default Additional Information to Markdown on Edit Screens'"
-			v-model="settingsState.defaultMarkdownInEditScreens" />
-		<div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
-		<TextInputField class="settingsView__randomPasswordLength" :color="color" :label="'Random Password Length'"
-			v-model.number="settingsState.randomValueLength" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
-			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
-			:additionalValidationFunction="enforceMinRandomPasswordLength" />
-		<TextInputField class="settingsView__randomPassphraseLength" :color="color" :label="'Random Passphrase Length'"
-			v-model.number="settingsState.randomPhraseLength" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
-			:height="'4vh'" :maxWidth="'300px'" :minHeight="'30px'"
-			:additionalValidationFunction="enforceMinRandomPassphraseLength" />
-		<TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
-			v-model.number="settingsState.oldPasswordDays" :inputType="'number'" :width="'10vw'" :minWidth="'190px'"
-			:maxWidth="'300px'" :height="'4vh'" :minHeight="'30px'"
-			:additionalValidationFunction="enforceOldPasswordDays" />
-		<TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
-			:label="'% Filled Metric for Pulse'" v-model.number="settingsState.percentMetricForPulse"
-			:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-			:minHeight="'30px'" :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
-			:toolTipSize="'clamp(15px, 1vw, 28px)'"
-			:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
+		<ScrollView :color="color" class="settingsView__container">
+			<div class="settingsView__sectionTitle settingsView__appSettings">App Settings</div>
+			<div class="settingsView__inputSection">
+				<EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
+					v-model="settingsState.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
+					:height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" />
+				<EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
+					:color="color" v-model="settingsState.multipleFilterBehavior" :optionsEnum="FilterStatus"
+					fadeIn="true" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'" />
+			</div>
+			<div class="settingsView__inputSection">
+				<TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
+					:label="'Max Login Records Per Day'" v-model="settingsState.loginRecordsToStorePerDay"
+					:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+					:minHeight="'35px'" :additionalValidationFunction="enforceLoginRecordsPerDay" />
+				<TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
+					:label="'Days to Store Login Records'" v-model="settingsState.numberOfDaysToStoreLoginRecords"
+					:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+					:minHeight="'35px'" :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
+			</div>
+			<div class="settingsView__inputSection">
+				<CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
+					:minHeight="'12.5px'" :label="'Default Additional Information to Markdown on Edit Screens'"
+					v-model="settingsState.defaultMarkdownInEditScreens" />
+			</div>
+			<div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
+			<div class="settingsView__inputSection">
+				<TextInputField class="settingsView__randomPasswordLength" :color="color"
+					:label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
+					:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+					:minHeight="'35px'" :additionalValidationFunction="enforceMinRandomPasswordLength" />
+				<TextInputField class="settingsView__randomPassphraseLength" :color="color"
+					:label="'Random Passphrase Length'" v-model.number="settingsState.randomPhraseLength"
+					:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+					:minHeight="'35px'" :additionalValidationFunction="enforceMinRandomPassphraseLength" />
+			</div>
+			<div class="settingsView__inputSection">
+				<TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
+					v-model.number="settingsState.oldPasswordDays" :inputType="'number'" :width="'10vw'"
+					:minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
+					:additionalValidationFunction="enforceOldPasswordDays" />
+				<TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
+					:label="'% Filled Metric for Pulse'" v-model.number="settingsState.percentMetricForPulse"
+					:inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+					:minHeight="'35px'" :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
+					:toolTipSize="'clamp(15px, 1vw, 28px)'"
+					:toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
+			</div>
+			<div></div>
+		</ScrollView>
 	</ObjectView>
 </template>
 <script lang="ts">
@@ -46,6 +60,7 @@ import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
+import ScrollView from './ScrollView.vue';
 
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
@@ -60,7 +75,8 @@ export default defineComponent({
 		ObjectView,
 		TextInputField,
 		CheckboxInputField,
-		EnumInputField
+		EnumInputField,
+		ScrollView
 	},
 	props: ['creating', 'model', 'currentView'],
 	setup(props)
@@ -71,10 +87,10 @@ export default defineComponent({
 		const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
 
 		const gridDefinition: GridDefinition = {
-			rows: 16,
-			rowHeight: 'clamp(20px, 3vh, 50px)',
-			columns: 11,
-			columnWidth: 'clamp(70px, 4vw, 100px)'
+			rows: 1,
+			rowHeight: '100%',
+			columns: 1,
+			columnWidth: '100%'
 		};
 
 		let saveSucceeded: (value: boolean) => void;
@@ -210,68 +226,42 @@ export default defineComponent({
 </script>
 
 <style>
+.settingsView__container {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	/* account for -6% margin */
+	height: 106%;
+	width: 80%;
+	display: flex;
+	flex-direction: column;
+	row-gap: clamp(20px, 2vw, 50px);
+	align-items: center;
+	margin-top: -6%;
+	margin-bottom: 10px;
+}
+
 .settingsView__sectionTitle {
 	color: white;
-	margin-left: 5%;
 	text-align: left;
-	font-size: clamp(15px, 1vw, 25px);
+	font-size: clamp(17px, 1vw, 25px);
+}
+
+.settingsView__inputSection {
+	direction: ltr;
+	display: flex;
+	column-gap: 50px;
 }
 
 .settingsView__appSettings {
-	grid-row: 1 / span 2;
-	grid-column: 3 / span 3;
 	z-index: 8;
 }
 
 .settingsView__autoLockTime {
-	grid-row: 3 / span 2;
-	grid-column: 3 / span 2;
 	z-index: 8;
 }
 
 .settingsView__multipleFilterBehavior {
-	grid-row: 3 / span 2;
-	grid-column: 6 / span 2;
 	z-index: 8;
-}
-
-.settingsView__maxLoginRecordsPerDay {
-	grid-row: 5 / span 2;
-	grid-column: 3 / span 2;
-}
-
-.settingsView__daysToStoreLoginRecords {
-	grid-row: 5 / span 2;
-	grid-column: 6 / span 2;
-}
-
-.settingsView__defaultMarkdown {
-	grid-row: 7 / span 1;
-	grid-column: 3 / span 3;
-}
-
-.settingsView__securitySettings {
-	grid-row: 10 / span 1;
-	grid-column: 3 / span 3;
-}
-
-.settingsView__randomPasswordLength {
-	grid-row: 13 / span 2;
-	grid-column: 3 / span 2;
-}
-
-.settingsView__randomPassphraseLength {
-	grid-row: 13 / span 2;
-	grid-column: 6 / span 2;
-}
-
-.settingsView__oldPasswordDays {
-	grid-row: 15 / span 2;
-	grid-column: 3 / span 2;
-}
-
-.settingsView__percentFilledMetricForPulse {
-	grid-row: 15 / span 2;
-	grid-column: 6 / span 2;
 }
 </style>
