@@ -199,7 +199,6 @@ class AppStore extends Store<AppStoreState>
 		clearTimeout(this.autoLockTimeoutID);
 		this.autoLockTimeoutID = setTimeout(() =>
 		{
-			// TODO: undo
 			this.lock();
 		}, stores.settingsStore.autoLockNumberTime);
 	}

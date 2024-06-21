@@ -365,11 +365,6 @@ export default defineComponent({
 			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
 
 			setModels();
-			if (collapsibleTableRowModels.value.visualValues.length == 0)
-			{
-				console.log("no values");
-			}
-
 			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
