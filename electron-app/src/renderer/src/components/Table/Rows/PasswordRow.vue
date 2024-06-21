@@ -4,13 +4,14 @@
 			<EncryptedInputField :colorModel="colorModel" :label="'Password'" v-model="passwordValue"
 				:initialLength="value.passwordLength" :showCopy="true" :disabled="true" :isInitiallyEncrypted="false"
 				:isOnWidget="true" :width="'11vw'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
-			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'" :isOnWidget="true"
+			<!-- <TextAreaInputField :colorModel="colorModel" :label="'Additional Information'" :isOnWidget="true"
 				v-model="pword.additionalInformation" :disabled="true" :width="'12vw'" :height="'9vh'"
-				:maxHeight="'135px'" :maxWidth="'300px'" />
+				:maxHeight="'135px'" :maxWidth="'300px'" :minWidth="'120px'" :isEditing="true" /> -->
 		</div>
 		<TableTemplate :color="textColor" class="scrollbar passwordRowContainer__table" :scrollbar-size="1"
 			:border="false" :row-gap="'0px'" :emptyMessage="emptyMessage" :hideHeader="true"
-			:showEmptyMessage="securityQuestions.length == 0" :backgroundColor="backgroundColor">
+			:showEmptyMessage="securityQuestions.length == 0" :backgroundColor="backgroundColor"
+			:initialPaddingRow="false">
 			<template #body>
 				<SecurityQuestionRow v-for="(sq, index) in securityQuestions" :key="sq.id" :rowNumber="index"
 					:colorModel="colorModel" :model="sq" :disabled="true" :isInitiallyEncrypted="false" />
@@ -20,7 +21,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 
 import TableTemplate from '../TableTemplate.vue';
 import SecurityQuestionRow from '../Rows/SecurityQuestionRow.vue';
@@ -32,7 +33,6 @@ import { HeaderTabModel, InputColorModel } from '@renderer/Types/Models';
 import { defaultInputColor } from '@renderer/Types/Colors';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import cryptHelper from '@renderer/Helpers/cryptHelper';
-import { screenWidthIsAtRatioOfMax } from '@renderer/Helpers/screenSizeHelepr';
 
 export default defineComponent({
 	name: "PasswordRow",
@@ -46,7 +46,6 @@ export default defineComponent({
 	props: ["value", "authenticationPromise", "color", 'isShowing'],
 	setup(props)
 	{
-		const resizeObserver: ResizeObserver = new ResizeObserver(calcRowGap);
 		const textColor: string = "#7676764d";
 		const backgroundColor: string = "transparent";
 		const colorModel: Ref<InputColorModel> = ref({
@@ -56,8 +55,6 @@ export default defineComponent({
 			borderColor: "rgba(118, 118, 118, 0.3)",
 			activeBorderColor: "rgba(118, 118, 118, 0.3)"
 		});
-
-		const securityQuestionRowGap: Ref<string> = ref(screenWidthIsAtRatioOfMax(0.8) ? 'clamp(10px, 1vh, 20px)' : 'clamp(10px, 1vh, 20px)');
 
 		// copy password so we don't accidentally edit it
 		const password: ComputedRef<ReactivePassword> = computed(() => JSON.parse(JSON.stringify(props.value)));
@@ -75,11 +72,6 @@ export default defineComponent({
 				onClick: () => { }
 			}
 		];
-
-		function calcRowGap()
-		{
-			securityQuestionRowGap.value = screenWidthIsAtRatioOfMax(0.8) ? 'clamp(25px, 1vh, 30px)' : 'clamp(10px, 1vh, 20px)';
-		}
 
 		watch(() => props.authenticationPromise as Promise<string>, (newValue) =>
 		{
@@ -132,15 +124,6 @@ export default defineComponent({
 			}
 		});
 
-		onMounted(() =>
-		{
-			const app = document.getElementById('app');
-			if (app)
-			{
-				resizeObserver.observe(app);
-			}
-		})
-
 		return {
 			pword: props.value,
 			securityQuestions,
@@ -150,7 +133,6 @@ export default defineComponent({
 			headerTabs,
 			backgroundColor,
 			colorModel,
-			securityQuestionRowGap
 		}
 	}
 })

@@ -11,17 +11,18 @@
 			:width="'8vw'" :height="'4vh'" :minHeight="'30px'" :isEmailField="true" />
 		<TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login"
 			:width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
-		<EncryptedInputField class="passwordView__password" :colorModel="colorModel" :label="'Password'"
-			v-model="passwordState.password" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
-			:showRandom="true" :showUnlock="true" :required="true" showCopy="true" :width="'11vw'" :maxWidth="'285px'"
-			:height="'4vh'" :minHeight="'30px'" @onDirty="passwordIsDirty = true" />
+		<EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
+			:label="'Password'" v-model="passwordState.password" :initialLength="initalLength"
+			:isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true" :required="true"
+			showCopy="true" :width="'11vw'" :maxWidth="'285px'" :height="'4vh'" :minHeight="'30px'"
+			@onDirty="passwordIsDirty = true" />
 		<TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
 			:label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'19vw'"
-			:height="'15vh'" :minWidth="'216px'" :minHeight="'91px'" :maxHeight="'203px'" />
+			:height="'15vh'" :minWidth="'216px'" :minHeight="'91px'" :maxHeight="'203px'" :isEditing="!creating" />
 		<TableTemplate ref="tableRef" :color="color" id="passwordView__table" class="scrollbar" :scrollbar-size="1"
 			:headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
 			:showEmptyMessage="showEmptyMessage" :headerTabs="headerTabs" :headerHeight="'clamp(45px, 5.8vh, 80px)'"
-			@scrolled-to-bottom="scrolledToBottom">
+			:initialPaddingRow="activeTab == 1" @scrolled-to-bottom="scrolledToBottom">
 			<template #headerControls>
 				<Transition name="fade" mode="out-in">
 					<div v-if="activeTab == 0" class="passwordViewTableHeaderControls">
@@ -52,7 +53,7 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
-import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import SecurityQuestionRow from '../Table/Rows/SecurityQuestionRow.vue';
@@ -69,6 +70,7 @@ import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
 import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
+import { EncryptedInputFieldComponent, TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "PasswordView",
@@ -89,7 +91,9 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
-		const tableRef: Ref<HTMLElement | null> = ref(null);
+		const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
+
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const refreshKey: Ref<string> = ref("");
 		const passwordState: Ref<Password> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor);
@@ -134,7 +138,7 @@ export default defineComponent({
 				return getEmptyTableMessage("Security Questions");
 			}
 
-			return getObjectPopupEmptyTableMessage("Groups", "Password", "Group");
+			return getObjectPopupEmptyTableMessage("Groups", "Password", "Group", props.creating);
 		});
 
 		const activeGroupHeader: Ref<number> = ref(1);
@@ -244,13 +248,16 @@ export default defineComponent({
 				{
 					// @ts-ignore
 					tableRef.value.scrollToTop();
+					setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 				}
 			});
 		}
 
 		function onSave()
 		{
+			passwordInputField.value?.toggleHidden(true);
 			stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+
 			return new Promise((resolve, reject) =>
 			{
 				saveSucceeded = resolve;
@@ -321,6 +328,8 @@ export default defineComponent({
 				answer: '',
 				answerLength: 0
 			});
+
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function onQuestionDirty(id: string)
@@ -352,6 +361,8 @@ export default defineComponent({
 			{
 				dirtySecurityQuestionAnswers.value.splice(dirtySecurityQuestionAnswers.value.indexOf(id), 1);
 			}
+
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function scrolledToBottom()
@@ -376,6 +387,7 @@ export default defineComponent({
 		});
 
 		return {
+			passwordInputField,
 			color,
 			groupHeaderModels,
 			groupModels,

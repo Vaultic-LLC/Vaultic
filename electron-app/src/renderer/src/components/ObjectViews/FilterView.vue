@@ -3,9 +3,9 @@
 		:gridDefinition="gridDefinition">
 		<TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name"
 			:width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
-		<TableTemplate id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color" :row-gap="0"
-			:border="true" :emptyMessage="emptyMessage" :showEmptyMessage="filterState.conditions.length == 0 ?? true"
-			:headerTabs="headerTabs">
+		<TableTemplate ref="tableRef" id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color"
+			:row-gap="0" :border="true" :emptyMessage="emptyMessage"
+			:showEmptyMessage="filterState.conditions.length == 0 ?? true" :headerTabs="headerTabs">
 			<template #headerControls>
 				<AddButton :color="color" @click="onAdd" />
 			</template>
@@ -32,6 +32,7 @@ import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '@renderer/Helpers/ModelHelper';
 import { stores } from '@renderer/Objects/Stores';
 import { generateUniqueID } from '@renderer/Helpers/generatorHelper';
+import { TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "FilterView",
@@ -46,6 +47,7 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const refreshKey: Ref<string> = ref("");
 		const filterState: Ref<Filter> = ref(props.model);
 		const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.filtersColor);
@@ -145,11 +147,14 @@ export default defineComponent({
 					property: '',
 					value: ''
 				});
+
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function onDelete(id: string)
 		{
 			filterState.value.conditions = filterState.value.conditions.filter(f => f.id != id);
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		onMounted(() =>
@@ -161,6 +166,7 @@ export default defineComponent({
 		})
 
 		return {
+			tableRef,
 			color,
 			filterState,
 			displayFieldOptions,

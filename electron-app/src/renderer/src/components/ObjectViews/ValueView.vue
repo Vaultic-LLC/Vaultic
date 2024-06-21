@@ -5,7 +5,7 @@
 			:height="'4vh'" :minHeight="'35px'" />
 		<div class="valueView__valueTypeContainer">
 			<EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType"
-				:optionsEnum="NameValuePairType" :fadeIn="true" :width="'8vw'" :height="'4vh'" :minHeight="'40px'"
+				:optionsEnum="NameValuePairType" :fadeIn="true" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
 				:minWidth="'130px'" :maxHeight="'50px'" :showRandom="showRandom" />
 			<Transition name="fade">
 				<div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
@@ -17,14 +17,14 @@
 				</div>
 			</Transition>
 		</div>
-		<EncryptedInputField class="valueView__value" :colorModel="colorModel" :label="'Value'"
+		<EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
 			v-model="valuesState.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
 			:showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
 			:required="true" :width="'11vw'" :maxWidth="'300px'" :minWidth="'150px'" :height="'4vh'" :minHeight="'35px'"
 			@onDirty="valueIsDirty = true" />
 		<TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
 			v-model="valuesState.additionalInformation" :width="'19vw'" :height="'18vh'" :maxHeight="'238px'"
-			:minWidth="'216px'" :minHeight="'100px'" />
+			:minWidth="'216px'" :minHeight="'100px'" :isEditing="!creating" />
 		<TableTemplate ref="tableRef" id="valueView__addGroupsTable" class="scrollbar" :scrollbar-size="1"
 			:color="color" :headerModels="groupHeaderModels" :border="true" :emptyMessage="emptyMessage"
 			:showEmptyMessage="mounted && groupModels.visualValues.length == 0" :headerTabs="groupTab"
@@ -49,7 +49,7 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
-import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import ToolTip from '../ToolTip.vue';
 
@@ -61,6 +61,7 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteScrollCollection';
 import { stores } from '@renderer/Objects/Stores';
+import { EncryptedInputFieldComponent, TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "ValueView",
@@ -79,7 +80,8 @@ export default defineComponent({
 	props: ['creating', 'model'],
 	setup(props)
 	{
-		const tableRef: Ref<HTMLElement | null> = ref(null);
+		const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const mounted: Ref<boolean> = ref(false);
 		const refreshKey: Ref<string> = ref("");
 		const valuesState: Ref<NameValuePair> = ref(props.model);
@@ -111,7 +113,7 @@ export default defineComponent({
 
 		const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
-		const emptyMessage: Ref<string> = ref(getObjectPopupEmptyTableMessage('Groups', "Value", "Group"));
+		const emptyMessage: Ref<string> = ref(getObjectPopupEmptyTableMessage('Groups', "Value", "Group", props.creating));
 
 		const activeGroupHeader: Ref<number> = ref(1);
 		const groupHeaderDisplayFields: HeaderDisplayField[] = [
@@ -199,13 +201,16 @@ export default defineComponent({
 				{
 					// @ts-ignore
 					tableRef.value.scrollToTop();
+					setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 				}
 			});
 		}
 
 		function onSave()
 		{
+			valueInputField.value?.toggleHidden(true);
 			stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+
 			return new Promise((resolve, reject) =>
 			{
 				saveSucceeded = resolve;
@@ -286,6 +291,7 @@ export default defineComponent({
 		});
 
 		return {
+			valueInputField,
 			initalLength,
 			isInitiallyEncrypted,
 			valueIsDirty,

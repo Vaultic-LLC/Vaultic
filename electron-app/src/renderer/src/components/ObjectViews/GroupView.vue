@@ -29,7 +29,7 @@ import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
 import SearchBar from '../Table/Controls/SearchBar.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
-import SelectableTableRow from '../Table/SelectableTableRow.vue';
+import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 
 import { DataType, Group } from '../../Types/Table';
 import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
@@ -40,6 +40,7 @@ import InfiniteScrollCollection from '@renderer/Objects/DataStructures/InfiniteS
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
+import { TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "GroupView",
@@ -57,7 +58,7 @@ export default defineComponent({
 	setup(props)
 	{
 		const refreshKey: Ref<string> = ref("");
-		const tableRef: Ref<HTMLElement | null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const mounted: Ref<boolean> = ref(false);
 		const groupState: Ref<Group> = ref(props.model);
 		const groupColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.groupsColor);
@@ -80,11 +81,11 @@ export default defineComponent({
 		{
 			if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
 			{
-				return getObjectPopupEmptyTableMessage("Passwords", "Group", "Password");
+				return getObjectPopupEmptyTableMessage("Passwords", "Group", "Password", props.creating);
 			}
 			else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
 			{
-				return getObjectPopupEmptyTableMessage("Values", "Group", "Value");
+				return getObjectPopupEmptyTableMessage("Values", "Group", "Value", props.creating);
 			}
 
 			return "";
@@ -275,6 +276,7 @@ export default defineComponent({
 					{
 						// @ts-ignore
 						tableRef.value.scrollToTop();
+						setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 					}
 				});
 			}

@@ -27,7 +27,7 @@ export default defineComponent({
 		function copyText(text: string)
 		{
 			clipboard.write(text);
-			stores.popupStore.showToast(primaryColor.value, "Copied to Clipboard", true);
+			stores.popupStore.showToast(primaryColor.value, "Copied", true);
 		}
 
 		return {

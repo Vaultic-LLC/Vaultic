@@ -3,8 +3,9 @@
 		<div class="mainUICover"></div>
 		<div class="globalAuthGlass" :class="{ unlocked: unlocked }"></div>
 		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="authenticationSuccessful"
-			:rubberbandOnUnlock="true" :showPulsing="true" :color="primaryColor" :beforeEntry="true"
-			:iconOnly="iconOnly" :popupIndex="enterOrder" :focusOnShow="focusInput" />
+			@onCanceled="onCancel" :allowCancel="true" :rubberbandOnUnlock="true" :showPulsing="true"
+			:color="primaryColor" :beforeEntry="true" :iconOnly="iconOnly" :popupIndex="enterOrder"
+			:focusOnShow="focusInput" />
 	</div>
 </template>
 
@@ -15,6 +16,7 @@ import AuthenticationPopup from "./AuthenticationPopup.vue"
 import { stores } from '@renderer/Objects/Stores';
 import { AuthPopup } from '@renderer/Types/Components';
 import { popups } from '@renderer/Objects/Stores/PopupStore';
+import { AccountSetupView } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: "GlobalAuthenticationPopup",
@@ -53,6 +55,11 @@ export default defineComponent({
 			}, 2500);
 		}
 
+		function onCancel()
+		{
+			stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
+		}
+
 		onMounted(() =>
 		{
 			if (props.playUnlockAnimation === true)
@@ -76,7 +83,8 @@ export default defineComponent({
 			zIndex: popupInfo.zIndex,
 			enterOrder: popupInfo.enterOrder,
 			authenticationSuccessful,
-			playUnlockAnimation
+			playUnlockAnimation,
+			onCancel
 		}
 	}
 })

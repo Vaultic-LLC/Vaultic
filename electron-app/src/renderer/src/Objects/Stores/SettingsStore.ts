@@ -20,6 +20,7 @@ export interface SettingsStoreState extends StoreState
 	multipleFilterBehavior: FilterStatus;
 	oldPasswordDays: number;
 	percentMetricForPulse: number;
+	defaultMarkdownInEditScreens: boolean;
 }
 
 class SettingsStore extends Store<SettingsStoreState>
@@ -37,11 +38,12 @@ class SettingsStore extends Store<SettingsStoreState>
 	get multipleFilterBehavior() { return this.state.multipleFilterBehavior; }
 	get oldPasswordDays() { return this.state.oldPasswordDays; }
 	get percentMetricForPulse() { return this.state.percentMetricForPulse; }
+	get defaultMarkdownInEditScreens() { return this.state.defaultMarkdownInEditScreens; }
 
 	constructor()
 	{
 		super();
-		this.internalAutoLockNumberTime = computed(this.calcAutolockTime);
+		this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.autoLockTime));
 	}
 
 	protected defaultState()
@@ -58,6 +60,7 @@ class SettingsStore extends Store<SettingsStoreState>
 			multipleFilterBehavior: FilterStatus.Or,
 			oldPasswordDays: 30,
 			percentMetricForPulse: 1,
+			defaultMarkdownInEditScreens: true
 		};
 	}
 
@@ -101,9 +104,9 @@ class SettingsStore extends Store<SettingsStoreState>
 		return false;
 	}
 
-	private calcAutolockTime(): number
+	private calcAutolockTime(time: AutoLockTime): number
 	{
-		switch (this?.state?.autoLockTime)
+		switch (time)
 		{
 			case AutoLockTime.FiveMinutes:
 				return 1000 * 60 * 5;

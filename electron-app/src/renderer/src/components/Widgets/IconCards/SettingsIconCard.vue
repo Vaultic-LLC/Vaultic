@@ -18,6 +18,7 @@ import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 import IconCard from "../../IconCard.vue"
 import ObjectPopup from "../../ObjectPopups/ObjectPopup.vue"
 import EditSettingsPopup from "../../ObjectPopups/EditPopups/EditSettingsPopup.vue"
+
 import { stores } from '@renderer/Objects/Stores';
 import { SettingsStoreState } from '@renderer/Objects/Stores/SettingsStore';
 

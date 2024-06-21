@@ -1,6 +1,6 @@
-import { Ref, ref } from "vue";
+import { Ref, ref, watch } from "vue";
 import { DataType } from "../../Types/Table"
-import { stores } from ".";
+import { Stores, stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
 import { hideAll } from 'tippy.js';
 import { Store, StoreState } from "./Base";
@@ -53,6 +53,14 @@ class AppStore extends Store<AppStoreState>
 			userDataVersion: 0,
 			loginHistory: {},
 		};
+	}
+
+	public init(stores: Stores)
+	{
+		watch(() => stores.settingsStore.autoLockTime, () =>
+		{
+			this.resetSessionTime();
+		});
 	}
 
 	// don't need app state anywhere so don't expose it

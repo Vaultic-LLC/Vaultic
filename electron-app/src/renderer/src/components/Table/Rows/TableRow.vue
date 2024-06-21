@@ -8,16 +8,24 @@
 		<td v-if="allowPin || allowEdit || allowDelete" class="gapData"></td>
 		<td v-if="!hideAtRiskCell" class="tableRowIconCell" :class="{ hideCell: !tableRowData.atRiskModel?.message }"
 			@click.stop="tableRowData.atRiskModel?.onClick">
-			<AtRiskIndicator :color="color" :message="tableRowData.atRiskModel?.message" />
+			<div class="tableRow__rowIconContainer">
+				<AtRiskIndicator :color="color" :message="tableRowData.atRiskModel?.message" />
+			</div>
 		</td>
 		<td v-if="allowPin" @click.stop="onPin" class="magnetCell tableRowIconCell">
-			<ion-icon class="rowIcon magnet" name="magnet-outline"></ion-icon>
+			<div class="tableRow__rowIconContainer">
+				<ion-icon class="rowIcon magnet" name="magnet-outline"></ion-icon>
+			</div>
 		</td>
 		<td v-if="allowEdit" @click.stop="onEdit" class="tableRowIconCell">
-			<ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
+			<div class="tableRow__rowIconContainer">
+				<ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
+			</div>
 		</td>
 		<td v-if="allowDelete" @click.stop="onDelete" class="tableRowIconCell">
-			<ion-icon class="rowIcon delete" name="trash-outline"></ion-icon>
+			<div class="tableRow__rowIconContainer">
+				<ion-icon class="rowIcon delete" name="trash-outline"></ion-icon>
+			</div>
 		</td>
 	</tr>
 </template>
@@ -271,5 +279,11 @@ export default defineComponent({
 
 .tableRow__gapCell {
 	width: auto;
+}
+
+.tableRow__rowIconContainer {
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 </style>

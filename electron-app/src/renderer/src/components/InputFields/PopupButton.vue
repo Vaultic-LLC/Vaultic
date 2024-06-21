@@ -39,7 +39,9 @@ export default defineComponent({
 
 		onMounted(() =>
 		{
-			transition.value = '0.3s';
+			// wait to add the transition till after the buttons are rendered otherwise it will transition the button growing
+			// which will make everything on the page twitch up
+			setTimeout(() => transition.value = '0.3s', 200);
 			window.addEventListener("keyup", onKeyUp);
 		});
 

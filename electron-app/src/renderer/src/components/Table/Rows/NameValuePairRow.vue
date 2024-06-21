@@ -4,9 +4,9 @@
 			<EncryptedInputField :colorModel="colorModel" :label="'Value'" v-model="valueValue" :showCopy="true"
 				:disabled="true" :width="'11vw'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
 				:isOnWidget="true" />
-			<TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
+			<!-- <TextAreaInputField :colorModel="colorModel" :label="'Additional Information'"
 				v-model="nameValuePair.additionalInformation" :width="'12vw'" :height="'9vh'" :maxHeight="'135px'"
-				:maxWidth="'300px'" :isOnWidget="true" :disabled="true" />
+				:maxWidth="'300px'" :minWidth="'120px'" :isOnWidget="true" :disabled="true" :isEditing="true" /> -->
 		</div>
 		<div class="nameValuePairRowContainer__right">
 			<img class="nameValuePairRowContainer__qrCode" :src="qrCodeUrl" />
