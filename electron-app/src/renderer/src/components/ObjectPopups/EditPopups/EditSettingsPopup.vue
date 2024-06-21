@@ -1,7 +1,6 @@
 <template>
 	<div class="editSettingsHeader">
-		<TableSelector class="settingsPopupHeader__controls"
-			:singleSelectorItems="[settingsView, devicesView, paymentView]" />
+		<TableSelector class="settingsPopupHeader__controls" :singleSelectorItems="singleSelectorItems" />
 	</div>
 	<div class="settingPopupContainer">
 		<Transition name="fade" mode="out-in">
@@ -73,13 +72,26 @@ export default defineComponent({
 			}
 		});
 
+		const singleSelectorItems: ComputedRef<SingleSelectorItemModel[]> = computed(() =>
+		{
+			let items: SingleSelectorItemModel[] = [settingsView.value];
+			if (stores.appStore.isOnline)
+			{
+				items.push(devicesView.value);
+			}
+
+			items.push(paymentView.value);
+			return items;
+		});
+
 		return {
 			currentSettings,
 			settingsView,
 			devicesView,
 			paymentView,
 			activeSection,
-			currentPrimaryColor
+			currentPrimaryColor,
+			singleSelectorItems
 		}
 	}
 })

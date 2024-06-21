@@ -173,7 +173,7 @@ export default defineComponent({
 		function copyValue()
 		{
 			clipboard.write(inputText.value);
-			stores.popupStore.showToast(colorModel.value.color, "Copied to Clipboard", true);
+			stores.popupStore.showToast(colorModel.value.color, "Copied", true);
 		}
 
 		function focus()

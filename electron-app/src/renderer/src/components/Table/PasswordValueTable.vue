@@ -303,13 +303,13 @@ export default defineComponent({
 			}
 		}
 
-		function setModels()
+		async function setModels()
 		{
 			switch (stores.appStore.activePasswordValuesTable)
 			{
 				case DataType.NameValuePairs:
 					// eslint-disable-next-line
-					createCollapsibleTableRowModels<ReactiveValue>(DataType.NameValuePairs,
+					await createCollapsibleTableRowModels<ReactiveValue>(DataType.NameValuePairs,
 						collapsibleTableRowModels, nameValuePairs, pinnedNameValuePairs,
 						(v: ReactiveValue) =>
 						{
@@ -325,7 +325,7 @@ export default defineComponent({
 				case DataType.Passwords:
 				default:
 					// eslint-disable-next-line
-					createCollapsibleTableRowModels<ReactivePassword>(DataType.Passwords,
+					await createCollapsibleTableRowModels<ReactivePassword>(DataType.Passwords,
 						collapsibleTableRowModels, passwords, pinnedPasswords,
 						(p: ReactivePassword) =>
 						{
@@ -365,6 +365,11 @@ export default defineComponent({
 			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
 
 			setModels();
+			if (collapsibleTableRowModels.value.visualValues.length == 0)
+			{
+				console.log("no values");
+			}
+
 			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
@@ -430,11 +435,11 @@ export default defineComponent({
 
 			if (succeeded)
 			{
-				stores.popupStore.showToast(color.value, "Password Deleted Successfully", true);
+				stores.popupStore.showToast(color.value, "Password Deleted", true);
 			}
 			else
 			{
-				stores.popupStore.showToast(color.value, "Password Delete Failed", false);
+				stores.popupStore.showToast(color.value, "Delete Failed", false);
 			}
 		}
 
@@ -456,11 +461,11 @@ export default defineComponent({
 
 			if (succeeded)
 			{
-				stores.popupStore.showToast(color.value, "Value Deleted Successfully", true);
+				stores.popupStore.showToast(color.value, "Value Deleted", true);
 			}
 			else
 			{
-				stores.popupStore.showToast(color.value, "Value Delete Failed", false);
+				stores.popupStore.showToast(color.value, "Delete Failed", false);
 			}
 		}
 
@@ -540,11 +545,6 @@ export default defineComponent({
 		{
 			init();
 		});
-
-		// watch(() => color.value, () =>
-		// {
-		// 	setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-		// });
 
 		return {
 			tableRef,

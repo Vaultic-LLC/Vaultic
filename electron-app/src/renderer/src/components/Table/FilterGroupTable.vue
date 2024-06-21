@@ -314,11 +314,11 @@ export default defineComponent({
 
 			if (succeeded)
 			{
-				stores.popupStore.showToast(color.value, "Filter Deleted Successfully", true);
+				stores.popupStore.showToast(color.value, "Filter Deleted", true);
 			}
 			else
 			{
-				stores.popupStore.showToast(color.value, "Filter Delete Failed", false);
+				stores.popupStore.showToast(color.value, "Delete Failed", false);
 			}
 		}
 
@@ -340,11 +340,11 @@ export default defineComponent({
 
 			if (succeeded)
 			{
-				stores.popupStore.showToast(color.value, "Group Deleted Sucessfully", true);
+				stores.popupStore.showToast(color.value, "Group Deleted", true);
 			}
 			else
 			{
-				stores.popupStore.showToast(color.value, "Group Delete Failed", false);
+				stores.popupStore.showToast(color.value, "Delete Failed", false);
 			}
 		}
 

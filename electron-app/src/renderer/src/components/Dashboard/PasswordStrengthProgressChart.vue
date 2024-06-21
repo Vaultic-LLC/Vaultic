@@ -376,7 +376,17 @@ export default defineComponent({
 			else
 			{
 				showStatusMessage.value = true;
-				statusMessage.value = "Unable to load data";
+				if (response.InvalidSession)
+				{
+					statusMessage.value = "Session has expired. Please sign back in"
+				}
+				else
+				{
+					statusMessage.value = "Unable to load data";
+				}
+
+				chartOneArray.value = [];
+				updateData();
 			}
 
 			// if the previous chart didn't have enough data, then the chart won't be loaded. Set a timeout so the chart

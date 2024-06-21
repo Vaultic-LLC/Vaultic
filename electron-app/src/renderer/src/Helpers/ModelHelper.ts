@@ -286,7 +286,7 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 	}
 }
 
-export function createCollapsibleTableRowModels<T extends { [key: string]: any } & IIdentifiable>(
+export async function createCollapsibleTableRowModels<T extends { [key: string]: any } & IIdentifiable>(
 	dataType: DataType, collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>>, sortedCollection: SortedCollection<T>,
 	pinnedCollection: SortedCollection<T>, getValues: (value: T) => TableRowValue[], onEdit: (value: T) => void, onDelete: (value: T) => void)
 {
@@ -374,10 +374,8 @@ export function createCollapsibleTableRowModels<T extends { [key: string]: any }
 	temp.push(...pinnedCollection.values.map(v => buildModel(v)));
 	temp.push(...sortedCollection.calculatedValues.map(v => buildModel(v)));
 
-	Promise.all(temp).then((rows) =>
-	{
-		collapsibleTableRowModels.value.setValues(rows);
-	});
+	const rows = await Promise.all(temp);
+	collapsibleTableRowModels.value.setValues(rows);
 
 	function addAtRiskValues<U extends IIdentifiable>(message: string, value: U, onClick?: () => void)
 	{
