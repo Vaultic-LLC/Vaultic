@@ -1,9 +1,8 @@
 <template>
 	<div class="editSettingsHeader">
-		<TableSelector class="settingsPopupHeader__controls"
-			:singleSelectorItems="[settingsView, devicesView, paymentView]" />
+		<TableSelector class="settingsPopupHeader__controls" :singleSelectorItems="singleSelectorItems" />
 	</div>
-	<div class="settingViewContainer">
+	<div class="settingPopupContainer">
 		<Transition name="fade" mode="out-in">
 			<SettingsView v-if="activeSection == 0" :creating="false" :model="currentSettings" />
 			<DevicesView v-else-if="activeSection == 1" :color="currentPrimaryColor" />
@@ -73,13 +72,26 @@ export default defineComponent({
 			}
 		});
 
+		const singleSelectorItems: ComputedRef<SingleSelectorItemModel[]> = computed(() =>
+		{
+			let items: SingleSelectorItemModel[] = [settingsView.value];
+			if (stores.appStore.isOnline)
+			{
+				items.push(devicesView.value);
+			}
+
+			items.push(paymentView.value);
+			return items;
+		});
+
 		return {
 			currentSettings,
 			settingsView,
 			devicesView,
 			paymentView,
 			activeSection,
-			currentPrimaryColor
+			currentPrimaryColor,
+			singleSelectorItems
 		}
 	}
 })
@@ -102,7 +114,7 @@ export default defineComponent({
 	z-index: 10;
 }
 
-.settingViewContainer {
+.settingPopupContainer {
 	position: absolute;
 	top: 20%;
 	width: 100%;

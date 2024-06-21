@@ -8,7 +8,7 @@ import { defineComponent } from 'vue';
 
 // component used to force the table cell widths.
 export default defineComponent({
-	name: "TableTemplate",
+	name: "SizingHeaderCell",
 	props: ['width'],
 	setup()
 	{

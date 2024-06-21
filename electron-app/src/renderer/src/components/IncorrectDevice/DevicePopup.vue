@@ -24,7 +24,7 @@ import { IncorrectDeviceResponse } from '@renderer/Types/SharedTypes';
 import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
-	name: "DeviceView",
+	name: "DevicePopup",
 	components:
 	{
 		ObjectPopup,

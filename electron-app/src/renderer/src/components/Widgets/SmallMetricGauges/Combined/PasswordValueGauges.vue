@@ -16,10 +16,11 @@
 import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 
 import CombinedMetricGaugeContainer from '../../../SmallMetricGauges/CombinedMetricGaugeContainer.vue';
+import SmallMetricGauge from '@renderer/components/Dashboard/SmallMetricGauge.vue';
+
 import { DataType } from '@renderer/Types/Table';
 import { AtRiskType } from '@renderer/Types/EncryptedData';
 import { SmallMetricGaugeModel } from '@renderer/Types/Models';
-import SmallMetricGauge from '@renderer/components/Dashboard/SmallMetricGauge.vue';
 import { stores } from '@renderer/Objects/Stores';
 
 export default defineComponent({

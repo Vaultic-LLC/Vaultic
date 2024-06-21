@@ -11,8 +11,9 @@
 </template>
 
 <script lang="ts">
-import { popups } from '@renderer/Objects/Stores/PopupStore';
 import { ComputedRef, computed, defineComponent } from 'vue';
+
+import { popups } from '@renderer/Objects/Stores/PopupStore';
 
 export default defineComponent({
 	name: 'ToastPopup',
@@ -37,7 +38,7 @@ export default defineComponent({
 <style>
 .toastContainer {
 	position: fixed;
-	width: 10.5%;
+	width: 11%;
 	min-width: 150px;
 	max-width: 235px;
 	height: 5%;
@@ -53,14 +54,14 @@ export default defineComponent({
 	justify-content: center;
 	box-shadow: 0 0 25px v-bind('primaryColor');
 	z-index: v-bind(zIndex);
-	column-gap: clamp(5px, 5%, 20px);
 }
 
 .toastContainerIcons {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	font-size: clamp(20px, 2vw, 40px);
+	font-size: clamp(30px, 2vw, 40px);
+	width: 20%;
 }
 
 .toastContainerIcons .toastIcon.success {
@@ -72,7 +73,8 @@ export default defineComponent({
 }
 
 .toastContainer .toastContainterText {
-	font-size: clamp(13px, 1vw, 18px);
+	font-size: clamp(11px, 0.8vw, 16px);
 	color: white;
+	width: 70%;
 }
 </style>

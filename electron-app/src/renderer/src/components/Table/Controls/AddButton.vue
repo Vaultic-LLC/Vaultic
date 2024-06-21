@@ -22,7 +22,7 @@ export default defineComponent({
 		onMounted(() =>
 		{
 			// used to fix bug where the icon will slowly grow when first rendered
-			transition.value = '0.5s';
+			setTimeout(() => transition.value = '0.5s', 200);
 		});
 
 		return {

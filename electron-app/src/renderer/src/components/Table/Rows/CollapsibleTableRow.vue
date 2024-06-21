@@ -14,9 +14,11 @@
 
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
-import GroupIcon from './GroupIcon.vue';
-import TableRow from "../Table/Rows/TableRow.vue"
-import { Group } from '../../Types/Table';
+
+import GroupIcon from '../GroupIcon.vue';
+import TableRow from "./TableRow.vue"
+
+import { Group } from '../../../Types/Table';
 import { GroupIconModel } from '@renderer/Types/Models';
 import { stores } from '@renderer/Objects/Stores';
 

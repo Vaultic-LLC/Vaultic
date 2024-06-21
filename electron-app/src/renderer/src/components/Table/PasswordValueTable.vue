@@ -46,11 +46,11 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, re
 
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import SlideInRow from './Rows/SlideInRow.vue';
-import PasswordRow from "./Password/PasswordRow.vue"
-import NameValuePairRow from './NameValuePair/NameValuePairRow.vue';
+import PasswordRow from "./Rows/PasswordRow.vue"
+import NameValuePairRow from './Rows/NameValuePairRow.vue';
 import TableHeaderRow from './Header/TableHeaderRow.vue';
 import TableTemplate from './TableTemplate.vue';
-import CollapsibleTableRow from './CollapsibleTableRow.vue';
+import CollapsibleTableRow from './Rows/CollapsibleTableRow.vue';
 import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue';
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
@@ -65,6 +65,7 @@ import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrol
 import { stores } from '@renderer/Objects/Stores';
 import { ReactivePassword } from '@renderer/Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '@renderer/Objects/Stores/ReactiveValue';
+import { TableTemplateComponent } from '@renderer/Types/Components';
 
 export default defineComponent({
 	name: "PasswordValueTable",
@@ -84,7 +85,7 @@ export default defineComponent({
 	},
 	setup()
 	{
-		const tableRef: Ref<null> = ref(null);
+		const tableRef: Ref<TableTemplateComponent | null> = ref(null);
 		const activeTable: Ref<number> = ref(stores.appStore.activePasswordValuesTable);
 		const color: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
 			stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor : stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor);
@@ -189,9 +190,10 @@ export default defineComponent({
 			{
 				displayName: "Groups",
 				backingProperty: "groups",
-				width: 'clamp(75px, 7vw, 175px)',
-				padding: 'clamp(10px, 1vw, 25px)',
-				clickable: true
+				width: 'clamp(75px, 5vw, 150px)',
+				clickable: true,
+				centered: true,
+				headerSpaceRight: '20px'
 			},
 			{
 				displayName: "Name",
@@ -301,13 +303,13 @@ export default defineComponent({
 			}
 		}
 
-		function setModels()
+		async function setModels()
 		{
 			switch (stores.appStore.activePasswordValuesTable)
 			{
 				case DataType.NameValuePairs:
 					// eslint-disable-next-line
-					createCollapsibleTableRowModels<ReactiveValue>(DataType.NameValuePairs,
+					await createCollapsibleTableRowModels<ReactiveValue>(DataType.NameValuePairs,
 						collapsibleTableRowModels, nameValuePairs, pinnedNameValuePairs,
 						(v: ReactiveValue) =>
 						{
@@ -323,7 +325,7 @@ export default defineComponent({
 				case DataType.Passwords:
 				default:
 					// eslint-disable-next-line
-					createCollapsibleTableRowModels<ReactivePassword>(DataType.Passwords,
+					await createCollapsibleTableRowModels<ReactivePassword>(DataType.Passwords,
 						collapsibleTableRowModels, passwords, pinnedPasswords,
 						(p: ReactivePassword) =>
 						{
@@ -343,6 +345,9 @@ export default defineComponent({
 				// @ts-ignore
 				tableRef.value.scrollToTop();
 			}
+
+			// use a timeout so that the color prop can update before we calculate the new color.
+			//setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function initPasswords()
@@ -351,6 +356,7 @@ export default defineComponent({
 			pinnedPasswords.updateValues(stores.passwordStore.pinnedPasswords);
 
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function initValues()
@@ -359,6 +365,7 @@ export default defineComponent({
 			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
 
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function init()
@@ -370,6 +377,7 @@ export default defineComponent({
 			pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
 
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		}
 
 		function onEditPassword(password: ReactivePassword)
@@ -422,11 +430,11 @@ export default defineComponent({
 
 			if (succeeded)
 			{
-				stores.popupStore.showToast(color.value, "Password Deleted Successfully", true);
+				stores.popupStore.showToast(color.value, "Password Deleted", true);
 			}
 			else
 			{
-				stores.popupStore.showToast(color.value, "Password Delete Failed", false);
+				stores.popupStore.showToast(color.value, "Delete Failed", false);
 			}
 		}
 
@@ -448,11 +456,11 @@ export default defineComponent({
 
 			if (succeeded)
 			{
-				stores.popupStore.showToast(color.value, "Value Deleted Successfully", true);
+				stores.popupStore.showToast(color.value, "Value Deleted", true);
 			}
 			else
 			{
-				stores.popupStore.showToast(color.value, "Value Delete Failed", false);
+				stores.popupStore.showToast(color.value, "Delete Failed", false);
 			}
 		}
 
@@ -518,12 +526,14 @@ export default defineComponent({
 		{
 			passwords.search(newValue);
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => valueSearchText.value, (newValue) =>
 		{
 			nameValuePairs.search(newValue);
 			setModels();
+			setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
 		});
 
 		watch(() => stores.settingsStore.multipleFilterBehavior, () =>

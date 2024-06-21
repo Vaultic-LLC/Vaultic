@@ -1,6 +1,4 @@
 <template>
-	<tr class="securityQuestionRowPrefixGap">
-	</tr>
 	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="colorModel.color" :allowDelete="!disabled"
 		:hideAtRisk="true" :animateDelete="true">
 		<td class="securityQuestionRow__firstCell">
@@ -20,6 +18,8 @@
 				:maxWidth="'250px'" :height="'4vh'" :minHeight="'30px'" :showButtonsUnderneath="moveButtonsToBottom" />
 		</td>
 	</TableRow>
+	<tr class="securityQuestionRowPrefixGap">
+	</tr>
 </template>
 
 <script lang="ts">
@@ -50,9 +50,8 @@ export default defineComponent({
 		const moveButtonsToBottomRatio: ComputedRef<number> = computed(() => props.moveButtonsToBottomRatio ?? 0.8);
 		const moveButtonsToBottom: Ref<boolean> = ref(screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value));
 		const securityQuestionRowGap: Ref<string> = ref(
-			props.hideInitialRow && props.rowNumber == 0 ? '5px' :
-				screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(20px, 2.2vh, 33px)' :
-					'clamp(10px, 1vh, 20px)');
+			screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(25px, 2.2vh, 33px)' :
+				'clamp(10px, 1vh, 20px)');
 
 		const tableRowData: Ref<TableRowData> = ref(
 			{
@@ -68,9 +67,8 @@ export default defineComponent({
 		function checkScreenWidth()
 		{
 			moveButtonsToBottom.value = screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value);
-			securityQuestionRowGap.value = props.hideInitialRow && props.rowNumber == 0 ? '5px' :
-				screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(20px, 2.2vh, 33px)' :
-					'clamp(10px, 1vh, 20px)';
+			securityQuestionRowGap.value = screenWidthIsAtRatioOfMax(moveButtonsToBottomRatio.value) ? 'clamp(25px, 2.2vh, 33px)' :
+				'clamp(10px, 1vh, 20px)';
 		}
 
 		onMounted(() =>

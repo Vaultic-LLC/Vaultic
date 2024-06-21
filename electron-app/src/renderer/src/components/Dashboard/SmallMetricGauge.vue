@@ -12,7 +12,6 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
-import CongratsRibbon from '../SmallMetricGauges/CongratsRibbon.vue';
 import { Doughnut } from 'vue-chartjs'
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
@@ -27,8 +26,7 @@ export default defineComponent({
 	props: ['model'],
 	components:
 	{
-		Doughnut,
-		CongratsRibbon
+		Doughnut
 	},
 	setup(props)
 	{

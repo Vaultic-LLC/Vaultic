@@ -1,12 +1,14 @@
 <template>
 	<div class="toggleRadioButtonContainer">
-		<div class="toggleRadioButtonContainer__tabs" :class="{second: checkedIndex == 1}">
-			<input :checked="checkedIndex == 0" type="radio" class="input"
-				@click="onButtonClick(0)" />
-			<label class="toggleRadioButtonContainer__label" @click="onButtonClick(0)">{{ model.buttonOne.text }}</label>
-			<input :checked="checkedIndex == 1" type="radio" class="input"
-				@click="onButtonClick(1)" />
-			<label class="toggleRadioButtonContainer__label toggleRadioButtonContainer__label--second" @click="onButtonClick(1)">{{ model.buttonTwo.text }}</label>
+		<div class="toggleRadioButtonContainer__tabs" :class="{ second: checkedIndex == 1 }">
+			<input :checked="checkedIndex == 0" type="radio" class="input" @click="onButtonClick(0)"
+				@keyup.enter="onInputEnter" />
+			<label class="toggleRadioButtonContainer__label" @click="onButtonClick(0)">{{ model.buttonOne.text
+				}}</label>
+			<input :checked="checkedIndex == 1" type="radio" class="input" @click="onButtonClick(1)"
+				@keyup.enter="onInputEnter" />
+			<label class="toggleRadioButtonContainer__label toggleRadioButtonContainer__label--second"
+				@click="onButtonClick(1)">{{ model.buttonTwo.text }}</label>
 		</div>
 	</div>
 </template>
@@ -20,7 +22,7 @@ import { ToggleRadioButtonModel } from '@renderer/Types/Models';
 
 export default defineComponent({
 	name: 'ToggleRadioButton',
-	props: [ 'model', 'height'],
+	props: ['model', 'height'],
 	emits: ['onButtonClicked'],
 	setup(props, ctx)
 	{
@@ -37,19 +39,30 @@ export default defineComponent({
 			ctx.emit('onButtonClicked', index);
 		}
 
+		function onInputEnter()
+		{
+			if (checkedIndex.value == 0)
+			{
+				onButtonClick(1);
+				return;
+			}
+
+			onButtonClick(0);
+		}
+
 		return {
 			model,
 			checkedIndex,
 			linearGradient,
 			primaryColor,
-			onButtonClick
+			onButtonClick,
+			onInputEnter,
 		}
 	}
 });
 </script>
 
 <style>
-
 .toggleRadioButtonContainer__tabs {
 	height: v-bind(height);
 	display: grid;
@@ -63,27 +76,25 @@ export default defineComponent({
 }
 
 .toggleRadioButtonContainer__tabs {
-	--ease: linear(
-		0,
-		0.1641 3.52%,
-		0.311 7.18%,
-		0.4413 10.99%,
-		0.5553 14.96%,
-		0.6539 19.12%,
-		0.738 23.5%,
-		0.8086 28.15%,
-		0.8662 33.12%,
-		0.9078 37.92%,
-		0.9405 43.12%,
-		0.965 48.84%,
-		0.9821 55.28%,
-		0.992 61.97%,
-		0.9976 70.09%,
-		1
-	);
+	--ease: linear(0,
+			0.1641 3.52%,
+			0.311 7.18%,
+			0.4413 10.99%,
+			0.5553 14.96%,
+			0.6539 19.12%,
+			0.738 23.5%,
+			0.8086 28.15%,
+			0.8662 33.12%,
+			0.9078 37.92%,
+			0.9405 43.12%,
+			0.965 48.84%,
+			0.9821 55.28%,
+			0.992 61.97%,
+			0.9976 70.09%,
+			1);
 }
 
-.toggleRadioButtonContainer__tabs > .input,
+.toggleRadioButtonContainer__tabs>.input,
 .sr-only {
 	position: absolute;
 	width: 1px;
@@ -97,30 +108,35 @@ export default defineComponent({
 }
 
 .toggleRadioButtonContainer__tabs:has(:checked:nth-of-type(1)) {
-  	--active: 0;
-}
-.toggleRadioButtonContainer__tabs:has(:checked:nth-of-type(2)) {
-  	--active: 1;
-}
-.toggleRadioButtonContainer__tabs:has(:checked:nth-of-type(3)) {
- 	 --active: 2;
-}
-.toggleRadioButtonContainer__tabs:has(:checked:nth-of-type(4)) {
-  	--active: 3;
+	--active: 0;
 }
 
-.toggleRadioButtonContainer__tabs :checked + .toggleRadioButtonContainer__label {
-  	--highlight: 1;
+.toggleRadioButtonContainer__tabs:has(:checked:nth-of-type(2)) {
+	--active: 1;
+}
+
+.toggleRadioButtonContainer__tabs:has(:checked:nth-of-type(3)) {
+	--active: 2;
+}
+
+.toggleRadioButtonContainer__tabs:has(:checked:nth-of-type(4)) {
+	--active: 3;
+}
+
+.toggleRadioButtonContainer__tabs :checked+.toggleRadioButtonContainer__label {
+	--highlight: 1;
 }
 
 .toggleRadioButtonContainer__tabs:has(.input:nth-of-type(2)) {
-  	--count: 2;
+	--count: 2;
 }
+
 .toggleRadioButtonContainer__tabs:has(.input:nth-of-type(3)) {
-  	--count: 3;
+	--count: 3;
 }
+
 .toggleRadioButtonContainer__tabs:has(.input:nth-of-type(4)) {
-  	--count: 4;
+	--count: 4;
 }
 
 .toggleRadioButtonContainer__tabs .toggleRadioButtonContainer__label {
@@ -135,7 +151,8 @@ export default defineComponent({
 	border-top-left-radius: clamp(3px, 0.3vw, 0.35rem);
 	border-bottom-left-radius: clamp(3px, 0.3vw, 0.35rem);
 	border-top-right-radius: 0;
-	border-bottom-right-radius: 0;  place-items: center;
+	border-bottom-right-radius: 0;
+	place-items: center;
 	color: hsl(0 0% 100% / calc(0.5 + var(--highlight, 0)));
 	transition: background, color;
 	transition-duration: 0.25s;
@@ -149,7 +166,7 @@ export default defineComponent({
 	border-bottom-right-radius: clamp(3px, 0.3vw, 0.35rem);
 }
 
-.input:not(:checked) + .toggleRadioButtonContainer__label:hover {
+.input:not(:checked)+.toggleRadioButtonContainer__label:hover {
 	--highlight: 0.35;
 	background: hsl(0 0% 20%);
 }
@@ -182,7 +199,6 @@ export default defineComponent({
 }
 
 .toggleRadioButtonContainer__tabs:has(:focus-visible)::after {
-	outline-color: red;
+	box-shadow: 0 0 10px v-bind(primaryColor);
 }
-
 </style>

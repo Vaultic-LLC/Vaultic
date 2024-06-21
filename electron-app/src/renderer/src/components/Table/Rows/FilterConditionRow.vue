@@ -10,15 +10,20 @@
 				<EnumInputField :label="'Condition'" :color="color" v-model="filterCondition.filterType"
 					:optionsEnum="filterConditionType" fadeIn="true" :isOnWidget="true" :width="'8vw'" :height="'4vh'"
 					:minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
-				<TextInputField v-if="inputType == 0" :label="'Value'" :color="color" v-model="filterCondition.value"
-					:fadeIn="true" :isOnWidget="true" :width="'8vw'" :height="'3.8vh'" :minHeight="'33px'"
-					:minWidth="'100px'" :maxHeight="'49px'" />
-				<EnumInputField v-if="inputType == 1" :label="'Value'" :color="color" v-model="filterCondition.value"
-					:optionsEnum="inputEnumType" fadeIn="true" :isOnWidget="true" :width="'8vw'" :height="'4vh'"
-					:minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
+				<!-- the EnumInputField is like 1.3px wider than the TextInputField at the same width, causing the other inputs to
+				 shift slightly when changing. Wrap them in a div with fixed width and set their width to 100% to fix this -->
+				<div class="filterConditionCell__valueInput">
+					<TextInputField v-if="inputType == 0" :label="'Value'" :color="color"
+						v-model="filterCondition.value" :fadeIn="true" :isOnWidget="true" :width="'100%'"
+						:height="'3.8vh'" :minHeight="'33px'" :minWidth="'100px'" :maxHeight="'49px'" />
+					<EnumInputField v-if="inputType == 1" :label="'Value'" :color="color"
+						v-model="filterCondition.value" :optionsEnum="inputEnumType" fadeIn="true" :isOnWidget="true"
+						:width="'100%'" :height="'4vh'" :minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
+				</div>
 			</div>
 		</td>
 	</TableRow>
+	<tr class="filterConditionRowSpace"></tr>
 </template>
 
 <script lang="ts">
@@ -109,5 +114,20 @@ export default defineComponent({
 .filterConditionCell__content {
 	display: flex;
 	justify-content: space-evenly
+}
+
+.filterConditionRowSpace {
+	height: 0px;
+}
+
+/* make sure the labels on the rows don't overlap at smaller sizes */
+@media (max-width: 1250px) {
+	.filterConditionRowSpace {
+		height: 5px;
+	}
+}
+
+.filterConditionCell__valueInput {
+	width: 8vw;
 }
 </style>
