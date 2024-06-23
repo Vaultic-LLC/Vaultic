@@ -6,7 +6,7 @@
 	"author": "Vaultic LLC",
 	"homepage": "https://www.electronjs.org",
 	"scripts": {
-		"copy": "node ../copy.js src=../common/src dest=./src/renderer/src/common",
+		"copy": "node ../copy.js src=../core/src dest=./src/renderer/src/core",
 		"format": "prettier --write .",
 		"lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",
 		"typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
