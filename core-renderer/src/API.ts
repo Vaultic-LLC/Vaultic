@@ -4,6 +4,7 @@ let internalAPI: IAPI;
 
 class API 
 {
+    get environment() { return internalAPI?.environment; }
     get server() { return internalAPI?.server; }
     get utilities() { return internalAPI?.utilities; }
     get helpers() { return internalAPI?.helpers; }

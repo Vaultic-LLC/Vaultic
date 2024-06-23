@@ -6,7 +6,7 @@ import { stores } from ".";
 import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
-import { api } from "../../API"
+import { api } from "../../API";
 
 export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 {

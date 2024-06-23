@@ -1,33 +1,34 @@
-import useFile, { File } from "./File";
+import { Files } from "../../Core/Types/File";
+import useFile from "./File";
 
-export interface Files
+let appFile;
+let settingsFile;
+let passwordFile;
+let valueFile;
+let filterFile;
+let groupFile;
+let userPreferencesFile;
+
+export function initFiles()
 {
-	app: File;
-	settings: File;
-	password: File;
-	value: File;
-	filter: File;
-	group: File;
-	userPreferences: File;
+	appFile = useFile("app");
+	settingsFile = useFile("settings");
+	passwordFile = useFile("passwords");
+	valueFile = useFile("values");
+	filterFile = useFile("filters");
+	groupFile = useFile("groups");
+	userPreferencesFile = useFile("userPreferences");
 }
 
-const appFile = useFile("app");
-const settingsFile = useFile("settings");
-const passwordFile = useFile("passwords");
-const valueFile = useFile("values");
-const filterFile = useFile("filters");
-const groupFile = useFile("groups");
-const userPreferencesFile = useFile("userPreferences")
-
-const vaulticFiles: Files =
+export default function getVaulticFiles(): Files
 {
-	app: appFile,
-	settings: settingsFile,
-	password: passwordFile,
-	value: valueFile,
-	filter: filterFile,
-	group: groupFile,
-	userPreferences: userPreferencesFile
+	return {
+		app: appFile,
+		settings: settingsFile,
+		password: passwordFile,
+		value: valueFile,
+		filter: filterFile,
+		group: groupFile,
+		userPreferences: userPreferencesFile
+	}
 }
-
-export default vaulticFiles;

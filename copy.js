@@ -15,7 +15,7 @@ function getArg(argName)
     const argArray = process.argv.filter(a => a.startsWith(argName));
     if (argArray.length == 0)
     {
-        console.log("No app arg specified");
+        console.log(`No ${argName} specified`);
         return;
     }
 

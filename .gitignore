@@ -3,8 +3,11 @@ electron-app/dist
 electron-app/out
 electron-app/*.log*
 electron-app/src/renderer/src/core
+electron-app/src/main/Core
 
-core/node_modules
+core-renderer/node_modules
 
-core/test/src/core
-core/test/node_modules
+core-renderer/test/src/core
+core-renderer/test/node_modules
+
+core-main/node_modules

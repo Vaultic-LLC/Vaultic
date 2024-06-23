@@ -1,12 +1,12 @@
 import { ipcMain } from "electron";
 import hashUtility from "./Utilities/HashUtility";
 import { getDeviceInfo } from "./Objects/DeviceInfo";
-import vaulticServer from "./Objects/Server/VaulticServer";
+import vaulticServer from "./Core/Server/VaulticServer";
 import cryptUtility from "./Utilities/CryptUtility";
 import generatorUtility from "./Utilities/Generator";
-import validationHelper from "./Helpers/ValidationHelper";
+import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
-import vaulticFiles from "./Objects/Files/Files";
+import getVaulticFiles from "./Objects/Files/Files";
 
 export default function setupIPC()
 {
@@ -67,33 +67,33 @@ export default function setupIPC()
 
 	ipcMain.handle('vaulticHelper:downloadDeactivationKey', (e) => validateSender(e, () => vaulticHelper.downloadDeactivationKey()));
 
-	ipcMain.handle('appFile:exists', (e) => validateSender(e, () => vaulticFiles.app.exists()));
-	ipcMain.handle('appFile:read', (e) => validateSender(e, () => vaulticFiles.app.read()));
-	ipcMain.handle('appFile:write', (e, data: string) => validateSender(e, () => vaulticFiles.app.write(data)));
+	ipcMain.handle('appFile:exists', (e) => validateSender(e, () => getVaulticFiles().app.exists()));
+	ipcMain.handle('appFile:read', (e) => validateSender(e, () => getVaulticFiles().app.read()));
+	ipcMain.handle('appFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().app.write(data)));
 
-	ipcMain.handle('settingsFile:exists', (e) => validateSender(e, () => vaulticFiles.settings.exists()));
-	ipcMain.handle('settingsFile:read', (e) => validateSender(e, () => vaulticFiles.settings.read()));
-	ipcMain.handle('settingsFile:write', (e, data: string) => validateSender(e, () => vaulticFiles.settings.write(data)));
+	ipcMain.handle('settingsFile:exists', (e) => validateSender(e, () => getVaulticFiles().settings.exists()));
+	ipcMain.handle('settingsFile:read', (e) => validateSender(e, () => getVaulticFiles().settings.read()));
+	ipcMain.handle('settingsFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().settings.write(data)));
 
-	ipcMain.handle('passwordFile:exists', (e) => validateSender(e, () => vaulticFiles.password.exists()));
-	ipcMain.handle('passwordFile:read', (e) => validateSender(e, () => vaulticFiles.password.read()));
-	ipcMain.handle('passwordFile:write', (e, data: string) => validateSender(e, () => vaulticFiles.password.write(data)));
+	ipcMain.handle('passwordFile:exists', (e) => validateSender(e, () => getVaulticFiles().password.exists()));
+	ipcMain.handle('passwordFile:read', (e) => validateSender(e, () => getVaulticFiles().password.read()));
+	ipcMain.handle('passwordFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().password.write(data)));
 
-	ipcMain.handle('valueFile:exists', (e) => validateSender(e, () => vaulticFiles.value.exists()));
-	ipcMain.handle('valueFile:read', (e) => validateSender(e, () => vaulticFiles.value.read()));
-	ipcMain.handle('valueFile:write', (e, data: string) => validateSender(e, () => vaulticFiles.value.write(data)));
+	ipcMain.handle('valueFile:exists', (e) => validateSender(e, () => getVaulticFiles().value.exists()));
+	ipcMain.handle('valueFile:read', (e) => validateSender(e, () => getVaulticFiles().value.read()));
+	ipcMain.handle('valueFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().value.write(data)));
 
-	ipcMain.handle('filterFile:exists', (e) => validateSender(e, () => vaulticFiles.filter.exists()));
-	ipcMain.handle('filterFile:read', (e) => validateSender(e, () => vaulticFiles.filter.read()));
-	ipcMain.handle('filterFile:write', (e, data: string) => validateSender(e, () => vaulticFiles.filter.write(data)));
+	ipcMain.handle('filterFile:exists', (e) => validateSender(e, () => getVaulticFiles().filter.exists()));
+	ipcMain.handle('filterFile:read', (e) => validateSender(e, () => getVaulticFiles().filter.read()));
+	ipcMain.handle('filterFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().filter.write(data)));
 
-	ipcMain.handle('groupFile:exists', (e) => validateSender(e, () => vaulticFiles.group.exists()));
-	ipcMain.handle('groupFile:read', (e) => validateSender(e, () => vaulticFiles.group.read()));
-	ipcMain.handle('groupFile:write', (e, data: string) => validateSender(e, () => vaulticFiles.group.write(data)));
+	ipcMain.handle('groupFile:exists', (e) => validateSender(e, () => getVaulticFiles().group.exists()));
+	ipcMain.handle('groupFile:read', (e) => validateSender(e, () => getVaulticFiles().group.read()));
+	ipcMain.handle('groupFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().group.write(data)));
 
-	ipcMain.handle('userPreferencesFile:exists', (e) => validateSender(e, () => vaulticFiles.userPreferences.exists()));
-	ipcMain.handle('userPreferencesFile:read', (e) => validateSender(e, () => vaulticFiles.userPreferences.read()));
-	ipcMain.handle('userPreferencesFile:write', (e, data: string) => validateSender(e, () => vaulticFiles.userPreferences.write(data)));
+	ipcMain.handle('userPreferencesFile:exists', (e) => validateSender(e, () => getVaulticFiles().userPreferences.exists()));
+	ipcMain.handle('userPreferencesFile:read', (e) => validateSender(e, () => getVaulticFiles().userPreferences.read()));
+	ipcMain.handle('userPreferencesFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().userPreferences.write(data)));
 }
 
 function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): any

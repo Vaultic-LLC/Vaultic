@@ -3,7 +3,7 @@ import { BaseResponse } from "./Responses";
 
 export interface AxiosHelper
 {
-	instance: AxiosInstance;
+	init: () => void;
 	postSTS: <T extends BaseResponse>(serverPath: string, data?: any) => Promise<T | BaseResponse>;
 	postAPI: <T extends BaseResponse>(serverPath: string, data?: any) => Promise<T | BaseResponse>;
 }

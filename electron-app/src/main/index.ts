@@ -1,11 +1,20 @@
-import { app, shell, BrowserWindow, ipcMain, dialog, session } from 'electron'
+import { app, shell, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import setupIPC from './ipcSetup';
 
+import { environment } from "./Core/Environment"
+import cryptUtility from './Utilities/CryptUtility';
+import hashUtility from './Utilities/HashUtility';
+import generatorUtility from './Utilities/Generator';
+import { getDeviceInfo } from './Objects/DeviceInfo';
+import { initFiles } from './Objects/Files/Files';
+
 function createWindow(): void
 {
+	setupEnvironment();
+
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
 		show: false,
@@ -16,7 +25,7 @@ function createWindow(): void
 			preload: join(__dirname, '../preload/index.js'),
 			backgroundThrottling: false,
 			devTools: is.dev
-		},
+		}
 	});
 
 	mainWindow.on('ready-to-show', () =>
@@ -114,4 +123,43 @@ app.on('web-contents-created', (event, contents) =>
 	{
 		return { action: 'deny' }
 	});
-})
+});
+
+function setupEnvironment()
+{
+	const isTest = process.argv.filter(a => a === "test");
+	environment.init({
+		isTest: isTest.length == 1,
+		sessionHandler: {
+			setSession,
+			getSession
+		},
+		utilities:
+		{
+			crypt: cryptUtility,
+			hash: hashUtility,
+			generator: generatorUtility
+		},
+		getDeviceInfo
+	});
+
+	// must be called after environment is setup
+	initFiles();
+}
+
+async function setSession(cookieHash: string): Promise<void>
+{
+	const sessionTokenHashCookie = { url: 'http://www.vaultic.co', name: 'SessionTokenHash', value: cookieHash }
+	await session.defaultSession.cookies.set(sessionTokenHashCookie);
+}
+
+async function getSession(): Promise<string>
+{
+	const cookies = await session.defaultSession.cookies.get({ url: 'http://www.vaultic.co' });
+	if (cookies.length != 1)
+	{
+		return "";
+	}
+
+	return cookies[0].value ?? "";
+}

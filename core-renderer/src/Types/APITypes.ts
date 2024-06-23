@@ -127,9 +127,15 @@ export interface Files
     userPreferences: File;
 }
 
+export interface Environment 
+{
+    isDebug: boolean;
+}
+
 export interface IAPI
 {
     getDeviceInfo: () => Promise<DeviceInfo>;
+    environment: Environment;
     server: VaulticServer;
     utilities: Utilities;
     helpers: Helpers;

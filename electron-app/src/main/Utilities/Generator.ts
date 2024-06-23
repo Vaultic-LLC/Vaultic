@@ -1,15 +1,7 @@
 import { randomBytes, generateKeyPairSync, KeyPairSyncResult } from "crypto"
-import validationHelper from '../Helpers/ValidationHelper';
+import validationHelper from '../Core/Helpers/ValidationHelper';
 import crypto from "crypto";
-
-export interface GeneratorUtility
-{
-	uniqueId: () => string;
-	randomValue: (length: number) => string;
-	randomPassword: (length: number) => string;
-	randomValueOfByteLength: (byteLength: number) => string;
-	publicPrivateKey: () => KeyPairSyncResult<string, string>;
-}
+import { GeneratorUtility, PublicPrivateKey } from "../Core/Types/Utilities";
 
 function uniqueId(): string
 {
@@ -63,9 +55,9 @@ function randomValueOfByteLength(bytes: number)
 	return randomBytes(bytes).toString('hex');
 }
 
-function publicPrivateKey(): KeyPairSyncResult<string, string>
+function publicPrivateKey(): PublicPrivateKey
 {
-	return generateKeyPairSync('rsa', {
+	const keys = generateKeyPairSync('rsa', {
 		modulusLength: 4096,
 		publicKeyEncoding: {
 			type: 'spki',
@@ -76,6 +68,11 @@ function publicPrivateKey(): KeyPairSyncResult<string, string>
 			format: 'pem'
 		}
 	});
+
+	return {
+		public: keys.publicKey,
+		private: keys.privateKey
+	}
 }
 
 const generatorUtility: GeneratorUtility =
