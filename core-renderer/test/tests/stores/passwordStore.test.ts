@@ -1,115 +1,119 @@
-import { expect, test } from 'vitest';
-import { stores } from "../../src/core/Objects/Stores";
-import { defaultPassword, type Password } from 'src/core/Types/EncryptedData';
-import cryptHelper from 'src/core/Helpers/cryptHelper';
-import createReactivePassword from 'src/core/Objects/Stores/ReactivePassword';
+import { stores } from "../../src/core/Objects/Stores/index";
+import { defaultPassword, type Password } from '../../src/core/Types/EncryptedData';
+import cryptHelper from '../../src/core/Helpers/cryptHelper';
+import createReactivePassword from '../../src/core/Objects/Stores/ReactivePassword';
+import type { ITest, TestContext } from '../test';
+
+let passwordTests: ITest[] = [];
 
 const masterKey = "test";
 
-test('Add works', async () =>
-{
-    const password: Password = defaultPassword();
-    password.id = "AddWorks";
+passwordTests.push({
+    name: "PasswordStore Add Works", func: async (ctx: TestContext) =>
+    {
+        const password: Password = defaultPassword();
 
-    const sequrityQuestion = {
-        id: "SecurityQuestion",
-        question: "Question",
-        questionLength: 0,
-        answer: "Answer",
-        answerLength: 0
-    };
+        const sequrityQuestion = {
+            id: "SecurityQuestion",
+            question: "Question",
+            questionLength: 0,
+            answer: "Answer",
+            answerLength: 0
+        };
 
-    password.securityQuestions.push(sequrityQuestion);
+        password.securityQuestions.push(sequrityQuestion);
 
-    await stores.passwordStore.addPassword(masterKey, password);
+        await stores.passwordStore.addPassword(masterKey, password);
+        const retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id)[0];
 
-    expect(stores.passwordStore.passwords.length).toEqual(1);
-
-    const retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == "AddWorks")[0];
-
-    expect(retrievedPassword.securityQuestions.length).toEqual(1);
-    expect(retrievedPassword.securityQuestions[0].answerLength).toEqual(sequrityQuestion.answer.length);
-    expect(retrievedPassword.securityQuestions[0].questionLength).toEqual(sequrityQuestion.question.length);
+        ctx.assertEquals("One Security Question", retrievedPassword.securityQuestions.length, 1);
+        ctx.assertEquals("Answer Length", retrievedPassword.securityQuestions[0].answerLength, 6);
+        ctx.assertEquals("Question Length", retrievedPassword.securityQuestions[0].questionLength, 8);
+    }
 });
 
-test('Update works', async () => 
-{
-    const password: Password = defaultPassword();
-    password.id = "UpdateWorks";
+passwordTests.push({
+    name: 'Update works', func: async (ctx: TestContext) => 
+    {
+        const password: Password = defaultPassword();
+        await stores.passwordStore.addPassword(masterKey, password);
 
-    await stores.passwordStore.addPassword(masterKey, password);
+        const newLogin = "New Login";
+        password.login = newLogin;
 
-    const newLogin = "New Login";
-    password.login = newLogin;
+        await stores.passwordStore.updatePassword(masterKey, password, false, [], []);
+        const updatedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
 
-    await stores.passwordStore.updatePassword(masterKey, password, false, [], []);
-    const updatedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
-
-    expect(updatedPassword[0].login).toEqual(newLogin);
+        ctx.assertEquals("New Login", updatedPassword[0].login, newLogin);
+    }
 });
 
-test('Update password works', async () =>
-{
-    const password: Password = defaultPassword();
-    password.id = "UpdatePasswordWorks";
+passwordTests.push({
+    name: 'Update password works', func: async (ctx: TestContext) =>
+    {
+        const password: Password = defaultPassword();
+        await stores.passwordStore.addPassword(masterKey, password);
 
-    await stores.passwordStore.addPassword(masterKey, password);
+        const newPassword = "New Password";
+        password.password = newPassword;
 
-    const newPassword = "New Password";
-    password.password = newPassword;
+        await stores.passwordStore.updatePassword(masterKey, password, true, [], []);
+        const updatedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
 
-    await stores.passwordStore.updatePassword(masterKey, password, true, [], []);
-    const updatedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
-
-    const decryptedNewPassword = await cryptHelper.decrypt(masterKey, updatedPassword[0].password);
-    expect(decryptedNewPassword.value).toEqual(newPassword);
+        const decryptedNewPassword = await cryptHelper.decrypt(masterKey, updatedPassword[0].password);
+        ctx.assertEquals("New Password", decryptedNewPassword.value, newPassword);
+    }
 });
 
-test('Update security question works', async () =>
-{
-    const password: Password = defaultPassword();
-    password.id = "UpdateSecurityQuestionWorks";
+passwordTests.push({
+    name: 'Update security question works', func: async (ctx: TestContext) =>
+    {
+        const password: Password = defaultPassword();
+        const securityQuestion = {
+            id: "SecurityQuestion",
+            question: "Question",
+            questionLength: 0,
+            answer: "Answer",
+            answerLength: 0
+        };
 
-    const securityQuestion = {
-        id: "SecurityQuestion",
-        question: "Question",
-        questionLength: 0,
-        answer: "Answer",
-        answerLength: 0
-    };
+        password.securityQuestions.push(securityQuestion);
 
-    password.securityQuestions.push(securityQuestion);
+        await stores.passwordStore.addPassword(masterKey, password);
 
-    await stores.passwordStore.addPassword(masterKey, password);
+        const newQuesiton = "UpdatedQuesiton";
+        const newAnswer = "UpdatedAnswer";
 
-    const newQuesiton = "UpdatedQuesiton";
-    const newAnswer = "UpdatedAnswer";
+        password.securityQuestions[0].question = newQuesiton;
+        password.securityQuestions[0].answer = newAnswer;
 
-    password.securityQuestions[0].question = newQuesiton;
-    password.securityQuestions[0].answer = newAnswer;
+        await stores.passwordStore.updatePassword(masterKey, password, false, [securityQuestion.id], [securityQuestion.id]);
+        const updatedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
 
-    await stores.passwordStore.updatePassword(masterKey, password, false, [securityQuestion.id], [securityQuestion.id]);
-    const updatedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
+        const decryptedAnswer = await cryptHelper.decrypt(masterKey, updatedPassword[0].securityQuestions[0].answer);
 
-    const decryptedAnswer = await cryptHelper.decrypt(masterKey, updatedPassword[0].securityQuestions[0].question);
-
-    expect(decryptedAnswer.value).toEqual(newAnswer);
-    expect(updatedPassword[0].securityQuestions[0].answerLength).toEqual(newAnswer.length);
-    expect(updatedPassword[0].securityQuestions[0].questionLength).toEqual(newQuesiton.length);
+        ctx.assertEquals("New Answer", decryptedAnswer.value, newAnswer);
+        ctx.assertEquals("Answer Length", updatedPassword[0].securityQuestions[0].answerLength, newAnswer.length);
+        ctx.assertEquals("Question Length", updatedPassword[0].securityQuestions[0].questionLength, newQuesiton.length);
+    }
 });
 
-test('Delete works', async () => 
-{
-    const password: Password = defaultPassword();
-    password.id = "DeleteWorks";
+passwordTests.push({
+    name: 'Delete works', func: async (ctx: TestContext) => 
+    {
+        const password: Password = defaultPassword();
 
-    await stores.passwordStore.addPassword(masterKey, password);
+        await stores.passwordStore.addPassword(masterKey, password);
 
-    expect(stores.passwordStore.passwords.length).toEqual(1);
+        const retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
+        ctx.assertTruthy("Password Exists", retrievedPassword[0]);
 
-    const reactivePassword = await createReactivePassword(masterKey, password);
-    await stores.passwordStore.deletePassword(masterKey, reactivePassword);
+        const reactivePassword = createReactivePassword(password);
+        await stores.passwordStore.deletePassword(masterKey, reactivePassword);
 
-    const deletedPassword = stores.passwordStore.passwords.filter(p => p.id == "DeleteWorks");
-    expect(deletedPassword.length).toEqual(0);
+        const deletedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);
+        ctx.assertEquals("Password Deleted", deletedPassword.length, 0);
+    }
 });
+
+export default passwordTests;

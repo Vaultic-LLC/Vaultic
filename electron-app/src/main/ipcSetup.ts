@@ -7,6 +7,7 @@ import generatorUtility from "./Utilities/Generator";
 import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
 import getVaulticFiles from "./Objects/Files/Files";
+import { environment } from "./Core/Environment";
 
 export default function setupIPC()
 {
@@ -94,6 +95,8 @@ export default function setupIPC()
 	ipcMain.handle('userPreferencesFile:exists', (e) => validateSender(e, () => getVaulticFiles().userPreferences.exists()));
 	ipcMain.handle('userPreferencesFile:read', (e) => validateSender(e, () => getVaulticFiles().userPreferences.read()));
 	ipcMain.handle('userPreferencesFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().userPreferences.write(data)));
+
+	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 }
 
 function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): any

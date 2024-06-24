@@ -101,7 +101,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
 
         this.updateSecurityQuestions(masterKey, password, true, [], []);
 
-        const reactivePassword = await createReactivePassword(masterKey, password);
+        const reactivePassword = createReactivePassword(password);
         this.state.values.push(reactivePassword);
         this.incrementCurrentAndSafePasswords();
 
@@ -134,15 +134,15 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
         updatedSecurityQuestionAnswers: string[]): Promise<boolean>
     {
-        const passwords = this.state.values.filter(p => p.id == updatingPassword.id);
-        if (passwords.length != 1)
+        const passwordIndex = this.state.values.findIndex(p => p.id == updatingPassword.id);
+        if (passwordIndex < 0)
         {
             return false;
         }
 
         // TODO: Check update email on sever if isVaultic
 
-        const currentPassword = passwords[0];
+        const currentPassword = this.state.values[passwordIndex];
 
         // retrieve these before updating
         const addedGroups = updatingPassword.groups.filter(g => !currentPassword.groups.includes(g));
@@ -181,9 +181,10 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         }
 
         this.incrementCurrentAndSafePasswords();
-
         this.updateSecurityQuestions(masterKey, updatingPassword, false, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers);
-        Object.assign(this.state.values.filter(p => p.id == updatingPassword.id), updatingPassword);
+
+        const newPassword = createReactivePassword(updatingPassword);
+        this.state.values[passwordIndex] = newPassword;
 
         stores.groupStore.syncGroupsForPasswords(updatingPassword.id, addedGroups, removedGroups);
         stores.filterStore.syncFiltersForPasswords(stores.filterStore.passwordFilters, [updatingPassword]);
@@ -218,7 +219,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
             return false;
         }
 
-        const passwordIndex = this.state.values.indexOf(password);
+        const passwordIndex = this.state.values.findIndex(p => p.id == password.id);
         if (passwordIndex < 0)
         {
             return false;

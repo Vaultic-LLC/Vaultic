@@ -129,7 +129,7 @@ export interface Files
 
 export interface Environment 
 {
-    isDebug: boolean;
+    isTest: () => Promise<boolean>;
 }
 
 export interface IAPI

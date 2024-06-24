@@ -13,7 +13,9 @@ import { initFiles } from './Objects/Files/Files';
 
 function createWindow(): void
 {
-	setupEnvironment();
+	//@ts-ignore
+	const isTest = import.meta.env.ISTEST === true;
+	setupEnvironment(isTest);
 
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
@@ -125,11 +127,10 @@ app.on('web-contents-created', (event, contents) =>
 	});
 });
 
-function setupEnvironment()
+function setupEnvironment(isTest: boolean)
 {
-	const isTest = process.argv.filter(a => a === "test");
 	environment.init({
-		isTest: isTest.length == 1,
+		isTest,
 		sessionHandler: {
 			setSession,
 			getSession

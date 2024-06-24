@@ -11,3 +11,5 @@ core-renderer/test/src/core
 core-renderer/test/node_modules
 
 core-main/node_modules
+
+electron-app-test/app
