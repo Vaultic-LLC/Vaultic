@@ -295,6 +295,37 @@ export class PrimaryDataObjectStore<U, T extends DataTypeStoreState<U>> extends 
             delete allDuplicates[primaryDataObject.id];
         }
     }
+
+    protected checkRemoveFromDuplicate<T extends IIdentifiable>(
+        primaryDataObject: T,
+        allDuplicates: Dictionary<string[]>)
+    {
+        if (!allDuplicates[primaryDataObject.id])
+        {
+            return;
+        }
+
+        allDuplicates[primaryDataObject.id].forEach(p =>
+        {
+            if (!allDuplicates[p])
+            {
+                return;
+            }
+
+            const currentPrimaryObjectIndex = allDuplicates[p].indexOf(primaryDataObject.id);
+            if (currentPrimaryObjectIndex >= 0)
+            {
+                allDuplicates[p].splice(currentPrimaryObjectIndex, 1);
+            }
+
+            if (allDuplicates[p] && allDuplicates[p].length == 0)
+            {
+                delete allDuplicates[p];
+            }
+        });
+
+        delete allDuplicates[primaryDataObject.id];
+    }
 }
 
 export class SecondaryObjectStore<U, T extends DataTypeStoreState<U>> extends DataTypeStore<U, T>

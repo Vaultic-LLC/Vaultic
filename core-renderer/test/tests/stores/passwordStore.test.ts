@@ -3,7 +3,7 @@ import { defaultFilter, defaultGroup, defaultPassword, type Password } from '../
 import cryptHelper from '../../src/core/Helpers/cryptHelper';
 import createReactivePassword from '../../src/core/Objects/Stores/ReactivePassword';
 import { createTestSuite, type TestContext } from '../test';
-import { DataType, Filter, Group } from "../../src/core/Types/Table";
+import { DataType, Filter, FilterConditionType, Group } from "../../src/core/Types/Table";
 
 let passwordStoreSuite = createTestSuite("Password Store");
 
@@ -190,6 +190,7 @@ passwordStoreSuite.tests.push({
     name: 'Update password works', func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.password = "Original Password";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const newPassword = "New Password";
@@ -242,6 +243,7 @@ passwordStoreSuite.tests.push({
         const strongPassword = "VNLinlsdhfklahsn]p][2p359jgjvlSHDGuilhwluihgwuieghl";
         const weakPassword: Password = defaultPassword();
         weakPassword.password = "weak";
+        weakPassword.login = "MetricsWorkAfterUpdate";
 
         const duplicatePassword: Password = defaultPassword();
         duplicatePassword.password = strongPassword;
@@ -339,21 +341,23 @@ passwordStoreSuite.tests.push({
 
         await stores.groupStore.addGroup(masterKey, group);
 
-        password.groups.push(group.id);
-        await stores.passwordStore.updatePassword(masterKey, password, false, [], []);
+        const addedGroupPassword = JSON.parse(JSON.stringify(password));
+        addedGroupPassword.groups.push(group.id);
+        await stores.passwordStore.updatePassword(masterKey, addedGroupPassword, false, [], []);
 
-        let retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        let retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == addedGroupPassword.id)[0];
         let retrievedGroup = stores.groupStore.passwordGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertEquals("Password has group id", retrievedPassword.groups.filter(g => g == retrievedGroup.id).length, 1);
-        ctx.assertEquals("Group has password id", retrievedGroup.passwords.filter(p => p == retrievedPassword.id).length, 1);
+        ctx.assertTruthy("Password has group id", retrievedPassword.groups.includes(retrievedGroup.id));
+        ctx.assertTruthy("Group has password id", retrievedGroup.passwords.includes(retrievedPassword.id));
 
-        password.groups = [];
-        await stores.passwordStore.updatePassword(masterKey, password, false, [], []);
+        const removedGroupPassword = JSON.parse(JSON.stringify(addedGroupPassword));
+        removedGroupPassword.groups = [];
+        await stores.passwordStore.updatePassword(masterKey, removedGroupPassword, false, [], []);
 
-        retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == removedGroupPassword.id)[0];
         retrievedGroup = stores.groupStore.passwordGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword);
@@ -367,14 +371,22 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Update With Filters Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "UpdateWithFilterWorks--NoFilter";
+
         await stores.passwordStore.addPassword(masterKey, password);
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name = "PasswordStore Update With Filter Works";
+        filter.conditions.push({
+            id: "Id",
+            property: "login",
+            filterType: FilterConditionType.EqualTo,
+            value: "UpdateWithFilterWorks--Filter"
+        });
 
         await stores.filterStore.addFilter(masterKey, filter);
 
-        password.filters.push(filter.id);
+        password.login = "UpdateWithFilterWorks--Filter";
         await stores.passwordStore.updatePassword(masterKey, password, false, [], []);
 
         let retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id)[0];
@@ -385,7 +397,7 @@ passwordStoreSuite.tests.push({
         ctx.assertEquals("Password has filter id", retrievedPassword.filters.filter(f => f == retrievedFilter.id).length, 1);
         ctx.assertEquals("Filter has password id", retrievedFilter.passwords.filter(p => p == retrievedPassword.id).length, 1);
 
-        password.filters = [];
+        password.login = "UpdateWithFilterWorks--NoFilter";
         await stores.passwordStore.updatePassword(masterKey, password, false, [], []);
 
         retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id)[0];
@@ -526,13 +538,18 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Delete With Filters Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "DeleteWithFilterWorks";
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name = "PasswordStore Update With Filter Works";
+        filter.conditions.push({
+            id: "DeleteWithFilterWorks--Condition",
+            property: "login",
+            filterType: FilterConditionType.EqualTo,
+            value: "DeleteWithFilterWorks"
+        });
 
         await stores.filterStore.addFilter(masterKey, filter);
-
-        password.filters.push(filter.id);
         await stores.passwordStore.addPassword(masterKey, password);
 
         let retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id);

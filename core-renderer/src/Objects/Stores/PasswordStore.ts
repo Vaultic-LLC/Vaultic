@@ -95,7 +95,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         password.id = await generateUniqueID(this.state.values);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        this.checkUpdateDuplicatePrimaryObjects(masterKey, password, this.passwords, "password", this.state.duplicatePasswords);
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, this.passwords, "password", this.state.duplicatePasswords);
 
         if (!(await this.setPasswordProperties(masterKey, password)))
         {
@@ -160,7 +160,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
             }
 
             // do this before re encrypting the password
-            this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword,
+            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword,
                 this.state.values.filter(p => p.id != updatingPassword.id), "password", this.state.duplicatePasswords);
 
             if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
@@ -229,7 +229,9 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
             return false;
         }
 
+        this.checkRemoveFromDuplicate(password, this.state.duplicatePasswords);
         this.state.values.splice(passwordIndex, 1);
+        this.incrementCurrentAndSafePasswords();
 
         stores.groupStore.syncGroupsForPasswords(password.id, [], password.groups);
         stores.filterStore.removePasswordFromFilters(password.id);
@@ -277,10 +279,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
             password.isWeak = isWeak;
             password.isWeakMessage = isWeakMessage;
 
-            if (password.password.includes(password.login))
-            {
-                password.containsLogin = true;
-            }
+            password.containsLogin = password.password.includes(password.login);
 
             const response = await cryptHelper.encrypt(masterKey, password.password);
             if (!response)
