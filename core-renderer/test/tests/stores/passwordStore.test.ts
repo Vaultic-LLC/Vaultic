@@ -9,10 +9,21 @@ let passwordStoreSuite = createTestSuite("Password Store");
 
 const masterKey = "test";
 
+function getSafePasswords()
+{
+    return stores.passwordStore.passwords.filter(p => !p.isWeak && !stores.passwordStore.duplicatePasswords.value.includes(p.id) && !p.containsLogin && !p.isOld);
+}
+
 passwordStoreSuite.tests.push({
     name: "PasswordStore Add Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "Login";
+        password.email = "Email@Email";
+        password.domain = "www.domain.com";
+        password.password = "Password";
+        password.passwordFor = "PasswordFor";
+        password.additionalInformation = "AdditionalInformation";
 
         const sequrityQuestion = {
             id: "SecurityQuestion",
@@ -27,8 +38,17 @@ passwordStoreSuite.tests.push({
         await stores.passwordStore.addPassword(masterKey, password);
         const retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id)[0];
 
+        const decryptedPassword = await cryptHelper.decrypt(masterKey, retrievedPassword.password);
         const decryptedSecurityQuesitonQuestion = await cryptHelper.decrypt(masterKey, retrievedPassword.securityQuestions[0].question);
         const decryptedSecurityQuesitonAnswer = await cryptHelper.decrypt(masterKey, retrievedPassword.securityQuestions[0].answer);
+
+        ctx.assertEquals("Login is correct", retrievedPassword.login, "Login");
+        ctx.assertEquals("Email is correct", retrievedPassword.email, "Email@Email");
+        ctx.assertEquals("Domain is correct", retrievedPassword.domain, "www.domain.com");
+        ctx.assertEquals("Password is correct", decryptedPassword.value, "Password");
+        ctx.assertEquals("PasswordFor is correct", retrievedPassword.passwordFor, "PasswordFor");
+        ctx.assertEquals("PasswordLength is correct", retrievedPassword.passwordLength, 8);
+        ctx.assertEquals("AdditionalInformation is correct", retrievedPassword.additionalInformation, "AdditionalInformation");
 
         ctx.assertEquals("One Security Question", retrievedPassword.securityQuestions.length, 1);
         ctx.assertEquals("Decrypted security question question", decryptedSecurityQuesitonQuestion.value, "Question");
@@ -87,7 +107,7 @@ passwordStoreSuite.tests.push({
 
         ctx.assertEquals("Safe password correct safe",
             stores.passwordStore.currentAndSafePasswords.safe[stores.passwordStore.currentAndSafePasswords.safe.length - 1],
-            stores.passwordStore.safePasswords.length);
+            getSafePasswords().length);
 
         await stores.passwordStore.addPassword(masterKey, unsafePassword);
 
@@ -97,7 +117,7 @@ passwordStoreSuite.tests.push({
 
         ctx.assertEquals("Unsafe password correct safe",
             stores.passwordStore.currentAndSafePasswords.safe[stores.passwordStore.currentAndSafePasswords.safe.length - 1],
-            stores.passwordStore.safePasswords.length);
+            getSafePasswords().length);
     }
 });
 
@@ -130,14 +150,18 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Add With Filter Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "PasswordStore Add With Filter Works";
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name = "PasswordStore Add With Filter Works";
+        filter.conditions.push({
+            id: "PasswordStore Add With Filter Works",
+            property: "login",
+            filterType: FilterConditionType.EqualTo,
+            value: "PasswordStore Add With Filter Works"
+        });
 
         await stores.filterStore.addFilter(masterKey, filter);
-
-        password.filters.push(filter.id);
-
         await stores.passwordStore.addPassword(masterKey, password);
 
         const retrievedPassword = stores.passwordStore.passwords.filter(p => p.id == password.id)[0];
@@ -151,7 +175,7 @@ passwordStoreSuite.tests.push({
 });
 
 passwordStoreSuite.tests.push({
-    name: 'Update works', func: async (ctx: TestContext) => 
+    name: 'PasswordStore Update works', func: async (ctx: TestContext) => 
     {
         const originalLogin = "TestUpdateWorksLogin";
 
@@ -314,7 +338,7 @@ passwordStoreSuite.tests.push({
 
         ctx.assertEquals("Unsafe password correct safe",
             stores.passwordStore.currentAndSafePasswords.safe[stores.passwordStore.currentAndSafePasswords.safe.length - 1],
-            stores.passwordStore.safePasswords.length);
+            getSafePasswords().length);
 
         password.password = "sdvlaioashvlSDLhbislhi2h892upt9jslinp[k2pop3tk2pyj";
         await stores.passwordStore.updatePassword(masterKey, password, true, [], []);
@@ -325,7 +349,7 @@ passwordStoreSuite.tests.push({
 
         ctx.assertEquals("Safe password correct safe",
             stores.passwordStore.currentAndSafePasswords.safe[stores.passwordStore.currentAndSafePasswords.safe.length - 1],
-            stores.passwordStore.safePasswords.length);
+            getSafePasswords().length);
     }
 });
 
@@ -497,7 +521,7 @@ passwordStoreSuite.tests.push({
 
         ctx.assertEquals("Correct safe",
             stores.passwordStore.currentAndSafePasswords.safe[stores.passwordStore.currentAndSafePasswords.safe.length - 1],
-            stores.passwordStore.safePasswords.length);
+            getSafePasswords().length);
     }
 });
 

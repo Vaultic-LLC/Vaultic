@@ -47,7 +47,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         this.internalWeakPassphraseValues = computed(() => this.state.values.filter(nvp => nvp.valueType == NameValuePairType.Passphrase && nvp.isWeak).map(nvp => nvp.id));
         this.internalWeakPasscodeValues = computed(() => this.state.values.filter(nvp => nvp.valueType == NameValuePairType.Passcode && nvp.isWeak).map(nvp => nvp.id));
 
-        this.internalDuplicateNameValuePairs = computed(() => this.state.values.filter(nvp => nvp.isDuplicate).map(nvp => nvp.id));
+        this.internalDuplicateNameValuePairs = computed(() => Object.keys(this.state.duplicateValues));
         this.internalDuplicateNameValuePairsLength = computed(() => Object.keys(this.state.duplicateValues).length);
 
         this.internalPinnedValues = computed(() => this.state.values.filter(nvp => stores.userPreferenceStore.pinnedValues.hasOwnProperty(nvp.id)));
@@ -83,7 +83,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         value.id = await generateUniqueID(this.state.values);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        this.checkUpdateDuplicatePrimaryObjects(masterKey, value, this.state.values, "value", this.state.duplicateValues);
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, value, this.state.values, "value", this.state.duplicateValues);
 
         if (!(await this.setValueProperties(masterKey, value)))
         {
@@ -134,7 +134,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 
         if (valueWasUpdated)
         {
-            this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, this.state.values, "value", this.state.duplicateValues);
+            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, this.state.values, "value", this.state.duplicateValues);
             if (!(await this.setValueProperties(masterKey, updatedValue)))
             {
                 return false;
@@ -148,7 +148,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
                 return false;
             }
 
-            // we want to re check this in case the type was changed
+            // check if the value is weak in case something changed
             this.checkIfValueIsWeak(response.value!, updatedValue);
         }
 
@@ -190,6 +190,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
             return false;
         }
 
+        this.checkRemoveFromDuplicate(value, this.state.duplicateValues);
         this.state.values.splice(valueIndex, 1);
         this.incrementCurrentAndSafeValues();
 
@@ -268,7 +269,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         this.state.currentAndSafeValues.current.push(this.state.values.length);
 
         const safeValues = this.state.values.filter(
-            v => !v.isWeak && !this.duplicateNameValuePairs[v.id] && !v.isOld);
+            v => !v.isWeak && !this.duplicateNameValuePairs.value.includes(v.id) && !v.isOld);
 
         this.state.currentAndSafeValues.safe.push(safeValues.length);
     }

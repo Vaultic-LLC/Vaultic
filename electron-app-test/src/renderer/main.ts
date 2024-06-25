@@ -7,7 +7,7 @@ import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
 import { stores } from './core/Objects/Stores';
-import runAllTests from "../tests/index"
+import runAllTests, { runAllValueTests } from "../tests/index"
 
 api.setAPI(window.api);
 

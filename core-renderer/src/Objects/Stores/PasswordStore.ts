@@ -25,7 +25,6 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
     private internalDuplicatePasswordsLength: ComputedRef<number>;
     private internalPinnedPasswords: ComputedRef<ReactivePassword[]>;
     private internalUnpinnedPasswords: ComputedRef<ReactivePassword[]>;
-    private internalSafePassword: ComputedRef<ReactivePassword[]>;
 
     private internalActiveAtRiskPasswordType: Ref<AtRiskType>;
     private internalHasVaulticPassword: ComputedRef<boolean>;
@@ -44,7 +43,6 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
     get activeAtRiskPasswordType() { return this.internalActiveAtRiskPasswordType.value; }
     get hasVaulticPassword() { return this.internalHasVaulticPassword.value; }
     get breachedPasswords() { return this.internalBreachedPasswords.value; }
-    get safePasswords() { return this.internalSafePassword.value; }
 
     constructor()
     {
@@ -59,7 +57,6 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         this.internalDuplicatePasswordsLength = computed(() => Object.keys(this.state.duplicatePasswords).length);
         this.internalPinnedPasswords = computed(() => this.state.values.filter(p => stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
         this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
-        this.internalSafePassword = computed(() => this.state.values.filter(p => !p.isWeak && !p.isDuplicate && !p.containsLogin && !p.isOld));
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
         this.internalHasVaulticPassword = computed(() => this.state.values.filter(p => p.isVaultic).length > 0);
@@ -263,7 +260,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         this.state.currentAndSafePasswords.current.push(this.state.values.length);
 
         const safePasswords = this.state.values.filter(
-            p => !p.isWeak && !this.duplicatePasswords[p.id] && !p.containsLogin && !p.isOld);
+            p => !p.isWeak && !this.duplicatePasswords.value.includes(p.id) && !p.containsLogin && !p.isOld);
 
         this.state.currentAndSafePasswords.safe.push(safePasswords.length);
     }

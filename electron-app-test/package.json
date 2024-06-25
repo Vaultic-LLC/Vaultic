@@ -9,7 +9,9 @@
         "copy-env": "node ../copy.js src=./src/app dest=./app",
         "copy-main-ts": "node ../copy.js src=./src/renderer dest=./app/src/renderer/src",
         "copy": "npm run copy-electron-app && npm run copy-test-files && npm run copy-env && npm run copy-main-ts",
-        "test": "npm run copy && cd app && npm run test"
+        "copy-no-app": "npm run copy-test-files && npm run copy-env && npm run copy-main-ts",
+        "test": "npm run copy && cd app && npm run test",
+        "test-no-copy-app": "npm run copy-no-app && cd app && npm run test"
     },
     "author": "",
     "license": "ISC"

@@ -8,6 +8,8 @@ export interface ReactivePassword extends Password
     isSafe: boolean;
 }
 
+// TODO: Remove isSafe and isDuplicate from here and reactive value. 
+// Remove these entirely then and just create a method or something for isOld?
 export default function createReactivePassword(password: Password): ReactivePassword
 {
     const passwordState: Password = reactive({
