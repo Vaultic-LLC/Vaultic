@@ -25,6 +25,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
     private internalDuplicatePasswordsLength: ComputedRef<number>;
     private internalPinnedPasswords: ComputedRef<ReactivePassword[]>;
     private internalUnpinnedPasswords: ComputedRef<ReactivePassword[]>;
+    private internalSafePassword: ComputedRef<ReactivePassword[]>;
 
     private internalActiveAtRiskPasswordType: Ref<AtRiskType>;
     private internalHasVaulticPassword: ComputedRef<boolean>;
@@ -43,6 +44,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
     get activeAtRiskPasswordType() { return this.internalActiveAtRiskPasswordType.value; }
     get hasVaulticPassword() { return this.internalHasVaulticPassword.value; }
     get breachedPasswords() { return this.internalBreachedPasswords.value; }
+    get safePasswords() { return this.internalSafePassword.value; }
 
     constructor()
     {
@@ -57,6 +59,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         this.internalDuplicatePasswordsLength = computed(() => Object.keys(this.state.duplicatePasswords).length);
         this.internalPinnedPasswords = computed(() => this.state.values.filter(p => stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
         this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !stores.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
+        this.internalSafePassword = computed(() => this.state.values.filter(p => !p.isWeak && !p.isDuplicate && !p.containsLogin && !p.isOld));
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
         this.internalHasVaulticPassword = computed(() => this.state.values.filter(p => p.isVaultic).length > 0);
@@ -180,11 +183,12 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
             }
         }
 
-        this.incrementCurrentAndSafePasswords();
         this.updateSecurityQuestions(masterKey, updatingPassword, false, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers);
 
         const newPassword = createReactivePassword(updatingPassword);
         this.state.values[passwordIndex] = newPassword;
+
+        this.incrementCurrentAndSafePasswords();
 
         stores.groupStore.syncGroupsForPasswords(updatingPassword.id, addedGroups, removedGroups);
         stores.filterStore.syncFiltersForPasswords(stores.filterStore.passwordFilters, [updatingPassword]);

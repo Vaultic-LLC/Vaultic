@@ -122,20 +122,23 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 
     async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>
     {
-        let currentValues = this.state.values.filter(v => v.id == updatedValue.id);
-        if (currentValues.length != 1)
+        let currentValueIndex = this.state.values.findIndex(v => v.id == updatedValue.id);
+        if (currentValueIndex < 0)
         {
             return false;
         }
 
-        let currentValue = currentValues[0];
+        let currentValue = this.state.values[currentValueIndex];
         const addedGroups = updatedValue.groups.filter(g => !currentValue.groups.includes(g));
-        const removedGroups = currentValue.gorups.filter(g => !updatedValue.groups.includes(g));
+        const removedGroups = currentValue.groups.filter(g => !updatedValue.groups.includes(g));
 
         if (valueWasUpdated)
         {
             this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, this.state.values, "value", this.state.duplicateValues);
-            this.setValueProperties(masterKey, updatedValue);
+            if (!(await this.setValueProperties(masterKey, updatedValue)))
+            {
+                return false;
+            }
         }
         else
         {
@@ -150,7 +153,9 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         }
 
         this.incrementCurrentAndSafeValues();
-        Object.assign(this.state.values.filter(v => v.id == updatedValue.id), updatedValue);
+
+        const newReactiveValue = createReactiveValue(updatedValue);
+        this.state.values[currentValueIndex] = newReactiveValue;
 
         stores.groupStore.syncGroupsForValues(updatedValue.id, addedGroups, removedGroups);
         stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [updatedValue]);
@@ -179,7 +184,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 
     async deleteNameValuePair(masterKey: string, value: ReactiveValue): Promise<boolean>
     {
-        const valueIndex = this.state.values.indexOf(value);
+        const valueIndex = this.state.values.findIndex(v => v.id == value.id);
         if (valueIndex < 0)
         {
             return false;

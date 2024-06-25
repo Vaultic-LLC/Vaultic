@@ -1,3 +1,8 @@
+export interface TestSuite
+{
+    name: string;
+    tests: ITest[];
+}
 
 export interface ITest 
 {
@@ -9,6 +14,14 @@ export interface TestContext
 {
     assertEquals<T>(description: string, actual: T, expected: T): void;
     assertTruthy<T>(description: string, value: T): void;
+}
+
+export function createTestSuite(name: string): TestSuite
+{
+    return {
+        name,
+        tests: []
+    }
 }
 
 export class Test
@@ -75,6 +88,7 @@ export class TestResult
     {
         const failedTests = Object.keys(this.failedTests);
         console.log('----- Test Results -----');
+        console.timeLog();
         console.log(`Passed: ${this.totalTests - failedTests.length}`);
         console.log(`Failed: ${failedTests.length}`);
 
@@ -87,7 +101,7 @@ export class TestResult
                 console.log(`Test: ${f}`);
                 this.failedTests[f].forEach(t => 
                 {
-                    console.log(t);
+                    console.log(`\t ${t}`);
                 });
             });
         }

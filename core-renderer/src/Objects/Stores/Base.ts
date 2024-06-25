@@ -254,35 +254,35 @@ export class PrimaryDataObjectStore<U, T extends DataTypeStoreState<U>> extends 
             if (response.value == primaryDataObject[secretProperty])
             {
                 // updating the list for the current primaryObject to include the duplicate primaryObjects id
-                if (!allDuplicates[primaryDataObject.id].includes(tempPrimaryObject.id))
+                if (!allDuplicates[primaryDataObject.id]?.includes(tempPrimaryObject.id))
                 {
-                    allDuplicates[primaryDataObject.id].push(tempPrimaryObject.id);
+                    allDuplicates[primaryDataObject.id]?.push(tempPrimaryObject.id);
                 }
 
                 // updating the duplciate primaryObjects list to include the current primaryObjects id
-                if (!allDuplicates[tempPrimaryObject.id].includes(primaryDataObject.id))
+                if (!allDuplicates[tempPrimaryObject.id]?.includes(primaryDataObject.id))
                 {
-                    allDuplicates[tempPrimaryObject.id].push(primaryDataObject.id);
+                    allDuplicates[tempPrimaryObject.id]?.push(primaryDataObject.id);
                 }
             }
             else
             {
-                const tempPrimaryObjectIndex = allDuplicates[primaryDataObject.id].indexOf(tempPrimaryObject.id);
+                const tempPrimaryObjectIndex = allDuplicates[primaryDataObject.id]?.indexOf(tempPrimaryObject.id) ?? -1;
                 if (tempPrimaryObjectIndex >= 0)
                 {
                     // remove old duplicate id from current primary objects list since it is no longer a duplicate
-                    allDuplicates[primaryDataObject.id].splice(tempPrimaryObjectIndex, 1);
+                    allDuplicates[primaryDataObject.id]?.splice(tempPrimaryObjectIndex, 1);
                 }
 
-                const currentPrimaryObjectIndex = allDuplicates[tempPrimaryObject.id].indexOf(primaryDataObject.id);
+                const currentPrimaryObjectIndex = allDuplicates[tempPrimaryObject.id]?.indexOf(primaryDataObject.id) ?? -1;
                 if (currentPrimaryObjectIndex >= 0)
                 {
                     // remove current primary object from temp primary objects list since it is no loner a duplicate
-                    allDuplicates[tempPrimaryObject.id].splice(currentPrimaryObjectIndex, 1);
+                    allDuplicates[tempPrimaryObject.id]?.splice(currentPrimaryObjectIndex, 1);
                 }
 
                 // remove  temp primary objects list since it no longer has any duplicates
-                if (allDuplicates[tempPrimaryObject.id].length == 0)
+                if (allDuplicates[tempPrimaryObject.id] && allDuplicates[tempPrimaryObject.id].length == 0)
                 {
                     delete allDuplicates[tempPrimaryObject.id];
                 }
@@ -290,7 +290,7 @@ export class PrimaryDataObjectStore<U, T extends DataTypeStoreState<U>> extends 
         }
 
         // remove current primary objects list since it no longer has any entries
-        if (allDuplicates[primaryDataObject.id].length == 0)
+        if (allDuplicates[primaryDataObject.id] && allDuplicates[primaryDataObject.id].length == 0)
         {
             delete allDuplicates[primaryDataObject.id];
         }

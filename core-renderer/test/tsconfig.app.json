@@ -3,7 +3,8 @@
     "include": [
         "env.d.ts",
         "tests/**/*",
-        "tests/**/*.vue"
+        "tests/**/*.vue",
+        "src/core/**/*"
     ],
     "exclude": [
         "tests/**/__tests__/*"
@@ -16,6 +17,7 @@
             "@/*": [
                 "tests/*"
             ]
-        }
+        },
+        "verbatimModuleSyntax": false
     }
 }
