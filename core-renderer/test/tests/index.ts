@@ -34,3 +34,11 @@ export async function runAllValueTests()
     results.printStatus();
     console.timeEnd();
 }
+
+export async function runAllGroupTests()
+{
+    console.time();
+    await runTests(groupStoreSuite);
+    results.printStatus();
+    console.timeEnd();
+}

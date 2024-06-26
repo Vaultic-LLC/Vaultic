@@ -205,6 +205,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             }
         }
 
+        // TODO: Doesn't work
         Object.assign(this.state.groupsById[updatedGroup.id], updatedGroup);
         Object.assign(this.state.values.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 

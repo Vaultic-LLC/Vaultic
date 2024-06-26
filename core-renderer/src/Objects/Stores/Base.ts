@@ -335,14 +335,17 @@ export class SecondaryObjectStore<U, T extends DataTypeStoreState<U>> extends Da
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         allSecondaryDataObjects: T[]): string[]
     {
+        // make sure we aren't considering our current object as a duplicate to itself
+        const secondaryDataObjectsToLookAt = allSecondaryDataObjects.filter(o => o.id != secondaryDataObject.id);
+
         // we don't have any primary objects so grab others that are also empty
         if (secondaryDataObject[primaryDataObjectCollection].length == 0)
         {
-            return allSecondaryDataObjects.filter(o => o[primaryDataObjectCollection].length == 0).map(o => o.id);
+            return secondaryDataObjectsToLookAt.filter(o => o[primaryDataObjectCollection].length == 0).map(o => o.id);
         }
 
         // only need to check others that have the same length
-        let potentiallyDuplicateObjects: T[] = allSecondaryDataObjects.filter(
+        let potentiallyDuplicateObjects: T[] = secondaryDataObjectsToLookAt.filter(
             o => o[primaryDataObjectCollection].length == secondaryDataObject[primaryDataObjectCollection].length);
 
         for (let i = 0; i < secondaryDataObject[primaryDataObjectCollection].length; i++)
