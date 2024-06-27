@@ -1,7 +1,8 @@
 import { stores } from "../../src/core/Objects/Stores/index";
-import { defaultFilter } from '../../src/core/Types/EncryptedData';
-import { createTestSuite, type ITest, type TestContext } from '../test';
+import { IFilterable, IIdentifiable, defaultFilter, defaultPassword, defaultValue } from '../../src/core/Types/EncryptedData';
+import { createTestSuite, type TestContext } from '../test';
 import { DataType, FilterConditionType, type Filter, type FilterCondition } from "../../src/core/Types/Table";
+import { Dictionary } from "src/core/Types/DataStructures";
 
 let filterStoreSuite = createTestSuite("Filter Store");
 
@@ -10,18 +11,137 @@ const masterKey = "test";
 filterStoreSuite.tests.push({
     name: "FilterStore Add Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterAdd(type: DataType, getFilters: () => Filter[])
+        const name = "FilterStore Add Works";
+        async function testFilterAdd(type: DataType, property: string, getFilters: () => Filter[])
         {
             const filter: Filter = defaultFilter(type);
+            filter.name = name;
+            filter.conditions.push({
+                id: name,
+                property: property,
+                filterType: FilterConditionType.EqualTo,
+                value: name
+            });
 
             await stores.filterStore.addFilter(masterKey, filter);
             const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
 
             ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
+            ctx.assertEquals(`Name for ${type}`, retrievedFilter.name, name);
+            ctx.assertEquals(`Condition for ${type}`, retrievedFilter.conditions[0].value, name);
         }
 
-        await testFilterAdd(DataType.Passwords, () => stores.filterStore.passwordFilters);
-        await testFilterAdd(DataType.NameValuePairs, () => stores.filterStore.nameValuePairFilters);
+        await testFilterAdd(DataType.Passwords, "login", () => stores.filterStore.passwordFilters);
+        await testFilterAdd(DataType.NameValuePairs, "name", () => stores.filterStore.nameValuePairFilters);
+    }
+});
+
+filterStoreSuite.tests.push({
+    name: "FilterStore Add With Current Primary Objects Works", func: async (ctx: TestContext) =>
+    {
+        async function testFilterAdd<T extends IIdentifiable & IFilterable>(
+            type: DataType,
+            conditionProperty: string,
+            getFilters: () => Filter[],
+            getPrimaryObject: () => T)
+        {
+            const filter: Filter = defaultFilter(type);
+            filter.conditions.push({
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: "FilterStore Add With Current Primary Objects Works"
+            });
+
+            await stores.filterStore.addFilter(masterKey, filter);
+
+            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            const retrievedPrimaryObject = getPrimaryObject();
+
+            ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.includes(filter.id));
+        }
+
+        const password = defaultPassword();
+        password.login = "FilterStore Add With Current Primary Objects Works";
+        await stores.passwordStore.addPassword(masterKey, password);
+
+        const value = defaultValue();
+        value.name = "FilterStore Add With Current Primary Objects Works";
+        await stores.valueStore.addNameValuePair(masterKey, value);
+
+        await testFilterAdd(DataType.Passwords, "login",
+            () => stores.filterStore.passwordFilters, () => stores.passwordStore.passwords.filter(p => p.id == password.id)[0]);
+
+        await testFilterAdd(DataType.NameValuePairs, "name",
+            () => stores.filterStore.nameValuePairFilters, () => stores.valueStore.nameValuePairs.filter(v => v.id == value.id)[0]);
+    }
+});
+
+filterStoreSuite.tests.push({
+    name: "FilterStore Add Metrics Work", func: async (ctx: TestContext) =>
+    {
+        async function testFilterAdd(
+            type: DataType,
+            conditionProperty: string,
+            getFilters: () => Filter[],
+            getEmptyFilters: () => string[],
+            getDuplicateFilters: () => Dictionary<string[]>)
+        {
+            const emptyFilter = defaultFilter(type);
+            await stores.filterStore.addFilter(masterKey, emptyFilter);
+
+            const retrievedEmptyFilter = getFilters().filter(f => f.id == emptyFilter.id)[0];
+            ctx.assertTruthy(`Empty Filter Exists for ${type}`, retrievedEmptyFilter);
+
+            const retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+
+            const duplicateFilterOne: Filter = defaultFilter(type);
+            duplicateFilterOne.conditions.push({
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: "FilterStore Add With Current Primary Objects Works"
+            });
+
+            const duplicateFilterTwo: Filter = defaultFilter(type);
+            duplicateFilterTwo.conditions.push({
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: "FilterStore Add With Current Primary Objects Works"
+            });
+
+            await stores.filterStore.addFilter(masterKey, duplicateFilterOne);
+            await stores.filterStore.addFilter(masterKey, duplicateFilterTwo);
+
+            const retrievedDuplicateFilterOne = getFilters().filter(f => f.id == duplicateFilterOne.id)[0];
+            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.id == duplicateFilterTwo.id)[0];
+
+            ctx.assertTruthy(`Duplicate Filter one exists for type ${type}`, retrievedDuplicateFilterOne);
+            ctx.assertTruthy(`Duplicate Filter two exists for type ${type}`, retrievedDuplicateFilterTwo);
+
+            const duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
+            const duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+        }
+
+        const password = defaultPassword();
+        password.login = "FilterStore Add With Current Primary Objects Works";
+        await stores.passwordStore.addPassword(masterKey, password);
+
+        const value = defaultValue();
+        value.name = "FilterStore Add With Current Primary Objects Works";
+        await stores.valueStore.addNameValuePair(masterKey, value);
+
+        await testFilterAdd(DataType.Passwords, "login", () => stores.filterStore.passwordFilters, () => stores.filterStore.emptyPasswordFilters,
+            () => stores.filterStore.duplicatePasswordFilters);
+
+        await testFilterAdd(DataType.NameValuePairs, "name", () => stores.filterStore.nameValuePairFilters, () => stores.filterStore.emptyValueFilters,
+            () => stores.filterStore.duplicateValueFilters);
     }
 });
 
@@ -102,6 +222,179 @@ filterStoreSuite.tests.push({
 });
 
 filterStoreSuite.tests.push({
+    name: "FilterStore Update With Current Primary Objects Works", func: async (ctx: TestContext) =>
+    {
+        const filterValue = "FilterStore Update With Current Primary Objects Works";
+
+        async function testFilterAdd<T extends IIdentifiable & IFilterable>(
+            type: DataType,
+            conditionProperty: string,
+            getFilters: () => Filter[],
+            getPrimaryObject: () => T)
+        {
+            const filter: Filter = defaultFilter(type);
+            filter.conditions.push({
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            });
+
+            await stores.filterStore.addFilter(masterKey, filter);
+
+            let retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            let retrievedPrimaryObject = getPrimaryObject();
+
+            ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.includes(filter.id));
+
+            filter.conditions[0].value = filterValue + "--NoMatches";
+            await stores.filterStore.updateFilter(masterKey, filter);
+
+            retrievedPrimaryObject = getPrimaryObject();
+            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.includes(filter.id));
+
+            filter.conditions[0].value = filterValue;
+            await stores.filterStore.updateFilter(masterKey, filter);
+
+            retrievedPrimaryObject = getPrimaryObject();
+            ctx.assertTruthy(`${type} has filter after update`, retrievedPrimaryObject.filters.includes(filter.id));
+        }
+
+        const password = defaultPassword();
+        password.login = filterValue;
+        await stores.passwordStore.addPassword(masterKey, password);
+
+        const value = defaultValue();
+        value.name = filterValue;
+        await stores.valueStore.addNameValuePair(masterKey, value);
+
+        await testFilterAdd(DataType.Passwords, "login",
+            () => stores.filterStore.passwordFilters, () => stores.passwordStore.passwords.filter(p => p.id == password.id)[0]);
+
+        await testFilterAdd(DataType.NameValuePairs, "name",
+            () => stores.filterStore.nameValuePairFilters, () => stores.valueStore.nameValuePairs.filter(v => v.id == value.id)[0]);
+    }
+});
+
+filterStoreSuite.tests.push({
+    name: "FilterStore Update Metrics Work", func: async (ctx: TestContext) =>
+    {
+        const filterValue = "FilterStore Update Metrics Work";
+
+        async function testFilterAdd(
+            type: DataType,
+            conditionProperty: string,
+            getFilters: () => Filter[],
+            getEmptyFilters: () => string[],
+            getDuplicateFilters: () => Dictionary<string[]>)
+        {
+            const condition = {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            };
+
+            const emptyFilter = defaultFilter(type);
+            await stores.filterStore.addFilter(masterKey, emptyFilter);
+
+            const retrievedEmptyFilter = getFilters().filter(f => f.id == emptyFilter.id)[0];
+            ctx.assertTruthy(`Empty Filter Exists for type ${type}`, retrievedEmptyFilter);
+
+            let retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+
+            emptyFilter.conditions.push(condition);
+            await stores.filterStore.updateFilter(masterKey, emptyFilter);
+
+            let nonExistsEmptyFilter = getEmptyFilters().filter(f => f == emptyFilter.id);
+            ctx.assertEquals(`Empty Filter is not included in empty filters for ${type}`, nonExistsEmptyFilter.length, 0);
+
+            emptyFilter.conditions = [];
+            await stores.filterStore.updateFilter(masterKey, emptyFilter);
+
+            retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
+            ctx.assertTruthy(`Empty Filter is included in empty filters after update for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+
+            const duplicateFilterOne: Filter = defaultFilter(type);
+            duplicateFilterOne.conditions.push(condition);
+
+            const duplicateFilterTwo: Filter = defaultFilter(type);
+            duplicateFilterTwo.conditions.push(condition);
+
+            await stores.filterStore.addFilter(masterKey, duplicateFilterOne);
+            await stores.filterStore.addFilter(masterKey, duplicateFilterTwo);
+
+            const retrievedDuplicateFilterOne = getFilters().filter(f => f.id == duplicateFilterOne.id)[0];
+            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.id == duplicateFilterTwo.id)[0];
+
+            ctx.assertTruthy(`Duplicate Filter one exists for type ${type}`, retrievedDuplicateFilterOne);
+            ctx.assertTruthy(`Duplicate Filter two exists for type ${type}`, retrievedDuplicateFilterTwo);
+
+            let duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
+            let duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+
+            duplicateFilterOne.conditions = [];
+            await stores.filterStore.updateFilter(masterKey, duplicateFilterOne);
+
+            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+
+            ctx.assertTruthy(`Duplicate filter one doesn't has duplicate filter two as a duplicate for ${type}`, !duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
+            ctx.assertEquals(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates, undefined);
+
+            duplicateFilterOne.conditions.push(condition);
+            await stores.filterStore.updateFilter(masterKey, duplicateFilterOne);
+
+            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+        }
+
+        const password = defaultPassword();
+        password.login = filterValue;
+        await stores.passwordStore.addPassword(masterKey, password);
+
+        const value = defaultValue();
+        value.name = filterValue;
+        await stores.valueStore.addNameValuePair(masterKey, value);
+
+        await testFilterAdd(DataType.Passwords, "login", () => stores.filterStore.passwordFilters, () => stores.filterStore.emptyPasswordFilters,
+            () => stores.filterStore.duplicatePasswordFilters);
+
+        await testFilterAdd(DataType.NameValuePairs, "name", () => stores.filterStore.nameValuePairFilters, () => stores.filterStore.emptyValueFilters,
+            () => stores.filterStore.duplicateValueFilters);
+    }
+});
+
+filterStoreSuite.tests.push({
+    name: "FilterStore Delete Works", func: async (ctx: TestContext) =>
+    {
+        async function testFilterDelete(type: DataType, getFilters: () => Filter[])
+        {
+            const filter: Filter = defaultFilter(type);
+
+            await stores.filterStore.addFilter(masterKey, filter);
+            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
+
+            await stores.filterStore.deleteFilter(masterKey, filter);
+            const deletedFilter = getFilters().filter(f => f.id == filter.id);
+            ctx.assertEquals(`Filter was deleted for ${type}`, deletedFilter.length, 0);
+        }
+
+        await testFilterDelete(DataType.Passwords, () => stores.filterStore.passwordFilters);
+        await testFilterDelete(DataType.NameValuePairs, () => stores.filterStore.nameValuePairFilters);
+    }
+});
+
+filterStoreSuite.tests.push({
     name: "FilterStore Delete Condition Works", func: async (ctx: TestContext) =>
     {
         async function testFilterConditionDelete(type: DataType, getFilters: () => Filter[], property: string)
@@ -134,23 +427,129 @@ filterStoreSuite.tests.push({
 });
 
 filterStoreSuite.tests.push({
-    name: "FilterStore Delete Works", func: async (ctx: TestContext) =>
+    name: "FilterStore Delete With Current Primary Objects Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterDelete(type: DataType, getFilters: () => Filter[])
+        const filterValue = "FilterStore Delete With Current Primary Objects Works";
+
+        async function testFilterAdd<T extends IIdentifiable & IFilterable>(
+            type: DataType,
+            conditionProperty: string,
+            getFilters: () => Filter[],
+            getPrimaryObject: () => T)
         {
             const filter: Filter = defaultFilter(type);
+            filter.conditions.push({
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            });
 
             await stores.filterStore.addFilter(masterKey, filter);
-            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
-            ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
+
+            let retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            let retrievedPrimaryObject = getPrimaryObject();
+
+            ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.includes(filter.id));
 
             await stores.filterStore.deleteFilter(masterKey, filter);
-            const deletedFilter = getFilters().filter(f => f.id == filter.id);
-            ctx.assertEquals(`Filter was deleted for ${type}`, deletedFilter.length, 0);
+
+            retrievedPrimaryObject = getPrimaryObject();
+            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.includes(filter.id));
         }
 
-        await testFilterDelete(DataType.Passwords, () => stores.filterStore.passwordFilters);
-        await testFilterDelete(DataType.NameValuePairs, () => stores.filterStore.nameValuePairFilters);
+        const password = defaultPassword();
+        password.login = filterValue;
+        await stores.passwordStore.addPassword(masterKey, password);
+
+        const value = defaultValue();
+        value.name = filterValue;
+        await stores.valueStore.addNameValuePair(masterKey, value);
+
+        await testFilterAdd(DataType.Passwords, "login",
+            () => stores.filterStore.passwordFilters, () => stores.passwordStore.passwords.filter(p => p.id == password.id)[0]);
+
+        await testFilterAdd(DataType.NameValuePairs, "name",
+            () => stores.filterStore.nameValuePairFilters, () => stores.valueStore.nameValuePairs.filter(v => v.id == value.id)[0]);
+    }
+});
+
+filterStoreSuite.tests.push({
+    name: "FilterStore Delete Metrics Work", func: async (ctx: TestContext) =>
+    {
+        const filterValue = "FilterStore Delete Metrics Work";
+        async function testFilterAdd(
+            type: DataType,
+            conditionProperty: string,
+            getFilters: () => Filter[],
+            getEmptyFilters: () => string[],
+            getDuplicateFilters: () => Dictionary<string[]>)
+        {
+            const condition = {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            };
+
+            const emptyFilter = defaultFilter(type);
+            await stores.filterStore.addFilter(masterKey, emptyFilter);
+
+            const retrievedEmptyFilter = getFilters().filter(f => f.id == emptyFilter.id)[0];
+            ctx.assertTruthy(`Empty Filter Exists for type ${type}`, retrievedEmptyFilter);
+
+            let retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+
+            await stores.filterStore.deleteFilter(masterKey, emptyFilter);
+
+            let nonExistsEmptyFilter = getEmptyFilters().filter(f => f == emptyFilter.id);
+            ctx.assertEquals(`Empty Filter is not included in empty filters for ${type}`, nonExistsEmptyFilter.length, 0);
+
+            const duplicateFilterOne: Filter = defaultFilter(type);
+            duplicateFilterOne.conditions.push(condition);
+
+            const duplicateFilterTwo: Filter = defaultFilter(type);
+            duplicateFilterTwo.conditions.push(condition);
+
+            await stores.filterStore.addFilter(masterKey, duplicateFilterOne);
+            await stores.filterStore.addFilter(masterKey, duplicateFilterTwo);
+
+            const retrievedDuplicateFilterOne = getFilters().filter(f => f.id == duplicateFilterOne.id)[0];
+            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.id == duplicateFilterTwo.id)[0];
+
+            ctx.assertTruthy(`Duplicate Filter one exists for ${type}`, retrievedDuplicateFilterOne);
+            ctx.assertTruthy(`Duplicate Filter two exists for ${type}`, retrievedDuplicateFilterTwo);
+
+            let duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
+            let duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+
+            await stores.filterStore.deleteFilter(masterKey, duplicateFilterOne);
+
+            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+
+            ctx.assertEquals(`Duplicate filter one doesn't exist in duplicates for ${type}`, duplicateFilterOneFromDuplicates, undefined);
+            ctx.assertEquals(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates, undefined);
+        }
+
+        const password = defaultPassword();
+        password.login = filterValue;
+        await stores.passwordStore.addPassword(masterKey, password);
+
+        const value = defaultValue();
+        value.name = filterValue;
+        await stores.valueStore.addNameValuePair(masterKey, value);
+
+        await testFilterAdd(DataType.Passwords, "login", () => stores.filterStore.passwordFilters, () => stores.filterStore.emptyPasswordFilters,
+            () => stores.filterStore.duplicatePasswordFilters);
+
+        await testFilterAdd(DataType.NameValuePairs, "name", () => stores.filterStore.nameValuePairFilters, () => stores.filterStore.emptyValueFilters,
+            () => stores.filterStore.duplicateValueFilters);
     }
 });
 

@@ -20,8 +20,8 @@ export default async function runAllTests()
     console.time();
     await runTests(passwordStoreSuite);
     await runTests(valueStoreSuite);
-    await runTests(filterStoreSuite);
     await runTests(groupStoreSuite);
+    await runTests(filterStoreSuite);
 
     results.printStatus();
     console.timeEnd();
@@ -39,6 +39,14 @@ export async function runAllGroupTests()
 {
     console.time();
     await runTests(groupStoreSuite);
+    results.printStatus();
+    console.timeEnd();
+}
+
+export async function runAllFilterTests()
+{
+    console.time();
+    await runTests(filterStoreSuite);
     results.printStatus();
     console.timeEnd();
 }

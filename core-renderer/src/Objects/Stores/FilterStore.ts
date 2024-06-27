@@ -343,7 +343,9 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     private filterAppliesToDataObject<T extends IGroupable>(filter: Filter, dataObject: T, groups: Group[]): boolean
     {
-        let allFilterConditionsApply: boolean = true;
+        // if we don't have any conditions, then default to false so 
+        // objects don't get included by default
+        let allFilterConditionsApply: boolean = filter.conditions.length > 0;
         const groupsForObject: Group[] = groups.filter(g => dataObject.groups.includes(g.id));
 
         filter.conditions.forEach(fc =>
