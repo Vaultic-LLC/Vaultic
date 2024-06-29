@@ -5,9 +5,8 @@ import { FilterStatus } from "../../Types/Table";
 import { AutoLockTime } from "../../Types/Settings";
 import { Store, StoreState } from "./Base";
 import { DataFile } from "../../Types/EncryptedData";
-import cryptHelper from "../../Helpers/cryptHelper";
-import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface SettingsStoreState extends StoreState
 {
@@ -65,44 +64,9 @@ class SettingsStore extends Store<SettingsStoreState>
         };
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return api.files.settings;
-    }
-
-    public async writeState(key: string): Promise<boolean>
-    {
-        this.state.version += 1;
-        const success = await super.writeState(key);
-        if (!success)
-        {
-            return false;
-        }
-
-        if (!stores.appStore.isOnline)
-        {
-            return true;
-        }
-
-        const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
-        if (state.success)
-        {
-            const data =
-            {
-                MasterKey: key,
-                SettingsStoreState: state.value
-            };
-
-            const response = await api.server.user.backupSettings(JSON.stringify(data));
-            if (!response.Success)
-            {
-                defaultHandleFailedResponse(response);
-            }
-
-            return response.Success;
-        }
-
-        return false;
     }
 
     private calcAutolockTime(time: AutoLockTime): number
@@ -121,9 +85,20 @@ class SettingsStore extends Store<SettingsStoreState>
         }
     }
 
-    public async updateColorPalette(key: string, colorPalette: ColorPalette): Promise<void>
+    public async update(masterKey: string, state: SettingsStoreState): Promise<boolean>
     {
-        const oldColorPalette: ColorPalette[] = this.state.colorPalettes.filter(cp => cp.id == colorPalette.id);
+        const transaction = new StoreUpdateTransaction();
+        transaction.addStore(this, state);
+
+        return transaction.commit(masterKey);
+    }
+
+    public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
+    {
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        const oldColorPalette: ColorPalette[] = pendingState.colorPalettes.filter(cp => cp.id == colorPalette.id);
         if (oldColorPalette.length != 1)
         {
             return Promise.resolve();
@@ -132,10 +107,11 @@ class SettingsStore extends Store<SettingsStoreState>
         Object.assign(oldColorPalette[0], colorPalette);
         if (stores.userPreferenceStore.currentColorPalette.id == oldColorPalette[0].id)
         {
-            stores.userPreferenceStore.updateCurrentColorPalette(oldColorPalette[0]);
+            stores.userPreferenceStore.updateCurrentColorPalette(transaction, oldColorPalette[0]);
         }
 
-        await super.writeState(key);
+        transaction.addStore(this, pendingState);
+        await transaction.commit(masterKey);
     }
 }
 

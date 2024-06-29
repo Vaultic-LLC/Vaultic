@@ -7,6 +7,8 @@ import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import { DataType } from "../../Types/Table";
 
 export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 {
@@ -77,7 +79,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         }
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return api.files.password;
     }
@@ -89,10 +91,13 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
 
     async addPassword(masterKey: string, password: Password): Promise<boolean>
     {
-        password.id = await generateUniqueID(this.state.values);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState: PasswordStoreState = this.cloneState();
+
+        password.id = await generateUniqueID(pendingState.values);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, this.passwords, "password", this.state.duplicatePasswords);
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingState.values, "password", pendingState.duplicatePasswords);
 
         if (!(await this.setPasswordProperties(masterKey, password)))
         {
@@ -102,39 +107,28 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         this.updateSecurityQuestions(masterKey, password, true, [], []);
 
         const reactivePassword = createReactivePassword(password);
-        this.state.values.push(reactivePassword);
-        this.incrementCurrentAndSafePasswords();
+        pendingState.values.push(reactivePassword);
+        this.incrementCurrentAndSafePasswords(pendingState);
 
         // update groups before filters
-        stores.groupStore.syncGroupsForPasswords(reactivePassword.id, reactivePassword.groups, []);
-        stores.filterStore.syncFiltersForPasswords(stores.filterStore.passwordFilters, [reactivePassword]);
+        const pendingGroupState = stores.groupStore.syncGroupsForPasswords(reactivePassword.id, reactivePassword.groups, []);
+        const pendingFilterState = stores.filterStore.syncFiltersForPasswords([reactivePassword],
+            pendingGroupState.values.filter(g => g.type == DataType.Passwords));
 
-        if (!(await stores.groupStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
+        transaction.addStore(this, pendingState);
+        transaction.addStore(stores.groupStore, pendingGroupState);
+        transaction.addStore(stores.filterStore, pendingFilterState);
 
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        if (!(await this.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        this.events["onChange"]?.forEach(c => c());
-        return true;
+        return await transaction.commit(masterKey);;
     }
 
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
         updatedSecurityQuestionAnswers: string[]): Promise<boolean>
     {
-        const passwordIndex = this.state.values.findIndex(p => p.id == updatingPassword.id);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        const passwordIndex = pendingState.values.findIndex(p => p.id == updatingPassword.id);
         if (passwordIndex < 0)
         {
             return false;
@@ -142,7 +136,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
 
         // TODO: Check update email on sever if isVaultic
 
-        const currentPassword = this.state.values[passwordIndex];
+        const currentPassword = pendingState.values[passwordIndex];
 
         // retrieve these before updating
         const addedGroups = updatingPassword.groups.filter(g => !currentPassword.groups.includes(g));
@@ -158,7 +152,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
 
             // do this before re encrypting the password
             await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword,
-                this.state.values.filter(p => p.id != updatingPassword.id), "password", this.state.duplicatePasswords);
+                pendingState.values.filter(p => p.id != updatingPassword.id), "password", pendingState.duplicatePasswords);
 
             if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
             {
@@ -183,86 +177,60 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         this.updateSecurityQuestions(masterKey, updatingPassword, false, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers);
 
         const newPassword = createReactivePassword(updatingPassword);
-        this.state.values[passwordIndex] = newPassword;
+        pendingState.values[passwordIndex] = newPassword;
 
-        this.incrementCurrentAndSafePasswords();
+        this.incrementCurrentAndSafePasswords(pendingState);
 
-        stores.groupStore.syncGroupsForPasswords(updatingPassword.id, addedGroups, removedGroups);
-        stores.filterStore.syncFiltersForPasswords(stores.filterStore.passwordFilters, [updatingPassword]);
+        const pendingGroupState = stores.groupStore.syncGroupsForPasswords(updatingPassword.id, addedGroups, removedGroups);
+        const pendingFilterState = stores.filterStore.syncFiltersForPasswords([updatingPassword],
+            pendingGroupState.values.filter(g => g.type == DataType.Passwords));
 
-        if (!(await stores.groupStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
+        transaction.addStore(this, pendingState);
+        transaction.addStore(stores.groupStore, pendingGroupState);
+        transaction.addStore(stores.filterStore, pendingFilterState);
 
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        if (!(await this.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        this.events["onChange"]?.forEach(c => c());
-        return true;
+        return await transaction.commit(masterKey);;
     }
 
     async deletePassword(masterKey: string, password: ReactivePassword): Promise<boolean>
     {
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
         if (password.isVaultic)
         {
             stores.popupStore.showAlert("Error", "Can't delete the username / password used for signing into Vaultic Services", false);
             return false;
         }
 
-        const passwordIndex = this.state.values.findIndex(p => p.id == password.id);
+        const passwordIndex = pendingState.values.findIndex(p => p.id == password.id);
         if (passwordIndex < 0)
         {
             return false;
         }
 
-        this.checkRemoveFromDuplicate(password, this.state.duplicatePasswords);
-        this.state.values.splice(passwordIndex, 1);
-        this.incrementCurrentAndSafePasswords();
+        this.checkRemoveFromDuplicate(password, pendingState.duplicatePasswords);
+        pendingState.values.splice(passwordIndex, 1);
+        this.incrementCurrentAndSafePasswords(pendingState);
 
-        stores.groupStore.syncGroupsForPasswords(password.id, [], password.groups);
-        stores.filterStore.removePasswordFromFilters(password.id);
+        const pendingGroupState = stores.groupStore.syncGroupsForPasswords(password.id, [], password.groups);
+        const pendingFilterState = stores.filterStore.removePasswordFromFilters(password.id);
 
-        if (!(await stores.groupStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
+        transaction.addStore(this, pendingState);
+        transaction.addStore(stores.groupStore, pendingGroupState);
+        transaction.addStore(stores.filterStore, pendingFilterState);
 
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        if (!(await this.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        this.events["onChange"]?.forEach(c => c());
-        return true;
+        return await transaction.commit(masterKey);;
     }
 
-    private incrementCurrentAndSafePasswords()
+    private incrementCurrentAndSafePasswords(pendingState: PasswordStoreState)
     {
-        this.state.currentAndSafePasswords.current.push(this.state.values.length);
+        pendingState.currentAndSafePasswords.current.push(pendingState.values.length);
 
-        const safePasswords = this.state.values.filter(
+        const safePasswords = pendingState.values.filter(
             p => !p.isWeak && !this.duplicatePasswords.value.includes(p.id) && !p.containsLogin && !p.isOld);
 
-        this.state.currentAndSafePasswords.safe.push(safePasswords.length);
+        pendingState.currentAndSafePasswords.safe.push(safePasswords.length);
     }
 
     private async setPasswordProperties(masterKey: string, password: Password): Promise<boolean>

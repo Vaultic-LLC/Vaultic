@@ -11,6 +11,7 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import userDataBreachStore, { UserDataBreachStoreType } from "./UserDataBreachStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface DataStoreStates
 {
@@ -34,7 +35,7 @@ export interface Stores
     loadStoreData: (key: string) => Promise<any>;
     resetStoresToDefault: () => void;
     getStates: () => DataStoreStates;
-    handleUpdateStoreResponse: (key: string, response: any, suppressError?: boolean) => Promise<boolean>;
+    //handleUpdateStoreResponse: (key: string, response: any, suppressError?: boolean) => Promise<boolean>;
     checkUpdateStoresWithBackup: (key: string, userDataResponse: any, overrideVersionCheck?: boolean) => Promise<void>;
 }
 
@@ -82,38 +83,40 @@ async function loadBackupData(key: string)
     }
 }
 
-async function checkUpdateStoresWithBackup(key: string, userDataResponse: any, overrideVersionCheck: boolean = false)
+async function checkUpdateStoresWithBackup(masterKey: string, userDataResponse: any, overrideVersionCheck: boolean = false)
 {
     if (userDataResponse.Success)
     {
+        const transaction = new StoreUpdateTransaction();
+
         if (userDataResponse.appStoreState)
         {
-            await checkUpdateEncryptedStore<AppStoreType, AppStoreState>(key, stores.appStore, userDataResponse.appStoreState, overrideVersionCheck);
+            await checkUpdateEncryptedStore<AppStoreType, AppStoreState>(transaction, masterKey, stores.appStore, userDataResponse.appStoreState, overrideVersionCheck);
         }
 
         if (userDataResponse.settingsStoreState)
         {
-            await checkUpdateEncryptedStore<SettingStoreType, SettingsStoreState>(key, stores.settingsStore, userDataResponse.settingsStoreState, overrideVersionCheck);
+            await checkUpdateEncryptedStore<SettingStoreType, SettingsStoreState>(transaction, masterKey, stores.settingsStore, userDataResponse.settingsStoreState, overrideVersionCheck);
         }
 
         if (userDataResponse.filterStoreState)
         {
-            await checkUpdateEncryptedStore<FilterStoreType, FilterStoreState>(key, stores.filterStore, userDataResponse.filterStoreState, overrideVersionCheck);
+            await checkUpdateEncryptedStore<FilterStoreType, FilterStoreState>(transaction, masterKey, stores.filterStore, userDataResponse.filterStoreState, overrideVersionCheck);
         }
 
         if (userDataResponse.groupStoreState)
         {
-            await checkUpdateEncryptedStore<GroupStoreType, GroupStoreState>(key, stores.groupStore, userDataResponse.groupStoreState, overrideVersionCheck);
+            await checkUpdateEncryptedStore<GroupStoreType, GroupStoreState>(transaction, masterKey, stores.groupStore, userDataResponse.groupStoreState, overrideVersionCheck);
         }
 
         if (userDataResponse.passwordStoreState)
         {
-            await checkUpdateEncryptedStore<PasswordStoreType, PasswordStoreState>(key, stores.passwordStore, userDataResponse.passwordStoreState, overrideVersionCheck);
+            await checkUpdateEncryptedStore<PasswordStoreType, PasswordStoreState>(transaction, masterKey, stores.passwordStore, userDataResponse.passwordStoreState, overrideVersionCheck);
         }
 
         if (userDataResponse.valueStoreState)
         {
-            await checkUpdateEncryptedStore<ValueStoreType, ValueStoreState>(key, stores.valueStore, userDataResponse.valueStoreState, overrideVersionCheck);
+            await checkUpdateEncryptedStore<ValueStoreType, ValueStoreState>(transaction, masterKey, stores.valueStore, userDataResponse.valueStoreState, overrideVersionCheck);
         }
 
         if (userDataResponse.userPreferenceStoreState)
@@ -121,7 +124,16 @@ async function checkUpdateStoresWithBackup(key: string, userDataResponse: any, o
             const userPreferenceState = JSON.parse(userDataResponse.userPreferenceStoreState) as UserPreferencesStoreState;
             if (overrideVersionCheck || userPreferenceState.version > stores.userPreferenceStore.getVersion())
             {
-                stores.userPreferenceStore.updateState(key, userPreferenceState);
+                transaction.addStore(stores.userPreferenceStore, userPreferenceState);
+            }
+        }
+
+        if (transaction.storeUpdateStates.length > 0)
+        {
+            if (!(await transaction.commit(masterKey)))
+            {
+                // TODO: Error message
+                // Unable to back up data
             }
         }
     }
@@ -131,15 +143,16 @@ async function checkUpdateStoresWithBackup(key: string, userDataResponse: any, o
     }
 }
 
-async function checkUpdateEncryptedStore<T extends Store<U>, U extends StoreState>(key: string, store: T, storeState: string, overrideVersionCheck: boolean)
+async function checkUpdateEncryptedStore<T extends Store<U>, U extends StoreState>(transaction: StoreUpdateTransaction, masterKey: string, store: T,
+    storeState: string, overrideVersionCheck: boolean)
 {
-    const state = await cryptHelper.decrypt(key, storeState);
+    const state = await cryptHelper.decrypt(masterKey, storeState);
     if (state.success)
     {
         const parsedState = JSON.parse(state.value!) as U;
         if (overrideVersionCheck || parsedState.version > store.getVersion())
         {
-            store.updateState(key, parsedState);
+            transaction.addStore(store, parsedState);
         }
     }
 }
@@ -165,27 +178,28 @@ function getStates(): DataStoreStates
     }
 }
 
-async function handleUpdateStoreResponse(key: string, response: any, suppressError: boolean = false): Promise<boolean>
-{
-    if (response.Success && response.FilterStoreState && response.GroupStoreState && response.PasswordStoreState
-        && response.ValueStoreState)
-    {
-        const results = await Promise.all([
-            stores.filterStore.updateState(key, response.FilterStoreState),
-            stores.groupStore.updateState(key, response.GroupStoreState),
-            stores.passwordStore.updateState(key, response.PasswordStoreState),
-            stores.valueStore.updateState(key, response.ValueStoreState)
-        ]);
+// TODO: Remove this
+// async function handleUpdateStoreResponse(key: string, response: any, suppressError: boolean = false): Promise<boolean>
+// {
+//     if (response.Success && response.FilterStoreState && response.GroupStoreState && response.PasswordStoreState
+//         && response.ValueStoreState)
+//     {
+//         const results = await Promise.all([
+//             stores.filterStore.updateState(key, response.FilterStoreState),
+//             stores.groupStore.updateState(key, response.GroupStoreState),
+//             stores.passwordStore.updateState(key, response.PasswordStoreState),
+//             stores.valueStore.updateState(key, response.ValueStoreState)
+//         ]);
 
-        return results.every(r => r);
-    }
-    else if (!suppressError)
-    {
-        defaultHandleFailedResponse(response);
-    }
+//         return results.every(r => r);
+//     }
+//     else if (!suppressError)
+//     {
+//         defaultHandleFailedResponse(response);
+//     }
 
-    return false;
-}
+//     return false;
+// }
 
 export const stores: Stores =
 {
@@ -201,7 +215,7 @@ export const stores: Stores =
     loadStoreData,
     resetStoresToDefault,
     getStates,
-    handleUpdateStoreResponse,
+    //handleUpdateStoreResponse,
     checkUpdateStoresWithBackup
 }
 

@@ -6,6 +6,7 @@ import { stores } from ".";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import { api } from "../../API"
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface GroupStoreState extends DataTypeStoreState<Group>
 {
@@ -92,7 +93,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         }
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return api.files.group;
     }
@@ -109,64 +110,65 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
     async addGroup(masterKey: string, group: Group): Promise<boolean>
     {
-        group.id = await generateUniqueID(this.state.values);
-        this.state.groupsById[group.id] = group;
-        this.state.values.push(group);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        group.id = await generateUniqueID(pendingState.values);
+        pendingState.groupsById[group.id] = group;
+        pendingState.values.push(group);
 
         if (group.type == DataType.Passwords)
         {
             if (group.passwords.length == 0)
             {
-                this.emptyPasswordGroups.push(group.id);
+                pendingState.emptyPasswordGroups.push(group.id);
             }
             else
             {
-                this.syncPrimaryDataObjectsForGroup(group, "passwords", group.passwords, [],
-                    stores.passwordStore.passwords, this.emptyPasswordGroups, this.duplicatePasswordGroups, this.passwordGroups);
+                const pendingPasswordState = stores.passwordStore.cloneState();
+                const passwordGroups = pendingState.values.filter(g => g.type == DataType.Passwords);
 
-                if (!(await stores.passwordStore.writeState(masterKey)))
-                {
-                    // TODO: handle
-                    return false;
-                }
+                this.syncPrimaryDataObjectsForGroup(group, "passwords", group.passwords, [],
+                    pendingPasswordState.values, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
+                    passwordGroups);
+
+                const pendingFilterState = stores.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
+
+                transaction.addStore(stores.passwordStore, pendingPasswordState);
+                transaction.addStore(stores.filterStore, pendingFilterState);
             }
         }
         else if (group.type == DataType.NameValuePairs)
         {
             if (group.values.length == 0)
             {
-                this.emptyValueGroups.push(group.id);
+                pendingState.emptyValueGroups.push(group.id);
             }
             else
             {
-                this.syncPrimaryDataObjectsForGroup(group, "values", group.values, [],
-                    stores.valueStore.nameValuePairs, this.emptyValueGroups, this.duplicateValueGroups, this.valuesGroups);
+                const pendingValueState = stores.valueStore.cloneState();
+                const valueGroups = pendingState.values.filter(g => g.type == DataType.NameValuePairs);
 
-                if (!(await stores.valueStore.writeState(masterKey)))
-                {
-                    // TODO: handle
-                    return false;
-                }
+                this.syncPrimaryDataObjectsForGroup(group, "values", group.values, [], pendingValueState.values,
+                    pendingState.emptyValueGroups, pendingState.duplicateValueGroups, valueGroups);
+
+                const pendingFilterState = stores.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
+
+                transaction.addStore(stores.valueStore, pendingValueState);
+                transaction.addStore(stores.filterStore, pendingFilterState);
             }
         }
 
-        const succeeded = await this.writeState(masterKey);
-        if (!succeeded)
-        {
-            // TODO: Make sure user gets notified correctly
-            return false;
-        }
-
-        // TODO: Sync filter state with server
-        // should return a special error if we fail to sync.
-        // let the user know the filter was saved locally, but not backed up
-
-        return true;
+        transaction.addStore(this, pendingState);
+        return await transaction.commit(masterKey);;
     }
 
     async updateGroup(masterKey: string, updatedGroup: Group): Promise<boolean>
     {
-        const currentGroup = this.state.groupsById[updatedGroup.id];
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        const currentGroup = pendingState.groupsById[updatedGroup.id];
         if (!currentGroup)
         {
             // TODO: do something
@@ -180,110 +182,80 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
         if (updatedGroup.type == DataType.Passwords)
         {
-            this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
-                stores.passwordStore.passwords, this.emptyPasswordGroups, this.duplicatePasswordGroups, this.passwordGroups);
+            const pendingPasswordState = stores.passwordStore.cloneState();
+            const passwordGroups = pendingState.values.filter(g => g.type == DataType.Passwords);
 
-            if (!(await stores.passwordStore.writeState(masterKey)))
-            {
-                // TODO:
-                // maybe tell them to close and re open the application?
-                // they will just lose whatever changes they tried doing
-                return false;
-            }
+            this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
+                pendingPasswordState.values, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
+                passwordGroups);
+
+            const pendingFilterState = stores.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
+
+            transaction.addStore(stores.passwordStore, pendingPasswordState);
+            transaction.addStore(stores.filterStore, pendingFilterState);
         }
         else if (updatedGroup.type == DataType.NameValuePairs)
         {
+            const pendingValueState = stores.valueStore.cloneState();
+            const valueGroups = pendingState.values.filter(g => g.type == DataType.NameValuePairs);
+
             this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
-                stores.valueStore.nameValuePairs, this.emptyValueGroups, this.duplicateValueGroups, this.valuesGroups);
+                pendingValueState.values, pendingState.emptyValueGroups, pendingState.duplicateValueGroups,
+                valueGroups);
 
-            if (!(await stores.valueStore.writeState(masterKey)))
-            {
-                // TODO:
-                // maybe tell them to close and re open the application?
-                // they will just lose whatever changes they tried doing
-                return false;
-            }
+            const pendingFilterState = stores.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
+
+            transaction.addStore(stores.valueStore, pendingValueState);
+            transaction.addStore(stores.filterStore, pendingFilterState);
         }
 
-        // TODO: Doesn't work
-        Object.assign(this.state.groupsById[updatedGroup.id], updatedGroup);
-        Object.assign(this.state.values.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
+        Object.assign(pendingState.groupsById[updatedGroup.id], updatedGroup);
+        Object.assign(pendingState.values.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
-        stores.filterStore.recalcGroupFilters(updatedGroup.type);
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO: it would be nice to have some sort of transaction system in case one of these failes while the others succeed...
-            // would be hard to do but worth it
-            return false;
-        }
-
-        const succeeded = await this.writeState(masterKey);
-        if (!succeeded)
-        {
-            // TODO: it would be nice to have some sort of transaction system in case one of these failes while the others succeed...
-            // would be hard to do but worth it
-            // maybe just doing all writting at the same time would suffice?
-            return false;
-        }
-
-        return true;
+        transaction.addStore(this, pendingState);
+        return await transaction.commit(masterKey);
     }
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>
     {
-        delete this.state.groupsById[group.id];
-        this.state.values.splice(this.state.values.indexOf(group), 1);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        delete pendingState.groupsById[group.id];
+        pendingState.values.splice(pendingState.values.indexOf(group), 1);
 
         // TODO: need to also remove groups from passwords / values and then re calc filters
         if (group.type == DataType.Passwords)
         {
-            stores.passwordStore.removeSecondaryObjectFromValues(group.id, "groups");
+            const pendingPasswordState = stores.passwordStore.removeSecondaryObjectFromValues(group.id, "groups");
 
             // do this here since it can update passwords
-            stores.filterStore.recalcGroupFilters(group.type);
+            const pendingFilterState = stores.filterStore.syncFiltersForPasswords(pendingPasswordState.values,
+                pendingState.values.filter(g => g.type == DataType.Passwords));
 
-            if (!(await stores.passwordStore.writeState(masterKey)))
-            {
-                // TODO: handle
-                return false;
-            }
+            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyPasswordGroups);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicatePasswordGroups);
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, this.emptyPasswordGroups);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, this.duplicatePasswordGroups);
+            transaction.addStore(stores.passwordStore, pendingPasswordState);
+            transaction.addStore(stores.filterStore, pendingFilterState);
         }
         else if (group.type == DataType.NameValuePairs)
         {
-            stores.valueStore.removeSecondaryObjectFromValues(group.id, "groups");
+            const pendingValueState = stores.valueStore.removeSecondaryObjectFromValues(group.id, "groups");
 
             // do this here since it can update values
-            stores.filterStore.recalcGroupFilters(group.type);
-
-            if (!(await stores.valueStore.writeState(masterKey)))
-            {
-                // TODO: handle
-                return false;
-            }
+            const pendingFilterState = stores.filterStore.syncFiltersForValues(pendingValueState.values,
+                pendingState.values.filter(g => g.type == DataType.NameValuePairs));
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, this.emptyValueGroups);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, this.duplicateValueGroups);
+
+            transaction.addStore(stores.passwordStore, pendingValueState);
+            transaction.addStore(stores.filterStore, pendingFilterState);
         }
 
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO: the usu
-            return false;
-        }
-
-        const succeeded = await this.writeState(masterKey);
-        if (!succeeded)
-        {
-            // TODO: it would be nice to have some sort of transaction system in case one of these failes while the others succeed...
-            // would be hard to do but worth it
-            // maybe just doing all writting at the same time would suffice?
-            return false;
-        }
-
-        return true;
+        transaction.addStore(this, pendingState);
+        return await transaction.commit(masterKey);
     }
 
     syncGroupsForPasswords(
@@ -291,8 +263,11 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         addedGroups: string[],
         removedGroups: string[])
     {
+        const pendingState = this.cloneState();
         this.syncGroupsForPrimaryObject(passwordID, "passwords", addedGroups, removedGroups,
-            this.state.emptyPasswordGroups, this.state.duplicatePasswordGroups, this.passwordGroups);
+            pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups, pendingState.values.filter(g => g.type == DataType.Passwords));
+
+        return pendingState;
     }
 
     syncGroupsForValues(
@@ -300,8 +275,11 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         addedGroups: string[],
         removedGroups: string[])
     {
+        const pendingState = this.cloneState();
         this.syncGroupsForPrimaryObject(valueID, "values", addedGroups, removedGroups,
-            this.state.emptyValueGroups, this.state.duplicateValueGroups, this.valuesGroups);
+            pendingState.emptyValueGroups, pendingState.duplicateValueGroups, pendingState.values.filter(g => g.type == DataType.NameValuePairs));
+
+        return pendingState;
     }
 
     // called when updating a password / value

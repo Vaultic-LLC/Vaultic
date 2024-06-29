@@ -6,8 +6,8 @@ import { Ref, ref, watch } from "vue";
 import { DataType } from "../../Types/Table";
 import { Stores, stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
-import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface UserPreferencesStoreState extends StoreState
 {
@@ -65,9 +65,14 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
         };
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return api.files.userPreferences;
+    }
+
+    public encrypted(): boolean
+    {
+        return false;
     }
 
     public async readState(_: string)
@@ -96,34 +101,41 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
         return true;
     }
 
-    public async writeState(_: string): Promise<boolean>
+    // public async writeState(_: string): Promise<boolean>
+    // {
+    //     this.state.version += 1;
+
+    //     const success = await fileHelper.writeUnencrypted<UserPreferencesStoreState>(this.state, this.getFile());
+    //     if (!success)
+    //     {
+    //         return false;
+    //     }
+
+    //     if (!stores.appStore.isOnline)
+    //     {
+    //         return true;
+    //     }
+
+    //     const data =
+    //     {
+    //         UserPreferencesStoreState: this.state
+    //     };
+
+    //     const response = await api.server.user.backupUserPreferences(JSON.stringify(data));
+    //     if (!response.Success)
+    //     {
+    //         defaultHandleFailedResponse(response, false);
+    //     }
+
+    //     return response.Success;
+    // }
+
+    private async update()
     {
-        this.state.version += 1;
+        const transaction = new StoreUpdateTransaction();
+        transaction.addStore(this, this.state);
 
-        const success = await fileHelper.writeUnencrypted<UserPreferencesStoreState>(this.state, this.getFile());
-        if (!success)
-        {
-            return false;
-        }
-
-        if (!stores.appStore.isOnline)
-        {
-            return true;
-        }
-
-        const data =
-        {
-            UserPreferencesStoreState: this.state
-        };
-
-        const response = await api.server.user.backupUserPreferences(JSON.stringify(data));
-        if (!response.Success)
-        {
-            defaultHandleFailedResponse(response, false);
-        }
-
-        return response.Success;
-
+        await transaction.commit('');
     }
 
     private setCurrentPrimaryColor(dataType: DataType)
@@ -139,61 +151,71 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
         }
     }
 
-    public async updateCurrentColorPalette(colorPalette: ColorPalette)
+    public async updateAndCommitCurrentColorPalette(colorPalette: ColorPalette)
     {
-        this.state.currentColorPalette = emptyColorPalette;
-        this.state.currentColorPalette = colorPalette;
+        const transaction = new StoreUpdateTransaction();
+        this.updateCurrentColorPalette(transaction, colorPalette);
 
-        this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
-        await this.writeState('');
+        transaction.commit('');
+    }
+
+    public async updateCurrentColorPalette(transaction: StoreUpdateTransaction, colorPalette: ColorPalette)
+    {
+        const pendingState = this.cloneState();
+        // TODO: remove comment
+        // This is needed for tracking to work. Otherwise some things won't register that the color palette has changed
+        // this.state.currentColorPalette = emptyColorPalette;
+        pendingState.currentColorPalette = colorPalette;
+
+        transaction.addStore(this, pendingState, () => this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable))
     }
 
     public async addPinnedFilter(id: string)
     {
         this.state.pinnedFilters[id] = {};
-        this.writeState('');
+        await this.update();
     }
 
     public async removePinnedFilters(id: string)
     {
         delete this.state.pinnedFilters[id];
-        this.writeState('');
+        await this.update();
     }
 
     public async addPinnedGroup(id: string)
     {
         this.state.pinnedGroups[id] = {};
-        this.writeState('');
+        await this.update();
     }
 
     public async removePinnedGroups(id: string)
     {
         delete this.state.pinnedGroups[id];
-        this.writeState('');
+        await this.update();
     }
 
     public async addPinnedPassword(id: string)
     {
         this.state.pinnedPasswords[id] = {};
-        this.writeState('');
+        await this.update();
     }
 
     public async removePinnedPasswords(id: string)
     {
         delete this.state.pinnedPasswords[id];
-        this.writeState('');
+        await this.update();
     }
 
     public async addPinnedValue(id: string)
     {
         this.state.pinnedValues[id] = {};
-        this.writeState('');
+        await this.update();
     }
 
     public async removePinnedValues(id: string)
     {
         delete this.state.pinnedValues[id];
-        this.writeState('');
+        await this.update();
     }
 }
 

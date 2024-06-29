@@ -4,6 +4,7 @@ import { DataType, Filter, Group, PrimaryDataObjectCollection } from "../../Type
 import { Dictionary } from "../../Types/DataStructures";
 import { Stores, stores } from ".";
 import cryptHelper from "../../Helpers/cryptHelper";
+import FileSaveTransaction from "../StoreUpdateTransaction";
 
 export interface StoreState
 {
@@ -31,35 +32,54 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
         this.events = {};
     }
 
+    public encrypted(): boolean 
+    {
+        return true;
+    }
+
+    public cloneState(): T
+    {
+        return JSON.parse(JSON.stringify(this.getState()));
+    }
+
     protected defaultState(): T
     {
         return {} as T;
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return {} as DataFile;
     }
 
-    public async writeState(key: string): Promise<boolean>
+    public async updateState(state: T): Promise<boolean>
     {
-        const jsonData: string = JSON.stringify(this.state);
-        const encryptedData = await cryptHelper.encrypt(key, jsonData);
-        if (!encryptedData.success)
-        {
-            stores.popupStore.showErrorAlert(encryptedData.logID);
-            return false;
-        }
-
-        const result = await this.getFile().write(encryptedData.value!);
-        if (!result.success)
-        {
-            stores.popupStore.showErrorAlert(result.logID);
-            return false;
-        }
+        Object.assign(this.state, state);
+        this.events['onChanged']?.forEach(f => f());
 
         return true;
     }
+
+    // TODO: update any places that were using this to use StoreUpdateTransaction instead
+    // private async writeState(key: string): Promise<boolean>
+    // {
+    //     const jsonData: string = JSON.stringify(this.state);
+    //     const encryptedData = await cryptHelper.encrypt(key, jsonData);
+    //     if (!encryptedData.success)
+    //     {
+    //         stores.popupStore.showErrorAlert(encryptedData.logID);
+    //         return false;
+    //     }
+
+    //     const result = await this.getFile().write(encryptedData.value!);
+    //     if (!result.success)
+    //     {
+    //         stores.popupStore.showErrorAlert(result.logID);
+    //         return false;
+    //     }
+
+    //     return true;
+    // }
 
     protected postAssignState(_: T): void { }
 
@@ -79,19 +99,6 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
     public getState(): T
     {
         return this.state;
-    }
-
-    public async updateState(key: string, state: T): Promise<boolean>
-    {
-        Object.assign(this.state, state);
-        const success = await this.writeState(key);
-        if (!success)
-        {
-            return false;
-        }
-
-        this.events['onChanged']?.forEach(f => f());
-        return true;
     }
 
     public async readState(key: string): Promise<boolean>
@@ -209,9 +216,10 @@ export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends Store<T>
 
 export class PrimaryDataObjectStore<U, T extends DataTypeStoreState<U>> extends DataTypeStore<U, T>
 {
-    public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection)
+    public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
     {
-        this.state.values.forEach(v =>
+        const pendingState = this.cloneState();
+        pendingState.values.forEach(v =>
         {
             const index = v[secondaryObjectCollection].indexOf(secondaryObjectID);
             if (index >= 0)
@@ -219,6 +227,8 @@ export class PrimaryDataObjectStore<U, T extends DataTypeStoreState<U>> extends 
                 v[secondaryObjectCollection].splice(index, 1);
             }
         });
+
+        return pendingState;
     }
 
     protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable>(

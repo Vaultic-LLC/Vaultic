@@ -6,9 +6,8 @@ import { hideAll } from 'tippy.js';
 import { Store, StoreState } from "./Base";
 import { DataFile } from "../../Types/EncryptedData";
 import { AccountSetupView } from "../../Types/Models";
-import cryptHelper from "../../Helpers/cryptHelper";
-import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface AppStoreState extends StoreState
 {
@@ -75,7 +74,7 @@ class AppStore extends Store<AppStoreState>
         super.resetToDefault();
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return api.files.app;
     }
@@ -85,67 +84,39 @@ class AppStore extends Store<AppStoreState>
         if (await super.readState(key))
         {
             this.checkRemoveOldLoginRecords(key);
-
             return true;
         }
 
         return false;
     }
 
-    public async writeState(key: string): Promise<boolean>
+    private async update(masterKey: string, state: AppStoreState): Promise<boolean>
     {
-        this.state.version += 1;
-        const success = await super.writeState(key);
-        if (!success)
-        {
-            return false;
-        }
+        const transaction = new StoreUpdateTransaction();
+        transaction.addStore(this, state);
 
-        if (!this.internalIsOnline.value)
-        {
-            return true;
-        }
-
-        const state = await cryptHelper.encrypt(key, JSON.stringify(this.state));
-        if (state.success)
-        {
-            const data =
-            {
-                MasterKey: key,
-                AppStoreState: state.value
-            };
-
-            const response = await api.server.user.backupAppStore(JSON.stringify(data));
-            if (!response.Success)
-            {
-                defaultHandleFailedResponse(response, false);
-            }
-
-            return response.Success;
-        }
-
-        return false;
-
+        return transaction.commit(masterKey);
     }
 
-    private async checkRemoveOldLoginRecords(key: string)
+    private async checkRemoveOldLoginRecords(masterKey: string)
     {
         let removedLogin: boolean = false;
         const daysToStoreLoginsAsMiliseconds: number = stores.settingsStore.numberOfDaysToStoreLoginRecords * 24 * 60 * 60 * 1000;
 
-        Object.keys(this.state.loginHistory).forEach((s) =>
+        const pendingState = this.cloneState();
+        Object.keys(pendingState.loginHistory).forEach((s) =>
         {
             const date: number = Date.parse(s);
             if (date - Date.now() > daysToStoreLoginsAsMiliseconds)
             {
                 removedLogin = true;
-                delete this.state.loginHistory[s];
+                delete pendingState.loginHistory[s];
             }
         });
 
         if (removedLogin)
         {
-            await this.writeState(key);
+            await this.update(masterKey, pendingState);
         }
     }
 
@@ -153,11 +124,14 @@ class AppStore extends Store<AppStoreState>
     {
         if (!this.state.masterKeyHash)
         {
+            const pendingState = this.cloneState();
             const salt = await api.utilities.generator.randomValue(30);
-            this.state.masterKeyHash = await api.utilities.hash.hash(masterKey, salt);
-            this.state.masterKeySalt = salt;
 
-            await this.writeState(masterKey);
+            pendingState.masterKeyHash = await api.utilities.hash.hash(masterKey, salt);
+            pendingState.masterKeySalt = salt;
+
+            // TODO: Should check the result of this in the account setup view
+            await this.update(masterKey, pendingState);
         }
     }
 
@@ -204,26 +178,28 @@ class AppStore extends Store<AppStoreState>
         }, stores.settingsStore.autoLockNumberTime);
     }
 
-    public async recordLogin(key: string, dateTime: number): Promise<void>
+    public async recordLogin(masterKey: string, dateTime: number): Promise<void>
     {
+        const pendingStte = this.cloneState();
+
         const dateObj: Date = new Date(dateTime);
         const loginHistoryKey: string = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
 
-        if (!this.state.loginHistory[loginHistoryKey])
+        if (!pendingStte.loginHistory[loginHistoryKey])
         {
-            this.state.loginHistory[loginHistoryKey] = [dateTime];
+            pendingStte.loginHistory[loginHistoryKey] = [dateTime];
         }
-        else if (this.state.loginHistory[loginHistoryKey].length < stores.settingsStore.loginRecordsToStorePerDay)
+        else if (pendingStte.loginHistory[loginHistoryKey].length < stores.settingsStore.loginRecordsToStorePerDay)
         {
-            this.state.loginHistory[loginHistoryKey].unshift(dateTime);
+            pendingStte.loginHistory[loginHistoryKey].unshift(dateTime);
         }
         else
         {
-            this.state.loginHistory[loginHistoryKey].pop();
-            this.state.loginHistory[loginHistoryKey].unshift(dateTime);
+            pendingStte.loginHistory[loginHistoryKey].pop();
+            pendingStte.loginHistory[loginHistoryKey].unshift(dateTime);
         }
 
-        this.writeState(key);
+        this.update(masterKey, pendingStte);
     }
 }
 

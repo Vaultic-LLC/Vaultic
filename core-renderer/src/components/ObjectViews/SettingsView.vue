@@ -106,10 +106,11 @@ export default defineComponent({
             });
         }
 
-        async function onAuthenticationSuccessful(key: string)
+        async function onAuthenticationSuccessful(masterkey: string)
         {
             stores.popupStore.showLoadingIndicator(color.value, "Saving Settings");
-            await stores.settingsStore.updateState(key, settingsState.value);
+            // TODO: Error handling?
+            await stores.settingsStore.update(masterkey, settingsState.value);
             stores.popupStore.hideLoadingIndicator();
 
             saveSucceeded(true);

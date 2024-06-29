@@ -7,6 +7,8 @@ import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import { DataType } from "../../Types/Table";
 
 export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 {
@@ -68,7 +70,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         }
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return api.files.value;
     }
@@ -80,10 +82,13 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 
     async addNameValuePair(masterKey: string, value: NameValuePair): Promise<boolean>
     {
-        value.id = await generateUniqueID(this.state.values);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        value.id = await generateUniqueID(pendingState.values);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, value, this.state.values, "value", this.state.duplicateValues);
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, value, pendingState.values, "value", pendingState.duplicateValues);
 
         if (!(await this.setValueProperties(masterKey, value)))
         {
@@ -91,50 +96,39 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         }
 
         const reactiveValue = createReactiveValue(value);
-        this.state.values.push(reactiveValue);
-        this.incrementCurrentAndSafeValues();
+        pendingState.values.push(reactiveValue);
+        this.incrementCurrentAndSafeValues(pendingState);
 
         // update groups before filters
-        stores.groupStore.syncGroupsForValues(value.id, value.groups, []);
-        stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [value]);
+        const pendingGroupState = stores.groupStore.syncGroupsForValues(value.id, value.groups, []);
+        const pendingFilterState = stores.filterStore.syncFiltersForValues([value],
+            pendingGroupState.values.filter(g => g.type == DataType.NameValuePairs));
 
-        if (!(await stores.groupStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
+        transaction.addStore(this, pendingState);
+        transaction.addStore(stores.groupStore, pendingGroupState);
+        transaction.addStore(stores.filterStore, pendingFilterState);
 
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        if (!(await this.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        this.events["onChange"]?.forEach(c => c());
-        return true;
+        return await transaction.commit(masterKey);
     }
 
     async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>
     {
-        let currentValueIndex = this.state.values.findIndex(v => v.id == updatedValue.id);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        let currentValueIndex = pendingState.values.findIndex(v => v.id == updatedValue.id);
         if (currentValueIndex < 0)
         {
             return false;
         }
 
-        let currentValue = this.state.values[currentValueIndex];
+        let currentValue = pendingState.values[currentValueIndex];
         const addedGroups = updatedValue.groups.filter(g => !currentValue.groups.includes(g));
         const removedGroups = currentValue.groups.filter(g => !updatedValue.groups.includes(g));
 
         if (valueWasUpdated)
         {
-            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, this.state.values, "value", this.state.duplicateValues);
+            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, pendingState.values, "value", pendingState.duplicateValues);
             if (!(await this.setValueProperties(masterKey, updatedValue)))
             {
                 return false;
@@ -152,71 +146,45 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
             this.checkIfValueIsWeak(response.value!, updatedValue);
         }
 
-        this.incrementCurrentAndSafeValues();
+        this.incrementCurrentAndSafeValues(pendingState);
 
         const newReactiveValue = createReactiveValue(updatedValue);
-        this.state.values[currentValueIndex] = newReactiveValue;
+        pendingState.values[currentValueIndex] = newReactiveValue;
 
-        stores.groupStore.syncGroupsForValues(updatedValue.id, addedGroups, removedGroups);
-        stores.filterStore.syncFiltersForValues(stores.filterStore.nameValuePairFilters, [updatedValue]);
+        const pendingGroupState = stores.groupStore.syncGroupsForValues(updatedValue.id, addedGroups, removedGroups);
+        const pendingFilterState = stores.filterStore.syncFiltersForValues([updatedValue],
+            pendingGroupState.values.filter(g => g.type == DataType.NameValuePairs));
 
-        if (!(await stores.groupStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
+        transaction.addStore(this, pendingState);
+        transaction.addStore(stores.groupStore, pendingGroupState);
+        transaction.addStore(stores.filterStore, pendingFilterState);
 
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        if (!(await this.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        this.events["onChange"]?.forEach(c => c());
-        return true;
+        return await transaction.commit(masterKey);
     }
 
     async deleteNameValuePair(masterKey: string, value: ReactiveValue): Promise<boolean>
     {
-        const valueIndex = this.state.values.findIndex(v => v.id == value.id);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        const valueIndex = pendingState.values.findIndex(v => v.id == value.id);
         if (valueIndex < 0)
         {
             return false;
         }
 
-        this.checkRemoveFromDuplicate(value, this.state.duplicateValues);
-        this.state.values.splice(valueIndex, 1);
-        this.incrementCurrentAndSafeValues();
+        this.checkRemoveFromDuplicate(value, pendingState.duplicateValues);
+        pendingState.values.splice(valueIndex, 1);
+        this.incrementCurrentAndSafeValues(pendingState);
 
-        stores.groupStore.syncGroupsForValues(value.id, [], value.groups);
-        stores.filterStore.removeValuesFromFilters(value.id);
+        const pendingGroupState = stores.groupStore.syncGroupsForValues(value.id, [], value.groups);
+        const pendingFilterState = stores.filterStore.removeValuesFromFilters(value.id);
 
-        if (!(await stores.groupStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
+        transaction.addStore(this, pendingState);
+        transaction.addStore(stores.groupStore, pendingGroupState);
+        transaction.addStore(stores.filterStore, pendingFilterState);
 
-        if (!(await stores.filterStore.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        if (!(await this.writeState(masterKey)))
-        {
-            // TODO:
-            return false;
-        }
-
-        this.events["onChange"]?.forEach(c => c());
-        return true;
+        return await transaction.commit(masterKey);
     }
 
     private async setValueProperties(masterKey: string, value: NameValuePair): Promise<boolean>
@@ -264,14 +232,14 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         nameValuePair.isWeakMessage = "";
     }
 
-    private incrementCurrentAndSafeValues()
+    private incrementCurrentAndSafeValues(pendingState: ValueStoreState)
     {
-        this.state.currentAndSafeValues.current.push(this.state.values.length);
+        pendingState.currentAndSafeValues.current.push(pendingState.values.length);
 
-        const safeValues = this.state.values.filter(
+        const safeValues = pendingState.values.filter(
             v => !v.isWeak && !this.duplicateNameValuePairs.value.includes(v.id) && !v.isOld);
 
-        this.state.currentAndSafeValues.safe.push(safeValues.length);
+        pendingState.currentAndSafeValues.safe.push(safeValues.length);
     }
 }
 

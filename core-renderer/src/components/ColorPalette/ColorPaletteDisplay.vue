@@ -95,7 +95,7 @@ export default defineComponent({
             }
 
             colorPalette.value.active = true;
-            stores.userPreferenceStore.updateCurrentColorPalette(colorPalette.value);
+            stores.userPreferenceStore.updateAndCommitCurrentColorPalette(colorPalette.value);
         }
 
         function onEditColorPalettePopupClosed()

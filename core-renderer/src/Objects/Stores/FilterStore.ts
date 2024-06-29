@@ -6,6 +6,8 @@ import { AtRiskType, DataFile, IFilterable, IGroupable, IIdentifiable, NameValue
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import { api } from "../../API"
+import { GroupStoreState } from "./GroupStore";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
 {
@@ -89,7 +91,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         }
     }
 
-    protected getFile(): DataFile
+    public getFile(): DataFile
     {
         return api.files.filter;
     }
@@ -118,207 +120,151 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     async addFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        filter.id = await generateUniqueID(this.state.values);
-        this.state.values.push(filter);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        filter.id = await generateUniqueID(pendingState.values);
+        pendingState.values.push(filter);
 
         if (filter.type == DataType.Passwords)
         {
-            this.syncFiltersForPasswords([filter], stores.passwordStore.passwords);
-            if (!(await stores.passwordStore.writeState(masterKey)))
-            {
-                // TODO: notify user of issue
-                // this would be a good time to create Vaultic Errors like how I did for the trading framework
-                return false;
-            }
+            // don't need to create a pending group store since the groups aren't actually being changed
+            const pendingPasswordState = this.syncSpecificFiltersForPasswords([filter], stores.groupStore.passwordGroups, pendingState);
+            transaction.addStore(stores.passwordStore, pendingPasswordState);
         }
         else
         {
-            this.syncFiltersForValues([filter], stores.valueStore.nameValuePairs);
-            if (!(await stores.valueStore.writeState(masterKey)))
-            {
-                // TODO: notify user of issue
-                // this would be a good time to create Vaultic Errors like how I did for the trading framework
-                return false;
-            }
+            // don't need to create a pending group store since the groups aren't actually being changed
+            const pendingValueState = this.syncSpecificFiltersForValues([filter], stores.groupStore.valuesGroups, pendingState);
+            transaction.addStore(stores.passwordStore, pendingValueState);
         }
 
-        const succeeded = await this.writeState(masterKey);
-        if (!succeeded)
-        {
-            // TODO: Make sure user gets notified correctly
-            return false;
-        }
-
-        // TODO: Sync filter state with server
-        // should return a special error if we fail to sync.
-        // let the user know the filter was saved locally, but not backed up
-
-        return true;
-        // const addFilterData = {
-        // 	MasterKey: key,
-        // 	Filter: filter,
-        // 	...stores.getStates()
-        // };
-
-        // const data: any = await window.api.server.filter.add(JSON.stringify(addFilterData));
-        // return await stores.handleUpdateStoreResponse(key, data);
+        transaction.addStore(this, pendingState);
+        return await transaction.commit(masterKey);
     }
 
     async updateFilter(masterKey: string, updatedFilter: Filter): Promise<boolean>
     {
-        let filter: Filter[] = this.state.values.filter(f => f.id == updatedFilter.id);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        let filter: Filter[] = pendingState.values.filter(f => f.id == updatedFilter.id);
         if (filter.length != 1)
         {
+            // TODO
             // something weird went wrong.
             // Should just add filter (if the length is 0)?
             return false;
         }
 
-        Object.assign(this.state.values.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
+        Object.assign(pendingState.values.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
         if (updatedFilter.type == DataType.Passwords)
         {
-            this.syncFiltersForPasswords([updatedFilter], stores.passwordStore.passwords);
-            if (!(await stores.passwordStore.writeState(masterKey)))
-            {
-                // TODO: notify user of issue
-                // this would be a good time to create Vaultic Errors like how I did for the trading framework
-                return false;
-            }
+            const pendingPasswordState = this.syncSpecificFiltersForPasswords([updatedFilter], stores.groupStore.passwordGroups, pendingState);
+            transaction.addStore(stores.passwordStore, pendingPasswordState);
         }
         else if (updatedFilter.type == DataType.NameValuePairs)
         {
-            this.syncFiltersForValues([updatedFilter], stores.valueStore.nameValuePairs);
-            if (!(await stores.valueStore.writeState(masterKey)))
-            {
-                // TODO: notify user of issue
-                // this would be a good time to create Vaultic Errors like how I did for the trading framework
-                return false;
-            }
+            const pendingValueState = this.syncSpecificFiltersForValues([updatedFilter], stores.groupStore.valuesGroups, pendingState);
+            transaction.addStore(stores.passwordStore, pendingValueState);
         }
 
-        const succeeded = await this.writeState(masterKey);
-        if (!succeeded)
-        {
-            // TODO: Make sure user gets notified correctly
-            return false;
-        }
-
-        // TODO: Sync filter state with server
-        // should return a special error if we fail to sync.
-        // let the user know the filter was saved locally, but not backed up
-
-        return true;
-        // const addFilterData = {
-        // 	MasterKey: key,
-        // 	Filter: updatedFilter,
-        // 	...stores.getStates()
-        // };
-
-        // const data: any = await window.api.server.filter.update(JSON.stringify(addFilterData));
-        // return await stores.handleUpdateStoreResponse(key, data);
+        transaction.addStore(this, pendingState);
+        return await transaction.commit(masterKey);
     }
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        this.state.values.splice(this.state.values.indexOf(filter), 1);
+        const transaction = new StoreUpdateTransaction();
+        const pendingState = this.cloneState();
+
+        pendingState.values.splice(pendingState.values.indexOf(filter), 1);
 
         if (filter.type == DataType.Passwords)
         {
-            stores.passwordStore.removeSecondaryObjectFromValues(filter.id, "filters");
-            if (!(await stores.passwordStore.writeState(masterKey)))
-            {
-                // TODO: notify user of issue
-                // this would be a good time to create Vaultic Errors like how I did for the trading framework
-                return false;
-            }
+            const pendingPasswordState = stores.passwordStore.removeSecondaryObjectFromValues(filter.id, "filters");
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, this.emptyPasswordFilters);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, this.duplicatePasswordFilters);
+            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, pendingState.emptyPasswordFilters);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, pendingState.duplicatePasswordFilters);
+
+            transaction.addStore(stores.passwordStore, pendingPasswordState);
         }
         else if (filter.type == DataType.NameValuePairs)
         {
-            stores.valueStore.removeSecondaryObjectFromValues(filter.id, "filters");
-            if (!(await stores.valueStore.writeState(masterKey)))
-            {
-                return false;
-            }
+            const pendingValueState = stores.valueStore.removeSecondaryObjectFromValues(filter.id, "filters");
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, this.emptyValueFilters);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, this.duplicateValueFilters);
+            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, pendingState.emptyValueFilters);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, pendingState.duplicateValueFilters);
+
+            transaction.addStore(stores.valueStore, pendingValueState);
         }
 
-        const succeeded = await this.writeState(masterKey);
-        if (!succeeded)
-        {
-            // TODO: Make sure user gets notified correctly
-            return false;
-        }
-
-        // TODO: Sync filter state with server
-        // should return a special error if we fail to sync.
-        // let the user know the filter was saved locally, but not backed up
-
-        return true;
-        // const addFilterData = {
-        // 	MasterKey: key,
-        // 	Filter: filter,
-        // 	...stores.getStates()
-        // };
-
-        // const data: any = await window.api.server.filter.delete(JSON.stringify(addFilterData));
-        // return await stores.handleUpdateStoreResponse(key, data);
+        transaction.addStore(this, pendingState);
+        return await transaction.commit(masterKey);
     }
 
-    syncFiltersForPasswords(filtersToSync: Filter[], passwords: Password[])
+    // called internally when adding / updating a filter to sync passwords
+    private syncSpecificFiltersForPasswords(filtersToSync: Filter[], allGroups: Group[], pendingState: FilterStoreState)
     {
-        this.syncFiltersForPrimaryDataObject(filtersToSync, passwords, "passwords",
-            this.emptyPasswordFilters, this.duplicatePasswordFilters, this.passwordFilters, stores.groupStore.passwordGroups);
+        const pendingPasswordState = stores.passwordStore.cloneState();
+
+        this.syncFiltersForPrimaryDataObject(filtersToSync, pendingPasswordState.values, "passwords", pendingState.emptyPasswordFilters,
+            pendingState.duplicatePasswordFilters, pendingState.values.filter(f => f.type == DataType.Passwords), allGroups);
+
+        return pendingPasswordState;
     }
 
-    syncFiltersForValues(filtersToSync: Filter[], values: NameValuePair[])
+    // called internally when adding / updating a filter to sync passwords
+    private syncSpecificFiltersForValues(filtersToSync: Filter[], allGroups: Group[], pendingState: FilterStoreState)
     {
-        this.syncFiltersForPrimaryDataObject(filtersToSync, values, "values",
-            this.emptyValueFilters, this.duplicateValueFilters, this.nameValuePairFilters, stores.groupStore.valuesGroups);
+        const pendingValueState = stores.valueStore.cloneState();
+
+        this.syncFiltersForPrimaryDataObject(filtersToSync, pendingValueState.values, "values", pendingState.emptyValueFilters,
+            pendingState.duplicateValueFilters, pendingState.values.filter(f => f.type == DataType.NameValuePairs), allGroups);
+
+        return pendingValueState;
     }
 
-    recalcGroupFilters(dataType: DataType)
+    // called externally when adding / updating passwords 
+    syncFiltersForPasswords(passwords: Password[], allGroups: Group[])
     {
-        if (dataType == DataType.Passwords)
-        {
-            this.passwordFilters.forEach(f =>
-            {
-                if (f.conditions.filter(c => c.property == "group").length == 0)
-                {
-                    return;
-                }
+        const pendingState = this.cloneState();
+        const passwordFilters = pendingState.values.filter(f => f.type == DataType.Passwords);
 
-                this.syncFiltersForPasswords([f], stores.passwordStore.passwords)
-            });
-        }
-        else
-        {
-            this.nameValuePairFilters.forEach(f =>
-            {
-                if (f.conditions.filter(c => c.property == "group").length == 0)
-                {
-                    return;
-                }
+        this.syncFiltersForPrimaryDataObject(passwordFilters, passwords, "passwords", pendingState.emptyPasswordFilters,
+            pendingState.duplicatePasswordFilters, passwordFilters, allGroups);
 
-                this.syncFiltersForValues([f], stores.valueStore.nameValuePairs)
-            });
-        }
+        return pendingState;
+    }
+
+    // called externally when adding / updating passwords 
+    syncFiltersForValues(values: NameValuePair[], allGroups: Group[])
+    {
+        const pendingState = this.cloneState();
+        const valueFilters = pendingState.values.filter(f => f.type == DataType.NameValuePairs);
+
+        this.syncFiltersForPrimaryDataObject(valueFilters, values, "values",
+            pendingState.emptyValueFilters, pendingState.duplicateValueFilters, valueFilters, allGroups);
+
+        return pendingState;
     }
 
     removePasswordFromFilters(passwordID: string)
     {
-        this.removePrimaryObjectFromValues(passwordID, "passwords", this.state.emptyPasswordFilters,
-            this.state.duplicatePasswordFilters, this.passwordFilters);
+        const pendingState = this.cloneState();
+        this.removePrimaryObjectFromValues(passwordID, "passwords", pendingState.emptyPasswordFilters,
+            pendingState.duplicatePasswordFilters, pendingState.values.filter(f => f.type == DataType.Passwords));
+
+        return pendingState;
     }
 
     removeValuesFromFilters(valueID: string)
     {
-        this.removePrimaryObjectFromValues(valueID, "values", this.state.emptyValueFilters,
-            this.state.duplicateValueFilters, this.nameValuePairFilters);
+        const pendingState = this.cloneState();
+        this.removePrimaryObjectFromValues(valueID, "values", pendingState.emptyValueFilters,
+            pendingState.duplicateValueFilters, pendingState.values.filter(f => f.type == DataType.NameValuePairs));
+
+        return pendingState;
     }
 
     private removePrimaryObjectFromValues(
@@ -328,7 +274,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         allDuplicateFilters: Dictionary<string[]>,
         allFilters: Filter[])
     {
-        this.state.values.forEach(v =>
+        allFilters.forEach(v =>
         {
             const primaryObjectIndex = v[primaryDataObjectCollection].indexOf(primaryObjectID);
             if (primaryObjectIndex >= 0)
