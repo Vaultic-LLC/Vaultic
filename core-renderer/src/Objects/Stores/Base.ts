@@ -52,12 +52,10 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
         return {} as DataFile;
     }
 
-    public async updateState(state: T): Promise<boolean>
+    public updateState(state: T): void
     {
         Object.assign(this.state, state);
         this.events['onChanged']?.forEach(f => f());
-
-        return true;
     }
 
     // TODO: update any places that were using this to use StoreUpdateTransaction instead

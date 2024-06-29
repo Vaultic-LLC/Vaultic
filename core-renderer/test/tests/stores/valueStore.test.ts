@@ -11,7 +11,8 @@ const masterKey = "test";
 
 function getSafeValues()
 {
-    return stores.valueStore.nameValuePairs.filter(v => !v.isWeak && !stores.valueStore.duplicateNameValuePairs.value.includes(v.id) && !v.isOld);
+    return stores.valueStore.nameValuePairs.filter(v => !v.isWeak &&
+        !stores.valueStore.duplicateNameValuePairs.value.includes(v.id) && !v.isOld);
 }
 
 valueStoreSuite.tests.push({

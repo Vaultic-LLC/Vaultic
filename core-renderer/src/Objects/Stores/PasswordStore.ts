@@ -228,7 +228,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         pendingState.currentAndSafePasswords.current.push(pendingState.values.length);
 
         const safePasswords = pendingState.values.filter(
-            p => !p.isWeak && !this.duplicatePasswords.value.includes(p.id) && !p.containsLogin && !p.isOld);
+            p => !p.isWeak && !pendingState.duplicatePasswords[p.id] && !p.containsLogin && !p.isOld);
 
         pendingState.currentAndSafePasswords.safe.push(safePasswords.length);
     }

@@ -87,7 +87,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 
         value.id = await generateUniqueID(pendingState.values);
 
-        // doing this before adding saves us from having to remove the current password from the list of potential duplicates
+        // doing this before adding saves us from having to remove the current value from the list of potential duplicates
         await this.checkUpdateDuplicatePrimaryObjects(masterKey, value, pendingState.values, "value", pendingState.duplicateValues);
 
         if (!(await this.setValueProperties(masterKey, value)))
@@ -237,7 +237,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         pendingState.currentAndSafeValues.current.push(pendingState.values.length);
 
         const safeValues = pendingState.values.filter(
-            v => !v.isWeak && !this.duplicateNameValuePairs.value.includes(v.id) && !v.isOld);
+            v => !v.isWeak && !pendingState.duplicateValues[v.id] && !v.isOld);
 
         pendingState.currentAndSafeValues.safe.push(safeValues.length);
     }

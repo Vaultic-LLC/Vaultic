@@ -136,7 +136,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         {
             // don't need to create a pending group store since the groups aren't actually being changed
             const pendingValueState = this.syncSpecificFiltersForValues([filter], stores.groupStore.valuesGroups, pendingState);
-            transaction.addStore(stores.passwordStore, pendingValueState);
+            transaction.addStore(stores.valueStore, pendingValueState);
         }
 
         transaction.addStore(this, pendingState);
@@ -166,7 +166,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         else if (updatedFilter.type == DataType.NameValuePairs)
         {
             const pendingValueState = this.syncSpecificFiltersForValues([updatedFilter], stores.groupStore.valuesGroups, pendingState);
-            transaction.addStore(stores.passwordStore, pendingValueState);
+            transaction.addStore(stores.valueStore, pendingValueState);
         }
 
         transaction.addStore(this, pendingState);

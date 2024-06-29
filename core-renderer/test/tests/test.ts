@@ -88,7 +88,7 @@ export class TestResult
     {
         const failedTests = Object.keys(this.failedTests);
         console.log('----- Test Results -----');
-        console.timeLog();
+        console.timeEnd();
         console.log(`Passed: ${this.totalTests - failedTests.length}`);
         console.log(`Failed: ${failedTests.length}`);
 

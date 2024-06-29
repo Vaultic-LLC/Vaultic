@@ -24,29 +24,28 @@ export default async function runAllTests()
     await runTests(filterStoreSuite);
 
     results.printStatus();
-    console.timeEnd();
 }
 
 export async function runAllValueTests()
 {
     console.time();
     await runTests(valueStoreSuite);
+
     results.printStatus();
-    console.timeEnd();
 }
 
 export async function runAllGroupTests()
 {
     console.time();
     await runTests(groupStoreSuite);
+
     results.printStatus();
-    console.timeEnd();
 }
 
 export async function runAllFilterTests()
 {
     console.time();
     await runTests(filterStoreSuite);
+
     results.printStatus();
-    console.timeEnd();
 }

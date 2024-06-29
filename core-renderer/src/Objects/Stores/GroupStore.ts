@@ -247,10 +247,10 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             const pendingFilterState = stores.filterStore.syncFiltersForValues(pendingValueState.values,
                 pendingState.values.filter(g => g.type == DataType.NameValuePairs));
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, this.emptyValueGroups);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, this.duplicateValueGroups);
+            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyValueGroups);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicateValueGroups);
 
-            transaction.addStore(stores.passwordStore, pendingValueState);
+            transaction.addStore(stores.valueStore, pendingValueState);
             transaction.addStore(stores.filterStore, pendingFilterState);
         }
 
