@@ -1,5 +1,6 @@
 import child_process from 'child_process';
 import os from "os";
+import { env } from 'process';
 
 export interface FileLocker
 {
@@ -11,6 +12,8 @@ function windowsLock(fileName: string, directory: string): Promise<void>
 {
 	return new Promise<void>((resolve) =>
 	{
+		console.log(`Path is ${env.PATH}`);
+
 		const child = child_process.spawn("icacls", [fileName, "/deny", "everyone:f"], {
 			shell: true, windowsHide: true, stdio: [
 				'pipe', // stdin: changed from the default `pipe`

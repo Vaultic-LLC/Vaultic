@@ -13,7 +13,7 @@ function getDirectory(): string
 	if (!directory)
 	{
 		directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
-		directory += environment.isTest ? "\\Vaultic\\Test\\DataStores" : "\\Vaultic\\DataStores";
+		directory += environment.isTest ? "\\Vaultic\\TestDataStores" : "\\Vaultic\\DataStores";
 	}
 
 	return directory;

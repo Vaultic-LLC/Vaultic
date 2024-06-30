@@ -4,7 +4,7 @@ import { DataType, Filter, Group, PrimaryDataObjectCollection } from "../../Type
 import { Dictionary } from "../../Types/DataStructures";
 import { Stores, stores } from ".";
 import cryptHelper from "../../Helpers/cryptHelper";
-import FileSaveTransaction from "../StoreUpdateTransaction";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface StoreState
 {
@@ -58,26 +58,17 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
         this.events['onChanged']?.forEach(f => f());
     }
 
-    // TODO: update any places that were using this to use StoreUpdateTransaction instead
-    // private async writeState(key: string): Promise<boolean>
-    // {
-    //     const jsonData: string = JSON.stringify(this.state);
-    //     const encryptedData = await cryptHelper.encrypt(key, jsonData);
-    //     if (!encryptedData.success)
-    //     {
-    //         stores.popupStore.showErrorAlert(encryptedData.logID);
-    //         return false;
-    //     }
+    protected async commitAndBackup(masterKey: string, transaction: StoreUpdateTransaction): Promise<boolean>
+    {
+        const savedSuccessfully = await transaction.commit(masterKey);
+        if (savedSuccessfully)
+        {
+            // TODO: Get each stores state,  encrypt with users export key for e2e encryption, add to object,
+            // pass to server to save
+        }
 
-    //     const result = await this.getFile().write(encryptedData.value!);
-    //     if (!result.success)
-    //     {
-    //         stores.popupStore.showErrorAlert(result.logID);
-    //         return false;
-    //     }
-
-    //     return true;
-    // }
+        return savedSuccessfully;
+    }
 
     protected postAssignState(_: T): void { }
 

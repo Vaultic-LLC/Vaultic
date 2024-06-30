@@ -101,41 +101,12 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
         return true;
     }
 
-    // public async writeState(_: string): Promise<boolean>
-    // {
-    //     this.state.version += 1;
-
-    //     const success = await fileHelper.writeUnencrypted<UserPreferencesStoreState>(this.state, this.getFile());
-    //     if (!success)
-    //     {
-    //         return false;
-    //     }
-
-    //     if (!stores.appStore.isOnline)
-    //     {
-    //         return true;
-    //     }
-
-    //     const data =
-    //     {
-    //         UserPreferencesStoreState: this.state
-    //     };
-
-    //     const response = await api.server.user.backupUserPreferences(JSON.stringify(data));
-    //     if (!response.Success)
-    //     {
-    //         defaultHandleFailedResponse(response, false);
-    //     }
-
-    //     return response.Success;
-    // }
-
     private async update()
     {
         const transaction = new StoreUpdateTransaction();
         transaction.addStore(this, this.state);
 
-        await transaction.commit('');
+        await this.commitAndBackup('', transaction);
     }
 
     private setCurrentPrimaryColor(dataType: DataType)
@@ -156,7 +127,7 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
         const transaction = new StoreUpdateTransaction();
         this.updateCurrentColorPalette(transaction, colorPalette);
 
-        transaction.commit('');
+        await this.commitAndBackup('', transaction);
     }
 
     public async updateCurrentColorPalette(transaction: StoreUpdateTransaction, colorPalette: ColorPalette)

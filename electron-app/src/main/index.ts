@@ -14,7 +14,7 @@ import { initFiles } from './Objects/Files/Files';
 function createWindow(): void
 {
 	//@ts-ignore
-	const isTest = import.meta.env.ISTEST === true;
+	const isTest = import.meta.env.VITE_ISTEST === "true";
 	setupEnvironment(isTest);
 
 	// Create the browser window.

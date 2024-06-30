@@ -40,7 +40,7 @@ export interface Stores
 }
 
 // Is only called from GlobalAuthPopup and SignInView and should stay that way since readState doesn't do any
-// authenticating
+// authenticating.
 async function loadStoreData(key: string): Promise<any>
 {
     const result = await Promise.all([
@@ -56,11 +56,11 @@ async function loadStoreData(key: string): Promise<any>
     {
         if (!stores.appStore.isOnline)
         {
-            stores.popupStore.showAlert("An Error has Occured", "Unable to use local data due to an unknown error. Please log in to load backed up data or try to continue using the application as normal.", false);
+            stores.popupStore.showAlert("An Error has Occured", "Unable to load all local data due to an unknown error. Please log in to load backed up data or try to continue using the application as normal.", false);
         }
         else
         {
-            stores.popupStore.showAlert("An Error has Occured", "Unable to use local data due to an unknown error. Loading backed up data.", false);
+            stores.popupStore.showAlert("An Error has Occured", "Unable to load all local data due to an unknown error. Loading backed up data.", false);
         }
     }
 
@@ -134,6 +134,7 @@ async function checkUpdateStoresWithBackup(masterKey: string, userDataResponse: 
             {
                 // TODO: Error message
                 // Unable to back up data
+                // Only show error message if actually saving data, not when logging in and overriding current with backups?
             }
         }
     }

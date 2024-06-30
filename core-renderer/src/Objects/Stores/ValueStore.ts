@@ -108,7 +108,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>
@@ -159,7 +159,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async deleteNameValuePair(masterKey: string, value: ReactiveValue): Promise<boolean>
@@ -184,7 +184,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     private async setValueProperties(masterKey: string, value: NameValuePair): Promise<boolean>

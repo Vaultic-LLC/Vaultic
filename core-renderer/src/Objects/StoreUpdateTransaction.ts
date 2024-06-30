@@ -87,12 +87,6 @@ export default class StoreUpdateTransaction
             data = response.value!;
         }
 
-        const result = await file.write(data);
-        if (!result.success)
-        {
-            return false;
-        }
-
-        return true;
+        return (await file.write(data)).success;
     }
 }

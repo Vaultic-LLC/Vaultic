@@ -90,7 +90,7 @@ class SettingsStore extends Store<SettingsStoreState>
         const transaction = new StoreUpdateTransaction();
         transaction.addStore(this, state);
 
-        return transaction.commit(masterKey);
+        return this.commitAndBackup(masterKey, transaction);
     }
 
     public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
@@ -111,7 +111,7 @@ class SettingsStore extends Store<SettingsStoreState>
         }
 
         transaction.addStore(this, pendingState);
-        await transaction.commit(masterKey);
+        await this.commitAndBackup(masterKey, transaction);
     }
 }
 

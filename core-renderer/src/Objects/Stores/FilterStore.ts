@@ -140,7 +140,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         }
 
         transaction.addStore(this, pendingState);
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async updateFilter(masterKey: string, updatedFilter: Filter): Promise<boolean>
@@ -170,7 +170,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         }
 
         transaction.addStore(this, pendingState);
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
@@ -200,7 +200,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         }
 
         transaction.addStore(this, pendingState);
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     // called internally when adding / updating a filter to sync passwords

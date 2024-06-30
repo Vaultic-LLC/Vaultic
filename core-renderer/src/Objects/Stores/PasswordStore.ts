@@ -119,7 +119,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey);;
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
@@ -189,7 +189,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey);;
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async deletePassword(masterKey: string, password: ReactivePassword): Promise<boolean>
@@ -220,7 +220,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey);;
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     private incrementCurrentAndSafePasswords(pendingState: PasswordStoreState)

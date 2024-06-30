@@ -95,7 +95,7 @@ class AppStore extends Store<AppStoreState>
         const transaction = new StoreUpdateTransaction();
         transaction.addStore(this, state);
 
-        return transaction.commit(masterKey);
+        return this.commitAndBackup(masterKey, transaction);
     }
 
     private async checkRemoveOldLoginRecords(masterKey: string)

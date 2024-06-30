@@ -160,7 +160,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         }
 
         transaction.addStore(this, pendingState);
-        return await transaction.commit(masterKey);;
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async updateGroup(masterKey: string, updatedGroup: Group): Promise<boolean>
@@ -213,7 +213,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         Object.assign(pendingState.values.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
         transaction.addStore(this, pendingState);
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>
@@ -255,7 +255,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         }
 
         transaction.addStore(this, pendingState);
-        return await transaction.commit(masterKey);
+        return await this.commitAndBackup(masterKey, transaction);
     }
 
     syncGroupsForPasswords(
