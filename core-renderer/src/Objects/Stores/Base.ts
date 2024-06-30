@@ -63,7 +63,7 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
         const savedSuccessfully = await transaction.commit(masterKey);
         if (savedSuccessfully)
         {
-            // TODO: Get each stores state,  encrypt with users export key for e2e encryption, add to object,
+            // TODO: Get each stores state, encrypt with users export key for e2e encryption, add to object,
             // pass to server to save
         }
 

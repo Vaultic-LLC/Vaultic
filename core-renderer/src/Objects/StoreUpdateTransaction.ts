@@ -38,10 +38,18 @@ export default class StoreUpdateTransaction
         let failed = false;
         for (let i = 0; i < this.storeUpdateStates.length; i++)
         {
-            const success = await this.writeFile(masterKey, this.storeUpdateStates[i].store.getFile(),
-                this.storeUpdateStates[i].pendingState, this.storeUpdateStates[i].store.encrypted());
+            try
+            {
+                const success = await this.writeFile(masterKey, this.storeUpdateStates[i].store.getFile(),
+                    this.storeUpdateStates[i].pendingState, this.storeUpdateStates[i].store.encrypted());
 
-            if (!success && !this.ignoreFail)
+                if (!success && !this.ignoreFail)
+                {
+                    failed = true;
+                    break;
+                }
+            }
+            catch 
             {
                 failed = true;
                 break;

@@ -1,8 +1,10 @@
-import filterStoreSuite from "./stores/filterStore.test";
-import groupStoreSuite from "./stores/groupStore.test";
+import { Test, TestResult, TestSuite } from "./test";
+
 import passwordStoreSuite from "./stores/passwordStore.test";
 import valueStoreSuite from "./stores/valueStore.test";
-import { Test, TestResult, TestSuite } from "./test";
+import filterStoreSuite from "./stores/filterStore.test";
+import groupStoreSuite from "./stores/groupStore.test";
+import transactionTestSuite from "./stores/transaction.test"
 
 const results: TestResult = new TestResult();
 
@@ -22,6 +24,7 @@ export default async function runAllTests()
     await runTests(valueStoreSuite);
     await runTests(groupStoreSuite);
     await runTests(filterStoreSuite);
+    await runTests(transactionTestSuite);
 
     results.printStatus();
 }
@@ -46,6 +49,14 @@ export async function runAllFilterTests()
 {
     console.time();
     await runTests(filterStoreSuite);
+
+    results.printStatus();
+}
+
+export async function runAllTransactionTests()
+{
+    console.time();
+    await runTests(transactionTestSuite);
 
     results.printStatus();
 }

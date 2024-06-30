@@ -135,6 +135,10 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         }
 
         // TODO: Check update email on sever if isVaultic
+        if (updatingPassword.isVaultic && !stores.appStore.isOnline)
+        {
+            return false;
+        }
 
         const currentPassword = pendingState.values[passwordIndex];
 
