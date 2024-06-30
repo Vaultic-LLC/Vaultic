@@ -44,5 +44,5 @@ async function initApp()
     app.use(setupCalendar, {});
     app.mount("#app");
 
-    runAllTransactionTests();
+    runAllTests();
 }

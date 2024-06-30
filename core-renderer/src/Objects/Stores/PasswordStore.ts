@@ -79,6 +79,14 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         }
     }
 
+    protected postAssignState(state: PasswordStoreState): void 
+    {
+        for (let i = 0; i < state.values.length; i++)
+        {
+            state.values[i] = createReactivePassword(state.values[i]);
+        }
+    }
+
     public getFile(): DataFile
     {
         return api.files.password;

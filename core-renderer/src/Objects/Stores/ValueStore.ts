@@ -70,6 +70,14 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         }
     }
 
+    protected postAssignState(state: ValueStoreState): void 
+    {
+        for (let i = 0; i < state.values.length; i++)
+        {
+            state.values[i] = createReactiveValue(state.values[i]);
+        }
+    }
+
     public getFile(): DataFile
     {
         return api.files.value;

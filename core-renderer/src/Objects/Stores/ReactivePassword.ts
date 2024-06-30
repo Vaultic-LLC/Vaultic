@@ -1,4 +1,4 @@
-import { Password } from "../../Types/EncryptedData";
+import { Password, IIdentifiable, IGroupable, IFilterable, SecurityQuestion } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
 import { stores } from ".";
 
@@ -8,8 +8,7 @@ export interface ReactivePassword extends Password
     isSafe: boolean;
 }
 
-// TODO: Remove isSafe and isDuplicate from here and reactive value. 
-// Remove these entirely then and just create a method or something for isOld?
+// Used to prevent modifing a password directly and to and some computed methods
 export default function createReactivePassword(password: Password): ReactivePassword
 {
     const passwordState: Password = reactive({
