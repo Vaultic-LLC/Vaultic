@@ -9,7 +9,9 @@ core-renderer/node_modules
 
 core-renderer/test/src/core
 core-renderer/test/node_modules
+core-renderer/package-lock.json
 
 core-main/node_modules
+core-main/package-lock.json
 
 electron-app-test/app
