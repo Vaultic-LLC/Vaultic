@@ -1,18 +1,23 @@
 import { electronAPI } from '@electron-toolkit/preload'
 import fs from "fs";
-import { MethodResponse } from '../../Types/MethodResponse';
+import { MethodResponse } from '../../Core/Types/MethodResponse';
 import { FileLocker, getFileLocker } from './FileLocker';
-import vaulticServer from '../Server/VaulticServer';
+import vaulticServer from '../../Core/Server/VaulticServer';
+import { File } from "../../Core/Types/File";
+import { environment } from '../../Core/Environment';
 
-export interface File
+let directory: string | undefined = undefined;
+
+function getDirectory(): string
 {
-	exists: () => Promise<boolean>;
-	write: (data: string) => Promise<MethodResponse>;
-	read: () => Promise<MethodResponse>;
-}
+	if (!directory)
+	{
+		directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
+		directory += environment.isTest ? "\\Vaultic\\TestDataStores" : "\\Vaultic\\DataStores";
+	}
 
-let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
-directory += "\\Vaultic\\DataStores";
+	return directory;
+}
 
 export function writeFile(fullPath: string, data: string): Promise<void>
 {
@@ -33,17 +38,17 @@ export function writeFile(fullPath: string, data: string): Promise<void>
 export default function useFile(name: string): File
 {
 	const fileName = `${name}.json`;
-	const fullPath = directory + "\\" + fileName;
+	const fullPath = getDirectory() + "\\" + fileName;;
 
 	const fileLocker: FileLocker = getFileLocker();
 
 	function checkMakeDataDirectory(): void
 	{
-		if (!fs.existsSync(directory))
+		if (!fs.existsSync(getDirectory()))
 		{
 			try
 			{
-				fs.mkdirSync(directory);
+				fs.mkdirSync(getDirectory());
 			}
 			catch { }
 		}
@@ -51,7 +56,7 @@ export default function useFile(name: string): File
 
 	async function fileExistsAndHasData(): Promise<boolean>
 	{
-		await fileLocker.unlock(fileName, directory);
+		await fileLocker.unlock(fileName, getDirectory());
 
 		if (!fs.existsSync(fullPath))
 		{
@@ -60,7 +65,7 @@ export default function useFile(name: string): File
 
 		const size = fs.statSync(fullPath).size;
 
-		await fileLocker.lock(fileName, directory);
+		await fileLocker.lock(fileName, getDirectory());
 		return size > 0;
 	}
 
@@ -93,13 +98,13 @@ export default function useFile(name: string): File
 
 		try
 		{
-			await fileLocker.unlock(fileName, directory);
+			await fileLocker.unlock(fileName, getDirectory());
 			unlocked = true;
 
 			await writeFile(fullPath, data);
 			wrote = true;
 
-			await fileLocker.lock(fileName, directory);
+			await fileLocker.lock(fileName, getDirectory());
 			unlocked = false;
 
 			return { success: true }
@@ -121,7 +126,7 @@ export default function useFile(name: string): File
 		{
 			try
 			{
-				await fileLocker.lock(fileName, directory);
+				await fileLocker.lock(fileName, getDirectory());
 			}
 			catch { }
 		}
@@ -141,12 +146,12 @@ export default function useFile(name: string): File
 		let logID: number | undefined;
 		try
 		{
-			await fileLocker.unlock(fileName, directory);
+			await fileLocker.unlock(fileName, getDirectory());
 			unlocked = true;
 
 			data = await readFile();
 
-			await fileLocker.lock(fileName, directory);
+			await fileLocker.lock(fileName, getDirectory());
 			unlocked = false;
 
 			return { success: true, value: data };
@@ -168,7 +173,7 @@ export default function useFile(name: string): File
 		{
 			try
 			{
-				await fileLocker.lock(fileName, directory);
+				await fileLocker.lock(fileName, getDirectory());
 			}
 			catch { }
 		}

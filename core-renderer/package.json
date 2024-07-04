@@ -1,0 +1,21 @@
+{
+    "name": "core",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "directories": {
+        "test": "test"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "vue": "^3.3.4",
+        "vue-tsc": "^2.0.21",
+        "typescript": "~5.4.0",
+        "tippy.js": "^6.3.7",
+        "@types/node": "^20.14.5"
+    }
+}

@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { API, AppController, CryptUtility, File, GeneratorUtility, HashUtility, SessionController, StoreController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
+import { API, AppController, CryptUtility, Environment, File, GeneratorUtility, HashUtility, SessionController, StoreController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -147,9 +147,15 @@ const userPreferencesFile: File =
 	write: (data: string) => ipcRenderer.invoke('userPreferencesFile:write', data)
 };
 
+const environment: Environment =
+{
+	isTest: () => ipcRenderer.invoke('environment:isTest')
+};
+
 const api: API =
 {
 	getDeviceInfo,
+	environment,
 	server: {
 		app: appController,
 		session: sessionController,

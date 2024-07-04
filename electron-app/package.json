@@ -6,7 +6,9 @@
 	"author": "Vaultic LLC",
 	"homepage": "https://www.electronjs.org",
 	"scripts": {
-		"copy": "node ../copy.js src=../common/src dest=./src/renderer/src/common",
+		"copy-core-main": "node ../copy.js src=../core-main/src dest=./src/main/Core",
+		"copy-core-renderer": "node ../copy.js src=../core-renderer/src dest=./src/renderer/src/core",
+		"copy": "npm run copy-core-main && npm run copy-core-renderer",
 		"format": "prettier --write .",
 		"lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",
 		"typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
@@ -20,7 +22,11 @@
 		"build:mac": "npm run build && electron-builder --mac --config",
 		"build:linux": "npm run build && electron-builder --linux --config",
 		"package": "npm run copy && electron-vite build --outDir=dist && electron-forge package",
-		"make": "npm run copy && electron-vite build --outDir=dist && electron-forge make"
+		"make": "npm run copy && electron-vite build --outDir=dist && electron-forge make",
+		"copy-core-main-test": "node ../../copy.js src=../../core-main/src dest=./src/main/Core",
+		"copy-core-renderer-test": "node ../../copy.js src=../../core-renderer/src dest=./src/renderer/src/core",
+		"copy-test": "npm run copy-core-main-test && npm run copy-core-renderer-test",
+		"test": "npm run copy-test && electron-vite dev"
 	},
 	"dependencies": {
 		"@electron-toolkit/preload": "^2.0.0",

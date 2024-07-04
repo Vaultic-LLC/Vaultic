@@ -4,13 +4,16 @@
 		"electron.vite.config.*",
 		"src/main/*",
 		"src/main/Objects/Files/*",
-		"src/main/Objects/Server/*",
 		"src/main/Types/*",
 		"src/main/Objects/*",
 		"src/main/Helpers/*",
 		"src/main/Utilities/*",
 		"src/preload/*",
 		"src/preload/Types/*",
+		"src/main/Core/*",
+		"src/main/Core/Helpers/*",
+		"src/main/Core/Server/*",
+		"src/main/Core/Types/*",
 	],
 	"compilerOptions": {
 		"composite": true,
@@ -19,5 +22,9 @@
 		],
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
+		"rootDirs": [
+			"src",
+			"../common"
+		]
 	}
 }

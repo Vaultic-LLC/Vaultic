@@ -1,12 +1,12 @@
 import { createApp } from 'vue'
 
-import App from './common/App.vue'
-import { api } from "./common/API"
+import App from './core/App.vue'
+import { api } from "./core/API"
 
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
-import { stores } from './common/Objects/Stores';
+import { stores } from './core/Objects/Stores';
 
 api.setAPI(window.api);
 

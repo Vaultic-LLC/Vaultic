@@ -2,7 +2,16 @@ electron-app/node_modules
 electron-app/dist
 electron-app/out
 electron-app/*.log*
-electron-app/src/renderer/src/common
+electron-app/src/renderer/src/core
+electron-app/src/main/Core
 
-common/test/src/common
-common/test/node_modules
+core-renderer/node_modules
+
+core-renderer/test/src/core
+core-renderer/test/node_modules
+core-renderer/package-lock.json
+
+core-main/node_modules
+core-main/package-lock.json
+
+electron-app-test/app

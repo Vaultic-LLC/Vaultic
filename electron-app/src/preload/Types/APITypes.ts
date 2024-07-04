@@ -127,9 +127,15 @@ export interface Files
 	userPreferences: File;
 }
 
+export interface Environment
+{
+	isTest: () => Promise<boolean>;
+}
+
 export interface API
 {
 	getDeviceInfo: () => Promise<DeviceInfo>;
+	environment: Environment;
 	server: VaulticServer;
 	utilities: Utilities;
 	helpers: Helpers;

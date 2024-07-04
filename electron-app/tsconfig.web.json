@@ -17,6 +17,10 @@
 			"@/*": [
 				"src/renderer/src/*"
 			]
-		}
+		},
+		"rootDirs": [
+			"src",
+			"../common"
+		]
 	}
 }

@@ -1,7 +1,7 @@
 import { dialog, ipcRenderer } from "electron";
 import { writeFile } from "../Objects/Files/File";
-import axiosHelper from "../Objects/Server/AxiosHelper";
-import { GetUserDeactivationKeyResponse } from "../Types/Responses";
+import axiosHelper from "../Core/Server/AxiosHelper";
+import { GetUserDeactivationKeyResponse } from "../Core/Types/Responses";
 
 export interface VaulticHelper
 {
@@ -21,7 +21,6 @@ async function selectDirectory()
 
 	return '';
 }
-
 
 export async function downloadDeactivationKey()
 {
