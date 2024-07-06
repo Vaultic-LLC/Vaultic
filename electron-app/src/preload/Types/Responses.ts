@@ -3,19 +3,20 @@ import { ChartData, LicenseStatus, Session, UserDataBreach } from "./ClientServe
 
 export interface EncryptedResponse
 {
-	key?: string;
-	data?: string;
+	Key?: string;
+	Data?: string;
 }
 
 export interface BaseResponse
 {
 	Success: boolean;
 	UnknownError?: boolean;
+	InvalidRequest?: boolean;
 	logID?: number;
 	statusCode?: number;
 	axiosCode?: string;
 	message?: string;
-	InvalidRequest?: boolean;
+	vaulticCode?: number;
 }
 
 interface InvalidLicenseResponse
@@ -46,9 +47,24 @@ interface EmailIsTakenResposne
 	EmailIsTaken?: boolean;
 }
 
+interface UnknownEmailResponse
+{
+	UnknownEmail?: boolean;
+}
+
 interface InvalidMasterKeyResponse
 {
 	InvalidMasterKey?: boolean;
+}
+
+interface PendingUserResponse
+{
+	PendingUserToken?: string;
+}
+
+export interface OpaqueResponse extends BaseResponse
+{
+	RestartOpaqueProtocol?: boolean;
 }
 
 export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse, IncorrectDeviceResponse
@@ -159,3 +175,19 @@ export interface GetChartDataResponse extends UseSessionLicenseAndDeviceAuthenti
 {
 	ChartData?: ChartData;
 }
+
+export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenResposne, PendingUserResponse, OpaqueResponse
+{
+	ServerRegistrationResponse?: string;
+}
+
+export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
+{
+	StartServerLoginResponse?: string;
+}
+
+export interface FinishLoginResponse extends LoadDataResponse, OpaqueResponse, CreateSessionResponse
+{
+}
+
+export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse { }

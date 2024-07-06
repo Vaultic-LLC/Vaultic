@@ -8,6 +8,7 @@ import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
 import getVaulticFiles from "./Objects/Files/Files";
 import { environment } from "./Core/Environment";
+import serverHelper from "./Core/Helpers/ServerHelper";
 
 export default function setupIPC()
 {
@@ -15,11 +16,9 @@ export default function setupIPC()
 
 	ipcMain.handle('appController:log', (e, exception: string, message: string) => validateSender(e, () => vaulticServer.app.log(exception, message)));
 
-	ipcMain.handle('sessionController:validateEmail', (e, email: string) => validateSender(e, () => vaulticServer.session.validateEmail(email)));
-	ipcMain.handle('sessionController:createAccount', (e, data: string) => validateSender(e, () => vaulticServer.session.createAccount(data)));
-	ipcMain.handle('sessionController:validateEmailAndMasterKey', (e, email: string, key: string) => validateSender(e, () => vaulticServer.session.validateEmailAndMasterKey(email, key)));
 	ipcMain.handle('sessionController:expire', (e) => validateSender(e, () => vaulticServer.session.expire()));
 
+	ipcMain.handle('userController:validateEmail', (e, email: string) => validateSender(e, () => vaulticServer.user.validateEmail(email)));
 	ipcMain.handle('userController:deleteDevice', (e, masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => validateSender(e, () => vaulticServer.user.deleteDevice(masterKey, desktopDeviceID, mobileDeviceID)));
 	ipcMain.handle('userController:backupSettings', (e, data: string) => validateSender(e, () => vaulticServer.user.backupSettings(data)));
 	ipcMain.handle('userController:backupAppStore', (e, data: string) => validateSender(e, () => vaulticServer.user.backupAppStore(data)));
@@ -67,6 +66,11 @@ export default function setupIPC()
 	ipcMain.handle('validationHelper:containsUppercaseAndLowercaseNumber', (e, value: string) => validateSender(e, () => validationHelper.containsUppercaseAndLowercaseNumber(value)));
 
 	ipcMain.handle('vaulticHelper:downloadDeactivationKey', (e) => validateSender(e, () => vaulticHelper.downloadDeactivationKey()));
+
+	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, email: string, firstName: string, lastName: string) =>
+		validateSender(e, () => serverHelper.registerUser(masterKey, email, firstName, lastName)));
+	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string) =>
+		validateSender(e, () => serverHelper.logUserIn(masterKey, email)));
 
 	ipcMain.handle('appFile:exists', (e) => validateSender(e, () => getVaulticFiles().app.exists()));
 	ipcMain.handle('appFile:read', (e) => validateSender(e, () => getVaulticFiles().app.read()));

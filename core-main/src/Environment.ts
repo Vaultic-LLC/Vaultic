@@ -4,7 +4,7 @@ import { CryptUtility, GeneratorUtility, HashUtility } from "./Types/Utilities";
 
 export interface SessionHandler
 {
-    setSession: (sessionHash: string) => Promise<void>;
+    setSession: (sessionKey: string) => Promise<void>;
     getSession: () => Promise<string>;
 }
 

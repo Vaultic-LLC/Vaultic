@@ -1,12 +1,13 @@
 export interface MethodResponse
 {
-	success: boolean;
-	errorMessage?: string;
-	logID?: number;
-	value?: string;
+    success: boolean;
+    errorMessage?: string;
+    logID?: number;
+    value?: string;
+    invalidSession?: boolean;
 }
 
 export interface HybridEncrypionResponse extends MethodResponse
 {
-	key?: string;
+    key?: string;
 }

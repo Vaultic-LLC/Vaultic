@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { API, AppController, CryptUtility, Environment, File, GeneratorUtility, HashUtility, SessionController, StoreController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
+import { IAPI, AppController, CryptUtility, Environment, File, GeneratorUtility, HashUtility, ServerHelper, SessionController, StoreController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -14,14 +14,12 @@ const appController: AppController =
 
 const sessionController: SessionController =
 {
-	validateEmail: (email: string) => ipcRenderer.invoke('sessionController:validateEmail', email),
-	createAccount: (data: string) => ipcRenderer.invoke('sessionController:createAccount', data),
-	validateEmailAndMasterKey: (email: string, masterKey: string) => ipcRenderer.invoke('sessionController:validateEmailAndMasterKey', email, masterKey),
 	expire: () => ipcRenderer.invoke('sessionController:expire')
 };
 
 const userController: UserController =
 {
+	validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
 	backupSettings: (data: string) => ipcRenderer.invoke('userController:backupSettings', data),
 	backupAppStore: (data: string) => ipcRenderer.invoke('userController:backupAppStore', data),
@@ -98,6 +96,12 @@ const vaulticHelper: VaulticHelper =
 	downloadDeactivationKey: () => ipcRenderer.invoke('vaulticHelper:downloadDeactivationKey')
 };
 
+const serverHelper: ServerHelper =
+{
+	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
+	logUserIn: (masterKey: string, email: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email)
+};
+
 const appFile: File =
 {
 	exists: () => ipcRenderer.invoke('appFile:exists'),
@@ -152,7 +156,7 @@ const environment: Environment =
 	isTest: () => ipcRenderer.invoke('environment:isTest')
 };
 
-const api: API =
+const api: IAPI =
 {
 	getDeviceInfo,
 	environment,
@@ -172,7 +176,8 @@ const api: API =
 	},
 	helpers: {
 		validation: validationHelper,
-		vaultic: vaulticHelper
+		vaultic: vaulticHelper,
+		server: serverHelper
 	},
 	files: {
 		app: appFile,

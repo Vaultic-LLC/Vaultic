@@ -164,7 +164,8 @@ export default defineComponent({
                     }
 
                     const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
-                    const response = await api.server.session.validateEmailAndMasterKey(password.email, masterKey.value);
+                    const response = await api.helpers.server.logUserIn(masterKey.value, password.email);
+
                     if (response.Success)
                     {
                         stores.appStore.isOnline = true;
@@ -181,7 +182,7 @@ export default defineComponent({
             }
             else
             {
-                const response = await api.server.session.validateEmailAndMasterKey(email.value, masterKey.value);
+                const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
                 if (response.Success)
                 {
                     stores.appStore.isOnline = true;
@@ -247,6 +248,13 @@ export default defineComponent({
                 }
 
                 emailField.value?.invalidate("Incorrect Email. Please try again");
+                resetToDefault();
+            }
+            else if (response.RestartOpaqueProtocol)
+            {
+                stores.popupStore.hideLoadingIndicator();
+                stores.popupStore.showErrorAlert();
+
                 resetToDefault();
             }
             else

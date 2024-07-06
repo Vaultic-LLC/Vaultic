@@ -88,9 +88,9 @@ export default defineComponent({
 
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
-        async function showAlertMessage(message: string)
+        async function showAlertMessage(message: string, title: string = 'Unable to create master key', showContactSupport: boolean = false)
         {
-            stores.popupStore.showAlert('Unable to create master key', message, false);
+            stores.popupStore.showAlert(title, message, showContactSupport);
             refreshKey.value = Date.now.toString();
             await new Promise((resolve) => setTimeout(resolve, 300));
             stores.popupStore.hideLoadingIndicator();
@@ -121,7 +121,9 @@ export default defineComponent({
             }
 
             stores.popupStore.showLoadingIndicator(props.color);
-            const response = await api.server.session.createAccount(JSON.stringify(data));
+            const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
+                account.value.lastName);
+
             if (response.Success)
             {
                 stores.appStore.isOnline = true;
@@ -137,6 +139,10 @@ export default defineComponent({
                 if (response.EmailIsTaken)
                 {
                     showAlertMessage("Email is already in use. Please use a different one");
+                }
+                else if (response.RestartOpaqueProtocol)
+                {
+                    showAlertMessage("Please try again. If the issue persists", "An error has occured", true);
                 }
                 else
                 {

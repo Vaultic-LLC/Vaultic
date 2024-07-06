@@ -9,6 +9,7 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
-        "axios": "^1.6.7"
+        "axios": "^1.6.7",
+        "@serenity-kit/opaque": "^0.8.4"
     }
 }

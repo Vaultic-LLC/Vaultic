@@ -1,5 +1,5 @@
 import { MethodResponse } from './MethodResponse';
-import { BaseResponse, CreateAccountResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, EncryptedResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, MutateStoreResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, ValidateUserResponse } from './Responses';
+import { BaseResponse, CreateAccountResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, EncryptedResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, LogUserInResponse, MutateStoreResponse, StartRegistrationResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, ValidateUserResponse } from './Responses';
 
 export interface CryptUtility
 {
@@ -41,10 +41,17 @@ export interface VaulticHelper
     downloadDeactivationKey: () => Promise<GetUserDeactivationKeyResponse>;
 }
 
+export interface ServerHelper
+{
+    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<StartRegistrationResponse>;
+    logUserIn: (masterKey: string, email: string) => Promise<LogUserInResponse>;
+}
+
 export interface Helpers
 {
     validation: ValidationHelper;
     vaultic: VaulticHelper;
+    server: ServerHelper;
 }
 
 export interface DeviceInfo
@@ -63,9 +70,6 @@ export interface AppController
 
 export interface SessionController
 {
-    validateEmail: (email: string) => Promise<ValidateEmailResponse>;
-    createAccount: (data: string) => Promise<CreateAccountResponse>;
-    validateEmailAndMasterKey: (email: string, key: string) => Promise<ValidateUserResponse>;
     expire: () => Promise<BaseResponse>;
 }
 
@@ -78,6 +82,7 @@ export interface StoreController
 
 export interface UserController
 {
+    validateEmail(email: string): Promise<ValidateEmailResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
     backupSettings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
@@ -96,7 +101,6 @@ export interface ValueController extends StoreController
 {
     generateRandomPhrase: (length: number) => Promise<GenerateRandomPhraseResponse>;
 }
-
 
 export interface VaulticServer
 {

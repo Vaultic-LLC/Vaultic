@@ -1,5 +1,5 @@
 import { MutateStoreResponse } from "../Types/Responses";
-import { AxiosHelper } from "../Types/ServerTypes";
+import { AxiosHelper } from "./AxiosHelper";
 
 export interface StoreController
 {
@@ -8,21 +8,22 @@ export interface StoreController
     delete: (data: string) => Promise<MutateStoreResponse>
 }
 
+// TODO: Remove this
 export function createStoreController(path: string, axiosHelper: AxiosHelper): StoreController
 {
     async function add(data: string): Promise<any>
     {
-        return axiosHelper.postAPI(`${path}/Add`, data);
+        return axiosHelper.api.post(`${path}/Add`, data);
     }
 
     async function update(data: string): Promise<any>
     {
-        return axiosHelper.postAPI(`${path}/Update`, data);
+        return axiosHelper.api.post(`${path}/Update`, data);
     }
 
     async function deleteValue(data: string): Promise<any>
     {
-        return axiosHelper.postAPI(`${path}/Delete`, data);
+        return axiosHelper.api.post(`${path}/Delete`, data);
     }
 
     return {
