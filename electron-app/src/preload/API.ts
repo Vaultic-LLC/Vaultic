@@ -95,7 +95,9 @@ const validationHelper: ValidationHelper =
 
 const vaulticHelper: VaulticHelper =
 {
-	downloadDeactivationKey: () => ipcRenderer.invoke('vaulticHelper:downloadDeactivationKey')
+	downloadDeactivationKey: () => ipcRenderer.invoke('vaulticHelper:downloadDeactivationKey'),
+	readCSV: () => ipcRenderer.invoke('vaulticHelper:readCSV'),
+	writeCSV: (data: string) => ipcRenderer.invoke('vaulticHelper:writeCSV', data)
 };
 
 const appFile: File =

@@ -7,7 +7,7 @@
         <Transition name="fade" mode="out-in">
             <ScrollView v-if="activeSection == 0" class="aboutPopupContainer__sections" :color="primaryColor">
                 <div class="aboutPopupContainer__section aboutPopupContainer__storingMultifactorAuthKeysSection">
-                    <h3 class="aboutPopupContainer__section__header">Storing Multi Factor Authentication Keys</h3>
+                    <h2 class="aboutPopupContainer__section__header">Storing Multi Factor Authentication Keys</h2>
                     <div class="aboutPopupContainer__section__text">
                         It seems like almost everyone is using Multi Factor Authentication these days. Luckily, you can
                         easily store your MFA Key in case you ever need to re set it up. Simply creat a Value with Type
@@ -23,7 +23,7 @@
                     </div>
                 </div>
                 <div class="aboutPopupContainer__section aboutPopupContainer__sectionHalfHeight">
-                    <h3 class="aboutPopupContainer__section__header">Metrics</h3>
+                    <h2 class="aboutPopupContainer__section__header">Metrics</h2>
                     <div class="aboutPopupContainer__section__text">
                         The Metric Gauges track important information about your data. But that's not all! Upon
                         clicking them, the data
@@ -37,7 +37,7 @@
                         src="../../assets/Files/hoverAtRiskIcon.png" />
                 </div>
                 <div class="aboutPopupContainer__section aboutPopupContainer__sectionHalfHeight">
-                    <h3 class="aboutPopupContainer__section__header">Searching</h3>
+                    <h2 class="aboutPopupContainer__section__header">Searching</h2>
                     <div class="aboutPopupContainer__section__text">
                         Searching allows you to quickly find a record by one of its values. The one thing to remember
                         about
@@ -57,7 +57,7 @@
                     </div>
                 </div>
                 <div class="aboutPopupContainer__section">
-                    <h3 class="aboutPopupContainer__section__header">Graph Target</h3>
+                    <h2 class="aboutPopupContainer__section__header">Graph Target</h2>
                     <div class="aboutPopupContainer__section__text">
                         Knowing how secure all your Passwords / Values should be is important. By default, the target
                         line on
@@ -74,18 +74,18 @@
             </ScrollView>
             <ScrollView v-else class="aboutPopupContainer__sections" :color="primaryColor">
                 <div class="aboutPopupContainer__section">
-                    <h3>Terms and Conditions</h3>
+                    <h2>Terms and Conditions</h2>
                     // link to terms and conditions on website
                 </div>
                 <div class="aboutPopupContainer__section">
-                    <h3>Privacy Policy</h3>
+                    <h2>Privacy Policy</h2>
                     // link to Privacy Policy on website
                 </div>
                 <div>
                     Copywrite
                 </div>
                 <div class="aboutPopupContainer__section">
-                    <h3 class="aboutPopupContainer__section__header">Report a Bug</h3>
+                    <h2 class="aboutPopupContainer__section__header">Report a Bug</h2>
                     <div class="aboutPopupContainer__reportBugSection">
                         <TextAreaInputField :colorModel="colorModel" :label="'Description'" v-model="bugDescription"
                             :width="'19vw'" :height="'15vh'" :minWidth="'216px'" :minHeight="'91px'"
@@ -97,7 +97,7 @@
                     </div>
                 </div>
                 <div class="aboutPopupContainer__section">
-                    <h3 class="aboutPopupContainer__section__header">Reach out to Customer Support</h3>
+                    <h2 class="aboutPopupContainer__section__header">Reach out to Customer Support</h2>
                     <div class="aboutPopupContainer__section__text">
                         vaultic.help@outlook.com
                     </div>
@@ -234,7 +234,8 @@ export default defineComponent({
 }
 
 .aboutPopupContainer__section__header {
-    font-size: clamp(15px, 1vw, 20px)
+    font-size: clamp(15px, 1vw, 25px);
+    margin-bottom: 20px;
 }
 
 .aboutPopupContainer__section__text {

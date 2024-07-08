@@ -67,6 +67,8 @@ export default function setupIPC()
 	ipcMain.handle('validationHelper:containsUppercaseAndLowercaseNumber', (e, value: string) => validateSender(e, () => validationHelper.containsUppercaseAndLowercaseNumber(value)));
 
 	ipcMain.handle('vaulticHelper:downloadDeactivationKey', (e) => validateSender(e, () => vaulticHelper.downloadDeactivationKey()));
+	ipcMain.handle('vaulticHelper:readCSV', (e) => validateSender(e, () => vaulticHelper.readCSV()));
+	ipcMain.handle('vaulticHelper:writeCSV', (e, data: string) => validateSender(e, () => vaulticHelper.writeCSV(data)));
 
 	ipcMain.handle('appFile:exists', (e) => validateSender(e, () => getVaulticFiles().app.exists()));
 	ipcMain.handle('appFile:read', (e) => validateSender(e, () => getVaulticFiles().app.read()));

@@ -73,6 +73,12 @@ export default function createPopupStore()
     const breachedPasswordIsShowing: Ref<boolean> = ref(false);
     const breachedPasswordID: Ref<string> = ref('');
 
+    const importPopupIsShowing: Ref<boolean> = ref(false);
+    const csvImportHeaders: Ref<string[]> = ref([]);
+    const importProperties: Ref<string[]> = ref([]);
+    const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: any, groupNameIndex: number) => void> =
+        ref((_, __, ___) => { });
+
     function addOnEnterHandler(index: number, callback: () => void)
     {
         onEnterHandlers[index] = callback;
@@ -273,6 +279,24 @@ export default function createPopupStore()
         breachedPasswordIsShowing.value = false;
     }
 
+    function showImportPopup(clr: string, csvHdrs: string[], props: string[],
+        onConfirm: (masterKey: string, columnIndexToProperty: any, groupNameIndex: number) => void)
+    {
+        csvImportHeaders.value = csvHdrs;
+        color.value = clr;
+        importProperties.value = props;
+        onImportConfirmed.value = onConfirm;
+        importPopupIsShowing.value = true;
+    }
+
+    function hideImportPopup()
+    {
+        csvImportHeaders.value = [];
+        importProperties.value = [];
+        onImportConfirmed.value = () => { };
+        importPopupIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -304,6 +328,10 @@ export default function createPopupStore()
         get toastSuccess() { return toastSuccess.value },
         get breachedPasswordIsShowing() { return breachedPasswordIsShowing.value },
         get breachedPasswordID() { return breachedPasswordID.value },
+        get importPopupIsShowing() { return importPopupIsShowing.value; },
+        get csvImportHeaders() { return csvImportHeaders.value; },
+        get importProperties() { return importProperties.value; },
+        get onImportConfirmed() { return onImportConfirmed.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -326,6 +354,8 @@ export default function createPopupStore()
         hideRequesetAuthentication,
         showToast,
         showBreachedPasswordPopup,
-        hideBreachedPasswordPopup
+        hideBreachedPasswordPopup,
+        showImportPopup,
+        hideImportPopup
     }
 }
