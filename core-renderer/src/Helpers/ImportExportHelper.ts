@@ -5,6 +5,37 @@ import { parse } from "csv-parse/sync";
 import { stringify } from 'csv-stringify';
 import cryptHelper from "./cryptHelper";
 import { api } from "../API";
+import { CSVHeaderPropertyMapperModel } from "../Types/Models";
+import { NumberDictionary } from "../Types/DataStructures";
+
+export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): [number | undefined, NumberDictionary<string[]>]
+{
+    let groupIndex: number | undefined = undefined;
+    let csvHeadersToPropertiesDict: NumberDictionary<string[]> = {};
+
+    models.forEach(mapper =>
+    {
+        if (!mapper.csvHeader)
+        {
+            return;
+        }
+
+        if (mapper.property == "groups")
+        {
+            groupIndex = mapper.csvHeader;
+            return;
+        }
+
+        if (!csvHeadersToPropertiesDict[mapper.csvHeader])
+        {
+            csvHeadersToPropertiesDict[mapper.csvHeader] = [];
+        }
+
+        csvHeadersToPropertiesDict[mapper.csvHeader].push(mapper.property);
+    });
+
+    return [groupIndex, csvHeadersToPropertiesDict];
+}
 
 export async function importPasswords(color: string)
 {
@@ -21,7 +52,7 @@ export async function importPasswords(color: string)
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties = ["login", "domain", "email", "password", "passwordFor", "additionalInformation"];
+    const properties = ["login", "domain", "email", "password", "passwordFor", "additionalInformation", "groups"];
 
     stores.popupStore.showImportPopup(color, records[0], properties,
         (masterKey: string, columnIndexToProperty: any, groupNameIndex: number) =>
@@ -44,7 +75,7 @@ export async function importValues(color: string)
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties = ["name", "value", "valueType", "notifyIfWeak", "additionalInformation"];
+    const properties = ["name", "value", "valueType", "notifyIfWeak", "additionalInformation", "groups"];
 
     stores.popupStore.showImportPopup(color, records[0], properties,
         (masterKey: string, columnIndexToProperty: any, groupNameIndex: number) =>
@@ -52,8 +83,8 @@ export async function importValues(color: string)
                 defaultValue, (value: NameValuePair) => stores.valueStore.addNameValuePair(masterKey, value)));
 }
 
-export async function importData<T extends IGroupable>(color: string, masterKey: string, records: string[][], columnIndexToProperty: any,
-    groupNameIndex: number, dataType: DataType, createValue: () => T, saveValue: (value: T) => Promise<boolean>)
+export async function importData<T extends IGroupable>(color: string, masterKey: string, records: string[][], columnIndexToProperty: NumberDictionary<string[]>,
+    groupNameIndex: number | undefined, dataType: DataType, createValue: () => T, saveValue: (value: T) => Promise<boolean>)
 {
     stores.popupStore.showLoadingIndicator(color, "Importing");
 
@@ -101,7 +132,7 @@ export async function importData<T extends IGroupable>(color: string, masterKey:
                 }
             }
 
-            for (let k = 0; k < columnIndexToProperty[j]; k++)
+            for (let k = 0; k < columnIndexToProperty[j].length; k++)
             {
                 value[columnIndexToProperty[j][k]] = records[i][j];
             }

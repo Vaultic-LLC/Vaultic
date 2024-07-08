@@ -19,7 +19,7 @@
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { ComputedRef, computed, defineComponent } from 'vue';
 
 import TableSelector from '../TableSelector.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
@@ -28,12 +28,9 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 
 import { stores } from '../../Objects/Stores';
-import { api } from "../../API"
-import { parse } from "csv-parse/sync";
-import { defaultPassword, defaultGroup } from "../../Types/EncryptedData";
-import { DataType } from "../../Types/Table";
 import { CSVHeaderPropertyMapperModel } from "../../Types/Models";
 import { defaultInputTextColor } from '../../Types/Colors';
+import { buildCSVPropertyMappers } from "../../Helpers/ImportExportHelper";
 
 export default defineComponent({
     name: "WorkflowPopup",
@@ -65,30 +62,7 @@ export default defineComponent({
 
         function buildAndEmit(masterKey: string)
         {
-            let groupIndex: number | undefined = undefined;
-            let csvHeadersToPropertiesDict = {};
-
-            csvHeaderPropertyMappers.value.forEach(mapper =>
-            {
-                if (!mapper.csvHeader)
-                {
-                    return;
-                }
-
-                if (mapper.property == "Group")
-                {
-                    groupIndex = mapper.csvHeader;
-                    return;
-                }
-
-                if (!csvHeadersToPropertiesDict[mapper.csvHeader])
-                {
-                    csvHeadersToPropertiesDict[mapper.csvHeader] = [];
-                }
-
-                csvHeadersToPropertiesDict[mapper.csvHeader].push(mapper.property);
-            });
-
+            const [groupIndex, csvHeadersToPropertiesDict] = buildCSVPropertyMappers(csvHeaderPropertyMappers.value);
             ctx.emit('onConfirm', masterKey, csvHeadersToPropertiesDict, groupIndex);
         }
 
