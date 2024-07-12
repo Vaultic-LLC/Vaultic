@@ -13,14 +13,22 @@ let deviceInfo: DeviceInfo;
 let axiosInstance: AxiosInstance;
 let responseKeys: PublicPrivateKey;
 
-// const stsURL = 'https://localhost:7088/';
-// const apiURL = 'https://localhost:7007/';
-
+// can't access environment before it has been initalized
 function init()
 {
-    // can't access environment before it has been initalized
     deviceInfo = environment.getDeviceInfo();
     responseKeys = environment.utilities.generator.publicPrivateKey();
+
+    if (environment.isTest)
+    {
+        stsAxiosHelper.init('https://localhost:7088/');
+        apiAxiosHelper.init('https://localhost:7007/');
+    }
+    else
+    {
+        stsAxiosHelper.init('https://vaultic-sts.vaulticserver.vaultic.co/');
+        apiAxiosHelper.init('https://vaultic-api.vaulticserver.vaultic.co/');
+    }
 
     axiosInstance = axios.create({
         timeout: 120000,
@@ -34,9 +42,18 @@ function init()
 class AxiosWrapper
 {
     private url: string;
+    private initalized: boolean;
 
-    constructor(url: string) 
+    constructor() { }
+
+    init(url: string)
     {
+        if (this.initalized)
+        {
+            return;
+        }
+
+        this.initalized = true;
         this.url = url;
     }
 
@@ -164,7 +181,7 @@ class STSAxiosWrapper extends AxiosWrapper
 {
     constructor()
     {
-        super('https://vaultic-sts.vaulticserver.vaultic.co/');
+        super();
     }
 
     protected async getRequestData(data?: any): Promise<[MethodResponse, EncryptedResponse]>
@@ -216,7 +233,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
     constructor()
     {
-        super('https://vaultic-api.vaulticserver.vaultic.co/');
+        super();
     }
 
     async setSessionInfoAndExportKey(tokenHash: string, sessionKey: string, exportKey: string)
