@@ -9,6 +9,7 @@ export interface EncryptedResponse
 
 export interface BaseResponse
 {
+	[key: string]: any;
 	Success: boolean;
 	UnknownError?: boolean;
 	InvalidRequest?: boolean;
@@ -52,11 +53,6 @@ interface UnknownEmailResponse
 	UnknownEmail?: boolean;
 }
 
-interface InvalidMasterKeyResponse
-{
-	InvalidMasterKey?: boolean;
-}
-
 interface PendingUserResponse
 {
 	PendingUserToken?: string;
@@ -75,31 +71,14 @@ export interface UseSessionLicenseAndDeviceAuthenticationResponse extends Invali
 {
 }
 
-export interface UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse extends UseSessionLicenseAndDeviceAuthenticationResponse, InvalidMasterKeyResponse
-{
-}
-
-export interface UserSessionLicenseAndMasterKeyAuthentication extends InvalidSessionResponse, InvalidLicenseResponse, InvalidMasterKeyResponse
-{
-
-}
-
-export interface MutateStoreResponse extends UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse, EmailIsTakenResposne
-{
-}
-
 export interface CreateSessionResponse extends BaseResponse
 {
-	session?: Session;
+	Session?: Session;
 }
 
 export interface ValidateEmailResponse extends BaseResponse
 {
 	EmailIsTaken?: boolean;
-}
-
-export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, DataStoreResponse
-{
 }
 
 export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
@@ -108,7 +87,7 @@ export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectD
 	UnknownEmail?: boolean;
 }
 
-export interface DeleteDeviceResponse extends UserSessionLicenseAndMasterKeyAuthentication
+export interface DeleteDeviceResponse extends InvalidSessionResponse, InvalidLicenseResponse
 {
 	DeviceNotFound?: boolean;
 	Url?: string;
@@ -179,6 +158,11 @@ export interface GetChartDataResponse extends UseSessionLicenseAndDeviceAuthenti
 export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenResposne, PendingUserResponse, OpaqueResponse
 {
 	ServerRegistrationResponse?: string;
+}
+
+export interface FinishRegistrationResponse extends BaseResponse
+{
+	VaulticPassword?: any;
 }
 
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse

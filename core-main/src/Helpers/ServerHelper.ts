@@ -1,15 +1,15 @@
 import * as opaque from "@serenity-kit/opaque";
 import { stsServer } from "../Server/VaulticServer";
-import { LogUserInResponse, OpaqueResponse, StartRegistrationResponse } from "../Types/Responses";
+import { FinishRegistrationResponse, LogUserInResponse, OpaqueResponse } from "../Types/Responses";
 import axiosHelper from "../Server/AxiosHelper";
 
 export interface ServerHelper
 {
-    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<StartRegistrationResponse>;
+    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
     logUserIn: (masterKey: string, email: string) => Promise<LogUserInResponse>;
 };
 
-async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<StartRegistrationResponse>
+async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
 {
     const { clientRegistrationState, registrationRequest } =
         opaque.client.startRegistration({
@@ -55,12 +55,23 @@ async function logUserIn(masterKey: string, email: string): Promise<LogUserInRes
         return { Success: false, RestartOpaqueProtocol: true } as OpaqueResponse;
     }
 
-    const { finishLoginRequest, sessionKey } = loginResult;
+    const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
-    const finishResponse = await stsServer.login.finish(startResponse.PendingUserToken!, finishLoginRequest);
+    let finishResponse = await stsServer.login.finish(startResponse.PendingUserToken!, finishLoginRequest);
     if (finishResponse.Success)
     {
-        await axiosHelper.api.setSession(finishResponse.session?.Token!, sessionKey);
+        await axiosHelper.api.setSessionInfoAndExportKey(finishResponse.Session?.Hash!, sessionKey, exportKey);
+
+        const storeStates = ['AppStoreState', 'SettingsStoreState', 'FilterStoreState', 'GroupStoreState', 'PasswordStoreState',
+            'ValueStoreState', 'UserPreferencesStoreState'];
+
+        const result = await axiosHelper.api.decryptEndToEndData(storeStates, finishResponse);
+        if (!result.success)
+        {
+            return { Success: false, message: result.errorMessage };
+        }
+
+        finishResponse = Object.assign(finishResponse, result.value);
     }
 
     return finishResponse;

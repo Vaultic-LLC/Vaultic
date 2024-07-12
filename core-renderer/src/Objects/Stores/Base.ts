@@ -5,6 +5,8 @@ import { Dictionary } from "../../Types/DataStructures";
 import { Stores, stores } from ".";
 import cryptHelper from "../../Helpers/cryptHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import { api } from "../../API";
+import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 
 export interface StoreState
 {
@@ -20,21 +22,42 @@ export type StoreEvents = "onChanged";
 
 export class Store<T extends {} & StoreState, U extends string = StoreEvents>
 {
-    protected state: T;
     loadedFile: boolean;
     events: Dictionary<{ (): void }[]>;
 
-    constructor()
+    protected state: T;
+    private stateName: string;
+
+    constructor(stateName: string)
     {
         // @ts-ignore
         this.state = reactive(this.defaultState());
         this.loadedFile = false;
         this.events = {};
+        this.stateName = stateName;
     }
 
     public encrypted(): boolean 
     {
         return true;
+    }
+
+    public getVersion(): number
+    {
+        return this.state.version;
+    }
+
+    public getState(): T
+    {
+        return this.state;
+    }
+
+    public getBackupableState(): any
+    {
+        const state = {};
+        state[this.stateName] = JSON.stringify(this.getState());
+
+        return state;
     }
 
     public cloneState(): T
@@ -58,13 +81,29 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
         this.events['onChanged']?.forEach(f => f());
     }
 
-    protected async commitAndBackup(masterKey: string, transaction: StoreUpdateTransaction): Promise<boolean>
+    protected async commitAndBackup(masterKey: string, transaction: StoreUpdateTransaction, skipBackup: boolean = false): Promise<boolean>
     {
         const savedSuccessfully = await transaction.commit(masterKey);
-        if (savedSuccessfully)
+
+        // TODO: Update to be able to support backing up to external directory
+        // Create a BackupHandler?
+        if (savedSuccessfully && !skipBackup && stores.appStore.isOnline)
         {
-            // TODO: Get each stores state, encrypt with users export key for e2e encryption, add to object,
-            // pass to server to save
+            let storesToBackup = {};
+
+            transaction.storeUpdateStates.forEach(s => 
+            {
+                const storeState = s.store.getBackupableState();
+                Object.assign(storesToBackup, storeState);
+            });
+
+            const response = await api.server.user.backupStores(JSON.stringify(storesToBackup));
+            if (!response.Success)
+            {
+                defaultHandleFailedResponse(response);
+            }
+
+            return response.Success;
         }
 
         return savedSuccessfully;
@@ -78,16 +117,6 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
     {
         this.loadedFile = false;
         Object.assign(this.state, this.defaultState());
-    }
-
-    public getVersion(): number
-    {
-        return this.state.version;
-    }
-
-    public getState(): T
-    {
-        return this.state;
     }
 
     public async readState(key: string): Promise<boolean>
@@ -157,9 +186,9 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
 
 export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends Store<T>
 {
-    constructor()
+    constructor(stateName: string)
     {
-        super()
+        super(stateName)
     }
 
     public resetToDefault()

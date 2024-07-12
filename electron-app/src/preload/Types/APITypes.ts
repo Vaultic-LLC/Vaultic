@@ -1,5 +1,5 @@
 import { MethodResponse } from './MethodResponse';
-import { BaseResponse, CreateAccountResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, EncryptedResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, LogUserInResponse, MutateStoreResponse, StartRegistrationResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, ValidateUserResponse } from './Responses';
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, FinishRegistrationResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, LogUserInResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from './Responses';
 
 export interface CryptUtility
 {
@@ -43,9 +43,9 @@ export interface VaulticHelper
 
 export interface ServerHelper
 {
-	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<StartRegistrationResponse>;
+	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
 	logUserIn: (masterKey: string, email: string) => Promise<LogUserInResponse>;
-}
+};
 
 export interface Helpers
 {
@@ -73,21 +73,12 @@ export interface SessionController
 	expire: () => Promise<BaseResponse>;
 }
 
-export interface StoreController
-{
-	add: (data: string) => Promise<MutateStoreResponse>;
-	update: (data: string) => Promise<MutateStoreResponse>;
-	delete: (data: string) => Promise<MutateStoreResponse>
-}
-
 export interface UserController
 {
 	validateEmail(email: string): Promise<ValidateEmailResponse>;
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-	backupSettings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
-	backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-	backupUserPreferences: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-	getUserData: (masterKey: string) => Promise<LoadDataResponse>;
+	backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+	getUserData: () => Promise<LoadDataResponse>;
 	createCheckout: () => Promise<CreateCheckoutResponse>;
 	getChartData: (data: string) => Promise<GetChartDataResponse>;
 	getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
@@ -97,19 +88,16 @@ export interface UserController
 	reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
 }
 
-export interface ValueController extends StoreController
+export interface ValueController
 {
 	generateRandomPhrase: (length: number) => Promise<GenerateRandomPhraseResponse>;
 }
 
 export interface VaulticServer
 {
-	session: SessionController;
 	app: AppController;
+	session: SessionController;
 	user: UserController;
-	filter: StoreController;
-	group: StoreController;
-	password: StoreController;
 	value: ValueController;
 }
 

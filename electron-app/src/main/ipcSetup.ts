@@ -20,10 +20,8 @@ export default function setupIPC()
 
 	ipcMain.handle('userController:validateEmail', (e, email: string) => validateSender(e, () => vaulticServer.user.validateEmail(email)));
 	ipcMain.handle('userController:deleteDevice', (e, masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => validateSender(e, () => vaulticServer.user.deleteDevice(masterKey, desktopDeviceID, mobileDeviceID)));
-	ipcMain.handle('userController:backupSettings', (e, data: string) => validateSender(e, () => vaulticServer.user.backupSettings(data)));
-	ipcMain.handle('userController:backupAppStore', (e, data: string) => validateSender(e, () => vaulticServer.user.backupAppStore(data)));
-	ipcMain.handle('userController:backupUserPreferences', (e, data: string) => validateSender(e, () => vaulticServer.user.backupUserPreferences(data)));
-	ipcMain.handle('userController:getUserData', (e, masterKey: string) => validateSender(e, () => vaulticServer.user.getUserData(masterKey)));
+	ipcMain.handle('userController:backupStores', (e, data: string) => validateSender(e, () => vaulticServer.user.backupStores(data)));
+	ipcMain.handle('userController:getUserData', (e) => validateSender(e, () => vaulticServer.user.getUserData()));
 	ipcMain.handle('userController:createCheckout', (e) => validateSender(e, () => vaulticServer.user.createCheckout()));
 	ipcMain.handle('userController:getChartData', (e, data: string) => validateSender(e, () => vaulticServer.user.getChartData(data)));
 	ipcMain.handle('userController:getUserDataBreaches', (e, passwordStoreState: string) => validateSender(e, () => vaulticServer.user.getUserDataBreaches(passwordStoreState)));
@@ -32,21 +30,6 @@ export default function setupIPC()
 	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));
 	ipcMain.handle('userController:reportBug', (e, descrption: string) => validateSender(e, () => vaulticServer.user.reportBug(descrption)));
 
-	ipcMain.handle('filterController:add', (e, data: string) => validateSender(e, () => vaulticServer.filter.add(data)));
-	ipcMain.handle('filterController:update', (e, data: string) => validateSender(e, () => vaulticServer.filter.update(data)));
-	ipcMain.handle('filterController:delete', (e, data: string) => validateSender(e, () => vaulticServer.filter.delete(data)));
-
-	ipcMain.handle('groupController:add', (e, data: string) => validateSender(e, () => vaulticServer.group.add(data)));
-	ipcMain.handle('groupController:update', (e, data: string) => validateSender(e, () => vaulticServer.group.update(data)));
-	ipcMain.handle('groupController:delete', (e, data: string) => validateSender(e, () => vaulticServer.group.delete(data)));
-
-	ipcMain.handle('passwordController:add', (e, data: string) => validateSender(e, () => vaulticServer.password.add(data)));
-	ipcMain.handle('passwordController:update', (e, data: string) => validateSender(e, () => vaulticServer.password.update(data)));
-	ipcMain.handle('passwordController:delete', (e, data: string) => validateSender(e, () => vaulticServer.password.delete(data)));
-
-	ipcMain.handle('valueController:add', (e, data: string) => validateSender(e, () => vaulticServer.value.add(data)));
-	ipcMain.handle('valueController:update', (e, data: string) => validateSender(e, () => vaulticServer.value.update(data)));
-	ipcMain.handle('valueController:delete', (e, data: string) => validateSender(e, () => vaulticServer.value.delete(data)));
 	ipcMain.handle('valueController:generateRandomPhrase', (e, length: number) => validateSender(e, () => vaulticServer.value.generateRandomPhrase(length)));
 
 	ipcMain.handle('cryptUtility:encrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.encrypt(key, value)));

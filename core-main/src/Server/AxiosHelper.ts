@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '../Types/Responses';
-import { MethodResponse } from '../Types/MethodResponse';
+import { MethodResponse, TypedMethodResponse } from '../Types/MethodResponse';
 import vaulticServer from './VaulticServer';
 import { environment } from '../Environment';
 import { DeviceInfo } from '../Types/Device';
@@ -11,6 +11,7 @@ const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
 let deviceInfo: DeviceInfo;
 let axiosInstance: AxiosInstance;
+let responseKeys: PublicPrivateKey;
 
 // const stsURL = 'https://localhost:7088/';
 // const apiURL = 'https://localhost:7007/';
@@ -19,7 +20,7 @@ function init()
 {
     // can't access environment before it has been initalized
     deviceInfo = environment.getDeviceInfo();
-    stsAxiosHelper.init();
+    responseKeys = environment.utilities.generator.publicPrivateKey();
 
     axiosInstance = axios.create({
         timeout: 120000,
@@ -161,28 +162,15 @@ class AxiosWrapper
 
 class STSAxiosWrapper extends AxiosWrapper
 {
-    private initalized: boolean;
-    private responseKeys: PublicPrivateKey;
-
     constructor()
     {
         super('https://vaultic-sts.vaulticserver.vaultic.co/');
     }
 
-    public init()
-    {
-        if (this.initalized)
-        {
-            return;
-        }
-
-        this.responseKeys = environment.utilities.generator.publicPrivateKey();
-    }
-
     protected async getRequestData(data?: any): Promise<[MethodResponse, EncryptedResponse]>
     {
         // we don't have our session key yet, use hybrid encryption to encrypt the post data
-        data.ResponsePublicKey = this.responseKeys.public;
+        data.ResponsePublicKey = responseKeys.public;
         const encryptedData = await environment.utilities.crypt.hybridEncrypt(JSON.stringify(data));
 
         if (!encryptedData.success)
@@ -204,7 +192,7 @@ class STSAxiosWrapper extends AxiosWrapper
             }
 
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
-            const decryptedResponse = await environment.utilities.crypt.hybridDecrypt(this.responseKeys.private, encryptedResponse);
+            const decryptedResponse = await environment.utilities.crypt.hybridDecrypt(responseKeys.private, encryptedResponse);
 
             if (!decryptedResponse.success)
             {
@@ -223,25 +211,78 @@ class STSAxiosWrapper extends AxiosWrapper
 
 class APIAxiosWrapper extends AxiosWrapper
 {
-    private token: string | undefined;
+    private sessionKey: string | undefined;
+    private exportKey: string | undefined;
 
     constructor()
     {
         super('https://vaultic-api.vaulticserver.vaultic.co/');
     }
 
-    async setSession(token: string, sessionKey: string)
+    async setSessionInfoAndExportKey(tokenHash: string, sessionKey: string, exportKey: string)
     {
-        this.token = token;
+        this.sessionKey = sessionKey;
+        this.exportKey = exportKey;
 
         // an exception will be thrown when trying to set a cookie with a ';' character.
-        // use the key to make sure this doen't happen
-        await environment.sessionHandler.setSession(sessionKey);
+        // use the hash to make sure this doesn't happen
+        await environment.sessionHandler.setSession(tokenHash);
+    }
+
+    async endToEndEncryptPostData(data: { [key: string]: string }): Promise<TypedMethodResponse<any>>
+    {
+        if (!this.exportKey)
+        {
+            return { success: false, errorMessage: "No Export Key" };
+        }
+
+        const encryptedData = {};
+        const keys = Object.keys(data);
+
+        for (let i = 0; i < keys.length; i++)
+        {
+            const response = await environment.utilities.crypt.encrypt(this.exportKey, data[keys[i]]);
+            if (!response.success)
+            {
+                return response;
+            }
+
+            encryptedData[keys[i]] = response.value!;
+        }
+
+        return { success: true, value: encryptedData };
+    }
+
+    async decryptEndToEndData(properties: string[], data: { [key: string]: string }): Promise<TypedMethodResponse<any>>
+    {
+        if (!this.exportKey)
+        {
+            return { success: false, errorMessage: "No Export Key" };
+        }
+
+        const decryptedData = {};
+        for (let i = 0; i < properties.length; i++)
+        {
+            if (!data[properties[i]])
+            {
+                continue;
+            }
+
+            const response = await environment.utilities.crypt.decrypt(this.exportKey, data[properties[i]]);
+            if (!response.success)
+            {
+                return response;
+            }
+
+            decryptedData[properties[i]] = response.value!;
+        }
+
+        return { success: true, value: decryptedData };
     }
 
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
     {
-        if (!this.token)
+        if (!this.sessionKey)
         {
             return { Success: false, InvalidSession: true } as InvalidSessionResponse;
         }
@@ -251,22 +292,26 @@ class APIAxiosWrapper extends AxiosWrapper
 
     protected async getRequestData(data?: any): Promise<[MethodResponse, EncryptedResponse]>
     {
-        data.SessionToken = this.token;
+        data.ResponsePublicKey = responseKeys.public;
 
-        const sessionKey = await environment.sessionHandler.getSession();
-        if (!sessionKey)
+        const sessionHash = await environment.sessionHandler.getSession();
+        if (!sessionHash)
         {
             return [{ success: false, invalidSession: true }, { Key: '', Data: '' }]
         }
 
-        const encryptedData = await environment.utilities.crypt.encrypt(sessionKey, JSON.stringify(data));
-        if (!encryptedData.success)
+        const requestData = await environment.utilities.crypt.encrypt(this.sessionKey!, JSON.stringify(data));
+        if (!requestData.success)
         {
-            return [encryptedData, { Key: '', Data: '' }]
+            return [requestData, { Data: '' }]
         }
 
-        // Don't need to set the key, the server should already know it
-        return [{ success: true }, { Key: '', Data: encryptedData.value }];
+        const encryptedData = await environment.utilities.crypt.hybridEncrypt(JSON.stringify({
+            SessionTokenHash: sessionHash,
+            Data: requestData.value
+        }));
+
+        return [{ success: true }, { Key: encryptedData.key, Data: encryptedData.value }];
     }
 
     protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]> 
@@ -274,19 +319,13 @@ class APIAxiosWrapper extends AxiosWrapper
         let responseData: T = {} as T;
         try
         {
-            const sessionKey = await environment.sessionHandler.getSession();
-            if (!sessionKey)
-            {
-                return [{ success: false, invalidSession: true }, responseData]
-            }
-
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
             if (!encryptedResponse.Data)
             {
                 return [{ success: false }, responseData]
             }
 
-            const decryptedResponse = await environment.utilities.crypt.decrypt(sessionKey, encryptedResponse.Data);
+            const decryptedResponse = await environment.utilities.crypt.decrypt(this.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
                 return [decryptedResponse, responseData];

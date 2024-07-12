@@ -35,7 +35,7 @@ class AppStore extends Store<AppStoreState>
 
     constructor()
     {
-        super();
+        super("AppStoreState");
 
         this.internalIsOnline = ref(false);
         this.internalActivePasswordValueTable = ref(DataType.Passwords);

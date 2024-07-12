@@ -5,10 +5,8 @@ export interface UserController
 {
     validateEmail(email: string): Promise<ValidateEmailResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-    backupSettings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
-    backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-    backupUserPreferences: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-    getUserData: (masterKey: string) => Promise<LoadDataResponse>;
+    backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+    getUserData: () => Promise<LoadDataResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
     getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
@@ -41,26 +39,32 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetDevices');
     }
 
-    function backupSettings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+    async function backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
     {
-        return axiosHelper.api.post('User/BackupSettings', data);
+        const stores = JSON.parse(data);
+        const response = await axiosHelper.api.endToEndEncryptPostData(stores);
+        if (!response.success)
+        {
+            return { Success: false, message: response.errorMessage }
+        }
+
+        return axiosHelper.api.post('User/BackupStores', response.value)
     }
 
-    function backupAppStore(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+    async function getUserData(): Promise<LoadDataResponse>
     {
-        return axiosHelper.api.post('User/BackupAppStore', data);
-    }
+        const properties = ['appStoreState', 'settingsStoreState', 'filterStoreState', 'groupStoreState', 'passwordStoreState',
+            'valueStoreState', 'userPreferencesStoreState'];
 
-    function backupUserPreferences(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-    {
-        return axiosHelper.api.post('User/BackupSettings', data);
-    }
+        let response = await axiosHelper.api.post('User/GetUserData');
+        const decryptedData = await axiosHelper.api.decryptEndToEndData(properties, response);
+        if (!decryptedData.success)
+        {
+            return { Success: false, message: "Unable to decrypt data" };
+        }
 
-    function getUserData(masterKey: string): Promise<LoadDataResponse>
-    {
-        return axiosHelper.api.post('User/GetUserData', {
-            MasterKey: masterKey
-        });
+        response = Object.assign(response, decryptedData);
+        return response;
     }
 
     function createCheckout(): Promise<CreateCheckoutResponse>
@@ -104,9 +108,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         validateEmail,
         deleteDevice,
         getDevices,
-        backupSettings,
-        backupAppStore,
-        backupUserPreferences,
+        backupStores,
         getUserData,
         createCheckout,
         getChartData,

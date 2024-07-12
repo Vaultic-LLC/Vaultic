@@ -32,7 +32,7 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
 
     constructor()
     {
-        super();
+        super("UserPreferencesStoreState");
 
         this.internalCurrentPrimaryColor = ref('');
         this.setCurrentPrimaryColor(DataType.Passwords);

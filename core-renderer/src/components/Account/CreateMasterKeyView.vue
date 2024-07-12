@@ -64,7 +64,7 @@ export default defineComponent({
         CheckboxInputField,
         ButtonLink,
     },
-    emits: ['onSuccess'],
+    emits: ['onSuccess', 'onLoginFailed'],
     props: ['color', 'account'],
     setup(props, ctx)
     {
@@ -120,18 +120,29 @@ export default defineComponent({
                 ...stores.getStates(),
             }
 
-            stores.popupStore.showLoadingIndicator(props.color);
+            stores.popupStore.showLoadingIndicator(props.color, "Creating Account");
             const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
                 account.value.lastName);
 
             if (response.Success)
             {
-                stores.appStore.isOnline = true;
                 await stores.appStore.setKey(key.value);
-                // TOOD: Update
-                //await stores.handleUpdateStoreResponse(key.value, response);
+                await stores.passwordStore.addPassword(key.value, response.VaulticPassword, true);
 
-                ctx.emit('onSuccess');
+                stores.popupStore.showLoadingIndicator(props.color, "Signing In");
+
+                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email);
+                if (loginResponse.Success)
+                {
+                    stores.appStore.isOnline = true;
+                    ctx.emit('onSuccess');
+
+                    return;
+                }
+
+                showAlertMessage("Your account was created but an error occured when trying to log in." +
+                    "Please try signing in again. If the issue persists", "Unable to sign in", true);
+                ctx.emit('onLoginFailed');
             }
             else
             {

@@ -1,11 +1,11 @@
-import { StartRegistrationResponse } from "../Types/Responses";
+import { FinishRegistrationResponse, StartRegistrationResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface RegistrationController
 {
     start: (startClientRegistrationRequest: string, email: string) => Promise<StartRegistrationResponse>;
     finish: (token: string, finishClientRegistrationRecord: string,
-        firstName: string, lastName: string) => Promise<any>;
+        firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
 }
 
 export function createRegistrationController(axiosHelper: AxiosHelper)
@@ -19,7 +19,7 @@ export function createRegistrationController(axiosHelper: AxiosHelper)
     }
 
     function finish(token: string, finishClientRegistrationRecord: string,
-        firstName: string, lastName: string): Promise<any>
+        firstName: string, lastName: string): Promise<FinishRegistrationResponse>
     {
         return axiosHelper.sts.post('Register/Finish', {
             Token: token,

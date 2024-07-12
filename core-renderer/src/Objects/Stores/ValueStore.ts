@@ -43,7 +43,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 
     constructor()
     {
-        super();
+        super("ValueStoreState");
 
         this.internalOldNameValuePairs = computed(() => this.state.values.filter(nvp => nvp.isOld).map(nvp => nvp.id));
         this.internalWeakPassphraseValues = computed(() => this.state.values.filter(nvp => nvp.valueType == NameValuePairType.Passphrase && nvp.isWeak).map(nvp => nvp.id));
