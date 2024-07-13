@@ -56,7 +56,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     constructor()
     {
-        super();
+        super("FilterStoreState");
 
         this.internalPasswordFilters = computed(() => this.state.values.filter(f => f.type == DataType.Passwords));
         this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.isActive) ?? []);

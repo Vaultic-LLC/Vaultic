@@ -1,13 +1,12 @@
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, LoadDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse } from "../Types/Responses";
-import { AxiosHelper } from "../Types/ServerTypes";
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, LoadDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
+import { AxiosHelper } from "./AxiosHelper";
 
 export interface UserController
 {
+    validateEmail(email: string): Promise<ValidateEmailResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-    backupSettings: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
-    backupAppStore: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-    backupUserPreferences: (data: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-    getUserData: (masterKey: string) => Promise<LoadDataResponse>;
+    backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+    getUserData: () => Promise<LoadDataResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
     getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
@@ -19,9 +18,16 @@ export interface UserController
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
 {
+    function validateEmail(email: string): Promise<ValidateEmailResponse>
+    {
+        return axiosHelper.sts.post('User/ValidateEmail', {
+            Email: email,
+        });
+    }
+
     function deleteDevice(masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
     {
-        return axiosHelper.postAPI('User/DeleteDevice', {
+        return axiosHelper.api.post('User/DeleteDevice', {
             MasterKey: masterKey,
             UserDesktopDeviceID: desktopDeviceID,
             UserMobileDeviceID: mobileDeviceID
@@ -30,56 +36,62 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     function getDevices(): Promise<GetDevicesResponse>
     {
-        return axiosHelper.postAPI('User/GetDevices');
+        return axiosHelper.api.post('User/GetDevices');
     }
 
-    function backupSettings(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+    async function backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
     {
-        return axiosHelper.postAPI('User/BackupSettings', data);
+        const stores = JSON.parse(data);
+        const response = await axiosHelper.api.endToEndEncryptPostData(stores);
+        if (!response.success)
+        {
+            return { Success: false, message: response.errorMessage }
+        }
+
+        return axiosHelper.api.post('User/BackupStores', response.value)
     }
 
-    function backupAppStore(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
+    async function getUserData(): Promise<LoadDataResponse>
     {
-        return axiosHelper.postAPI('User/BackupAppStore', data);
-    }
+        const properties = ['appStoreState', 'settingsStoreState', 'filterStoreState', 'groupStoreState', 'passwordStoreState',
+            'valueStoreState', 'userPreferencesStoreState'];
 
-    function backupUserPreferences(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-    {
-        return axiosHelper.postAPI('User/BackupSettings', data);
-    }
+        let response = await axiosHelper.api.post('User/GetUserData');
+        const decryptedData = await axiosHelper.api.decryptEndToEndData(properties, response);
+        if (!decryptedData.success)
+        {
+            return { Success: false, message: "Unable to decrypt data" };
+        }
 
-    function getUserData(masterKey: string): Promise<LoadDataResponse>
-    {
-        return axiosHelper.postAPI('User/GetUserData', {
-            MasterKey: masterKey
-        });
+        response = Object.assign(response, decryptedData);
+        return response;
     }
 
     function createCheckout(): Promise<CreateCheckoutResponse>
     {
-        return axiosHelper.postAPI("User/CreateCheckout");
+        return axiosHelper.api.post("User/CreateCheckout");
     }
 
     function getChartData(data: string): Promise<GetChartDataResponse>
     {
-        return axiosHelper.postAPI("User/GetChartData", data);
+        return axiosHelper.api.post("User/GetChartData", data);
     }
 
     function getUserDataBreaches(passwordStoreState: string): Promise<GetUserDataBreachesResponse>
     {
-        return axiosHelper.postAPI("User/GetUserDataBreaches", passwordStoreState);
+        return axiosHelper.api.post("User/GetUserDataBreaches", passwordStoreState);
     }
 
     function dismissUserDataBreach(userDataBreachID: number): Promise<BaseResponse>
     {
-        return axiosHelper.postAPI("User/DismissUserDataBreach", {
+        return axiosHelper.api.post("User/DismissUserDataBreach", {
             UserDataBreachID: userDataBreachID
         });
     }
 
     function deactivateUserSubscription(email: string, deactivationKey: string): Promise<DeactivateUserSubscriptionResponse>
     {
-        return axiosHelper.postSTS("User/DeactivateUserSubscription", {
+        return axiosHelper.api.post("User/DeactivateUserSubscription", {
             Email: email,
             DeactivationKey: deactivationKey
         });
@@ -87,17 +99,16 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     function reportBug(description: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
     {
-        return axiosHelper.postAPI('User/ReportBug', {
+        return axiosHelper.api.post('User/ReportBug', {
             Description: description
         });
     }
 
     return {
+        validateEmail,
         deleteDevice,
         getDevices,
-        backupSettings,
-        backupAppStore,
-        backupUserPreferences,
+        backupStores,
         getUserData,
         createCheckout,
         getChartData,

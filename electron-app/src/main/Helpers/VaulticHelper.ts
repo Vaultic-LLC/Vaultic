@@ -24,7 +24,7 @@ async function selectDirectory()
 
 export async function downloadDeactivationKey()
 {
-	const response: GetUserDeactivationKeyResponse = await axiosHelper.postAPI("User/GetUserDeactivationKey");
+	const response: GetUserDeactivationKeyResponse = await axiosHelper.api.post("User/GetUserDeactivationKey");
 	if (!response.Success)
 	{
 		return response;

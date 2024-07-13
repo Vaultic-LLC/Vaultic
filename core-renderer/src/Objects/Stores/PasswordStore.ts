@@ -48,7 +48,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
 
     constructor()
     {
-        super();
+        super("PasswordStoreState");
 
         this.internalOldPasswords = computed(() => this.state.values.filter(p => p.isOld).map(p => p.id));
         this.internalWeakPasswords = computed(() => this.state.values.filter(p => p.isWeak).map(p => p.id));
@@ -97,7 +97,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         return this.internalActiveAtRiskPasswordType;
     }
 
-    async addPassword(masterKey: string, password: Password): Promise<boolean>
+    async addPassword(masterKey: string, password: Password, skipBackup: boolean = false): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction();
         const pendingState: PasswordStoreState = this.cloneState();
@@ -127,7 +127,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await this.commitAndBackup(masterKey, transaction);
+        return await this.commitAndBackup(masterKey, transaction, skipBackup);
     }
 
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],

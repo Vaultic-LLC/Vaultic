@@ -24,6 +24,7 @@ export default class StoreUpdateTransaction
 
     addStore(store: Store<StoreState, StoreEvents>, pendingState: StoreState, postSave: ((() => void) | undefined) = undefined)
     {
+        pendingState.version += 1;
         this.storeUpdateStates.push({
             store,
             currentState: store.getState(),

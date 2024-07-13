@@ -57,7 +57,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
     constructor()
     {
-        super();
+        super("GroupStoreState");
 
         this.internalPasswordGroups = computed(() => this.state.values.filter(g => g.type == DataType.Passwords));
         this.internalValueGroups = computed(() => this.state.values.filter(g => g.type == DataType.NameValuePairs));

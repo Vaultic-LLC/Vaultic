@@ -133,7 +133,7 @@ export default defineComponent({
         async function onSubmit()
         {
             masterKeyField.value?.toggleHidden(true);
-            stores.popupStore.showLoadingIndicator(props.color);
+            stores.popupStore.showLoadingIndicator(props.color, "Signing In");
 
             if (!showEmailField.value)
             {
@@ -164,11 +164,12 @@ export default defineComponent({
                     }
 
                     const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
-                    const response = await api.server.session.validateEmailAndMasterKey(password.email, masterKey.value);
+                    const response = await api.helpers.server.logUserIn(masterKey.value, password.email);
+
                     if (response.Success)
                     {
                         stores.appStore.isOnline = true;
-                        await stores.loadStoreData(masterKey.value);
+                        await stores.loadStoreData(masterKey.value, response);
                         await stores.appStore.recordLogin(masterKey.value, Date.now());
 
                         ctx.emit('onKeySuccess');
@@ -181,11 +182,12 @@ export default defineComponent({
             }
             else
             {
-                const response = await api.server.session.validateEmailAndMasterKey(email.value, masterKey.value);
+                const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
                 if (response.Success)
                 {
                     stores.appStore.isOnline = true;
-                    await checkOverrideUserData();
+                    await checkOverrideUserData(response);
+
                     ctx.emit('onKeySuccess');
                 }
                 else
@@ -195,34 +197,38 @@ export default defineComponent({
             }
         }
 
-        async function checkOverrideUserData()
+        async function checkOverrideUserData(response: any)
         {
-            const response = await api.server.user.getUserData(masterKey.value);
-            if (response.Success)
+            if (!(await stores.appStore.canAuthenticateKey()))
             {
-                if (!(await stores.appStore.canAuthenticateKey()))
+                // TODO: What if the user only lost the appFile? We wouldn't want to override 
+                // other stores then. Unless its a new user, then we would.
+                // Also, what if its a new user and there is only some files? 
+                // Seems like I need to add a way to group / identify files
+                // Could just add an identifier to the files that matches across all 
+                // of them per user per vault? This part would be a lot easier with sqlLite and a db.
+                // Maybe thats what I should use sqlLite for. Not for the state, but just to replicate the 
+                // UserData table on the server. Basically each file is just a column in the db. Could then add a
+                // 'vaults' table to group the states under
+                // This also doesn't call stores.loadStoreData, so if there aren't any backups, no data at all will get loaded.
+                // Is that an issue?
+
+                // user lost data files, force override all data
+                await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
+            }
+            else
+            {
+                const validKey = await stores.appStore.authenticateKey(masterKey.value);
+                if (!validKey)
                 {
-                    // user lost data files, force override all data
+                    // new user, force override all data
                     await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
                 }
                 else
                 {
-                    const validKey = await stores.appStore.authenticateKey(masterKey.value);
-                    if (!validKey)
-                    {
-                        // new user, force override all data
-                        await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
-                    }
-                    else
-                    {
-                        // same user, probably just lost passwords file somehow
-                        await stores.checkUpdateStoresWithBackup(masterKey.value, response);
-                    }
+                    // same user, probably just lost passwords file somehow
+                    await stores.checkUpdateStoresWithBackup(masterKey.value, response);
                 }
-            }
-            else
-            {
-                handleFailedResponse(response);
             }
         }
 
@@ -243,10 +249,17 @@ export default defineComponent({
                 if (!showEmailField.value)
                 {
                     showEmailField.value = true;
-                    stores.popupStore.showAlert("Unable to auto log in", "The email for your Vaultic account stored on your computer is incorrect. Please enter it manually in order to log in and update it locally.", false);
+                    stores.popupStore.showAlert("Unable to auto sign in", "The Email for your Vaultic account stored on your computer is incorrect. Please enter it manually in order to log in and update it locally.", false);
                 }
 
                 emailField.value?.invalidate("Incorrect Email. Please try again");
+                resetToDefault();
+            }
+            else if (response.RestartOpaqueProtocol)
+            {
+                stores.popupStore.hideLoadingIndicator();
+                stores.popupStore.showAlert("Unable to sign in", "Please check your Email and Master Key, and try again", false);
+
                 resetToDefault();
             }
             else

@@ -1,5 +1,5 @@
 import { LogResponse } from "../Types/Responses";
-import { AxiosHelper } from "../Types/ServerTypes";
+import { AxiosHelper } from "./AxiosHelper";
 
 export interface AppController
 {
@@ -10,7 +10,7 @@ export function createAppController(axiosHelper: AxiosHelper): AppController
 {
     function log(exception: string, stack: string)
     {
-        return axiosHelper.postAPI('App/ReportError', {
+        return axiosHelper.api.post('App/ReportError', {
             Exception: exception,
             Stack: stack
         });

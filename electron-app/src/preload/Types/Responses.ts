@@ -3,19 +3,21 @@ import { ChartData, LicenseStatus, Session, UserDataBreach } from "./ClientServe
 
 export interface EncryptedResponse
 {
-	key?: string;
-	data?: string;
+	Key?: string;
+	Data?: string;
 }
 
 export interface BaseResponse
 {
+	[key: string]: any;
 	Success: boolean;
 	UnknownError?: boolean;
+	InvalidRequest?: boolean;
 	logID?: number;
 	statusCode?: number;
 	axiosCode?: string;
 	message?: string;
-	InvalidRequest?: boolean;
+	vaulticCode?: number;
 }
 
 interface InvalidLicenseResponse
@@ -46,9 +48,19 @@ interface EmailIsTakenResposne
 	EmailIsTaken?: boolean;
 }
 
-interface InvalidMasterKeyResponse
+interface UnknownEmailResponse
 {
-	InvalidMasterKey?: boolean;
+	UnknownEmail?: boolean;
+}
+
+interface PendingUserResponse
+{
+	PendingUserToken?: string;
+}
+
+export interface OpaqueResponse extends BaseResponse
+{
+	RestartOpaqueProtocol?: boolean;
 }
 
 export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse, IncorrectDeviceResponse
@@ -59,31 +71,14 @@ export interface UseSessionLicenseAndDeviceAuthenticationResponse extends Invali
 {
 }
 
-export interface UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse extends UseSessionLicenseAndDeviceAuthenticationResponse, InvalidMasterKeyResponse
-{
-}
-
-export interface UserSessionLicenseAndMasterKeyAuthentication extends InvalidSessionResponse, InvalidLicenseResponse, InvalidMasterKeyResponse
-{
-
-}
-
-export interface MutateStoreResponse extends UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse, EmailIsTakenResposne
-{
-}
-
 export interface CreateSessionResponse extends BaseResponse
 {
-	session?: Session;
+	Session?: Session;
 }
 
 export interface ValidateEmailResponse extends BaseResponse
 {
 	EmailIsTaken?: boolean;
-}
-
-export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, DataStoreResponse
-{
 }
 
 export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
@@ -92,7 +87,7 @@ export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectD
 	UnknownEmail?: boolean;
 }
 
-export interface DeleteDeviceResponse extends UserSessionLicenseAndMasterKeyAuthentication
+export interface DeleteDeviceResponse extends InvalidSessionResponse, InvalidLicenseResponse
 {
 	DeviceNotFound?: boolean;
 	Url?: string;
@@ -159,3 +154,24 @@ export interface GetChartDataResponse extends UseSessionLicenseAndDeviceAuthenti
 {
 	ChartData?: ChartData;
 }
+
+export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenResposne, PendingUserResponse, OpaqueResponse
+{
+	ServerRegistrationResponse?: string;
+}
+
+export interface FinishRegistrationResponse extends BaseResponse
+{
+	VaulticPassword?: any;
+}
+
+export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
+{
+	StartServerLoginResponse?: string;
+}
+
+export interface FinishLoginResponse extends LoadDataResponse, OpaqueResponse, CreateSessionResponse
+{
+}
+
+export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse { }

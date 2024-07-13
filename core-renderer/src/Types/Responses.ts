@@ -3,53 +3,64 @@ import { ChartData, LicenseStatus, Session, UserDataBreach } from "./ClientServe
 
 export interface EncryptedResponse
 {
-	Key?: string;
-	Data?: string;
+    Key?: string;
+    Data?: string;
 }
 
 export interface BaseResponse
 {
-	Success: boolean;
-	UnknownError?: boolean;
-	InvalidRequest?: boolean;
-	logID?: number;
-	statusCode?: number;
-	axiosCode?: string;
-	message?: string;
-	vaulticCode?: number;
+    [key: string]: any;
+    Success: boolean;
+    UnknownError?: boolean;
+    InvalidRequest?: boolean;
+    logID?: number;
+    statusCode?: number;
+    axiosCode?: string;
+    message?: string;
+    vaulticCode?: number;
 }
 
 interface InvalidLicenseResponse
 {
-	LicenseStatus?: LicenseStatus;
+    LicenseStatus?: LicenseStatus;
 }
 
 export interface InvalidSessionResponse extends BaseResponse
 {
-	InvalidSession?: boolean;
+    InvalidSession?: boolean;
 }
 
 export interface DeviceResponse extends BaseResponse
 {
-	DesktopDeviceUpdatesLeft?: number;
-	MobileDeviceUpdatesLeft?: number;
-	DesktopDevices?: Device[];
-	MobileDevices?: Device[];
+    DesktopDeviceUpdatesLeft?: number;
+    MobileDeviceUpdatesLeft?: number;
+    DesktopDevices?: Device[];
+    MobileDevices?: Device[];
 }
 
 interface IncorrectDeviceResponse extends DeviceResponse
 {
-	IncorrectDevice?: boolean;
+    IncorrectDevice?: boolean;
 }
 
 interface EmailIsTakenResposne
 {
-	EmailIsTaken?: boolean;
+    EmailIsTaken?: boolean;
 }
 
-interface InvalidMasterKeyResponse
+interface UnknownEmailResponse 
 {
-	InvalidMasterKey?: boolean;
+    UnknownEmail?: boolean;
+}
+
+interface PendingUserResponse
+{
+    PendingUserToken?: string;
+}
+
+export interface OpaqueResponse extends BaseResponse
+{
+    RestartOpaqueProtocol?: boolean;
 }
 
 export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse, IncorrectDeviceResponse
@@ -60,43 +71,26 @@ export interface UseSessionLicenseAndDeviceAuthenticationResponse extends Invali
 {
 }
 
-export interface UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse extends UseSessionLicenseAndDeviceAuthenticationResponse, InvalidMasterKeyResponse
-{
-}
-
-export interface UserSessionLicenseAndMasterKeyAuthentication extends InvalidSessionResponse, InvalidLicenseResponse, InvalidMasterKeyResponse
-{
-
-}
-
-export interface MutateStoreResponse extends UseSessionLicenseDeviceAndMasterKeyAuthenticationResponse, EmailIsTakenResposne
-{
-}
-
 export interface CreateSessionResponse extends BaseResponse
 {
-	session?: Session;
+    Session?: Session;
 }
 
 export interface ValidateEmailResponse extends BaseResponse
 {
-	EmailIsTaken?: boolean;
-}
-
-export interface CreateAccountResponse extends ValidateEmailResponse, CreateSessionResponse, DataStoreResponse
-{
+    EmailIsTaken?: boolean;
 }
 
 export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
 {
-	InvalidMasterKey?: boolean;
-	UnknownEmail?: boolean;
+    InvalidMasterKey?: boolean;
+    UnknownEmail?: boolean;
 }
 
-export interface DeleteDeviceResponse extends UserSessionLicenseAndMasterKeyAuthentication
+export interface DeleteDeviceResponse extends InvalidSessionResponse, InvalidLicenseResponse
 {
-	DeviceNotFound?: boolean;
-	Url?: string;
+    DeviceNotFound?: boolean;
+    Url?: string;
 }
 
 export interface GetDevicesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
@@ -106,57 +100,78 @@ export interface GetDevicesResponse extends UseSessionLicenseAndDeviceAuthentica
 
 export interface LogResponse extends BaseResponse
 {
-	LogID?: number;
+    LogID?: number;
 }
 
 export interface DataStoreResponse
 {
-	filterStoreState?: any;
-	groupStoreState?: any;
-	passwordStoreState?: any;
-	valueStoreState?: any;
+    filterStoreState?: any;
+    groupStoreState?: any;
+    passwordStoreState?: any;
+    valueStoreState?: any;
 }
 
 export interface LoadDataResponse extends DataStoreResponse, InvalidSessionResponse, IncorrectDeviceResponse
 {
-	appStoreState?: any;
-	settingsStoreState?: any;
-	userPreferenceStoreState?: any;
+    appStoreState?: any;
+    settingsStoreState?: any;
+    userPreferenceStoreState?: any;
 }
 
 export interface UpdateDeviceRespnose extends InvalidSessionResponse
 {
-	Device?: Device;
+    Device?: Device;
 }
 
 export interface CreateCheckoutResponse extends UserSessionAndDeviceAuthenticationRespons
 {
-	AlreadyCreated?: boolean;
-	Url?: string;
+    AlreadyCreated?: boolean;
+    Url?: string;
 }
 
 export interface GetUserDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-	DataBreaches?: UserDataBreach[];
+    DataBreaches?: UserDataBreach[];
 }
 
 export interface GetUserDeactivationKeyResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-	DeactivationKey?: string;
+    DeactivationKey?: string;
 }
 
 export interface DeactivateUserSubscriptionResponse extends BaseResponse
 {
-	UnknownEmail?: boolean;
-	IncorrectDeactivationKey?: boolean;
+    UnknownEmail?: boolean;
+    IncorrectDeactivationKey?: boolean;
 }
 
 export interface GenerateRandomPhraseResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-	Phrase?: string;
+    Phrase?: string;
 }
 
 export interface GetChartDataResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-	ChartData?: ChartData;
+    ChartData?: ChartData;
 }
+
+export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenResposne, PendingUserResponse, OpaqueResponse
+{
+    ServerRegistrationResponse?: string;
+}
+
+export interface FinishRegistrationResponse extends BaseResponse
+{
+    VaulticPassword?: any;
+}
+
+export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
+{
+    StartServerLoginResponse?: string;
+}
+
+export interface FinishLoginResponse extends LoadDataResponse, OpaqueResponse, CreateSessionResponse
+{
+}
+
+export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse { }

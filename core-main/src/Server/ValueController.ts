@@ -1,8 +1,7 @@
 import { GenerateRandomPhraseResponse } from "../Types/Responses";
-import { AxiosHelper } from "../Types/ServerTypes";
-import { StoreController, createStoreController } from "./StoreController";
+import { AxiosHelper } from "./AxiosHelper";
 
-export interface ValueController extends StoreController
+export interface ValueController
 {
     generateRandomPhrase: (length: number) => Promise<GenerateRandomPhraseResponse>;
 }
@@ -11,13 +10,12 @@ export function createValueController(axiosHelper: AxiosHelper): ValueController
 {
     async function generateRandomPhrase(length: number): Promise<GenerateRandomPhraseResponse>
     {
-        return axiosHelper.postAPI('Value/GenerateRandomPhrase', {
+        return axiosHelper.api.post('Value/GenerateRandomPhrase', {
             PhraseLength: length
         });
     }
 
     return {
-        ...createStoreController("Value", axiosHelper),
         generateRandomPhrase
     }
 }
