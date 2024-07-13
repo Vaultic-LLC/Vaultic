@@ -64,7 +64,7 @@ export default defineComponent({
         CheckboxInputField,
         ButtonLink,
     },
-    emits: ['onSuccess'],
+    emits: ['onSuccess', 'onLoginFailed'],
     props: ['color', 'account'],
     setup(props, ctx)
     {
@@ -88,9 +88,9 @@ export default defineComponent({
 
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
-        async function showAlertMessage(message: string)
+        async function showAlertMessage(message: string, title: string = 'Unable to create master key', showContactSupport: boolean = false)
         {
-            stores.popupStore.showAlert('Unable to create master key', message, false);
+            stores.popupStore.showAlert(title, message, showContactSupport);
             refreshKey.value = Date.now.toString();
             await new Promise((resolve) => setTimeout(resolve, 300));
             stores.popupStore.hideLoadingIndicator();
@@ -120,16 +120,29 @@ export default defineComponent({
                 ...stores.getStates(),
             }
 
-            stores.popupStore.showLoadingIndicator(props.color);
-            const response = await api.server.session.createAccount(JSON.stringify(data));
+            stores.popupStore.showLoadingIndicator(props.color, "Creating Account");
+            const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
+                account.value.lastName);
+
             if (response.Success)
             {
-                stores.appStore.isOnline = true;
                 await stores.appStore.setKey(key.value);
-                // TOOD: Update
-                //await stores.handleUpdateStoreResponse(key.value, response);
+                await stores.passwordStore.addPassword(key.value, response.VaulticPassword, true);
 
-                ctx.emit('onSuccess');
+                stores.popupStore.showLoadingIndicator(props.color, "Signing In");
+
+                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email);
+                if (loginResponse.Success)
+                {
+                    stores.appStore.isOnline = true;
+                    ctx.emit('onSuccess');
+
+                    return;
+                }
+
+                showAlertMessage("Your account was created but an error occured when trying to log in." +
+                    "Please try signing in again. If the issue persists", "Unable to sign in", true);
+                ctx.emit('onLoginFailed');
             }
             else
             {
@@ -137,6 +150,10 @@ export default defineComponent({
                 if (response.EmailIsTaken)
                 {
                     showAlertMessage("Email is already in use. Please use a different one");
+                }
+                else if (response.RestartOpaqueProtocol)
+                {
+                    showAlertMessage("Please try again. If the issue persists", "An error has occured", true);
                 }
                 else
                 {

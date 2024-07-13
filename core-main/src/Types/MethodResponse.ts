@@ -1,12 +1,18 @@
-export interface MethodResponse
+export interface TypedMethodResponse<T>
 {
-	success: boolean;
-	errorMessage?: string;
-	logID?: number;
-	value?: string;
+    success: boolean;
+    errorMessage?: string;
+    logID?: number;
+    invalidSession?: boolean;
+    value?: T;
+}
+
+export interface MethodResponse extends TypedMethodResponse<string>
+{
+    value?: string;
 }
 
 export interface HybridEncrypionResponse extends MethodResponse
 {
-	key?: string;
+    key?: string;
 }

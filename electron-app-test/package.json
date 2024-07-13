@@ -4,11 +4,12 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "copy-electron-app": "node ../copy.js src=../electron-app dest=./app",
+        "copy-electron-app": "cd ../ && cd electron-app && npm run copy && cd ../ && cd electron-app-test && node ../copy.js src=../electron-app dest=./app",
         "copy-test-files": "node ../copy.js src=../core-renderer/test/tests dest=./app/src/renderer/tests",
         "copy-env": "node ../copy.js src=./src/app dest=./app",
         "copy-main-ts": "node ../copy.js src=./src/renderer dest=./app/src/renderer/src",
-        "copy": "npm run copy-electron-app && npm run copy-test-files && npm run copy-env && npm run copy-main-ts",
+        "copy-index-ts": "node ../copy.js src=./src/main dest=./app/src/main",
+        "copy": "npm run copy-electron-app && npm run copy-test-files && npm run copy-env && npm run copy-main-ts && npm run copy-index-ts",
         "copy-no-app": "npm run copy-test-files && npm run copy-env && npm run copy-main-ts",
         "test": "npm run copy && cd app && npm run test",
         "test-no-copy-app": "npm run copy-no-app && cd app && npm run test"

@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { API, AppController, CryptUtility, Environment, File, GeneratorUtility, HashUtility, SessionController, StoreController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
+import { IAPI, AppController, CryptUtility, Environment, File, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -14,19 +14,15 @@ const appController: AppController =
 
 const sessionController: SessionController =
 {
-	validateEmail: (email: string) => ipcRenderer.invoke('sessionController:validateEmail', email),
-	createAccount: (data: string) => ipcRenderer.invoke('sessionController:createAccount', data),
-	validateEmailAndMasterKey: (email: string, masterKey: string) => ipcRenderer.invoke('sessionController:validateEmailAndMasterKey', email, masterKey),
 	expire: () => ipcRenderer.invoke('sessionController:expire')
 };
 
 const userController: UserController =
 {
+	validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
-	backupSettings: (data: string) => ipcRenderer.invoke('userController:backupSettings', data),
-	backupAppStore: (data: string) => ipcRenderer.invoke('userController:backupAppStore', data),
-	backupUserPreferences: (data: string) => ipcRenderer.invoke('userController:backupUserPreferences', data),
-	getUserData: (masterKey: string) => ipcRenderer.invoke('userController:getUserData', masterKey),
+	backupStores: (data: string) => ipcRenderer.invoke('userController:backupStores', data),
+	getUserData: () => ipcRenderer.invoke('userController:getUserData'),
 	createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
 	getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),
 	getUserDataBreaches: (passwordStoreState: string) => ipcRenderer.invoke('userController:getUserDataBreaches', passwordStoreState),
@@ -36,32 +32,8 @@ const userController: UserController =
 	reportBug: () => ipcRenderer.invoke('userController:reportBug'),
 };
 
-const filterController: StoreController =
-{
-	add: (data: string) => ipcRenderer.invoke('filterController:add', data),
-	update: (data: string) => ipcRenderer.invoke('filterController:update', data),
-	delete: (data: string) => ipcRenderer.invoke('filterController:delete', data)
-};
-
-const groupController: StoreController =
-{
-	add: (data: string) => ipcRenderer.invoke('groupController:add', data),
-	update: (data: string) => ipcRenderer.invoke('groupController:update', data),
-	delete: (data: string) => ipcRenderer.invoke('groupController:delete', data)
-};
-
-const passwordController: StoreController =
-{
-	add: (data: string) => ipcRenderer.invoke('passwordController:add', data),
-	update: (data: string) => ipcRenderer.invoke('passwordController:update', data),
-	delete: (data: string) => ipcRenderer.invoke('passwordController:delete', data)
-};
-
 const valueController: ValueController =
 {
-	add: (data: string) => ipcRenderer.invoke('valueController:add', data),
-	update: (data: string) => ipcRenderer.invoke('valueController:update', data),
-	delete: (data: string) => ipcRenderer.invoke('valueController:delete', data),
 	generateRandomPhrase: (length: number) => ipcRenderer.invoke('valueController:generateRandomPhrase', length)
 };
 
@@ -98,6 +70,12 @@ const vaulticHelper: VaulticHelper =
 	downloadDeactivationKey: () => ipcRenderer.invoke('vaulticHelper:downloadDeactivationKey'),
 	readCSV: () => ipcRenderer.invoke('vaulticHelper:readCSV'),
 	writeCSV: (data: string) => ipcRenderer.invoke('vaulticHelper:writeCSV', data)
+};
+
+const serverHelper: ServerHelper =
+{
+	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
+	logUserIn: (masterKey: string, email: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email)
 };
 
 const appFile: File =
@@ -154,7 +132,7 @@ const environment: Environment =
 	isTest: () => ipcRenderer.invoke('environment:isTest')
 };
 
-const api: API =
+const api: IAPI =
 {
 	getDeviceInfo,
 	environment,
@@ -162,9 +140,6 @@ const api: API =
 		app: appController,
 		session: sessionController,
 		user: userController,
-		filter: filterController,
-		group: groupController,
-		password: passwordController,
 		value: valueController,
 	},
 	utilities: {
@@ -174,7 +149,8 @@ const api: API =
 	},
 	helpers: {
 		validation: validationHelper,
-		vaultic: vaulticHelper
+		vaultic: vaulticHelper,
+		server: serverHelper
 	},
 	files: {
 		app: appFile,

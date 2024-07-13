@@ -42,7 +42,7 @@ class SettingsStore extends Store<SettingsStoreState>
 
     constructor()
     {
-        super();
+        super("SettingsStoreState");
         this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.autoLockTime));
     }
 
