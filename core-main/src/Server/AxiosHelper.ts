@@ -88,7 +88,7 @@ class AxiosWrapper
 
             if (!responseResult[0].success)
             {
-                if (requestData[0].invalidSession)
+                if (responseResult[0].invalidSession)
                 {
                     return { Success: false, InvalidSession: true } as InvalidSessionResponse;
                 }
@@ -135,8 +135,7 @@ class AxiosWrapper
     {
         let newData = data ?? {};
 
-        // TODO: is this needed still? I think only json data was passed when sending store states to the server, but
-        // that doesn't happen anymore. 
+        // GetChartData still sends data as strong through ipc
         try
         {
             if (typeof data === 'string')
@@ -201,6 +200,7 @@ class STSAxiosWrapper extends AxiosWrapper
     protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]> 
     {
         let responseData: T = {} as T;
+
         try
         {
             if (!('Key' in response) || !('Data' in response))

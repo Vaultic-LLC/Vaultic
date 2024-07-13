@@ -84,9 +84,6 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
     protected async commitAndBackup(masterKey: string, transaction: StoreUpdateTransaction, skipBackup: boolean = false): Promise<boolean>
     {
         const savedSuccessfully = await transaction.commit(masterKey);
-
-        // TODO: Update to be able to support backing up to external directory
-        // Create a BackupHandler?
         if (savedSuccessfully && !skipBackup && stores.appStore.isOnline)
         {
             let storesToBackup = {};

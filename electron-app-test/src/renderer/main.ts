@@ -7,7 +7,7 @@ import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
 import { stores } from './core/Objects/Stores';
-import runAllTests, { runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests } from "../tests/index"
+import runAllTests, { runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests } from "../tests/index"
 
 api.setAPI(window.api);
 
@@ -44,5 +44,5 @@ async function initApp()
     app.use(setupCalendar, {});
     app.mount("#app");
 
-    runAllTests();
+    runServerHelperTests();
 }
