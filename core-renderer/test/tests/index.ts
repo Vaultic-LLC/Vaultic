@@ -7,8 +7,10 @@ import groupStoreSuite from "./stores/groupStore.test";
 import transactionTestSuite from "./stores/transaction.test"
 
 import serverHelperTestSuite from "./helpers/serverHelper.test"
+import { stores } from "../src/core/Objects/Stores";
 
 const results: TestResult = new TestResult();
+const masterKey = "test";
 
 async function runTests(suite: TestSuite)
 {
@@ -21,6 +23,7 @@ async function runTests(suite: TestSuite)
 
 export default async function runAllTests()
 {
+    await stores.appStore.setKey(masterKey);
     console.time();
 
     await runTests(passwordStoreSuite);

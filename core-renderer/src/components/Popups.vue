@@ -49,11 +49,9 @@
                 :success="popupStore.toastSuccess" />
         </Transition>
         <Transition name="fade">
-            <ObjectPopup v-if="popupStore.importPopupIsShowing" :closePopup="popupStore.hideImportPopup()"
-                :minWidth="'800px'" :minHeight="'480px'">
-                <ImportSelectionPopup :color="popupStore.color" :csvHeaders="popupStore.csvImportHeaders"
-                    :properties="popupStore.importProperties" @onConfirm="popupStore.onImportConfirmed" />
-            </ObjectPopup>
+            <ImportSelectionPopup v-if="popupStore.importPopupIsShowing" :color="popupStore.color"
+                :csvHeaders="popupStore.csvImportHeaders" :properties="popupStore.importProperties"
+                @onConfirm="popupStore.onImportConfirmed" @onClose="popupStore.hideImportPopup" />
         </Transition>
     </div>
 </template>
@@ -69,6 +67,7 @@ import GlobalAuthenticationPopup from './Authentication/GlobalAuthenticationPopu
 import RequestedAuthenticationPopup from './Authentication/RequestedAuthenticationPopup.vue';
 import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue"
 import ToastPopup from './ToastPopup.vue';
+import ImportSelectionPopup from "./Workflow/ImportSelectionPopup.vue"
 
 import { stores } from '..//Objects/Stores';
 
@@ -83,7 +82,8 @@ export default defineComponent({
         GlobalAuthenticationPopup,
         RequestedAuthenticationPopup,
         BreachedPasswordPopup,
-        ToastPopup
+        ToastPopup,
+        ImportSelectionPopup
     },
     setup()
     {

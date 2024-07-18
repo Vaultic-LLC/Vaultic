@@ -63,12 +63,6 @@ class AppStore extends Store<AppStoreState>
         });
     }
 
-    // don't need app state anywhere so don't expose it
-    public getState()
-    {
-        return this.defaultState();
-    }
-
     public resetToDefault()
     {
         super.resetToDefault();

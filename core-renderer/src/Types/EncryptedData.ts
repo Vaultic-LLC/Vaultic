@@ -2,7 +2,7 @@ import { DataType, Filter, Group } from "./Table";
 
 export interface IIdentifiable
 {
-	id: string;
+    id: string;
 }
 
 export type SecondaryDataObjectCollection = "filters" | "groups";
@@ -10,259 +10,264 @@ export type SecretProperty = "password" | "value";
 
 export interface IFilterable
 {
-	filters: string[];
+    filters: string[];
 }
 
 export interface IGroupable
 {
-	groups: string[];
+    groups: string[];
 }
 
 export interface DisplayField
 {
-	backingProperty: string;
-	displayName: string;
+    backingProperty: string;
+    displayName: string;
 }
 
 export interface HeaderDisplayField extends DisplayField
 {
-	width: string;
-	clickable: boolean;
-	padding?: string;
-	centered?: boolean;
-	headerSpaceRight?: string;
+    width: string;
+    clickable: boolean;
+    padding?: string;
+    centered?: boolean;
+    headerSpaceRight?: string;
+}
+
+export interface RequireableDisplayField extends DisplayField
+{
+    required: boolean;
 }
 
 export enum PropertyType
 {
-	String,
-	Enum,
-	Object
+    String,
+    Enum,
+    Object
 }
 
 export interface PropertySelectorDisplayFields extends DisplayField
 {
-	type: PropertyType;
-	enum?: { [key: string]: string | number };
+    type: PropertyType;
+    enum?: { [key: string]: string | number };
 }
 
-export const PasswordProperties: PropertySelectorDisplayFields[] = [
-	{
-		backingProperty: "PasswordFor",
-		displayName: "Password For",
-		type: PropertyType.String,
-	},
-	{
-		backingProperty: "Domain",
-		displayName: "Domain",
-		type: PropertyType.String,
-	},
-	{
-		backingProperty: "Email",
-		displayName: "Email",
-		type: PropertyType.String,
-	},
-	{
-		backingProperty: "Login",
-		displayName: "Login",
-		type: PropertyType.String,
-	},
-	{
-		backingProperty: "AdditionalInformation",
-		displayName: "Additional Info",
-		type: PropertyType.String,
-	},
-	{
-		backingProperty: "Groups",
-		displayName: "Group Name",
-		type: PropertyType.Object,
-	}
+export const FilterablePasswordProperties: PropertySelectorDisplayFields[] = [
+    {
+        backingProperty: "PasswordFor",
+        displayName: "Password For",
+        type: PropertyType.String,
+    },
+    {
+        backingProperty: "Domain",
+        displayName: "Domain",
+        type: PropertyType.String,
+    },
+    {
+        backingProperty: "Email",
+        displayName: "Email",
+        type: PropertyType.String,
+    },
+    {
+        backingProperty: "Login",
+        displayName: "Username",
+        type: PropertyType.String,
+    },
+    {
+        backingProperty: "AdditionalInformation",
+        displayName: "Additional Info",
+        type: PropertyType.String,
+    },
+    {
+        backingProperty: "Groups",
+        displayName: "Group Name",
+        type: PropertyType.Object,
+    }
 ]
 
 export interface Password extends IFilterable, IIdentifiable, IGroupable
 {
-	[key: string]: any;
-	isVaultic: boolean;
-	login: string;
-	domain: string;
-	email: string;
-	password: string;
-	passwordFor: string;
-	securityQuestions: SecurityQuestion[];
-	additionalInformation: string;
-	lastModifiedTime: string;
-	isWeak: boolean;
-	isWeakMessage: string;
-	containsLogin: boolean;
-	passwordLength: number;
-	isDuplicate: boolean;
+    [key: string]: any;
+    isVaultic: boolean;
+    login: string;
+    domain: string;
+    email: string;
+    password: string;
+    passwordFor: string;
+    securityQuestions: SecurityQuestion[];
+    additionalInformation: string;
+    lastModifiedTime: string;
+    isWeak: boolean;
+    isWeakMessage: string;
+    containsLogin: boolean;
+    passwordLength: number;
+    isDuplicate: boolean;
 }
 
 export interface SecurityQuestion extends IIdentifiable
 {
-	question: string,
-	questionLength: number,
-	answer: string
-	answerLength: number
+    question: string,
+    questionLength: number,
+    answer: string
+    answerLength: number
 }
 
 export enum NameValuePairType
 {
-	Passphrase = "Passphrase",
-	Passcode = "Passcode",
-	Safe = "Safe",
-	Information = "Information",
-	MFAKey = "MFA Key",
-	Other = "Other",
+    Passphrase = "Passphrase",
+    Passcode = "Passcode",
+    Safe = "Safe",
+    Information = "Information",
+    MFAKey = "MFA Key",
+    Other = "Other",
 }
 
-export const ValueProperties: PropertySelectorDisplayFields[] = [
-	{
-		backingProperty: "Name",
-		displayName: "Name",
-		type: PropertyType.String,
-	},
-	{
-		backingProperty: "AdditionalInformation",
-		displayName: "Additional Info",
-		type: PropertyType.String,
-	},
-	{
-		backingProperty: "ValueType",
-		displayName: "Type",
-		type: PropertyType.Enum,
-		enum: NameValuePairType,
-	},
-	{
-		backingProperty: "Groups",
-		displayName: "Group Name",
-		type: PropertyType.Object,
-	}
-]
+export const FilterableValueProperties: PropertySelectorDisplayFields[] = [
+    {
+        backingProperty: "Name",
+        displayName: "Name",
+        type: PropertyType.String,
+    },
+    {
+        backingProperty: "AdditionalInformation",
+        displayName: "Additional Info",
+        type: PropertyType.String,
+    },
+    {
+        backingProperty: "ValueType",
+        displayName: "Type",
+        type: PropertyType.Enum,
+        enum: NameValuePairType,
+    },
+    {
+        backingProperty: "Groups",
+        displayName: "Group Name",
+        type: PropertyType.Object,
+    }
+];
 
 export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable
 {
-	[key: string]: any;
-	name: string;
-	value: string;
-	valueType?: NameValuePairType;
-	notifyIfWeak: boolean;
-	additionalInformation: string;
-	lastModifiedTime: string;
-	isDuplicate: boolean;
-	isWeak: boolean;
-	isWeakMessage: string;
-	valueLength: number;
+    [key: string]: any;
+    name: string;
+    value: string;
+    valueType?: NameValuePairType;
+    notifyIfWeak: boolean;
+    additionalInformation: string;
+    lastModifiedTime: string;
+    isDuplicate: boolean;
+    isWeak: boolean;
+    isWeakMessage: string;
+    valueLength: number;
 }
 
 export interface CurrentAndSafeStructure
 {
-	current: number[];
-	safe: number[];
+    current: number[];
+    safe: number[];
 }
 
 export enum AtRiskType
 {
-	Old,
-	Duplicate,
-	Weak,
-	WeakPhrase,
-	ContainsLogin,
-	Breached,
-	Empty,
-	None
+    Old,
+    Duplicate,
+    Weak,
+    WeakPhrase,
+    ContainsLogin,
+    Breached,
+    Empty,
+    None
 }
 
 export interface AtRisks
 {
-	isOld?: boolean;
-	isWeak?: boolean;
-	isWeakMessage?: string;
-	containsLogin?: boolean;
-	isDuplicate?: boolean;
-	isEmpty?: boolean;
+    isOld?: boolean;
+    isWeak?: boolean;
+    isWeakMessage?: string;
+    containsLogin?: boolean;
+    isDuplicate?: boolean;
+    isEmpty?: boolean;
 }
 
 export function defaultPassword(): Password
 {
-	return {
-		id: "",
-		key: "",
-		isVaultic: false,
-		passwordFor: '',
-		login: '',
-		domain: '',
-		email: '',
-		password: '',
-		passwordLength: 0,
-		securityQuestions: [],
-		additionalInformation: '',
-		lastModifiedTime: '',
-		isDuplicate: false,
-		isWeak: false,
-		isWeakMessage: '',
-		containsLogin: false,
-		filters: [],
-		groups: [],
-	}
+    return {
+        id: "",
+        key: "",
+        isVaultic: false,
+        passwordFor: '',
+        login: '',
+        domain: '',
+        email: '',
+        password: '',
+        passwordLength: 0,
+        securityQuestions: [],
+        additionalInformation: '',
+        lastModifiedTime: '',
+        isDuplicate: false,
+        isWeak: false,
+        isWeakMessage: '',
+        containsLogin: false,
+        filters: [],
+        groups: [],
+    }
 }
 
 export function defaultValue(): NameValuePair
 {
-	return {
-		id: "",
-		key: '',
-		name: '',
-		value: '',
-		notifyIfWeak: true,
-		additionalInformation: '',
-		lastModifiedTime: '',
-		isDuplicate: false,
-		filters: [],
-		groups: [],
-		isWeak: false,
-		isWeakMessage: '',
-		valueLength: 0
-	}
+    return {
+        id: "",
+        key: '',
+        name: '',
+        value: '',
+        notifyIfWeak: true,
+        additionalInformation: '',
+        lastModifiedTime: '',
+        isDuplicate: false,
+        filters: [],
+        groups: [],
+        isWeak: false,
+        isWeakMessage: '',
+        valueLength: 0
+    }
 }
 
 export function defaultFilter(type: DataType): Filter
 {
-	return {
-		id: "",
-		key: '',
-		passwords: [],
-		values: [],
-		type: type,
-		isActive: false,
-		name: '',
-		conditions: []
-	}
+    return {
+        id: "",
+        key: '',
+        passwords: [],
+        values: [],
+        type: type,
+        isActive: false,
+        name: '',
+        conditions: []
+    }
 }
 
 export function defaultGroup(type: DataType): Group
 {
-	return {
-		id: "",
-		key: "",
-		passwords: [],
-		values: [],
-		name: '',
-		type: type,
-		color: ''
-	}
+    return {
+        id: "",
+        key: "",
+        passwords: [],
+        values: [],
+        name: '',
+        type: type,
+        color: ''
+    }
 }
 
 export interface DataFile
 {
-	exists: () => Promise<boolean>;
-	write: (data: string) => Promise<MethodResponse>;
-	read: () => Promise<MethodResponse>;
+    exists: () => Promise<boolean>;
+    write: (data: string) => Promise<MethodResponse>;
+    read: () => Promise<MethodResponse>;
 }
 
 export interface MethodResponse
 {
-	success: boolean;
-	logID?: number;
-	value?: string;
+    success: boolean;
+    logID?: number;
+    value?: string;
 }

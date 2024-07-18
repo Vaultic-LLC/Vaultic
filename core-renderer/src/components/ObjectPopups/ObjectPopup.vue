@@ -30,12 +30,15 @@ import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import { hideAll } from 'tippy.js';
 import { stores } from '../../Objects/Stores';
+import { popups } from "../../Objects/Stores/PopupStore";
 
 export default defineComponent({
     name: "ObjectPopup",
     props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing"],
     setup(props)
     {
+        const popupInfo = popups.defaultObjectPopup;
+
         const objectPopup: Ref<HTMLElement | null> = ref(null);
         const resizeObserver: ResizeObserver = new ResizeObserver(() => checkWidthToHeightRatio());
 
@@ -223,6 +226,7 @@ export default defineComponent({
             computedMinHeight,
             computedMinWidth,
             pulsingWidth,
+            zIndex: popupInfo.zIndex,
             doClosePopup,
         };
     }
@@ -234,7 +238,7 @@ export default defineComponent({
     position: absolute;
     width: 100%;
     height: 100%;
-    z-index: 7;
+    z-index: v-bind(zIndex);
     top: 0;
     left: 0;
 }

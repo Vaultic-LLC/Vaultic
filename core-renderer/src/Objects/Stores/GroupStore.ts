@@ -108,7 +108,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         return this.internalActiveAtRiskValueGroupType;
     }
 
-    async addGroup(masterKey: string, group: Group): Promise<boolean>
+    async addGroup(masterKey: string, group: Group, skipBackup: boolean = false): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
@@ -160,7 +160,7 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         }
 
         transaction.addStore(this, pendingState);
-        return await this.commitAndBackup(masterKey, transaction);
+        return await this.commitAndBackup(masterKey, transaction, skipBackup);
     }
 
     async updateGroup(masterKey: string, updatedGroup: Group): Promise<boolean>

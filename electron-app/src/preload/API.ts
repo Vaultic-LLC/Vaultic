@@ -69,7 +69,7 @@ const vaulticHelper: VaulticHelper =
 {
 	downloadDeactivationKey: () => ipcRenderer.invoke('vaulticHelper:downloadDeactivationKey'),
 	readCSV: () => ipcRenderer.invoke('vaulticHelper:readCSV'),
-	writeCSV: (data: string) => ipcRenderer.invoke('vaulticHelper:writeCSV', data)
+	writeCSV: (fileName: string, data: string) => ipcRenderer.invoke('vaulticHelper:writeCSV', fileName, data)
 };
 
 const serverHelper: ServerHelper =

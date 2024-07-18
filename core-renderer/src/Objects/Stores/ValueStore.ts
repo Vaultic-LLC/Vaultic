@@ -88,7 +88,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         return this.internalActiveAtRiskValueType;
     }
 
-    async addNameValuePair(masterKey: string, value: NameValuePair): Promise<boolean>
+    async addNameValuePair(masterKey: string, value: NameValuePair, skipBackup: boolean = false): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
@@ -116,7 +116,7 @@ class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
         transaction.addStore(stores.groupStore, pendingGroupState);
         transaction.addStore(stores.filterStore, pendingFilterState);
 
-        return await this.commitAndBackup(masterKey, transaction);
+        return await this.commitAndBackup(masterKey, transaction, skipBackup);
     }
 
     async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>

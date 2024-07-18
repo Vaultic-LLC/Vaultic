@@ -8,7 +8,7 @@ export interface VaulticHelper
 {
 	downloadDeactivationKey: () => Promise<GetUserDeactivationKeyResponse>;
 	readCSV: () => Promise<[boolean, string]>;
-	writeCSV: (data: string) => Promise<boolean>;
+	writeCSV: (fileName: string, data: string) => Promise<boolean>;
 }
 
 async function selectDirectory()
@@ -82,22 +82,16 @@ async function readCSV(): Promise<[boolean, string]>
 	});
 }
 
-async function writeCSV(data: string): Promise<boolean>
+async function writeCSV(fileName: string, data: string): Promise<boolean>
 {
 	const filePath = await selectDirectory();
 	if (!filePath)
 	{
-
 		return false;
 	}
 
-	return new Promise((resolve) =>
-	{
-		fs.writeFile(filePath[0], data, () =>
-		{
-			resolve(true);
-		});
-	});
+	await writeFile(`${filePath}\\${fileName}.csv`, data);
+	return true;
 }
 
 const vaulticHelper: VaulticHelper =

@@ -19,19 +19,28 @@ function getDirectory(): string
 	return directory;
 }
 
+// TODO: return a specific response depending on the error, like if the user has the file opened when we
+// are trying to write to it and then show a specific error message for that
 export function writeFile(fullPath: string, data: string): Promise<void>
 {
 	return new Promise<void>((resolve, reject) =>
 	{
-		fs.writeFile(fullPath, data, { encoding: 'utf8' }, (err) =>
+		try
 		{
-			if (err != null)
+			fs.writeFile(fullPath, data, { encoding: 'utf8' }, (err) =>
 			{
-				reject(err);
-			}
+				if (err != null)
+				{
+					reject(err);
+				}
 
-			resolve();
-		});
+				resolve();
+			});
+		}
+		catch
+		{
+			reject();
+		}
 	});
 }
 

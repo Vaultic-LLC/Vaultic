@@ -23,11 +23,11 @@ import { stores } from '../../Objects/Stores';
 
 export default defineComponent({
     name: "ObjectView",
-    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition'],
+    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality'],
     setup(props)
     {
         const primaryColor: ComputedRef<string> = computed(() => props.color);
-        const buttonText: Ref<string> = ref(props.creating ? "Create" : "Save and Close");
+        const buttonText: Ref<string> = ref(props.buttonText ? props.buttonText : props.creating ? "Create" : "Save and Close");
         const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
         const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
         const disabled: Ref<boolean> = ref(false);
@@ -55,6 +55,11 @@ export default defineComponent({
             {
                 onSaveFunc.value().then(() =>
                 {
+                    if (props.skipOnSaveFunctionality)
+                    {
+                        return;
+                    }
+
                     if (!props.creating && closePopupFunction?.value)
                     {
                         closePopupFunction.value(true);
@@ -63,7 +68,7 @@ export default defineComponent({
                     stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
                 }).catch((triedSaved: boolean) =>
                 {
-                    if (triedSaved)
+                    if (triedSaved && !props.skipOnSaveFunctionality)
                     {
                         stores.popupStore.showToast(primaryColor.value, "Save Failed", false);
                     }

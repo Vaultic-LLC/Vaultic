@@ -1,21 +1,25 @@
 <template>
     <div class="importSelectionPopup">
-        <Transition name="fade" mode="out-in">
-            <ScrollView class="importSelectionPopup__sections" :color="color">
-                <div>
-                    <h2>Select which columns map to which properties</h2>
-                    <div v-for="(mapper, idx) in csvHeaderPropertyMappers" :key="idx"
-                        class="importSelectionPopup__headerPropertyPicker">
-                        <TextInputField :id="'importSelectionPopup__property' + idx" :color="color" :label="'Property'"
-                            v-model="mapper.property" :width="'8vw'" :maxWidth="'330px'" :minWidth="'100px'"
-                            :height="'4vh'" :minHeight="'35px'" :isEmailField="true" />
-                        <EnumInputField :id="'importSelectionPopup__csvHeader' + idx" :label="'CSV Header'"
-                            :color="color" v-model="mapper.csvHeader" :optionsEnum="mockHeadersEnum" :width="'8vw'"
-                            :height="'4vh'" :minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
+        <ObjectPopup :closePopup="onClose" :minWidth="'800px'" :minHeight="'480px'">
+            <ObjectView :color="color" :creating="false" :defaultSave="onConfirm" :gridDefinition="gridDefinition"
+                :buttonText="'Confirm'" :skipOnSaveFunctionality="true">
+                <ScrollView class="importSelectionPopup__sections" :color="color">
+                    <div class="importSelectionPopup__content">
+                        <h2 class="importSelectionPopup__header">Select which columns map to each property</h2>
+                        <div v-for="(mapper, idx) in csvHeaderPropertyMappers" :key="idx"
+                            class="importSelectionPopup__headerPropertyPicker">
+                            <TextInputField :disabled="true" :color="color" :label="'Property'"
+                                v-model="mapper.property.displayName" :width="'8vw'" :maxWidth="'330px'"
+                                :minWidth="'100px'" :height="'4vh'" :minHeight="'35px'" />
+                            <EnumInputField :label="'CSV Header'" :color="color" v-model="mapper.csvHeader"
+                                :optionsEnum="mockHeadersEnum" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
+                                :minWidth="'100px'" :maxHeight="'50px'" :zIndex="100 - idx" :fadeIn="true"
+                                :required="mapper.property.required" />
+                        </div>
                     </div>
-                </div>
-            </ScrollView>
-        </Transition>
+                </ScrollView>
+            </ObjectView>
+        </ObjectPopup>
     </div>
 </template>
 <script lang="ts">
@@ -26,11 +30,15 @@ import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from "../ObjectViews/ScrollView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
+import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
+import ObjectView from "../ObjectViews/ObjectView.vue";
 
 import { stores } from '../../Objects/Stores';
-import { CSVHeaderPropertyMapperModel } from "../../Types/Models";
+import { CSVHeaderPropertyMapperModel, GridDefinition } from "../../Types/Models";
 import { defaultInputTextColor } from '../../Types/Colors';
 import { buildCSVPropertyMappers } from "../../Helpers/ImportExportHelper";
+import { popups } from "../../Objects/Stores/PopupStore";
+import { RequireableDisplayField } from "../../Types/EncryptedData";
 
 export default defineComponent({
     name: "WorkflowPopup",
@@ -40,14 +48,26 @@ export default defineComponent({
         TextInputField,
         PopupButton,
         ScrollView,
-        EnumInputField
+        EnumInputField,
+        ObjectPopup,
+        ObjectView
     },
     props: ['color', 'csvHeaders', 'properties'],
-    emits: ['onConfirm'],
+    emits: ['onConfirm', 'onClose'],
     setup(props, ctx)
     {
+        const popupInfo = popups.importSelection;
+
+        const gridDefinition: GridDefinition = {
+            rows: 1,
+            rowHeight: '100%',
+            columns: 1,
+            columnWidth: '100%'
+        };
+
         const mockHeadersEnum = computed(() => Object.assign({}, props.csvHeaders));
-        const csvHeaderPropertyMappers: ComputedRef<CSVHeaderPropertyMapperModel[]> = computed(() => props.properties.map(p => 
+        const properties: ComputedRef<RequireableDisplayField[]> = computed(() => props.properties);
+        const csvHeaderPropertyMappers: ComputedRef<CSVHeaderPropertyMapperModel[]> = computed(() => properties.value.map(p => 
         {
             return {
                 property: p,
@@ -57,19 +77,30 @@ export default defineComponent({
 
         function onConfirm()
         {
-            stores.popupStore.showRequestAuthentication(props.color, buildAndEmit, () => { });
+            return stores.popupStore.showRequestAuthentication(props.color, buildAndEmit, () => { });
         }
 
         function buildAndEmit(masterKey: string)
         {
-            const [groupIndex, csvHeadersToPropertiesDict] = buildCSVPropertyMappers(csvHeaderPropertyMappers.value);
-            ctx.emit('onConfirm', masterKey, csvHeadersToPropertiesDict, groupIndex);
+            const [groupHeader, csvHeadersToPropertiesDict] = buildCSVPropertyMappers(csvHeaderPropertyMappers.value);
+            ctx.emit('onConfirm', masterKey, csvHeadersToPropertiesDict, groupHeader);
+
+            onClose();
+        }
+
+        function onClose()
+        {
+            ctx.emit('onClose');
         }
 
         return {
             mockHeadersEnum,
             csvHeaderPropertyMappers,
-            defaultInputTextColor
+            defaultInputTextColor,
+            zIndex: popupInfo.zIndex,
+            gridDefinition,
+            onClose,
+            onConfirm
         }
     }
 })
@@ -81,6 +112,7 @@ export default defineComponent({
     top: 10%;
     width: 100%;
     height: 95%;
+    z-index: v-bind(zIndex);
 }
 
 .importSelectionPopup__sections {
@@ -92,11 +124,23 @@ export default defineComponent({
     width: 90%;
     height: 90%;
     padding: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+.importSelectionPopup__content {
+    direction: ltr;
+    height: 100%;
+}
+
+.importSelectionPopup__header {
+    margin-bottom: 50px;
 }
 
 .importSelectionPopup__headerPropertyPicker {
     display: flex;
     justify-content: center;
     column-gap: 20px;
+    margin-bottom: 20px;
 }
 </style>

@@ -2,11 +2,13 @@ import { BaseResponse, IncorrectDeviceResponse } from "../../Types/SharedTypes";
 import { AccountSetupModel, AccountSetupView, ButtonModel } from "../../Types/Models";
 import { Ref, ref } from "vue";
 import { stores } from ".";
+import { RequireableDisplayField } from "../../Types/EncryptedData";
+import { Dictionary } from "../../Types/DataStructures";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
 type PopupName = "loading" | "alert" | "devicePopup" | "incorrectDevice" | "globalAuth" | "requestAuth" | "accountSetup" |
-    "breachedPasswords" | "toast";
+    "breachedPasswords" | "toast" | "importSelection" | "defaultObjectPopup";
 
 interface PopupInfo
 {
@@ -28,7 +30,9 @@ export const popups: Popups =
     "globalAuth": { zIndex: 100, enterOrder: 3 },
     "requestAuth": { zIndex: 90, enterOrder: 4 },
     "breachedPasswords": { zIndex: 50 },
-    "toast": { zIndex: 20 }
+    "toast": { zIndex: 20 },
+    "importSelection": { zIndex: 10 },
+    "defaultObjectPopup": { zIndex: 7 }
 }
 
 export default function createPopupStore()
@@ -75,8 +79,8 @@ export default function createPopupStore()
 
     const importPopupIsShowing: Ref<boolean> = ref(false);
     const csvImportHeaders: Ref<string[]> = ref([]);
-    const importProperties: Ref<string[]> = ref([]);
-    const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: any, groupNameIndex: number) => void> =
+    const importProperties: Ref<RequireableDisplayField[]> = ref([]);
+    const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: Dictionary<string[]>, groupNameIndex: string) => void> =
         ref((_, __, ___) => { });
 
     function addOnEnterHandler(index: number, callback: () => void)
@@ -279,8 +283,8 @@ export default function createPopupStore()
         breachedPasswordIsShowing.value = false;
     }
 
-    function showImportPopup(clr: string, csvHdrs: string[], props: string[],
-        onConfirm: (masterKey: string, columnIndexToProperty: any, groupNameIndex: number) => void)
+    function showImportPopup(clr: string, csvHdrs: string[], props: RequireableDisplayField[],
+        onConfirm: (masterKey: string, columnIndexToProperty: Dictionary<string[]>, groupNameIndex: string) => void)
     {
         csvImportHeaders.value = csvHdrs;
         color.value = clr;

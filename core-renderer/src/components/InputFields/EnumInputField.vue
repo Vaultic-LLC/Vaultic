@@ -32,15 +32,20 @@ export default defineComponent({
     name: "EnumInputField",
     emits: ["update:modelValue"],
     props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth'],
+        'width', 'minWidth', 'maxWidth', 'zIndex', 'required'],
     setup(props, ctx)
     {
         const container: Ref<HTMLElement | null> = ref(null);
         const refreshKey: Ref<string> = ref('');
+
         let selectedValue: Ref<string> = ref(props.modelValue);
         let opened: Ref<boolean> = ref(false);
         let focused: Ref<boolean> = ref(false);
         let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value || focused.value);
+
+        const computedRequired: ComputedRef<boolean> = computed(() => props.required === false ? false : true);
+        const computedZIndex: ComputedRef<number> = computed(() => props.zIndex ?? 1);
+
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
@@ -96,7 +101,7 @@ export default defineComponent({
 
         function validate()
         {
-            if (selectedValue.value == '' || selectedValue.value == undefined)
+            if (computedRequired.value && (selectedValue.value == '' || selectedValue.value == undefined))
             {
                 invalidate("Please select a value");
                 return false;
@@ -178,6 +183,7 @@ export default defineComponent({
             focused,
             focusedItem,
             enumOptionCount,
+            computedZIndex,
             onSelectorClick,
             onOptionClick,
             unFocus,
@@ -201,12 +207,14 @@ export default defineComponent({
 
     border: solid 1.5px #9e9e9e;
     border-radius: var(--responsive-border-radius);
-    background: none;
+    background-color: none;
     color: white;
     transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
     cursor: pointer;
     outline: none;
+
+    z-index: v-bind(computedZIndex);
 }
 
 .dropDownContainer.shouldFadeIn {
@@ -267,22 +275,28 @@ export default defineComponent({
     display: none;
     color: white;
     font-size: clamp(11px, 1.2vh, 25px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 70%;
+    text-wrap: nowrap;
+    text-align: left;
 }
 
 .dropDownContainer .dropDownTitle .selectedItemText.hasValue {
     display: block;
     position: absolute;
     top: 30%;
-    left: 5%;
+    left: var(--input-label-left);
     transition: var(--input-label-transition);
 }
 
 .dropDownContainer .dropDownSelect {
-    width: 100%;
+    /* account for the increase in border size compared to .dropDownContainer */
+    width: calc(100% - 0.5px);
     position: absolute;
     left: 0;
     bottom: -2%;
-    background: none;
+    background-color: v-bind(backgroundColor);
     font-size: clamp(11px, 1.2vh, 25px);
     color: white;
     transform: translate(-1.5px, 100%);
@@ -294,9 +308,10 @@ export default defineComponent({
 }
 
 .dropDownSelect.opened {
-    border-left: 1.5px solid v-bind(color);
-    border-right: 1.5px solid v-bind(color);
-    border-bottom: 1.5px solid v-bind(color);
+    /* increase the border so it overlaps any dropdowns below them entirely */
+    border-left: 2px solid v-bind(color);
+    border-right: 2px solid v-bind(color);
+    border-bottom: 2px solid v-bind(color);
     opacity: 1;
 }
 
@@ -310,6 +325,8 @@ export default defineComponent({
     background-color: v-bind(backgroundColor);
     transition: opacity 0.3s;
     opacity: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .dropDownSelect.opened .dropDownSelectOption {

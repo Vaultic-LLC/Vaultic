@@ -1,6 +1,7 @@
 import { ComputedRef, Ref, ref } from "vue";
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "./SharedTypes";
+import { RequireableDisplayField } from "./EncryptedData";
 
 export interface SmallMetricGaugeModel
 {
@@ -188,6 +189,6 @@ export interface ToggleRadioButtonModel
 
 export interface CSVHeaderPropertyMapperModel
 {
-    property: string;
-    csvHeader: number | undefined;
+    property: RequireableDisplayField;
+    csvHeader: string | undefined;
 }

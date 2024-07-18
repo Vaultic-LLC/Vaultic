@@ -112,7 +112,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
             return false;
         }
 
-        this.updateSecurityQuestions(masterKey, password, true, [], []);
+        await this.updateSecurityQuestions(masterKey, password, true, [], []);
 
         const reactivePassword = createReactivePassword(password);
         pendingState.values.push(reactivePassword);
@@ -186,7 +186,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
             }
         }
 
-        this.updateSecurityQuestions(masterKey, updatingPassword, false, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers);
+        await this.updateSecurityQuestions(masterKey, updatingPassword, false, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers);
 
         const newPassword = createReactivePassword(updatingPassword);
         pendingState.values[passwordIndex] = newPassword;
@@ -297,7 +297,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
                     continue;
                 }
 
-                updateSecurityQuestionQuestion(masterKey, password, i);
+                await updateSecurityQuestionQuestion(masterKey, password, i);
             }
 
             for (let i = 0; i < updatedSecurityQuestionAnswers.length; i++)
@@ -308,7 +308,7 @@ class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordSto
                     continue;
                 }
 
-                updateSecurityQuestionnAnswer(masterKey, password, i);
+                await updateSecurityQuestionnAnswer(masterKey, password, i);
             }
         }
 

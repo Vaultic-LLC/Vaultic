@@ -1,41 +1,35 @@
 <template>
     <div class="workflowPopupContainer">
-        <Transition name="fade" mode="out-in">
-            <ScrollView class="workflowPopupContainer__sections" :color="primaryColor">
-                <div class="workflowPopupContainer__section">
-                    <h2 class="workflowPopupContainer__section__header">Import</h2>
-                    <div class="workflowPopupContainer__section__text">
-                        Import Passwords or Values via an unencrypted CSV file
-                    </div>
-                    <div class="workflowPopupContainer__section__buttons">
-                        <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
-                            :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-                            @onClick="doImportPasswords" />
-                        <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
-                            :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-                            @onClick="doImportValues" />
-                    </div>
+        <ScrollView class="workflowPopupContainer__sections" :color="primaryColor">
+            <div class="workflowPopupContainer__section">
+                <h2 class="workflowPopupContainer__section__header">Import</h2>
+                <div class="workflowPopupContainer__section__text">
+                    Import Passwords or Values via an unencrypted CSV file
                 </div>
-                <div class="workflowPopupContainer__section">
-                    <h2 class="workflowPopupContainer__section__header">Export</h2>
-                    <div class="workflowPopupContainer__section__text">
-                        Export unencrypted Passwords or Values into a CSV file
-                    </div>
-                    <div class="workflowPopupContainer__section__buttons">
-                        <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
-                            :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-                            @onClick="exportPasswords" />
-                        <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
-                            :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-                            @onClick="exportValues" />
-                    </div>
+                <div class="workflowPopupContainer__section__buttons">
+                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
+                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="doImportPasswords" />
+                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
+                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="doImportValues" />
                 </div>
-            </ScrollView>
-        </Transition>
+            </div>
+            <div class="workflowPopupContainer__section">
+                <h2 class="workflowPopupContainer__section__header">Export</h2>
+                <div class="workflowPopupContainer__section__text">
+                    Export unencrypted Passwords or Values into a CSV file
+                </div>
+                <div class="workflowPopupContainer__section__buttons">
+                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
+                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportPasswords" />
+                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
+                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportValues" />
+                </div>
+            </div>
+        </ScrollView>
     </div>
 </template>
 <script lang="ts">
@@ -85,8 +79,7 @@ export default defineComponent({
                 return;
             }
 
-            // do this here so we can unit test exporting easier
-            await api.helpers.vaultic.writeCSV(formattedData);
+            await doExport("vaultic-passwords", formattedData);
         }
 
         async function exportValues()
@@ -97,8 +90,23 @@ export default defineComponent({
                 return;
             }
 
+            await doExport("vaultic-values", formattedData);
+        }
+
+        async function doExport(fileName: string, formattedData: string)
+        {
             // do this here so we can unit test exporting easier
-            await api.helpers.vaultic.writeCSV(formattedData);
+            const success = await api.helpers.vaultic.writeCSV(fileName, formattedData);
+            if (success)
+            {
+                stores.popupStore.showToast(primaryColor.value, "Export Succeeded", true);
+            }
+            else 
+            {
+                stores.popupStore.showToast(primaryColor.value, "Export Failed", false);
+            }
+
+            stores.popupStore.hideLoadingIndicator();
         }
 
         return {

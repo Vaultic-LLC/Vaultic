@@ -27,7 +27,7 @@ import AddButton from '../Table/Controls/AddButton.vue';
 import FilterConditionRow from '../Table/Rows/FilterConditionRow.vue';
 
 import { DataType, Filter } from '../../Types/Table';
-import { DisplayField, PasswordProperties, ValueProperties, defaultFilter } from '../../Types/EncryptedData';
+import { DisplayField, FilterablePasswordProperties, FilterableValueProperties, defaultFilter } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { stores } from '../../Objects/Stores';
@@ -52,7 +52,7 @@ export default defineComponent({
         const filterState: Ref<Filter> = ref(props.model);
         const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.filtersColor);
         const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
-            PasswordProperties : ValueProperties);
+            FilterablePasswordProperties : FilterableValueProperties);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;

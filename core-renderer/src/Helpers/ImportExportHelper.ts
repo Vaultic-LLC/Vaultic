@@ -1,17 +1,17 @@
-import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, Password } from "../Types/EncryptedData";
+import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, NameValuePairType, Password, PropertySelectorDisplayFields, PropertyType, RequireableDisplayField } from "../Types/EncryptedData";
 import { DataType } from "../Types/Table";
 import { stores } from "../Objects/Stores/index";
-import { parse } from "csv-parse/sync";
-import { stringify } from 'csv-stringify';
+import { parse } from "csv-parse/browser/esm/sync";
+import { stringify } from 'csv-stringify/browser/esm';
 import cryptHelper from "./cryptHelper";
 import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
-import { NumberDictionary } from "../Types/DataStructures";
+import { Dictionary } from "../Types/DataStructures";
 
-export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): [number | undefined, NumberDictionary<string[]>]
+export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): [string | undefined, Dictionary<string[]>]
 {
-    let groupIndex: number | undefined = undefined;
-    let csvHeadersToPropertiesDict: NumberDictionary<string[]> = {};
+    let groupHeader: string | undefined = undefined;
+    let csvHeadersToPropertiesDict: Dictionary<string[]> = {};
 
     models.forEach(mapper =>
     {
@@ -20,9 +20,9 @@ export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]):
             return;
         }
 
-        if (mapper.property == "groups")
+        if (mapper.property.backingProperty == "groups")
         {
-            groupIndex = mapper.csvHeader;
+            groupHeader = mapper.csvHeader;
             return;
         }
 
@@ -31,10 +31,10 @@ export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]):
             csvHeadersToPropertiesDict[mapper.csvHeader] = [];
         }
 
-        csvHeadersToPropertiesDict[mapper.csvHeader].push(mapper.property);
+        csvHeadersToPropertiesDict[mapper.csvHeader].push(mapper.property.backingProperty);
     });
 
-    return [groupIndex, csvHeadersToPropertiesDict];
+    return [groupHeader, csvHeadersToPropertiesDict];
 }
 
 export async function importPasswords(color: string)
@@ -47,17 +47,53 @@ export async function importPasswords(color: string)
 
     if (!content)
     {
-        // TODO: show error
+        stores.popupStore.showAlert("Unable to read file", "Please check to make sure the file is formatted properly.", false);
         return;
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties = ["login", "domain", "email", "password", "passwordFor", "additionalInformation", "groups"];
+    const properties: RequireableDisplayField[] = [
+        {
+            backingProperty: "login",
+            displayName: "Username",
+            required: true
+        },
+        {
+            backingProperty: "password",
+            displayName: "Password",
+            required: true
+        },
+        {
+            backingProperty: "passwordFor",
+            displayName: "Password For",
+            required: false
+        },
+        {
+            backingProperty: "domain",
+            displayName: "Domain",
+            required: false
+        },
+        {
+            backingProperty: "email",
+            displayName: "Email",
+            required: false
+        },
+        {
+            backingProperty: "additionalInformation",
+            displayName: "Additional Info",
+            required: false,
+        },
+        {
+            backingProperty: "groups",
+            displayName: "Groups",
+            required: false
+        }
+    ];
 
     stores.popupStore.showImportPopup(color, records[0], properties,
-        (masterKey: string, columnIndexToProperty: any, groupNameIndex: number) =>
-            importData(color, masterKey, records, columnIndexToProperty, groupNameIndex, DataType.Passwords,
-                defaultPassword, (password: Password) => stores.passwordStore.addPassword(masterKey, password)));
+        (masterKey: string, columnToProperty: Dictionary<string[]>, groupNameIndex: string) =>
+            importData(color, masterKey, records, columnToProperty, groupNameIndex, DataType.Passwords,
+                defaultPassword, (password: Password, skipBackup: boolean) => stores.passwordStore.addPassword(masterKey, password, skipBackup)));
 }
 
 export async function importValues(color: string)
@@ -70,43 +106,62 @@ export async function importValues(color: string)
 
     if (!content)
     {
-        // TODO: show error
+        stores.popupStore.showAlert("Unable to read file", "Please check to make sure the file is formatted properly.", false);
         return;
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties = ["name", "value", "valueType", "notifyIfWeak", "additionalInformation", "groups"];
+    const properties: RequireableDisplayField[] = [
+        {
+            backingProperty: "name",
+            displayName: "Name",
+            required: true
+        },
+        {
+            backingProperty: "value",
+            displayName: "Value",
+            required: true
+        },
+        {
+            backingProperty: "additionalInformation",
+            displayName: "Additional Info",
+            required: false
+        },
+        {
+            backingProperty: "groups",
+            displayName: "Groups",
+            required: false
+        }
+    ];
 
     stores.popupStore.showImportPopup(color, records[0], properties,
-        (masterKey: string, columnIndexToProperty: any, groupNameIndex: number) =>
-            importData(color, masterKey, records, columnIndexToProperty, groupNameIndex, DataType.NameValuePairs,
-                defaultValue, (value: NameValuePair) => stores.valueStore.addNameValuePair(masterKey, value)));
+        (masterKey: string, columnToProperty: Dictionary<string[]>, groupNameIndex: string) =>
+            importData(color, masterKey, records, columnToProperty, groupNameIndex, DataType.NameValuePairs,
+                defaultValue, (value: NameValuePair, skipBackup: boolean) => stores.valueStore.addNameValuePair(masterKey, value, skipBackup)));
 }
 
-export async function importData<T extends IGroupable>(color: string, masterKey: string, records: string[][], columnIndexToProperty: NumberDictionary<string[]>,
-    groupNameIndex: number | undefined, dataType: DataType, createValue: () => T, saveValue: (value: T) => Promise<boolean>)
+export async function importData<T extends IGroupable>(color: string, masterKey: string, records: string[][], columnToProperty: Dictionary<string[]>,
+    groupNameIndex: string | undefined, dataType: DataType, createValue: () => T, saveValue: (value: T, skipBackup: boolean) => Promise<boolean>)
 {
     stores.popupStore.showLoadingIndicator(color, "Importing");
 
     let groupsAdded: string[] = [];
-    for (let i = 0; i < records.length; i++)
-    {
-        // header row
-        if (i == 0)
-        {
-            continue;
-        }
+    const headers: string[] = records[0];
 
+    for (let i = 1; i < records.length; i++)
+    {
         const value = createValue();
         for (let j = 0; j < records[i].length; j++)
         {
+            const column = headers[j];
+
             // the user didn't decide to import this column
-            if (!columnIndexToProperty[j])
+            if (!columnToProperty[column])
             {
                 continue;
             }
 
-            if (j == groupNameIndex)
+            if (column == groupNameIndex)
             {
                 let groupId: string | undefined = undefined;
 
@@ -116,7 +171,7 @@ export async function importData<T extends IGroupable>(color: string, masterKey:
                     const group = defaultGroup(dataType);
                     group.name = records[i][j];
 
-                    await stores.groupStore.addGroup(masterKey, group);
+                    await stores.groupStore.addGroup(masterKey, group, true);
 
                     groupId = group.id;
                     groupsAdded.push(group.name);
@@ -132,15 +187,13 @@ export async function importData<T extends IGroupable>(color: string, masterKey:
                 }
             }
 
-            for (let k = 0; k < columnIndexToProperty[j].length; k++)
+            for (let k = 0; k < columnToProperty[column].length; k++)
             {
-                value[columnIndexToProperty[j][k]] = records[i][j];
+                value[columnToProperty[column][k]] = records[i][j];
             }
         }
 
-        // TODO: this and group store should not backup after each password. Should
-        // add an override to skip this
-        await saveValue(value);
+        await saveValue(value, i != records.length - 1);
     }
 
     stores.popupStore.hideLoadingIndicator();
@@ -162,6 +215,10 @@ export function getExportablePasswords(color: string): Promise<string>
             for (let i = 0; i < stores.passwordStore.passwords.length; i++)
             {
                 let password = stores.passwordStore.passwords[i];
+                if (password.isVaultic)
+                {
+                    continue;
+                }
 
                 let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.password);
                 if (!decryptedPasswordResponse.success)
@@ -175,14 +232,14 @@ export function getExportablePasswords(color: string): Promise<string>
 
                 for (let j = 0; j < password.securityQuestions.length; j++)
                 {
-                    const decryptedSecurityQuestionQuestion = await cryptHelper.encrypt(masterKey, password.securityQuestions[i].question);
+                    const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].question);
                     if (!decryptedSecurityQuestionQuestion.success)
                     {
                         showExportError();
                         return;
                     }
 
-                    const decryptedSecurityQuestionAnswer = await cryptHelper.encrypt(masterKey, password.securityQuestions[i].answer);
+                    const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].answer);
                     if (!decryptedSecurityQuestionAnswer.success)
                     {
                         showExportError();
@@ -193,15 +250,23 @@ export function getExportablePasswords(color: string): Promise<string>
                     securityQuestionAnswers.push(decryptedSecurityQuestionAnswer.value!);
                 }
 
-                data.push([formatCSVValue(password.login), formatCSVValue(password.domain), formatCSVValue(password.email),
-                formatCSVValue(password.passwordFor), formatCSVValue(decryptedPasswordResponse.value!), formatCSVValue(securityQuestionQuestions.join(';')),
-                formatCSVValue(securityQuestionAnswers.join(';')), formatCSVValue(password.additionalInformation), formatCSVValue(password.groups.join(';'))]);
+                let groups: string[] = [];
+                for (let j = 0; j < password.groups.length; j++)
+                {
+                    const group = stores.groupStore.passwordGroups.filter(g => g.id == password.groups[j]);
+                    if (group.length == 1)
+                    {
+                        groups.push(group[0].name);
+                    }
+                }
+
+                data.push([password.login, password.domain, password.email, password.passwordFor, decryptedPasswordResponse.value!,
+                securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.additionalInformation, groups.join(';')]);
             }
 
             const formattedData = await exportData(data);
             resolve(formattedData);
         }, () => resolve(''))
-
     });
 }
 
@@ -225,8 +290,18 @@ export function getExportableValues(color: string): Promise<string>
                     return;
                 }
 
-                data.push([formatCSVValue(value.name), formatCSVValue(decryptedValueResponse.value!), formatCSVValue(value.valueType),
-                formatCSVValue(value.additionalInformation), formatCSVValue(value.groups.join(';'))]);
+                let groups: string[] = [];
+                for (let j = 0; j < value.groups.length; j++)
+                {
+                    const group = stores.groupStore.valuesGroups.filter(g => g.id == value.groups[j]);
+                    if (group.length == 1)
+                    {
+                        groups.push(group[0].name);
+                    }
+                }
+
+                const valueType = value.valueType ? NameValuePairType[value.valueType] : "";
+                data.push([value.name, decryptedValueResponse.value!, valueType, value.additionalInformation, groups.join(';')]);
             }
 
             const formattedData = await exportData(data);
@@ -241,7 +316,8 @@ async function exportData(data: string[][]): Promise<string>
     {
         const formattedData: string[] = [];
         const stringifier = stringify({
-            delimiter: ','
+            delimiter: ',',
+            quoted: true
         });
 
         // Use the readable stream api to consume CSV data
@@ -275,22 +351,8 @@ async function exportData(data: string[][]): Promise<string>
     });
 }
 
-function formatCSVValue(value: any)
-{
-    let stringValue: string = `${value}`;
-
-    // double escape any quotes already in the value
-    if (stringValue.includes("\""))
-    {
-        stringValue = stringValue.replace("\"", "\"\"");
-    }
-
-    // escape the whole value in case there is a delimiter in it
-    stringValue = `"${stringValue}"`;
-    return stringValue;
-}
-
 function showExportError()
 {
     stores.popupStore.showAlert("", "An error occured while trying to export. Please try again or", true);
+    stores.popupStore.hideLoadingIndicator();
 }
