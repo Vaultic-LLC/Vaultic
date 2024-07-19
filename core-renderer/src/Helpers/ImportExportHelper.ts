@@ -1,4 +1,4 @@
-import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, NameValuePairType, Password, PropertySelectorDisplayFields, PropertyType, RequireableDisplayField } from "../Types/EncryptedData";
+import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, NameValuePairType, Password, ImportableDisplayField, GroupCSVHeader } from "../Types/EncryptedData";
 import { DataType } from "../Types/Table";
 import { stores } from "../Objects/Stores/index";
 import { parse } from "csv-parse/browser/esm/sync";
@@ -8,10 +8,9 @@ import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
 import { Dictionary } from "../Types/DataStructures";
 
-export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): [string | undefined, Dictionary<string[]>]
+export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): Dictionary<ImportableDisplayField[]>
 {
-    let groupHeader: string | undefined = undefined;
-    let csvHeadersToPropertiesDict: Dictionary<string[]> = {};
+    let csvHeadersToPropertiesDict: Dictionary<ImportableDisplayField[]> = {};
 
     models.forEach(mapper =>
     {
@@ -20,21 +19,15 @@ export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]):
             return;
         }
 
-        if (mapper.property.backingProperty == "groups")
-        {
-            groupHeader = mapper.csvHeader;
-            return;
-        }
-
         if (!csvHeadersToPropertiesDict[mapper.csvHeader])
         {
             csvHeadersToPropertiesDict[mapper.csvHeader] = [];
         }
 
-        csvHeadersToPropertiesDict[mapper.csvHeader].push(mapper.property.backingProperty);
+        csvHeadersToPropertiesDict[mapper.csvHeader].push(mapper.property);
     });
 
-    return [groupHeader, csvHeadersToPropertiesDict];
+    return csvHeadersToPropertiesDict;
 }
 
 export async function importPasswords(color: string)
@@ -52,31 +45,33 @@ export async function importPasswords(color: string)
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties: RequireableDisplayField[] = [
+    const properties: ImportableDisplayField[] = [
         {
             backingProperty: "login",
             displayName: "Username",
-            required: true
+            required: true,
         },
         {
             backingProperty: "password",
             displayName: "Password",
-            required: true
+            required: true,
         },
         {
             backingProperty: "passwordFor",
             displayName: "Password For",
-            required: false
+            required: false,
         },
         {
             backingProperty: "domain",
             displayName: "Domain",
-            required: false
+            required: false,
+
         },
         {
             backingProperty: "email",
             displayName: "Email",
-            required: false
+            required: false,
+
         },
         {
             backingProperty: "additionalInformation",
@@ -86,14 +81,14 @@ export async function importPasswords(color: string)
         {
             backingProperty: "groups",
             displayName: "Groups",
-            required: false
+            required: false,
+            requiresDelimiter: true
         }
     ];
 
+    const importer = new PasswordCSVImporter();
     stores.popupStore.showImportPopup(color, records[0], properties,
-        (masterKey: string, columnToProperty: Dictionary<string[]>, groupNameIndex: string) =>
-            importData(color, masterKey, records, columnToProperty, groupNameIndex, DataType.Passwords,
-                defaultPassword, (password: Password, skipBackup: boolean) => stores.passwordStore.addPassword(masterKey, password, skipBackup)));
+        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
 }
 
 export async function importValues(color: string)
@@ -111,7 +106,7 @@ export async function importValues(color: string)
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties: RequireableDisplayField[] = [
+    const properties: ImportableDisplayField[] = [
         {
             backingProperty: "name",
             displayName: "Name",
@@ -130,76 +125,14 @@ export async function importValues(color: string)
         {
             backingProperty: "groups",
             displayName: "Groups",
-            required: false
+            required: false,
+            requiresDelimiter: true
         }
     ];
 
+    const importer = new ValueCSVImporter();
     stores.popupStore.showImportPopup(color, records[0], properties,
-        (masterKey: string, columnToProperty: Dictionary<string[]>, groupNameIndex: string) =>
-            importData(color, masterKey, records, columnToProperty, groupNameIndex, DataType.NameValuePairs,
-                defaultValue, (value: NameValuePair, skipBackup: boolean) => stores.valueStore.addNameValuePair(masterKey, value, skipBackup)));
-}
-
-export async function importData<T extends IGroupable>(color: string, masterKey: string, records: string[][], columnToProperty: Dictionary<string[]>,
-    groupNameIndex: string | undefined, dataType: DataType, createValue: () => T, saveValue: (value: T, skipBackup: boolean) => Promise<boolean>)
-{
-    stores.popupStore.showLoadingIndicator(color, "Importing");
-
-    let groupsAdded: string[] = [];
-    const headers: string[] = records[0];
-
-    for (let i = 1; i < records.length; i++)
-    {
-        const value = createValue();
-        for (let j = 0; j < records[i].length; j++)
-        {
-            const column = headers[j];
-
-            // the user didn't decide to import this column
-            if (!columnToProperty[column])
-            {
-                continue;
-            }
-
-            if (column == groupNameIndex)
-            {
-                let groupId: string | undefined = undefined;
-
-                // TODO: this column could be an array of groups
-                if (!groupsAdded.includes(records[i][j]))
-                {
-                    const group = defaultGroup(dataType);
-                    group.name = records[i][j];
-
-                    await stores.groupStore.addGroup(masterKey, group, true);
-
-                    groupId = group.id;
-                    groupsAdded.push(group.name);
-                }
-                else 
-                {
-                    groupId = stores.groupStore.groups.filter(g => g.type == dataType && g.name == records[i][j])[0].id;
-                }
-
-                if (groupId)
-                {
-                    value.groups.push(groupId);
-                }
-            }
-
-            for (let k = 0; k < columnToProperty[column].length; k++)
-            {
-                value[columnToProperty[column][k]] = records[i][j];
-            }
-        }
-
-        await saveValue(value, i != records.length - 1);
-    }
-
-    stores.popupStore.hideLoadingIndicator();
-
-    // TOOD: should actually do some error handling
-    stores.popupStore.showToast(color, "Import Complete", true);
+        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
 }
 
 export function getExportablePasswords(color: string): Promise<string>
@@ -355,4 +288,167 @@ function showExportError()
 {
     stores.popupStore.showAlert("", "An error occured while trying to export. Please try again or", true);
     stores.popupStore.hideLoadingIndicator();
+}
+
+class CSVImporter<T extends IGroupable>
+{
+    dataType: DataType;
+
+    constructor(dataType: DataType)
+    {
+        this.dataType = dataType;
+    }
+
+    protected createValue(): T
+    {
+        return {} as T;
+    }
+
+    protected async saveValue(masterKey: string, value: T, skipBackup: boolean)
+    {
+    }
+
+    public async import(color: string, masterKey: string, records: string[][], columnToProperty: Dictionary<ImportableDisplayField[]>)
+    {
+        stores.popupStore.showLoadingIndicator(color, "Importing");
+
+        let groupsAdded: Dictionary<string> = {};
+        const headers: string[] = records[0];
+
+        for (let i = 1; i < records.length; i++)
+        {
+            const value = this.createValue();
+            for (let j = 0; j < records[i].length; j++)
+            {
+                const column = headers[j];
+
+                // the user didn't decide to import this column
+                if (!columnToProperty[column])
+                {
+                    continue;
+                }
+
+                const cellValue = records[i][j];
+                const properties = columnToProperty[column];
+
+                // a single cell can map to multiple properties
+                for (let k = 0; k < properties.length; k++)
+                {
+                    // first see if its something we need to set custom
+                    if (!(await this.customSetProperty(value, properties[k], cellValue)))
+                    {
+                        // then check groups
+                        if (properties[k].backingProperty == "groups")
+                        {
+                            // split groups up if the user has specified a delimiter for them, otherwise just use the entire value as the group name
+                            const groups: string[] = cellValue ? properties[k].delimiter ? cellValue.split(properties[k].delimiter!) : [cellValue] : [];
+                            if (groups.length > 0)
+                            {
+                                for (let l = 0; l < groups.length; l++)
+                                {
+                                    // just in case
+                                    if (!groups[l])
+                                    {
+                                        continue;
+                                    }
+
+                                    let groupId: string | undefined = undefined;
+                                    if (!groupsAdded[groups[l]])
+                                    {
+                                        const group = defaultGroup(this.dataType);
+                                        group.name = groups[l];
+
+                                        await stores.groupStore.addGroup(masterKey, group, true);
+
+                                        groupId = group.id;
+                                        groupsAdded[group.name] = group.id;
+                                    }
+                                    else 
+                                    {
+                                        groupId = groupsAdded[groups[l]];
+                                    }
+
+                                    if (groupId)
+                                    {
+                                        value.groups.push(groupId);
+                                    }
+                                }
+                            }
+                        }
+                        else 
+                        {
+                            // default set, can just set to the value in the csv cell
+                            value[properties[k].backingProperty] = column;
+                        }
+                    }
+                }
+            }
+
+            // save, only backup the last value
+            await this.saveValue(masterKey, value, i != records.length - 1);
+        }
+
+        stores.popupStore.hideLoadingIndicator();
+
+        // TOOD: should actually do some error handling
+        stores.popupStore.showToast(color, "Import Complete", true);
+    }
+
+    protected async customSetProperty(value: T, property: ImportableDisplayField, cellValue: string)
+    {
+        return false;
+    }
+}
+
+class PasswordCSVImporter extends CSVImporter<Password>
+{
+    constructor()
+    {
+        super(DataType.Passwords);
+    }
+
+    protected createValue(): Password 
+    {
+        return defaultPassword();
+    }
+
+    protected async saveValue(masterKey: string, value: Password, skipBackup: boolean): Promise<void> 
+    {
+        await stores.passwordStore.addPassword(masterKey, value, skipBackup);
+    }
+
+    protected async customSetProperty(value: Password, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
+    {
+        // TODO: implement security question import
+        return false;
+    }
+}
+
+class ValueCSVImporter extends CSVImporter<NameValuePair>
+{
+    constructor()
+    {
+        super(DataType.NameValuePairs);
+    }
+
+    protected createValue(): NameValuePair 
+    {
+        return defaultValue();
+    }
+
+    protected async saveValue(masterKey: string, value: NameValuePair, skipBackup: boolean): Promise<void> 
+    {
+        await stores.valueStore.addNameValuePair(masterKey, value, skipBackup);
+    }
+
+    protected async customSetProperty(value: NameValuePair, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
+    {
+        if (property.backingProperty == "valueType" && cellValue)
+        {
+            value.valueType = NameValuePairType[cellValue] ?? NameValuePairType.Other;
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -1,4 +1,7 @@
 <template>
+    <div class="workflowPopupHeader">
+        <TableSelector class="workflowPopupHeader__controls" :singleSelectorItems="[worflowsSelectorItem]" />
+    </div>
     <div class="workflowPopupContainer">
         <ScrollView class="workflowPopupContainer__sections" :color="primaryColor">
             <div class="workflowPopupContainer__section">
@@ -33,7 +36,7 @@
     </div>
 </template>
 <script lang="ts">
-import { Ref, computed, defineComponent, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import TableSelector from '../TableSelector.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
@@ -44,6 +47,7 @@ import { defaultInputTextColor } from '../../Types/Colors';
 import { stores } from '../../Objects/Stores';
 import { importPasswords, importValues, getExportableValues, getExportablePasswords } from "../../Helpers/ImportExportHelper";
 import { api } from "../../API";
+import { SingleSelectorItemModel } from '../../Types/Models';
 
 export default defineComponent({
     name: "WorkflowPopup",
@@ -60,6 +64,16 @@ export default defineComponent({
         const primaryColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
 
         const disableButtons: Ref<boolean> = ref(false);
+
+        const worflowsSelectorItem: ComputedRef<SingleSelectorItemModel> = computed(() =>
+        {
+            return {
+                title: ref("Workflows"),
+                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                isActive: computed(() => true),
+                onClick: () => { }
+            }
+        });
 
         async function doImportPasswords()
         {
@@ -114,6 +128,7 @@ export default defineComponent({
             primaryColor,
             disableButtons,
             defaultInputTextColor,
+            worflowsSelectorItem,
             doImportPasswords,
             doImportValues,
             exportPasswords,
@@ -124,11 +139,23 @@ export default defineComponent({
 </script>
 
 <style>
+.workflowPopupHeader {
+    width: 100%;
+}
+
+.workflowPopupHeader__controls {
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0%;
+    width: 20%;
+    z-index: 10;
+}
+
 .workflowPopupContainer {
     position: absolute;
-    top: 10%;
+    top: 14%;
     width: 100%;
-    height: 95%;
+    height: 86%;
 }
 
 .workflowPopupContainer__sections {

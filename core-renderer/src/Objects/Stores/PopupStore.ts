@@ -2,7 +2,7 @@ import { BaseResponse, IncorrectDeviceResponse } from "../../Types/SharedTypes";
 import { AccountSetupModel, AccountSetupView, ButtonModel } from "../../Types/Models";
 import { Ref, ref } from "vue";
 import { stores } from ".";
-import { RequireableDisplayField } from "../../Types/EncryptedData";
+import { GroupCSVHeader, ImportableDisplayField } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
@@ -79,9 +79,9 @@ export default function createPopupStore()
 
     const importPopupIsShowing: Ref<boolean> = ref(false);
     const csvImportHeaders: Ref<string[]> = ref([]);
-    const importProperties: Ref<RequireableDisplayField[]> = ref([]);
-    const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: Dictionary<string[]>, groupNameIndex: string) => void> =
-        ref((_, __, ___) => { });
+    const importProperties: Ref<ImportableDisplayField[]> = ref([]);
+    const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: Dictionary<ImportableDisplayField[]>) => Promise<void>> =
+        ref(async (_, __) => { });
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -283,8 +283,8 @@ export default function createPopupStore()
         breachedPasswordIsShowing.value = false;
     }
 
-    function showImportPopup(clr: string, csvHdrs: string[], props: RequireableDisplayField[],
-        onConfirm: (masterKey: string, columnIndexToProperty: Dictionary<string[]>, groupNameIndex: string) => void)
+    function showImportPopup(clr: string, csvHdrs: string[], props: ImportableDisplayField[],
+        onConfirm: (masterKey: string, columnIndexToProperty: Dictionary<ImportableDisplayField[]>) => Promise<void>)
     {
         csvImportHeaders.value = csvHdrs;
         color.value = clr;
@@ -297,7 +297,7 @@ export default function createPopupStore()
     {
         csvImportHeaders.value = [];
         importProperties.value = [];
-        onImportConfirmed.value = () => { };
+        onImportConfirmed.value = async () => { };
         importPopupIsShowing.value = false;
     }
 

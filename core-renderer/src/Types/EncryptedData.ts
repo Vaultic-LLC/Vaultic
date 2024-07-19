@@ -33,9 +33,11 @@ export interface HeaderDisplayField extends DisplayField
     headerSpaceRight?: string;
 }
 
-export interface RequireableDisplayField extends DisplayField
+export interface ImportableDisplayField extends DisplayField
 {
     required: boolean;
+    requiresDelimiter?: boolean;
+    delimiter?: string;
 }
 
 export enum PropertyType
@@ -270,4 +272,10 @@ export interface MethodResponse
     success: boolean;
     logID?: number;
     value?: string;
+}
+
+export interface GroupCSVHeader 
+{
+    csvHeader: string;
+    delimiter?: string;
 }
