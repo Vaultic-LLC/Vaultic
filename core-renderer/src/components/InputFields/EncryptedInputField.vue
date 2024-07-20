@@ -1,9 +1,9 @@
 <template>
     <div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
         <div class="textInuptContainer">
-            <input :id="id" tabindex="0" ref="input" required="false" class="textInputFieldInput" :type="inputType"
-                name="text" autocomplete="off" :value="inputText"
-                @input="onInput(($event.target as HTMLInputElement).value)" :disabled="isDisabled" :maxlength="200" />
+            <input tabindex="0" ref="input" required="false" class="textInputFieldInput" :type="inputType" name="text"
+                autocomplete="off" :value="inputText" @input="onInput(($event.target as HTMLInputElement).value)"
+                :disabled="isDisabled" :maxlength="200" />
             <label class="textInputFieldLable">{{ label }}</label>
             <div class="icons">
                 <div v-if="isLocked && showUnlock">
@@ -52,7 +52,7 @@ import { api } from '../../API';
 export default defineComponent({
     name: "EncryptedInputField",
     emits: ["update:modelValue", "onDirty"],
-    props: ["modelValue", "id", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
+    props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
         "showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
         "minHeight", "maxHeight", 'isOnWidget', 'showButtonsUnderneath', 'randomValueType'],
     setup(props, ctx)
