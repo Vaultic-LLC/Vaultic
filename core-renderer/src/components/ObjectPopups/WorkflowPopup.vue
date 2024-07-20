@@ -87,24 +87,34 @@ export default defineComponent({
 
         async function exportPasswords()
         {
-            const formattedData = await getExportablePasswords(primaryColor.value);
-            if (!formattedData)
-            {
-                return;
-            }
+            stores.popupStore.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { })
 
-            await doExport("vaultic-passwords", formattedData);
+            async function doExportPasswords(masterKey: string)
+            {
+                const formattedData = await getExportablePasswords(primaryColor.value, masterKey);
+                if (!formattedData)
+                {
+                    return;
+                }
+
+                await doExport("vaultic-passwords", formattedData);
+            }
         }
 
         async function exportValues()
         {
-            const formattedData = await getExportableValues(primaryColor.value);
-            if (!formattedData)
-            {
-                return;
-            }
+            stores.popupStore.showRequestAuthentication(primaryColor.value, doExportValues, () => { })
 
-            await doExport("vaultic-values", formattedData);
+            async function doExportValues(masterKey: string)
+            {
+                const formattedData = await getExportableValues(primaryColor.value, masterKey);
+                if (!formattedData)
+                {
+                    return;
+                }
+
+                await doExport("vaultic-values", formattedData);
+            }
         }
 
         async function doExport(fileName: string, formattedData: string)

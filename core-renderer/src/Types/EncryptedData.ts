@@ -123,6 +123,8 @@ export enum NameValuePairType
     Other = "Other",
 }
 
+export const nameValuePairTypesValues = Object.values(NameValuePairType);
+
 export const FilterableValueProperties: PropertySelectorDisplayFields[] = [
     {
         backingProperty: "Name",

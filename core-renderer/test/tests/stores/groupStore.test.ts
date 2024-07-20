@@ -42,7 +42,7 @@ groupStoreSuite.tests.push({
         {
             const group: Group = defaultGroup(type);
             group[property].push(primaryObject.id);
-            group.name = "GroupStore Add With Primary Object Works";
+            group.name = `GroupStore Add With Primary Object Works Type ${type}`;
             group.color = "#FFFFFF";
 
             await stores.groupStore.addGroup(masterKey, group);
@@ -55,9 +55,11 @@ groupStoreSuite.tests.push({
         }
 
         const password = defaultPassword();
+        password.login = ":Om;lmvksnvilnigneioreg";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
+        value.name = "n ruvwl hweigbweilblgbwelgnwelngwe";
         await stores.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password,
@@ -80,6 +82,7 @@ groupStoreSuite.tests.push({
             getDuplicateGroups: () => Dictionary<string[]>)
         {
             const emptyGroup: Group = defaultGroup(type);
+            emptyGroup.name = `GroupStore Add Metrics Work Empty Type ${type}`;
 
             await stores.groupStore.addGroup(masterKey, emptyGroup);
 
@@ -90,7 +93,10 @@ groupStoreSuite.tests.push({
             ctx.assertTruthy(`Empty Group Exists for type ${type}`, retrievedEmptyGroup);
 
             const duplicateGroupOne = defaultGroup(type);
+            duplicateGroupOne.name = `GroupStore Add Metrics Work Dup One Type ${type}`;
+
             const duplicateGroupTwo = defaultGroup(type);
+            duplicateGroupTwo.name = `GroupStore Add Metrics Work Dup Two Type ${type}`;
 
             duplicateGroupOne[property].push(primaryObject.id);
             duplicateGroupTwo[property].push(primaryObject.id);
@@ -116,9 +122,11 @@ groupStoreSuite.tests.push({
         }
 
         const password = defaultPassword();
+        password.login = "MVonivrnweigwehgiowjgiowngoi2gn";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
+        value.name = "uhvwivweign;iognelbnae;ne;";
         await stores.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password, () => stores.groupStore.passwordGroups,
@@ -134,7 +142,7 @@ groupStoreSuite.tests.push({
     {
         async function testUpdateGroup(type: DataType, getGroups: () => Group[])
         {
-            const originalName = "GroupStoreUpdateWorks";
+            const originalName = `GroupStoreUpdateWorksType${type}`;
             const originalColor = "#FFFFFF";
 
             const group: Group = defaultGroup(type);
@@ -177,7 +185,7 @@ groupStoreSuite.tests.push({
         {
             const group: Group = defaultGroup(type);
             group[property].push(primaryObject.id);
-            group.name = "GroupStore Add With Primary Object Works";
+            group.name = `GroupStore Update With Primary Object Works Type ${type}`;
             group.color = "#FFFFFF";
 
             await stores.groupStore.addGroup(masterKey, group);
@@ -212,9 +220,11 @@ groupStoreSuite.tests.push({
         }
 
         const password = defaultPassword();
+        password.login = "j22hg28ghigneorvmilerneriohe";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
+        value.name = "dnlxznvklzxnvilhbilehgeigherg";
         await stores.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password,
@@ -237,6 +247,7 @@ groupStoreSuite.tests.push({
             getDuplicateGroups: () => Dictionary<string[]>)
         {
             const emptyGroup: Group = defaultGroup(type);
+            emptyGroup.name = `GroupStore Update Metrics Work Empty Type ${type}`;
 
             await stores.groupStore.addGroup(masterKey, emptyGroup);
 
@@ -259,7 +270,10 @@ groupStoreSuite.tests.push({
             ctx.assertEquals(`Empty Group Exist for type ${type} after update`, retrievedEmptyGroup.length, 1);
 
             const duplicateGroupOne = defaultGroup(type);
+            duplicateGroupOne.name = `GroupStore Update Metrics Work Dup One Type ${type}`;
+
             const duplicateGroupTwo = defaultGroup(type);
+            duplicateGroupTwo.name = `GroupStore Update Metrics Work Dup Two Type ${type}`;
 
             duplicateGroupOne[property].push(primaryObject.id);
             duplicateGroupTwo[property].push(primaryObject.id);
@@ -296,9 +310,11 @@ groupStoreSuite.tests.push({
         }
 
         const password = defaultPassword();
+        password.login = "mvpovmweoipvnwigwiug2hih2iuglin";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
+        value.name = "zxhdfohoashibnsdklbnaei neraiv";
         await stores.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password, () => stores.groupStore.passwordGroups,
@@ -315,6 +331,7 @@ groupStoreSuite.tests.push({
         async function testGroupDelete(type: DataType, getGroups: () => Group[])
         {
             const group: Group = defaultGroup(type);
+            group.name = `GroupStore Delete Works Type ${type}`;
 
             await stores.groupStore.addGroup(masterKey, group);
 
@@ -344,7 +361,7 @@ groupStoreSuite.tests.push({
         {
             const group: Group = defaultGroup(type);
             group[property].push(primaryObject.id);
-            group.name = "GroupStore Add With Primary Object Works";
+            group.name = `GroupStore Delete With Primary Object Works Type ${type}`;
             group.color = "#FFFFFF";
 
             await stores.groupStore.addGroup(masterKey, group);
@@ -362,9 +379,11 @@ groupStoreSuite.tests.push({
         }
 
         const password = defaultPassword();
+        password.login = "mvpovmerobnrigugh23uguyuysbvuasg";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
+        value.name = "ixhvzioxhvioaxvwiagnweuigweipgw";
         await stores.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password,
@@ -387,6 +406,7 @@ groupStoreSuite.tests.push({
             getDuplicateGroups: () => Dictionary<string[]>)
         {
             const emptyGroup: Group = defaultGroup(type);
+            emptyGroup.name = `GroupStore Delete Metrics Work Empty Type ${type}`;
 
             await stores.groupStore.addGroup(masterKey, emptyGroup);
 
@@ -402,7 +422,10 @@ groupStoreSuite.tests.push({
             ctx.assertEquals(`Empty Group Doesn't Exist for type ${type}`, retrievedEmptyGroup.length, 0);
 
             const duplicateGroupOne = defaultGroup(type);
+            duplicateGroupOne.name = `GroupStore Delete Metrics Work Dup One Type ${type}`;
+
             const duplicateGroupTwo = defaultGroup(type);
+            duplicateGroupTwo.name = `GroupStore Delete Metrics Work Dup Two Type ${type}`;
 
             duplicateGroupOne[property].push(primaryObject.id);
             duplicateGroupTwo[property].push(primaryObject.id);
@@ -426,9 +449,11 @@ groupStoreSuite.tests.push({
         }
 
         const password = defaultPassword();
+        password.login = "vmsovmovnwigh2t8o2hto8hidlibdsb";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
+        value.name = "zxioviowngiognio;gnio;gner;ige";
         await stores.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password, () => stores.groupStore.passwordGroups,

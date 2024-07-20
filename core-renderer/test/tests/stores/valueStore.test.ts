@@ -19,7 +19,7 @@ valueStoreSuite.tests.push({
     name: "ValueStore Add Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.name = "Name";
+        value.name = "ValueStore Add Works";
         value.notifyIfWeak = true;
         value.valueType = NameValuePairType.Information;
         value.value = "Value";
@@ -31,7 +31,7 @@ valueStoreSuite.tests.push({
         const decryptedValue = await cryptHelper.decrypt(masterKey, retrievedValue.value);
 
         ctx.assertTruthy("Value Exists", retrievedValue);
-        ctx.assertEquals("Name is correct", retrievedValue.name, "Name");
+        ctx.assertEquals("Name is correct", retrievedValue.name, "ValueStore Add Works");
         ctx.assertEquals("NotifyIfWeak is correct", retrievedValue.notifyIfWeak, true);
         ctx.assertEquals("ValueType is correct", retrievedValue.valueType, NameValuePairType.Information);
         ctx.assertEquals("Value is correct", decryptedValue.value, "Value");
@@ -44,14 +44,17 @@ valueStoreSuite.tests.push({
     name: "ValueStore Metrics Work After Add", func: async (ctx: TestContext) =>
     {
         const weakPhraseValue: NameValuePair = defaultValue();
+        weakPhraseValue.name = "Mvosnviowengwegnwilgnl";
         weakPhraseValue.valueType = NameValuePairType.Passphrase;
         weakPhraseValue.value = "weakduplicate";
 
         const weakPasscodeValue: NameValuePair = defaultValue();
+        weakPhraseValue.name = "MV;lmlvnqlbguilwhguilghwlig";
         weakPasscodeValue.valueType = NameValuePairType.Passcode;
         weakPasscodeValue.value = "weak";
 
         const duplicateValue: NameValuePair = defaultValue();
+        duplicateValue.name = "MLKZNlkdnfijlbguiweguilhgiwelgw";
         duplicateValue.value = "weakduplicate";
 
         await stores.valueStore.addNameValuePair(masterKey, weakPhraseValue);
@@ -69,9 +72,6 @@ valueStoreSuite.tests.push({
         const retrievedDuplicateValueOne = stores.valueStore.duplicateNameValuePairs.value.filter(v => v == duplicateValue.id);
         const retrievedDuplicateValueTwo = stores.valueStore.duplicateNameValuePairs.value.filter(v => v == weakPhraseValue.id);
 
-        const d1 = await cryptHelper.decrypt(masterKey, duplicateValue.value);
-        const d2 = await cryptHelper.decrypt(masterKey, weakPhraseValue.value);
-
         ctx.assertEquals("Duplicate value one exists", retrievedDuplicateValueOne.length, 1);
         ctx.assertEquals("Duplicate value two exists", retrievedDuplicateValueTwo.length, 1);
     }
@@ -81,9 +81,11 @@ valueStoreSuite.tests.push({
     name: "ValueStore Add CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safeValue: NameValuePair = defaultValue();
+        safeValue.name = "mamlsnlwniogwegilwgiowgg";
         safeValue.value = "FS:nvw2nvioshsoijhvhoVnlweuw159y98hoivGSHLViNSBuign[p[1";
 
         const unsafeValue: NameValuePair = defaultValue();
+        unsafeValue.name = "mnwiughqwuighq4uighilghnelgng";
         unsafeValue.value = "weak";
 
         await stores.valueStore.addNameValuePair(masterKey, safeValue);
@@ -112,6 +114,7 @@ valueStoreSuite.tests.push({
     name: "ValueStore Add With Group Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
+        value.name = "amsldkvnwlbuweibgwukgbeauilglg";
 
         const group: Group = defaultGroup(DataType.NameValuePairs);
         group.name = "ValueStore Add With Group Works";
@@ -172,7 +175,7 @@ valueStoreSuite.tests.push({
 
         await stores.valueStore.addNameValuePair(masterKey, value);
 
-        const newName = "New Name";
+        const newName = "ValueStoreUpdateWorks--New";
         const newValueType = NameValuePairType.Safe;
         const newNotifyIfWeak = false;
         const newAdditionalInfo = "NewAdditionalInfo";
@@ -201,6 +204,7 @@ valueStoreSuite.tests.push({
     {
         const value: NameValuePair = defaultValue();
         value.value = "Value";
+        value.name = "vms;alvnwklnweigwligewg";
 
         await stores.valueStore.addNameValuePair(masterKey, value);
 
@@ -221,6 +225,7 @@ valueStoreSuite.tests.push({
     {
         const notWeakValue = "s123hgsjhLS HDHFp[]p[L ihsgh lh hsh hwe SLHF shgskljhwkg eghuiSSHGL SDh";
         const weakPhraseValue: NameValuePair = defaultValue();
+        weakPhraseValue.name = "ms;lvknklvenilwbguilwgwlgwg";
         weakPhraseValue.valueType = NameValuePairType.Passphrase;
         weakPhraseValue.value = notWeakValue;
 
@@ -242,6 +247,7 @@ valueStoreSuite.tests.push({
         ctx.assertEquals("Weak pass phrase value doesn't exist after update", retrievedWeakPhraseValue.length, 0);
 
         const weakPasscodeValue: NameValuePair = defaultValue();
+        weakPasscodeValue.name = "qwuiegfuiwqvkabvljksdbvmbmansdjklgna";
         weakPasscodeValue.valueType = NameValuePairType.Passcode;
         weakPasscodeValue.value = notWeakValue;
 
@@ -263,6 +269,7 @@ valueStoreSuite.tests.push({
         ctx.assertEquals("Weak pass code value doesn't exists after update", retrievedWeakCodeValue.length, 0);
 
         const duplicateValue: NameValuePair = defaultValue();
+        duplicateValue.name = "zxncvlashijhgweilghweroipghwro;igwrg";
         duplicateValue.value = "notDuplicate";
 
         await stores.valueStore.addNameValuePair(masterKey, duplicateValue);
@@ -297,9 +304,11 @@ valueStoreSuite.tests.push({
     name: "ValueStore Update CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safeValue: NameValuePair = defaultValue();
+        safeValue.name = "sm;lwanvwjekgbwuighwuighwigwh";
         safeValue.value = "weak";
 
         const unsafeValue: NameValuePair = defaultValue();
+        unsafeValue.name = "uhweoghisvklsdabvkwehlkebgleibg";
         unsafeValue.value = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
 
         await stores.valueStore.addNameValuePair(masterKey, safeValue);
@@ -334,6 +343,7 @@ valueStoreSuite.tests.push({
     name: "ValueStore Update With Group Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
+        value.name = "msal;vkwanvwebuiogwbguiwhgilenle";
 
         const group: Group = defaultGroup(DataType.NameValuePairs);
         group.name = "ValueStore Add With Group Works";
@@ -420,6 +430,7 @@ valueStoreSuite.tests.push({
     name: "ValueStore Delete Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
+        value.name = "skmklwVIEBWUIAGBILGBLBKLBNERLKGBLER";
 
         await stores.valueStore.addNameValuePair(masterKey, value);
 
@@ -440,6 +451,7 @@ valueStoreSuite.tests.push({
         const weakPhraseValue: NameValuePair = defaultValue();
         weakPhraseValue.valueType = NameValuePairType.Passphrase;
         weakPhraseValue.value = "weak";
+        weakPhraseValue.name = "mwo;jvwgbweuighwuighweiohgegewg";
 
         await stores.valueStore.addNameValuePair(masterKey, weakPhraseValue);
 
@@ -455,6 +467,7 @@ valueStoreSuite.tests.push({
         const weakPasscodeValue: NameValuePair = defaultValue();
         weakPasscodeValue.valueType = NameValuePairType.Passcode;
         weakPasscodeValue.value = "weak";
+        weakPasscodeValue.name = "mvlkasnvkwjgighwuighwuighwlghwg";
 
         await stores.valueStore.addNameValuePair(masterKey, weakPasscodeValue);
 
@@ -463,6 +476,7 @@ valueStoreSuite.tests.push({
 
         const duplicateValue: NameValuePair = defaultValue();
         duplicateValue.value = "weak";
+        duplicateValue.name = "zbxivhsuihweighweuigwgherilgherlg";
 
         await stores.valueStore.addNameValuePair(masterKey, duplicateValue);
 
@@ -492,10 +506,12 @@ valueStoreSuite.tests.push({
     name: "ValueStore Delete CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safeValue: NameValuePair = defaultValue();
+        safeValue.name = "hohsdl nuidlvuilvbio;beruilbelbheb";
         safeValue.valueType = NameValuePairType.Passcode;
         safeValue.value = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
 
         const unsafeValue: NameValuePair = defaultValue();
+        unsafeValue.name = "snvwvuibuidlhboa;nblabner";
         safeValue.valueType = NameValuePairType.Passcode;
         unsafeValue.value = "weak";
 
@@ -537,6 +553,7 @@ valueStoreSuite.tests.push({
     name: "ValueStore Delete With Group Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
+        value.name = " nvibweighweigweaioghwiugbwegihwgw";
 
         const group: Group = defaultGroup(DataType.NameValuePairs);
         group.name = "ValueStore Add With Group Works";

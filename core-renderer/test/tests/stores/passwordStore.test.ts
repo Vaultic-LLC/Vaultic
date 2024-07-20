@@ -18,7 +18,7 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Add Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login = "Login";
+        password.login = "PasswordStore Add Works";
         password.email = "Email@Email";
         password.domain = "www.domain.com";
         password.password = "Password";
@@ -42,7 +42,7 @@ passwordStoreSuite.tests.push({
         const decryptedSecurityQuesitonQuestion = await cryptHelper.decrypt(masterKey, retrievedPassword.securityQuestions[0].question);
         const decryptedSecurityQuesitonAnswer = await cryptHelper.decrypt(masterKey, retrievedPassword.securityQuestions[0].answer);
 
-        ctx.assertEquals("Login is correct", retrievedPassword.login, "Login");
+        ctx.assertEquals("Login is correct", retrievedPassword.login, "PasswordStore Add Works");
         ctx.assertEquals("Email is correct", retrievedPassword.email, "Email@Email");
         ctx.assertEquals("Domain is correct", retrievedPassword.domain, "www.domain.com");
         ctx.assertEquals("Password is correct", decryptedPassword.value, "Password");
@@ -62,14 +62,16 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Metrics Work After Add", func: async (ctx: TestContext) =>
     {
         const weakPassword: Password = defaultPassword();
+        weakPassword.login = "OJpmbp4on894h89jhog";
         weakPassword.password = "weak";
 
         const duplicatePassword: Password = defaultPassword();
+        duplicatePassword.login = "beponjioNSOIGw";
         duplicatePassword.password = "weak";
 
         const containsLoginPassword: Password = defaultPassword();
-        containsLoginPassword.login = "TylerWanta";
-        containsLoginPassword.password = "TylerWanta123";
+        containsLoginPassword.login = "PasswordStore Metrics Work After Add";
+        containsLoginPassword.password = "PasswordStore Metrics Work After Add Test";
 
         await stores.passwordStore.addPassword(masterKey, weakPassword);
 
@@ -94,9 +96,11 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Add CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safePassword: Password = defaultPassword();
+        safePassword.login = "GLSVBvlinwoigjnioolnguiq3lnneilrun";
         safePassword.password = "FS:nvw2nvioshsoijhvhoVnlweuw159y98hoivGSHLViNSBuign[p[1";
 
         const unsafePassword: Password = defaultPassword();
+        unsafePassword.login = "lnljolwhiwlnSNDfbuiho2tto27";
         unsafePassword.password = "weak";
 
         await stores.passwordStore.addPassword(masterKey, safePassword);
@@ -125,6 +129,7 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Add With Group Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "VNwelnbwiono;imgo;mbio";
 
         const group: Group = defaultGroup(DataType.Passwords);
         group.name = "PasswordStore Add With Group Works";
@@ -184,7 +189,7 @@ passwordStoreSuite.tests.push({
 
         await stores.passwordStore.addPassword(masterKey, password);
 
-        const newLogin = "New Login";
+        const newLogin = "Test Update Works New Login";
         const newDomin = "New Domain";
         const newEmail = "New Email";
         const newPasswordFor = "New Password For";
@@ -214,7 +219,9 @@ passwordStoreSuite.tests.push({
     name: 'Update password works', func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "ijvLOSvniowemwmiophjh";
         password.password = "Original Password";
+
         await stores.passwordStore.addPassword(masterKey, password);
 
         const newPassword = "New Password";
@@ -232,6 +239,7 @@ passwordStoreSuite.tests.push({
     name: 'Update security question works', func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "MVOmewpobwjbiophniones";
         const securityQuestion = {
             id: "SecurityQuestion",
             question: "Question",
@@ -271,10 +279,11 @@ passwordStoreSuite.tests.push({
 
         const duplicatePassword: Password = defaultPassword();
         duplicatePassword.password = strongPassword;
+        duplicatePassword.login = "MVowemiogwnoigninlgnqilnhn";
 
         const containsLoginPassword: Password = defaultPassword();
-        containsLoginPassword.login = "TylerWanta";
-        containsLoginPassword.password = "TylerWanta123";
+        containsLoginPassword.login = "PasswordStore Metrics Work After Update";
+        containsLoginPassword.password = "PasswordStore Metrics Work After Update 123";
 
         await stores.passwordStore.addPassword(masterKey, weakPassword);
 
@@ -326,6 +335,7 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Update CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "Vmwoeipvnio2nhiohnlkng3lnhhi3";
 
         await stores.passwordStore.addPassword(masterKey, password);
         password.password = "unsafe";
@@ -357,6 +367,7 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Update With Groups Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "MVpmvio2mbomomjpjgpwjogwhergg";
         await stores.passwordStore.addPassword(masterKey, password);
 
         const group: Group = defaultGroup(DataType.Passwords);
@@ -438,6 +449,7 @@ passwordStoreSuite.tests.push({
     name: 'Delete works', func: async (ctx: TestContext) => 
     {
         const password: Password = defaultPassword();
+        password.login = "vmOVKmweopbmoibniohwigh8goho2hti2";
 
         await stores.passwordStore.addPassword(masterKey, password);
 
@@ -457,13 +469,15 @@ passwordStoreSuite.tests.push({
     {
         const weakPassword: Password = defaultPassword();
         weakPassword.password = "weak";
+        weakPassword.login = "MVlsd;mvl;mkln2jtigohgoh";
 
         const duplicatePassword: Password = defaultPassword();
         duplicatePassword.password = "weak";
+        duplicatePassword.login = "uigiwhgshioadsjvoavmobn";
 
         const containsLoginPassword: Password = defaultPassword();
-        containsLoginPassword.login = "TylerWanta";
-        containsLoginPassword.password = "TylerWanta123";
+        containsLoginPassword.login = "PasswordStore Metrics Work After Delete";
+        containsLoginPassword.password = "PasswordStore Metrics Work After Delete 123";
 
         await stores.passwordStore.addPassword(masterKey, weakPassword);
 
@@ -508,6 +522,7 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Delete CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "lmommoniNVInweuiobwiogbw";
 
         await stores.passwordStore.addPassword(masterKey, password);
         password.password = "unsafe";
@@ -529,6 +544,7 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Delete With Groups Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
+        password.login = "Mqmiovwnvionbigh2uioghoighug";
 
         const group: Group = defaultGroup(DataType.Passwords);
         group.name = "PasswordStore Delete With Group Works";

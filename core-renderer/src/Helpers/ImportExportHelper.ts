@@ -1,4 +1,4 @@
-import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, NameValuePairType, Password, ImportableDisplayField, GroupCSVHeader } from "../Types/EncryptedData";
+import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, NameValuePairType, Password, ImportableDisplayField, GroupCSVHeader, SecurityQuestion, nameValuePairTypesValues } from "../Types/EncryptedData";
 import { DataType } from "../Types/Table";
 import { stores } from "../Objects/Stores/index";
 import { parse } from "csv-parse/browser/esm/sync";
@@ -7,6 +7,7 @@ import cryptHelper from "./cryptHelper";
 import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
 import { Dictionary } from "../Types/DataStructures";
+import { generateUniqueID } from "./generatorHelper";
 
 export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): Dictionary<ImportableDisplayField[]>
 {
@@ -45,49 +46,8 @@ export async function importPasswords(color: string)
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties: ImportableDisplayField[] = [
-        {
-            backingProperty: "login",
-            displayName: "Username",
-            required: true,
-        },
-        {
-            backingProperty: "password",
-            displayName: "Password",
-            required: true,
-        },
-        {
-            backingProperty: "passwordFor",
-            displayName: "Password For",
-            required: false,
-        },
-        {
-            backingProperty: "domain",
-            displayName: "Domain",
-            required: false,
-
-        },
-        {
-            backingProperty: "email",
-            displayName: "Email",
-            required: false,
-
-        },
-        {
-            backingProperty: "additionalInformation",
-            displayName: "Additional Info",
-            required: false,
-        },
-        {
-            backingProperty: "groups",
-            displayName: "Groups",
-            required: false,
-            requiresDelimiter: true
-        }
-    ];
-
     const importer = new PasswordCSVImporter();
-    stores.popupStore.showImportPopup(color, records[0], properties,
+    stores.popupStore.showImportPopup(color, records[0], importablePasswordProperties,
         (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
 }
 
@@ -106,141 +66,107 @@ export async function importValues(color: string)
     }
 
     const records: string[][] = parse(content, { bom: true });
-    const properties: ImportableDisplayField[] = [
-        {
-            backingProperty: "name",
-            displayName: "Name",
-            required: true
-        },
-        {
-            backingProperty: "value",
-            displayName: "Value",
-            required: true
-        },
-        {
-            backingProperty: "additionalInformation",
-            displayName: "Additional Info",
-            required: false
-        },
-        {
-            backingProperty: "groups",
-            displayName: "Groups",
-            required: false,
-            requiresDelimiter: true
-        }
-    ];
 
     const importer = new ValueCSVImporter();
-    stores.popupStore.showImportPopup(color, records[0], properties,
+    stores.popupStore.showImportPopup(color, records[0], importableValueProperties,
         (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
 }
 
-export function getExportablePasswords(color: string): Promise<string>
+export async function getExportablePasswords(color: string, masterKey: string): Promise<string>
 {
-    return new Promise<string>((resolve) => 
+    stores.popupStore.showLoadingIndicator(color, "Exporting Passwords");
+    let data: string[][] = [['Login', 'Domain', 'Email', 'Password For', 'Password', 'Security Question Questions',
+        'Security Question Answers', 'Additional Info', 'Groups']];
+
+    for (let i = 0; i < stores.passwordStore.passwords.length; i++)
     {
-        stores.popupStore.showRequestAuthentication(color, async (masterKey: string) => 
+        let password = stores.passwordStore.passwords[i];
+        if (password.isVaultic)
         {
-            stores.popupStore.showLoadingIndicator(color, "Exporting Passwords");
-            let data: string[][] = [['Login', 'Domain', 'Email', 'Password For', 'Password', 'Security Question Questions',
-                'Security Question Answers', 'Additional Info', 'Groups']];
+            continue;
+        }
 
-            for (let i = 0; i < stores.passwordStore.passwords.length; i++)
+        let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.password);
+        if (!decryptedPasswordResponse.success)
+        {
+            showExportError();
+            return "";
+        }
+
+        let securityQuestionQuestions: string[] = [];
+        let securityQuestionAnswers: string[] = [];
+
+        for (let j = 0; j < password.securityQuestions.length; j++)
+        {
+            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].question);
+            if (!decryptedSecurityQuestionQuestion.success)
             {
-                let password = stores.passwordStore.passwords[i];
-                if (password.isVaultic)
-                {
-                    continue;
-                }
-
-                let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.password);
-                if (!decryptedPasswordResponse.success)
-                {
-                    showExportError();
-                    return;
-                }
-
-                let securityQuestionQuestions: string[] = [];
-                let securityQuestionAnswers: string[] = [];
-
-                for (let j = 0; j < password.securityQuestions.length; j++)
-                {
-                    const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].question);
-                    if (!decryptedSecurityQuestionQuestion.success)
-                    {
-                        showExportError();
-                        return;
-                    }
-
-                    const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].answer);
-                    if (!decryptedSecurityQuestionAnswer.success)
-                    {
-                        showExportError();
-                        return;
-                    }
-
-                    securityQuestionQuestions.push(decryptedSecurityQuestionQuestion.value!);
-                    securityQuestionAnswers.push(decryptedSecurityQuestionAnswer.value!);
-                }
-
-                let groups: string[] = [];
-                for (let j = 0; j < password.groups.length; j++)
-                {
-                    const group = stores.groupStore.passwordGroups.filter(g => g.id == password.groups[j]);
-                    if (group.length == 1)
-                    {
-                        groups.push(group[0].name);
-                    }
-                }
-
-                data.push([password.login, password.domain, password.email, password.passwordFor, decryptedPasswordResponse.value!,
-                securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.additionalInformation, groups.join(';')]);
+                showExportError();
+                return "";
             }
 
-            const formattedData = await exportData(data);
-            resolve(formattedData);
-        }, () => resolve(''))
-    });
+            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].answer);
+            if (!decryptedSecurityQuestionAnswer.success)
+            {
+                showExportError();
+                return "";
+            }
+
+            securityQuestionQuestions.push(decryptedSecurityQuestionQuestion.value!);
+            securityQuestionAnswers.push(decryptedSecurityQuestionAnswer.value!);
+        }
+
+        let groups: string[] = [];
+        for (let j = 0; j < password.groups.length; j++)
+        {
+            const group = stores.groupStore.passwordGroups.filter(g => g.id == password.groups[j]);
+            if (group.length == 1)
+            {
+                groups.push(group[0].name);
+            }
+            else 
+            {
+                console.log(group);
+            }
+        }
+
+        data.push([password.login, password.domain, password.email, password.passwordFor, decryptedPasswordResponse.value!,
+        securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.additionalInformation, groups.join(';')]);
+    }
+
+    return await exportData(data);
 }
 
-export function getExportableValues(color: string): Promise<string>
+export async function getExportableValues(color: string, masterKey: string): Promise<string>
 {
-    return new Promise<string>((resolve) => 
+    stores.popupStore.showLoadingIndicator(color, "Exporting Values");
+    let data: string[][] = [['Name', 'Value', 'Value Type', 'Additional Info', 'Groups']];
+
+    for (let i = 0; i < stores.valueStore.nameValuePairs.length; i++)
     {
-        stores.popupStore.showRequestAuthentication(color, async (masterKey: string) => 
+        let value = stores.valueStore.nameValuePairs[i];
+
+        let decryptedValueResponse = await cryptHelper.decrypt(masterKey, value.value);
+        if (!decryptedValueResponse.success)
         {
-            stores.popupStore.showLoadingIndicator(color, "Exporting Values");
-            let data: string[][] = [['Name', 'Value', 'ValueType', 'Additional Info', 'Groups']];
+            showExportError();
+            return "";
+        }
 
-            for (let i = 0; i < stores.valueStore.nameValuePairs.length; i++)
+        let groups: string[] = [];
+        for (let j = 0; j < value.groups.length; j++)
+        {
+            const group = stores.groupStore.valuesGroups.filter(g => g.id == value.groups[j]);
+            if (group.length == 1)
             {
-                let value = stores.valueStore.nameValuePairs[i];
-
-                let decryptedValueResponse = await cryptHelper.decrypt(masterKey, value.value);
-                if (!decryptedValueResponse.success)
-                {
-                    showExportError();
-                    return;
-                }
-
-                let groups: string[] = [];
-                for (let j = 0; j < value.groups.length; j++)
-                {
-                    const group = stores.groupStore.valuesGroups.filter(g => g.id == value.groups[j]);
-                    if (group.length == 1)
-                    {
-                        groups.push(group[0].name);
-                    }
-                }
-
-                const valueType = value.valueType ? NameValuePairType[value.valueType] : "";
-                data.push([value.name, decryptedValueResponse.value!, valueType, value.additionalInformation, groups.join(';')]);
+                groups.push(group[0].name);
             }
+        }
 
-            const formattedData = await exportData(data);
-            resolve(formattedData);
-        }, () => resolve(''))
-    });
+        data.push([value.name, decryptedValueResponse.value!, value.valueType ?? "", value.additionalInformation, groups.join(';')]);
+    }
+
+    return await exportData(data);
 }
 
 async function exportData(data: string[][]): Promise<string>
@@ -329,6 +255,11 @@ class CSVImporter<T extends IGroupable>
                 }
 
                 const cellValue = records[i][j];
+                if (!cellValue)
+                {
+                    continue;
+                }
+
                 const properties = columnToProperty[column];
 
                 // a single cell can map to multiple properties
@@ -378,7 +309,7 @@ class CSVImporter<T extends IGroupable>
                         else 
                         {
                             // default set, can just set to the value in the csv cell
-                            value[properties[k].backingProperty] = column;
+                            value[properties[k].backingProperty] = cellValue;
                         }
                     }
                 }
@@ -400,11 +331,14 @@ class CSVImporter<T extends IGroupable>
     }
 }
 
-class PasswordCSVImporter extends CSVImporter<Password>
+export class PasswordCSVImporter extends CSVImporter<Password>
 {
+    temporarySecurityQuestions: SecurityQuestion[];
+
     constructor()
     {
         super(DataType.Passwords);
+        this.temporarySecurityQuestions = [];
     }
 
     protected createValue(): Password 
@@ -419,12 +353,80 @@ class PasswordCSVImporter extends CSVImporter<Password>
 
     protected async customSetProperty(value: Password, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
     {
-        // TODO: implement security question import
+        if (property.backingProperty == "securityQuestionQuestions")
+        {
+            const questions: string[] = property.delimiter ? cellValue.split(property.delimiter) : [cellValue];
+
+            // reading in questions first
+            if (this.temporarySecurityQuestions.length == 0)
+            {
+                for (let i = 0; i < questions.length; i++)
+                {
+                    const id = await generateUniqueID(this.temporarySecurityQuestions);
+                    this.temporarySecurityQuestions.push({
+                        id,
+                        question: questions[i],
+                        questionLength: questions[i].length,
+                        answer: '',
+                        answerLength: 0
+                    });
+                }
+            }
+            // reading in questions after answers
+            else 
+            {
+                for (let i = 0; i < questions.length; i++)
+                {
+                    this.temporarySecurityQuestions[i].question = questions[i];
+                    this.temporarySecurityQuestions[i].questionLength = questions[i].length;
+                }
+
+                value.securityQuestions = this.temporarySecurityQuestions;
+                this.temporarySecurityQuestions = [];
+            }
+
+            return true;
+        }
+        else if (property.backingProperty == "securityQuestionAnswers")
+        {
+            const answers: string[] = property.delimiter ? cellValue.split(property.delimiter) : [cellValue];
+
+            // reading in answers first
+            if (this.temporarySecurityQuestions.length == 0)
+            {
+                for (let i = 0; i < answers.length; i++)
+                {
+                    const id = await generateUniqueID(this.temporarySecurityQuestions);
+                    this.temporarySecurityQuestions.push({
+                        id,
+                        question: '',
+                        questionLength: 0,
+                        answer: answers[i],
+                        answerLength: answers[i].length
+                    });
+                }
+            }
+            // reading in answers after questions
+            else 
+            {
+                for (let i = 0; i < answers.length; i++)
+                {
+                    this.temporarySecurityQuestions[i].answer = answers[i];
+                    this.temporarySecurityQuestions[i].answerLength = answers[i].length;
+                }
+
+                value.securityQuestions = this.temporarySecurityQuestions;
+                this.temporarySecurityQuestions = [];
+            }
+
+            return true;
+        }
+
         return false;
     }
 }
 
-class ValueCSVImporter extends CSVImporter<NameValuePair>
+export class ValueCSVImporter extends CSVImporter<NameValuePair>
 {
     constructor()
     {
@@ -443,12 +445,93 @@ class ValueCSVImporter extends CSVImporter<NameValuePair>
 
     protected async customSetProperty(value: NameValuePair, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
     {
-        if (property.backingProperty == "valueType" && cellValue)
+        if (property.backingProperty == "valueType")
         {
-            value.valueType = NameValuePairType[cellValue] ?? NameValuePairType.Other;
+            // @ts-ignore
+            value.valueType = nameValuePairTypesValues.includes(cellValue) ? cellValue : NameValuePairType.Other;
             return true;
         }
 
         return false;
     }
 }
+
+export const importablePasswordProperties: ImportableDisplayField[] = [
+    {
+        backingProperty: "login",
+        displayName: "Username",
+        required: true,
+    },
+    {
+        backingProperty: "password",
+        displayName: "Password",
+        required: true,
+    },
+    {
+        backingProperty: "passwordFor",
+        displayName: "Password For",
+        required: false,
+    },
+    {
+        backingProperty: "domain",
+        displayName: "Domain",
+        required: false,
+    },
+    {
+        backingProperty: "email",
+        displayName: "Email",
+        required: false,
+    },
+    {
+        backingProperty: "additionalInformation",
+        displayName: "Additional Info",
+        required: false,
+    },
+    {
+        backingProperty: "securityQuestionQuestions",
+        displayName: "Security Questions",
+        required: false,
+        requiresDelimiter: true
+    },
+    {
+        backingProperty: "securityQuestionAnswers",
+        displayName: "Security Answers",
+        required: false,
+        requiresDelimiter: true
+    },
+    {
+        backingProperty: "groups",
+        displayName: "Groups",
+        required: false,
+        requiresDelimiter: true
+    }
+];
+
+export const importableValueProperties: ImportableDisplayField[] = [
+    {
+        backingProperty: "name",
+        displayName: "Name",
+        required: true
+    },
+    {
+        backingProperty: "value",
+        displayName: "Value",
+        required: true
+    },
+    {
+        backingProperty: "valueType",
+        displayName: "Type",
+        required: false
+    },
+    {
+        backingProperty: "additionalInformation",
+        displayName: "Additional Info",
+        required: false
+    },
+    {
+        backingProperty: "groups",
+        displayName: "Groups",
+        required: false,
+        requiresDelimiter: true
+    }
+];

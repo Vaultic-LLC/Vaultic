@@ -1,6 +1,6 @@
 <template>
     <div>
-        <IconCard :icon="'construct-outline'" :text="'Workflows'" @click="showWorkflowPopup = true" />
+        <IconCard :icon="'build-outline'" :text="'Workflows'" @click="showWorkflowPopup = true" />
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="showWorkflowPopup" :closePopup="closePopup" :minWidth="'800px'" :minHeight="'480px'">

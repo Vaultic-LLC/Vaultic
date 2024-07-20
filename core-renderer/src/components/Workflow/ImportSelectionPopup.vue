@@ -1,8 +1,8 @@
 <template>
     <div class="importSelectionPopup">
-        <ObjectPopup :closePopup="onClose" :width="'50%'" :minWidth="'800px'" :minHeight="'480px'">
+        <ObjectPopup :closePopup="onClose" :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
             <ObjectView :color="color" :creating="false" :defaultSave="onConfirm" :gridDefinition="gridDefinition"
-                :buttonText="'Confirm'" :skipOnSaveFunctionality="true">
+                :buttonText="'Confirm'" :skipOnSaveFunctionality="true" :anchorButtonsDown="true">
                 <div class="importSelectionPopup__content">
                     <h2 class="importSelectionPopup__header">Select which columns map to each property</h2>
                     <ScrollView class="importSelectionPopup__sections" :color="color">
@@ -126,7 +126,7 @@ export default defineComponent({
     margin-right: auto;
     margin-top: 0;
     width: 90%;
-    height: 90%;
+    height: 80%;
     padding: 5px;
     display: flex;
     flex-direction: column;
@@ -139,7 +139,8 @@ export default defineComponent({
 }
 
 .importSelectionPopup__header {
-    margin-bottom: 50px;
+    margin-bottom: 2vw;
+    font-size: clamp(15px, 1vw, 25px);
 }
 
 .importSelectionPopup__pickers {

@@ -3,7 +3,7 @@
         <div class="objectViewContainer__form">
             <slot></slot>
         </div>
-        <div class="createButtons">
+        <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
             <PopupButton :color="color" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
                 :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" :fontSize="'1vw'"
                 :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSave" />
@@ -23,7 +23,7 @@ import { stores } from '../../Objects/Stores';
 
 export default defineComponent({
     name: "ObjectView",
-    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality'],
+    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 'anchorButtonsDown'],
     setup(props)
     {
         const primaryColor: ComputedRef<string> = computed(() => props.color);
@@ -184,5 +184,11 @@ export default defineComponent({
     align-items: center;
     justify-content: space-between;
     column-gap: 50px;
+}
+
+.objectViewContainer .createButtons.anchorDown {
+    margin: 0;
+    flex-grow: 1;
+    align-items: flex-end;
 }
 </style>

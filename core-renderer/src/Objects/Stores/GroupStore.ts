@@ -222,9 +222,14 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         const pendingState = this.cloneState();
 
         delete pendingState.groupsById[group.id];
-        pendingState.values.splice(pendingState.values.indexOf(group), 1);
+        const groupIndex = pendingState.values.findIndex(g => g.id == group.id);
+        if (groupIndex < 0)
+        {
+            return false;
+        }
 
-        // TODO: need to also remove groups from passwords / values and then re calc filters
+        pendingState.values.splice(groupIndex, 1);
+
         if (group.type == DataType.Passwords)
         {
             const pendingPasswordState = stores.passwordStore.removeSecondaryObjectFromValues(group.id, "groups");
