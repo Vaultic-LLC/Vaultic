@@ -27,6 +27,11 @@ function insecureHash(value: string)
 
 function compareHashes(a: string, b: string): boolean
 {
+	if (a.length != b.length)
+	{
+		return false;
+	}
+
 	const aBytes = Buffer.from(a, 'base64');
 	const bBytes = Buffer.from(b, 'base64');
 

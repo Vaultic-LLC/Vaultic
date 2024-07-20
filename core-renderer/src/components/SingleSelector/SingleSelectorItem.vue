@@ -20,7 +20,7 @@ import { tween } from '../../Helpers/TweenHelper';
 
 export default defineComponent({
     name: "SingleSelectorItem",
-    props: ["item", "isFirst", "isLast"],
+    props: ["item", "isFirst", "isLast", "width"],
     setup(props)
     {
         const key: Ref<string> = ref('');
@@ -90,7 +90,7 @@ export default defineComponent({
 
 <style>
 .tableSelectorButton {
-    width: 50%;
+    width: v-bind(width);
     display: flex;
     position: relative;
     overflow: hidden;

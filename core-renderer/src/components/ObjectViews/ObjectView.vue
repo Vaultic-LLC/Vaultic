@@ -3,7 +3,7 @@
         <div class="objectViewContainer__form">
             <slot></slot>
         </div>
-        <div class="createButtons">
+        <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
             <PopupButton :color="color" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
                 :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" :fontSize="'1vw'"
                 :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSave" />
@@ -23,11 +23,11 @@ import { stores } from '../../Objects/Stores';
 
 export default defineComponent({
     name: "ObjectView",
-    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition'],
+    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 'anchorButtonsDown'],
     setup(props)
     {
         const primaryColor: ComputedRef<string> = computed(() => props.color);
-        const buttonText: Ref<string> = ref(props.creating ? "Create" : "Save and Close");
+        const buttonText: Ref<string> = ref(props.buttonText ? props.buttonText : props.creating ? "Create" : "Save and Close");
         const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
         const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
         const disabled: Ref<boolean> = ref(false);
@@ -55,6 +55,11 @@ export default defineComponent({
             {
                 onSaveFunc.value().then(() =>
                 {
+                    if (props.skipOnSaveFunctionality)
+                    {
+                        return;
+                    }
+
                     if (!props.creating && closePopupFunction?.value)
                     {
                         closePopupFunction.value(true);
@@ -63,7 +68,7 @@ export default defineComponent({
                     stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
                 }).catch((triedSaved: boolean) =>
                 {
-                    if (triedSaved)
+                    if (triedSaved && !props.skipOnSaveFunctionality)
                     {
                         stores.popupStore.showToast(primaryColor.value, "Save Failed", false);
                     }
@@ -179,5 +184,11 @@ export default defineComponent({
     align-items: center;
     justify-content: space-between;
     column-gap: 50px;
+}
+
+.objectViewContainer .createButtons.anchorDown {
+    margin: 0;
+    flex-grow: 1;
+    align-items: flex-end;
 }
 </style>

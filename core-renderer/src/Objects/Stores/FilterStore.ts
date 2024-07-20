@@ -6,7 +6,6 @@ import { AtRiskType, DataFile, IFilterable, IGroupable, IIdentifiable, NameValue
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import { api } from "../../API"
-import { GroupStoreState } from "./GroupStore";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
@@ -178,7 +177,13 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
 
-        pendingState.values.splice(pendingState.values.indexOf(filter), 1);
+        const filterIndex = pendingState.values.findIndex(f => f.id == filter.id);
+        if (filterIndex < 0)
+        {
+            return false;
+        }
+
+        pendingState.values.splice(filterIndex, 1);
 
         if (filter.type == DataType.Passwords)
         {

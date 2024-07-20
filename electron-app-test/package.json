@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "copy-electron-app": "cd ../ && cd electron-app && npm run copy && cd ../ && cd electron-app-test && node ../copy.js src=../electron-app dest=./app",
-        "copy-test-files": "node ../copy.js src=../core-renderer/test/tests dest=./app/src/renderer/tests",
+        "copy-test-files": "cd ../core-renderer/test && npm run copy && cd ../../electron-app-test && node ../copy.js src=../core-renderer/test/tests dest=./app/src/renderer/tests",
         "copy-env": "node ../copy.js src=./src/app dest=./app",
         "copy-main-ts": "node ../copy.js src=./src/renderer dest=./app/src/renderer/src",
         "copy-index-ts": "node ../copy.js src=./src/main dest=./app/src/main",

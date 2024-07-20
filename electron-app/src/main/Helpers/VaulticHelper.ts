@@ -1,11 +1,14 @@
-import { dialog, ipcRenderer } from "electron";
+import { dialog } from "electron";
 import { writeFile } from "../Objects/Files/File";
 import axiosHelper from "../Core/Server/AxiosHelper";
 import { GetUserDeactivationKeyResponse } from "../Core/Types/Responses";
+import fs from "fs";
 
 export interface VaulticHelper
 {
 	downloadDeactivationKey: () => Promise<GetUserDeactivationKeyResponse>;
+	readCSV: () => Promise<[boolean, string]>;
+	writeCSV: (fileName: string, data: string) => Promise<boolean>;
 }
 
 async function selectDirectory()
@@ -52,9 +55,50 @@ export async function downloadDeactivationKey()
 	return response;
 }
 
+async function readCSV(): Promise<[boolean, string]>
+{
+	const { canceled, filePaths } = await dialog.showOpenDialog({
+		properties: ['openFile'],
+		filters: [{ name: 'csvs', extensions: ['csv'] }]
+	});
+
+	if (canceled)
+	{
+		return [false, ''];
+	}
+
+	return new Promise<[boolean, string]>((resolve) =>
+	{
+		fs.readFile(filePaths[0], { encoding: 'utf8' }, (err, data) =>
+		{
+			if (err != null)
+			{
+				resolve([true, '']);
+				return;
+			}
+
+			resolve([true, data]);
+		});
+	});
+}
+
+async function writeCSV(fileName: string, data: string): Promise<boolean>
+{
+	const filePath = await selectDirectory();
+	if (!filePath)
+	{
+		return false;
+	}
+
+	await writeFile(`${filePath}\\${fileName}.csv`, data);
+	return true;
+}
+
 const vaulticHelper: VaulticHelper =
 {
-	downloadDeactivationKey
+	downloadDeactivationKey,
+	readCSV,
+	writeCSV,
 }
 
 export default vaulticHelper;

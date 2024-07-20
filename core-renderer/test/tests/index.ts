@@ -1,4 +1,5 @@
 import { Test, TestResult, TestSuite } from "./test";
+import { stores } from "../src/core/Objects/Stores";
 
 import passwordStoreSuite from "./stores/passwordStore.test";
 import valueStoreSuite from "./stores/valueStore.test";
@@ -6,9 +7,12 @@ import filterStoreSuite from "./stores/filterStore.test";
 import groupStoreSuite from "./stores/groupStore.test";
 import transactionTestSuite from "./stores/transaction.test"
 
-import serverHelperTestSuite from "./helpers/serverHelper.test"
+import serverHelperTestSuite from "./helpers/serverHelper.test";
+import importExportHelperTestSuite from "./helpers/importExportHelper.test";
+import { AutoLockTime } from "../src/core/Types/Settings";
 
 const results: TestResult = new TestResult();
+const masterKey = "test";
 
 async function runTests(suite: TestSuite)
 {
@@ -19,8 +23,46 @@ async function runTests(suite: TestSuite)
     }
 }
 
+async function setup()
+{
+    // update the auto lock time so our store data doesn't get reset mid test run
+    const settingState = stores.settingsStore.getState();
+    settingState.autoLockTime = AutoLockTime.ThirtyMinutes;
+
+    await stores.settingsStore.update(masterKey, settingState);
+}
+
+async function cleanUp()
+{
+    for (let i = 0; i < stores.passwordStore.passwords.length; i++)
+    {
+        await stores.passwordStore.deletePassword(masterKey, stores.passwordStore.passwords[i]);
+    }
+
+    for (let i = 0; i < stores.valueStore.nameValuePairs.length; i++)
+    {
+        await stores.valueStore.deleteNameValuePair(masterKey, stores.valueStore.nameValuePairs[i]);
+    }
+
+    const filterState = stores.filterStore.getState();
+    for (let i = 0; i < filterState.values.length; i++)
+    {
+        await stores.filterStore.deleteFilter(masterKey, filterState.values[i]);
+    }
+
+    const groupState = stores.groupStore.getState();
+    for (let i = 0; i < groupState.values.length; i++)
+    {
+        await stores.groupStore.deleteGroup(masterKey, groupState.values[i]);
+    }
+}
+
 export default async function runAllTests()
 {
+    await cleanUp();
+    await setup();
+
+    await stores.appStore.setKey(masterKey);
     console.time();
 
     await runTests(passwordStoreSuite);
@@ -29,8 +71,11 @@ export default async function runAllTests()
     await runTests(filterStoreSuite);
     await runTests(transactionTestSuite);
     await runTests(serverHelperTestSuite);
+    await runTests(importExportHelperTestSuite);
 
     results.printStatus();
+
+    await cleanUp();
 }
 
 export async function runAllValueTests()
@@ -69,6 +114,14 @@ export async function runServerHelperTests()
 {
     console.time();
     await runTests(serverHelperTestSuite);
+
+    results.printStatus();
+}
+
+export async function runImportExportHelperTests()
+{
+    console.time();
+    await runTests(importExportHelperTestSuite);
 
     results.printStatus();
 }

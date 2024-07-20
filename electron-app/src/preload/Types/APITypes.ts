@@ -39,6 +39,8 @@ export interface ValidationHelper
 export interface VaulticHelper
 {
 	downloadDeactivationKey: () => Promise<GetUserDeactivationKeyResponse>;
+	readCSV: () => Promise<[boolean, string]>;
+	writeCSV: (fileName: string, data: string) => Promise<boolean>;
 }
 
 export interface ServerHelper

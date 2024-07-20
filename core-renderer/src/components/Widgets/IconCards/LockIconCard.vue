@@ -1,5 +1,7 @@
 <template>
-    <IconCard :icon="'lock-closed-outline'" :text="'Lock'" @click="lockApp" />
+    <div>
+        <IconCard :icon="'lock-closed-outline'" :text="'Lock'" @click="lockApp" />
+    </div>
 </template>
 
 <script lang="ts">

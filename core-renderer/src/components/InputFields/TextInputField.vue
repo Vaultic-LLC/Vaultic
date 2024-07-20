@@ -199,7 +199,8 @@ export default defineComponent({
 }
 
 .textInputFieldContainer .textInputFieldInput:focus,
-.textInputFieldContainer .textInputFieldInput:valid {
+.textInputFieldContainer .textInputFieldInput:valid,
+.textInputFieldContainer .textInputFieldInput:disabled {
     outline: none;
     border: 1.5px solid v-bind(color);
 }

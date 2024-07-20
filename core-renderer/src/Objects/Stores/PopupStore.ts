@@ -2,11 +2,13 @@ import { BaseResponse, IncorrectDeviceResponse } from "../../Types/SharedTypes";
 import { AccountSetupModel, AccountSetupView, ButtonModel } from "../../Types/Models";
 import { Ref, ref } from "vue";
 import { stores } from ".";
+import { GroupCSVHeader, ImportableDisplayField } from "../../Types/EncryptedData";
+import { Dictionary } from "../../Types/DataStructures";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
 type PopupName = "loading" | "alert" | "devicePopup" | "incorrectDevice" | "globalAuth" | "requestAuth" | "accountSetup" |
-    "breachedPasswords" | "toast";
+    "breachedPasswords" | "toast" | "importSelection" | "defaultObjectPopup";
 
 interface PopupInfo
 {
@@ -28,7 +30,9 @@ export const popups: Popups =
     "globalAuth": { zIndex: 100, enterOrder: 3 },
     "requestAuth": { zIndex: 90, enterOrder: 4 },
     "breachedPasswords": { zIndex: 50 },
-    "toast": { zIndex: 20 }
+    "toast": { zIndex: 20 },
+    "importSelection": { zIndex: 10 },
+    "defaultObjectPopup": { zIndex: 7 }
 }
 
 export default function createPopupStore()
@@ -72,6 +76,12 @@ export default function createPopupStore()
 
     const breachedPasswordIsShowing: Ref<boolean> = ref(false);
     const breachedPasswordID: Ref<string> = ref('');
+
+    const importPopupIsShowing: Ref<boolean> = ref(false);
+    const csvImportHeaders: Ref<string[]> = ref([]);
+    const importProperties: Ref<ImportableDisplayField[]> = ref([]);
+    const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: Dictionary<ImportableDisplayField[]>) => Promise<void>> =
+        ref(async (_, __) => { });
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -273,6 +283,24 @@ export default function createPopupStore()
         breachedPasswordIsShowing.value = false;
     }
 
+    function showImportPopup(clr: string, csvHdrs: string[], props: ImportableDisplayField[],
+        onConfirm: (masterKey: string, columnIndexToProperty: Dictionary<ImportableDisplayField[]>) => Promise<void>)
+    {
+        csvImportHeaders.value = csvHdrs;
+        color.value = clr;
+        importProperties.value = props;
+        onImportConfirmed.value = onConfirm;
+        importPopupIsShowing.value = true;
+    }
+
+    function hideImportPopup()
+    {
+        csvImportHeaders.value = [];
+        importProperties.value = [];
+        onImportConfirmed.value = async () => { };
+        importPopupIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -304,6 +332,10 @@ export default function createPopupStore()
         get toastSuccess() { return toastSuccess.value },
         get breachedPasswordIsShowing() { return breachedPasswordIsShowing.value },
         get breachedPasswordID() { return breachedPasswordID.value },
+        get importPopupIsShowing() { return importPopupIsShowing.value; },
+        get csvImportHeaders() { return csvImportHeaders.value; },
+        get importProperties() { return importProperties.value; },
+        get onImportConfirmed() { return onImportConfirmed.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -326,6 +358,8 @@ export default function createPopupStore()
         hideRequesetAuthentication,
         showToast,
         showBreachedPasswordPopup,
-        hideBreachedPasswordPopup
+        hideBreachedPasswordPopup,
+        showImportPopup,
+        hideImportPopup
     }
 }

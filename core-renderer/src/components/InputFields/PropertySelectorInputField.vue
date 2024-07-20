@@ -201,7 +201,7 @@ export default defineComponent({
 
     border: solid 1.5px #9e9e9e;
     border-radius: var(--responsive-border-radius);
-    background: none;
+    background-color: none;
     color: white;
     transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -267,22 +267,28 @@ export default defineComponent({
     display: none;
     color: white;
     font-size: clamp(11px, 1.2vh, 25px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 70%;
+    text-wrap: nowrap;
+    text-align: left;
 }
 
 .dropDownContainer .dropDownTitle .selectedItemText.hasValue {
     display: block;
     position: absolute;
     top: 30%;
-    left: 5%;
+    left: var(--input-label-left);
     transition: var(--input-label-transition);
 }
 
 .dropDownContainer .dropDownSelect {
-    width: 100%;
+    /* account for the increase in border size compared to .dropDownContainer */
+    width: calc(100% - 1px);
     position: absolute;
     left: 0;
     bottom: 0;
-    background: none;
+    background-color: v-bind(backgroundColor);
     font-size: clamp(11px, 1.2vh, 25px);
     color: white;
     transform: translate(-1.5px, 100%);
@@ -294,9 +300,10 @@ export default defineComponent({
 }
 
 .dropDownSelect.opened {
-    border-left: 1.5px solid v-bind(color);
-    border-right: 1.5px solid v-bind(color);
-    border-bottom: 1.5px solid v-bind(color);
+    /* increase the border so it overlaps any dropdowns below them entirely */
+    border-left: 2px solid v-bind(color);
+    border-right: 2px solid v-bind(color);
+    border-bottom: 2px solid v-bind(color);
     opacity: 1;
 }
 
