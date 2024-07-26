@@ -16,3 +16,8 @@ export interface HybridEncrypionResponse extends MethodResponse
 {
     key?: string;
 }
+
+export interface ECEncryptionResult extends MethodResponse
+{
+    publicKey: string;
+}

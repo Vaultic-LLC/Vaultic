@@ -1,13 +1,24 @@
-import { MethodResponse } from './MethodResponse';
+import { ECEncryptionResult, MethodResponse, PublicPrivateKey } from './MethodResponse';
 import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, FinishRegistrationResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, LogUserInResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from './Responses';
 
-export interface CryptUtility
+export interface CoreCryptUtility
+{
+    ECEncrypt: (recipientPublicKey: string, value: string) => Promise<ECEncryptionResult>;
+    ECDecrypt: (tempPublicKey: string, usersPrivateKey: string, value: string) => Promise<MethodResponse>;
+}
+
+export interface CryptUtility extends CoreCryptUtility
 {
     encrypt: (key: string, value: string) => Promise<MethodResponse>;
     decrypt: (key: string, value: string) => Promise<MethodResponse>;
 }
 
-export interface GeneratorUtility
+export interface CoreGeneratorUtility
+{
+    ECKeys: () => Promise<PublicPrivateKey>;
+}
+
+export interface GeneratorUtility extends CoreGeneratorUtility
 {
     uniqueId: () => Promise<string>;
     randomValue: (length: number) => Promise<string>;

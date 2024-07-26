@@ -2,6 +2,7 @@ import { randomBytes, generateKeyPairSync, KeyPairSyncResult } from "crypto"
 import validationHelper from '../Core/Helpers/ValidationHelper';
 import crypto from "crypto";
 import { GeneratorUtility, PublicPrivateKey } from "../Core/Types/Utilities";
+import coreGenerator from "../Core/Utilities/CoreGeneratorUtility";
 
 function uniqueId(): string
 {
@@ -77,6 +78,7 @@ function publicPrivateKey(): PublicPrivateKey
 
 const generatorUtility: GeneratorUtility =
 {
+	...coreGenerator,
 	uniqueId,
 	randomValue,
 	randomPassword,

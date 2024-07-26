@@ -1,5 +1,6 @@
 import { Test, TestResult, TestSuite } from "./test";
 import { stores } from "../src/core/Objects/Stores";
+import { AutoLockTime } from "../src/core/Types/Settings";
 
 import passwordStoreSuite from "./stores/passwordStore.test";
 import valueStoreSuite from "./stores/valueStore.test";
@@ -9,7 +10,8 @@ import transactionTestSuite from "./stores/transaction.test"
 
 import serverHelperTestSuite from "./helpers/serverHelper.test";
 import importExportHelperTestSuite from "./helpers/importExportHelper.test";
-import { AutoLockTime } from "../src/core/Types/Settings";
+
+import cryptUtilityTestSuite from "./utilities/cryptUtility.test";
 
 const results: TestResult = new TestResult();
 const masterKey = "test";
@@ -72,6 +74,7 @@ export default async function runAllTests()
     await runTests(transactionTestSuite);
     await runTests(serverHelperTestSuite);
     await runTests(importExportHelperTestSuite);
+    await runTests(cryptUtilityTestSuite);
 
     results.printStatus();
 
@@ -122,6 +125,14 @@ export async function runImportExportHelperTests()
 {
     console.time();
     await runTests(importExportHelperTestSuite);
+
+    results.printStatus();
+}
+
+export async function runCryptUtilityTests()
+{
+    console.time();
+    await runTests(cryptUtilityTestSuite);
 
     results.printStatus();
 }
