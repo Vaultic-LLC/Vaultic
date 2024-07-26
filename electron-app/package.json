@@ -35,6 +35,7 @@
 		"@esbuild-plugins/node-globals-polyfill": "^0.2.3",
 		"@esbuild-plugins/node-modules-polyfill": "^0.2.2",
 		"@melloware/coloris": "^0.24.0",
+		"@noble/curves": "^1.4.2",
 		"@popperjs/core": "^2.11.8",
 		"@serenity-kit/opaque": "^0.8.4",
 		"@tweenjs/tween.js": "^21.0.0",

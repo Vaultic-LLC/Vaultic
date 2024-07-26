@@ -40,7 +40,9 @@ const valueController: ValueController =
 const cryptUtility: CryptUtility =
 {
 	encrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:encrypt', key, value),
-	decrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:decrypt', key, value)
+	decrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:decrypt', key, value),
+	ECEncrypt: (recipientPublicKey: string, value: string) => ipcRenderer.invoke('cryptUtility:ECEncrypt', recipientPublicKey, value),
+	ECDecrypt: (tempPublicKey: string, userPrivateKey: string, value: string) => ipcRenderer.invoke('cryptUtility:ECDecrypt', tempPublicKey, userPrivateKey, value)
 };
 
 const hashUtility: HashUtility =
@@ -54,7 +56,8 @@ const generatorUtility: GeneratorUtility =
 {
 	uniqueId: () => ipcRenderer.invoke('generatorUtility:uniqueId'),
 	randomValue: (length: number) => ipcRenderer.invoke('generatorUtility:randomValue', length),
-	randomPassword: (length: number) => ipcRenderer.invoke('generatorUtility:randomPassword', length)
+	randomPassword: (length: number) => ipcRenderer.invoke('generatorUtility:randomPassword', length),
+	ECKeys: () => ipcRenderer.invoke('generatorUtility:ECKeys')
 };
 
 const validationHelper: ValidationHelper =

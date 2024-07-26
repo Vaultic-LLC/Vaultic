@@ -20,7 +20,7 @@ Coloris({
 	focusInput: true,
 	swatches: [
 		'#a712ec',
-		'#7752FE"',
+		'#7752FE',
 		'#03C4A1',
 		'#19A7CE',
 		'#3339ef',

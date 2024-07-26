@@ -9,7 +9,8 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
+        "@serenity-kit/opaque": "^0.8.4",
         "axios": "^1.6.7",
-        "@serenity-kit/opaque": "^0.8.4"
+        "@noble/curves": "^1.4.2"
     }
 }
