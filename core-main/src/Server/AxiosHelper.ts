@@ -11,6 +11,9 @@ const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
 let deviceInfo: DeviceInfo;
 let axiosInstance: AxiosInstance;
+
+// TODO: create cache and move these into there so that I can clear the cache when a user 
+// locks the app
 let responseKeys: PublicPrivateKey;
 
 // can't access environment before it has been initalized
@@ -135,7 +138,7 @@ class AxiosWrapper
     {
         let newData = data ?? {};
 
-        // GetChartData still sends data as strong through ipc
+        // For sending complex data throuch IPC
         try
         {
             if (typeof data === 'string')
@@ -228,6 +231,8 @@ class STSAxiosWrapper extends AxiosWrapper
 
 class APIAxiosWrapper extends AxiosWrapper
 {
+    // TODO: create cache and move these into there so that I can clear the cache when a user 
+    // locks the app
     private sessionKey: string | undefined;
     private exportKey: string | undefined;
 

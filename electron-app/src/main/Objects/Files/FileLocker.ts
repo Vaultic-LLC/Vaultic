@@ -1,5 +1,5 @@
-import child_process from 'child_process';
-import os from "os";
+import * as child_process from 'child_process';
+import * as os from "os";
 import { env } from 'process';
 
 export interface FileLocker

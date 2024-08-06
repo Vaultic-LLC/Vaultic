@@ -1,5 +1,5 @@
 import { electronAPI } from '@electron-toolkit/preload'
-import fs from "fs";
+import * as fs from 'fs';
 import { MethodResponse } from '../../Core/Types/MethodResponse';
 import { FileLocker, getFileLocker } from './FileLocker';
 import vaulticServer from '../../Core/Server/VaulticServer';
@@ -44,24 +44,24 @@ export function writeFile(fullPath: string, data: string): Promise<void>
 	});
 }
 
+export function checkMakeDirectory(directory: string): void
+{
+	if (!fs.existsSync(directory))
+	{
+		try
+		{
+			fs.mkdirSync(directory);
+		}
+		catch { }
+	}
+}
+
 export default function useFile(name: string): File
 {
 	const fileName = `${name}.json`;
 	const fullPath = getDirectory() + "\\" + fileName;;
 
 	const fileLocker: FileLocker = getFileLocker();
-
-	function checkMakeDataDirectory(): void
-	{
-		if (!fs.existsSync(getDirectory()))
-		{
-			try
-			{
-				fs.mkdirSync(getDirectory());
-			}
-			catch { }
-		}
-	}
 
 	async function fileExistsAndHasData(): Promise<boolean>
 	{
@@ -190,7 +190,7 @@ export default function useFile(name: string): File
 		return { success: data != "", value: data, logID: logID };
 	}
 
-	checkMakeDataDirectory();
+	checkMakeDirectory(getDirectory());
 
 	return {
 		exists,

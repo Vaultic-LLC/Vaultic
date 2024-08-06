@@ -137,6 +137,74 @@ export interface Environment
     isTest: () => Promise<boolean>;
 }
 
+interface User
+{
+    userID: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    userIdentifier: string;
+    masterKeyHash: string;
+    masterKeySalt: string;
+    privateKey: string;
+    userVaults: UserVault[];
+}
+
+interface UserVault
+{
+    userVaultID: number;
+    userID: number;
+    user: User;
+    vaultID: number;
+    vault: Vault;
+    vaultKey: string;
+}
+
+interface Vault
+{
+    vaultID: number;
+    userVaults: UserVault[];
+    vaultIdentifier: string;
+    name: string;
+    color: string;
+    appStoreState: string;
+    settingsStoreState: string;
+    passwordStoreState: string;
+    valueStoreState: string;
+    filterStoreState: string;
+    groupStoreState: string;
+    userPreferencesStoreState: string;
+}
+
+export interface DisplayVault 
+{
+    name: string;
+    identifier: string;
+    color: string;
+}
+
+export interface UserRepository 
+{
+    createUser: (masterKey: string, userIdentifier: string, email: string) => Promise<boolean | string>;
+    getCurrentUser: () => Promise<User | undefined>;
+    findByIdentifier: (userIdentifier: string) => Promise<User | null>;
+    setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
+    deleteUserAndVault: (masterKey: string, userIdentifier: string, vaultIdentifier: string) => Promise<boolean>;
+}
+
+export interface VaultRepository
+{
+    createNewVault: (name: string, color?: string) => Promise<Vault>;
+    getAllVaults: () => Promise<Vault[] | null>;
+    getAllDisplayVaults: () => Promise<DisplayVault[]>;
+}
+
+export interface Repositories
+{
+    users: UserRepository;
+    vaults: VaultRepository;
+}
+
 export interface IAPI
 {
     getDeviceInfo: () => Promise<DeviceInfo>;
@@ -145,4 +213,5 @@ export interface IAPI
     utilities: Utilities;
     helpers: Helpers;
     files: Files;
+    repositories: Repositories;
 }

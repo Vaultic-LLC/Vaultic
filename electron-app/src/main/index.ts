@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 import { app, shell, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -10,6 +12,7 @@ import hashUtility from './Utilities/HashUtility';
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
 import { initFiles } from './Objects/Files/Files';
+import { createDataSource } from './Objects/DataSource';
 
 function createWindow(): void
 {
@@ -141,7 +144,8 @@ function setupEnvironment(isTest: boolean)
 			hash: hashUtility,
 			generator: generatorUtility
 		},
-		getDeviceInfo
+		getDeviceInfo,
+		createDataSource
 	});
 
 	// must be called after environment is setup

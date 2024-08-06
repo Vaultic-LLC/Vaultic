@@ -13,6 +13,8 @@ async function registerUser(masterKey: string, email: string, firstName: string,
 {
     const { clientRegistrationState, registrationRequest } =
         opaque.client.startRegistration({
+            // TODO: should hash this so that even if the registration record is stolen, an attacker would 
+            // only be able to derive the hash and not the actual master key
             password: masterKey
         });
 
@@ -25,6 +27,8 @@ async function registerUser(masterKey: string, email: string, firstName: string,
     const { registrationRecord } = opaque.client.finishRegistration({
         clientRegistrationState,
         registrationResponse: startResponse.ServerRegistrationResponse!,
+        // TODO: should hash this so that even if the registration record is stolen, an attacker would 
+        // only be able to derive the hash and not the actual master key
         password: masterKey,
     });
 

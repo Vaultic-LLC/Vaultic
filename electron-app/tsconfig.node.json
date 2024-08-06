@@ -14,7 +14,8 @@
 		"src/main/Core/Helpers/*",
 		"src/main/Core/Server/*",
 		"src/main/Core/Types/*",
-		"src/main/Core/Utilities/*"
+		"src/main/Core/Utilities/*",
+		"src/main/Core/Database/Migrations/*"
 	],
 	"compilerOptions": {
 		"composite": true,
@@ -26,6 +27,9 @@
 		"rootDirs": [
 			"src",
 			"../common"
-		]
+		],
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"strictPropertyInitialization": false
 	}
 }

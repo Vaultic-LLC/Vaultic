@@ -1,6 +1,8 @@
+import { DataSource } from "typeorm";
 import axiosHelper from "./Server/AxiosHelper";
 import { DeviceInfo } from "./Types/Device";
 import { CryptUtility, GeneratorUtility, HashUtility } from "./Types/Utilities";
+import { initRepositories, VaulticRepositories } from "./Database/Repositories";
 
 export interface SessionHandler
 {
@@ -8,7 +10,7 @@ export interface SessionHandler
     getSession: () => Promise<string>;
 }
 
-export interface IEnvironment
+export interface InternalEnvironment
 {
     isTest: boolean;
     sessionHandler: SessionHandler;
@@ -19,28 +21,39 @@ export interface IEnvironment
         generator: GeneratorUtility;
     };
     getDeviceInfo: () => DeviceInfo;
+    createDataSource: (isTest: boolean) => DataSource;
 }
 
-let internalEnvironment: IEnvironment;
-class Environment implements IEnvironment
+class Environment
 {
-    get isTest() { return internalEnvironment.isTest; }
-    get sessionHandler() { return internalEnvironment.sessionHandler; }
-    get utilities() { return internalEnvironment.utilities; }
+    private internalEnvironment: InternalEnvironment;
+    private internalDatabaseDataSouce: DataSource;
+    private internalRepositories: VaulticRepositories;
+
+    get isTest() { return this.internalEnvironment.isTest; }
+    get sessionHandler() { return this.internalEnvironment.sessionHandler; }
+    get utilities() { return this.internalEnvironment.utilities; }
+    get databaseDataSouce() { return this.internalDatabaseDataSouce; }
+    get repositories() { return this.internalRepositories; }
 
     constructor()
     {
     }
 
-    init(environment: IEnvironment)
+    async init(environment: InternalEnvironment)
     {
-        internalEnvironment = environment;
+        this.internalEnvironment = environment;
         axiosHelper.init();
+
+        this.internalDatabaseDataSouce = environment.createDataSource(this.internalEnvironment.isTest);
+        await this.internalDatabaseDataSouce.initialize();
+
+        this.internalRepositories = initRepositories();
     }
 
     getDeviceInfo()
     {
-        return internalEnvironment.getDeviceInfo();
+        return this.internalEnvironment.getDeviceInfo();
     }
 }
 

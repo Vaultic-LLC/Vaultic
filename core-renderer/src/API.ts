@@ -1,14 +1,15 @@
 import { IAPI } from "./Types/APITypes"
 
-let internalAPI: IAPI;
-
 class API 
 {
-    get environment() { return internalAPI?.environment; }
-    get server() { return internalAPI?.server; }
-    get utilities() { return internalAPI?.utilities; }
-    get helpers() { return internalAPI?.helpers; }
-    get files() { return internalAPI?.files; }
+    private internalAPI: IAPI;
+
+    get environment() { return this.internalAPI?.environment; }
+    get server() { return this.internalAPI?.server; }
+    get utilities() { return this.internalAPI?.utilities; }
+    get helpers() { return this.internalAPI?.helpers; }
+    get files() { return this.internalAPI?.files; }
+    get repositories() { return this.internalAPI?.repositories; }
 
     constructor()
     {
@@ -16,12 +17,17 @@ class API
 
     setAPI(api: IAPI)
     {
-        internalAPI = api;
+        if (this.internalAPI != undefined)
+        {
+            return;
+        }
+
+        this.internalAPI = api;
     }
 
     getDeviceInfo()
     {
-        return internalAPI?.getDeviceInfo();
+        return this.internalAPI?.getDeviceInfo();
     }
 }
 

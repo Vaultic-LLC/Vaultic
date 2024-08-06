@@ -162,6 +162,7 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 
 export interface FinishRegistrationResponse extends BaseResponse
 {
+    UserIdentifier?: string;
     VaulticPassword?: any;
 }
 

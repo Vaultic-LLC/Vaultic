@@ -21,6 +21,9 @@
 		"rootDirs": [
 			"src",
 			"../common"
-		]
+		],
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"strictPropertyInitialization": false
 	}
 }

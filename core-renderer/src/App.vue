@@ -1,29 +1,29 @@
 <template>
-	<StatusBar />
-	<Popups />
-	<div id="mainUI" class="mainUI">
-		<div class="center">
-			<ColorPaletteContainer />
-			<Transition name="fade">
-				<BreachedPasswords v-if="isOnline" />
-			</Transition>
-			<div id="tables">
-				<FilterGroupTable />
-				<PasswordValueTable />
-			</div>
-		</div>
-		<PasswordValueGauges />
-		<FilterGroupGauges />
-		<Transition name="fade">
-			<div v-if="isOnline" class="tempWidget secureProgressChartWidget">
-				<PasswordStrengthProgressChart />
-			</div>
-		</Transition>
-		<div class="tempWidget loginHistoryCalendarWidget">
-			<LoginHistoryCalendar />
-		</div>
-		<MenuWidget />
-	</div>
+    <StatusBar />
+    <Popups />
+    <div id="mainUI" class="mainUI">
+        <div class="center">
+            <ColorPaletteContainer />
+            <Transition name="fade">
+                <BreachedPasswords v-if="isOnline" />
+            </Transition>
+            <div id="tables">
+                <FilterGroupTable />
+                <PasswordValueTable />
+            </div>
+        </div>
+        <PasswordValueGauges />
+        <FilterGroupGauges />
+        <Transition name="fade">
+            <div v-if="isOnline" class="tempWidget secureProgressChartWidget">
+                <PasswordStrengthProgressChart />
+            </div>
+        </Transition>
+        <div class="tempWidget loginHistoryCalendarWidget">
+            <LoginHistoryCalendar />
+        </div>
+        <MenuWidget />
+    </div>
 </template>
 
 <script lang="ts">
@@ -52,67 +52,67 @@ import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import { stores } from './Objects/Stores';
 
 export default defineComponent({
-	name: 'App',
-	components:
-	{
-		StatusBar,
-		Popups,
-		TableSelector,
-		FilterGroupTable,
-		PasswordValueTable,
-		ColorPaletteContainer,
-		BreachedPasswords,
-		PasswordValueGauges,
-		FilterGroupGauges,
-		PasswordStrengthProgressChart,
-		LoginHistoryCalendar,
-		SettingsIconCard,
-		LockIconCard,
-		AboutIconCard,
-		LayoutIconCard,
-		MenuWidget
-	},
-	setup()
-	{
-		const isOnline: ComputedRef<boolean> = computed(() => stores.appStore.isOnline);
-		const finishedMounting: Ref<boolean> = ref(false);
+    name: 'App',
+    components:
+    {
+        StatusBar,
+        Popups,
+        TableSelector,
+        FilterGroupTable,
+        PasswordValueTable,
+        ColorPaletteContainer,
+        BreachedPasswords,
+        PasswordValueGauges,
+        FilterGroupGauges,
+        PasswordStrengthProgressChart,
+        LoginHistoryCalendar,
+        SettingsIconCard,
+        LockIconCard,
+        AboutIconCard,
+        LayoutIconCard,
+        MenuWidget
+    },
+    setup()
+    {
+        const isOnline: ComputedRef<boolean> = computed(() => stores.appStore.isOnline);
+        const finishedMounting: Ref<boolean> = ref(false);
 
-		const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
-		let backgroundColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.backgroundColor);
-		//let backgroundClr: Ref<string> = ref('#0f111d');
+        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
+        let backgroundColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.backgroundColor);
+        //let backgroundClr: Ref<string> = ref('#0f111d');
 
-		const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.userPreferenceStore.currentPrimaryColor.value));
+        const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.userPreferenceStore.currentPrimaryColor.value));
 
-		let lastMouseover: number = 0;
-		const threshold: number = 1000;
+        let lastMouseover: number = 0;
+        const threshold: number = 1000;
 
-		onMounted(async () =>
-		{
-			document.getElementById('body')?.addEventListener('mouseover', (_) =>
-			{
-				if (Date.now() - lastMouseover < threshold)
-				{
-					return;
-				}
+        onMounted(async () =>
+        {
+            document.getElementById('body')?.addEventListener('mouseover', (_) =>
+            {
+                if (Date.now() - lastMouseover < threshold)
+                {
+                    return;
+                }
 
-				stores.appStore.resetSessionTime();
-				lastMouseover = Date.now();
-			});
+                stores.appStore.resetSessionTime();
+                lastMouseover = Date.now();
+            });
 
-			finishedMounting.value = true;
-			stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
-		});
+            finishedMounting.value = true;
+            stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
+        });
 
-		let clr = "#0f111d";
-		return {
-			backgroundColor,
-			currentColorPalette,
-			clr,
-			gradient,
-			finishedMounting,
-			isOnline
-		}
-	}
+        let clr = "#0f111d";
+        return {
+            backgroundColor,
+            currentColorPalette,
+            clr,
+            gradient,
+            finishedMounting,
+            isOnline
+        }
+    }
 });
 </script>
 
@@ -128,112 +128,112 @@ export default defineComponent({
 } */
 
 #app {
-	font-family: Avenir, Helvetica, Arial, sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	text-align: center;
-	color: var(--app-color);
-	min-width: 1140px;
-	min-height: 600px;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: var(--app-color);
+    min-width: 1140px;
+    min-height: 600px;
 }
 
 body {
-	font-family: Avenir, Helvetica, Arial, sans-serif !important;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	background-color: #0f111d;
-	overflow: hidden;
-	text-align: center;
+    font-family: Avenir, Helvetica, Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #0f111d;
+    overflow: hidden;
+    text-align: center;
 }
 
 h2,
 div {
-	user-select: none;
+    user-select: none;
 }
 
 h2 {
-	margin-top: min(5px, 10%);
-	margin-bottom: min(5px, 10%);
+    margin-top: min(5px, 10%);
+    margin-bottom: min(5px, 10%);
 }
 
 .tempWidget {
-	position: absolute;
+    position: absolute;
 }
 
 .tempWidget.background {
-	background: var(--widget-background-color);
-	border-radius: 20px;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	flex-direction: column;
-	row-gap: 25px;
+    background: var(--widget-background-color);
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    row-gap: 25px;
 }
 
 .secureProgressChartWidget {
-	top: 4%;
-	left: 58%;
-	width: 21%;
-	height: 24.7%;
-	min-height: 190px;
-	min-width: 250px;
+    top: 4%;
+    left: 58%;
+    width: 21%;
+    height: 24.7%;
+    min-height: 190px;
+    min-width: 250px;
 }
 
 .loginHistoryCalendarWidget {
-	top: 70.5%;
-	left: 81%;
-	width: 17%;
-	min-width: 240px;
-	min-height: 140px;
+    top: 70.5%;
+    left: 81%;
+    width: 17%;
+    min-width: 240px;
+    min-height: 140px;
 }
 
 @media (max-width: 1450px) {
-	.loginHistoryCalendarWidget {
-		width: 18%;
-	}
+    .loginHistoryCalendarWidget {
+        width: 18%;
+    }
 }
 
 @media (max-width: 1300px) {
-	.loginHistoryCalendarWidget {
-		left: max(890px, 78%);
-		width: 21.5%;
-	}
+    .loginHistoryCalendarWidget {
+        left: max(890px, 78%);
+        width: 21.5%;
+    }
 }
 
 @media (max-width: 1300px) {
-	.secureProgressChartWidget {
-		left: max(627px, 55%);
-	}
+    .secureProgressChartWidget {
+        left: max(627px, 55%);
+    }
 }
 
 @media (max-height: 750px) {
-	.loginHistoryCalendarWidget {
-		top: 73%;
-	}
+    .loginHistoryCalendarWidget {
+        top: 73%;
+    }
 }
 
 @media (max-height: 690px) {
-	.loginHistoryCalendarWidget {
-		top: 72%;
-	}
+    .loginHistoryCalendarWidget {
+        top: 72%;
+    }
 }
 
 @media (max-height: 650px) {
-	.secureProgressChartWidget {
-		top: max(12px, 2%);
-	}
+    .secureProgressChartWidget {
+        top: max(12px, 2%);
+    }
 
-	.loginHistoryCalendarWidget {
-		top: max(414px, 69%);
-	}
+    .loginHistoryCalendarWidget {
+        top: max(414px, 69%);
+    }
 }
 
 .tippy-box[data-theme~='material'] {
-	text-align: center;
+    text-align: center;
 }
 
 .tippy-box[data-theme~='material'][data-placement^='bottom-start']>.tippy-arrow {
-	left: 10px !important;
-	transform: translate(0, 0) !important;
+    left: 10px !important;
+    transform: translate(0, 0) !important;
 }
 </style>

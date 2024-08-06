@@ -112,28 +112,31 @@ export default defineComponent({
                 return;
             }
 
-            const data = {
-                FirstName: account.value.firstName,
-                LastName: account.value.lastName,
-                Email: account.value.email,
-                MasterKey: key.value,
-                ...stores.getStates(),
-            }
-
             stores.popupStore.showLoadingIndicator(props.color, "Creating Account");
             const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
                 account.value.lastName);
 
             if (response.Success)
             {
-                await stores.appStore.setKey(key.value);
-                await stores.passwordStore.addPassword(key.value, response.VaulticPassword, true);
+                // TODO: this should take the UserIdentifier returned from registerUser, that should come from the server to make
+                // sure that it is unique
+                const createUserResult = await api.repositories.users.createUser(key.value, response.UserIdentifier!, account.value.email);
+                if (!createUserResult)
+                {
+                    stores.popupStore.hideLoadingIndicator();
+                    showAlertMessage("Unable to create account, please try again. If the issue persists", "Unable to create account", true);
 
+                    return;
+                }
+
+                // TODO: Not needed anymore?
+                //await stores.passwordStore.addPassword(key.value, response.VaulticPassword, true);
                 stores.popupStore.showLoadingIndicator(props.color, "Signing In");
 
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email);
                 if (loginResponse.Success)
                 {
+                    // TODO: add created user data to server
                     stores.appStore.isOnline = true;
                     ctx.emit('onSuccess');
 
@@ -146,6 +149,7 @@ export default defineComponent({
             }
             else
             {
+                // TODO: Delete previously created user
                 stores.popupStore.hideLoadingIndicator();
                 if (response.EmailIsTaken)
                 {
