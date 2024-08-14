@@ -1,10 +1,15 @@
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, LoadDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
+import { User } from "../Database/Entities/User";
+import { UserVault } from "../Database/Entities/UserVault";
+import { Vault } from "../Database/Entities/Vault";
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, LoadDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface UserController
 {
     validateEmail(email: string): Promise<ValidateEmailResponse>;
+    getUserID: () => Promise<GetUserIDResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
+    backupData: (user?: User, userVault?: UserVault[], vault?: Vault[]) => Promise<BaseResponse>;
     backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     getUserData: () => Promise<LoadDataResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
@@ -25,6 +30,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
+    function getUserID(): Promise<GetUserIDResponse>
+    {
+        return axiosHelper.api.post("User/GetUserID");
+    }
+
     function deleteDevice(masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
     {
         return axiosHelper.api.post('User/DeleteDevice', {
@@ -37,6 +47,53 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
     function getDevices(): Promise<GetDevicesResponse>
     {
         return axiosHelper.api.post('User/GetDevices');
+    }
+
+    async function backupData(user?: User, userVault?: UserVault[], vault?: Vault[]): Promise<BaseResponse>
+    {
+        const postData = {};
+        if (user)
+        {
+            const encryptedUser = await axiosHelper.api.endToEndEncryptPostData(user);
+            if (!encryptedUser.success)
+            {
+                return { Success: false }
+            }
+
+            postData["user"] = encryptedUser.value!;
+        }
+
+        if (userVault)
+        {
+            postData["userVaults"] = [];
+            for (let i = 0; i < userVault.length; i++)
+            {
+                const encryptedUserVault = await axiosHelper.api.endToEndEncryptPostData(userVault[i]);
+                if (!encryptedUserVault.success)
+                {
+                    return { Success: false };
+                }
+
+                postData["userVaults"].push(encryptedUserVault.value);
+            }
+        }
+
+        if (vault)
+        {
+            postData["vaults"] = [];
+            for (let i = 0; i < vault.length; i++)
+            {
+                const encryptedVault = await axiosHelper.api.endToEndEncryptPostData(vault[i]);
+                if (!encryptedVault.success)
+                {
+                    return { Success: false };
+                }
+
+                postData["vaults"].push(encryptedVault.value);
+            }
+        }
+
+        return axiosHelper.api.post("User/BackupData", postData);
     }
 
     async function backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
@@ -106,8 +163,10 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     return {
         validateEmail,
+        getUserID,
         deleteDevice,
         getDevices,
+        backupData,
         backupStores,
         getUserData,
         createCheckout,

@@ -1,9 +1,9 @@
 import { BaseResponse, IncorrectDeviceResponse } from "../../Types/SharedTypes";
 import { AccountSetupModel, AccountSetupView, ButtonModel } from "../../Types/Models";
 import { Ref, ref } from "vue";
-import { stores } from ".";
-import { GroupCSVHeader, ImportableDisplayField } from "../../Types/EncryptedData";
+import { ImportableDisplayField } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
+import app from "./AppStore";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -35,7 +35,7 @@ export const popups: Popups =
     "defaultObjectPopup": { zIndex: 7 }
 }
 
-export default function createPopupStore()
+export function createPopupStore()
 {
     const onEnterHandlers: ({ (): void } | undefined)[] = [];
     const color: Ref<string> = ref('');
@@ -180,7 +180,7 @@ export default function createPopupStore()
 
     function showSessionExpired()
     {
-        stores.appStore.lock(false, false);
+        app.lock(false, false);
         showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'");
     }
 
@@ -237,7 +237,7 @@ export default function createPopupStore()
     {
         color.value = clr;
 
-        if (!(await stores.appStore.canAuthenticateKey()))
+        if (!(await app.canAuthenticateKey()))
         {
             return;
         }

@@ -56,11 +56,11 @@ import ButtonLink from "../InputFields/ButtonLink.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 
-import { stores } from '../../Objects/Stores';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { ValidationFunctionsKey } from '../../Types/Keys';
 import { InputComponent } from '../../Types/Components';
-import { api } from "../../API"
+import { api } from "../../API";
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "AccountInfoView",
@@ -72,7 +72,7 @@ export default defineComponent({
     },
     setup()
     {
-        const currentPrimaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const emailField: Ref<InputComponent | null> = ref(null);
         const deactivationField: Ref<InputComponent | null> = ref(null);
@@ -82,7 +82,7 @@ export default defineComponent({
         const disableButtons: Ref<boolean> = ref(false);
 
         const scrollbarColor: Ref<string> = ref('#0f111d');
-        const thumbColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const thumbColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         let validationFunctions: Ref<{ (): boolean; }[]> = ref([]);
         provide(ValidationFunctionsKey, validationFunctions);
@@ -105,10 +105,10 @@ export default defineComponent({
                 return;
             }
 
-            stores.popupStore.showLoadingIndicator(currentPrimaryColor.value, "Deactivating");
+            app.popups.showLoadingIndicator(currentPrimaryColor.value, "Deactivating");
             const response = await api.server.user.deactivateUserSubscription(email.value, deactivationKey.value);
 
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             disableButtons.value = false;
 
             if (!response.Success)
@@ -131,17 +131,17 @@ export default defineComponent({
 
             email.value = "";
             deactivationKey.value = "";
-            stores.popupStore.showToast(currentPrimaryColor.value, "Deactivated", true);
+            app.popups.showToast(currentPrimaryColor.value, "Deactivated", true);
         }
 
         async function downloadDeactivationKey()
         {
             disableButtons.value = true;
-            stores.popupStore.showLoadingIndicator(currentPrimaryColor.value, "Downloading");
+            app.popups.showLoadingIndicator(currentPrimaryColor.value, "Downloading");
 
             const result = await api.helpers.vaultic.downloadDeactivationKey();
 
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             disableButtons.value = false;
 
             if (!result.Success)

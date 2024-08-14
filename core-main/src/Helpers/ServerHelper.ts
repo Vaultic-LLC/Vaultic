@@ -62,6 +62,8 @@ async function logUserIn(masterKey: string, email: string): Promise<LogUserInRes
     const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
     let finishResponse = await stsServer.login.finish(startResponse.PendingUserToken!, finishLoginRequest);
+
+    // TODO: check backups and set current user
     if (finishResponse.Success)
     {
         await axiosHelper.api.setSessionInfoAndExportKey(finishResponse.Session?.Hash!, sessionKey, exportKey);

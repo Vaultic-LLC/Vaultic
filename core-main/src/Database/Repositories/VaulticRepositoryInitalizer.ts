@@ -33,9 +33,9 @@ export class VaulticRepositoryInitalizer<T extends VaulticEntity, U extends Repo
         return [true, this.repository];
     }
 
-    protected async signAndSave(masterKey: string, entity: T, userIdentifier: string): Promise<boolean>
+    protected async signAndSave(key: string, entity: T, userID: number): Promise<boolean>
     {
-        if (!(await entity.sign(masterKey, userIdentifier)))
+        if (!(await entity.sign(key, userID)))
         {
             return false;
         }
@@ -44,7 +44,7 @@ export class VaulticRepositoryInitalizer<T extends VaulticEntity, U extends Repo
         return true;
     }
 
-    protected async retrieveAndVerify(masterKey: string, userIdentifier: string, predicate: () => T): Promise<boolean>
+    protected async retrieveAndVerify(key: string, userID: number, predicate: () => T): Promise<boolean>
     {
         const entity = predicate();
         if (!entity)
@@ -52,6 +52,25 @@ export class VaulticRepositoryInitalizer<T extends VaulticEntity, U extends Repo
             return true;
         }
 
-        return await entity.verify(masterKey, userIdentifier);
+        return await entity.verify(key, userID);
+    }
+
+    protected async retrieveAndVerifyAll(key: string, userID: number, predicate: () => T[]): Promise<boolean>
+    {
+        const entities = predicate();
+        if (entities.length == 0)
+        {
+            return true;
+        }
+
+        for (let i = 0; i < entities.length; i++)
+        {
+            if (!(await entities[i].verify(key, userID)))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

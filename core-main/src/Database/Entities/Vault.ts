@@ -1,45 +1,56 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from "typeorm"
+import { Entity, PrimaryColumn, Column, ManyToOne } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
 
 @Entity({ name: "vaults" })
 export class Vault extends VaulticEntity
 {
-    @PrimaryGeneratedColumn("increment", { type: "integer" })
+    // Matches Server
+    @PrimaryColumn("integer")
     vaultID: number
 
     @ManyToOne(() => UserVault, (uv: UserVault) => uv.vault)
     userVaults: UserVault[];
 
-    @Column("text")
-    vaultIdentifier: string
-
+    // Backed Up
+    // Encrypted by Vault Key
     @Column("text")
     name: string
 
+    // Backed Up
+    // Encrypted by Vault Key
     @Column("text")
     color: string
 
-    @Column("text")
-    appStoreState: string
+    // Not backed up
+    // Not encrypted
+    @Column("boolean")
+    lastUsed: boolean;
 
+    // Backed Up
+    // Encrypted by Vault Key
     @Column("text")
-    settingsStoreState: string
+    vaultStoreState: string
 
+    // Backed Up
+    // Encrypted by Vault Key
     @Column("text")
     passwordStoreState: string
 
+    // Backed Up
+    // Encrypted by Vault Key
     @Column("text")
     valueStoreState: string
 
+    // Backed Up
+    // Encrypted by Vault Key
     @Column("text")
     filterStoreState: string
 
+    // Backed Up
+    // Encrypted by Vault Key
     @Column("text")
     groupStoreState: string
-
-    @Column("text")
-    userPreferencesStoreState: string
 
     protected getSignatureMakeup(): any
     {
@@ -47,11 +58,9 @@ export class Vault extends VaulticEntity
         return {
             signatureSecret: this.signatureSecret,
             vaultID: this.vaultID,
-            vaultIdentifier: this.vaultIdentifier,
             name: this.name,
             color: this.color,
-            appStoreState: this.appStoreState,
-            settingsStoreState: this.settingsStoreState,
+            vaultStoreState: this.vaultStoreState,
             passwordStoreState: this.passwordStoreState,
             valueStoreState: this.valueStoreState,
             filterStoreState: this.filterStoreState,
@@ -61,8 +70,20 @@ export class Vault extends VaulticEntity
 
     async lock(key: string): Promise<boolean>
     {
-        return this.encryptAndSetEach(key, ["vaultIdentifier", "name", "color",
-            "appStoreState", "settingsStoreState", "passwordStoreState", "valueStoreState", "filterStoreState",
-            "groupStoreState"])
+        return this.encryptAndSetEach(key, ["name", "color", "vaultStoreState", "passwordStoreState",
+            "valueStoreState", "filterStoreState", "groupStoreState"])
+    }
+
+    protected internalGetBackup() 
+    {
+        return {
+            name: this.name,
+            color: this.color,
+            vaultStoreState: this.vaultStoreState,
+            passwordStoreState: this.passwordStoreState,
+            valueStoreState: this.valueStoreState,
+            filterStoreState: this.filterStoreState,
+            groupStoreState: this.groupStoreState,
+        }
     }
 }

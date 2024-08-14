@@ -1,11 +1,13 @@
 import { environment } from "../../Environment";
 import { User } from "../Entities/User";
 import { UserRepository } from "../../Types/Repositories";
-import { UserVault } from "../Entities/UserVault";
 import { VaulticRepositoryInitalizer } from "./VaulticRepositoryInitalizer";
 import { Repository } from "typeorm";
 import Transaction from "../Transaction";
+import vaulticServer from "../../Server/VaulticServer";
+import cryptHelper from "../../../../core-renderer/src/Helpers/cryptHelper";
 
+// TODO: move to cache
 let currentUser: User | undefined;
 
 class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRepository>
@@ -22,12 +24,17 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
             getCurrentUser: this.getCurrentUser,
             setCurrentUser: this.setCurrentUser,
             findByIdentifier: this.findByIdentifier,
-            deleteUserAndVault: this.deleteUserAndVault
         }
     }
 
-    protected async createUser(masterKey: string, userIdentifier: string, email: string): Promise<boolean | string>
+    protected async createUser(masterKey: string, email: string): Promise<boolean | string>
     {
+        const response = await vaulticServer.user.getUserID();
+        if (!response.Success)
+        {
+            return false;
+        }
+
         const vaultKey = environment.utilities.generator.randomValue(60);
         const keys = await environment.utilities.generator.ECKeys();
 
@@ -35,12 +42,15 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
         const hash = await environment.utilities.hash.hash(masterKey, salt);
 
         const user = new User();
-        user.userIdentifier = userIdentifier;
+        user.userID = response.UserID!;
         user.email = email;
+        user.lastUsed = true;
         user.masterKeyHash = hash;
         user.masterKeySalt = salt;
         user.publicKey = keys.public;
         user.privateKey = keys.private;
+        user.appStoreState = "{}";
+        user.userPreferencesStoreState = "{}";
 
         if (!user.lock(masterKey))
         {
@@ -53,15 +63,16 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
             return false;
         }
 
-        const vault = await environment.repositories.vaults.createNewVault("Personal");
-        if (!vault.lock(vaultKey))
+        const vaults = await environment.repositories.vaults.createNewVault("Personal");
+        if (!vaults)
         {
             return false;
         }
 
-        const userVault = new UserVault();
+        const userVault = vaults[0];
+        const vault = vaults[1];
+
         userVault.user = user;
-        userVault.vault = vault;
         userVault.vaultKey = JSON.stringify({
             vaultKey: encryptedVaultKey.value!,
             publicKey: encryptedVaultKey.publicKey
@@ -74,47 +85,30 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
             return false;
         }
 
+        if (!vault.lock(vaultKey))
+        {
+            return false;
+        }
+
         const transaction = new Transaction();
         transaction.saveEntity(user, masterKey, () => this.repository);
         transaction.saveEntity(userVault, masterKey, () => environment.repositories.userVaults);
         transaction.saveEntity(vault, vaultKey, () => environment.repositories.vaults);
 
-        const succeeded = await transaction.commit(user.userIdentifier);
+        const succeeded = await transaction.commit(user.userID);
         if (!succeeded)
         {
             return false;
         }
 
-        const { userVaults, ...tempUser } = user;
-        const { user: u, vault: v, ...tempUserVault } = userVault;
-        const { userVaults: uvs, ...tempVault } = vault;
-
-        return JSON.stringify({
-            user: tempUser,
-            userVault: tempUserVault,
-            vault: tempVault
-        });
-    }
-
-    protected async deleteUserAndVault(masterKey: string, userIdentifier: string, vaultIdentifier: string): Promise<boolean>
-    {
-        const user = await this.getUserAndVaultByIdentifiers(userIdentifier, vaultIdentifier);
-        if (!user)
+        const backupResponse = await vaulticServer.user.backupData(user.getBackup(), [userVault.getBackup()], [vault.getBackup()]);
+        if (!backupResponse.Success)
         {
             return false;
         }
 
-        if (!(await this.verifyMasterKey(user, masterKey)))
-        {
-            return false;
-        }
-
-        const transaction = new Transaction();
-        transaction.deleteEntity(user.userVaults[0], () => environment.repositories.userVaults);
-        transaction.deleteEntity(user.userVaults[0].vault, () => environment.repositories.vaults);
-        transaction.deleteEntity(user, () => this.repository);
-
-        return transaction.commit(userIdentifier);
+        currentUser = user;
+        return true;
     }
 
     // when logging in for the first time as a user that already exists
@@ -161,6 +155,11 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
             return false;
         }
 
+        if (!(await user.verify(masterKey, user.userID)))
+        {
+            return false;
+        }
+
         if (!(await this.verifyMasterKey(user, masterKey)))
         {
             return false;
@@ -170,14 +169,74 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
         return true;
     }
 
-    protected async getUserAndVaultByIdentifiers(userIdentifier: string, vaultIdentifier: string): Promise<User | null>
+    protected async getLastUsedUserEmail(): Promise<string | null>
     {
-        return this.repository.createQueryBuilder("users")
-            .innerJoinAndSelect("users.userVaults", "userVaults")
-            .innerJoinAndSelect("userVaults.vault", "vaults")
-            .where("users.userIdentifier = :userIdentifier", { userIdentifier })
-            .andWhere("vaults.vaultIdentifier = :vaultIdentifier", { vaultIdentifier })
-            .getOne();
+        const lastUsedUser = await this.repository.findOneBy({
+            lastUsed: true
+        });
+
+        return lastUsedUser?.email ?? null;
+    }
+
+    protected async getLastUsedUserPreferences(): Promise<string | null>
+    {
+        const lastUsedUser = await this.repository.findOneBy({
+            lastUsed: true
+        });
+
+        return lastUsedUser?.userPreferencesStoreState ?? null;
+    }
+
+    protected async getCurrentUserData(masterKey: string, response: any): Promise<any>
+    {
+        if (!currentUser)
+        {
+            return null;
+        }
+
+        const userData = {
+            appStoreState: currentUser.appStoreState,
+            displayVaults: [],
+            currentVault: undefined
+        };
+
+        const vaults = await environment.repositories.vaults.getVaults(masterKey, ["userID", "lastUsed"],
+            ["name", "color", "appStoreState", "settingsStoreState", "passwordStoreState",
+                "valueStoreState", "filterStoreState", "groupStoreState", "userPreferencesStoreState"]);
+
+        if (vaults[0].length == 0)
+        {
+            return false;
+        }
+
+        for (let i = 0; i < vaults[0].length; i++)
+        {
+            if (vaults[0][i].lastUsed)
+            {
+                const userVault = await environment.repositories.userVaults.getByVaultID(vaults[0][i].vaultID!);
+                // @ts-ignore
+                userData.currentVault = { ...vaults[0][i], vaultPreferencesStoreState: userVault?.vaultPreferencesStoreState };
+            }
+            else 
+            {
+                // @ts-ignore
+                userData.displayVaults.push({
+                    id: vaults[0][i].vaultID,
+                    color: vaults[0][i].color,
+                    name: vaults[0][i].name
+                });
+            }
+        }
+
+        if (!userData.currentVault)
+        {
+            const userVault = await environment.repositories.userVaults.getByVaultID(userData.currentVault[0].vaultID);
+            userData.currentVault = { ...userData.currentVault[0], vaultPreferencesStoreState: userVault?.vaultPreferencesStoreState };
+            userData.displayVaults.splice(0, 1);
+        }
+
+        userData['success'] = true;
+        return userData;
     }
 }
 

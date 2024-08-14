@@ -18,6 +18,13 @@ export interface IGroupable
     groups: string[];
 }
 
+export interface StoreStateProperty<T>
+{
+    value: T;
+    lastModifiedTime: number;
+    displayComponent?: string;
+}
+
 export interface DisplayField
 {
     backingProperty: string;

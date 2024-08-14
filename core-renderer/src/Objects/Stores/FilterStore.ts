@@ -1,12 +1,11 @@
 import { Filter, DataType, Group, FilterConditionType, PrimaryDataObjectCollection } from "../../Types/Table";
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { stores } from ".";
 import { Dictionary } from "../../Types/DataStructures";
 import { AtRiskType, DataFile, IFilterable, IGroupable, IIdentifiable, NameValuePair, Password } from "../../Types/EncryptedData";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import { api } from "../../API"
-import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
 {
@@ -16,64 +15,11 @@ export interface FilterStoreState extends DataTypeStoreState<Filter>
     duplicateValueFilters: Dictionary<string[]>;
 }
 
-class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
+export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 {
-    private internalPasswordFilters: ComputedRef<Filter[]>;
-    private internalActivePasswordFilters: ComputedRef<Filter[]>;
-
-    private internalNameValuePairFilters: ComputedRef<Filter[]>;
-    private internalActiveNameValuePairFilters: ComputedRef<Filter[]>;
-
-    private internalDuplicatePasswordFiltersLength: ComputedRef<number>;
-    private internalDuplicateValueFiltersLength: ComputedRef<number>;
-
-    private internalActiveAtRiskPasswordFilterType: Ref<AtRiskType>;
-    private internalActiveAtRiskValueFilterType: Ref<AtRiskType>;
-
-    private internalPinnedPasswordFilters: ComputedRef<Filter[]>;
-    private internalUnpinnedPasswordFilters: ComputedRef<Filter[]>;
-
-    private internalPinnedValueFilters: ComputedRef<Filter[]>;
-    private internalUnpinnedValueFilters: ComputedRef<Filter[]>;
-
-    get passwordFilters() { return this.internalPasswordFilters.value; }
-    get activePasswordFilters() { return this.internalActivePasswordFilters.value; }
-    get nameValuePairFilters() { return this.internalNameValuePairFilters.value; }
-    get activeNameValuePairFilters() { return this.internalActiveNameValuePairFilters.value; }
-    get activeAtRiskPasswordFilterType() { return this.internalActiveAtRiskPasswordFilterType.value; }
-    get activeAtRiskValueFilterType() { return this.internalActiveAtRiskValueFilterType.value; }
-    get emptyPasswordFilters() { return this.state.emptyPasswordFilters; }
-    get emptyValueFilters() { return this.state.emptyValueFilters; }
-    get duplicatePasswordFilters() { return this.state.duplicatePasswordFilters; }
-    get duplicatePasswordFiltersLength() { return this.internalDuplicatePasswordFiltersLength.value; }
-    get duplicateValueFilters() { return this.state.duplicateValueFilters; }
-    get duplicateValueFiltersLength() { return this.internalDuplicateValueFiltersLength.value; }
-    get pinnedPasswordFilters() { return this.internalPinnedPasswordFilters.value; }
-    get unpinnedPasswordFilters() { return this.internalUnpinnedPasswordFilters.value; }
-    get pinnedValueFilters() { return this.internalPinnedValueFilters.value; }
-    get unpinnedValueFitlers() { return this.internalUnpinnedValueFilters.value; }
-
-    constructor()
+    constructor(vault: any, state: any)
     {
-        super("FilterStoreState");
-
-        this.internalPasswordFilters = computed(() => this.state.values.filter(f => f.type == DataType.Passwords));
-        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.isActive) ?? []);
-
-        this.internalNameValuePairFilters = computed(() => this.state.values.filter(f => f.type == DataType.NameValuePairs));
-        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.isActive) ?? []);
-
-        this.internalDuplicatePasswordFiltersLength = computed(() => Object.keys(this.state.duplicatePasswordFilters).length);
-        this.internalDuplicateValueFiltersLength = computed(() => Object.keys(this.state.duplicateValueFilters).length);
-
-        this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
-        this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);
-
-        this.internalPinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
-        this.internalUnpinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => !stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
-
-        this.internalPinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
-        this.internalUnpinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => !stores.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+        super(vault, state, "filterStoreState");
     }
 
     protected defaultState()
@@ -95,16 +41,6 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         return api.files.filter;
     }
 
-    protected getPasswordAtRiskType(): Ref<AtRiskType>
-    {
-        return this.internalActiveAtRiskPasswordFilterType;
-    }
-
-    protected getValueAtRiskType(): Ref<AtRiskType>
-    {
-        return this.internalActiveAtRiskValueFilterType;
-    }
-
     toggleFilter(id: string): boolean | undefined
     {
         const filterIndex: number = this.state.values.findIndex(f => f.id == id);
@@ -119,7 +55,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     async addFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction();
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
         const pendingState = this.cloneState();
 
         filter.id = await generateUniqueID(pendingState.values);
@@ -128,23 +64,23 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         if (filter.type == DataType.Passwords)
         {
             // don't need to create a pending group store since the groups aren't actually being changed
-            const pendingPasswordState = this.syncSpecificFiltersForPasswords([filter], stores.groupStore.passwordGroups, pendingState);
-            transaction.addStore(stores.passwordStore, pendingPasswordState);
+            const pendingPasswordState = this.syncSpecificFiltersForPasswords([filter], this.vault.groupStore.passwordGroups, pendingState);
+            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
         }
         else
         {
             // don't need to create a pending group store since the groups aren't actually being changed
-            const pendingValueState = this.syncSpecificFiltersForValues([filter], stores.groupStore.valuesGroups, pendingState);
-            transaction.addStore(stores.valueStore, pendingValueState);
+            const pendingValueState = this.syncSpecificFiltersForValues([filter], this.vault.groupStore.valuesGroups, pendingState);
+            transaction.addStore(this.vault.valueStore, pendingValueState);
         }
 
         transaction.addStore(this, pendingState);
-        return await this.commitAndBackup(masterKey, transaction);
+        return await transaction.commit(masterKey);
     }
 
     async updateFilter(masterKey: string, updatedFilter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction();
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
         const pendingState = this.cloneState();
 
         let filter: Filter[] = pendingState.values.filter(f => f.id == updatedFilter.id);
@@ -159,22 +95,22 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         Object.assign(pendingState.values.filter(f => f.id == updatedFilter.id)[0], updatedFilter);
         if (updatedFilter.type == DataType.Passwords)
         {
-            const pendingPasswordState = this.syncSpecificFiltersForPasswords([updatedFilter], stores.groupStore.passwordGroups, pendingState);
-            transaction.addStore(stores.passwordStore, pendingPasswordState);
+            const pendingPasswordState = this.syncSpecificFiltersForPasswords([updatedFilter], this.vault.groupStore.passwordGroups, pendingState);
+            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
         }
         else if (updatedFilter.type == DataType.NameValuePairs)
         {
-            const pendingValueState = this.syncSpecificFiltersForValues([updatedFilter], stores.groupStore.valuesGroups, pendingState);
-            transaction.addStore(stores.valueStore, pendingValueState);
+            const pendingValueState = this.syncSpecificFiltersForValues([updatedFilter], this.vault.groupStore.valuesGroups, pendingState);
+            transaction.addStore(this.vault.valueStore, pendingValueState);
         }
 
         transaction.addStore(this, pendingState);
-        return await this.commitAndBackup(masterKey, transaction);
+        return await transaction.commit(masterKey);
     }
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction();
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
         const pendingState = this.cloneState();
 
         const filterIndex = pendingState.values.findIndex(f => f.id == filter.id);
@@ -187,31 +123,31 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
         if (filter.type == DataType.Passwords)
         {
-            const pendingPasswordState = stores.passwordStore.removeSecondaryObjectFromValues(filter.id, "filters");
+            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(filter.id, "filters");
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, pendingState.emptyPasswordFilters);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, pendingState.duplicatePasswordFilters);
 
-            transaction.addStore(stores.passwordStore, pendingPasswordState);
+            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
         }
         else if (filter.type == DataType.NameValuePairs)
         {
-            const pendingValueState = stores.valueStore.removeSecondaryObjectFromValues(filter.id, "filters");
+            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(filter.id, "filters");
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, pendingState.emptyValueFilters);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, pendingState.duplicateValueFilters);
 
-            transaction.addStore(stores.valueStore, pendingValueState);
+            transaction.addStore(this.vault.valueStore, pendingValueState);
         }
 
         transaction.addStore(this, pendingState);
-        return await this.commitAndBackup(masterKey, transaction);
+        return await transaction.commit(masterKey);
     }
 
     // called internally when adding / updating a filter to sync passwords
     private syncSpecificFiltersForPasswords(filtersToSync: Filter[], allGroups: Group[], pendingState: FilterStoreState)
     {
-        const pendingPasswordState = stores.passwordStore.cloneState();
+        const pendingPasswordState = this.vault.passwordStore.cloneState();
 
         this.syncFiltersForPrimaryDataObject(filtersToSync, pendingPasswordState.values, "passwords", pendingState.emptyPasswordFilters,
             pendingState.duplicatePasswordFilters, pendingState.values.filter(f => f.type == DataType.Passwords), allGroups);
@@ -222,7 +158,7 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
     // called internally when adding / updating a filter to sync passwords
     private syncSpecificFiltersForValues(filtersToSync: Filter[], allGroups: Group[], pendingState: FilterStoreState)
     {
-        const pendingValueState = stores.valueStore.cloneState();
+        const pendingValueState = this.vault.valueStore.cloneState();
 
         this.syncFiltersForPrimaryDataObject(filtersToSync, pendingValueState.values, "values", pendingState.emptyValueFilters,
             pendingState.duplicateValueFilters, pendingState.values.filter(f => f.type == DataType.NameValuePairs), allGroups);
@@ -398,7 +334,73 @@ class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
     }
 }
 
-const filterStore = new FilterStore();
-export default filterStore;
+export class ReactiveFilterStore extends FilterStore 
+{
+    private internalPasswordFilters: ComputedRef<Filter[]>;
+    private internalActivePasswordFilters: ComputedRef<Filter[]>;
 
-export type FilterStoreType = typeof filterStore;
+    private internalNameValuePairFilters: ComputedRef<Filter[]>;
+    private internalActiveNameValuePairFilters: ComputedRef<Filter[]>;
+
+    private internalDuplicatePasswordFiltersLength: ComputedRef<number>;
+    private internalDuplicateValueFiltersLength: ComputedRef<number>;
+
+    private internalActiveAtRiskPasswordFilterType: Ref<AtRiskType>;
+    private internalActiveAtRiskValueFilterType: Ref<AtRiskType>;
+
+    private internalPinnedPasswordFilters: ComputedRef<Filter[]>;
+    private internalUnpinnedPasswordFilters: ComputedRef<Filter[]>;
+
+    private internalPinnedValueFilters: ComputedRef<Filter[]>;
+    private internalUnpinnedValueFilters: ComputedRef<Filter[]>;
+
+    get passwordFilters() { return this.internalPasswordFilters.value; }
+    get activePasswordFilters() { return this.internalActivePasswordFilters.value; }
+    get nameValuePairFilters() { return this.internalNameValuePairFilters.value; }
+    get activeNameValuePairFilters() { return this.internalActiveNameValuePairFilters.value; }
+    get activeAtRiskPasswordFilterType() { return this.internalActiveAtRiskPasswordFilterType.value; }
+    get activeAtRiskValueFilterType() { return this.internalActiveAtRiskValueFilterType.value; }
+    get emptyPasswordFilters() { return this.state.emptyPasswordFilters; }
+    get emptyValueFilters() { return this.state.emptyValueFilters; }
+    get duplicatePasswordFilters() { return this.state.duplicatePasswordFilters; }
+    get duplicatePasswordFiltersLength() { return this.internalDuplicatePasswordFiltersLength.value; }
+    get duplicateValueFilters() { return this.state.duplicateValueFilters; }
+    get duplicateValueFiltersLength() { return this.internalDuplicateValueFiltersLength.value; }
+    get pinnedPasswordFilters() { return this.internalPinnedPasswordFilters.value; }
+    get unpinnedPasswordFilters() { return this.internalUnpinnedPasswordFilters.value; }
+    get pinnedValueFilters() { return this.internalPinnedValueFilters.value; }
+    get unpinnedValueFitlers() { return this.internalUnpinnedValueFilters.value; }
+
+    constructor(vault: any, state: any)
+    {
+        super(vault, state);
+
+        this.internalPasswordFilters = computed(() => this.state.values.filter(f => f.type == DataType.Passwords));
+        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.isActive) ?? []);
+
+        this.internalNameValuePairFilters = computed(() => this.state.values.filter(f => f.type == DataType.NameValuePairs));
+        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.isActive) ?? []);
+
+        this.internalDuplicatePasswordFiltersLength = computed(() => Object.keys(this.state.duplicatePasswordFilters).length);
+        this.internalDuplicateValueFiltersLength = computed(() => Object.keys(this.state.duplicateValueFilters).length);
+
+        this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
+        this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);
+
+        this.internalPinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+        this.internalUnpinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => !this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+
+        this.internalPinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+        this.internalUnpinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => !this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+    }
+
+    protected getPasswordAtRiskType(): Ref<AtRiskType>
+    {
+        return this.internalActiveAtRiskPasswordFilterType;
+    }
+
+    protected getValueAtRiskType(): Ref<AtRiskType>
+    {
+        return this.internalActiveAtRiskValueFilterType;
+    }
+}

@@ -71,7 +71,7 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { EncryptedInputFieldComponent, InputComponent } from '../../Types/Components';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { Password } from '../../Types/EncryptedData';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
@@ -110,168 +110,148 @@ export default defineComponent({
             ctx.emit('onMoveToCreateAccount');
         }
 
+        // TODO: should only show this after the user has signed up 
+        // otherwise the user, userVault, and vault won't be created
+        // Instead just show a toggle for online / offline? Something simplier
+        // than than going to a new popup
         async function moveToLimitedMode()
         {
-            if (await stores.appStore.canAuthenticateKey())
+            if (await app.canAuthenticateKey())
             {
-                stores.popupStore.showGlobalAuthentication(props.color, true);
+                app.popups.showGlobalAuthentication(props.color, true);
             }
 
             ctx.emit('onMoveToLimitedMode');
         }
 
-        async function didFailedAutoLogin()
-        {
-            stores.popupStore.showAlert("Unable to auto log in", "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it, or crate a new account.", false);
-            refreshKey.value = Date.now().toString();
-            await new Promise((resolve) => setTimeout(resolve, 300));
+        // async function didFailedAutoLogin()
+        // {
+        //     app.popups.showAlert("Unable to auto log in", "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it, or crate a new account.", false);
+        //     refreshKey.value = Date.now().toString();
+        //     await new Promise((resolve) => setTimeout(resolve, 300));
 
-            stores.popupStore.hideLoadingIndicator();
-            showEmailField.value = true;
-        }
+        //     app.popups.hideLoadingIndicator();
+        //     showEmailField.value = true;
+        // }
 
         async function onSubmit()
         {
             masterKeyField.value?.toggleHidden(true);
-            stores.popupStore.showLoadingIndicator(props.color, "Signing In");
+            app.popups.showLoadingIndicator(props.color, "Signing In");
 
-            if (!showEmailField.value)
+            const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
+            if (response.Success)
             {
-                if (!(await stores.appStore.canAuthenticateKey()))
-                {
-                    didFailedAutoLogin();
-                    return;
-                }
-                else
-                {
-                    const validKey = await stores.appStore.authenticateKey(masterKey.value);
-                    if (!validKey)
-                    {
-                        stores.popupStore.hideLoadingIndicator();
-                        masterKeyField.value?.invalidate("Master Key is incorrect");
-                        resetToDefault();
-
-                        return;
-                    }
-
-                    await stores.passwordStore.readState(masterKey.value);
-                    if (!stores.passwordStore.hasVaulticPassword)
-                    {
-                        didFailedAutoLogin();
-                        resetToDefault();
-
-                        return;
-                    }
-
-                    const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
-                    const response = await api.helpers.server.logUserIn(masterKey.value, password.email);
-
-                    if (response.Success)
-                    {
-                        stores.appStore.isOnline = true;
-                        await stores.loadStoreData(masterKey.value, response);
-                        await stores.appStore.recordLogin(masterKey.value, Date.now());
-
-                        ctx.emit('onKeySuccess');
-                    }
-                    else
-                    {
-                        handleFailedResponse(response);
-                    }
-                }
+                // TODO: this is the only time we know that the master key is correct besides
+                // when creating the account. Should check to make sure that the masterKey hash
+                // is set / make sure it wasn't tampered with
+                app.isOnline = true;
+                //await stores.loadStoreData(masterKey.value, response);
+                await app.loadUserData(masterKey.value, response);
+                ctx.emit('onKeySuccess');
             }
             else
             {
-                const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
-                if (response.Success)
-                {
-                    stores.appStore.isOnline = true;
-                    await checkOverrideUserData(response);
-
-                    ctx.emit('onKeySuccess');
-                }
-                else
-                {
-                    handleFailedResponse(response);
-                }
+                handleFailedResponse(response);
             }
-        }
 
-        async function checkOverrideUserData(response: any)
-        {
-            if (!(await stores.appStore.canAuthenticateKey()))
-            {
-                // TODO: What if the user only lost the appFile? We wouldn't want to override 
-                // other stores then. Unless its a new user, then we would.
-                // Also, what if its a new user and there is only some files? 
-                // Seems like I need to add a way to group / identify files
-                // Could just add an identifier to the files that matches across all 
-                // of them per user per vault? This part would be a lot easier with sqlLite and a db.
-                // Maybe thats what I should use sqlLite for. Not for the state, but just to replicate the 
-                // UserData table on the server. Basically each file is just a column in the db. Could then add a
-                // 'vaults' table to group the states under
-                // This also doesn't call stores.loadStoreData, so if there aren't any backups, no data at all will get loaded.
-                // Is that an issue?
+            // TOOD: remove
+            // if (!showEmailField.value)
+            // {
+            //     if (!(await stores.appStore.canAuthenticateKey()))
+            //     {
+            //         didFailedAutoLogin();
+            //         return;
+            //     }
+            //     else
+            //     {
+            //         const validKey = await stores.appStore.authenticateKey(masterKey.value);
+            //         if (!validKey)
+            //         {
+            //             app.popups.hideLoadingIndicator();
+            //             masterKeyField.value?.invalidate("Master Key is incorrect");
+            //             resetToDefault();
 
-                // user lost data files, force override all data
-                await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
-            }
-            else
-            {
-                const validKey = await stores.appStore.authenticateKey(masterKey.value);
-                if (!validKey)
-                {
-                    // new user, force override all data
-                    await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
-                }
-                else
-                {
-                    // same user, probably just lost passwords file somehow
-                    await stores.checkUpdateStoresWithBackup(masterKey.value, response);
-                }
-            }
+            //             return;
+            //         }
+
+            //         await stores.passwordStore.readState(masterKey.value);
+            //         if (!stores.passwordStore.hasVaulticPassword)
+            //         {
+            //             didFailedAutoLogin();
+            //             resetToDefault();
+
+            //             return;
+            //         }
+
+            //         const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
+            //         const response = await api.helpers.server.logUserIn(masterKey.value, password.email);
+
+            //         if (response.Success)
+            //         {
+            //             // TODO: this is the only time we know that the master key is correct besides
+            //             // when creating the account. Should check to make sure that the masterKey hash
+            //             // is set / make sure it wasn't tampered with
+            //             stores.appStore.isOnline = true;
+            //             await stores.loadStoreData(masterKey.value, response);
+            //             await stores.appStore.recordLogin(masterKey.value, Date.now());
+
+            //             ctx.emit('onKeySuccess');
+            //         }
+            //         else
+            //         {
+            //             handleFailedResponse(response);
+            //         }
+            //     }
+            // }
+            // else
+            // {
+            //     const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
+            //     if (response.Success)
+            //     {
+            //         stores.appStore.isOnline = true;
+            //         await checkOverrideUserData(response);
+
+            //         ctx.emit('onKeySuccess');
+            //     }
+            //     else
+            //     {
+            //         handleFailedResponse(response);
+            //     }
+            // }
         }
 
         function handleFailedResponse(response: any)
         {
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
+            // TODO: not possible any more?
             if (response.InvalidMasterKey)
             {
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
 
                 masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
-                resetToDefault();
             }
             else if (response.UnknownEmail)
             {
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
 
                 if (!showEmailField.value)
                 {
                     showEmailField.value = true;
-                    stores.popupStore.showAlert("Unable to auto sign in", "The Email for your Vaultic account stored on your computer is incorrect. Please enter it manually in order to log in and update it locally.", false);
+                    app.popups.showAlert("Unable to sign in", "The Email you entered is not correct. Please try again", false);
                 }
 
                 emailField.value?.invalidate("Incorrect Email. Please try again");
-                resetToDefault();
             }
             else if (response.RestartOpaqueProtocol)
             {
-                stores.popupStore.hideLoadingIndicator();
-                stores.popupStore.showAlert("Unable to sign in", "Please check your Email and Master Key, and try again", false);
-
-                resetToDefault();
+                app.popups.hideLoadingIndicator();
+                app.popups.showAlert("Unable to sign in", "Please check your Email and Master Key, and try again", false);
             }
             else
             {
                 defaultHandleFailedResponse(response);
             }
-        }
-
-        async function resetToDefault()
-        {
-            stores.appStore.resetToDefault();
-            stores.passwordStore.resetToDefault();
         }
 
         function navigateLeft()
@@ -323,9 +303,21 @@ export default defineComponent({
 
         onMounted(() =>
         {
+            // TODO: can remove
+            showEmailField.value = true;
+
+            api.repositories.users.getLastUsedUserEmail().then((lastUsedEmail) =>
+            {
+                if (lastUsedEmail)
+                {
+                    email.value = lastUsedEmail;
+                    // TODO: set user profile pic
+                }
+            });
+
             if (props.infoMessage)
             {
-                stores.popupStore.showAlert("Alert", props.infoMessage, false);
+                app.popups.showAlert("Alert", props.infoMessage, false);
             }
 
             const body = document.getElementById('body');

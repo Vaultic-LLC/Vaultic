@@ -6,7 +6,7 @@ import { api } from "./core/API"
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
-import { stores } from './core/Objects/Stores';
+import app from './core/Objects/Stores/AppStore';
 
 api.setAPI(window.api);
 
@@ -52,7 +52,7 @@ window.addEventListener('unhandledrejection', (e) =>
 });
 
 // read userpreferences before any UI elements for themeing
-stores.userPreferenceStore.readState('').then(initApp).catch(initApp);
+app.userPreferences.loadLastUsersPreferences().then(initApp).catch(initApp);
 
 function initApp()
 {

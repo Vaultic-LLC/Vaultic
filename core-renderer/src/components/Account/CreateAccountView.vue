@@ -30,7 +30,7 @@ import AccountSetupView from './AccountSetupView.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { InputComponent } from '../../Types/Components';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 
@@ -60,9 +60,9 @@ export default defineComponent({
 
         async function createAccount()
         {
-            stores.popupStore.showLoadingIndicator(props.color, 'Loading');
+            app.popups.showLoadingIndicator(props.color, 'Loading');
             const response = await api.server.user.validateEmail(email.value);
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
 
             if (response.Success)
             {

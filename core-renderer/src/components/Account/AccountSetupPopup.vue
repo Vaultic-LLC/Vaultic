@@ -42,9 +42,9 @@ import DownloadDeactivationKeyView from "./DownloadDeactivationKeyView.vue"
 
 import { AccountSetupModel, AccountSetupView } from '../../Types/Models';
 import { Account } from '../../Types/SharedTypes';
-import { stores } from '../../Objects/Stores';
 import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey } from '../../Types/Keys';
 import { popups } from '../../Objects/Stores/PopupStore';
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "AccountSetupPopup",
@@ -64,7 +64,7 @@ export default defineComponent({
         const objectPopup: Ref<null> = ref(null);
         const popupInfo = popups.accountSetup;
 
-        const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const accountSetupModel: Ref<AccountSetupModel> = ref(props.model);
         const navigationStack: Ref<AccountSetupView[]> = ref([]);
         const disableBack: Ref<boolean> = ref(false);
@@ -155,13 +155,13 @@ export default defineComponent({
 
         async function closeWithAnimation()
         {
-            stores.popupStore.showGlobalAuthWithLockIcon(primaryColor.value);
+            app.popups.showGlobalAuthWithLockIcon(primaryColor.value);
 
             ctx.emit('onClose');
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            stores.popupStore.hideLoadingIndicator();
-            stores.popupStore.playUnlockAnimation();
+            app.popups.hideLoadingIndicator();
+            app.popups.playUnlockAnimation();
         }
 
         function close()

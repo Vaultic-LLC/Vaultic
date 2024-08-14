@@ -44,7 +44,7 @@ export default class Transaction
         });
     }
 
-    commit(userIdentifier: string): Promise<boolean>
+    commit(userID: number): Promise<boolean>
     {
         return new Promise((resolve) =>
         {
@@ -58,7 +58,7 @@ export default class Transaction
 
                     if (pendingEntity.operation == Operation.Save)
                     {
-                        if (!repo.signAndSave(pendingEntity.signingKey!, this.pendingEntities[i].entity, userIdentifier))
+                        if (!repo.signAndSave(pendingEntity.signingKey!, this.pendingEntities[i].entity, userID))
                         {
                             succeeded = false;
                             break;

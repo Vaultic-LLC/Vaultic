@@ -15,6 +15,19 @@ class UserVaultRepositoryInitalizer extends VaulticRepositoryInitalizer<UserVaul
     {
     }
 
+    protected async getByVaultID(vaultID: number): Promise<UserVault | null>
+    {
+        const currentUser = environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return null;
+        }
+
+        return this.repository.findOneBy({
+            userID: currentUser.userID,
+            vaultID: vaultID
+        });
+    }
 }
 
 const userVaultaultRepositoryInitalizer: UserVaultRepositoryInitalizer = new UserVaultRepositoryInitalizer();

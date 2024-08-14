@@ -162,7 +162,7 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 
 export interface FinishRegistrationResponse extends BaseResponse
 {
-    UserIdentifier?: string;
+    // TODO: not needed?
     VaulticPassword?: any;
 }
 
@@ -176,3 +176,14 @@ export interface FinishLoginResponse extends LoadDataResponse, OpaqueResponse, C
 }
 
 export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse { }
+
+export interface CreateVaultResponse extends BaseResponse
+{
+    UserVaultID?: number;
+    VaultID?: number;
+}
+
+export interface GetUserIDResponse extends BaseResponse
+{
+    UserID?: number;
+}

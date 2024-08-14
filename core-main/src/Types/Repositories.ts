@@ -6,33 +6,34 @@ import { UserVault } from "../Database/Entities/UserVault";
 
 export interface VaulticRepository<T extends ObjectLiteral & VaulticEntity> extends Repository<T>
 {
-    signAndSave: (masterKey: string, entity: T, userIdentifier: string) => Promise<boolean>;
-    retrieveAndVerify: (masterKey: string, userIdentifier: string, predicate: () => T) => Promise<boolean>;
+    signAndSave: (masterKey: string, entity: T, userID: number) => Promise<boolean>;
+    retrieveAndVerify: (masterKey: string, userID: number, predicate: () => T) => Promise<boolean>;
 }
 
 export interface UserRepository extends VaulticRepository<User>
 {
+    getLastUsedUserEmail: () => Promise<string | null>;
     createUser: (masterKey: string, userIdentifier: string, email: string) => Promise<boolean | string>;
     getCurrentUser: () => User | undefined;
     findByIdentifier: (userIdentifier: string) => Promise<User | null>;
     setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
-    deleteUserAndVault: (masterKey: string, userIdentifier: string, vaultIdentifier: string) => Promise<boolean>;
 }
 
 export interface VaultRepository extends VaulticRepository<Vault>
 {
-    createNewVault: (name: string, color?: string) => Promise<Vault>;
-    getAllVaults: () => Promise<Vault[] | null>;
-    getAllDisplayVaults: () => Promise<DisplayVault[]>;
+    createNewVault: (name: string, color?: string) => Promise<boolean | [UserVault, Vault]>;
+    getVaults: (masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number) => Promise<[Partial<Vault>[], string[]]>;
 }
 
 export interface UserVaultRepository extends VaulticRepository<UserVault>
 {
+    getByVaultID: (vaultID: number) => Promise<UserVault | null>;
 }
 
 export interface DisplayVault 
 {
     name: string;
-    identifier: string;
+    id: number;
     color: string;
+    lastUsed: boolean;
 }

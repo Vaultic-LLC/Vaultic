@@ -179,13 +179,14 @@ interface Vault
 export interface DisplayVault 
 {
     name: string;
-    identifier: string;
+    id: number;
     color: string;
+    lastUsed: boolean;
 }
 
 export interface UserRepository 
 {
-    createUser: (masterKey: string, userIdentifier: string, email: string) => Promise<boolean | string>;
+    createUser: (masterKey: string, email: string) => Promise<boolean | string>;
     getCurrentUser: () => Promise<User | undefined>;
     findByIdentifier: (userIdentifier: string) => Promise<User | null>;
     setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;

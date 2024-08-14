@@ -1,29 +1,55 @@
-import { Ref, ref, watch } from "vue";
-import { DataType } from "../../Types/Table"
-import { Stores, stores } from ".";
-import { Dictionary } from "../../Types/DataStructures";
+import { Ref, ref, ComputedRef, computed } from "vue";
+import { DataType, FilterStatus } from "../../Types/Table"
 import { hideAll } from 'tippy.js';
-import { Store, StoreState } from "./Base";
-import { DataFile } from "../../Types/EncryptedData";
+import { Store } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
-import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import { ColorPalette, colorPalettes } from "../../Types/Colors";
+import { AutoLockTime } from "../../Types/Settings";
+import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
+import { DisplayVault } from "../../Types/APITypes";
+import { UserPreferencesStore } from "./UserPreferencesStore";
+import { UserDataBreachStore } from "./UserDataBreachStore";
+import { createPopupStore, PopupStore } from "./PopupStore";
 
-export interface AppStoreState extends StoreState
+interface AppSettings 
 {
-    masterKeyHash: string;
-    masterKeySalt: string;
-    loginHistory: Dictionary<number[]>;
+    readonly rowChunkAmount: number;
+    colorPalettes: ColorPalette[];
+    autoLockTime: AutoLockTime;
+    randomValueLength: number;
+    randomPhraseLength: number;
+    multipleFilterBehavior: FilterStatus;
+    oldPasswordDays: number;
+    percentMetricForPulse: number;
+    defaultMarkdownInEditScreens: boolean;
 }
 
-class AppStore extends Store<AppStoreState>
+export interface AppStoreState
 {
+    settings: AppSettings;
+}
+
+export class AppStore extends Store<AppStoreState>
+{
+    private loadedUser: boolean;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
 
     private internalActivePasswordValueTable: Ref<DataType> = ref(DataType.Passwords);
     private internalActiveFilterGroupTable: Ref<DataType> = ref(DataType.Filters);
 
+    private internalAutoLockNumberTime: ComputedRef<number>;
+
     private internalIsOnline: Ref<boolean>;
+
+    private internalUserVaults: DisplayVault[];
+    private internalSharedVaults: BasicVaultStore[];
+    private internalCurrentVault: ReactiveVaultStore;
+
+    private internalUsersPreferencesStore: UserPreferencesStore;
+    private internalUserDataBreachStore: UserDataBreachStore;
+    private internalPopupStore: PopupStore;
 
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
@@ -31,15 +57,26 @@ class AppStore extends Store<AppStoreState>
     set activePasswordValuesTable(value: DataType) { this.internalActivePasswordValueTable.value = value; }
     get activeFilterGroupsTable() { return this.internalActiveFilterGroupTable.value; }
     set activeFilterGroupsTable(value: DataType) { this.internalActiveFilterGroupTable.value = value; }
-    get loginHistory() { return this.state.loginHistory; }
+    get currentVault() { return this.internalCurrentVault; }
+    get userPreferences() { return this.internalUsersPreferencesStore; }
+    get userDataBreaches() { return this.internalUserDataBreachStore; }
+    get popups() { return this.internalPopupStore; }
 
     constructor()
     {
-        super("AppStoreState");
+        super({} as AppStoreState, "appStoreState");
+        this.state = this.defaultState();
+
+        this.loadedUser = false;
+        this.internalUsersPreferencesStore = new UserPreferencesStore(this);
+        this.internalUserDataBreachStore = new UserDataBreachStore();
+        this.internalPopupStore = createPopupStore();
 
         this.internalIsOnline = ref(false);
         this.internalActivePasswordValueTable = ref(DataType.Passwords);
         this.internalActiveFilterGroupTable = ref(DataType.Filters);
+
+        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.autoLockTime));
     }
 
     protected defaultState()
@@ -52,15 +89,34 @@ class AppStore extends Store<AppStoreState>
             isOnline: false,
             userDataVersion: 0,
             loginHistory: {},
+            settings: {
+                rowChunkAmount: 10,
+                colorPalettes: colorPalettes,
+                autoLockTime: AutoLockTime.OneMinute,
+                randomValueLength: 25,
+                randomPhraseLength: 7,
+                multipleFilterBehavior: FilterStatus.Or,
+                oldPasswordDays: 30,
+                percentMetricForPulse: 1,
+                defaultMarkdownInEditScreens: true
+            }
         };
     }
 
-    public init(stores: Stores)
+    private calcAutolockTime(time: AutoLockTime): number
     {
-        watch(() => stores.settingsStore.autoLockTime, () =>
+        switch (time)
         {
-            this.resetSessionTime();
-        });
+            case AutoLockTime.FiveMinutes:
+                return 1000 * 60 * 5;
+            case AutoLockTime.FifteenMinutes:
+                return 1000 * 60 * 15;
+            case AutoLockTime.ThirtyMinutes:
+                return 1000 * 60 * 30;
+            case AutoLockTime.OneMinute:
+            default:
+                return 1000 * 60;
+        }
     }
 
     public resetToDefault()
@@ -68,81 +124,12 @@ class AppStore extends Store<AppStoreState>
         super.resetToDefault();
     }
 
-    public getFile(): DataFile
-    {
-        return api.files.app;
-    }
-
-    public async readState(key: string)
-    {
-        if (await super.readState(key))
-        {
-            this.checkRemoveOldLoginRecords(key);
-            return true;
-        }
-
-        return false;
-    }
-
     private async update(masterKey: string, state: AppStoreState): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction();
+        const transaction = new StoreUpdateTransaction(Entity.User);
         transaction.addStore(this, state);
 
-        return this.commitAndBackup(masterKey, transaction);
-    }
-
-    private async checkRemoveOldLoginRecords(masterKey: string)
-    {
-        let removedLogin: boolean = false;
-        const daysToStoreLoginsAsMiliseconds: number = stores.settingsStore.numberOfDaysToStoreLoginRecords * 24 * 60 * 60 * 1000;
-
-        const pendingState = this.cloneState();
-        Object.keys(pendingState.loginHistory).forEach((s) =>
-        {
-            const date: number = Date.parse(s);
-            if (date - Date.now() > daysToStoreLoginsAsMiliseconds)
-            {
-                removedLogin = true;
-                delete pendingState.loginHistory[s];
-            }
-        });
-
-        if (removedLogin)
-        {
-            await this.update(masterKey, pendingState);
-        }
-    }
-
-    public async setKey(masterKey: string)
-    {
-        if (!this.state.masterKeyHash)
-        {
-            const pendingState = this.cloneState();
-            const salt = await api.utilities.generator.randomValue(30);
-
-            pendingState.masterKeyHash = await api.utilities.hash.hash(masterKey, salt);
-            pendingState.masterKeySalt = salt;
-
-            // TODO: Should check the result of this in the account setup view
-            await this.update(masterKey, pendingState);
-        }
-    }
-
-    public canAuthenticateKey(): Promise<boolean>
-    {
-        return this.getFile().exists();
-    }
-
-    public async authenticateKey(key: string): Promise<boolean>
-    {
-        if (!this.loadedFile && !(await this.readState(key)))
-        {
-            return false;
-        }
-
-        const computedHash = await api.utilities.hash.hash(key, this.state.masterKeySalt);
-        return await api.utilities.hash.compareHashes(this.state.masterKeyHash, computedHash);
+        return transaction.commit(masterKey);
     }
 
     public lock(redirect: boolean = true, expireSession: boolean = true)
@@ -151,7 +138,7 @@ class AppStore extends Store<AppStoreState>
 
         if (redirect)
         {
-            stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
+            this.internalPopupStore.showAccountSetup(AccountSetupView.SignIn);
         }
 
         if (expireSession && this.isOnline === true)
@@ -159,8 +146,15 @@ class AppStore extends Store<AppStoreState>
             api.server.session.expire();
         }
 
+        this.currentVault.passwordStore.resetToDefault();
+        this.currentVault.valueStore.resetToDefault();
+        this.currentVault.filterStore.resetToDefault();
+        this.currentVault.groupStore.resetToDefault();
+        this.currentVault.vaultPreferencesStore.resetToDefault();
+        this.internalUserDataBreachStore.resetToDefault();
+
         this.isOnline = false;
-        stores.resetStoresToDefault();
+        this.loadedUser = false;
     }
 
     public resetSessionTime()
@@ -169,34 +163,70 @@ class AppStore extends Store<AppStoreState>
         this.autoLockTimeoutID = setTimeout(() =>
         {
             this.lock();
-        }, stores.settingsStore.autoLockNumberTime);
+        }, this.internalAutoLockNumberTime.value);
     }
 
-    public async recordLogin(masterKey: string, dateTime: number): Promise<void>
+    // TODO: resposne should contain all vaults from server to check if any local ones are out of date. It should also contain 
+    // shared vaults to set in the store only but not save locally
+    public async loadUserData(masterKey: string, response?: any)
     {
-        const pendingStte = this.cloneState();
-
-        const dateObj: Date = new Date(dateTime);
-        const loginHistoryKey: string = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
-
-        if (!pendingStte.loginHistory[loginHistoryKey])
+        if (this.loadedUser)
         {
-            pendingStte.loginHistory[loginHistoryKey] = [dateTime];
-        }
-        else if (pendingStte.loginHistory[loginHistoryKey].length < stores.settingsStore.loginRecordsToStorePerDay)
-        {
-            pendingStte.loginHistory[loginHistoryKey].unshift(dateTime);
-        }
-        else
-        {
-            pendingStte.loginHistory[loginHistoryKey].pop();
-            pendingStte.loginHistory[loginHistoryKey].unshift(dateTime);
+            return;
         }
 
-        this.update(masterKey, pendingStte);
+        const userData = await api.repositories.users.loadCurrentUserData(masterKey, response);
+        if (!userData.success)
+        {
+            return false;
+        }
+
+        this.state = JSON.parse(userData.appStoreState);
+        this.internalUserVaults = JSON.parse(userData.displayVaults);
+        this.internalSharedVaults = JSON.parse(response.SharedVaults);
+        this.internalCurrentVault = new ReactiveVaultStore(masterKey, JSON.parse(userData.currentVault));
+        this.internalUsersPreferencesStore.updateState(JSON.parse(userData.usersPreferencesStoreState));
+        this.loadedUser = true;
+    }
+
+    async loadVault(masterKey: string, vaultID: number)
+    {
+        const vault = await api.repositories.vaults.getVault(masterKey, vaultID);
+        if (!vault)
+        {
+            // TODO: handle
+        }
+
+        // TODO: will this break reactivity? might just need to replace the state on each store
+        this.internalCurrentVault = new ReactiveVaultStore(masterKey, vault);
+    }
+
+    public shareToVault<T>(value: T, toVault: number)
+    {
+
+    }
+
+    public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
+    {
+        const transaction = new StoreUpdateTransaction(Entity.User);
+        const pendingState = this.cloneState();
+
+        const oldColorPalette: ColorPalette[] = pendingState.settings.colorPalettes.filter(cp => cp.id == colorPalette.id);
+        if (oldColorPalette.length != 1)
+        {
+            return Promise.resolve();
+        }
+
+        Object.assign(oldColorPalette[0], colorPalette);
+        if (this.internalUsersPreferencesStore.currentColorPalette.id == oldColorPalette[0].id)
+        {
+            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette[0]);
+        }
+
+        transaction.addStore(this, pendingState);
+        await transaction.commit(masterKey);
     }
 }
 
-const appStore = new AppStore();
-export default appStore;
-export type AppStoreType = typeof appStore;
+const app = new AppStore();
+export default app;

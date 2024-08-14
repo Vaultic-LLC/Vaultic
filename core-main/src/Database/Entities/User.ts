@@ -1,31 +1,53 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from "typeorm"
+import { Entity, PrimaryColumn, Column, OneToMany } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
 
 @Entity({ name: "users" })
 export class User extends VaulticEntity
 {
-    @PrimaryGeneratedColumn("increment", { type: "integer" })
+    // Matches Server
+    @PrimaryColumn("integer")
     userID: number
 
-    // TODO: add emailHash for querying for user so I don't have to decrypt and check every user
+    // Backed Up
+    // Not Encrypted
     @Column("text")
     email: string
 
-    @Column("text")
-    userIdentifier: string
+    // Not backed up
+    // Not encrypted
+    @Column("boolean")
+    lastUsed: boolean;
 
+    // Not Backed Up
+    // Encrypted By Users Master Key
     @Column("text")
     masterKeyHash: string
 
+    // Not Backed Up
+    // Encrypted By Users Master Key
     @Column("text")
     masterKeySalt: string
 
+    // Backed Up
+    // Not Encrypted
     @Column("text")
     publicKey: string
 
+    // Backed Up
+    // Encrypted By Users Master Key
     @Column("text")
     privateKey: string
+
+    // Backed up
+    // Encrypted by Users Master Key
+    @Column("text")
+    appStoreState: string;
+
+    // Backed Up
+    // Not Encrypted
+    @Column("text")
+    userPreferencesStoreState: string;
 
     @OneToMany(() => UserVault, (uv: UserVault) => uv.user)
     userVaults: UserVault[]
@@ -36,7 +58,6 @@ export class User extends VaulticEntity
             signatureSecret: this.signatureSecret,
             userID: this.userID,
             email: this.email,
-            userIdentifier: this.userIdentifier,
             masterKeyHash: this.masterKeyHash,
             masterKeySalt: this.masterKeySalt,
             publicKey: this.publicKey,
@@ -46,7 +67,17 @@ export class User extends VaulticEntity
 
     async lock(key: string): Promise<boolean>
     {
-        return this.encryptAndSetEach(key, ["email", "userIdentifier",
-            "masterKeyHash", "masterKeySalt", "privateKey"]);
+        return this.encryptAndSetEach(key, [
+            "masterKeyHash", "masterKeySalt", "privateKey", "appStoreState", "userPreferencesStoreState"]);
+    }
+
+    protected internalGetBackup() 
+    {
+        return {
+            publicKey: this.publicKey,
+            privateKey: this.privateKey,
+            appStoreState: this.appStoreState,
+            userPreferencesStoreState: this.userPreferencesStoreState
+        }
     }
 }

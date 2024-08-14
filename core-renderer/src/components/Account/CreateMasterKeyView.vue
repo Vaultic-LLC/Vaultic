@@ -49,7 +49,7 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import { InputComponent } from '../../Types/Components';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { Account } from '../../Types/SharedTypes';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -90,10 +90,10 @@ export default defineComponent({
 
         async function showAlertMessage(message: string, title: string = 'Unable to create master key', showContactSupport: boolean = false)
         {
-            stores.popupStore.showAlert(title, message, showContactSupport);
+            app.popups.showAlert(title, message, showContactSupport);
             refreshKey.value = Date.now.toString();
             await new Promise((resolve) => setTimeout(resolve, 300));
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
         }
 
         async function onSubmit()
@@ -112,32 +112,31 @@ export default defineComponent({
                 return;
             }
 
-            stores.popupStore.showLoadingIndicator(props.color, "Creating Account");
+            app.popups.showLoadingIndicator(props.color, "Creating Account");
             const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
                 account.value.lastName);
 
             if (response.Success)
             {
-                // TODO: this should take the UserIdentifier returned from registerUser, that should come from the server to make
-                // sure that it is unique
-                const createUserResult = await api.repositories.users.createUser(key.value, response.UserIdentifier!, account.value.email);
-                if (!createUserResult)
-                {
-                    stores.popupStore.hideLoadingIndicator();
-                    showAlertMessage("Unable to create account, please try again. If the issue persists", "Unable to create account", true);
-
-                    return;
-                }
-
                 // TODO: Not needed anymore?
                 //await stores.passwordStore.addPassword(key.value, response.VaulticPassword, true);
-                stores.popupStore.showLoadingIndicator(props.color, "Signing In");
+                app.popups.showLoadingIndicator(props.color, "Signing In");
 
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email);
                 if (loginResponse.Success)
                 {
-                    // TODO: add created user data to server
-                    stores.appStore.isOnline = true;
+                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email);
+                    if (!createUserResult)
+                    {
+                        // TODO: need to better recover from this
+                        app.popups.hideLoadingIndicator();
+                        showAlertMessage("Unable to create account, please try again. If the issue persists", "Unable to create account", true);
+
+                        return;
+                    }
+
+                    app.isOnline = true;
+                    await app.loadUserData(key.value);
                     ctx.emit('onSuccess');
 
                     return;
@@ -149,8 +148,7 @@ export default defineComponent({
             }
             else
             {
-                // TODO: Delete previously created user
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
                 if (response.EmailIsTaken)
                 {
                     showAlertMessage("Email is already in use. Please use a different one");

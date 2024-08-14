@@ -3,13 +3,19 @@ import * as jose from 'jose'
 
 export class VaulticEntity
 {
+    [key: string]: any;
+
+    // Encrypted
+    // Backed Up
     @Column()
     signatureSecret: string
 
+    // Not Encrypted
+    // Backed Up
     @Column()
     signature: string
 
-    async sign(masterKey: string, userIdentifier: string): Promise<boolean>
+    async sign(masterKey: string, userID: number): Promise<boolean>
     {
         let signatureSecret = "";
         if (!this.signatureSecret)
@@ -49,7 +55,7 @@ export class VaulticEntity
             .setProtectedHeader({ alg: 'HS256' })
             .setIssuedAt()
             .setIssuer('vaultic')
-            .setAudience(userIdentifier)
+            .setAudience(userID.toString())
             .setExpirationTime('999y')
             .sign(secretBytes);
 
@@ -62,7 +68,7 @@ export class VaulticEntity
         return undefined;
     }
 
-    async verify(masterKey: string, userIdentifier: string): Promise<boolean>
+    async verify(masterKey: string, userID: number): Promise<boolean>
     {
         if (!this.signatureSecret || !this.signature)
         {
@@ -87,7 +93,7 @@ export class VaulticEntity
 
         const response = await jose.jwtVerify(this.signature, secretBytes, {
             issuer: 'vaultic',
-            audience: userIdentifier,
+            audience: userID.toString(),
         });
 
         const retrievedEntity = response.payload.entity;
@@ -99,7 +105,7 @@ export class VaulticEntity
         return environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
     }
 
-    protected async encryptAndSet(masterKey: string, property: keyof this): Promise<boolean> 
+    public async encryptAndSet(masterKey: string, property: keyof this): Promise<boolean> 
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
@@ -117,7 +123,7 @@ export class VaulticEntity
         return true;
     }
 
-    protected async encryptAndSetEach(masterKey: string, properties: (keyof this)[]): Promise<boolean> 
+    public async encryptAndSetEach(masterKey: string, properties: (keyof this)[]): Promise<boolean> 
     {
         for (let i = 0; i < properties.length; i++)
         {
@@ -130,7 +136,7 @@ export class VaulticEntity
         return true;
     }
 
-    protected async decryptAndSet(masterKey: string, property: keyof this): Promise<boolean>
+    protected async decryptAndGet(masterKey: string, property: keyof this, runningObject: { [key: string]: any }): Promise<boolean>
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
@@ -143,13 +149,41 @@ export class VaulticEntity
             return false;
         }
 
-        //@ts-ignore
-        this[property] = result.value!;
+        // @ts-ignore
+        runningObject[property] = result.value!;
         return true;
+    }
+
+    public async decryptAndGetEach(masterKey: string, properties: (keyof this)[]): Promise<[boolean, Partial<this>]>
+    {
+        const runningObject = {};
+        for (let i = 0; i < properties.length; i++)
+        {
+            if (!await this.decryptAndGet(masterKey, properties[i], runningObject))
+            {
+                return [false, {}];
+            }
+        }
+
+        return [true, runningObject];
     }
 
     async lock(key: string): Promise<boolean>
     {
         return false;
+    }
+
+    protected internalGetBackup(): any
+    {
+        return {};
+    }
+
+    getBackup(): any
+    {
+        return {
+            ...this.internalGetBackup(),
+            signature: this.signature,
+            signatureSecret: this.signatureSecret
+        }
     }
 }
