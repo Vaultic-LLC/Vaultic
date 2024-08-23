@@ -62,7 +62,7 @@ import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHea
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
@@ -86,21 +86,21 @@ export default defineComponent({
     setup()
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
-        const activeTable: Ref<number> = ref(stores.appStore.activePasswordValuesTable);
-        const color: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
-            stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor : stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor);
+        const activeTable: Ref<number> = ref(app.activePasswordValuesTable);
+        const color: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
+            app.userPreferences.currentColorPalette.passwordsColor.primaryColor : app.userPreferences.currentColorPalette.valuesColor.primaryColor);
 
         const passwords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(
             DataType.Passwords, [], "passwordFor");
         const pinnedPasswords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(
-            DataType.Passwords, stores.passwordStore.pinnedPasswords, "passwordFor");
+            DataType.Passwords, app.currentVault.passwordStore.pinnedPasswords, "passwordFor");
 
         const nameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(
             DataType.NameValuePairs, [], "name");
         const pinnedNameValuePairs: IGroupableSortedCollection<ReactiveValue> = new IGroupableSortedCollection(
             DataType.NameValuePairs, [], "name");
 
-        let rowComponent: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ? 'PasswordRow' : 'NameValuePairRow');
+        let rowComponent: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ? 'PasswordRow' : 'NameValuePairRow');
         let collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>> = ref(new InfiniteScrollCollection<CollapsibleTableRowModel>());
 
         let showEditPasswordPopup: Ref<boolean> = ref(false);
@@ -114,14 +114,14 @@ export default defineComponent({
 
         const passwordSearchText: Ref<string> = ref('');
         const valueSearchText: Ref<string> = ref('');
-        const currentSearchText: ComputedRef<Ref<string>> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
+        const currentSearchText: ComputedRef<Ref<string>> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             passwordSearchText : valueSearchText);
 
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
-            if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+            if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                if (stores.filterStore.activePasswordFilters.length > 0)
+                if (app.currentVault.filterStore.activePasswordFilters.length > 0)
                 {
                     return getNoValuesApplyToFilterMessage("Passwords");
                 }
@@ -130,9 +130,9 @@ export default defineComponent({
                     return getEmptyTableMessage("Passwords");
                 }
             }
-            else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
-                if (stores.filterStore.activePasswordFilters.length > 0)
+                if (app.currentVault.filterStore.activePasswordFilters.length > 0)
                 {
                     return getNoValuesApplyToFilterMessage("Values");
                 }
@@ -148,15 +148,15 @@ export default defineComponent({
         const headerTabs: HeaderTabModel[] = [
             {
                 name: 'Passwords',
-                active: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
-                color: computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor),
-                onClick: () => { stores.appStore.activePasswordValuesTable = DataType.Passwords; }
+                active: computed(() => app.activePasswordValuesTable == DataType.Passwords),
+                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor),
+                onClick: () => { app.activePasswordValuesTable = DataType.Passwords; }
             },
             {
                 name: 'Values',
-                active: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
-                color: computed(() => stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor),
-                onClick: () => { stores.appStore.activePasswordValuesTable = DataType.NameValuePairs; }
+                active: computed(() => app.activePasswordValuesTable == DataType.NameValuePairs),
+                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.primaryColor),
+                onClick: () => { app.activePasswordValuesTable = DataType.NameValuePairs; }
             }
         ];
 
@@ -219,7 +219,7 @@ export default defineComponent({
 
         const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
         {
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
                     return valueHeaders;
@@ -253,7 +253,7 @@ export default defineComponent({
             {
                 let temp: T[] = [...localVariable.values];
 
-                if (stores.settingsStore.multipleFilterBehavior == FilterStatus.Or)
+                if (app.settings.multipleFilterBehavior == FilterStatus.Or)
                 {
                     const filtersActivated: Filter[] = newValue.filter(f => !oldValue.includes(f));
                     filtersActivated.forEach(f =>
@@ -261,7 +261,7 @@ export default defineComponent({
                         temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.includes(f.id)));
                     });
                 }
-                else if (stores.settingsStore.multipleFilterBehavior == FilterStatus.And)
+                else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.includes(f.id))));
@@ -274,7 +274,7 @@ export default defineComponent({
             {
                 let temp: T[] = [...localVariable.values];
 
-                if (stores.settingsStore.multipleFilterBehavior == FilterStatus.Or)
+                if (app.settings.multipleFilterBehavior == FilterStatus.Or)
                 {
                     const filtersRemoved: Filter[] = oldValue.filter(f => !newValue.includes(f));
 
@@ -293,7 +293,7 @@ export default defineComponent({
                         })
                     });
                 }
-                else if (stores.settingsStore.multipleFilterBehavior == FilterStatus.And)
+                else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.includes(f.id))));
@@ -305,7 +305,7 @@ export default defineComponent({
 
         async function setModels()
         {
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
                     // eslint-disable-next-line
@@ -352,8 +352,8 @@ export default defineComponent({
 
         function initPasswords()
         {
-            filter(stores.filterStore.activePasswordFilters, [], passwords, stores.passwordStore.unpinnedPasswords);
-            pinnedPasswords.updateValues(stores.passwordStore.pinnedPasswords);
+            filter(app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
+            pinnedPasswords.updateValues(app.currentVault.passwordStore.pinnedPasswords);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -361,8 +361,8 @@ export default defineComponent({
 
         function initValues()
         {
-            filter(stores.filterStore.activeNameValuePairFilters, [], nameValuePairs, stores.valueStore.unpinnedValues);
-            pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
+            filter(app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
+            pinnedNameValuePairs.updateValues(app.currentVault.valueStore.pinnedValues);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -370,11 +370,11 @@ export default defineComponent({
 
         function init()
         {
-            filter(stores.filterStore.activePasswordFilters, [], passwords, stores.passwordStore.unpinnedPasswords);
-            filter(stores.filterStore.activeNameValuePairFilters, [], nameValuePairs, stores.valueStore.unpinnedValues);
+            filter(app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
+            filter(app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
 
-            pinnedPasswords.updateValues(stores.passwordStore.pinnedPasswords);
-            pinnedNameValuePairs.updateValues(stores.valueStore.pinnedValues);
+            pinnedPasswords.updateValues(app.currentVault.passwordStore.pinnedPasswords);
+            pinnedNameValuePairs.updateValues(app.currentVault.valueStore.pinnedValues);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -416,25 +416,25 @@ export default defineComponent({
         {
             deletePassword.value = async (key: string) =>
             {
-                return await stores.passwordStore.deletePassword(key, password);
+                return await app.currentVault.passwordStore.deletePassword(key, password);
             };
 
-            stores.popupStore.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
+            app.popups.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
         }
 
         async function onDeletePasswordConfirmed(key: string)
         {
-            stores.popupStore.showLoadingIndicator(color.value, "Deleting Password");
+            app.popups.showLoadingIndicator(color.value, "Deleting Password");
             const succeeded = await deletePassword.value(key);
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
 
             if (succeeded)
             {
-                stores.popupStore.showToast(color.value, "Password Deleted", true);
+                app.popups.showToast(color.value, "Password Deleted", true);
             }
             else
             {
-                stores.popupStore.showToast(color.value, "Delete Failed", false);
+                app.popups.showToast(color.value, "Delete Failed", false);
             }
         }
 
@@ -442,40 +442,40 @@ export default defineComponent({
         {
             deleteValue.value = async (key: string) =>
             {
-                return await stores.valueStore.deleteNameValuePair(key, value);
+                return await app.currentVault.valueStore.deleteNameValuePair(key, value);
             };
 
-            stores.popupStore.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });
+            app.popups.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });
         }
 
         async function onDeleteValueConfirmed(key: string)
         {
-            stores.popupStore.showLoadingIndicator(color.value, "Deleting Value");
+            app.popups.showLoadingIndicator(color.value, "Deleting Value");
             const succeeded = await deleteValue.value(key);
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
 
             if (succeeded)
             {
-                stores.popupStore.showToast(color.value, "Value Deleted", true);
+                app.popups.showToast(color.value, "Value Deleted", true);
             }
             else
             {
-                stores.popupStore.showToast(color.value, "Delete Failed", false);
+                app.popups.showToast(color.value, "Delete Failed", false);
             }
         }
 
         onMounted(() =>
         {
             init();
-            stores.userDataBreachStore.addEvent('onBreachDismissed', initPasswords);
+            app.userDataBreaches.addEvent('onBreachDismissed', initPasswords);
         });
 
         onUnmounted(() =>
         {
-            stores.userDataBreachStore.removeEvent('onBreachDismissed', initPasswords);
+            app.userDataBreaches.removeEvent('onBreachDismissed', initPasswords);
         });
 
-        watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
+        watch(() => app.activePasswordValuesTable, (newValue) =>
         {
             switch (newValue)
             {
@@ -490,34 +490,34 @@ export default defineComponent({
             setModels();
         })
 
-        watch(() => stores.filterStore.activePasswordFilters, (newValue, oldValue) =>
+        watch(() => app.currentVault.filterStore.activePasswordFilters, (newValue, oldValue) =>
         {
-            filter(newValue, oldValue, passwords, stores.passwordStore.unpinnedPasswords);
+            filter(newValue, oldValue, passwords, app.currentVault.passwordStore.unpinnedPasswords);
             setModels();
         });
 
-        watch(() => stores.filterStore.activeNameValuePairFilters, (newValue, oldValue) =>
+        watch(() => app.currentVault.filterStore.activeNameValuePairFilters, (newValue, oldValue) =>
         {
-            filter(newValue, oldValue, nameValuePairs, stores.valueStore.unpinnedValues);
+            filter(newValue, oldValue, nameValuePairs, app.currentVault.valueStore.unpinnedValues);
             setModels();
         });
 
-        watch(() => stores.passwordStore.passwords.length, () =>
+        watch(() => app.currentVault.passwordStore.passwords.length, () =>
         {
             initPasswords();
         });
 
-        watch(() => stores.valueStore.nameValuePairs.length, () =>
+        watch(() => app.currentVault.valueStore.nameValuePairs.length, () =>
         {
             initValues();
         });
 
-        watch(() => stores.passwordStore.activeAtRiskPasswordType, () =>
+        watch(() => app.currentVault.passwordStore.activeAtRiskPasswordType, () =>
         {
             initPasswords();
         });
 
-        watch(() => stores.valueStore.activeAtRiskValueType, () =>
+        watch(() => app.currentVault.valueStore.activeAtRiskValueType, () =>
         {
             initValues();
         });
@@ -536,7 +536,7 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
-        watch(() => stores.settingsStore.multipleFilterBehavior, () =>
+        watch(() => app.settings.multipleFilterBehavior, () =>
         {
             init();
         });

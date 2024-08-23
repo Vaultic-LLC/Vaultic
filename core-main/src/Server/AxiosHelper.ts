@@ -83,7 +83,7 @@ class AxiosWrapper
                     return { Success: false, InvalidSession: true } as InvalidSessionResponse;
                 }
 
-                return { Success: false, UnknownError: true, logID: requestData[0].logID };
+                return { Success: false, UnknownError: true, logID: requestData[0].logID, message: "setup" };
             }
 
             const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData[1]);
@@ -96,7 +96,7 @@ class AxiosWrapper
                     return { Success: false, InvalidSession: true } as InvalidSessionResponse;
                 }
 
-                return { Success: false, UnknownError: true, logID: responseResult[0].logID, message: responseResult[0].errorMessage };
+                return { Success: false, UnknownError: true, logID: responseResult[0].logID, message: `code: ${response.status}` };
             }
 
             return responseResult[1];
@@ -108,7 +108,7 @@ class AxiosWrapper
                 // Bad request data response, we can handle that
                 if (e.status == 400)
                 {
-                    return { Success: false, InvalidRequest: true };
+                    return { Success: false, InvalidRequest: true, message: "400" };
                 }
 
                 if (e.response)
@@ -130,7 +130,7 @@ class AxiosWrapper
                 };
             }
 
-            return { Success: false, UnknownError: true };
+            return { Success: false, UnknownError: true, message: "good luck" };
         }
     }
 
@@ -266,7 +266,7 @@ class APIAxiosWrapper extends AxiosWrapper
             const response = await environment.utilities.crypt.encrypt(this.exportKey, data[keys[i]]);
             if (!response.success)
             {
-                return response;
+                return { ...response, errorMessage: `${response.errorMessage}. Prop: ${keys[i]}, Value: ${data[keys[i]]}` };
             }
 
             encryptedData[keys[i]] = response.value!;
@@ -344,13 +344,13 @@ class APIAxiosWrapper extends AxiosWrapper
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
             if (!encryptedResponse.Data)
             {
-                return [{ success: false }, responseData]
+                return [{ success: false, errorMessage: `response: ${JSON.stringify(encryptedResponse)}` }, responseData]
             }
 
             const decryptedResponse = await environment.utilities.crypt.decrypt(this.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
-                return [decryptedResponse, responseData];
+                return [{ ...decryptedResponse, errorMessage: `response: ${JSON.stringify(encryptedResponse)}` }, responseData];
             }
 
             responseData = JSON.parse(decryptedResponse.value!) as T;
@@ -358,7 +358,7 @@ class APIAxiosWrapper extends AxiosWrapper
         }
         catch (e)
         {
-            return [{ success: false }, responseData]
+            return [{ success: false, errorMessage: JSON.stringify(e) }, responseData]
         }
     }
 }

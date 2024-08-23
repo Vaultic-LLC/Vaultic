@@ -17,9 +17,9 @@ export class VaultPreferencesStore extends VaultContrainedStore<VaultPreferences
     get pinnedPasswords() { return this.state.pinnedPasswords; }
     get pinnedValues() { return this.state.pinnedValues; }
 
-    constructor(vault, state)
+    constructor(vault)
     {
-        super(vault, state, "vaultPreferencesStore");
+        super(vault, "vaultPreferencesStore");
     }
 
     private async update()

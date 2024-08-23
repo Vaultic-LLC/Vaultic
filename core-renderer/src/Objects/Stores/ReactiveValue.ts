@@ -1,6 +1,6 @@
 import { NameValuePair } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
-import { stores } from ".";
+import app from "./AppStore";
 
 export interface ReactiveValue extends NameValuePair
 {
@@ -22,7 +22,7 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
         const lastModifiedTime = Date.parse(nameValuePairState.lastModifiedTime);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
-        return differenceInDays >= stores.settingsStore.oldPasswordDays;
+        return differenceInDays >= app.settings.oldPasswordDays;
     });
 
     const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !nameValuePairState.isDuplicate && !nameValuePairState.isWeak)

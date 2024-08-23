@@ -2,6 +2,7 @@ import * as opaque from "@serenity-kit/opaque";
 import { stsServer } from "../Server/VaulticServer";
 import { FinishRegistrationResponse, LogUserInResponse, OpaqueResponse } from "../Types/Responses";
 import axiosHelper from "../Server/AxiosHelper";
+import { environment } from "../Environment";
 
 export interface ServerHelper
 {
@@ -11,11 +12,11 @@ export interface ServerHelper
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
 {
+    // TODO: switch to argon2 hash
+    const passwordHash = environment.utilities.hash.insecureHash(masterKey);
     const { clientRegistrationState, registrationRequest } =
         opaque.client.startRegistration({
-            // TODO: should hash this so that even if the registration record is stolen, an attacker would 
-            // only be able to derive the hash and not the actual master key
-            password: masterKey
+            password: passwordHash
         });
 
     const startResponse = await stsServer.registration.start(registrationRequest, email);
@@ -27,9 +28,7 @@ async function registerUser(masterKey: string, email: string, firstName: string,
     const { registrationRecord } = opaque.client.finishRegistration({
         clientRegistrationState,
         registrationResponse: startResponse.ServerRegistrationResponse!,
-        // TODO: should hash this so that even if the registration record is stolen, an attacker would 
-        // only be able to derive the hash and not the actual master key
-        password: masterKey,
+        password: passwordHash,
     });
 
     return await stsServer.registration.finish(startResponse.PendingUserToken!,
@@ -38,8 +37,9 @@ async function registerUser(masterKey: string, email: string, firstName: string,
 
 async function logUserIn(masterKey: string, email: string): Promise<LogUserInResponse>
 {
+    const passwordHash = environment.utilities.hash.insecureHash(masterKey);
     const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
-        password: masterKey,
+        password: passwordHash,
     });
 
     const startResponse = await stsServer.login.start(startLoginRequest, email);
@@ -51,7 +51,7 @@ async function logUserIn(masterKey: string, email: string): Promise<LogUserInRes
     const loginResult = opaque.client.finishLogin({
         clientLoginState,
         loginResponse: startResponse.StartServerLoginResponse!,
-        password: masterKey,
+        password: passwordHash,
     });
 
     if (!loginResult)
@@ -67,6 +67,9 @@ async function logUserIn(masterKey: string, email: string): Promise<LogUserInRes
     if (finishResponse.Success)
     {
         await axiosHelper.api.setSessionInfoAndExportKey(finishResponse.Session?.Hash!, sessionKey, exportKey);
+
+        // TODO: this will fail when logging in for the first time after registering
+        await environment.repositories.users.setCurrentUser(masterKey, email);
 
         const storeStates = ['AppStoreState', 'SettingsStoreState', 'FilterStoreState', 'GroupStoreState', 'PasswordStoreState',
             'ValueStoreState', 'UserPreferencesStoreState'];

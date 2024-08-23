@@ -9,7 +9,7 @@ import { defineComponent } from 'vue';
 
 import IconCard from "../../IconCard.vue"
 
-import { stores } from '../../../Objects/Stores';
+import app from "../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "LockIconCard",
@@ -21,7 +21,7 @@ export default defineComponent({
     {
         function lockApp()
         {
-            stores.appStore.lock();
+            app.lock();
         }
 
         return {

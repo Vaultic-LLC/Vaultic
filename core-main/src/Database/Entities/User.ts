@@ -52,6 +52,11 @@ export class User extends VaulticEntity
     @OneToMany(() => UserVault, (uv: UserVault) => uv.user)
     userVaults: UserVault[]
 
+    identifier(): number 
+    {
+        return this.userID;
+    }
+
     protected getSignatureMakeup(): any
     {
         return {
@@ -61,19 +66,21 @@ export class User extends VaulticEntity
             masterKeyHash: this.masterKeyHash,
             masterKeySalt: this.masterKeySalt,
             publicKey: this.publicKey,
-            privateKey: this.privateKey
+            privateKey: this.privateKey,
+            appStoreState: this.appStoreState
         };
     }
 
     async lock(key: string): Promise<boolean>
     {
         return this.encryptAndSetEach(key, [
-            "masterKeyHash", "masterKeySalt", "privateKey", "appStoreState", "userPreferencesStoreState"]);
+            "masterKeyHash", "masterKeySalt", "privateKey", "appStoreState"]);
     }
 
     protected internalGetBackup() 
     {
         return {
+            userID: this.userID,
             publicKey: this.publicKey,
             privateKey: this.privateKey,
             appStoreState: this.appStoreState,

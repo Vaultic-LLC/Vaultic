@@ -1,9 +1,9 @@
-import { Repository } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
 
-export class VaulticRepositoryInitalizer<T extends VaulticEntity, U extends Repository<T>>
+export class VaulticRepository<T extends VaulticEntity>
 {
-    protected repository: U;
+    protected repository: Repository<T>;
 
     protected getRepository(): Repository<T> | undefined
     {
@@ -15,36 +15,51 @@ export class VaulticRepositoryInitalizer<T extends VaulticEntity, U extends Repo
         return {}
     }
 
-    init(): [boolean, U]
+    init(): boolean
     {
         const repository = this.getRepository();
         if (!repository)
         {
-            return [false, {} as U];
+            return false;
         }
 
-        repository.extend({
-            ...this.getRepositoryExtension(),
-            signAndSave: this.signAndSave,
-            retrieveAndVerify: this.retrieveAndVerify
-        });
-
-        this.repository = repository as U;
-        return [true, this.repository];
+        this.repository = repository;
+        return true;
     }
 
-    protected async signAndSave(key: string, entity: T, userID: number): Promise<boolean>
+    public async signAndInsert(manager: EntityManager, key: string, entity: T, userID: number): Promise<boolean>
     {
         if (!(await entity.sign(key, userID)))
         {
             return false;
         }
 
-        await this.repository.save(entity);
+        const repo = manager.withRepository(this.repository);
+        await repo.insert(entity);
         return true;
     }
 
-    protected async retrieveAndVerify(key: string, userID: number, predicate: () => T): Promise<boolean>
+    public async signAndUpdate(manager: EntityManager, key: string, entity: T, userID: number): Promise<boolean>
+    {
+        if (!(await entity.sign(key, userID)))
+        {
+            return false;
+        }
+
+        const repo = manager.withRepository(this.repository);
+        await repo.update(entity.identifier(), entity);
+        return true;
+    }
+
+    public async remove(manager: EntityManager, entity: T): Promise<boolean>
+    {
+        const repo = manager.withRepository(this.repository);
+        const removedEntity = repo.remove(entity);
+
+        return !!removedEntity;
+    }
+
+    public async retrieveAndVerify(key: string, userID: number, predicate: () => T): Promise<boolean>
     {
         const entity = predicate();
         if (!entity)
@@ -55,7 +70,7 @@ export class VaulticRepositoryInitalizer<T extends VaulticEntity, U extends Repo
         return await entity.verify(key, userID);
     }
 
-    protected async retrieveAndVerifyAll(key: string, userID: number, predicate: () => T[]): Promise<boolean>
+    public async retrieveAndVerifyAll(key: string, userID: number, predicate: () => T[]): Promise<boolean>
     {
         const entities = predicate();
         if (entities.length == 0)

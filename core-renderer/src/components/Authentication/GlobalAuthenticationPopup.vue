@@ -13,7 +13,7 @@
 import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import AuthenticationPopup from "./AuthenticationPopup.vue"
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { AuthPopup } from '../../Types/Components';
 import { popups } from '../../Objects/Stores/PopupStore';
 import { AccountSetupView } from '../../Types/Models';
@@ -31,17 +31,15 @@ export default defineComponent({
         const popupInfo = popups.globalAuth;
 
         const authPopup: Ref<AuthPopup | null> = ref(null);
-        const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const unlocked: Ref<boolean> = ref(false);
 
         // TODO: can probably remove this entire component for something more graceful like just a toggle on the main
         // popup
         async function authenticationSuccessful(key: string)
         {
-            stores.loadStoreData(key).then(async () =>
+            app.loadUserData(key).then(async () =>
             {
-                await stores.appStore.recordLogin(key, Date.now());
-
                 playUnlockAnimation();
             });
         }
@@ -59,7 +57,7 @@ export default defineComponent({
 
         function onCancel()
         {
-            stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
+            app.popups.showAccountSetup(AccountSetupView.SignIn);
         }
 
         onMounted(() =>

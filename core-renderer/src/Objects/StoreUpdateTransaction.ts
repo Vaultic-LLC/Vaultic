@@ -1,7 +1,5 @@
 import { api } from "../API";
-import cryptHelper from "../Helpers/cryptHelper";
-import { File } from "../Types/APITypes";
-import { Store, StoreEvents, StoreState } from "./Stores/Base";
+import { Store, StoreEvents } from "./Stores/Base";
 
 export enum Entity
 {
@@ -12,9 +10,9 @@ export enum Entity
 
 interface StoreUpdateState
 {
-    store: Store<StoreState, StoreEvents>;
-    currentState: StoreState;
-    pendingState: StoreState;
+    store: Store<any, StoreEvents>;
+    currentState: any;
+    pendingState: any;
     committed: boolean;
     postSave?: () => void;
 }
@@ -33,7 +31,7 @@ export default class StoreUpdateTransaction
         this.vaultID = vaultID;
     }
 
-    addStore(store: Store<StoreState, StoreEvents>, pendingState: StoreState, postSave: ((() => void) | undefined) = undefined)
+    addStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
         pendingState.version += 1;
         this.storeUpdateStates.push({
@@ -60,7 +58,7 @@ export default class StoreUpdateTransaction
             case Entity.User:
             case Entity.UserVault:
             case Entity.Vault:
-                success = await api.repositories.vaults.saveAndBackup(masterKey, this.vaultID, JSON.stringify(state), skipBackup);
+                success = await api.repositories.vaults.saveAndBackup(masterKey, this.vaultID!, JSON.stringify(state), skipBackup);
                 break;
         }
 

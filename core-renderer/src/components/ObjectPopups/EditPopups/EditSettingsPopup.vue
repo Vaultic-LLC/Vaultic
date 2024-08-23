@@ -19,8 +19,7 @@ import TableSelector from '../../../components/TableSelector.vue';
 import ButtonLink from '../../../components/InputFields/ButtonLink.vue';
 import AccountInfoView from '../../../components/Account/AccountInfoView.vue';
 
-import { SettingsStoreState } from '../../../Objects/Stores/SettingsStore';
-import { stores } from '../../../Objects/Stores';
+import app, { AppSettings } from "../../../Objects/Stores/AppStore";
 import { SingleSelectorItemModel } from '../../../Types/Models';
 
 export default defineComponent({
@@ -39,14 +38,14 @@ export default defineComponent({
         const activeSection: Ref<number> = ref(0);
 
         // copy the object so that we don't edit the original one
-        const currentSettings: Ref<SettingsStoreState> = ref(JSON.parse(JSON.stringify(props.model)));
-        const currentPrimaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const currentSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(props.model)));
+        const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const settingsView: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
             return {
                 title: ref("Settings"),
-                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                color: ref(app.userPreferences.currentPrimaryColor.value),
                 isActive: computed(() => activeSection.value == 0),
                 onClick: () => { activeSection.value = 0; }
             }
@@ -56,7 +55,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Devices"),
-                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                color: ref(app.userPreferences.currentPrimaryColor.value),
                 isActive: computed(() => activeSection.value == 1),
                 onClick: () => { activeSection.value = 1; }
             }
@@ -66,7 +65,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Account"),
-                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                color: ref(app.userPreferences.currentPrimaryColor.value),
                 isActive: computed(() => activeSection.value == 2),
                 onClick: () => { activeSection.value = 2; }
             }
@@ -75,7 +74,7 @@ export default defineComponent({
         const singleSelectorItems: ComputedRef<SingleSelectorItemModel[]> = computed(() =>
         {
             let items: SingleSelectorItemModel[] = [settingsView.value];
-            if (stores.appStore.isOnline)
+            if (app.isOnline)
             {
                 items.push(devicesView.value);
             }

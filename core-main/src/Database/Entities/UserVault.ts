@@ -35,6 +35,11 @@ export class UserVault extends VaulticEntity
     @Column("text")
     vaultPreferencesStoreState: string
 
+    identifier(): number 
+    {
+        return this.userVaultID;
+    }
+
     protected getSignatureMakeup(): any
     {
         return {
@@ -48,12 +53,13 @@ export class UserVault extends VaulticEntity
 
     async lock(key: string): Promise<boolean>
     {
-        return this.encryptAndSetAll(key, ["vaultKey"]);
+        return this.encryptAndSetEach(key, ["vaultKey"]);
     }
 
     protected internalGetBackup() 
     {
         return {
+            userVaultID: this.userVaultID,
             vaultKey: this.vaultKey,
             vaultPreferencesStoreState: this.vaultPreferencesStoreState,
         }

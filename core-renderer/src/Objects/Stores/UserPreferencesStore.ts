@@ -11,7 +11,7 @@ export interface UserPreferencesStoreState
     currentColorPalette: ColorPalette;
 }
 
-// TODO: this should user the staet of the last known users prefereences before signing in, and then, 
+// TODO: this should use the state of the last known users prefereences before signing in, and then, 
 // if a different user signed in, use their state instead
 export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 {
@@ -23,8 +23,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
     constructor(appStore: AppStore)
     {
-        super({} as UserPreferencesStoreState, "userPreferencesStoreState");
-        this.state = this.defaultState();
+        super("userPreferencesStoreState");
 
         this.internalCurrentPrimaryColor = ref('');
         this.setCurrentPrimaryColor(DataType.Passwords);
@@ -59,7 +58,11 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         const state = await api.repositories.users.getLastUsedUserPreferences();
         if (state)
         {
-            this.state = JSON.parse(state);
+            const parsedState: UserPreferencesStoreState = JSON.parse(state);
+            if (parsedState.currentColorPalette)
+            {
+                this.state = parsedState;
+            }
         }
     }
 

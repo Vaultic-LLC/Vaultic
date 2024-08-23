@@ -39,6 +39,8 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 				logID = response.LogID;
 			}
 		}
+
+		return { success: false, errorMessage: `Encryption Error: ${JSON.stringify(e)}` };
 	}
 
 	return { success: false, logID };

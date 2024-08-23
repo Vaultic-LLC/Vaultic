@@ -16,17 +16,12 @@ export class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBre
 
     constructor()
     {
-        const state = {
-            userBreaches: []
-        };
-
-        super(state, 'userDataBreachStore');
+        super('userDataBreachStore');
     }
 
     protected defaultState()
     {
         return {
-            version: 0,
             userBreaches: []
         };
     }

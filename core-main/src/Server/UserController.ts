@@ -49,51 +49,58 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetDevices');
     }
 
-    async function backupData(user?: User, userVault?: UserVault[], vault?: Vault[]): Promise<BaseResponse>
+    async function backupData(user?: User, userVaults?: UserVault[], vaults?: Vault[]): Promise<BaseResponse>
     {
         const postData = {};
         if (user)
         {
-            const encryptedUser = await axiosHelper.api.endToEndEncryptPostData(user);
+            const { userID, publicKey, ...userWithoutID } = user;
+            const encryptedUser = await axiosHelper.api.endToEndEncryptPostData(userWithoutID);
+
             if (!encryptedUser.success)
             {
-                return { Success: false }
+                return { Success: false, message: encryptedUser.errorMessage }
             }
 
-            postData["user"] = encryptedUser.value!;
+            postData["user"] = { userID, publicKey, ...encryptedUser.value! };
         }
 
-        if (userVault)
+        if (userVaults)
         {
             postData["userVaults"] = [];
-            for (let i = 0; i < userVault.length; i++)
+            for (let i = 0; i < userVaults.length; i++)
             {
-                const encryptedUserVault = await axiosHelper.api.endToEndEncryptPostData(userVault[i]);
+                const { userVaultID, ...userVaultWithoutID } = userVaults[i];
+                const encryptedUserVault = await axiosHelper.api.endToEndEncryptPostData(userVaultWithoutID);
+
                 if (!encryptedUserVault.success)
                 {
-                    return { Success: false };
+                    return { Success: false, message: `userVault encryption failed. ${encryptedUserVault.errorMessage}` };
                 }
 
-                postData["userVaults"].push(encryptedUserVault.value);
+                postData["userVaults"].push({ userVaultID, ...encryptedUserVault.value });
             }
         }
 
-        if (vault)
+        if (vaults)
         {
             postData["vaults"] = [];
-            for (let i = 0; i < vault.length; i++)
+            for (let i = 0; i < vaults.length; i++)
             {
-                const encryptedVault = await axiosHelper.api.endToEndEncryptPostData(vault[i]);
+                const { vaultID, ...vaultWithoutID } = vaults[i];
+                const encryptedVault = await axiosHelper.api.endToEndEncryptPostData(vaultWithoutID);
+
                 if (!encryptedVault.success)
                 {
-                    return { Success: false };
+                    return { Success: false, message: "vault encryption failed" };
                 }
 
-                postData["vaults"].push(encryptedVault.value);
+                postData["vaults"].push({ vaultID, ...encryptedVault.value });
             }
         }
 
-        return axiosHelper.api.post("User/BackupData", postData);
+        const response = await axiosHelper.api.post("User/BackupData", postData);
+        return { ...response, message: `Post data: ${JSON.stringify(postData)}` }
     }
 
     async function backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>

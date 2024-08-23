@@ -12,8 +12,9 @@ import { DisplayVault } from "../../Types/APITypes";
 import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
+import { UserData } from "../../Types/SharedTypes";
 
-interface AppSettings 
+export interface AppSettings 
 {
     readonly rowChunkAmount: number;
     colorPalettes: ColorPalette[];
@@ -51,6 +52,7 @@ export class AppStore extends Store<AppStoreState>
     private internalUserDataBreachStore: UserDataBreachStore;
     private internalPopupStore: PopupStore;
 
+    get settings() { return this.state.settings; }
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
     get activePasswordValuesTable() { return this.internalActivePasswordValueTable.value; }
@@ -64,13 +66,16 @@ export class AppStore extends Store<AppStoreState>
 
     constructor()
     {
-        super({} as AppStoreState, "appStoreState");
-        this.state = this.defaultState();
+        super("appStoreState");
 
         this.loadedUser = false;
         this.internalUsersPreferencesStore = new UserPreferencesStore(this);
         this.internalUserDataBreachStore = new UserDataBreachStore();
         this.internalPopupStore = createPopupStore();
+
+        this.internalUserVaults = [];
+        this.internalSharedVaults = [];
+        this.internalCurrentVault = new ReactiveVaultStore();
 
         this.internalIsOnline = ref(false);
         this.internalActivePasswordValueTable = ref(DataType.Passwords);
@@ -124,10 +129,10 @@ export class AppStore extends Store<AppStoreState>
         super.resetToDefault();
     }
 
-    private async update(masterKey: string, state: AppStoreState): Promise<boolean>
+    public async updateSettings(masterKey: string, settings: AppSettings): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(Entity.User);
-        transaction.addStore(this, state);
+        transaction.addStore(this, { settings });
 
         return transaction.commit(masterKey);
     }
@@ -175,17 +180,18 @@ export class AppStore extends Store<AppStoreState>
             return;
         }
 
-        const userData = await api.repositories.users.loadCurrentUserData(masterKey, response);
-        if (!userData.success)
+        const userData = await api.repositories.users.getCurrentUserData(masterKey, response);
+        const parsedUserData: UserData = JSON.parse(userData);
+        if (!parsedUserData.success)
         {
             return false;
         }
 
-        this.state = JSON.parse(userData.appStoreState);
-        this.internalUserVaults = JSON.parse(userData.displayVaults);
+        this.state = JSON.parse(parsedUserData.appStoreState);
+        this.internalUserVaults = parsedUserData.displayVaults!;
         this.internalSharedVaults = JSON.parse(response.SharedVaults);
-        this.internalCurrentVault = new ReactiveVaultStore(masterKey, JSON.parse(userData.currentVault));
-        this.internalUsersPreferencesStore.updateState(JSON.parse(userData.usersPreferencesStoreState));
+        this.internalCurrentVault.setVaultData(masterKey, parsedUserData.currentVault);
+        this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;
     }
 
@@ -195,10 +201,10 @@ export class AppStore extends Store<AppStoreState>
         if (!vault)
         {
             // TODO: handle
+            return;
         }
 
-        // TODO: will this break reactivity? might just need to replace the state on each store
-        this.internalCurrentVault = new ReactiveVaultStore(masterKey, vault);
+        this.internalCurrentVault.setVaultData(masterKey, vault);
     }
 
     public shareToVault<T>(value: T, toVault: number)

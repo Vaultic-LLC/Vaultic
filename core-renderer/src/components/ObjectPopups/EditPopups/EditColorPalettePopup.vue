@@ -24,7 +24,7 @@ import ColorPaletteView from '../../../components/ObjectViews/ColorPaletteView.v
 import ColorPalettePill from "../../ColorPalette/ColorPalettePill.vue"
 
 import { ColorPalette } from '../../../Types/Colors';
-import { stores } from '../../../Objects/Stores';
+import app from "../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "EditColorPalettePopup",
@@ -39,7 +39,7 @@ export default defineComponent({
         const hoveringColorPalette: Ref<number> = ref(-1);
         // copy the object so that we don't edit the original one
         const colorPaletteModel: Ref<ColorPalette> = ref(JSON.parse(JSON.stringify(props.model)));
-        const currentColorPalettes: ComputedRef<ColorPalette[]> = computed(() => stores.settingsStore.colorPalettes.filter(cp => cp.isCreated));
+        const currentColorPalettes: ComputedRef<ColorPalette[]> = computed(() => app.settings.colorPalettes.filter(cp => cp.isCreated));
 
         function cloneColorPalette(colorPalette: ColorPalette)
         {

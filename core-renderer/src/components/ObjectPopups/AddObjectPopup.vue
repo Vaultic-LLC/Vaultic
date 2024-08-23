@@ -31,7 +31,7 @@ import { DataType, Filter, Group } from '../../Types/Table';
 import { NameValuePair, Password, defaultFilter, defaultGroup, defaultPassword, defaultValue } from '../../Types/EncryptedData';
 import { SingleSelectorItemModel } from '../../Types/Models';
 import { hideAll } from 'tippy.js';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "AddObjectPopup",
@@ -47,9 +47,9 @@ export default defineComponent({
     setup(props)
     {
         let activeContent: Ref<number> = ref(props.initalActiveContent);
-        const activeTable: ComputedRef<DataType> = computed(() => stores.appStore.activePasswordValuesTable);
+        const activeTable: ComputedRef<DataType> = computed(() => app.activePasswordValuesTable);
 
-        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
+        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
 
         const passwordModel: Ref<Password> = ref(defaultPassword());
         const passwordFilterModel: Ref<Filter> = ref(defaultFilter(DataType.Passwords));
@@ -61,13 +61,13 @@ export default defineComponent({
 
         const primaryColor: ComputedRef<string> = computed(() =>
         {
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    return stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor;
+                    return app.userPreferences.currentColorPalette.valuesColor.primaryColor;
                 case DataType.Passwords:
                 default:
-                    return stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor;
+                    return app.userPreferences.currentColorPalette.passwordsColor.primaryColor;
             }
         });
 
@@ -76,7 +76,7 @@ export default defineComponent({
             return {
                 title: ref("Passwords"),
                 color: ref(currentColorPalette.value.passwordsColor.primaryColor),
-                isActive: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords),
+                isActive: computed(() => app.activePasswordValuesTable == DataType.Passwords),
                 onClick: () => { updatePasswordsValuesTable(DataType.Passwords); }
             }
         });
@@ -86,7 +86,7 @@ export default defineComponent({
             return {
                 title: ref("Values"),
                 color: ref(currentColorPalette.value.valuesColor.primaryColor),
-                isActive: computed(() => stores.appStore.activePasswordValuesTable == DataType.NameValuePairs),
+                isActive: computed(() => app.activePasswordValuesTable == DataType.NameValuePairs),
                 onClick: () => { updatePasswordsValuesTable(DataType.NameValuePairs); }
             }
         });
@@ -114,10 +114,10 @@ export default defineComponent({
         const addTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
             return {
-                title: computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Add Password" : "Add Value"),
+                title: computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Add Password" : "Add Value"),
                 color: primaryColor,
                 isActive: computed(() => activeContent.value <= 1),
-                onClick: () => { activeContent.value = stores.appStore.activePasswordValuesTable; }
+                onClick: () => { activeContent.value = app.activePasswordValuesTable; }
             }
         });
 
@@ -130,14 +130,14 @@ export default defineComponent({
                 activeContent.value = tableItem;
             }
 
-            stores.appStore.activePasswordValuesTable = tableItem;
+            app.activePasswordValuesTable = tableItem;
         }
 
         function filtersGroupsClicked(tableItem: number)
         {
             hideAll();
             activeContent.value = tableItem;
-            stores.appStore.activeFilterGroupsTable = tableItem;
+            app.activeFilterGroupsTable = tableItem;
         }
 
         watch(() => props.initalActiveContent, (newValue) =>

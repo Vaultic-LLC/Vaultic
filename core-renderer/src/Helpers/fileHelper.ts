@@ -1,5 +1,5 @@
 import { DataFile } from "../Types/EncryptedData";
-import { stores } from "../Objects/Stores";
+import app from "../Objects/Stores/AppStore";
 
 // Uesd to read and write files. ContextBridge can only take simple types so we have to do most of
 // the heavy lifting on the renderer side and then send just strings back and fourth
@@ -16,7 +16,7 @@ async function readUnencrypted<T>(file: DataFile): Promise<[boolean, T]>
     const result = await file.read();
     if (!result.success)
     {
-        stores.popupStore.showErrorAlert(result.logID);
+        app.popups.showErrorAlert(result.logID);
         return [false, {} as T];
     }
 
@@ -35,7 +35,7 @@ async function writeUnencrypted<T>(data: T, file: DataFile): Promise<boolean>
     const result = await file.write(jsonData);
     if (!result.success)
     {
-        stores.popupStore.showErrorAlert(result.logID);
+        app.popups.showErrorAlert(result.logID);
         return false;
     }
 

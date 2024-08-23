@@ -1,38 +1,27 @@
 import { environment } from "../../Environment";
 import { User } from "../Entities/User";
-import { UserRepository } from "../../Types/Repositories";
-import { VaulticRepositoryInitalizer } from "./VaulticRepositoryInitalizer";
+import { UserData } from "../../Types/Repositories";
+import { VaulticRepository } from "./VaulticRepositoryInitalizer";
 import { Repository } from "typeorm";
 import Transaction from "../Transaction";
 import vaulticServer from "../../Server/VaulticServer";
-import cryptHelper from "../../../../core-renderer/src/Helpers/cryptHelper";
 
 // TODO: move to cache
 let currentUser: User | undefined;
 
-class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRepository>
+class UserRepository extends VaulticRepository<User>
 {
     protected getRepository(): Repository<User> | undefined
     {
         return environment.databaseDataSouce.getRepository(User);
     }
 
-    protected getRepositoryExtension(): any 
-    {
-        return {
-            createUser: this.createUser,
-            getCurrentUser: this.getCurrentUser,
-            setCurrentUser: this.setCurrentUser,
-            findByIdentifier: this.findByIdentifier,
-        }
-    }
-
-    protected async createUser(masterKey: string, email: string): Promise<boolean | string>
+    public async createUser(masterKey: string, email: string): Promise<boolean | string>
     {
         const response = await vaulticServer.user.getUserID();
         if (!response.Success)
         {
-            return false;
+            return JSON.stringify(response);
         }
 
         const vaultKey = environment.utilities.generator.randomValue(60);
@@ -51,22 +40,23 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
         user.privateKey = keys.private;
         user.appStoreState = "{}";
         user.userPreferencesStoreState = "{}";
+        user.userVaults = [];
 
         if (!user.lock(masterKey))
         {
-            return false;
+            return "no user lock";
         }
 
         const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(keys.public, vaultKey);
         if (!encryptedVaultKey.success)
         {
-            return false;
+            return "no encrypted vault key";
         }
 
         const vaults = await environment.repositories.vaults.createNewVault("Personal");
         if (!vaults)
         {
-            return false;
+            return "no vaults";
         }
 
         const userVault = vaults[0];
@@ -82,29 +72,31 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
 
         if (!userVault.lock(masterKey))
         {
-            return false;
+            return "no user vault lock";
         }
 
         if (!vault.lock(vaultKey))
         {
-            return false;
+            return "no vault lock";
         }
 
+        console.log("saving");
         const transaction = new Transaction();
-        transaction.saveEntity(user, masterKey, () => this.repository);
-        transaction.saveEntity(userVault, masterKey, () => environment.repositories.userVaults);
-        transaction.saveEntity(vault, vaultKey, () => environment.repositories.vaults);
+        transaction.insertEntity(user, masterKey, () => this);
+        transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
+        transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
 
         const succeeded = await transaction.commit(user.userID);
         if (!succeeded)
         {
-            return false;
+            return "no commit";
         }
 
+        console.log("saving complete");
         const backupResponse = await vaulticServer.user.backupData(user.getBackup(), [userVault.getBackup()], [vault.getBackup()]);
         if (!backupResponse.Success)
         {
-            return false;
+            return backupResponse.message!;
         }
 
         currentUser = user;
@@ -112,18 +104,33 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
     }
 
     // when logging in for the first time as a user that already exists
-    protected addUser()
+    public addUser()
     {
 
     }
 
-    protected getCurrentUser()
+    public getCurrentUser()
     {
         return currentUser;
     }
 
-    protected async verifyMasterKey(user: User, masterKey: string): Promise<boolean>
+    public async verifyUserMasterKey(masterKey: string, email?: string): Promise<boolean>
     {
+        let user: User | null | undefined;
+        if (email)
+        {
+            user = await this.findByEmail(email);
+        }
+        else 
+        {
+            user = currentUser;
+        }
+
+        if (!user)
+        {
+            return false;
+        }
+
         const decryptedHashResponse = await environment.utilities.crypt.decrypt(masterKey, user.masterKeyHash);
         if (!decryptedHashResponse.success)
         {
@@ -140,16 +147,16 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
         return environment.utilities.hash.compareHashes(decryptedHashResponse.value!, hash);
     }
 
-    protected findByIdentifier(userIdentifier: string) 
+    public findByEmail(email: string) 
     {
         return this.repository.findOneBy({
-            userIdentifier: userIdentifier
+            email: email
         });
     }
 
-    protected async setCurrentUser(masterKey: string, userIdentifier: string): Promise<boolean>
+    public async setCurrentUser(masterKey: string, email: string): Promise<boolean>
     {
-        const user = await this.findByIdentifier(userIdentifier);
+        const user = await this.findByEmail(email);
         if (!user)
         {
             return false;
@@ -160,16 +167,11 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
             return false;
         }
 
-        if (!(await this.verifyMasterKey(user, masterKey)))
-        {
-            return false;
-        }
-
         currentUser = user;
         return true;
     }
 
-    protected async getLastUsedUserEmail(): Promise<string | null>
+    public async getLastUsedUserEmail(): Promise<string | null>
     {
         const lastUsedUser = await this.repository.findOneBy({
             lastUsed: true
@@ -178,7 +180,7 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
         return lastUsedUser?.email ?? null;
     }
 
-    protected async getLastUsedUserPreferences(): Promise<string | null>
+    public async getLastUsedUserPreferences(): Promise<string | null>
     {
         const lastUsedUser = await this.repository.findOneBy({
             lastUsed: true
@@ -187,15 +189,19 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
         return lastUsedUser?.userPreferencesStoreState ?? null;
     }
 
-    protected async getCurrentUserData(masterKey: string, response: any): Promise<any>
+    public async getCurrentUserData(masterKey: string, response: any): Promise<string>
     {
+        const failedResponse = JSON.stringify({ success: false });
         if (!currentUser)
         {
-            return null;
+            return failedResponse;
         }
 
-        const userData = {
+        const userData: UserData =
+        {
+            success: false,
             appStoreState: currentUser.appStoreState,
+            userPreferencesStoreState: undefined,
             displayVaults: [],
             currentVault: undefined
         };
@@ -206,7 +212,7 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
 
         if (vaults[0].length == 0)
         {
-            return false;
+            return failedResponse;
         }
 
         for (let i = 0; i < vaults[0].length; i++)
@@ -221,24 +227,25 @@ class UserRepositoryInitalizer extends VaulticRepositoryInitalizer<User, UserRep
             {
                 // @ts-ignore
                 userData.displayVaults.push({
-                    id: vaults[0][i].vaultID,
-                    color: vaults[0][i].color,
-                    name: vaults[0][i].name
+                    id: vaults[0][i].vaultID!,
+                    color: vaults[0][i].color!,
+                    name: vaults[0][i].name!
                 });
             }
         }
 
         if (!userData.currentVault)
         {
-            const userVault = await environment.repositories.userVaults.getByVaultID(userData.currentVault[0].vaultID);
-            userData.currentVault = { ...userData.currentVault[0], vaultPreferencesStoreState: userVault?.vaultPreferencesStoreState };
-            userData.displayVaults.splice(0, 1);
+            const userVault = await environment.repositories.userVaults.getByVaultID(userData.currentVault![0].vaultID);
+            userData.currentVault = { ...userData.currentVault![0], vaultPreferencesStoreState: userVault?.vaultPreferencesStoreState };
+            userData.displayVaults!.splice(0, 1);
         }
 
-        userData['success'] = true;
-        return userData;
+        userData.success = true;
+        return JSON.stringify(userData);
     }
 }
 
-const userRepositoryInitalizer: UserRepositoryInitalizer = new UserRepositoryInitalizer();
-export default userRepositoryInitalizer;
+const userRepository: UserRepository = new UserRepository();
+export default userRepository;
+export type UserRepositoryType = typeof userRepository;

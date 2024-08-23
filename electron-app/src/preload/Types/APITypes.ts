@@ -114,27 +114,82 @@ export interface VaulticServer
 	value: ValueController;
 }
 
-export interface File
-{
-	exists: () => Promise<boolean>;
-	write: (data: string) => Promise<MethodResponse>;
-	read: () => Promise<MethodResponse>;
-}
-
-export interface Files
-{
-	app: File;
-	settings: File;
-	password: File;
-	value: File;
-	filter: File;
-	group: File;
-	userPreferences: File;
-}
-
 export interface Environment
 {
 	isTest: () => Promise<boolean>;
+}
+
+export interface UserRepository
+{
+	getLastUsedUserEmail: () => Promise<string | null>;
+	getLastUsedUserPreferences: () => Promise<string | null>;
+	createUser: (masterKey: string, email: string) => Promise<boolean | string>;
+	// getCurrentUser: () => User | undefined;
+	// setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
+	getCurrentUserData: (masterKey: string, response: any) => Promise<string>;
+	verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
+}
+
+export interface VaultRepository
+{
+	getVault: (masterKey: string, vaultID: number) => Promise<VaultData | null>;
+	saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
+}
+
+export interface Repositories
+{
+	users: UserRepository;
+	vaults: VaultRepository;
+}
+
+interface User
+{
+	userID: number;
+	firstName: string;
+	lastName: string;
+	email: string;
+	userIdentifier: string;
+	masterKeyHash: string;
+	masterKeySalt: string;
+	privateKey: string;
+	userVaults: UserVault[];
+}
+
+interface UserVault
+{
+	userVaultID: number;
+	userID: number;
+	user: User;
+	vaultID: number;
+	vault: Vault;
+	vaultKey: string;
+}
+
+interface Vault
+{
+	vaultID: number;
+	userVaults: UserVault[];
+	vaultIdentifier: string;
+	name: string;
+	color: string;
+	vaultStoreState: string;
+	passwordStoreState: string;
+	valueStoreState: string;
+	filterStoreState: string;
+	groupStoreState: string;
+}
+
+export interface VaultData extends Vault
+{
+	vaultPreferencesStoreState: string;
+}
+
+export interface DisplayVault
+{
+	name: string;
+	id: number;
+	color: string;
+	lastUsed: boolean;
 }
 
 export interface IAPI
@@ -144,5 +199,5 @@ export interface IAPI
 	server: VaulticServer;
 	utilities: Utilities;
 	helpers: Helpers;
-	files: Files;
+	repositories: Repositories;
 }

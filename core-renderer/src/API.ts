@@ -8,7 +8,6 @@ class API
     get server() { return this.internalAPI?.server; }
     get utilities() { return this.internalAPI?.utilities; }
     get helpers() { return this.internalAPI?.helpers; }
-    get files() { return this.internalAPI?.files; }
     get repositories() { return this.internalAPI?.repositories; }
 
     constructor()

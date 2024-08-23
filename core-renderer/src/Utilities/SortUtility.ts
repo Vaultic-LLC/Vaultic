@@ -1,7 +1,7 @@
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { IGroupable } from "../Types/EncryptedData";
 import { Group } from "../Types/Table";
-import { stores } from "../Objects/Stores";
+import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 
 class SortUtility
@@ -22,12 +22,12 @@ class SortUtility
 
     passwordGroupSort(values: ReactivePassword[], descending: boolean)
     {
-        this.groupSort<ReactivePassword>(values, descending, stores.groupStore.sortedPasswordsGroups);
+        this.groupSort<ReactivePassword>(values, descending, app.currentVault.groupStore.sortedPasswordsGroups);
     }
 
     valuesGroupSort(values: ReactiveValue[], descending: boolean)
     {
-        this.groupSort<ReactiveValue>(values, descending, stores.groupStore.sortedValuesGroups);
+        this.groupSort<ReactiveValue>(values, descending, app.currentVault.groupStore.sortedValuesGroups);
     }
 
     private groupSort<T extends IGroupable>(values: T[], descending: boolean, sortedGroups: Group[])

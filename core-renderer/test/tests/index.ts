@@ -36,26 +36,26 @@ async function setup()
 
 async function cleanUp()
 {
-    for (let i = 0; i < stores.passwordStore.passwords.length; i++)
+    for (let i = 0; i < app.currentVault.passwordStore.passwords.length; i++)
     {
-        await stores.passwordStore.deletePassword(masterKey, stores.passwordStore.passwords[i]);
+        await app.currentVault.passwordStore.deletePassword(masterKey, app.currentVault.passwordStore.passwords[i]);
     }
 
-    for (let i = 0; i < stores.valueStore.nameValuePairs.length; i++)
+    for (let i = 0; i < app.currentVault.valueStore.nameValuePairs.length; i++)
     {
-        await stores.valueStore.deleteNameValuePair(masterKey, stores.valueStore.nameValuePairs[i]);
+        await app.currentVault.valueStore.deleteNameValuePair(masterKey, app.currentVault.valueStore.nameValuePairs[i]);
     }
 
-    const filterState = stores.filterStore.getState();
+    const filterState = app.currentVault.filterStore.getState();
     for (let i = 0; i < filterState.values.length; i++)
     {
-        await stores.filterStore.deleteFilter(masterKey, filterState.values[i]);
+        await app.currentVault.filterStore.deleteFilter(masterKey, filterState.values[i]);
     }
 
-    const groupState = stores.groupStore.getState();
+    const groupState = app.currentVault.groupStore.getState();
     for (let i = 0; i < groupState.values.length; i++)
     {
-        await stores.groupStore.deleteGroup(masterKey, groupState.values[i]);
+        await app.currentVault.groupStore.deleteGroup(masterKey, groupState.values[i]);
     }
 }
 
@@ -64,7 +64,7 @@ export default async function runAllTests()
     await cleanUp();
     await setup();
 
-    await stores.appStore.setKey(masterKey);
+    await app.setKey(masterKey);
     console.time();
 
     await runTests(passwordStoreSuite);

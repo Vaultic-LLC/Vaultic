@@ -21,10 +21,10 @@ transactionTestSuite.tests.push({
             value: test
         });
 
-        await stores.filterStore.addFilter(masterKey, filter);
+        await app.currentVault.filterStore.addFilter(masterKey, filter);
 
         const group = defaultGroup(DataType.Passwords);
-        await stores.groupStore.addGroup(masterKey, group);
+        await app.currentVault.groupStore.addGroup(masterKey, group);
 
         const password = defaultPassword();
         password.login = test;
@@ -32,20 +32,20 @@ transactionTestSuite.tests.push({
 
         // groups are saved last in the add password workflow. This will cause it to fail, 
         // triggering a rollback of filters and passwords
-        stores.groupStore.getFile = () => ({} as DataFile);
+        app.currentVault.groupStore.getFile = () => ({} as DataFile);
 
-        const passwordStoreState = JSON.stringify(stores.passwordStore.getState());
-        const filterStoreState = JSON.stringify(stores.filterStore.getState());
-        const groupStoreState = JSON.stringify(stores.groupStore.getState());
+        const passwordStoreState = JSON.stringify(app.currentVault.passwordStore.getState());
+        const filterStoreState = JSON.stringify(app.currentVault.filterStore.getState());
+        const groupStoreState = JSON.stringify(app.currentVault.groupStore.getState());
 
-        const success = await stores.passwordStore.addPassword(masterKey, password);
+        const success = await app.currentVault.passwordStore.addPassword(masterKey, password);
         ctx.assertTruthy("Save Password failed", !success);
 
-        ctx.assertEquals("Password states", JSON.stringify(stores.passwordStore.getState()), passwordStoreState);
-        ctx.assertEquals("Filter states", JSON.stringify(stores.filterStore.getState()), filterStoreState);
-        ctx.assertEquals("Group states", JSON.stringify(stores.groupStore.getState()), groupStoreState);
+        ctx.assertEquals("Password states", JSON.stringify(app.currentVault.passwordStore.getState()), passwordStoreState);
+        ctx.assertEquals("Filter states", JSON.stringify(app.currentVault.filterStore.getState()), filterStoreState);
+        ctx.assertEquals("Group states", JSON.stringify(app.currentVault.groupStore.getState()), groupStoreState);
 
-        stores.groupStore.getFile = () => api.files.group;
+        app.currentVault.groupStore.getFile = () => api.files.group;
     }
 });
 
@@ -62,10 +62,10 @@ transactionTestSuite.tests.push({
             value: test
         });
 
-        await stores.filterStore.addFilter(masterKey, filter);
+        await app.currentVault.filterStore.addFilter(masterKey, filter);
 
         const group = defaultGroup(DataType.Passwords);
-        await stores.groupStore.addGroup(masterKey, group);
+        await app.currentVault.groupStore.addGroup(masterKey, group);
 
         const password = defaultPassword();
         password.login = test;
@@ -73,30 +73,30 @@ transactionTestSuite.tests.push({
 
         // groups are saved last in the add password workflow. This will cause it to fail, 
         // triggering a rollback of filters and passwords
-        stores.groupStore.getFile = () => ({} as DataFile);
+        app.currentVault.groupStore.getFile = () => ({} as DataFile);
 
-        const passwordStoreState = JSON.stringify(stores.passwordStore.getState());
-        const filterStoreState = JSON.stringify(stores.filterStore.getState());
-        const groupStoreState = JSON.stringify(stores.groupStore.getState());
+        const passwordStoreState = JSON.stringify(app.currentVault.passwordStore.getState());
+        const filterStoreState = JSON.stringify(app.currentVault.filterStore.getState());
+        const groupStoreState = JSON.stringify(app.currentVault.groupStore.getState());
 
-        const success = await stores.passwordStore.addPassword(masterKey, password);
+        const success = await app.currentVault.passwordStore.addPassword(masterKey, password);
         ctx.assertTruthy("Save Password failed", !success);
 
-        stores.groupStore.getFile = () => api.files.group;
+        app.currentVault.groupStore.getFile = () => api.files.group;
 
         // re reading in the files should give the same state as before trying to save the password
-        stores.passwordStore.resetToDefault();
-        await stores.passwordStore.readState(masterKey);
+        app.currentVault.passwordStore.resetToDefault();
+        await app.currentVault.passwordStore.readState(masterKey);
 
-        stores.filterStore.resetToDefault();
-        await stores.filterStore.readState(masterKey);
+        app.currentVault.filterStore.resetToDefault();
+        await app.currentVault.filterStore.readState(masterKey);
 
-        stores.groupStore.resetToDefault();
-        await stores.groupStore.readState(masterKey);
+        app.currentVault.groupStore.resetToDefault();
+        await app.currentVault.groupStore.readState(masterKey);
 
-        ctx.assertEquals("Password states", JSON.stringify(stores.passwordStore.getState()), passwordStoreState);
-        ctx.assertEquals("Filter states", JSON.stringify(stores.filterStore.getState()), filterStoreState);
-        ctx.assertEquals("Group states", JSON.stringify(stores.groupStore.getState()), groupStoreState);
+        ctx.assertEquals("Password states", JSON.stringify(app.currentVault.passwordStore.getState()), passwordStoreState);
+        ctx.assertEquals("Filter states", JSON.stringify(app.currentVault.filterStore.getState()), filterStoreState);
+        ctx.assertEquals("Group states", JSON.stringify(app.currentVault.groupStore.getState()), groupStoreState);
     }
 });
 

@@ -13,7 +13,7 @@ import PasswordView from "../../ObjectViews/PasswordView.vue";
 
 import { Password } from '../../../Types/EncryptedData';
 import { SingleSelectorItemModel } from '../../../Types/Models';
-import { stores } from '../../../Objects/Stores';
+import app from "../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "EditPasswordPopup",
@@ -30,7 +30,7 @@ export default defineComponent({
         const selectorItemModel: SingleSelectorItemModel = {
             isActive: ref(true),
             title: ref("Edit Password"),
-            color: ref(stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor),
+            color: ref(app.userPreferences.currentColorPalette.passwordsColor.primaryColor),
             onClick: () => { }
         }
 

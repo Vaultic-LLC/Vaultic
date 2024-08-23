@@ -119,7 +119,7 @@ export default defineComponent({
             if (response.Success)
             {
                 // TODO: Not needed anymore?
-                //await stores.passwordStore.addPassword(key.value, response.VaulticPassword, true);
+                //await app.currentVault.passwordStore.addPassword(key.value, response.VaulticPassword, true);
                 app.popups.showLoadingIndicator(props.color, "Signing In");
 
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email);
@@ -128,7 +128,8 @@ export default defineComponent({
                     const createUserResult = await api.repositories.users.createUser(key.value, account.value.email);
                     if (!createUserResult)
                     {
-                        // TODO: need to better recover from this
+                        // TODO: need to better recover from this. Should take back to main screen since the user is created
+                        // on the server
                         app.popups.hideLoadingIndicator();
                         showAlertMessage("Unable to create account, please try again. If the issue persists", "Unable to create account", true);
 

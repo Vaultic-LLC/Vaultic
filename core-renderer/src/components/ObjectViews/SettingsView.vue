@@ -65,8 +65,7 @@ import ScrollView from './ScrollView.vue';
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
 import { FilterStatus } from '../../Types/Table';
-import { stores } from '../../Objects/Stores';
-import { SettingsStoreState } from '../../Objects/Stores/SettingsStore';
+import app, { AppSettings } from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "ValueView",
@@ -81,9 +80,10 @@ export default defineComponent({
     props: ['creating', 'model', 'currentView'],
     setup(props)
     {
+        // TODO: this component needs to get its settings from multiple places now
         const refreshKey: Ref<string> = ref("");
-        const settingsState: Ref<SettingsStoreState> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const settingsState: Ref<AppSettings> = ref(props.model);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
 
         const gridDefinition: GridDefinition = {
@@ -98,7 +98,7 @@ export default defineComponent({
 
         function onSave()
         {
-            stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -108,10 +108,10 @@ export default defineComponent({
 
         async function onAuthenticationSuccessful(masterkey: string)
         {
-            stores.popupStore.showLoadingIndicator(color.value, "Saving Settings");
-            // TODO: Error handling?
-            await stores.settingsStore.update(masterkey, settingsState.value);
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.showLoadingIndicator(color.value, "Saving Settings");
+            // TODO: Error handling? 
+            await app.updateSettings(masterkey, settingsState.value);
+            app.popups.hideLoadingIndicator();
 
             saveSucceeded(true);
         }

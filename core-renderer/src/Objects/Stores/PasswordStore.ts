@@ -18,9 +18,9 @@ export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 
 export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordStoreState>
 {
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state, "passwordStoreState");
+        super(vault, "passwordStoreState");
     }
 
     protected defaultState()
@@ -33,11 +33,6 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
             duplicatePasswords: {},
             currentAndSafePasswords: { current: [], safe: [] },
         }
-    }
-
-    public getFile(): DataFile
-    {
-        return api.files.password;
     }
 
     async addPassword(masterKey: string, password: Password, skipBackup: boolean = false): Promise<boolean>
@@ -299,9 +294,9 @@ export class ReactivePasswordStore extends PasswordStore
     get hasVaulticPassword() { return this.internalHasVaulticPassword.value; }
     get breachedPasswords() { return this.internalBreachedPasswords.value; }
 
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state);
+        super(vault);
 
         this.internalOldPasswords = computed(() => this.state.values.filter(p => p.isOld).map(p => p.id));
         this.internalWeakPasswords = computed(() => this.state.values.filter(p => p.isWeak).map(p => p.id));

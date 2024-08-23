@@ -13,11 +13,11 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     isPrimary: true
                 },
                 {
-                    name: "firstName",
+                    name: "signatureSecret",
                     type: "text"
                 },
                 {
-                    name: "lastName",
+                    name: "signature",
                     type: "text"
                 },
                 {
@@ -25,8 +25,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "text"
                 },
                 {
-                    name: "userIdentifier",
-                    type: "text"
+                    name: "lastUsed",
+                    type: "boolean"
                 },
                 {
                     name: "masterKeyHash",
@@ -37,7 +37,19 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "text"
                 },
                 {
+                    name: "publicKey",
+                    type: "text"
+                },
+                {
                     name: "privateKey",
+                    type: "text"
+                },
+                {
+                    name: "appStoreState",
+                    type: "text"
+                },
+                {
+                    name: "userPreferencesStoreState",
                     type: "text"
                 }
             ]
@@ -60,7 +72,19 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "integer"
                 },
                 {
+                    name: "signatureSecret",
+                    type: "text"
+                },
+                {
+                    name: "signature",
+                    type: "text"
+                },
+                {
                     name: "vaultKey",
+                    type: "text"
+                },
+                {
+                    name: "vaultPreferencesStoreState",
                     type: "text"
                 }
             ]
@@ -75,8 +99,12 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     isPrimary: true
                 },
                 {
-                    name: "vaultIdentifier",
-                    type: "string"
+                    name: "signatureSecret",
+                    type: "text"
+                },
+                {
+                    name: "signature",
+                    type: "text"
                 },
                 {
                     name: "name",
@@ -87,11 +115,11 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "string"
                 },
                 {
-                    name: "appStoreState",
-                    type: "string"
+                    name: "lastUsed",
+                    type: "boolean"
                 },
                 {
-                    name: "settingsStoreState",
+                    name: "vaultStoreState",
                     type: "string"
                 },
                 {
@@ -108,10 +136,6 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 },
                 {
                     name: "groupStoreState",
-                    type: "string"
-                },
-                {
-                    name: "userPreferencesStoreState",
                     type: "string"
                 }
             ]

@@ -39,7 +39,7 @@ import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import DevicePopup from './DevicePopup.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { popups } from '../../Objects/Stores/PopupStore';
 
 export default defineComponent({
@@ -56,7 +56,7 @@ export default defineComponent({
     {
         const showDevicePopup: Ref<boolean> = ref(false);
         const popupInfo = popups.incorrectDevice;
-        const currentPrimaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         function close()
         {
@@ -66,12 +66,12 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            stores.popupStore.addOnEnterHandler(popupInfo.enterOrder!, close);
+            app.popups.addOnEnterHandler(popupInfo.enterOrder!, close);
         });
 
         onUnmounted(() =>
         {
-            stores.popupStore.removeOnEnterHandler(popupInfo.enterOrder!);
+            app.popups.removeOnEnterHandler(popupInfo.enterOrder!);
         });
 
         return {

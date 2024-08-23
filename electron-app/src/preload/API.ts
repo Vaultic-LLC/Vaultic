@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { IAPI, AppController, CryptUtility, Environment, File, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
+import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -81,58 +81,24 @@ const serverHelper: ServerHelper =
 	logUserIn: (masterKey: string, email: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email)
 };
 
-const appFile: File =
-{
-	exists: () => ipcRenderer.invoke('appFile:exists'),
-	read: () => ipcRenderer.invoke('appFile:read'),
-	write: (data: string) => ipcRenderer.invoke('appFile:write', data)
-};
-
-const settingsFile: File =
-{
-	exists: () => ipcRenderer.invoke('settingsFile:exists'),
-	read: () => ipcRenderer.invoke('settingsFile:read'),
-	write: (data: string) => ipcRenderer.invoke('settingsFile:write', data)
-};
-
-const passwordFile: File =
-{
-	exists: () => ipcRenderer.invoke('passwordFile:exists'),
-	read: () => ipcRenderer.invoke('passwordFile:read'),
-	write: (data: string) => ipcRenderer.invoke('passwordFile:write', data)
-};
-
-const valueFile: File =
-{
-	exists: () => ipcRenderer.invoke('valueFile:exists'),
-	read: () => ipcRenderer.invoke('valueFile:read'),
-	write: (data: string) => ipcRenderer.invoke('valueFile:write', data)
-};
-
-const filterFile: File =
-{
-	exists: () => ipcRenderer.invoke('filterFile:exists'),
-	read: () => ipcRenderer.invoke('filterFile:read'),
-	write: (data: string) => ipcRenderer.invoke('filterFile:write', data)
-};
-
-const groupFile: File =
-{
-	exists: () => ipcRenderer.invoke('groupFile:exists'),
-	read: () => ipcRenderer.invoke('groupFile:read'),
-	write: (data: string) => ipcRenderer.invoke('groupFile:write', data)
-};
-
-const userPreferencesFile: File =
-{
-	exists: () => ipcRenderer.invoke('userPreferencesFile:exists'),
-	read: () => ipcRenderer.invoke('userPreferencesFile:read'),
-	write: (data: string) => ipcRenderer.invoke('userPreferencesFile:write', data)
-};
-
 const environment: Environment =
 {
 	isTest: () => ipcRenderer.invoke('environment:isTest')
+};
+
+const userRepository: UserRepository =
+{
+	getLastUsedUserEmail: () => ipcRenderer.invoke('userRepository:getLastUsedUserEmail'),
+	getLastUsedUserPreferences: () => ipcRenderer.invoke('userRepository:getLastUsedUserPreferences'),
+	createUser: (masterKey: string, email: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email),
+	getCurrentUserData: (masterKey: string, response: any) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey, response),
+	verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
+};
+
+const vaultRepository: VaultRepository =
+{
+	getVault: (masterKey: string, vaultID: number) => ipcRenderer.invoke('vaultRepository:getVault', masterKey, vaultID),
+	saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => ipcRenderer.invoke('vaultRepository:saveAndBackup', masterKey, vaultID, data, skipBackup)
 };
 
 const api: IAPI =
@@ -155,14 +121,10 @@ const api: IAPI =
 		vaultic: vaulticHelper,
 		server: serverHelper
 	},
-	files: {
-		app: appFile,
-		settings: settingsFile,
-		password: passwordFile,
-		value: valueFile,
-		filter: filterFile,
-		group: groupFile,
-		userPreferences: userPreferencesFile
+	repositories: {
+		users: userRepository,
+		vaults: vaultRepository
+
 	}
 };
 

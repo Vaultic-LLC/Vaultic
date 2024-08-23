@@ -19,7 +19,7 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import { ClosePopupFuncctionKey, ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Types/Keys';
 import PopupButton from '../InputFields/PopupButton.vue';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "ObjectView",
@@ -65,12 +65,12 @@ export default defineComponent({
                         closePopupFunction.value(true);
                     }
 
-                    stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
+                    app.popups.showToast(primaryColor.value, "Saved Successfully", true);
                 }).catch((triedSaved: boolean) =>
                 {
                     if (triedSaved && !props.skipOnSaveFunctionality)
                     {
-                        stores.popupStore.showToast(primaryColor.value, "Save Failed", false);
+                        app.popups.showToast(primaryColor.value, "Save Failed", false);
                     }
                 });
             }
@@ -94,12 +94,12 @@ export default defineComponent({
                         closePopupFunction.value(true);
                     }
 
-                    stores.popupStore.showToast(primaryColor.value, "Saved Successfully", true);
+                    app.popups.showToast(primaryColor.value, "Saved Successfully", true);
                 }).catch((triedSaved: boolean) =>
                 {
                     if (triedSaved)
                     {
-                        stores.popupStore.showToast(primaryColor.value, "Save Failed", false);
+                        app.popups.showToast(primaryColor.value, "Save Failed", false);
                     }
                 });
             }
@@ -125,7 +125,7 @@ export default defineComponent({
                 return;
             }
 
-            stores.popupStore.showRequestAuthentication(primaryColor.value,
+            app.popups.showRequestAuthentication(primaryColor.value,
                 onAuthenticationSuccessful, authenticationCancelled);
 
             requestAuthorization.value = false;
@@ -133,12 +133,12 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            stores.popupStore.addOnEnterHandler(4, onSave);
+            app.popups.addOnEnterHandler(4, onSave);
         });
 
         onUnmounted(() =>
         {
-            stores.popupStore.removeOnEnterHandler(4);
+            app.popups.removeOnEnterHandler(4);
         });
 
         return {

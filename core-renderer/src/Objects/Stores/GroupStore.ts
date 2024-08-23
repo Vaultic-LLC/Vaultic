@@ -18,9 +18,9 @@ export interface GroupStoreState extends DataTypeStoreState<Group>
 
 export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 {
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state, "groupStoreState");
+        super(vault, "groupStoreState");
     }
 
     protected defaultState()
@@ -36,11 +36,6 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             duplicatePasswordGroups: {},
             duplicateValueGroups: {},
         }
-    }
-
-    public getFile(): DataFile
-    {
-        return api.files.group;
     }
 
     async addGroup(masterKey: string, group: Group, skipBackup: boolean = false): Promise<boolean>
@@ -350,9 +345,9 @@ export class ReactiveGroupStore extends GroupStore
     get pinnedValueGroups() { return this.internalPinnedValueGroups.value; }
     get unpinnedValueGroups() { return this.internalUnpinnedValueGroups.value; }
 
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state);
+        super(vault);
 
         this.internalPasswordGroups = computed(() => this.state.values.filter(g => g.type == DataType.Passwords));
         this.internalValueGroups = computed(() => this.state.values.filter(g => g.type == DataType.NameValuePairs));

@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, ManyToOne } from "typeorm"
+import { Entity, PrimaryColumn, Column, OneToMany } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
 
@@ -9,7 +9,7 @@ export class Vault extends VaulticEntity
     @PrimaryColumn("integer")
     vaultID: number
 
-    @ManyToOne(() => UserVault, (uv: UserVault) => uv.vault)
+    @OneToMany(() => UserVault, (uv: UserVault) => uv.vault)
     userVaults: UserVault[];
 
     // Backed Up
@@ -52,6 +52,11 @@ export class Vault extends VaulticEntity
     @Column("text")
     groupStoreState: string
 
+    identifier(): number 
+    {
+        return this.vaultID;
+    }
+
     protected getSignatureMakeup(): any
     {
         // exclude user preferences so it can be updated without the need of a master key
@@ -77,6 +82,7 @@ export class Vault extends VaulticEntity
     protected internalGetBackup() 
     {
         return {
+            vaultID: this.vaultID,
             name: this.name,
             color: this.color,
             vaultStoreState: this.vaultStoreState,

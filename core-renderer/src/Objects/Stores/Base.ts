@@ -1,5 +1,5 @@
 import { AtRiskType, IIdentifiable, SecondaryDataObjectCollection, SecretProperty } from "../../Types/EncryptedData";
-import { Ref, reactive, ref } from "vue";
+import { Reactive, Ref, reactive, ref } from "vue";
 import { DataType, Filter, Group, PrimaryDataObjectCollection } from "../../Types/Table";
 import { Dictionary } from "../../Types/DataStructures";
 import cryptHelper from "../../Helpers/cryptHelper";
@@ -15,19 +15,19 @@ export class Store<T extends {}, U extends string = StoreEvents>
 {
     events: Dictionary<{ (): void }[]>;
 
-    protected state: T;
+    protected state: Reactive<T>;
     private internalStateName: string;
 
     get stateName() { return this.stateName; }
 
-    constructor(state: T, stateName: string)
+    constructor(stateName: string)
     {
-        this.state = reactive(state);
+        this.state = reactive(this.defaultState());
         this.internalStateName = stateName;
         this.events = {};
     }
 
-    public getState(): T
+    public getState(): Reactive<T>
     {
         return this.state;
     }
@@ -89,9 +89,9 @@ export class VaultContrainedStore<T extends {}, U extends string = StoreEvents> 
 {
     protected vault: any;
 
-    constructor(vault: any, state: T, stateName: string)
+    constructor(vault: any, stateName: string)
     {
-        super(state, stateName);
+        super(stateName);
         this.vault = vault;
     }
 }

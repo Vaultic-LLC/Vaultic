@@ -236,12 +236,6 @@ export function createPopupStore()
     async function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
     {
         color.value = clr;
-
-        if (!(await app.canAuthenticateKey()))
-        {
-            return;
-        }
-
         onSuccess.value = (key: string) =>
         {
             requestAuthenticationIsShowing.value = false;

@@ -49,7 +49,7 @@ import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
-import { stores } from './Objects/Stores';
+import app from "./Objects/Stores/AppStore";
 
 export default defineComponent({
     name: 'App',
@@ -74,14 +74,14 @@ export default defineComponent({
     },
     setup()
     {
-        const isOnline: ComputedRef<boolean> = computed(() => stores.appStore.isOnline);
+        const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
         const finishedMounting: Ref<boolean> = ref(false);
 
-        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
-        let backgroundColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.backgroundColor);
+        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
+        let backgroundColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.backgroundColor);
         //let backgroundClr: Ref<string> = ref('#0f111d');
 
-        const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(stores.userPreferenceStore.currentPrimaryColor.value));
+        const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(app.userPreferences.currentPrimaryColor.value));
 
         let lastMouseover: number = 0;
         const threshold: number = 1000;
@@ -95,12 +95,12 @@ export default defineComponent({
                     return;
                 }
 
-                stores.appStore.resetSessionTime();
+                app.resetSessionTime();
                 lastMouseover = Date.now();
             });
 
             finishedMounting.value = true;
-            stores.popupStore.showAccountSetup(AccountSetupView.SignIn);
+            app.popups.showAccountSetup(AccountSetupView.SignIn);
         });
 
         let clr = "#0f111d";

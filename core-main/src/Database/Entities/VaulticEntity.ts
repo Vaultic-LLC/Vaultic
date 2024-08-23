@@ -1,5 +1,6 @@
 import { environment } from "../../Environment";
 import * as jose from 'jose'
+import { Column } from "typeorm"
 
 export class VaulticEntity
 {
@@ -7,13 +8,18 @@ export class VaulticEntity
 
     // Encrypted
     // Backed Up
-    @Column()
+    @Column("text")
     signatureSecret: string
 
     // Not Encrypted
     // Backed Up
-    @Column()
+    @Column("text")
     signature: string
+
+    identifier(): number
+    {
+        throw "need to override";
+    }
 
     async sign(masterKey: string, userID: number): Promise<boolean>
     {

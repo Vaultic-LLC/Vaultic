@@ -17,7 +17,7 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import { getLinearGradientFromColor } from '../../Helpers/ColorHelper';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { ToggleRadioButtonModel } from '../../Types/Models';
 
 export default defineComponent({
@@ -26,7 +26,7 @@ export default defineComponent({
     emits: ['onButtonClicked'],
     setup(props, ctx)
     {
-        const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const linearGradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(primaryColor.value));
 
         const model: ComputedRef<ToggleRadioButtonModel> = computed(() => props.model);

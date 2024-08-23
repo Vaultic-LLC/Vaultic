@@ -61,33 +61,15 @@ export default function setupIPC()
 	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string) =>
 		validateSender(e, () => serverHelper.logUserIn(masterKey, email)));
 
-	ipcMain.handle('appFile:exists', (e) => validateSender(e, () => getVaulticFiles().app.exists()));
-	ipcMain.handle('appFile:read', (e) => validateSender(e, () => getVaulticFiles().app.read()));
-	ipcMain.handle('appFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().app.write(data)));
+	ipcMain.handle('userRepository:getLastUsedUserEmail', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserEmail()));
+	ipcMain.handle('userRepository:getLastUsedUserPreferences', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserPreferences()));
+	ipcMain.handle('userRepository:createUser', (e, masterKey: string, email: string) => validateSender(e, () => environment.repositories.users.createUser(masterKey, email)));
+	ipcMain.handle('userRepository:getCurrentUserData', (e, masterKey: string, response: any) => validateSender(e, () => environment.repositories.users.getCurrentUserData(masterKey, response)));
+	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email)));
 
-	ipcMain.handle('settingsFile:exists', (e) => validateSender(e, () => getVaulticFiles().settings.exists()));
-	ipcMain.handle('settingsFile:read', (e) => validateSender(e, () => getVaulticFiles().settings.read()));
-	ipcMain.handle('settingsFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().settings.write(data)));
+	ipcMain.handle('vaultRepository:getVault', (e, masterKey: string, vaultID: number) => validateSender(e, () => environment.repositories.vaults.getVault(masterKey, vaultID)));
+	ipcMain.handle('vaultRepository:saveAndBackup', (e, masterKey: string, vaultID: number, data: string, skipBackup: boolean) => validateSender(e, () => environment.repositories.vaults.saveAndBackup(masterKey, vaultID, data, skipBackup)));
 
-	ipcMain.handle('passwordFile:exists', (e) => validateSender(e, () => getVaulticFiles().password.exists()));
-	ipcMain.handle('passwordFile:read', (e) => validateSender(e, () => getVaulticFiles().password.read()));
-	ipcMain.handle('passwordFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().password.write(data)));
-
-	ipcMain.handle('valueFile:exists', (e) => validateSender(e, () => getVaulticFiles().value.exists()));
-	ipcMain.handle('valueFile:read', (e) => validateSender(e, () => getVaulticFiles().value.read()));
-	ipcMain.handle('valueFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().value.write(data)));
-
-	ipcMain.handle('filterFile:exists', (e) => validateSender(e, () => getVaulticFiles().filter.exists()));
-	ipcMain.handle('filterFile:read', (e) => validateSender(e, () => getVaulticFiles().filter.read()));
-	ipcMain.handle('filterFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().filter.write(data)));
-
-	ipcMain.handle('groupFile:exists', (e) => validateSender(e, () => getVaulticFiles().group.exists()));
-	ipcMain.handle('groupFile:read', (e) => validateSender(e, () => getVaulticFiles().group.read()));
-	ipcMain.handle('groupFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().group.write(data)));
-
-	ipcMain.handle('userPreferencesFile:exists', (e) => validateSender(e, () => getVaulticFiles().userPreferences.exists()));
-	ipcMain.handle('userPreferencesFile:read', (e) => validateSender(e, () => getVaulticFiles().userPreferences.read()));
-	ipcMain.handle('userPreferencesFile:write', (e, data: string) => validateSender(e, () => getVaulticFiles().userPreferences.write(data)));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 }

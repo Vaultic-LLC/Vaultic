@@ -1,21 +1,16 @@
 import { environment } from "../../Environment";
 import { Repository } from "typeorm";
-import { VaulticRepositoryInitalizer } from "./VaulticRepositoryInitalizer";
+import { VaulticRepository } from "./VaulticRepositoryInitalizer";
 import { UserVault } from "../Entities/UserVault";
-import { UserVaultRepository } from "../../Types/Repositories";
 
-class UserVaultRepositoryInitalizer extends VaulticRepositoryInitalizer<UserVault, UserVaultRepository>
+class UserVaultRepository extends VaulticRepository<UserVault>
 {
     protected getRepository(): Repository<UserVault> | undefined
     {
         return environment.databaseDataSouce.getRepository(UserVault);
     }
 
-    protected getRepositoryExtension(): any 
-    {
-    }
-
-    protected async getByVaultID(vaultID: number): Promise<UserVault | null>
+    public async getByVaultID(vaultID: number): Promise<UserVault | null>
     {
         const currentUser = environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -30,5 +25,6 @@ class UserVaultRepositoryInitalizer extends VaulticRepositoryInitalizer<UserVaul
     }
 }
 
-const userVaultaultRepositoryInitalizer: UserVaultRepositoryInitalizer = new UserVaultRepositoryInitalizer();
-export default userVaultaultRepositoryInitalizer;
+const userVaultaultRepository: UserVaultRepository = new UserVaultRepository();
+export default userVaultaultRepository;
+export type UserVaultRepositoryType = typeof userVaultaultRepository;

@@ -30,7 +30,7 @@ import WorldMap from './WorldMap.vue';
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
 
 import { SmallMetricGaugeModel } from '../../Types/Models';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { AtRiskType } from '../../Types/EncryptedData';
 import { DataType } from '../../Types/Table';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -45,7 +45,7 @@ export default defineComponent({
     },
     setup()
     {
-        const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
         const scanning: Ref<boolean> = ref(false);
 
         const metricModel: ComputedRef<SmallMetricGaugeModel> = computed(() =>
@@ -53,10 +53,10 @@ export default defineComponent({
             if (scanning.value)
             {
                 return {
-                    key: `pbreached${0}${stores.passwordStore.passwords.length}`,
+                    key: `pbreached${0}${app.currentVault.passwordStore.passwords.length}`,
                     title: 'Breached',
                     filledAmount: 0,
-                    totalAmount: stores.passwordStore.passwords.length,
+                    totalAmount: app.currentVault.passwordStore.passwords.length,
                     color: color.value,
                     active: false,
                     pulse: true,
@@ -69,19 +69,19 @@ export default defineComponent({
             }
             else
             {
-                const breachedCount: number = stores.passwordStore.breachedPasswords.length;
+                const breachedCount: number = app.currentVault.passwordStore.breachedPasswords.length;
                 return {
-                    key: `pbreached${breachedCount}${stores.passwordStore.passwords.length}`,
+                    key: `pbreached${breachedCount}${app.currentVault.passwordStore.passwords.length}`,
                     title: 'Breached',
                     filledAmount: breachedCount,
-                    totalAmount: stores.passwordStore.passwords.length,
+                    totalAmount: app.currentVault.passwordStore.passwords.length,
                     color: color.value,
-                    active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Breached,
+                    active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Breached,
                     pulse: breachedCount > 0,
                     pulseColor: color.value,
                     onClick: function ()
                     {
-                        stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Breached);
+                        app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Breached);
                     }
                 };
             }
@@ -106,11 +106,11 @@ export default defineComponent({
             {
                 if (result[1] === true)
                 {
-                    stores.popupStore.showToast(color.value, "Scan Complete", true);
+                    app.popups.showToast(color.value, "Scan Complete", true);
                 }
                 else
                 {
-                    stores.popupStore.showToast(color.value, "Scan Failed", false);
+                    app.popups.showToast(color.value, "Scan Failed", false);
                 }
             }
         }
@@ -118,7 +118,7 @@ export default defineComponent({
         async function getUserBreaches(notifyFailed: boolean): Promise<boolean>
         {
             const requestData = {
-                LimitedPasswords: stores.passwordStore.passwords.map(p =>
+                LimitedPasswords: app.currentVault.passwordStore.passwords.map(p =>
                 {
                     return {
                         id: p.id,
@@ -130,7 +130,7 @@ export default defineComponent({
             const response = await api.server.user.getUserDataBreaches(JSON.stringify(requestData));
             if (response.Success)
             {
-                stores.userDataBreachStore.updateUserBreaches(response.DataBreaches!);
+                app.userDataBreaches.updateUserBreaches(response.DataBreaches!);
                 return true;
             }
             // don't be showing random popups when we were updating in the background
@@ -145,13 +145,13 @@ export default defineComponent({
         // should request the data breeches once when the app first loads and store them somewhere
         onMounted(() =>
         {
-            if (stores.passwordStore.passwords.length > 0)
+            if (app.currentVault.passwordStore.passwords.length > 0)
             {
                 startScan(false);
             }
         });
 
-        watch(() => stores.passwordStore.passwords.length, (newValue, oldValue) =>
+        watch(() => app.currentVault.passwordStore.passwords.length, (newValue, oldValue) =>
         {
             if (newValue > oldValue)
             {
@@ -159,9 +159,9 @@ export default defineComponent({
             }
         });
 
-        watch(() => stores.appStore.isOnline, () =>
+        watch(() => app.isOnline, () =>
         {
-            if (stores.passwordStore.passwords.length == 0)
+            if (app.currentVault.passwordStore.passwords.length == 0)
             {
                 return;
             }

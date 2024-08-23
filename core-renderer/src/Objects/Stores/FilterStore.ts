@@ -17,9 +17,9 @@ export interface FilterStoreState extends DataTypeStoreState<Filter>
 
 export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 {
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state, "filterStoreState");
+        super(vault, "filterStoreState");
     }
 
     protected defaultState()
@@ -34,11 +34,6 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
             duplicatePasswordFilters: {},
             duplicateValueFilters: {},
         }
-    }
-
-    public getFile(): DataFile
-    {
-        return api.files.filter;
     }
 
     toggleFilter(id: string): boolean | undefined
@@ -371,9 +366,9 @@ export class ReactiveFilterStore extends FilterStore
     get pinnedValueFilters() { return this.internalPinnedValueFilters.value; }
     get unpinnedValueFitlers() { return this.internalUnpinnedValueFilters.value; }
 
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state);
+        super(vault);
 
         this.internalPasswordFilters = computed(() => this.state.values.filter(f => f.type == DataType.Passwords));
         this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.isActive) ?? []);

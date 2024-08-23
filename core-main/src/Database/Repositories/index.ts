@@ -1,30 +1,30 @@
-import { UserRepository, UserVaultRepository, VaultRepository } from "../../Types/Repositories";
-import userRepositoryInitalizer from "./UserRepositoryInitalizer";
-import userVaultaultRepositoryInitalizer from "./UserVaultRepositoryInitalizer";
-import vaultRepositoryInitalizer from "./VaultRepositoryInitalizer";
+import userRepository, { UserRepositoryType } from "./UserRepositoryInitalizer";
+import userVaultRepository, { UserVaultRepositoryType } from "./UserVaultRepositoryInitalizer";
+import vaultRepository, { VaultRepositoryType } from "./VaultRepositoryInitalizer";
 
 export interface VaulticRepositories
 {
-    users: UserRepository;
-    vaults: VaultRepository;
-    userVaults: UserVaultRepository;
+    users: UserRepositoryType;
+    vaults: VaultRepositoryType;
+    userVaults: UserVaultRepositoryType;
 }
 
 export function initRepositories(): VaulticRepositories
 {
-    const userRepository = userRepositoryInitalizer.init();
-    const vaultRepository = vaultRepositoryInitalizer.init();
-    const userVaultRepository = userVaultaultRepositoryInitalizer.init();
+    const userRepositorySucceeded = userRepository.init();
+    const vaultRepositorySucceeded = userVaultRepository.init();
+    const userVaultRepositorySucceeded = vaultRepository.init();
 
-    if (!userRepository[0] || !vaultRepository[0] || !userVaultRepository[0])
+    if (!userRepositorySucceeded || !vaultRepositorySucceeded || !userVaultRepositorySucceeded)
     {
-        // TODO: handle
+        // TODO: add a log table that I can write to internally and that users can export 
+        throw "Error from repositories";
     }
 
     const repositories: VaulticRepositories = {
-        users: userRepository[1],
-        vaults: vaultRepository[1],
-        userVaults: userVaultRepository[1]
+        users: userRepository,
+        vaults: vaultRepository,
+        userVaults: userVaultRepository
     };
 
     return repositories;

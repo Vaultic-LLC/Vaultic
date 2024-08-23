@@ -1,3 +1,4 @@
+import { VaultData } from "../../Types/APITypes";
 import { Dictionary } from "../../Types/DataStructures";
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { Store } from "./Base";
@@ -15,26 +16,14 @@ interface VaultSettings
 
 interface VaultStoreState
 {
-    vaultID: number;
+    vaultID: number | undefined;
     settings: VaultSettings;
     loginHistory: Dictionary<number[]>;
-}
-
-interface UnparsedVault 
-{
-    vaultStoreState: string;
-    passwordStoreState: string;
-    valueStoreState: string;
-    filterStoreState: string;
-    groupStoreState: string;
-    vaultPreferencesStoreState: string;
 }
 
 class BaseVaultStore<V extends PasswordStore,
     W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState>
 {
-    protected state: VaultStoreState;
-
     protected internalPasswordStore: V;
     protected internalValueStore: W;
     protected internalFilterStore: X;
@@ -49,35 +38,71 @@ class BaseVaultStore<V extends PasswordStore,
     get groupStore() { return this.internalGroupStore; }
     get vaultPreferencesStore() { return this.internalVaultPreferencesStore; }
 
-    constructor(vault: UnparsedVault) 
+    constructor() 
     {
-        super(JSON.parse(vault.vaultStoreState), "vaultStoreState");
-        this.internalVaultPreferencesStore = new VaultPreferencesStore(this, JSON.parse(vault.vaultPreferencesStoreState));
+        super("vaultStoreState");
+        this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
+    }
+
+    public setVaultData(masterKey: string, vault: VaultData)
+    {
+        this.updateState(JSON.parse(vault.vaultStoreState));
+        this.internalVaultPreferencesStore.updateState(JSON.parse(vault.vaultPreferencesStoreState));
+    }
+
+    protected defaultState(): VaultStoreState 
+    {
+        return {
+            vaultID: undefined,
+            settings: {
+                loginRecordsToStorePerDay: 13,
+                numberOfDaysToStoreLoginRecords: 30
+            },
+            loginHistory: {}
+        }
     }
 }
 
 export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, FilterStore, GroupStore>
 {
-    constructor(vault: UnparsedVault)
+    constructor()
     {
-        super(vault);
-        this.internalPasswordStore = new PasswordStore(this, JSON.parse(vault.passwordStoreState));
-        this.internalValueStore = new ValueStore(this, JSON.parse(vault.valueStoreState));
-        this.internalFilterStore = new FilterStore(this, JSON.parse(vault.filterStoreState));
-        this.internalGroupStore = new GroupStore(this, JSON.parse(vault.groupStoreState));
+        super();
+        this.internalPasswordStore = new PasswordStore(this);
+        this.internalValueStore = new ValueStore(this);
+        this.internalFilterStore = new FilterStore(this);
+        this.internalGroupStore = new GroupStore(this);
+    }
+
+    public setVaultData(masterKey: string, vault: VaultData)
+    {
+        this.internalPasswordStore.updateState(JSON.parse(vault.passwordStoreState));
+        this.internalValueStore.updateState(JSON.parse(vault.valueStoreState));
+        this.internalFilterStore.updateState(JSON.parse(vault.filterStoreState));
+        this.internalGroupStore.updateState(JSON.parse(vault.groupStoreState));
     }
 }
 
 export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     ReactiveValueStore, ReactiveFilterStore, ReactiveGroupStore>
 {
-    constructor(masterKey: string, vault: UnparsedVault)
+    constructor()
     {
-        super(vault);
-        this.internalPasswordStore = new ReactivePasswordStore(this, JSON.parse(vault.passwordStoreState));
-        this.internalValueStore = new ReactiveValueStore(this, JSON.parse(vault.valueStoreState));
-        this.internalFilterStore = new ReactiveFilterStore(this, JSON.parse(vault.filterStoreState));
-        this.internalGroupStore = new ReactiveGroupStore(this, JSON.parse(vault.groupStoreState));
+        super();
+        this.internalPasswordStore = new ReactivePasswordStore(this);
+        this.internalValueStore = new ReactiveValueStore(this);
+        this.internalFilterStore = new ReactiveFilterStore(this);
+        this.internalGroupStore = new ReactiveGroupStore(this);
+    }
+
+    get loginHistory() { return this.state.loginHistory; }
+
+    public setVaultData(masterKey: string, vault: VaultData)
+    {
+        this.internalPasswordStore.updateState(JSON.parse(vault.passwordStoreState));
+        this.internalValueStore.updateState(JSON.parse(vault.valueStoreState));
+        this.internalFilterStore.updateState(JSON.parse(vault.filterStoreState));
+        this.internalGroupStore.updateState(JSON.parse(vault.groupStoreState));
 
         this.updateLogins(masterKey);
     }

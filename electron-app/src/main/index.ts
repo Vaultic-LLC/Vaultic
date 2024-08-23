@@ -14,11 +14,11 @@ import { getDeviceInfo } from './Objects/DeviceInfo';
 import { initFiles } from './Objects/Files/Files';
 import { createDataSource } from './Objects/DataSource';
 
-function createWindow(): void
+async function createWindow(): Promise<void>
 {
 	//@ts-ignore
 	const isTest = import.meta.env.VITE_ISTEST === "true";
-	setupEnvironment(isTest);
+	await setupEnvironment(isTest);
 
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
@@ -130,9 +130,9 @@ app.on('web-contents-created', (event, contents) =>
 	});
 });
 
-function setupEnvironment(isTest: boolean)
+async function setupEnvironment(isTest: boolean)
 {
-	environment.init({
+	await environment.init({
 		isTest,
 		sessionHandler: {
 			setSession,

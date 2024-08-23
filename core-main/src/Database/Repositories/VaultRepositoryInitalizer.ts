@@ -1,28 +1,21 @@
 import { environment } from "../../Environment";
 import { Vault } from "../Entities/Vault";
-import { DisplayVault, VaultRepository } from "../../Types/Repositories";
+import { VaultData } from "../../Types/Repositories";
 import { Repository } from "typeorm";
-import { VaulticRepositoryInitalizer } from "./VaulticRepositoryInitalizer";
+import { VaulticRepository } from "./VaulticRepositoryInitalizer";
 import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
 import { VaultKey } from "../../Types/Properties";
+import Transaction from "../Transaction";
 
-class VaultRepositoryInitalizer extends VaulticRepositoryInitalizer<Vault, VaultRepository>
+class VaultRepository extends VaulticRepository<Vault>
 {
     protected getRepository(): Repository<Vault> | undefined
     {
         return environment.databaseDataSouce.getRepository(Vault);
     }
 
-    protected getRepositoryExtension(): any 
-    {
-        return {
-            createNewVault: this.createNewVault,
-            getVaults: this.getVaults
-        }
-    }
-
-    protected async createNewVault(name: string, color: string = '#FFFFFF')
+    public async createNewVault(name: string, color: string = '#FFFFFF'): Promise<boolean | [UserVault, Vault]>
     {
         const response = await vaulticServer.vault.create();
         if (!response.Success)
@@ -35,11 +28,13 @@ class VaultRepositoryInitalizer extends VaulticRepositoryInitalizer<Vault, Vault
 
         userVault.userVaultID = response.UserVaultID!;
         userVault.vault = vault;
+        userVault.vaultPreferencesStoreState = "{}"
 
         vault.vaultID = response.VaultID!;
+        vault.lastUsed = true;
         vault.name = name;
         vault.color = color;
-        vault.settingsStoreState = "{}";
+        vault.vaultStoreState = "{}";
         vault.passwordStoreState = "{}";
         vault.valueStoreState = "{}";
         vault.filterStoreState = "{}";
@@ -48,7 +43,7 @@ class VaultRepositoryInitalizer extends VaulticRepositoryInitalizer<Vault, Vault
         return [userVault, vault];
     }
 
-    protected async getVaults(masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number): Promise<[Partial<Vault>[], string[]]>
+    public async getVaults(masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number): Promise<[Partial<Vault>[], string[]]>
     {
         const currentUser = environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -124,21 +119,25 @@ class VaultRepositoryInitalizer extends VaulticRepositoryInitalizer<Vault, Vault
         return [returnVaults, vaultKeys];
     }
 
-    protected async getVault(masterKey: string, vaultID: number): Promise<Vault | null>
+    public async getVault(masterKey: string, vaultID: number): Promise<VaultData | null>
     {
         const vault = await this.getVaults(masterKey, ["userID", "lastUsed"],
             ["name", "color", "appStoreState", "settingsStoreState", "passwordStoreState",
                 "valueStoreState", "filterStoreState", "groupStoreState", "userPreferencesStoreState"], vaultID);
 
+        const currentUser = environment.repositories.users.getCurrentUser();
+
         if (vault[0].length == 1)
         {
-            return vault[0][0] as Vault;
+            const userVault = vault[0][0].userVaults?.filter(uv => uv.userID == currentUser?.userID);
+            // @ts-ignore
+            return { ...vault[0][0], userPreferencesStoreState: userVault[0].vaultPreferencesStoreState } as VaultData;
         }
 
         return null;
     }
 
-    protected async saveAndBackup(masterKey: string, vaultID: number, data: string, skipBackup: boolean = false)
+    public async saveAndBackup(masterKey: string, vaultID: number, data: string, skipBackup: boolean = false)
     {
         const vaultInfo = await this.getVaults(masterKey, [], [], vaultID);
         if (vaultInfo[0].length == 0)
@@ -160,7 +159,10 @@ class VaultRepositoryInitalizer extends VaulticRepositoryInitalizer<Vault, Vault
             return false;
         }
 
-        const saved = this.repository.signAndSave(vaultKey, oldVault as Vault, user!.userID);
+        const transaction = new Transaction();
+        transaction.updateEntity(oldVault as Vault, vaultKey, () => this);
+
+        const saved = await transaction.commit(user!.userID);
         if (!saved)
         {
             return false;
@@ -169,12 +171,13 @@ class VaultRepositoryInitalizer extends VaulticRepositoryInitalizer<Vault, Vault
         if (!skipBackup)
         {
             // TODO: backup
-            const backup = oldVault.getBackup();
+            //const backup = oldVault.getBackup();
         }
 
         return true;
     }
 }
 
-const vaultRepositoryInitalizer: VaultRepositoryInitalizer = new VaultRepositoryInitalizer();
-export default vaultRepositoryInitalizer;
+const vaultRepository: VaultRepository = new VaultRepository();
+export default vaultRepository;
+export type VaultRepositoryType = typeof vaultRepository;

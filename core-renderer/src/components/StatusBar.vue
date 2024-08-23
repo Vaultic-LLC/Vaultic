@@ -15,17 +15,17 @@
 <script lang="ts">
 import { Ref, defineComponent, ref, watch } from 'vue';
 
-import { stores } from '../Objects/Stores';
+import app from "../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "StatusBar",
     setup()
     {
         const refreshKey: Ref<string> = ref('');
-        const online: Ref<boolean> = ref(stores.appStore.isOnline);
+        const online: Ref<boolean> = ref(app.isOnline);
         const text: Ref<string> = ref(online.value ? "Online" : "Offline");
 
-        watch(() => stores.appStore.isOnline, (newValue) =>
+        watch(() => app.isOnline, (newValue) =>
         {
             online.value = newValue;
             text.value = newValue ? "Online" : "Offline";

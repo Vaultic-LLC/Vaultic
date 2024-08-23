@@ -69,7 +69,7 @@ import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue
 import ToastPopup from './ToastPopup.vue';
 import ImportSelectionPopup from "./Workflow/ImportSelectionPopup.vue"
 
-import { stores } from '..//Objects/Stores';
+import app from "../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: 'Popups',
@@ -88,7 +88,7 @@ export default defineComponent({
     setup()
     {
         return {
-            popupStore: stores.popupStore,
+            popupStore: app.popups,
         }
     }
 });

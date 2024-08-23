@@ -35,7 +35,7 @@ Coloris({
 });
 
 // read userpreferences before any UI elements for themeing
-stores.userPreferenceStore.readState('').then(initApp).catch(initApp);
+app.userPreferences.readState('').then(initApp).catch(initApp);
 
 async function initApp()
 {

@@ -12,7 +12,7 @@ import SmallMetricGauge from "../../../Dashboard/SmallMetricGauge.vue"
 import { AtRiskType } from '../../../../Types/EncryptedData';
 import { DataType } from '../../../../Types/Table';
 import { SmallMetricGaugeModel } from "../../../../Types/Models"
-import { stores } from '../../../../Objects/Stores';
+import app from "../../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "EmptyFilterGroupGauge",
@@ -24,68 +24,68 @@ export default defineComponent({
     {
         const model: ComputedRef<SmallMetricGaugeModel> = computed(() =>
         {
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    switch (stores.appStore.activeFilterGroupsTable)
+                    switch (app.activeFilterGroupsTable)
                     {
                         case DataType.Groups:
                             return {
-                                key: `vgempty${stores.groupStore.emptyValueGroups.length}${stores.groupStore.valuesGroups.length}`,
+                                key: `vgempty${app.currentVault.groupStore.emptyValueGroups.length}${app.currentVault.groupStore.valuesGroups.length}`,
                                 title: 'Empty',
-                                filledAmount: stores.groupStore.emptyValueGroups.length,
-                                totalAmount: stores.groupStore.valuesGroups.length,
-                                color: stores.userPreferenceStore.currentColorPalette.groupsColor,
-                                active: stores.groupStore.activeAtRiskValueGroupType == AtRiskType.Empty,
+                                filledAmount: app.currentVault.groupStore.emptyValueGroups.length,
+                                totalAmount: app.currentVault.groupStore.valuesGroups.length,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
-                                    stores.groupStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Empty);
+                                    app.currentVault.groupStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Empty);
                                 }
                             };
                         case DataType.Filters:
                         default:
                             return {
-                                key: `vfempty${stores.filterStore.emptyValueFilters.length}${stores.filterStore.nameValuePairFilters.length}`,
+                                key: `vfempty${app.currentVault.filterStore.emptyValueFilters.length}${app.currentVault.filterStore.nameValuePairFilters.length}`,
                                 title: 'Empty',
-                                filledAmount: stores.filterStore.emptyValueFilters.length,
-                                totalAmount: stores.filterStore.nameValuePairFilters.length,
-                                color: stores.userPreferenceStore.currentColorPalette.filtersColor,
-                                active: stores.filterStore.activeAtRiskValueFilterType == AtRiskType.Empty,
+                                filledAmount: app.currentVault.filterStore.emptyValueFilters.length,
+                                totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
-                                    stores.filterStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Empty);
+                                    app.currentVault.filterStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Empty);
                                 }
                             };
                     }
                 case DataType.Passwords:
                 default:
-                    switch (stores.appStore.activeFilterGroupsTable)
+                    switch (app.activeFilterGroupsTable)
                     {
                         case DataType.Groups:
                             return {
-                                key: `pgempty${stores.groupStore.emptyPasswordGroups.length}${stores.groupStore.passwordGroups.length}`,
+                                key: `pgempty${app.currentVault.groupStore.emptyPasswordGroups.length}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Empty',
-                                filledAmount: stores.groupStore.emptyPasswordGroups.length,
-                                totalAmount: stores.groupStore.passwordGroups.length,
-                                color: stores.userPreferenceStore.currentColorPalette.groupsColor,
-                                active: stores.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Empty,
+                                filledAmount: app.currentVault.groupStore.emptyPasswordGroups.length,
+                                totalAmount: app.currentVault.groupStore.passwordGroups.length,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
-                                    stores.groupStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Empty);
+                                    app.currentVault.groupStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Empty);
                                 }
                             };
                         case DataType.Filters:
                         default:
                             return {
-                                key: `pfempty${stores.filterStore.emptyPasswordFilters.length}${stores.filterStore.passwordFilters.length}`,
+                                key: `pfempty${app.currentVault.filterStore.emptyPasswordFilters.length}${app.currentVault.filterStore.passwordFilters.length}`,
                                 title: 'Empty',
-                                filledAmount: stores.filterStore.emptyPasswordFilters.length,
-                                totalAmount: stores.filterStore.passwordFilters.length,
-                                color: stores.userPreferenceStore.currentColorPalette.filtersColor,
-                                active: stores.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Empty,
+                                filledAmount: app.currentVault.filterStore.emptyPasswordFilters.length,
+                                totalAmount: app.currentVault.filterStore.passwordFilters.length,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
-                                    stores.filterStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Empty);
+                                    app.currentVault.filterStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Empty);
                                 }
                             };
                     }

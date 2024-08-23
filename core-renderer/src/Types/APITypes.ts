@@ -1,5 +1,6 @@
 import { ECEncryptionResult, MethodResponse, PublicPrivateKey } from './MethodResponse';
 import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, FinishRegistrationResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, LogUserInResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from './Responses';
+import { UserData } from './SharedTypes';
 
 export interface CoreCryptUtility
 {
@@ -167,13 +168,16 @@ interface Vault
     vaultIdentifier: string;
     name: string;
     color: string;
-    appStoreState: string;
-    settingsStoreState: string;
+    vaultStoreState: string;
     passwordStoreState: string;
     valueStoreState: string;
     filterStoreState: string;
     groupStoreState: string;
-    userPreferencesStoreState: string;
+}
+
+export interface VaultData extends Vault
+{
+    vaultPreferencesStoreState: string;
 }
 
 export interface DisplayVault 
@@ -186,18 +190,19 @@ export interface DisplayVault
 
 export interface UserRepository 
 {
+    getLastUsedUserEmail: () => Promise<string | null>;
+    getLastUsedUserPreferences: () => Promise<string | null>;
     createUser: (masterKey: string, email: string) => Promise<boolean | string>;
-    getCurrentUser: () => Promise<User | undefined>;
-    findByIdentifier: (userIdentifier: string) => Promise<User | null>;
+    getCurrentUser: () => User | undefined;
     setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
-    deleteUserAndVault: (masterKey: string, userIdentifier: string, vaultIdentifier: string) => Promise<boolean>;
+    getCurrentUserData: (masterKey: string, response: any) => Promise<string>;
+    verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
 }
 
 export interface VaultRepository
 {
-    createNewVault: (name: string, color?: string) => Promise<Vault>;
-    getAllVaults: () => Promise<Vault[] | null>;
-    getAllDisplayVaults: () => Promise<DisplayVault[]>;
+    getVault: (masterKey: string, vaultID: number) => Promise<VaultData | null>;
+    saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
 }
 
 export interface Repositories
@@ -213,6 +218,5 @@ export interface IAPI
     server: VaulticServer;
     utilities: Utilities;
     helpers: Helpers;
-    files: Files;
     repositories: Repositories;
 }

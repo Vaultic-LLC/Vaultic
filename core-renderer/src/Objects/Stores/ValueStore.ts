@@ -17,9 +17,9 @@ export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 
 export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 {
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state, "valueStoreState");
+        super(vault, "valueStoreState");
     }
 
     protected defaultState()
@@ -32,11 +32,6 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
             duplicateValues: {},
             currentAndSafeValues: { current: [], safe: [] },
         }
-    }
-
-    public getFile(): DataFile
-    {
-        return api.files.value;
     }
 
     async addNameValuePair(masterKey: string, value: NameValuePair, skipBackup: boolean = false): Promise<boolean>
@@ -227,9 +222,9 @@ export class ReactiveValueStore extends ValueStore
     get currentAndSafeValues() { return this.state.currentAndSafeValues; }
     get activeAtRiskValueType() { return this.internalActiveAtRiskValueType.value; }
 
-    constructor(vault: any, state: any)
+    constructor(vault: any)
     {
-        super(vault, state);
+        super(vault);
 
         this.internalOldNameValuePairs = computed(() => this.state.values.filter(nvp => nvp.isOld).map(nvp => nvp.id));
         this.internalWeakPassphraseValues = computed(() => this.state.values.filter(nvp => nvp.valueType == NameValuePairType.Passphrase && nvp.isWeak).map(nvp => nvp.id));

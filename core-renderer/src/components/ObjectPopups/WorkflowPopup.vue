@@ -44,7 +44,7 @@ import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from "../ObjectViews/ScrollView.vue"
 
 import { defaultInputTextColor } from '../../Types/Colors';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { importPasswords, importValues, getExportableValues, getExportablePasswords } from "../../Helpers/ImportExportHelper";
 import { api } from "../../API";
 import { SingleSelectorItemModel } from '../../Types/Models';
@@ -61,7 +61,7 @@ export default defineComponent({
     setup()
     {
         const scrollbarColor: Ref<string> = ref('#0f111d');
-        const primaryColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const disableButtons: Ref<boolean> = ref(false);
 
@@ -69,7 +69,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Workflows"),
-                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                color: ref(app.userPreferences.currentPrimaryColor.value),
                 isActive: computed(() => true),
                 onClick: () => { }
             }
@@ -87,7 +87,7 @@ export default defineComponent({
 
         async function exportPasswords()
         {
-            stores.popupStore.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { })
 
             async function doExportPasswords(masterKey: string)
             {
@@ -103,7 +103,7 @@ export default defineComponent({
 
         async function exportValues()
         {
-            stores.popupStore.showRequestAuthentication(primaryColor.value, doExportValues, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportValues, () => { })
 
             async function doExportValues(masterKey: string)
             {
@@ -123,14 +123,14 @@ export default defineComponent({
             const success = await api.helpers.vaultic.writeCSV(fileName, formattedData);
             if (success)
             {
-                stores.popupStore.showToast(primaryColor.value, "Export Succeeded", true);
+                app.popups.showToast(primaryColor.value, "Export Succeeded", true);
             }
             else 
             {
-                stores.popupStore.showToast(primaryColor.value, "Export Failed", false);
+                app.popups.showToast(primaryColor.value, "Export Failed", false);
             }
 
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
         }
 
         return {

@@ -44,7 +44,7 @@ import clipboard from 'clipboardy';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import tippy from 'tippy.js';
 import { InputColorModel } from '../../Types/Models';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import cryptHelper from '../../Helpers/cryptHelper';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
@@ -152,9 +152,9 @@ export default defineComponent({
         {
             if (props.randomValueType == 0)
             {
-                stores.popupStore.showLoadingIndicator(colorModel.value.color, "Generating Phrase");
-                const response = await api.server.value.generateRandomPhrase(stores.settingsStore.randomPhraseLength);
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.showLoadingIndicator(colorModel.value.color, "Generating Phrase");
+                const response = await api.server.value.generateRandomPhrase(app.settings.randomPhraseLength);
+                app.popups.hideLoadingIndicator();
 
                 if (response.Success)
                 {
@@ -168,13 +168,13 @@ export default defineComponent({
                 return;
             }
 
-            onInput(await api.utilities.generator.randomPassword(stores.settingsStore.randomValueLength));
+            onInput(await api.utilities.generator.randomPassword(app.settings.randomValueLength));
         }
 
         function copyValue()
         {
             clipboard.write(inputText.value);
-            stores.popupStore.showToast(colorModel.value.color, "Copied", true);
+            app.popups.showToast(colorModel.value.color, "Copied", true);
         }
 
         function focus()

@@ -42,7 +42,7 @@ import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '../../Types/EncryptedData';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { TableTemplateComponent } from '../../Types/Components';
 import { api } from '../../API';
@@ -126,7 +126,7 @@ export default defineComponent({
                     values: values,
                     onDelete: function ()
                     {
-                        stores.popupStore.showRequestAuthentication(props.color, (key: string) =>
+                        app.popups.showRequestAuthentication(props.color, (key: string) =>
                         {
                             doDelete(key, d);
                         }, () => { });
@@ -145,17 +145,17 @@ export default defineComponent({
 
         async function doDelete(masterKey: string, device: Device)
         {
-            stores.popupStore.showLoadingIndicator(props.color, "Deleting Device");
+            app.popups.showLoadingIndicator(props.color, "Deleting Device");
             const response = await api.server.user.deleteDevice(masterKey, device.UserDesktopDeviceID, device.UserMobileDeviceID);
 
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             if (response.Success)
             {
                 if (response.Url)
                 {
                     const purchaseButtonModel: ButtonModel = { text: "Purchase", onClick: () => { window.open(response.Url); } }
                     const cancelButtonModel: ButtonModel = { text: "Cancel", onClick: () => { } };
-                    stores.popupStore.showAlert("Unable to delete device",
+                    app.popups.showAlert("Unable to delete device",
                         "You do not have any more automatic device updates left. Please purchase more in order to remove this device",
                         false, purchaseButtonModel, cancelButtonModel);
 
@@ -170,7 +170,7 @@ export default defineComponent({
                 devices.value.remove(device.id);
                 setTableRows();
 
-                stores.popupStore.showToast(props.color, "Deleted Device", true);
+                app.popups.showToast(props.color, "Deleted Device", true);
             }
             else
             {

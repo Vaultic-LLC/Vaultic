@@ -72,7 +72,6 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { EncryptedInputFieldComponent, InputComponent } from '../../Types/Components';
 import app from "../../Objects/Stores/AppStore";
-import { Password } from '../../Types/EncryptedData';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 
@@ -113,14 +112,10 @@ export default defineComponent({
         // TODO: should only show this after the user has signed up 
         // otherwise the user, userVault, and vault won't be created
         // Instead just show a toggle for online / offline? Something simplier
-        // than than going to a new popup
+        // than than going to a new popup. Either way, a user shouldn't be 
+        // able to use the app without signing up and having data
         async function moveToLimitedMode()
         {
-            if (await app.canAuthenticateKey())
-            {
-                app.popups.showGlobalAuthentication(props.color, true);
-            }
-
             ctx.emit('onMoveToLimitedMode');
         }
 
@@ -158,14 +153,14 @@ export default defineComponent({
             // TOOD: remove
             // if (!showEmailField.value)
             // {
-            //     if (!(await stores.appStore.canAuthenticateKey()))
+            //     if (!(await app.canAuthenticateKey()))
             //     {
             //         didFailedAutoLogin();
             //         return;
             //     }
             //     else
             //     {
-            //         const validKey = await stores.appStore.authenticateKey(masterKey.value);
+            //         const validKey = await app.authenticateKey(masterKey.value);
             //         if (!validKey)
             //         {
             //             app.popups.hideLoadingIndicator();
@@ -175,8 +170,8 @@ export default defineComponent({
             //             return;
             //         }
 
-            //         await stores.passwordStore.readState(masterKey.value);
-            //         if (!stores.passwordStore.hasVaulticPassword)
+            //         await app.currentVault.passwordStore.readState(masterKey.value);
+            //         if (!app.currentVault.passwordStore.hasVaulticPassword)
             //         {
             //             didFailedAutoLogin();
             //             resetToDefault();
@@ -184,7 +179,7 @@ export default defineComponent({
             //             return;
             //         }
 
-            //         const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
+            //         const password: Password = app.currentVault.passwordStore.passwords.filter(p => p.isVaultic)[0];
             //         const response = await api.helpers.server.logUserIn(masterKey.value, password.email);
 
             //         if (response.Success)
@@ -192,9 +187,9 @@ export default defineComponent({
             //             // TODO: this is the only time we know that the master key is correct besides
             //             // when creating the account. Should check to make sure that the masterKey hash
             //             // is set / make sure it wasn't tampered with
-            //             stores.appStore.isOnline = true;
+            //             app.isOnline = true;
             //             await stores.loadStoreData(masterKey.value, response);
-            //             await stores.appStore.recordLogin(masterKey.value, Date.now());
+            //             await app.recordLogin(masterKey.value, Date.now());
 
             //             ctx.emit('onKeySuccess');
             //         }
@@ -209,7 +204,7 @@ export default defineComponent({
             //     const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
             //     if (response.Success)
             //     {
-            //         stores.appStore.isOnline = true;
+            //         app.isOnline = true;
             //         await checkOverrideUserData(response);
 
             //         ctx.emit('onKeySuccess');
