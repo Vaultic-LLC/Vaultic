@@ -8,6 +8,7 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { DataType } from "../../Types/Table";
+import { VaultStoreParameter } from "./VaultStore";
 
 export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 {
@@ -17,7 +18,7 @@ export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 
 export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStoreState>
 {
-    constructor(vault: any)
+    constructor(vault: VaultStoreParameter)
     {
         super(vault, "valueStoreState");
     }
@@ -233,8 +234,8 @@ export class ReactiveValueStore extends ValueStore
         this.internalDuplicateNameValuePairs = computed(() => Object.keys(this.state.duplicateValues));
         this.internalDuplicateNameValuePairsLength = computed(() => Object.keys(this.state.duplicateValues).length);
 
-        this.internalPinnedValues = computed(() => this.state.values.filter(nvp => this.vault.userPreferenceStore.pinnedValues.hasOwnProperty(nvp.id)));
-        this.internalUnpinnedValues = computed(() => this.state.values.filter(nvp => !this.vault.userPreferenceStore.pinnedValues.hasOwnProperty(nvp.id)));
+        this.internalPinnedValues = computed(() => this.state.values.filter(nvp => this.vault.vaultPreferencesStore.pinnedValues.hasOwnProperty(nvp.id)));
+        this.internalUnpinnedValues = computed(() => this.state.values.filter(nvp => !this.vault.vaultPreferencesStore.pinnedValues.hasOwnProperty(nvp.id)));
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
     }

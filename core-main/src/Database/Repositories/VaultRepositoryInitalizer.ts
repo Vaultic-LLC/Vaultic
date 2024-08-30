@@ -28,6 +28,7 @@ class VaultRepository extends VaulticRepository<Vault>
 
         userVault.userVaultID = response.UserVaultID!;
         userVault.vault = vault;
+        userVault.vaultID = response.VaultID!;
         userVault.vaultPreferencesStoreState = "{}"
 
         vault.vaultID = response.VaultID!;
@@ -43,49 +44,44 @@ class VaultRepository extends VaulticRepository<Vault>
         return [userVault, vault];
     }
 
-    public async getVaults(masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number): Promise<[Partial<Vault>[], string[]]>
+    public async getVaults(masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number): Promise<[Vault[], string[]]>
     {
         const currentUser = environment.repositories.users.getCurrentUser();
         if (!currentUser)
         {
+            console.log('no user')
             return [[], []];
         }
 
-        const userVaultQuery = this.repository
-            .createQueryBuilder('vault')
-            .leftJoinAndSelect('vault.userVault', 'userVault')
-            .where('userVaults.userID = :userID', { userID: currentUser?.userID });
-
-        if (vaultID)
-        {
-            userVaultQuery.andWhere("vault.vaultID = :vaultID", { vaultID });
-        }
-
-        const userVaults: UserVault[] = await userVaultQuery.execute();
+        const userVaults: UserVault[] = await environment.repositories.userVaults.getUserVaults(vaultID);
         if (userVaults.length == 0)
         {
+            console.log('no user vaults')
             return [[], []];
         }
 
         const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, currentUser.privateKey);
         if (!decryptedPrivateKey.success)
         {
+            console.log('no private key decrypt')
             return [[], []];
         }
 
-        const returnVaults: Partial<Vault>[] = [];
+        const returnVaults: Vault[] = [];
         const vaultKeys: string[] = [];
 
         for (let i = 0; i < userVaults.length; i++)
         {
-            if (!(await userVaults[i].verify(decryptedPrivateKey.value!, currentUser.userID)))
+            if (!(await userVaults[i].verify(masterKey)))
             {
+                console.log('un verified user vault')
                 return [[], []];
             }
 
-            const decryptedVaultKeys = await environment.utilities.crypt.decrypt(decryptedPrivateKey.value!, userVaults[i].vaultKey);
+            const decryptedVaultKeys = await environment.utilities.crypt.decrypt(masterKey, userVaults[i].vaultKey);
             if (!decryptedVaultKeys.success)
             {
+                console.log('no vault keys decrypt')
                 return [[], []];
             }
 
@@ -93,17 +89,20 @@ class VaultRepository extends VaulticRepository<Vault>
             const decryptedVaultKey = await environment.utilities.crypt.ECDecrypt(keys.publicKey, decryptedPrivateKey.value!, keys.vaultKey);
             if (!decryptedVaultKey.success)
             {
+                console.log('no vault key decrypt')
                 return [[], []];
             }
 
-            if (!(await userVaults[i].vault.verify(decryptedVaultKey.value!, currentUser.userID)))
-            {
-                return [[], []];
-            }
+            // if (!(await userVaults[i].vault.verify(decryptedVaultKey.value!)))
+            // {
+            //     console.log('no vault verify')
+            //     return [[], []];
+            // }
 
             const result = await userVaults[i].vault.decryptAndGetEach(decryptedVaultKey.value!, encryptedProperties);
             if (!result[0])
             {
+                console.log('no vault decrypt')
                 return [[], []];
             }
 
@@ -112,7 +111,7 @@ class VaultRepository extends VaulticRepository<Vault>
                 result[1][properties[j]] = userVaults[i].vault[properties[j]];
             }
 
-            returnVaults.push(result[1]);
+            returnVaults.push(result[1] as Vault);
             vaultKeys.push(decryptedVaultKey.value!);
         }
 
@@ -121,9 +120,9 @@ class VaultRepository extends VaulticRepository<Vault>
 
     public async getVault(masterKey: string, vaultID: number): Promise<VaultData | null>
     {
-        const vault = await this.getVaults(masterKey, ["userID", "lastUsed"],
-            ["name", "color", "appStoreState", "settingsStoreState", "passwordStoreState",
-                "valueStoreState", "filterStoreState", "groupStoreState", "userPreferencesStoreState"], vaultID);
+        const vault = await this.getVaults(masterKey, ["vaultID", "lastUsed"],
+            ["name", "color", "vaultStoreState", "passwordStoreState",
+                "valueStoreState", "filterStoreState", "groupStoreState"], vaultID);
 
         const currentUser = environment.repositories.users.getCurrentUser();
 
@@ -139,20 +138,26 @@ class VaultRepository extends VaulticRepository<Vault>
 
     public async saveAndBackup(masterKey: string, vaultID: number, data: string, skipBackup: boolean = false)
     {
-        const vaultInfo = await this.getVaults(masterKey, [], [], vaultID);
+        // get all fields. Don't decrypt any of them because they may not be being updated
+        const vaultInfo = await this.getVaults(masterKey, ["signature", "signatureSecret", "vaultID", "lastUsed", "name", "color",
+            "vaultStoreState", "passwordStoreState", "valueStoreState", "filterStoreState", "groupStoreState"], [], vaultID);
+
         if (vaultInfo[0].length == 0)
         {
             return false;
         }
 
-        const user = environment.repositories.users.getCurrentUser();
-
         const oldVault = vaultInfo[0][0];
         const vaultKey = vaultInfo[1][0];
 
+        console.log(oldVault);
+
         const newVault: Vault = JSON.parse(data);
+        console.log(newVault);
+
         Object.assign(oldVault, newVault);
 
+        console.log(oldVault);
         const succeeded = await oldVault.encryptAndSetEach!(vaultKey, Object.keys(newVault));
         if (!succeeded)
         {
@@ -160,18 +165,23 @@ class VaultRepository extends VaulticRepository<Vault>
         }
 
         const transaction = new Transaction();
-        transaction.updateEntity(oldVault as Vault, vaultKey, () => this);
+        transaction.updateEntity(oldVault, vaultKey, () => this);
 
-        const saved = await transaction.commit(user!.userID);
+        const saved = await transaction.commit();
         if (!saved)
         {
             return false;
         }
 
+        // TODO: this should be done seperatly. not being able to backup shouldn't be considered the same 
+        // as an error while saving
         if (!skipBackup)
         {
-            // TODO: backup
-            //const backup = oldVault.getBackup();
+            const backupResponse = await vaulticServer.user.backupData(undefined, undefined, [oldVault.getBackup()]);
+            if (!backupResponse.Success)
+            {
+                //return JSON.stringify(backupResponse);
+            }
         }
 
         return true;

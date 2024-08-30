@@ -6,9 +6,9 @@ import { EntityManager } from "typeorm";
 
 export interface VaulticRepository<T extends VaulticEntity>
 {
-    signAndInsert: (manager: EntityManager, key: string, entity: T, userID: number) => Promise<boolean>;
-    signAndUpdate: (manager: EntityManager, key: string, entity: T, userID: number) => Promise<boolean>;
-    retrieveAndVerify: (masterKey: string, userID: number, predicate: () => T) => Promise<boolean>;
+    signAndInsert: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
+    signAndUpdate: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
+    retrieveAndVerify: (masterKey: string, predicate: () => T) => Promise<boolean>;
     remove: (manager: EntityManager, entity: T) => Promise<boolean>;
 }
 
@@ -22,12 +22,13 @@ export interface UserRepository extends VaulticRepository<User>
     setCurrentUser: (masterKey: string, email: string) => Promise<boolean>;
     getCurrentUserData: (masterKey: string, response: any) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
+    saveUser: (masterKey: string, data: string) => Promise<boolean>;
 }
 
 export interface VaultRepository extends VaulticRepository<Vault>
 {
     createNewVault: (name: string, color?: string) => Promise<boolean | [UserVault, Vault]>;
-    getVaults: (masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number) => Promise<[Partial<Vault>[], string[]]>;
+    getVaults: (masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number) => Promise<[Vault[], string[]]>;
     getVault: (masterKey: string, vaultID: number) => Promise<VaultData | null>;
     saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
 }
@@ -35,6 +36,8 @@ export interface VaultRepository extends VaulticRepository<Vault>
 export interface UserVaultRepository extends VaulticRepository<UserVault>
 {
     getByVaultID: (vaultID: number) => Promise<UserVault | null>;
+    getUserVaults: (vaultID?: number) => Promise<UserVault[]>;
+    saveUserVault: (masterKey: string, vaultID: number, data: string) => Promise<boolean>;
 }
 
 export interface DisplayVault 

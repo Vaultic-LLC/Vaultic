@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository } from "./Types/APITypes"
+import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository, UserVaultRepository } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -93,12 +93,18 @@ const userRepository: UserRepository =
 	createUser: (masterKey: string, email: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email),
 	getCurrentUserData: (masterKey: string, response: any) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey, response),
 	verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
+	saveUser: (masterKey: string, data: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, data)
 };
 
 const vaultRepository: VaultRepository =
 {
 	getVault: (masterKey: string, vaultID: number) => ipcRenderer.invoke('vaultRepository:getVault', masterKey, vaultID),
 	saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => ipcRenderer.invoke('vaultRepository:saveAndBackup', masterKey, vaultID, data, skipBackup)
+};
+
+const userVaultRepository: UserVaultRepository =
+{
+	saveUserVault: (masterKey: string, vaultID: number, data: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, vaultID, data),
 };
 
 const api: IAPI =
@@ -123,8 +129,8 @@ const api: IAPI =
 	},
 	repositories: {
 		users: userRepository,
-		vaults: vaultRepository
-
+		vaults: vaultRepository,
+		userVaults: userVaultRepository
 	}
 };
 

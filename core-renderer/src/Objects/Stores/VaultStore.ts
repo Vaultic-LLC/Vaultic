@@ -21,7 +21,7 @@ interface VaultStoreState
     loginHistory: Dictionary<number[]>;
 }
 
-class BaseVaultStore<V extends PasswordStore,
+export class BaseVaultStore<V extends PasswordStore,
     W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState>
 {
     protected internalPasswordStore: V;
@@ -76,6 +76,7 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
 
     public setVaultData(masterKey: string, vault: VaultData)
     {
+        super.setVaultData(masterKey, vault);
         this.internalPasswordStore.updateState(JSON.parse(vault.passwordStoreState));
         this.internalValueStore.updateState(JSON.parse(vault.valueStoreState));
         this.internalFilterStore.updateState(JSON.parse(vault.filterStoreState));
@@ -99,6 +100,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     public setVaultData(masterKey: string, vault: VaultData)
     {
+        super.setVaultData(masterKey, vault);
         this.internalPasswordStore.updateState(JSON.parse(vault.passwordStoreState));
         this.internalValueStore.updateState(JSON.parse(vault.valueStoreState));
         this.internalFilterStore.updateState(JSON.parse(vault.filterStoreState));
@@ -155,3 +157,5 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         });
     }
 }
+
+export type VaultStoreParameter = BasicVaultStore | ReactiveVaultStore;

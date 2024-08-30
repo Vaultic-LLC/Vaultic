@@ -17,7 +17,8 @@
 		"src/main/Core/Utilities/*",
 		"src/main/Core/Database/Migrations/*",
 		"src/main/Core/Database/Entities/*",
-		"src/main/Core/Database/Repositories/*"
+		"src/main/Core/Database/Repositories/*",
+		"src/main/Core/Database/*"
 	],
 	"compilerOptions": {
 		"composite": true,

@@ -3,6 +3,7 @@ import { Reactive, Ref, reactive, ref } from "vue";
 import { DataType, Filter, Group, PrimaryDataObjectCollection } from "../../Types/Table";
 import { Dictionary } from "../../Types/DataStructures";
 import cryptHelper from "../../Helpers/cryptHelper";
+import { VaultStoreParameter } from "./VaultStore";
 
 export interface DataTypeStoreState<T>
 {
@@ -18,7 +19,7 @@ export class Store<T extends {}, U extends string = StoreEvents>
     protected state: Reactive<T>;
     private internalStateName: string;
 
-    get stateName() { return this.stateName; }
+    get stateName() { return this.internalStateName; }
 
     constructor(stateName: string)
     {
@@ -52,7 +53,11 @@ export class Store<T extends {}, U extends string = StoreEvents>
 
     public updateState(state: T): void
     {
-        Object.assign(this.state, state);
+        if (Object.keys(state).length != 0)
+        {
+            Object.assign(this.state, state);
+        }
+
         this.events['onChanged']?.forEach(f => f());
     }
 
@@ -87,9 +92,9 @@ export class Store<T extends {}, U extends string = StoreEvents>
 
 export class VaultContrainedStore<T extends {}, U extends string = StoreEvents> extends Store<T, U>
 {
-    protected vault: any;
+    protected vault: VaultStoreParameter;
 
-    constructor(vault: any, stateName: string)
+    constructor(vault: VaultStoreParameter, stateName: string)
     {
         super(stateName);
         this.vault = vault;

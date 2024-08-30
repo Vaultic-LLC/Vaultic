@@ -1,4 +1,4 @@
-import { Password, CurrentAndSafeStructure, AtRiskType, DataFile } from "../../Types/EncryptedData";
+import { Password, CurrentAndSafeStructure, AtRiskType } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
 import { Dictionary } from "../../Types/DataStructures";
@@ -9,6 +9,7 @@ import { api } from "../../API";
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { DataType } from "../../Types/Table";
 import app from "./AppStore";
+import { VaultStoreParameter } from "./VaultStore";
 
 export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 {
@@ -18,7 +19,7 @@ export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 
 export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordStoreState>
 {
-    constructor(vault: any)
+    constructor(vault: VaultStoreParameter)
     {
         super(vault, "passwordStoreState");
     }
@@ -81,7 +82,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         }
 
         // TODO: Check update email on sever if isVaultic
-        if (updatingPassword.isVaultic && !this.vault.appStore.isOnline)
+        if (updatingPassword.isVaultic && !app.isOnline)
         {
             return false;
         }
@@ -149,7 +150,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
 
         if (password.isVaultic)
         {
-            this.vault.popupStore.showAlert("Error", "Can't delete the username / password used for signing into Vaultic Services", false);
+            app.popups.showAlert("Error", "Can't delete the username / password used for signing into Vaultic Services", false);
             return false;
         }
 
@@ -305,8 +306,8 @@ export class ReactivePasswordStore extends PasswordStore
         this.internalDuplicatePasswords = computed(() => Object.keys(this.state.duplicatePasswords));
 
         this.internalDuplicatePasswordsLength = computed(() => Object.keys(this.state.duplicatePasswords).length);
-        this.internalPinnedPasswords = computed(() => this.state.values.filter(p => this.vault.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
-        this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !this.vault.userPreferenceStore.pinnedPasswords.hasOwnProperty(p.id)));
+        this.internalPinnedPasswords = computed(() => this.state.values.filter(p => this.vault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(p.id)));
+        this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !this.vault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(p.id)));
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
         this.internalHasVaulticPassword = computed(() => this.state.values.filter(p => p.isVaultic).length > 0);

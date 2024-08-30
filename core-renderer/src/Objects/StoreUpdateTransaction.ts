@@ -13,7 +13,6 @@ interface StoreUpdateState
     store: Store<any, StoreEvents>;
     currentState: any;
     pendingState: any;
-    committed: boolean;
     postSave?: () => void;
 }
 
@@ -38,7 +37,6 @@ export default class StoreUpdateTransaction
             store,
             currentState: store.getState(),
             pendingState,
-            committed: false,
             postSave
         });
     }
@@ -56,7 +54,11 @@ export default class StoreUpdateTransaction
         {
             // TODO: fill out the rest
             case Entity.User:
+                success = await api.repositories.users.saveUser(masterKey, JSON.stringify(state));
+                break;
             case Entity.UserVault:
+                success = await api.repositories.userVaults.saveUserVault(masterKey, this.vaultID!, JSON.stringify(state));
+                break;
             case Entity.Vault:
                 success = await api.repositories.vaults.saveAndBackup(masterKey, this.vaultID!, JSON.stringify(state), skipBackup);
                 break;

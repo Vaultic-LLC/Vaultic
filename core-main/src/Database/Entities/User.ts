@@ -1,6 +1,7 @@
 import { Entity, PrimaryColumn, Column, OneToMany } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
+import { nameof } from "../../Helpers/TypeScriptHelper"
 
 @Entity({ name: "users" })
 export class User extends VaulticEntity
@@ -57,34 +58,42 @@ export class User extends VaulticEntity
         return this.userID;
     }
 
-    protected getSignatureMakeup(): any
+    protected createNew(): VaulticEntity
     {
-        return {
-            signatureSecret: this.signatureSecret,
-            userID: this.userID,
-            email: this.email,
-            masterKeyHash: this.masterKeyHash,
-            masterKeySalt: this.masterKeySalt,
-            publicKey: this.publicKey,
-            privateKey: this.privateKey,
-            appStoreState: this.appStoreState
-        };
+        return new User();
+    }
+
+    protected internalGetSignableProperties(): string[] 
+    {
+        return [
+            nameof<User>("userID"),
+            nameof<User>("email"),
+            nameof<User>("masterKeyHash"),
+            nameof<User>("masterKeySalt"),
+            nameof<User>("publicKey"),
+            nameof<User>("privateKey"),
+            nameof<User>("appStoreState")
+        ];
+    }
+
+    protected internalGetBackupableProperties(): string[] 
+    {
+        return [
+            nameof<User>("userID"),
+            nameof<User>("publicKey"),
+            nameof<User>("privateKey"),
+            nameof<User>("appStoreState"),
+            nameof<User>("userPreferencesStoreState")
+        ];
     }
 
     async lock(key: string): Promise<boolean>
     {
         return this.encryptAndSetEach(key, [
-            "masterKeyHash", "masterKeySalt", "privateKey", "appStoreState"]);
-    }
-
-    protected internalGetBackup() 
-    {
-        return {
-            userID: this.userID,
-            publicKey: this.publicKey,
-            privateKey: this.privateKey,
-            appStoreState: this.appStoreState,
-            userPreferencesStoreState: this.userPreferencesStoreState
-        }
+            nameof<User>("masterKeyHash"),
+            nameof<User>("masterKeySalt"),
+            nameof<User>("privateKey"),
+            nameof<User>("appStoreState")
+        ]);
     }
 }

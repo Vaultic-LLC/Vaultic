@@ -182,14 +182,17 @@ export class AppStore extends Store<AppStoreState>
 
         const userData = await api.repositories.users.getCurrentUserData(masterKey, response);
         const parsedUserData: UserData = JSON.parse(userData);
+
+        // TODO: better handle error. No data will be loaded
         if (!parsedUserData.success)
         {
             return false;
         }
 
-        this.state = JSON.parse(parsedUserData.appStoreState);
+        Object.assign(this.state, JSON.parse(parsedUserData.appStoreState));
         this.internalUserVaults = parsedUserData.displayVaults!;
-        this.internalSharedVaults = JSON.parse(response.SharedVaults);
+        // TODO: return shared vaults from server
+        //this.internalSharedVaults = JSON.parse(response.SharedVaults);
         this.internalCurrentVault.setVaultData(masterKey, parsedUserData.currentVault);
         this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;

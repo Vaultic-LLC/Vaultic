@@ -13,6 +13,9 @@ export interface UserPreferencesStoreState
 
 // TODO: this should use the state of the last known users prefereences before signing in, and then, 
 // if a different user signed in, use their state instead
+
+// TODO: this stuff isn't that important and is mostly visual. We should update the state first
+// so that the app doesn't seem like its slow from waitin for it to save. 
 export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 {
     private internalCurrentPrimaryColor: Ref<string>;
@@ -61,7 +64,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             const parsedState: UserPreferencesStoreState = JSON.parse(state);
             if (parsedState.currentColorPalette)
             {
-                this.state = parsedState;
+                Object.assign(this.state, parsedState);
             }
         }
     }

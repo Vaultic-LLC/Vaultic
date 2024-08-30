@@ -6,6 +6,7 @@ import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import { VaultStoreParameter } from "./VaultStore";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
 {
@@ -366,7 +367,7 @@ export class ReactiveFilterStore extends FilterStore
     get pinnedValueFilters() { return this.internalPinnedValueFilters.value; }
     get unpinnedValueFitlers() { return this.internalUnpinnedValueFilters.value; }
 
-    constructor(vault: any)
+    constructor(vault: VaultStoreParameter)
     {
         super(vault);
 
@@ -382,11 +383,11 @@ export class ReactiveFilterStore extends FilterStore
         this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);
 
-        this.internalPinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
-        this.internalUnpinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => !this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+        this.internalPinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => this.vault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(f.id)));
+        this.internalUnpinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => !this.vault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(f.id)));
 
-        this.internalPinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
-        this.internalUnpinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => !this.vault.userPreferenceStore.pinnedFilters.hasOwnProperty(f.id)));
+        this.internalPinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => this.vault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(f.id)));
+        this.internalUnpinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => !this.vault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(f.id)));
     }
 
     protected getPasswordAtRiskType(): Ref<AtRiskType>

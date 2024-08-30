@@ -5,6 +5,7 @@ import { VaulticRepository } from "./VaulticRepositoryInitalizer";
 import { Repository } from "typeorm";
 import Transaction from "../Transaction";
 import vaulticServer from "../../Server/VaulticServer";
+import { UserVault } from "../Entities/UserVault";
 
 // TODO: move to cache
 let currentUser: User | undefined;
@@ -16,6 +17,38 @@ class UserRepository extends VaulticRepository<User>
         return environment.databaseDataSouce.getRepository(User);
     }
 
+    public getCurrentUser()
+    {
+        return currentUser;
+    }
+
+    public findByEmail(email: string) 
+    {
+        return this.retrieveReactive((repository) => repository.findOneBy({
+            email: email
+        }))
+    }
+
+    public getLastUsedUser()
+    {
+        return this.retrieveReactive((repository) => repository.findOneBy({
+            lastUsed: true
+        }));
+    }
+
+    public async getLastUsedUserEmail(): Promise<string | null>
+    {
+        const lastUsedUser = await this.getLastUsedUser();
+        return lastUsedUser?.email ?? null;
+    }
+
+    public async getLastUsedUserPreferences(): Promise<string | null>
+    {
+        const lastUsedUser = await this.getLastUsedUser();
+        return lastUsedUser?.userPreferencesStoreState ?? null;
+    }
+
+    // TODO: better handle failed
     public async createUser(masterKey: string, email: string): Promise<boolean | string>
     {
         const response = await vaulticServer.user.getUserID();
@@ -59,9 +92,10 @@ class UserRepository extends VaulticRepository<User>
             return "no vaults";
         }
 
-        const userVault = vaults[0];
+        const userVault: UserVault = vaults[0];
         const vault = vaults[1];
 
+        userVault.userID = user.userID;
         userVault.user = user;
         userVault.vaultKey = JSON.stringify({
             vaultKey: encryptedVaultKey.value!,
@@ -80,19 +114,24 @@ class UserRepository extends VaulticRepository<User>
             return "no vault lock";
         }
 
-        console.log("saving");
         const transaction = new Transaction();
         transaction.insertEntity(user, masterKey, () => this);
-        transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
         transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
+        transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
 
-        const succeeded = await transaction.commit(user.userID);
+        const lastUsedUser = await this.getLastUsedUser();
+        if (lastUsedUser)
+        {
+            lastUsedUser.lastUsed = false;
+            transaction.updateEntity(lastUsedUser, '', () => this);
+        }
+
+        const succeeded = await transaction.commit();
         if (!succeeded)
         {
             return "no commit";
         }
 
-        console.log("saving complete");
         const backupResponse = await vaulticServer.user.backupData(user.getBackup(), [userVault.getBackup()], [vault.getBackup()]);
         if (!backupResponse.Success)
         {
@@ -107,11 +146,6 @@ class UserRepository extends VaulticRepository<User>
     public addUser()
     {
 
-    }
-
-    public getCurrentUser()
-    {
-        return currentUser;
     }
 
     public async verifyUserMasterKey(masterKey: string, email?: string): Promise<boolean>
@@ -147,13 +181,6 @@ class UserRepository extends VaulticRepository<User>
         return environment.utilities.hash.compareHashes(decryptedHashResponse.value!, hash);
     }
 
-    public findByEmail(email: string) 
-    {
-        return this.repository.findOneBy({
-            email: email
-        });
-    }
-
     public async setCurrentUser(masterKey: string, email: string): Promise<boolean>
     {
         const user = await this.findByEmail(email);
@@ -162,7 +189,24 @@ class UserRepository extends VaulticRepository<User>
             return false;
         }
 
-        if (!(await user.verify(masterKey, user.userID)))
+        if (!(await user.verify(masterKey)))
+        {
+            return false;
+        }
+
+        const transaction = new Transaction();
+        const lastCurrentUser = await this.getLastUsedUser();
+
+        if (lastCurrentUser)
+        {
+            lastCurrentUser.lastUsed = false;
+            transaction.updateEntity(lastCurrentUser, masterKey, () => this);
+        }
+
+        user.lastUsed = true;
+        transaction.updateEntity(user, masterKey, () => this);
+        const succeeded = await transaction.commit();
+        if (!succeeded)
         {
             return false;
         }
@@ -171,28 +215,17 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async getLastUsedUserEmail(): Promise<string | null>
-    {
-        const lastUsedUser = await this.repository.findOneBy({
-            lastUsed: true
-        });
-
-        return lastUsedUser?.email ?? null;
-    }
-
-    public async getLastUsedUserPreferences(): Promise<string | null>
-    {
-        const lastUsedUser = await this.repository.findOneBy({
-            lastUsed: true
-        });
-
-        return lastUsedUser?.userPreferencesStoreState ?? null;
-    }
-
     public async getCurrentUserData(masterKey: string, response: any): Promise<string>
     {
         const failedResponse = JSON.stringify({ success: false });
         if (!currentUser)
+        {
+            console.log('no current user');
+            return failedResponse;
+        }
+
+        const decryptedAppStoreState = await environment.utilities.crypt.decrypt(masterKey, currentUser.appStoreState);
+        if (!decryptedAppStoreState)
         {
             return failedResponse;
         }
@@ -200,18 +233,21 @@ class UserRepository extends VaulticRepository<User>
         const userData: UserData =
         {
             success: false,
-            appStoreState: currentUser.appStoreState,
-            userPreferencesStoreState: undefined,
+            appStoreState: decryptedAppStoreState.value!,
+            userPreferencesStoreState: currentUser.userPreferencesStoreState,
             displayVaults: [],
             currentVault: undefined
         };
 
-        const vaults = await environment.repositories.vaults.getVaults(masterKey, ["userID", "lastUsed"],
-            ["name", "color", "appStoreState", "settingsStoreState", "passwordStoreState",
-                "valueStoreState", "filterStoreState", "groupStoreState", "userPreferencesStoreState"]);
+        const vaults = await environment.repositories.vaults.getVaults(masterKey, ["vaultID", "lastUsed"],
+            ["name", "color", "vaultStoreState", "passwordStoreState",
+                "valueStoreState", "filterStoreState", "groupStoreState"]);
+
+        console.log(vaults);
 
         if (vaults[0].length == 0)
         {
+            console.log('no vaults');
             return failedResponse;
         }
 
@@ -243,6 +279,45 @@ class UserRepository extends VaulticRepository<User>
 
         userData.success = true;
         return JSON.stringify(userData);
+    }
+
+    public async saveUser(masterKey: string, data: string)
+    {
+        const user = this.getCurrentUser();
+        if (!user)
+        {
+            return false;
+        }
+
+        const parsedData = JSON.parse(data);
+        Object.assign(user, parsedData);
+
+        const { userPreferencesStoreState, ...newUser } = parsedData;
+
+        const succeeded = await user.encryptAndSetEach!(masterKey, Object.keys(newUser));
+        if (!succeeded)
+        {
+            return false;
+        }
+
+        const transaction = new Transaction();
+        transaction.updateEntity(user, masterKey, () => this);
+
+        const saved = await transaction.commit();
+        if (!saved)
+        {
+            return false;
+        }
+
+        // TODO: this should be done seperatly. not being able to backup shouldn't be considered the same 
+        // as an error while saving
+        const backupResponse = await vaulticServer.user.backupData(user.getBackup(), undefined, undefined);
+        if (!backupResponse.Success)
+        {
+            //return JSON.stringify(backupResponse);
+        }
+
+        return true;
     }
 }
 

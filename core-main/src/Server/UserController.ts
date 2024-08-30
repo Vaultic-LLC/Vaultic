@@ -82,6 +82,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
             }
         }
 
+        // TODO: vaults can't be end to end encrypted since they can be shared with multiple users
         if (vaults)
         {
             postData["vaults"] = [];

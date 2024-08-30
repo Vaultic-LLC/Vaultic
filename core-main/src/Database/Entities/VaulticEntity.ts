@@ -1,11 +1,27 @@
 import { environment } from "../../Environment";
 import * as jose from 'jose'
-import { Column } from "typeorm"
+import { Column, ObjectLiteral } from "typeorm"
+import { nameof } from "../../Helpers/TypeScriptHelper";
 
-export class VaulticEntity
+const VaulticHandler = {
+    get(target, prop, receiver)
+    {
+        return target[prop];
+    },
+    set(obj: VaulticEntity, prop: string, newValue: any)
+    {
+        if (!obj.updatedProperties.includes(prop))
+        {
+            obj.updatedProperties.push(prop);
+        }
+
+        obj[prop] = newValue;
+        return true;
+    }
+};
+
+export class VaulticEntity implements ObjectLiteral
 {
-    [key: string]: any;
-
     // Encrypted
     // Backed Up
     @Column("text")
@@ -16,12 +32,72 @@ export class VaulticEntity
     @Column("text")
     signature: string
 
+    updatedProperties: string[];
+
+    constructor() 
+    {
+        this.updatedProperties = [];
+    }
+
     identifier(): number
     {
         throw "need to override";
     }
 
-    async sign(masterKey: string, userID: number): Promise<boolean>
+    protected createNew(): VaulticEntity
+    {
+        return new VaulticEntity();
+    }
+
+    public makeReactive(): VaulticEntity
+    {
+        return new Proxy(this, VaulticHandler);
+    }
+
+    private getSignatureMakeup(): any
+    {
+        const signableProperties = this.getSignableProperties();
+        const signatureMakeup = {};
+
+        for (let i = 0; i < signableProperties.length; i++)
+        {
+            signatureMakeup[signableProperties[i]] = this[signableProperties[i]];
+        }
+
+        return signatureMakeup;
+    }
+
+    protected internalGetSignableProperties(): string[]
+    {
+        return [];
+    }
+
+    public getSignableProperties(): string[]
+    {
+        return [nameof<VaulticEntity>("signatureSecret"), ...this.internalGetSignableProperties()];
+    }
+
+    protected internalGetBackupableProperties(): string[]
+    {
+        return [];
+    }
+
+    getBackup(): any
+    {
+        const backup = {};
+        backup[nameof<VaulticEntity>("signatureSecret")] = this[nameof<VaulticEntity>("signatureSecret")];
+        backup[nameof<VaulticEntity>("signature")] = this[nameof<VaulticEntity>("signature")];
+
+        const backupableProperties = this.internalGetBackupableProperties();
+        for (let i = 0; i < backupableProperties.length; i++)
+        {
+            backup[backupableProperties[i]] = this[backupableProperties[i]];
+        }
+
+        return backup;
+    }
+
+    async sign(masterKey: string): Promise<boolean>
     {
         let signatureSecret = "";
         if (!this.signatureSecret)
@@ -61,7 +137,7 @@ export class VaulticEntity
             .setProtectedHeader({ alg: 'HS256' })
             .setIssuedAt()
             .setIssuer('vaultic')
-            .setAudience(userID.toString())
+            .setAudience('vaulticUser')
             .setExpirationTime('999y')
             .sign(secretBytes);
 
@@ -69,12 +145,7 @@ export class VaulticEntity
         return true;
     }
 
-    protected getSignatureMakeup(): any
-    {
-        return undefined;
-    }
-
-    async verify(masterKey: string, userID: number): Promise<boolean>
+    async verify(masterKey: string): Promise<boolean>
     {
         if (!this.signatureSecret || !this.signature)
         {
@@ -97,21 +168,33 @@ export class VaulticEntity
         const hashedEntity = environment.utilities.hash.insecureHash(serializedMakeup);
         const secretBytes = new TextEncoder().encode(secretResponse.value!);
 
-        const response = await jose.jwtVerify(this.signature, secretBytes, {
-            issuer: 'vaultic',
-            audience: userID.toString(),
-        });
-
-        const retrievedEntity = response.payload.entity;
-        if (!retrievedEntity || typeof retrievedEntity != 'string')
+        try 
         {
-            return false;
+            const response = await jose.jwtVerify(this.signature, secretBytes, {
+                issuer: 'vaultic',
+                audience: 'vaulticUser',
+            });
+
+            const retrievedEntity = response.payload.entity;
+            if (!retrievedEntity || typeof retrievedEntity != 'string')
+            {
+                console.log('no entity');
+                return false;
+            }
+
+            console.log(`Retrieved: ${retrievedEntity}`);
+            console.log(`Current: ${hashedEntity}`);
+            return environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
+        }
+        catch (e)
+        {
+            console.log(`error: ${e}`);
         }
 
-        return environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
+        return false;
     }
 
-    public async encryptAndSet(masterKey: string, property: keyof this): Promise<boolean> 
+    public async encryptAndSet(masterKey: string, property: string): Promise<boolean> 
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
@@ -129,7 +212,7 @@ export class VaulticEntity
         return true;
     }
 
-    public async encryptAndSetEach(masterKey: string, properties: (keyof this)[]): Promise<boolean> 
+    public async encryptAndSetEach(masterKey: string, properties: string[]): Promise<boolean> 
     {
         for (let i = 0; i < properties.length; i++)
         {
@@ -142,7 +225,7 @@ export class VaulticEntity
         return true;
     }
 
-    protected async decryptAndGet(masterKey: string, property: keyof this, runningObject: { [key: string]: any }): Promise<boolean>
+    private async decryptAndGet(masterKey: string, property: keyof this, runningObject: { [key: string]: any }): Promise<boolean>
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
@@ -160,36 +243,23 @@ export class VaulticEntity
         return true;
     }
 
-    public async decryptAndGetEach(masterKey: string, properties: (keyof this)[]): Promise<[boolean, Partial<this>]>
+    public async decryptAndGetEach(masterKey: string, properties: (keyof this)[]): Promise<[boolean, VaulticEntity]>
     {
-        const runningObject = {};
+        let runningObject = this.createNew();
         for (let i = 0; i < properties.length; i++)
         {
             if (!await this.decryptAndGet(masterKey, properties[i], runningObject))
             {
-                return [false, {}];
+                return [false, {} as VaulticEntity];
             }
         }
 
+        runningObject = runningObject.makeReactive();
         return [true, runningObject];
     }
 
     async lock(key: string): Promise<boolean>
     {
         return false;
-    }
-
-    protected internalGetBackup(): any
-    {
-        return {};
-    }
-
-    getBackup(): any
-    {
-        return {
-            ...this.internalGetBackup(),
-            signature: this.signature,
-            signatureSecret: this.signatureSecret
-        }
     }
 }

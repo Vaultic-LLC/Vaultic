@@ -1,6 +1,7 @@
 import { Entity, PrimaryColumn, Column, OneToMany } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
+import { nameof } from "../../Helpers/TypeScriptHelper";
 
 @Entity({ name: "vaults" })
 export class Vault extends VaulticEntity
@@ -57,39 +58,50 @@ export class Vault extends VaulticEntity
         return this.vaultID;
     }
 
-    protected getSignatureMakeup(): any
+    protected createNew(): VaulticEntity 
+    {
+        return new Vault();
+    }
+
+    protected internalGetSignableProperties(): string[] 
     {
         // exclude user preferences so it can be updated without the need of a master key
-        return {
-            signatureSecret: this.signatureSecret,
-            vaultID: this.vaultID,
-            name: this.name,
-            color: this.color,
-            vaultStoreState: this.vaultStoreState,
-            passwordStoreState: this.passwordStoreState,
-            valueStoreState: this.valueStoreState,
-            filterStoreState: this.filterStoreState,
-            groupStoreState: this.groupStoreState
-        };
+        return [
+            nameof<Vault>("vaultID"),
+            nameof<Vault>("name"),
+            nameof<Vault>("color"),
+            nameof<Vault>("vaultStoreState"),
+            nameof<Vault>("passwordStoreState"),
+            nameof<Vault>("valueStoreState"),
+            nameof<Vault>("filterStoreState"),
+            nameof<Vault>("groupStoreState"),
+        ];
+    }
+
+    protected internalGetBackupableProperties(): string[] 
+    {
+        return [
+            nameof<Vault>("vaultID"),
+            nameof<Vault>("name"),
+            nameof<Vault>("color"),
+            nameof<Vault>("vaultStoreState"),
+            nameof<Vault>("passwordStoreState"),
+            nameof<Vault>("valueStoreState"),
+            nameof<Vault>("filterStoreState"),
+            nameof<Vault>("groupStoreState"),
+        ];
     }
 
     async lock(key: string): Promise<boolean>
     {
-        return this.encryptAndSetEach(key, ["name", "color", "vaultStoreState", "passwordStoreState",
-            "valueStoreState", "filterStoreState", "groupStoreState"])
-    }
-
-    protected internalGetBackup() 
-    {
-        return {
-            vaultID: this.vaultID,
-            name: this.name,
-            color: this.color,
-            vaultStoreState: this.vaultStoreState,
-            passwordStoreState: this.passwordStoreState,
-            valueStoreState: this.valueStoreState,
-            filterStoreState: this.filterStoreState,
-            groupStoreState: this.groupStoreState,
-        }
+        return this.encryptAndSetEach(key, [
+            nameof<Vault>("name"),
+            nameof<Vault>("color"),
+            nameof<Vault>("vaultStoreState"),
+            nameof<Vault>("passwordStoreState"),
+            nameof<Vault>("valueStoreState"),
+            nameof<Vault>("filterStoreState"),
+            nameof<Vault>("groupStoreState")
+        ]);
     }
 }

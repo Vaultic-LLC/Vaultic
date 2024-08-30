@@ -55,7 +55,7 @@ export default class Transaction
         });
     }
 
-    commit(userID: number): Promise<boolean>
+    commit(): Promise<boolean>
     {
         return new Promise((resolve) =>
         {
@@ -67,7 +67,7 @@ export default class Transaction
                     const pendingEntity = this.pendingEntities[i];
                     if (pendingEntity.operation == Operation.Insert)
                     {
-                        if (!(await pendingEntity.repository().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity, userID)))
+                        if (!(await pendingEntity.repository().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity)))
                         {
                             succeeded = false;
                             break;
@@ -75,7 +75,7 @@ export default class Transaction
                     }
                     else if (pendingEntity.operation == Operation.Update)
                     {
-                        if (!(await pendingEntity.repository().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity, userID)))
+                        if (!(await pendingEntity.repository().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity)))
                         {
                             succeeded = false;
                             break;

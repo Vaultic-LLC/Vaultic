@@ -1,7 +1,8 @@
-import { Entity, PrimaryColumn, Column, ManyToOne } from "typeorm"
+import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from "typeorm"
 import { User } from "./User"
 import { Vault } from "./Vault"
 import { VaulticEntity } from "./VaulticEntity"
+import { nameof } from "../../Helpers/TypeScriptHelper"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity
@@ -15,6 +16,7 @@ export class UserVault extends VaulticEntity
     userID: number
 
     @ManyToOne(() => User, (user: User) => user.userVaults)
+    @JoinColumn({ name: "userID" })
     user: User
 
     // Matches Server
@@ -22,6 +24,7 @@ export class UserVault extends VaulticEntity
     vaultID: number
 
     @ManyToOne(() => Vault, (vault: Vault) => vault.userVaults)
+    @JoinColumn({ name: "vaultID" })
     vault: Vault;
 
     // Encrypted by Users Private Key
@@ -40,28 +43,33 @@ export class UserVault extends VaulticEntity
         return this.userVaultID;
     }
 
-    protected getSignatureMakeup(): any
+    protected createNew(): VaulticEntity 
     {
-        return {
-            signatureSecret: this.signatureSecret,
-            userVaultID: this.userVaultID,
-            userID: this.userID,
-            vaultID: this.vaultID,
-            vaultKey: this.vaultKey
-        };
+        return new UserVault();
+    }
+
+    protected internalGetSignableProperties(): string[] 
+    {
+        return [
+            nameof<UserVault>("userVaultID"),
+            nameof<UserVault>("userID"),
+            nameof<UserVault>("vaultID"),
+            nameof<UserVault>("vaultKey")
+        ];
+    }
+
+    protected internalGetBackupableProperties(): string[] 
+    {
+        return [
+            nameof<UserVault>("userVaultID"),
+            nameof<UserVault>("vaultKey"),
+            nameof<UserVault>("vaultPreferencesStoreState")
+        ];
     }
 
     async lock(key: string): Promise<boolean>
     {
-        return this.encryptAndSetEach(key, ["vaultKey"]);
+        return this.encryptAndSetEach(key, [nameof<UserVault>("vaultKey")]);
     }
 
-    protected internalGetBackup() 
-    {
-        return {
-            userVaultID: this.userVaultID,
-            vaultKey: this.vaultKey,
-            vaultPreferencesStoreState: this.vaultPreferencesStoreState,
-        }
-    }
 }

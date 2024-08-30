@@ -22,6 +22,16 @@ export class VaultPreferencesStore extends VaultContrainedStore<VaultPreferences
         super(vault, "vaultPreferencesStore");
     }
 
+    protected defaultState(): VaultPreferencesState
+    {
+        return {
+            pinnedFilters: {},
+            pinnedGroups: {},
+            pinnedPasswords: {},
+            pinnedValues: {}
+        }
+    }
+
     private async update()
     {
         const transaction = new StoreUpdateTransaction(Entity.UserVault, this.vault.vaultID);

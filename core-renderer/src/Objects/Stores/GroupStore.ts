@@ -18,9 +18,18 @@ export interface GroupStoreState extends DataTypeStoreState<Group>
 
 export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 {
+    protected internalPasswordGroups: ComputedRef<Group[]>;
+    protected internalValueGroups: ComputedRef<Group[]>;
+
+    get passwordGroups() { return this.internalPasswordGroups.value; }
+    get valuesGroups() { return this.internalValueGroups.value; }
+
     constructor(vault: any)
     {
         super(vault, "groupStoreState");
+
+        this.internalPasswordGroups = computed(() => this.state.values.filter(g => g.type == DataType.Passwords));
+        this.internalValueGroups = computed(() => this.state.values.filter(g => g.type == DataType.NameValuePairs));
     }
 
     protected defaultState()
@@ -309,9 +318,6 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
 export class ReactiveGroupStore extends GroupStore 
 {
-    private internalPasswordGroups: ComputedRef<Group[]>;
-    private internalValueGroups: ComputedRef<Group[]>;
-
     private internalSortedPasswordsGroups: ComputedRef<Group[]>;
     private internalSortedValuesGroups: ComputedRef<Group[]>;
 
@@ -328,13 +334,11 @@ export class ReactiveGroupStore extends GroupStore
     private internalUnpinnedValueGroups: ComputedRef<Group[]>;
 
     get groups() { return this.state.values; }
-    get passwordGroups() { return this.internalPasswordGroups.value; }
     get activeAtRiskPasswordGroupType() { return this.internalActiveAtRiskPasswordGroupType.value; }
     get activeAtRiskValueGroupType() { return this.internalActiveAtRiskValueGroupType.value; }
     get emptyPasswordGroups() { return this.state.emptyPasswordGroups; }
     get duplicatePasswordGroups() { return this.state.duplicatePasswordGroups; }
     get duplicatePasswordGroupLength() { return this.internalDuplicatePasswordGroupsLength.value; }
-    get valuesGroups() { return this.internalValueGroups.value; }
     get emptyValueGroups() { return this.state.emptyValueGroups; }
     get duplicateValueGroups() { return this.state.duplicateValueGroups; }
     get duplicateValueGroupLength() { return this.internalDuplicateValuesGroupsLength.value; }
@@ -349,9 +353,6 @@ export class ReactiveGroupStore extends GroupStore
     {
         super(vault);
 
-        this.internalPasswordGroups = computed(() => this.state.values.filter(g => g.type == DataType.Passwords));
-        this.internalValueGroups = computed(() => this.state.values.filter(g => g.type == DataType.NameValuePairs));
-
         this.internalSortedPasswordsGroups = computed(() => this.internalPasswordGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
         this.internalSortedValuesGroups = computed(() => this.internalValueGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
 
@@ -361,11 +362,11 @@ export class ReactiveGroupStore extends GroupStore
         this.internalActiveAtRiskPasswordGroupType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueGroupType = ref(AtRiskType.None);
 
-        this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => this.vault.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
-        this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !this.vault.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
 
-        this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => this.vault.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
-        this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !this.vault.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
     }
 
     protected getPasswordAtRiskType(): Ref<AtRiskType>

@@ -197,6 +197,7 @@ export interface UserRepository
     setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
     getCurrentUserData: (masterKey: string, response: any) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
+    saveUser: (masterKey: string, data: string) => Promise<boolean>;
 }
 
 export interface VaultRepository
@@ -205,10 +206,16 @@ export interface VaultRepository
     saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
 }
 
+export interface UserVaultRepository
+{
+    saveUserVault: (masterKey: string, vaultID: number, data: string) => Promise<boolean>;
+}
+
 export interface Repositories
 {
     users: UserRepository;
     vaults: VaultRepository;
+    userVaults: UserVaultRepository;
 }
 
 export interface IAPI
