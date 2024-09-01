@@ -1,7 +1,8 @@
 import { environment } from "../../Environment";
 import * as jose from 'jose'
-import { Column, ObjectLiteral } from "typeorm"
+import { Column, ObjectLiteral, PrimaryGeneratedColumn } from "typeorm"
 import { nameof } from "../../Helpers/TypeScriptHelper";
+import { EntityState } from "../../Types/Properties";
 
 const VaulticHandler = {
     get(target, prop, receiver)
@@ -22,6 +23,9 @@ const VaulticHandler = {
 
 export class VaulticEntity implements ObjectLiteral
 {
+    @PrimaryGeneratedColumn("increment")
+    id: number
+
     // Encrypted
     // Backed Up
     @Column("text")
@@ -30,7 +34,10 @@ export class VaulticEntity implements ObjectLiteral
     // Not Encrypted
     // Backed Up
     @Column("text")
-    signature: string
+    currentSignature: string
+
+    @Column("integer")
+    entityState: EntityState;
 
     updatedProperties: string[];
 
@@ -86,7 +93,7 @@ export class VaulticEntity implements ObjectLiteral
     {
         const backup = {};
         backup[nameof<VaulticEntity>("signatureSecret")] = this[nameof<VaulticEntity>("signatureSecret")];
-        backup[nameof<VaulticEntity>("signature")] = this[nameof<VaulticEntity>("signature")];
+        backup[nameof<VaulticEntity>("currentSignature")] = this[nameof<VaulticEntity>("currentSignature")];
 
         const backupableProperties = this.internalGetBackupableProperties();
         for (let i = 0; i < backupableProperties.length; i++)
@@ -141,13 +148,13 @@ export class VaulticEntity implements ObjectLiteral
             .setExpirationTime('999y')
             .sign(secretBytes);
 
-        this.signature = jwt;
+        this.currentSignature = jwt;
         return true;
     }
 
     async verify(masterKey: string): Promise<boolean>
     {
-        if (!this.signatureSecret || !this.signature)
+        if (!this.signatureSecret || !this.currentSignature)
         {
             return false;
         }
@@ -170,7 +177,7 @@ export class VaulticEntity implements ObjectLiteral
 
         try 
         {
-            const response = await jose.jwtVerify(this.signature, secretBytes, {
+            const response = await jose.jwtVerify(this.currentSignature, secretBytes, {
                 issuer: 'vaultic',
                 audience: 'vaulticUser',
             });
@@ -182,8 +189,6 @@ export class VaulticEntity implements ObjectLiteral
                 return false;
             }
 
-            console.log(`Retrieved: ${retrievedEntity}`);
-            console.log(`Current: ${hashedEntity}`);
             return environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
         }
         catch (e)

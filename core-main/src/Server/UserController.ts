@@ -7,7 +7,7 @@ import { AxiosHelper } from "./AxiosHelper";
 export interface UserController
 {
     validateEmail(email: string): Promise<ValidateEmailResponse>;
-    getUserID: () => Promise<GetUserIDResponse>;
+    getUserIDs: () => Promise<GetUserIDResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
     backupData: (user?: User, userVault?: UserVault[], vault?: Vault[]) => Promise<BaseResponse>;
     backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
@@ -30,9 +30,9 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
-    function getUserID(): Promise<GetUserIDResponse>
+    function getUserIDs(): Promise<GetUserIDResponse>
     {
-        return axiosHelper.api.post("User/GetUserID");
+        return axiosHelper.api.post("User/GetUserIDs");
     }
 
     function deleteDevice(masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
@@ -171,7 +171,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     return {
         validateEmail,
-        getUserID,
+        getUserIDs,
         deleteDevice,
         getDevices,
         backupData,

@@ -45,12 +45,12 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "text"
                 },
                 {
-                    name: "appStoreState",
-                    type: "text"
+                    name: "appStoreStateID",
+                    type: "integer"
                 },
                 {
-                    name: "userPreferencesStoreState",
-                    type: "text"
+                    name: "userPreferencesStoreStateID",
+                    type: "integer"
                 }
             ]
         }));
@@ -84,8 +84,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "text"
                 },
                 {
-                    name: "vaultPreferencesStoreState",
-                    type: "text"
+                    name: "vaultPreferencesStoreStateID",
+                    type: "integer"
                 }
             ]
         }));
@@ -119,24 +119,24 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "boolean"
                 },
                 {
-                    name: "vaultStoreState",
-                    type: "string"
+                    name: "vaultStoreStateID",
+                    type: "integer"
                 },
                 {
-                    name: "passwordStoreState",
-                    type: "string"
+                    name: "passwordStoreStateID",
+                    type: "integer"
                 },
                 {
-                    name: "valueStoreState",
-                    type: "string"
+                    name: "valueStoreStateID",
+                    type: "integer"
                 },
                 {
-                    name: "filterStoreState",
-                    type: "string"
+                    name: "filterStoreStateID",
+                    type: "integer"
                 },
                 {
-                    name: "groupStoreState",
-                    type: "string"
+                    name: "groupStoreStateID",
+                    type: "integer"
                 }
             ]
         }));
@@ -159,7 +159,87 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 referencedTableName: "vaults",
                 onDelete: "CASCADE",
             }),
-        )
+        );
+
+        await queryRunner.createForeignKey(
+            "users",
+            new TableForeignKey({
+                columnNames: ["appStoreStateID"],
+                referencedColumnNames: ["appStoreStateID"],
+                referencedTableName: "appStoreStates",
+                onDelete: "CASCADE",
+            }),
+        );
+
+        await queryRunner.createForeignKey(
+            "users",
+            new TableForeignKey({
+                columnNames: ["userPreferencesStoreStateID"],
+                referencedColumnNames: ["userPreferencesStoreStateID"],
+                referencedTableName: "userPreferencesStoreState",
+                onDelete: "CASCADE",
+            }),
+        );
+
+        await queryRunner.createForeignKey(
+            "userVaults",
+            new TableForeignKey({
+                columnNames: ["vaultPreferencesStoreStateID"],
+                referencedColumnNames: ["vaultPreferencesStoreStateID"],
+                referencedTableName: "vaultPreferencesStoreStates",
+                onDelete: "CASCADE",
+            }),
+        );
+
+        await queryRunner.createForeignKey(
+            "vaults",
+            new TableForeignKey({
+                columnNames: ["vaultStoreStateID"],
+                referencedColumnNames: ["vaultStoreStateID"],
+                referencedTableName: "vaultStoreStates",
+                onDelete: "CASCADE",
+            }),
+        );
+
+        await queryRunner.createForeignKey(
+            "vaults",
+            new TableForeignKey({
+                columnNames: ["passwordStoreStateID"],
+                referencedColumnNames: ["passwordStoreStateID"],
+                referencedTableName: "passwordStoreStates",
+                onDelete: "CASCADE",
+            }),
+        );
+
+        await queryRunner.createForeignKey(
+            "vaults",
+            new TableForeignKey({
+                columnNames: ["valueStoreStateID"],
+                referencedColumnNames: ["valueStoreStateID"],
+                referencedTableName: "valueStoreStates",
+                onDelete: "CASCADE",
+            }),
+        );
+
+        await queryRunner.createForeignKey(
+            "vaults",
+            new TableForeignKey({
+                columnNames: ["filterStoreStateID"],
+                referencedColumnNames: ["filterStoreStateID"],
+                referencedTableName: "filterStoreStates",
+                onDelete: "CASCADE",
+            }),
+        );
+
+        await queryRunner.createForeignKey(
+            "userVaults",
+            new TableForeignKey({
+                columnNames: ["groupStoreStateID"],
+                referencedColumnNames: ["groupStoreStateID"],
+                referencedTableName: "groupStoreStates",
+                onDelete: "CASCADE",
+            }),
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void>

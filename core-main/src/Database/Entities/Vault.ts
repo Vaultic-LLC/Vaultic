@@ -1,13 +1,18 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from "typeorm"
+import { Entity, Column, OneToMany } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
 import { nameof } from "../../Helpers/TypeScriptHelper";
+import { VaultStoreState } from "./States/VaultStoreState";
+import { PasswordStoreState } from "./States/PasswordStoreState";
+import { ValueStoreState } from "./States/ValueStoreState";
+import { FilterStoreState } from "./States/FilterStoreState";
+import { GroupStoreState } from "./States/GroupStoreState";
 
 @Entity({ name: "vaults" })
 export class Vault extends VaulticEntity
 {
     // Matches Server
-    @PrimaryColumn("integer")
+    @Column("integer")
     vaultID: number
 
     @OneToMany(() => UserVault, (uv: UserVault) => uv.vault)
@@ -28,30 +33,42 @@ export class Vault extends VaulticEntity
     @Column("boolean")
     lastUsed: boolean;
 
-    // Backed Up
-    // Encrypted by Vault Key
-    @Column("text")
-    vaultStoreState: string
+    // matches server
+    @Column("integer")
+    vaultStoreStateID: number
+
+    @OneToOne(() => VaultStoreState, (state: VaultStoreState) => state.vault, { eager: true, cascade: true })
+    vaultStoreState: VaultStoreState;
+
+    // matches server
+    @Column("integer")
+    passwordStoreStateID: number
+
+    @OneToOne(() => PasswordStoreState, (state: PasswordStoreState) => state.vault, { eager: true, cascade: true })
+    passwordStoreState: PasswordStoreState;
+
+    // matches server
+    @Column("integer")
+    valueStoreStateID: number
+
+    @OneToOne(() => ValueStoreState, (state: ValueStoreState) => state.vault, { eager: true, cascade: true })
+    valueStoreState: ValueStoreState;
 
     // Backed Up
     // Encrypted by Vault Key
-    @Column("text")
-    passwordStoreState: string
+    @Column("integer")
+    filterStoreStateID: number
+
+    @OneToOne(() => FilterStoreState, (state: FilterStoreState) => state.vault, { eager: true, cascade: true })
+    filterStoreState: FilterStoreState;
 
     // Backed Up
     // Encrypted by Vault Key
-    @Column("text")
-    valueStoreState: string
+    @Column("integer")
+    groupStoreStateID: number
 
-    // Backed Up
-    // Encrypted by Vault Key
-    @Column("text")
-    filterStoreState: string
-
-    // Backed Up
-    // Encrypted by Vault Key
-    @Column("text")
-    groupStoreState: string
+    @OneToOne(() => GroupStoreState, (state: GroupStoreState) => state.vault, { eager: true, cascade: true })
+    groupStoreState: GroupStoreState;
 
     identifier(): number 
     {
@@ -65,16 +82,15 @@ export class Vault extends VaulticEntity
 
     protected internalGetSignableProperties(): string[] 
     {
-        // exclude user preferences so it can be updated without the need of a master key
         return [
             nameof<Vault>("vaultID"),
             nameof<Vault>("name"),
             nameof<Vault>("color"),
-            nameof<Vault>("vaultStoreState"),
-            nameof<Vault>("passwordStoreState"),
-            nameof<Vault>("valueStoreState"),
-            nameof<Vault>("filterStoreState"),
-            nameof<Vault>("groupStoreState"),
+            nameof<Vault>("vaultStoreStateID"),
+            nameof<Vault>("passwordStoreStateID"),
+            nameof<Vault>("valueStoreStateID"),
+            nameof<Vault>("filterStoreStateID"),
+            nameof<Vault>("groupStoreStateID"),
         ];
     }
 
@@ -84,11 +100,6 @@ export class Vault extends VaulticEntity
             nameof<Vault>("vaultID"),
             nameof<Vault>("name"),
             nameof<Vault>("color"),
-            nameof<Vault>("vaultStoreState"),
-            nameof<Vault>("passwordStoreState"),
-            nameof<Vault>("valueStoreState"),
-            nameof<Vault>("filterStoreState"),
-            nameof<Vault>("groupStoreState"),
         ];
     }
 
@@ -96,12 +107,7 @@ export class Vault extends VaulticEntity
     {
         return this.encryptAndSetEach(key, [
             nameof<Vault>("name"),
-            nameof<Vault>("color"),
-            nameof<Vault>("vaultStoreState"),
-            nameof<Vault>("passwordStoreState"),
-            nameof<Vault>("valueStoreState"),
-            nameof<Vault>("filterStoreState"),
-            nameof<Vault>("groupStoreState")
+            nameof<Vault>("color")
         ]);
     }
 }

@@ -1,13 +1,15 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from "typeorm"
+import { Entity, Column, OneToMany, OneToOne } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
 import { nameof } from "../../Helpers/TypeScriptHelper"
+import { AppStoreState } from "./States/AppStoreState"
+import { UserPreferencesStoreState } from "./States/UserPreferencesStoreState"
 
 @Entity({ name: "users" })
 export class User extends VaulticEntity
 {
     // Matches Server
-    @PrimaryColumn("integer")
+    @Column("integer")
     userID: number
 
     // Backed Up
@@ -40,15 +42,19 @@ export class User extends VaulticEntity
     @Column("text")
     privateKey: string
 
-    // Backed up
-    // Encrypted by Users Master Key
-    @Column("text")
-    appStoreState: string;
+    // Matches Server
+    @Column("integer")
+    appStoreStateID: number;
 
-    // Backed Up
-    // Not Encrypted
-    @Column("text")
-    userPreferencesStoreState: string;
+    @OneToOne(() => AppStoreState, (state: AppStoreState) => state.user, { eager: true, cascade: true });
+    appStoreState: AppStoreState;
+
+    // matches server
+    @Column("integer")
+    userPreferencesStoreStateID: number;
+
+    @OneToOne(() => UserPreferencesStoreState, (state: UserPreferencesStoreState) => state.user, { eager: true, cascade: true });
+    userPreferencesStoreState: UserPreferencesStoreState;
 
     @OneToMany(() => UserVault, (uv: UserVault) => uv.user)
     userVaults: UserVault[]
@@ -68,11 +74,14 @@ export class User extends VaulticEntity
         return [
             nameof<User>("userID"),
             nameof<User>("email"),
+            // TODO: is signing these an issue since they aren't also backed up? I won't be able to create the same signature
+            // on another device then? Maybe just bakup the salt?
             nameof<User>("masterKeyHash"),
             nameof<User>("masterKeySalt"),
             nameof<User>("publicKey"),
             nameof<User>("privateKey"),
-            nameof<User>("appStoreState")
+            nameof<User>("appStoreStateID"),
+            nameof<User>("userPreferencesStoreStateID")
         ];
     }
 
@@ -81,9 +90,7 @@ export class User extends VaulticEntity
         return [
             nameof<User>("userID"),
             nameof<User>("publicKey"),
-            nameof<User>("privateKey"),
-            nameof<User>("appStoreState"),
-            nameof<User>("userPreferencesStoreState")
+            nameof<User>("privateKey")
         ];
     }
 
@@ -92,8 +99,7 @@ export class User extends VaulticEntity
         return this.encryptAndSetEach(key, [
             nameof<User>("masterKeyHash"),
             nameof<User>("masterKeySalt"),
-            nameof<User>("privateKey"),
-            nameof<User>("appStoreState")
+            nameof<User>("privateKey")
         ]);
     }
 }

@@ -1,14 +1,15 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { DataType, Group, PrimaryDataObjectCollection } from "../../Types/Table";
-import { AtRiskType, DataFile, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
+import { AtRiskType, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
-import { api } from "../../API"
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 
 export interface GroupStoreState extends DataTypeStoreState<Group>
 {
+    // TODO: this shold be hoisted up to a DataTypeStoreState and by Dictionary<number> where 
+    // number is the index in values[].
     groupsById: Dictionary<Group>;
     emptyPasswordGroups: string[];
     emptyValueGroups: string[];

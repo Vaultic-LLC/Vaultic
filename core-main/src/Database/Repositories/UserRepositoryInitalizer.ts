@@ -6,6 +6,8 @@ import { Repository } from "typeorm";
 import Transaction from "../Transaction";
 import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
+import { AppStoreState } from "../Entities/States/AppStoreState";
+import { UserPreferencesStoreState } from "../Entities/States/UserPreferencesStoreState";
 
 // TODO: move to cache
 let currentUser: User | undefined;
@@ -45,13 +47,13 @@ class UserRepository extends VaulticRepository<User>
     public async getLastUsedUserPreferences(): Promise<string | null>
     {
         const lastUsedUser = await this.getLastUsedUser();
-        return lastUsedUser?.userPreferencesStoreState ?? null;
+        return lastUsedUser?.userPreferencesStoreState?.state ?? null;
     }
 
     // TODO: better handle failed
     public async createUser(masterKey: string, email: string): Promise<boolean | string>
     {
-        const response = await vaulticServer.user.getUserID();
+        const response = await vaulticServer.user.getUserIDs();
         if (!response.Success)
         {
             return JSON.stringify(response);
@@ -71,11 +73,17 @@ class UserRepository extends VaulticRepository<User>
         user.masterKeySalt = salt;
         user.publicKey = keys.public;
         user.privateKey = keys.private;
-        user.appStoreState = "{}";
-        user.userPreferencesStoreState = "{}";
         user.userVaults = [];
 
-        if (!user.lock(masterKey))
+        const appStoreState = new AppStoreState();
+        appStoreState.appStoreStateID = response.AppStoreStateID!;
+        user.appStoreState = appStoreState;
+
+        const userPreferencesStoreState = new UserPreferencesStoreState();
+        userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
+        user.userPreferencesStoreState = userPreferencesStoreState;
+
+        if (!user.lock(masterKey) || !appStoreState.lock(masterKey) || !userPreferencesStoreState.lock(masterKey))
         {
             return "no user lock";
         }
@@ -86,7 +94,16 @@ class UserRepository extends VaulticRepository<User>
             return "no encrypted vault key";
         }
 
-        const vaults = await environment.repositories.vaults.createNewVault("Personal");
+        const createVaultResponse = await vaulticServer.vault.create();
+        if (!createVaultResponse.Success)
+        {
+            return "no vault";
+        }
+
+        // TODO: what happens if we fail to re back these up after creating them? There will then be pointless records on the server
+        // Create an initalized property on the userVault on server and default to false. Once it has been backed up once, set to true.
+        // Have scheduled task to remove all userVaults with initalized is false for more than a day
+        const vaults = await environment.repositories.vaults.createNewVault("Personal", "#FFFFFF", createVaultResponse);
         if (!vaults)
         {
             return "no vaults";
@@ -224,7 +241,7 @@ class UserRepository extends VaulticRepository<User>
             return failedResponse;
         }
 
-        const decryptedAppStoreState = await environment.utilities.crypt.decrypt(masterKey, currentUser.appStoreState);
+        const decryptedAppStoreState = await environment.utilities.crypt.decrypt(masterKey, currentUser.appStoreState.state);
         if (!decryptedAppStoreState)
         {
             return failedResponse;
@@ -243,11 +260,8 @@ class UserRepository extends VaulticRepository<User>
             ["name", "color", "vaultStoreState", "passwordStoreState",
                 "valueStoreState", "filterStoreState", "groupStoreState"]);
 
-        console.log(vaults);
-
         if (vaults[0].length == 0)
         {
-            console.log('no vaults');
             return failedResponse;
         }
 
@@ -263,7 +277,7 @@ class UserRepository extends VaulticRepository<User>
             {
                 // @ts-ignore
                 userData.displayVaults.push({
-                    id: vaults[0][i].vaultID!,
+                    id: vaults[0][i].id!,
                     color: vaults[0][i].color!,
                     name: vaults[0][i].name!
                 });

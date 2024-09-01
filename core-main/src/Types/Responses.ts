@@ -180,10 +180,18 @@ export interface LogUserInResponse extends StartLoginResponse, FinishLoginRespon
 export interface CreateVaultResponse extends BaseResponse
 {
     UserVaultID?: number;
+    VaultPreferencesStoreStateID?: number;
     VaultID?: number;
+    VaultStoreStateID?: number;
+    PasswordStoreStateID?: number;
+    ValueStoreStateID?: number;
+    FilterStoreStateID?: number;
+    GroupStoreStateID?: number;
 }
 
 export interface GetUserIDResponse extends BaseResponse
 {
     UserID?: number;
+    AppStoreStateID?: number;
+    UserPreferencesStoreStateID?: number;
 }

@@ -35,8 +35,7 @@ export interface VaultRepository extends VaulticRepository<Vault>
 
 export interface UserVaultRepository extends VaulticRepository<UserVault>
 {
-    getByVaultID: (vaultID: number) => Promise<UserVault | null>;
-    getUserVaults: (vaultID?: number) => Promise<UserVault[]>;
+    getVerifiedUserVaults: (masterKey: string, vaultID?: number) => Promise<[UserVault[], string[]]>;
     saveUserVault: (masterKey: string, vaultID: number, data: string) => Promise<boolean>;
 }
 
@@ -60,4 +59,17 @@ export interface UserData
 export interface VaultData extends Vault
 {
     vaultPreferencesStoreState: string;
+}
+
+export interface CondensedVaultData
+{
+    id: number;
+    vaultPreferencesStoreState: string;
+    name: string;
+    color: string;
+    vaultStoreState: string;
+    passwordStoreState: string;
+    valueStoreState: string;
+    filterStoreState: string;
+    groupStoreState: string;
 }

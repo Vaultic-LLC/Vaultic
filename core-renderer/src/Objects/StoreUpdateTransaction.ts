@@ -43,24 +43,23 @@ export default class StoreUpdateTransaction
 
     async commit(masterKey: string, skipBackup: boolean = false)
     {
-        const state = {};
+        const states = {};
         for (let i = 0; i < this.storeUpdateStates.length; i++)
         {
-            state[this.storeUpdateStates[i].store.stateName] = JSON.stringify(this.storeUpdateStates[i].pendingState);
+            states[this.storeUpdateStates[i].store.stateName] = { state: JSON.stringify(this.storeUpdateStates[i].pendingState) };
         }
 
         let success = false;
         switch (this.entity)
         {
-            // TODO: fill out the rest
             case Entity.User:
-                success = await api.repositories.users.saveUser(masterKey, JSON.stringify(state));
+                success = await api.repositories.users.saveUser(masterKey, JSON.stringify(states));
                 break;
             case Entity.UserVault:
-                success = await api.repositories.userVaults.saveUserVault(masterKey, this.vaultID!, JSON.stringify(state));
+                success = await api.repositories.userVaults.saveUserVault(masterKey, this.vaultID!, JSON.stringify(states));
                 break;
             case Entity.Vault:
-                success = await api.repositories.vaults.saveAndBackup(masterKey, this.vaultID!, JSON.stringify(state), skipBackup);
+                success = await api.repositories.vaults.saveAndBackup(masterKey, this.vaultID!, JSON.stringify(states), skipBackup);
                 break;
         }
 

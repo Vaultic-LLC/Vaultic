@@ -1,14 +1,15 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, Column, ManyToOne, JoinColumn } from "typeorm"
 import { User } from "./User"
 import { Vault } from "./Vault"
 import { VaulticEntity } from "./VaulticEntity"
 import { nameof } from "../../Helpers/TypeScriptHelper"
+import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity
 {
     // Matches Server
-    @PrimaryColumn("integer")
+    @Column("integer")
     userVaultID: number
 
     // Matches Server
@@ -33,10 +34,12 @@ export class UserVault extends VaulticEntity
     @Column("text")
     vaultKey: string
 
-    // Backed Up
-    // Not encrypted
-    @Column("text")
-    vaultPreferencesStoreState: string
+    // matches server
+    @Column("integer")
+    vaultPreferencesStoreStateID: number
+
+    @OneToOne(() => VaultPreferencesStoreState, (state: VaultPreferencesStoreState) => state.userVault, { eager: true, cascade: true })
+    vaultPreferencesStoreState: VaultPreferencesStoreState;
 
     identifier(): number 
     {
@@ -54,7 +57,8 @@ export class UserVault extends VaulticEntity
             nameof<UserVault>("userVaultID"),
             nameof<UserVault>("userID"),
             nameof<UserVault>("vaultID"),
-            nameof<UserVault>("vaultKey")
+            nameof<UserVault>("vaultKey"),
+            nameof<UserVault>("vaultPreferencesStoreStateID")
         ];
     }
 
@@ -62,8 +66,7 @@ export class UserVault extends VaulticEntity
     {
         return [
             nameof<UserVault>("userVaultID"),
-            nameof<UserVault>("vaultKey"),
-            nameof<UserVault>("vaultPreferencesStoreState")
+            nameof<UserVault>("vaultKey")
         ];
     }
 
@@ -71,5 +74,4 @@ export class UserVault extends VaulticEntity
     {
         return this.encryptAndSetEach(key, [nameof<UserVault>("vaultKey")]);
     }
-
 }
