@@ -1,15 +1,16 @@
-import { Entity, Column, ManyToOne, JoinColumn } from "typeorm"
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from "typeorm"
 import { User } from "./User"
 import { Vault } from "./Vault"
 import { VaulticEntity } from "./VaulticEntity"
 import { nameof } from "../../Helpers/TypeScriptHelper"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
+import { CondensedVaultData } from "../../Types/Repositories"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity
 {
     // Matches Server
-    @Column("integer")
+    @PrimaryColumn("integer")
     userVaultID: number
 
     // Matches Server
@@ -73,5 +74,28 @@ export class UserVault extends VaulticEntity
     async lock(key: string): Promise<boolean>
     {
         return this.encryptAndSetEach(key, [nameof<UserVault>("vaultKey")]);
+    }
+
+    protected getUserUpdatableProperties(): string[] 
+    {
+        return [
+            nameof<UserVault>("vaultPreferencesStoreState"),
+        ]
+    }
+
+    public condense(): CondensedVaultData
+    {
+        return {
+            userVaultID: this.userVaultID,
+            vaultPreferencesStoreState: this.vaultPreferencesStoreState.state,
+            name: this.vault.name,
+            color: this.vault.color,
+            lastUsed: this.vault.lastUsed,
+            vaultStoreState: this.vault.valueStoreState.state,
+            passwordStoreState: this.vault.passwordStoreState.state,
+            valueStoreState: this.vault.valueStoreState.state,
+            filterStoreState: this.vault.filterStoreState.state,
+            groupStoreState: this.vault.groupStoreState.state
+        }
     }
 }

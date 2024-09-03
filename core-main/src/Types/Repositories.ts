@@ -14,37 +14,36 @@ export interface VaulticRepository<T extends VaulticEntity>
 
 export interface UserRepository extends VaulticRepository<User>
 {
+    getCurrentUser: () => User | undefined;
+    findByEmail: (email: string) => Promise<User | null>;
     getLastUsedUserEmail: () => Promise<string | null>;
     getLastUsedUserPreferences: () => Promise<string | null>;
     createUser: (masterKey: string, email: string) => Promise<boolean | string>;
-    getCurrentUser: () => User | undefined;
-    findByEmail: (email: string) => Promise<User | null>;
     setCurrentUser: (masterKey: string, email: string) => Promise<boolean>;
     getCurrentUserData: (masterKey: string, response: any) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
     saveUser: (masterKey: string, data: string) => Promise<boolean>;
 }
 
+export interface UserVaultRepository extends VaulticRepository<UserVault>
+{
+    getVerifiedUserVaults: (masterKey: string, userVaultID?: number) => Promise<[UserVault[], string[]]>;
+    getVerifiedAndDecryt: (masterKey: string, propertiesToDecrypt?: string[], userVaultID?: number) => Promise<CondensedVaultData[] | null>;
+    saveUserVault: (masterKey: string, userVaultID: number, data: string) => Promise<boolean>;
+}
+
 export interface VaultRepository extends VaulticRepository<Vault>
 {
     createNewVault: (name: string, color?: string) => Promise<boolean | [UserVault, Vault]>;
-    getVaults: (masterKey: string, properties: (keyof Vault)[], encryptedProperties: (keyof Vault)[], vaultID?: number) => Promise<[Vault[], string[]]>;
-    getVault: (masterKey: string, vaultID: number) => Promise<VaultData | null>;
-    saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
-}
-
-export interface UserVaultRepository extends VaulticRepository<UserVault>
-{
-    getVerifiedUserVaults: (masterKey: string, vaultID?: number) => Promise<[UserVault[], string[]]>;
-    saveUserVault: (masterKey: string, vaultID: number, data: string) => Promise<boolean>;
+    getVault: (masterKey: string, userVaultID: number) => Promise<CondensedVaultData | null>;
+    saveAndBackup: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
 }
 
 export interface DisplayVault 
 {
     name: string;
-    id: number;
+    userVaultID: number;
     color: string;
-    lastUsed: boolean;
 }
 
 export interface UserData 
@@ -53,7 +52,7 @@ export interface UserData
     appStoreState?: any;
     userPreferencesStoreState?: any;
     displayVaults?: DisplayVault[];
-    currentVault?: Vault;
+    currentVault?: CondensedVaultData;
 }
 
 export interface VaultData extends Vault
@@ -63,10 +62,11 @@ export interface VaultData extends Vault
 
 export interface CondensedVaultData
 {
-    id: number;
+    userVaultID: number;
     vaultPreferencesStoreState: string;
     name: string;
     color: string;
+    lastUsed: boolean;
     vaultStoreState: string;
     passwordStoreState: string;
     valueStoreState: string;

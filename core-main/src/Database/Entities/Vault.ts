@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany } from "typeorm"
+import { Entity, Column, OneToMany, PrimaryColumn } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
 import { nameof } from "../../Helpers/TypeScriptHelper";
@@ -12,7 +12,7 @@ import { GroupStoreState } from "./States/GroupStoreState";
 export class Vault extends VaulticEntity
 {
     // Matches Server
-    @Column("integer")
+    @PrimaryColumn("integer")
     vaultID: number
 
     @OneToMany(() => UserVault, (uv: UserVault) => uv.vault)
@@ -109,5 +109,31 @@ export class Vault extends VaulticEntity
             nameof<Vault>("name"),
             nameof<Vault>("color")
         ]);
+    }
+
+    protected getUserUpdatableProperties(): string[] 
+    {
+        return [
+            nameof<Vault>("name"),
+            nameof<Vault>("color"),
+            nameof<Vault>("vaultStoreState"),
+            nameof<Vault>("passwordStoreState"),
+            nameof<Vault>("valueStoreState"),
+            nameof<Vault>("filterStoreState"),
+            nameof<Vault>("groupStoreState"),
+        ]
+    }
+
+    public static getDecrypableProperties()
+    {
+        return [
+            nameof<Vault>("name"),
+            nameof<Vault>("color"),
+            nameof<Vault>("vaultStoreState"),
+            nameof<Vault>("passwordStoreState"),
+            nameof<Vault>("valueStoreState"),
+            nameof<Vault>("filterStoreState"),
+            nameof<Vault>("groupStoreState")
+        ];
     }
 }

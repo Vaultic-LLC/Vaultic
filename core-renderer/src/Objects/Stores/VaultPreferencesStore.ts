@@ -34,7 +34,7 @@ export class VaultPreferencesStore extends VaultContrainedStore<VaultPreferences
 
     private async update()
     {
-        const transaction = new StoreUpdateTransaction(Entity.UserVault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.UserVault, this.vault.userVaultID);
         transaction.addStore(this, this.state);
 
         await transaction.commit('');

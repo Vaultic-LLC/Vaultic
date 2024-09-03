@@ -21,13 +21,13 @@ export default class StoreUpdateTransaction
     storeUpdateStates: StoreUpdateState[];
     ignoreFail: boolean;
     entity: Entity;
-    vaultID: number | undefined;
+    userVaultID: number | undefined;
 
-    constructor(entity: Entity, vaultID?: number)
+    constructor(entity: Entity, userVaultID?: number)
     {
         this.entity = entity;
         this.storeUpdateStates = [];
-        this.vaultID = vaultID;
+        this.userVaultID = userVaultID;
     }
 
     addStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
@@ -56,10 +56,10 @@ export default class StoreUpdateTransaction
                 success = await api.repositories.users.saveUser(masterKey, JSON.stringify(states));
                 break;
             case Entity.UserVault:
-                success = await api.repositories.userVaults.saveUserVault(masterKey, this.vaultID!, JSON.stringify(states));
+                success = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states));
                 break;
             case Entity.Vault:
-                success = await api.repositories.vaults.saveAndBackup(masterKey, this.vaultID!, JSON.stringify(states), skipBackup);
+                success = await api.repositories.vaults.saveAndBackup(masterKey, this.userVaultID!, JSON.stringify(states), skipBackup);
                 break;
         }
 

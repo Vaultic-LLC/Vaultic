@@ -68,10 +68,10 @@ export default function setupIPC()
 	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email)));
 	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, data: string) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, data)));
 
-	ipcMain.handle('vaultRepository:getVault', (e, masterKey: string, vaultID: number) => validateSender(e, () => environment.repositories.vaults.getVault(masterKey, vaultID)));
-	ipcMain.handle('vaultRepository:saveAndBackup', (e, masterKey: string, vaultID: number, data: string, skipBackup: boolean) => validateSender(e, () => environment.repositories.vaults.saveAndBackup(masterKey, vaultID, data, skipBackup)));
+	ipcMain.handle('vaultRepository:getVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.getVault(masterKey, userVaultID)));
+	ipcMain.handle('vaultRepository:saveAndBackup', (e, masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => validateSender(e, () => environment.repositories.vaults.saveAndBackup(masterKey, userVaultID, data, skipBackup)));
 
-	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, vaultID: number, data: string) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, vaultID, data)));
+	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data)));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 }

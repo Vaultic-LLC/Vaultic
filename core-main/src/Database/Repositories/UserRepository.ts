@@ -1,13 +1,15 @@
 import { environment } from "../../Environment";
 import { User } from "../Entities/User";
 import { UserData } from "../../Types/Repositories";
-import { VaulticRepository } from "./VaulticRepositoryInitalizer";
+import { VaulticRepository } from "./VaulticRepository";
 import { Repository } from "typeorm";
 import Transaction from "../Transaction";
 import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
 import { AppStoreState } from "../Entities/States/AppStoreState";
 import { UserPreferencesStoreState } from "../Entities/States/UserPreferencesStoreState";
+import { nameof } from "../../Helpers/TypeScriptHelper";
+import { Vault } from "../Entities/Vault";
 
 // TODO: move to cache
 let currentUser: User | undefined;
@@ -31,7 +33,7 @@ class UserRepository extends VaulticRepository<User>
         }))
     }
 
-    public getLastUsedUser()
+    private getLastUsedUser()
     {
         return this.retrieveReactive((repository) => repository.findOneBy({
             lastUsed: true
@@ -94,16 +96,7 @@ class UserRepository extends VaulticRepository<User>
             return "no encrypted vault key";
         }
 
-        const createVaultResponse = await vaulticServer.vault.create();
-        if (!createVaultResponse.Success)
-        {
-            return "no vault";
-        }
-
-        // TODO: what happens if we fail to re back these up after creating them? There will then be pointless records on the server
-        // Create an initalized property on the userVault on server and default to false. Once it has been backed up once, set to true.
-        // Have scheduled task to remove all userVaults with initalized is false for more than a day
-        const vaults = await environment.repositories.vaults.createNewVault("Personal", "#FFFFFF", createVaultResponse);
+        const vaults = await environment.repositories.vaults.createNewVault("Personal", "#FFFFFF");
         if (!vaults)
         {
             return "no vaults";
@@ -256,43 +249,56 @@ class UserRepository extends VaulticRepository<User>
             currentVault: undefined
         };
 
-        const vaults = await environment.repositories.vaults.getVaults(masterKey, ["vaultID", "lastUsed"],
-            ["name", "color", "vaultStoreState", "passwordStoreState",
-                "valueStoreState", "filterStoreState", "groupStoreState"]);
+        const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey,
+            [nameof<Vault>("color"), nameof<Vault>("name")]);
 
-        if (vaults[0].length == 0)
+        if (!userVaults || userVaults.length == 0)
         {
             return failedResponse;
         }
 
-        for (let i = 0; i < vaults[0].length; i++)
+        for (let i = 0; i < userVaults.length; i++)
         {
-            if (vaults[0][i].lastUsed)
+            if (userVaults[i].lastUsed)
             {
-                const userVault = await environment.repositories.userVaults.getByVaultID(vaults[0][i].vaultID!);
-                // @ts-ignore
-                userData.currentVault = { ...vaults[0][i], vaultPreferencesStoreState: userVault?.vaultPreferencesStoreState };
+                if (!(await setCurrentVault(userVaults[i].userVaultID)))
+                {
+                    return "issue";
+                }
             }
             else 
             {
-                // @ts-ignore
-                userData.displayVaults.push({
-                    id: vaults[0][i].id!,
-                    color: vaults[0][i].color!,
-                    name: vaults[0][i].name!
+                userData.displayVaults!.push({
+                    userVaultID: userVaults[i].userVaultID,
+                    color: userVaults[i].color,
+                    name: userVaults[i].name
                 });
             }
         }
 
         if (!userData.currentVault)
         {
-            const userVault = await environment.repositories.userVaults.getByVaultID(userData.currentVault![0].vaultID);
-            userData.currentVault = { ...userData.currentVault![0], vaultPreferencesStoreState: userVault?.vaultPreferencesStoreState };
+            if (!(await setCurrentVault(userData.displayVaults![0].userVaultID)))
+            {
+                return "issue";
+            }
+
             userData.displayVaults!.splice(0, 1);
         }
 
         userData.success = true;
         return JSON.stringify(userData);
+
+        async function setCurrentVault(id: number)
+        {
+            const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, id);
+            if (!userVault || userVault.length == 0)
+            {
+                return "issue";
+            }
+
+            userData.currentVault = userVault[0];
+        }
     }
 
     public async saveUser(masterKey: string, data: string)
@@ -304,11 +310,11 @@ class UserRepository extends VaulticRepository<User>
         }
 
         const parsedData = JSON.parse(data);
-        Object.assign(user, parsedData);
+        user.copyFrom(parsedData);
 
         const { userPreferencesStoreState, ...newUser } = parsedData;
 
-        const succeeded = await user.encryptAndSetEach!(masterKey, Object.keys(newUser));
+        const succeeded = await user.encryptAndSetFromObject!(masterKey, newUser);
         if (!succeeded)
         {
             return false;
@@ -325,6 +331,7 @@ class UserRepository extends VaulticRepository<User>
 
         // TODO: this should be done seperatly. not being able to backup shouldn't be considered the same 
         // as an error while saving
+        // Can do this only if its a shared vault =)
         const backupResponse = await vaulticServer.user.backupData(user.getBackup(), undefined, undefined);
         if (!backupResponse.Success)
         {

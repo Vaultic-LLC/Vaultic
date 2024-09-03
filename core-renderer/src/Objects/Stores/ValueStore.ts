@@ -37,7 +37,7 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
 
     async addNameValuePair(masterKey: string, value: NameValuePair, skipBackup: boolean = false): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         value.id = await generateUniqueID(pendingState.values);
@@ -68,7 +68,7 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
 
     async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         let currentValueIndex = pendingState.values.findIndex(v => v.id == updatedValue.id);
@@ -119,7 +119,7 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
 
     async deleteNameValuePair(masterKey: string, value: ReactiveValue): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const valueIndex = pendingState.values.findIndex(v => v.id == value.id);

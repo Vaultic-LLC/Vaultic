@@ -48,4 +48,11 @@ export class StoreState extends VaulticEntity
     {
         return this.encryptAndSetEach(key, [nameof<StoreState>("state")]);
     }
+
+    protected getUserUpdatableProperties(): string[] 
+    {
+        return [
+            nameof<StoreState>("state"),
+        ]
+    }
 }

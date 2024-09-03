@@ -1,4 +1,4 @@
-import { Entity, OneToOne, JoinColumn } from "typeorm";
+import { Entity, OneToOne, JoinColumn, PrimaryColumn } from "typeorm";
 import { nameof } from "../../../Helpers/TypeScriptHelper"
 import { StoreState } from "./StoreState";
 import { Vault } from "../Vault";
@@ -7,7 +7,7 @@ import { Vault } from "../Vault";
 export class FilterStoreState extends StoreState
 {
     // Matches Server
-    @Column("integer")
+    @PrimaryColumn("integer")
     filterStoreStateID: number
 
     @OneToOne(() => Vault, (vault) => vault.filterStoreState)

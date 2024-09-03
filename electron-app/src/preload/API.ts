@@ -98,13 +98,13 @@ const userRepository: UserRepository =
 
 const vaultRepository: VaultRepository =
 {
-	getVault: (masterKey: string, vaultID: number) => ipcRenderer.invoke('vaultRepository:getVault', masterKey, vaultID),
-	saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => ipcRenderer.invoke('vaultRepository:saveAndBackup', masterKey, vaultID, data, skipBackup)
+	getVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:getVault', masterKey, userVaultID),
+	saveAndBackup: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => ipcRenderer.invoke('vaultRepository:saveAndBackup', masterKey, userVaultID, data, skipBackup)
 };
 
 const userVaultRepository: UserVaultRepository =
 {
-	saveUserVault: (masterKey: string, vaultID: number, data: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, vaultID, data),
+	saveUserVault: (masterKey: string, userVaultID: number, data: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data),
 };
 
 const api: IAPI =

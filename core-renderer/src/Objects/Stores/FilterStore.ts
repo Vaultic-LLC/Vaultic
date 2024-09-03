@@ -51,7 +51,7 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     async addFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         filter.id = await generateUniqueID(pendingState.values);
@@ -76,7 +76,7 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     async updateFilter(masterKey: string, updatedFilter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         let filter: Filter[] = pendingState.values.filter(f => f.id == updatedFilter.id);
@@ -106,7 +106,7 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const filterIndex = pendingState.values.findIndex(f => f.id == filter.id);

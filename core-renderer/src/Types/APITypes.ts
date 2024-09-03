@@ -175,9 +175,18 @@ interface Vault
     groupStoreState: string;
 }
 
-export interface VaultData extends Vault
+export interface CondensedVaultData
 {
+    userVaultID: number;
     vaultPreferencesStoreState: string;
+    name: string;
+    color: string;
+    lastUsed: boolean;
+    vaultStoreState: string;
+    passwordStoreState: string;
+    valueStoreState: string;
+    filterStoreState: string;
+    groupStoreState: string;
 }
 
 export interface DisplayVault 
@@ -202,7 +211,7 @@ export interface UserRepository
 
 export interface VaultRepository
 {
-    getVault: (masterKey: string, vaultID: number) => Promise<VaultData | null>;
+    getVault: (masterKey: string, vaultID: number) => Promise<CondensedVaultData | null>;
     saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
 }
 

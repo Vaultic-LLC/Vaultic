@@ -50,7 +50,7 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
     async addGroup(masterKey: string, group: Group, skipBackup: boolean = false): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         group.id = await generateUniqueID(pendingState.values);
@@ -105,7 +105,7 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
     async updateGroup(masterKey: string, updatedGroup: Group): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const currentGroup = pendingState.groupsById[updatedGroup.id];
@@ -158,7 +158,7 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         delete pendingState.groupsById[group.id];

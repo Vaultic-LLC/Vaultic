@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, OneToOne } from "typeorm"
+import { Entity, Column, OneToMany, OneToOne, PrimaryColumn } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
 import { nameof } from "../../Helpers/TypeScriptHelper"
@@ -9,7 +9,7 @@ import { UserPreferencesStoreState } from "./States/UserPreferencesStoreState"
 export class User extends VaulticEntity
 {
     // Matches Server
-    @Column("integer")
+    @PrimaryColumn("integer")
     userID: number
 
     // Backed Up
@@ -101,5 +101,13 @@ export class User extends VaulticEntity
             nameof<User>("masterKeySalt"),
             nameof<User>("privateKey")
         ]);
+    }
+
+    protected getUserUpdatableProperties(): string[] 
+    {
+        return [
+            nameof<User>("appStoreState"),
+            nameof<User>("userPreferencesStoreState")
+        ]
     }
 }

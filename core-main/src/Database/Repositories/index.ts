@@ -1,6 +1,6 @@
-import userRepository, { UserRepositoryType } from "./UserRepositoryInitalizer";
-import userVaultRepository, { UserVaultRepositoryType } from "./UserVaultRepositoryInitalizer";
-import vaultRepository, { VaultRepositoryType } from "./VaultRepositoryInitalizer";
+import userRepository, { UserRepositoryType } from "./UserRepository";
+import userVaultRepository, { UserVaultRepositoryType } from "./UserVaultRepository";
+import vaultRepository, { VaultRepositoryType } from "./VaultRepository";
 
 export interface VaulticRepositories
 {

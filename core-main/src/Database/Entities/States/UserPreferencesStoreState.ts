@@ -1,4 +1,4 @@
-import { Entity } from "typeorm";
+import { Entity, PrimaryColumn } from "typeorm";
 import { nameof } from "../../../Helpers/TypeScriptHelper"
 import { StoreState } from "./StoreState";
 import { User } from "../User";
@@ -7,7 +7,7 @@ import { User } from "../User";
 export class UserPreferencesStoreState extends StoreState
 {
     // Matches Server
-    @Column("integer")
+    @PrimaryColumn("integer")
     userPreferencesStoreStateID: number
 
     @OneToOne(() => User, (user: User) => user.userPreferencesStoreState)

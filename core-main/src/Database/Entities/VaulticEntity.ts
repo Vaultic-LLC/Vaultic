@@ -1,6 +1,6 @@
 import { environment } from "../../Environment";
 import * as jose from 'jose'
-import { Column, ObjectLiteral, PrimaryGeneratedColumn } from "typeorm"
+import { Column, ObjectLiteral } from "typeorm"
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { EntityState } from "../../Types/Properties";
 
@@ -23,9 +23,6 @@ const VaulticHandler = {
 
 export class VaulticEntity implements ObjectLiteral
 {
-    @PrimaryGeneratedColumn("increment")
-    id: number
-
     // Encrypted
     // Backed Up
     @Column("text")
@@ -87,6 +84,47 @@ export class VaulticEntity implements ObjectLiteral
     protected internalGetBackupableProperties(): string[]
     {
         return [];
+    }
+
+    protected getUserUpdatableProperties(): string[]
+    {
+        return [];
+    }
+
+    public copyFrom(obj: any, target?: VaulticEntity)
+    {
+        if (target === undefined)
+        {
+            target = this;
+        }
+
+        if (!target.getUserUpdatableProperties)
+        {
+            return;
+        }
+
+        const properties = Object.keys(obj);
+        const userUpdatableProperties = target.getUserUpdatableProperties();
+
+        for (let i = 0; i < properties.length; i++)
+        {
+            if (!userUpdatableProperties.includes(properties[i]))
+            {
+                continue;
+            }
+            else if (target[properties[i]] === undefined || obj[properties[i]] === undefined)
+            {
+                continue;
+            }
+            else if (typeof obj[properties[i]] === "object")
+            {
+                this.copyFrom(obj[properties[i]], this[properties[i]]);
+            }
+            else if (typeof obj[properties[i]] === 'string')
+            {
+                target[properties[i]] = obj[properties[i]];
+            }
+        }
     }
 
     getBackup(): any
@@ -224,6 +262,39 @@ export class VaulticEntity implements ObjectLiteral
             if (!await this.encryptAndSet(masterKey, properties[i]))
             {
                 return false;
+            }
+        }
+
+        return true;
+    }
+
+    public async encryptAndSetFromObject(key: string, obj: any, target?: VaulticEntity): Promise<boolean>
+    {
+        if (!target)
+        {
+            target = this;
+        }
+
+        const properties = Object.keys(obj);
+        for (let i = 0; i < properties.length; i++)
+        {
+            if (target[properties[i]] === undefined || obj[properties[i]] === undefined)
+            {
+                continue;
+            }
+            else if (typeof obj[properties[i]] === "object")
+            {
+                this.encryptAndSetFromObject(key, obj[properties[i]], this[properties[i]]);
+            }
+            else if (typeof obj[properties[i]] === 'string')
+            {
+                const result = await environment.utilities.crypt.encrypt(key, obj[properties[i]] as string);
+                if (!result)
+                {
+                    return false;
+                }
+
+                target[properties[i]] = result.value!;
             }
         }
 

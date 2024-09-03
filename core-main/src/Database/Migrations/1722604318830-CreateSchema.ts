@@ -1,24 +1,43 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from "typeorm";
+import { MigrationInterface, QueryRunner, Table, TableColumnOptions, TableForeignKey } from "typeorm";
 
 export class CreateSchema1722604318830 implements MigrationInterface
 {
     public async up(queryRunner: QueryRunner): Promise<void>
     {
+        const vaulticEntityProperties: TableColumnOptions[] = [
+            {
+                name: "signatureSecret",
+                type: "text"
+            },
+            {
+                name: "currentSignature",
+                type: "text"
+            },
+            {
+                name: "entityState",
+                type: "integer"
+            }
+        ];
+
+        const storeStateProperties: TableColumnOptions[] = [
+            {
+                name: "state",
+                type: "text"
+            },
+            {
+                name: "previousSignature",
+                type: "text"
+            }
+        ];
+
         await queryRunner.createTable(new Table({
             name: "users",
             columns: [
+                ...vaulticEntityProperties,
                 {
                     name: "userID",
+                    isPrimary: true,
                     type: "integer",
-                    isPrimary: true
-                },
-                {
-                    name: "signatureSecret",
-                    type: "text"
-                },
-                {
-                    name: "signature",
-                    type: "text"
                 },
                 {
                     name: "email",
@@ -58,10 +77,11 @@ export class CreateSchema1722604318830 implements MigrationInterface
         await queryRunner.createTable(new Table({
             name: "userVaults",
             columns: [
+                ...vaulticEntityProperties,
                 {
                     name: "userVaultID",
+                    isPrimary: true,
                     type: "integer",
-                    isPrimary: true
                 },
                 {
                     name: "userID",
@@ -70,14 +90,6 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "vaultID",
                     type: "integer"
-                },
-                {
-                    name: "signatureSecret",
-                    type: "text"
-                },
-                {
-                    name: "signature",
-                    type: "text"
                 },
                 {
                     name: "vaultKey",
@@ -93,18 +105,11 @@ export class CreateSchema1722604318830 implements MigrationInterface
         await queryRunner.createTable(new Table({
             name: "vaults",
             columns: [
+                ...vaulticEntityProperties,
                 {
                     name: "vaultID",
                     type: "integer",
                     isPrimary: true
-                },
-                {
-                    name: "signatureSecret",
-                    type: "text"
-                },
-                {
-                    name: "signature",
-                    type: "text"
                 },
                 {
                     name: "name",
@@ -134,6 +139,102 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     name: "filterStoreStateID",
                     type: "integer"
                 },
+                {
+                    name: "groupStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "appStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
+                {
+                    name: "appStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "userPreferencesStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
+                {
+                    name: "userPreferencesStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "vaultPreferencesStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
+                {
+                    name: "vaultPreferencesStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "vaultStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
+                {
+                    name: "vaultStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "passwordStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
+                {
+                    name: "passwordStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "valueStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
+                {
+                    name: "valueStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "filterStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
+                {
+                    name: "filterStoreStateID",
+                    type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "groupStoreStates",
+            columns: [
+                ...vaulticEntityProperties,
+                ...storeStateProperties,
                 {
                     name: "groupStoreStateID",
                     type: "integer"

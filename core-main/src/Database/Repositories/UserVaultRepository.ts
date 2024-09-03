@@ -1,10 +1,13 @@
 import { environment } from "../../Environment";
 import { Repository } from "typeorm";
-import { VaulticRepository } from "./VaulticRepositoryInitalizer";
+import { VaulticRepository } from "./VaulticRepository";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
 import vaulticServer from "../../Server/VaulticServer";
 import { VaultKey } from "../../Types/Properties";
+import { CondensedVaultData } from "../../Types/Repositories";
+import { Vault } from "../Entities/Vault";
+import { User } from "../Entities/User";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -13,14 +16,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return environment.databaseDataSouce.getRepository(UserVault);
     }
 
-    private async getUserVaults(vaultID?: number): Promise<UserVault[]>
+    private async getUserVaults(currentUser: User, userVaultID?: number): Promise<UserVault[]>
     {
-        const currentUser = environment.repositories.users.getCurrentUser();
-        if (!currentUser)
-        {
-            return [];
-        }
-
         return this.retrieveManyReactive(getUserVaultsQuery);
 
         function getUserVaultsQuery(repository: Repository<UserVault>)
@@ -30,16 +27,16 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 .leftJoinAndSelect('userVault.vault', 'vault')
                 .where('userVault.userID = :userID', { userID: currentUser?.userID });
 
-            if (vaultID)
+            if (userVaultID)
             {
-                userVaultQuery.andWhere("vault.vaultID = :vaultID", { vaultID });
+                userVaultQuery.andWhere("userVault.userVaultID = :userVaultID", { userVaultID });
             }
 
             return userVaultQuery.getMany();
         }
     }
 
-    public async getVerifiedUserVaults(masterKey: string, vaultID?: number): Promise<[UserVault[], string[]]>
+    public async getVerifiedUserVaults(masterKey: string, userVaultID?: number): Promise<[UserVault[], string[]]>
     {
         const currentUser = environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -48,7 +45,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             return [[], []];
         }
 
-        const userVaults: UserVault[] = await this.getUserVaults(vaultID);
+        const userVaults: UserVault[] = await this.getUserVaults(currentUser, userVaultID);
         if (userVaults.length == 0)
         {
             console.log('no user vaults')
@@ -98,26 +95,56 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return [userVaults, vaultKeys];
     }
 
-    public async saveUserVault(masterKey: string, vaultID: number, data: string): Promise<boolean>
+    public async getVerifiedAndDecryt(masterKey: string, propertiesToDecrypt?: string[], userVaultID?: number): Promise<CondensedVaultData[] | null>
     {
-        const userVaults = await this.getVerifiedUserVaults(masterKey, vaultID);
+        const userVaults = await this.getVerifiedUserVaults(masterKey, userVaultID);
+        if (userVaults[0].length == 0)
+        {
+            return null;
+        }
+
+        const condensedDecryptedUserVaults: CondensedVaultData[] = [];
+        for (let i = 0; i < userVaults[0].length; i++)
+        {
+            const condensedUserVault = userVaults[0][i].condense();
+            const decryptableProperties = propertiesToDecrypt ?? Vault.getDecrypableProperties();
+
+            for (let j = 0; j < decryptableProperties.length; j++)
+            {
+                const response = await environment.utilities.crypt.decrypt(userVaults[1][i], condensedUserVault[decryptableProperties[j]]);
+                if (!response.success)
+                {
+                    return null;
+                }
+
+                condensedUserVault[decryptableProperties[j]] = response.value!;
+            }
+
+            condensedDecryptedUserVaults.push(condensedUserVault);
+        }
+
+        return condensedDecryptedUserVaults;
+    }
+
+    public async saveUserVault(masterKey: string, userVaultID: number, data: string): Promise<boolean>
+    {
+        const userVaults = await this.getVerifiedUserVaults(masterKey, userVaultID);
         if (userVaults[0].length != 1)
         {
             return false;
         }
 
         const oldUserVault = userVaults[0][0];
-
         const parsedData = JSON.parse(data);
-        Object.assign(oldUserVault, parsedData);
 
-        const { vaultPreferencesStoreState, ...newUserVault } = oldUserVault;
+        oldUserVault.copyFrom(parsedData);
 
-        const succeeded = await oldUserVault.encryptAndSetEach!(masterKey, Object.keys(newUserVault));
-        if (!succeeded)
-        {
-            return false;
-        }
+        // there shouldn't be any encrypted properties that are being updated through this method
+        // const succeeded = await oldUserVault.encryptAndSetFromObject!(masterKey, newUserVault);
+        // if (!succeeded)
+        // {
+        //     return false;
+        // }
 
         const transaction = new Transaction();
         transaction.updateEntity(oldUserVault, masterKey, () => this);

@@ -38,7 +38,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
 
     async addPassword(masterKey: string, password: Password, skipBackup: boolean = false): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState: PasswordStoreState = this.cloneState();
 
         password.id = await generateUniqueID(pendingState.values);
@@ -72,7 +72,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
         updatedSecurityQuestionAnswers: string[]): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const passwordIndex = pendingState.values.findIndex(p => p.id == updatingPassword.id);
@@ -145,7 +145,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
 
     async deletePassword(masterKey: string, password: ReactivePassword): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.vaultID);
+        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         if (password.isVaultic)
