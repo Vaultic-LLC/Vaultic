@@ -21,7 +21,6 @@ const userController: UserController =
 {
 	validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
-	backupStores: (data: string) => ipcRenderer.invoke('userController:backupStores', data),
 	getUserData: () => ipcRenderer.invoke('userController:getUserData'),
 	createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
 	getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),

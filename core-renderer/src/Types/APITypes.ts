@@ -91,7 +91,6 @@ export interface UserController
 {
     validateEmail(email: string): Promise<ValidateEmailResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-    backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     getUserData: () => Promise<LoadDataResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;

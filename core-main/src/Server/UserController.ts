@@ -1,6 +1,7 @@
 import { User } from "../Database/Entities/User";
 import { UserVault } from "../Database/Entities/UserVault";
 import { Vault } from "../Database/Entities/Vault";
+import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, LoadDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
@@ -9,8 +10,7 @@ export interface UserController
     validateEmail(email: string): Promise<ValidateEmailResponse>;
     getUserIDs: () => Promise<GetUserIDResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-    backupData: (user?: User, userVault?: UserVault[], vault?: Vault[]) => Promise<BaseResponse>;
-    backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+    backupData: (user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null) => Promise<BaseResponse>;
     getUserData: () => Promise<LoadDataResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
@@ -49,80 +49,34 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetDevices');
     }
 
-    async function backupData(user?: User, userVaults?: UserVault[], vaults?: Vault[]): Promise<BaseResponse>
+    async function backupData(user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null): Promise<BaseResponse>
     {
-        const postData = {};
+        const postData = { userDataPayload: {} };
         if (user)
         {
-            const { userID, publicKey, ...userWithoutID } = user;
-            const encryptedUser = await axiosHelper.api.endToEndEncryptPostData(userWithoutID);
-
-            if (!encryptedUser.success)
-            {
-                return { Success: false, message: encryptedUser.errorMessage }
-            }
-
-            postData["user"] = { userID, publicKey, ...encryptedUser.value! };
+            postData.userDataPayload["user"] = user;
         }
 
-        if (userVaults)
+        if (userVaults && userVaults.length > 0)
         {
-            postData["userVaults"] = [];
-            for (let i = 0; i < userVaults.length; i++)
-            {
-                const { userVaultID, ...userVaultWithoutID } = userVaults[i];
-                const encryptedUserVault = await axiosHelper.api.endToEndEncryptPostData(userVaultWithoutID);
-
-                if (!encryptedUserVault.success)
-                {
-                    return { Success: false, message: `userVault encryption failed. ${encryptedUserVault.errorMessage}` };
-                }
-
-                postData["userVaults"].push({ userVaultID, ...encryptedUserVault.value });
-            }
+            postData.userDataPayload["userVaults"] = userVaults;
         }
 
-        // TODO: vaults can't be end to end encrypted since they can be shared with multiple users
-        if (vaults)
+        if (vaults && vaults.length > 0)
         {
-            postData["vaults"] = [];
-            for (let i = 0; i < vaults.length; i++)
-            {
-                const { vaultID, ...vaultWithoutID } = vaults[i];
-                const encryptedVault = await axiosHelper.api.endToEndEncryptPostData(vaultWithoutID);
-
-                if (!encryptedVault.success)
-                {
-                    return { Success: false, message: "vault encryption failed" };
-                }
-
-                postData["vaults"].push({ vaultID, ...encryptedVault.value });
-            }
+            postData.userDataPayload["vaults"] = vaults;
         }
 
-        const response = await axiosHelper.api.post("User/BackupData", postData);
+        const e2eEncryptedData = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, postData);
+        const response = await axiosHelper.api.post("User/BackupData", e2eEncryptedData);
+
         return { ...response, message: `Post data: ${JSON.stringify(postData)}` }
-    }
-
-    async function backupStores(data: string): Promise<UseSessionLicenseAndDeviceAuthenticationResponse>
-    {
-        const stores = JSON.parse(data);
-        const response = await axiosHelper.api.endToEndEncryptPostData(stores);
-        if (!response.success)
-        {
-            return { Success: false, message: response.errorMessage }
-        }
-
-        return axiosHelper.api.post('User/BackupStores', response.value)
     }
 
     async function getUserData(): Promise<LoadDataResponse>
     {
-        const properties = ['appStoreState', 'settingsStoreState', 'filterStoreState', 'groupStoreState', 'passwordStoreState',
-            'valueStoreState', 'userPreferencesStoreState'];
-
         let response = await axiosHelper.api.post('User/GetUserData');
-        const decryptedData = await axiosHelper.api.decryptEndToEndData(properties, response);
+        const decryptedData = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, response);
         if (!decryptedData.success)
         {
             return { Success: false, message: "Unable to decrypt data" };
@@ -175,7 +129,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         deleteDevice,
         getDevices,
         backupData,
-        backupStores,
         getUserData,
         createCheckout,
         getChartData,

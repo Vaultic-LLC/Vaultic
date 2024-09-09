@@ -94,13 +94,11 @@ export class Vault extends VaulticEntity
         ];
     }
 
-    protected internalGetBackupableProperties(): string[] 
+    protected neededBackupProperties(): string[] 
     {
         return [
-            nameof<Vault>("vaultID"),
-            nameof<Vault>("name"),
-            nameof<Vault>("color"),
-        ];
+            nameof<Vault>("vaultID")
+        ]
     }
 
     async lock(key: string): Promise<boolean>

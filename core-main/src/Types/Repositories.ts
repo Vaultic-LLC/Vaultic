@@ -8,8 +8,9 @@ export interface VaulticRepository<T extends VaulticEntity>
 {
     signAndInsert: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
     signAndUpdate: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
-    retrieveAndVerify: (masterKey: string, predicate: () => T) => Promise<boolean>;
     remove: (manager: EntityManager, entity: T) => Promise<boolean>;
+    getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>;
+    getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>;
 }
 
 export interface UserRepository extends VaulticRepository<User>
@@ -20,7 +21,7 @@ export interface UserRepository extends VaulticRepository<User>
     getLastUsedUserPreferences: () => Promise<string | null>;
     createUser: (masterKey: string, email: string) => Promise<boolean | string>;
     setCurrentUser: (masterKey: string, email: string) => Promise<boolean>;
-    getCurrentUserData: (masterKey: string, response: any) => Promise<string>;
+    getCurrentUserData: (masterKey: string) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
     saveUser: (masterKey: string, data: string) => Promise<boolean>;
 }

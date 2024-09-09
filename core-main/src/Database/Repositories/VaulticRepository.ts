@@ -1,9 +1,10 @@
 import { EntityManager, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
+import { EntityState } from "../../Types/Properties";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
-    private repository: Repository<T>;
+    protected repository: Repository<T>;
 
     protected getRepository(): Repository<T> | undefined
     {
@@ -60,7 +61,7 @@ export class VaulticRepository<T extends VaulticEntity>
 
     private getSavableEntity(entity: T): any
     {
-        const { updatedProperties, ...saveableEntity } = entity;
+        const { updatedProperties, propertiesToSync, ...saveableEntity } = entity;
         return saveableEntity;
     }
 
@@ -102,25 +103,25 @@ export class VaulticRepository<T extends VaulticEntity>
         return !!removedEntity;
     }
 
-    public async retrieveAndVerify(key: string, predicate: () => T): Promise<boolean>
+    public async retrieveAndVerify(key: string, predicate: (repository: Repository<T>) => Promise<T | null>): Promise<[boolean, T | null]>
     {
-        const entity = predicate();
+        const entity = await predicate(this.repository);
         if (!entity)
         {
-            return true;
+            return [true, null];
         }
 
-        return await entity.verify(key);
+        if (!(await entity.verify(key)))
+        {
+            return [false, null];
+        }
+
+        return [true, entity];
     }
 
-    public async retrieveAndVerifyAll(key: string, predicate: () => T[]): Promise<boolean>
+    public async retrieveAndVerifyAll(key: string, predicate: (repository: Repository<T>) => Promise<T[]>): Promise<T[] | boolean>
     {
-        const entities = predicate();
-        if (entities.length == 0)
-        {
-            return true;
-        }
-
+        const entities = await predicate(this.repository);
         for (let i = 0; i < entities.length; i++)
         {
             if (!(await entities[i].verify(key)))
@@ -129,6 +130,26 @@ export class VaulticRepository<T extends VaulticEntity>
             }
         }
 
+        return entities;
+    }
+
+    public async getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>
+    {
+        return [false, null];
+    }
+
+    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>
+    {
+        return [false, null];
+    }
+
+    public async resetBackupTrackingForEntity(entity: Partial<T>): Promise<boolean>
+    {
+        return true;
+    }
+
+    public async resetBackupTrackingForEntities(entities: Partial<T>[]): Promise<boolean>
+    {
         return true;
     }
 }

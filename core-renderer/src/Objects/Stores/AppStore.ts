@@ -172,7 +172,7 @@ export class AppStore extends Store<AppStoreState>
     }
 
     // TODO: resposne should contain all vaults from server to check if any local ones are out of date. It should also contain 
-    // shared vaults to set in the store only but not save locally
+    // shared and archived vaults to set in the store only but not save locally
     public async loadUserData(masterKey: string, response?: any)
     {
         if (this.loadedUser)
@@ -180,7 +180,7 @@ export class AppStore extends Store<AppStoreState>
             return;
         }
 
-        const userData = await api.repositories.users.getCurrentUserData(masterKey, response);
+        const userData = await api.repositories.users.getCurrentUserData(masterKey);
         const parsedUserData: UserData = JSON.parse(userData);
 
         // TODO: better handle error. No data will be loaded
@@ -191,8 +191,9 @@ export class AppStore extends Store<AppStoreState>
 
         Object.assign(this.state, JSON.parse(parsedUserData.appStoreState));
         this.internalUserVaults = parsedUserData.displayVaults!;
-        // TODO: return shared vaults from server
+        // TODO: return shared vaults from server. These also need to include userVault for vaultKey...
         //this.internalSharedVaults = JSON.parse(response.SharedVaults);
+        // this.internalArchivedVaults = JSON.parse(response.archivedVaults);
         this.internalCurrentVault.setVaultData(masterKey, parsedUserData.currentVault);
         this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;

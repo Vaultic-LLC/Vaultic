@@ -47,7 +47,7 @@ export class UserVault extends VaulticEntity
         return this.userVaultID;
     }
 
-    protected createNew(): VaulticEntity 
+    protected createNew(): UserVault 
     {
         return new UserVault();
     }
@@ -63,12 +63,11 @@ export class UserVault extends VaulticEntity
         ];
     }
 
-    protected internalGetBackupableProperties(): string[] 
+    protected neededBackupProperties(): string[]
     {
         return [
-            nameof<UserVault>("userVaultID"),
-            nameof<UserVault>("vaultKey")
-        ];
+            nameof<UserVault>("userVaultID")
+        ]
     }
 
     async lock(key: string): Promise<boolean>

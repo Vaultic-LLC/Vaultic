@@ -10,6 +10,9 @@ import { AppStoreState } from "../Entities/States/AppStoreState";
 import { UserPreferencesStoreState } from "../Entities/States/UserPreferencesStoreState";
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { Vault } from "../Entities/Vault";
+import { EntityState } from "../../Types/Properties";
+import { backupData } from ".";
+import { StoreState } from "../Entities/States/StoreState";
 
 // TODO: move to cache
 let currentUser: User | undefined;
@@ -142,20 +145,14 @@ class UserRepository extends VaulticRepository<User>
             return "no commit";
         }
 
-        const backupResponse = await vaulticServer.user.backupData(user.getBackup(), [userVault.getBackup()], [vault.getBackup()]);
-        if (!backupResponse.Success)
+        const backupResponse = await backupData(masterKey);
+        if (!backupResponse)
         {
-            return backupResponse.message!;
+            return false;
         }
 
         currentUser = user;
         return true;
-    }
-
-    // when logging in for the first time as a user that already exists
-    public addUser()
-    {
-
     }
 
     public async verifyUserMasterKey(masterKey: string, email?: string): Promise<boolean>
@@ -225,7 +222,7 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async getCurrentUserData(masterKey: string, response: any): Promise<string>
+    public async getCurrentUserData(masterKey: string): Promise<string>
     {
         const failedResponse = JSON.stringify({ success: false });
         if (!currentUser)
@@ -301,7 +298,7 @@ class UserRepository extends VaulticRepository<User>
         }
     }
 
-    public async saveUser(masterKey: string, data: string)
+    public async saveUser(masterKey: string, data: string, backup: boolean)
     {
         const user = this.getCurrentUser();
         if (!user)
@@ -311,6 +308,7 @@ class UserRepository extends VaulticRepository<User>
 
         const parsedData = JSON.parse(data);
         user.copyFrom(parsedData);
+        user.entityState = EntityState.Updated;
 
         const { userPreferencesStoreState, ...newUser } = parsedData;
 
@@ -329,16 +327,205 @@ class UserRepository extends VaulticRepository<User>
             return false;
         }
 
-        // TODO: this should be done seperatly. not being able to backup shouldn't be considered the same 
-        // as an error while saving
-        // Can do this only if its a shared vault =)
-        const backupResponse = await vaulticServer.user.backupData(user.getBackup(), undefined, undefined);
-        if (!backupResponse.Success)
+        if (backup)
         {
-            //return JSON.stringify(backupResponse);
+            await backupData(masterKey);
         }
 
         return true;
+    }
+
+    public async getEntitesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<User> | null]>
+    {
+        const currentUser = this.getCurrentUser();
+        if (!currentUser)
+        {
+            return [false, null];
+        }
+
+        const response = await this.retrieveAndVerify(masterKey, getUsers);
+        if (!response[0])
+        {
+            return [false, null];
+        }
+
+        if (!response[1])
+        {
+            return [true, null];
+        }
+
+        const user = response[1];
+        const userDataToBackup: Partial<User> = {};
+
+        if (user.propertiesToSync.length > 0)
+        {
+            userDataToBackup["user"] = user.getBackup();
+        }
+        else 
+        {
+            // make sure we always add the userID, even if just store states are being updated
+            userDataToBackup["user"] = { userID: user.userID }
+        }
+
+        if (user.appStoreState.propertiesToSync.length > 0)
+        {
+            userDataToBackup["user"]["appStoreState"] = user.appStoreState.getBackup();
+        }
+
+        if (user.userPreferencesStoreState.propertiesToSync.length > 0)
+        {
+            userDataToBackup["user"]["userPreferencesStoreState"] = user.userPreferencesStoreState.getBackup();
+        }
+
+        return [true, userDataToBackup];
+
+        function getUsers(repository: Repository<User>): Promise<User | null>
+        {
+            return repository
+                .createQueryBuilder("users")
+                .leftJoinAndSelect("users.appStoreState", "appStoreState")
+                .leftJoinAndSelect("users.userPreferencesStoreState", "userPreferencesStoreState")
+                .where("user.userID = :userID", { userID: currentUser?.userID })
+                .andWhere(`
+                    user.entityState != :entityState OR 
+                    appStoreState.entityState != :entityState OR 
+                    userPreferencesStoreState.entityState != :entityState`,
+                    { entityState: EntityState.Unchanged })
+                .getOne();
+        }
+    }
+
+    public async resetBackupTrackingForEntity(entity: Partial<User>)
+    {
+        const currentUser = this.getCurrentUser();
+        if (!currentUser || !entity.userID || entity.userID != currentUser.userID)
+        {
+            return false;
+        }
+
+        this.repository
+            .createQueryBuilder("users")
+            .innerJoin("users.appStoreState", "appStoreState")
+            .innerJoin("users.userPreferencesStoreState", "userPreferencesStoreState")
+            .update()
+            .set(
+                {
+                    entityState: EntityState.Unchanged,
+                    serializedPropertiesToSync: "[]",
+                    appStoreState: {
+                        entityState: EntityState.Unchanged,
+                        serializedPropertiesToSync: "[]"
+                    },
+                    userPreferencesStoreState: {
+                        entityState: EntityState.Unchanged,
+                        serializedPropertiesToSync: "[]"
+                    }
+                }
+            )
+            .where("userID = :userID", { userID: entity.userID })
+            .execute();
+
+        return true;
+    }
+
+    public async addFromServer(user: Partial<User>)
+    {
+        if (!user.userID ||
+            !user.email ||
+            !user.signatureSecret ||
+            !user.currentSignature ||
+            !user.publicKey ||
+            !user.privateKey ||
+            !user.appStoreState ||
+            !user.userPreferencesStoreState)
+        {
+            return;
+        }
+
+        // TODO: make sure this saves appStoreState and userPreferncesStorState correctly
+        return this.repository.insert(user);
+    }
+
+    public async updateFromServer(currentUser: Partial<User>, newUser: Partial<User>)
+    {
+        if (!newUser.userID)
+        {
+            return;
+        }
+
+        const setProperties = {};
+
+        if (newUser.email)
+        {
+            setProperties[nameof<User>("email")] = newUser.email;
+        }
+
+        if (newUser.publicKey)
+        {
+            setProperties[nameof<User>("publicKey")] = newUser.publicKey;
+        }
+
+        if (newUser.privateKey)
+        {
+            setProperties[nameof<User>("privateKey")] = newUser.privateKey;
+        }
+
+        if (newUser.signatureSecret)
+        {
+            setProperties[nameof<User>("signatureSecret")] = newUser.signatureSecret;
+        }
+
+        if (newUser.currentSignature)
+        {
+            setProperties[nameof<User>("currentSignature")] = newUser.currentSignature;
+        }
+
+        if (newUser.appStoreState)
+        {
+            if (!currentUser.appStoreState?.entityState)
+            {
+                currentUser = (await this.repository.findOneBy({
+                    userID: newUser.userID
+                })) as User;
+            }
+
+            if (currentUser.appStoreState?.entityState == EntityState.Updated)
+            {
+                // TODO: merge changes between states
+            }
+            else 
+            {
+                setProperties[nameof<User>("appStoreState")] =
+                    StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
+            }
+        }
+
+        if (newUser.userPreferencesStoreState)
+        {
+            if (!currentUser.userPreferencesStoreState?.entityState)
+            {
+                currentUser = (await this.repository.findOneBy({
+                    userID: newUser.userID
+                })) as User;
+            }
+
+            if (currentUser.userPreferencesStoreState?.entityState == EntityState.Updated)
+            {
+                // TODO: merge changes between states
+            }
+            else 
+            {
+                setProperties[nameof<User>("userPreferencesStoreState")] =
+                    StoreState.getUpdatedPropertiesFromObject(newUser.userPreferencesStoreState);
+            }
+        }
+
+        return this.repository
+            .createQueryBuilder()
+            .update()
+            .set(setProperties)
+            .where("userID = :userID", { userID: newUser.userID })
+            .execute();
     }
 }
 

@@ -4,7 +4,7 @@ import { AxiosHelper } from "./AxiosHelper";
 export interface LoginController
 {
     start: (startClientLoginRequest: string, email: string) => Promise<StartLoginResponse>;
-    finish: (token: string, finishClientLoginRequest: string) => Promise<FinishLoginResponse>;
+    finish: (token: string, finishClientLoginRequest: string, userDataPayload: any) => Promise<FinishLoginResponse>;
 }
 
 export function createLoginController(axiosHelper: AxiosHelper)
@@ -17,11 +17,12 @@ export function createLoginController(axiosHelper: AxiosHelper)
         });
     }
 
-    function finish(token: string, finishClientLoginRequest: string): Promise<FinishLoginResponse>
+    function finish(token: string, finishClientLoginRequest: string, userDataPayload: any): Promise<FinishLoginResponse>
     {
         return axiosHelper.sts.post('Login/Finish', {
             Token: token,
             FinishClientLoginRequest: finishClientLoginRequest,
+            UserDataPayload: userDataPayload
         });
     }
 

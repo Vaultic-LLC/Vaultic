@@ -1,6 +1,6 @@
 import { environment } from "../../Environment";
 import * as jose from 'jose'
-import { Column, ObjectLiteral } from "typeorm"
+import { Column, ObjectLiteral, AfterLoad } from "typeorm"
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { EntityState } from "../../Types/Properties";
 
@@ -14,6 +14,12 @@ const VaulticHandler = {
         if (!obj.updatedProperties.includes(prop))
         {
             obj.updatedProperties.push(prop);
+        }
+
+        if (!obj.propertiesToSync.includes(prop))
+        {
+            obj.propertiesToSync.push(prop);
+            obj.serializedPropertiesToSync = JSON.stringify(obj.updatedProperties);
         }
 
         obj[prop] = newValue;
@@ -36,11 +42,28 @@ export class VaulticEntity implements ObjectLiteral
     @Column("integer")
     entityState: EntityState;
 
+    // not encrypted
+    // not backed up
+    @Column("text")
+    serializedPropertiesToSync: string;
+
+    propertiesToSync: string[];
     updatedProperties: string[];
 
     constructor() 
     {
+        this.serializedPropertiesToSync = "[]";
         this.updatedProperties = [];
+
+        // this should be fine to do. TypeORM should override it with the saved value when 
+        // retrieving entities.
+        this.entityState = EntityState.Inserted;
+    }
+
+    @AfterLoad
+    afterLoad()
+    {
+        this.propertiesToSync = JSON.parse(this.serializedPropertiesToSync);
     }
 
     identifier(): number
@@ -79,11 +102,6 @@ export class VaulticEntity implements ObjectLiteral
     public getSignableProperties(): string[]
     {
         return [nameof<VaulticEntity>("signatureSecret"), ...this.internalGetSignableProperties()];
-    }
-
-    protected internalGetBackupableProperties(): string[]
-    {
-        return [];
     }
 
     protected getUserUpdatableProperties(): string[]
@@ -127,19 +145,29 @@ export class VaulticEntity implements ObjectLiteral
         }
     }
 
-    getBackup(): any
+    protected neededBackupProperties(): string[]
     {
-        const backup = {};
-        backup[nameof<VaulticEntity>("signatureSecret")] = this[nameof<VaulticEntity>("signatureSecret")];
-        backup[nameof<VaulticEntity>("currentSignature")] = this[nameof<VaulticEntity>("currentSignature")];
+        return []
+    }
 
-        const backupableProperties = this.internalGetBackupableProperties();
-        for (let i = 0; i < backupableProperties.length; i++)
+    public getBackup()
+    {
+        const obj = {};
+        obj[nameof<VaulticEntity>("currentSignature")] = this.currentSignature;
+        obj[nameof<VaulticEntity>("entityState")] = this.entityState;
+
+        const neededBackupProperties = this.neededBackupProperties();
+        for (let i = 0; i < neededBackupProperties.length; i++)
         {
-            backup[backupableProperties[i]] = this[backupableProperties[i]];
+            obj[neededBackupProperties[i]] = this[neededBackupProperties[i]];
         }
 
-        return backup;
+        for (let i = 0; i < this.propertiesToSync.length; i++)
+        {
+            obj[this.propertiesToSync[i]] = this[this.propertiesToSync[i]];
+        }
+
+        return obj;
     }
 
     async sign(masterKey: string): Promise<boolean>

@@ -1,3 +1,5 @@
+import { nameof } from "../Helpers/TypeScriptHelper";
+
 export interface VaultKey
 {
     publicKey: string;

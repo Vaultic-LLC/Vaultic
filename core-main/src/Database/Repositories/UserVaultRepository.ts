@@ -3,11 +3,14 @@ import { Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
-import vaulticServer from "../../Server/VaulticServer";
-import { VaultKey } from "../../Types/Properties";
+import { EntityState, VaultKey } from "../../Types/Properties";
 import { CondensedVaultData } from "../../Types/Repositories";
 import { Vault } from "../Entities/Vault";
 import { User } from "../Entities/User";
+import { backupData } from ".";
+import { nameof } from "../../Helpers/TypeScriptHelper";
+import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
+import { StoreState } from "../Entities/States/StoreState";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -16,7 +19,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return environment.databaseDataSouce.getRepository(UserVault);
     }
 
-    private async getUserVaults(currentUser: User, userVaultID?: number): Promise<UserVault[]>
+    private async getUserVaults(user: User, userVaultID?: number): Promise<UserVault[]>
     {
         return this.retrieveManyReactive(getUserVaultsQuery);
 
@@ -25,7 +28,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             const userVaultQuery = repository
                 .createQueryBuilder('userVault')
                 .leftJoinAndSelect('userVault.vault', 'vault')
-                .where('userVault.userID = :userID', { userID: currentUser?.userID });
+                .where('userVault.userID = :userID', { userID: user.userID });
 
             if (userVaultID)
             {
@@ -36,23 +39,28 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
     }
 
-    public async getVerifiedUserVaults(masterKey: string, userVaultID?: number): Promise<[UserVault[], string[]]>
+    public async getVerifiedUserVaults(masterKey: string, userVaultID?: number, user?: User): Promise<[UserVault[], string[]]>
     {
-        const currentUser = environment.repositories.users.getCurrentUser();
-        if (!currentUser)
+        if (!user)
         {
-            console.log('no user')
-            return [[], []];
+            const currentUser = environment.repositories.users.getCurrentUser();
+            if (!currentUser)
+            {
+                console.log('no user')
+                return [[], []];
+            }
+
+            user = currentUser;
         }
 
-        const userVaults: UserVault[] = await this.getUserVaults(currentUser, userVaultID);
+        const userVaults: UserVault[] = await this.getUserVaults(user, userVaultID);
         if (userVaults.length == 0)
         {
             console.log('no user vaults')
             return [[], []];
         }
 
-        const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, currentUser.privateKey);
+        const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, user.privateKey);
         if (!decryptedPrivateKey.success)
         {
             console.log('no private key decrypt')
@@ -126,7 +134,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return condensedDecryptedUserVaults;
     }
 
-    public async saveUserVault(masterKey: string, userVaultID: number, data: string): Promise<boolean>
+    public async saveUserVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<boolean>
     {
         const userVaults = await this.getVerifiedUserVaults(masterKey, userVaultID);
         if (userVaults[0].length != 1)
@@ -138,14 +146,10 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         const parsedData = JSON.parse(data);
 
         oldUserVault.copyFrom(parsedData);
+        oldUserVault.entityState = EntityState.Updated;
 
-        // there shouldn't be any encrypted properties that are being updated through this method
-        // const succeeded = await oldUserVault.encryptAndSetFromObject!(masterKey, newUserVault);
-        // if (!succeeded)
-        // {
-        //     return false;
-        // }
-
+        // there shouldn't be any encrypted properties that are being updated through this method.
+        // No need to encrypt anything
         const transaction = new Transaction();
         transaction.updateEntity(oldUserVault, masterKey, () => this);
 
@@ -155,15 +159,177 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             return false;
         }
 
-        // TODO: this should be done seperatly. not being able to backup shouldn't be considered the same 
-        // as an error while saving
-        const backupResponse = await vaulticServer.user.backupData(undefined, [oldUserVault], undefined);
-        if (!backupResponse.Success)
+        if (backup)
         {
-            //return JSON.stringify(backupResponse);
+            await backupData(masterKey);
         }
 
         return true;
+    }
+
+    public async getEntitesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<UserVault>[] | null]> 
+    {
+        const currentUser = environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return [false, null];
+        }
+
+        let userVaultsToBackup = await this.retrieveAndVerifyAll(masterKey, getUserVaults);
+        if (!userVaultsToBackup)
+        {
+            return [false, null];
+        }
+
+        userVaultsToBackup = userVaultsToBackup as UserVault[];
+        if (userVaultsToBackup.length == 0)
+        {
+            return [true, null];
+        }
+
+        const partialUserVaultsToBackup: Partial<UserVault>[] = [];
+
+        for (let i = 0; i < userVaultsToBackup.length; i++)
+        {
+            const userVaultBackup = {};
+            const userVault = userVaultsToBackup[i];
+
+            if (userVault.updatedProperties.length > 0)
+            {
+                Object.assign(userVaultBackup, userVault.getBackup());
+            }
+            else 
+            {
+                userVaultBackup["userVaultID"] = userVault.userVaultID;
+            }
+
+            if (userVault.vaultPreferencesStoreState.updatedProperties.length > 0)
+            {
+                userVaultBackup["vaultPreferencesStoreState"] = userVault.vaultPreferencesStoreState.getBackup();
+            }
+
+            partialUserVaultsToBackup.push(userVaultBackup);
+        }
+
+        return [true, partialUserVaultsToBackup];
+
+        function getUserVaults(repository: Repository<UserVault>): Promise<UserVault[]>
+        {
+            return repository
+                .createQueryBuilder('userVault')
+                .leftJoinAndSelect("userVault.vaultPreferencesStoreState", "vaultPreferencesStoreState")
+                .where("userVault.userID = :userID", { userID: currentUser?.userID })
+                .andWhere(`
+                userVault.entityState != :entityState OR 
+                vaultPreferencesStoreState.entityState != :entityState OR`,
+                    { entityState: EntityState.Unchanged })
+                .getMany();
+        }
+    }
+
+    public async resetBackupTrackingForEntities(entities: Partial<UserVault>[]): Promise<boolean> 
+    {
+        const currentUser = environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return false;
+        }
+
+        this.repository
+            .createQueryBuilder("userVaults")
+            .innerJoin("userVaults.vaultPreferencesStoreState", "vaultPreferencesStoreState")
+            .update()
+            .set(
+                {
+                    entityState: EntityState.Unchanged,
+                    serializedPropertiesToSync: "[]",
+                    vaultPreferencesStoreState: {
+                        entityState: EntityState.Unchanged,
+                        serializedPropertiesToSync: "[]"
+                    }
+                }
+            )
+            .where("userID = :userID", { userID: currentUser.userID })
+            .andWhere("userVaultID IN (:...userVaultIDs)", { userVaultIDs: entities.map(e => e.userVaultID) })
+            .execute();
+
+        return true;
+    }
+
+    public async addFromServer(userVault: Partial<UserVault>)
+    {
+        if (!userVault.userVaultID ||
+            !userVault.vaultID ||
+            !userVault.userID ||
+            !userVault.signatureSecret ||
+            !userVault.currentSignature ||
+            !userVault.vaultKey ||
+            !userVault.vaultPreferencesStoreState)
+        {
+            return;
+        }
+
+        // TODO: make sure this saves vaultPreferencesStoreState correctly
+        this.repository.insert(userVault);
+    }
+
+    public async updateFromServer(currentUserVault: Partial<UserVault>, newUserVault: Partial<UserVault>)
+    {
+        const setProperties = {}
+        if (!newUserVault.userVaultID)
+        {
+            return;
+        }
+
+        if (newUserVault.signatureSecret)
+        {
+            setProperties[nameof<UserVault>("signatureSecret")] = newUserVault.signatureSecret;
+        }
+
+        if (newUserVault.currentSignature)
+        {
+            setProperties[nameof<UserVault>("currentSignature")] = newUserVault.currentSignature;
+        }
+
+        if (newUserVault.vaultKey)
+        {
+            setProperties[nameof<UserVault>("vaultKey")] = newUserVault.vaultKey;
+        }
+
+        if (newUserVault.vaultPreferencesStoreState)
+        {
+            if (!currentUserVault.vaultPreferencesStoreState?.entityState)
+            {
+                currentUserVault = (await this.repository.findOneBy({
+                    userVaultID: newUserVault.userVaultID
+                })) as UserVault;
+            }
+
+            if (currentUserVault.vaultPreferencesStoreState?.entityState == EntityState.Updated)
+            {
+                // TODO: merge changes between states
+            }
+            else 
+            {
+                setProperties[nameof<UserVault>("vaultPreferencesStoreState")] =
+                    StoreState.getUpdatedPropertiesFromObject(newUserVault.vaultPreferencesStoreState);
+            }
+        }
+
+        return this.repository
+            .createQueryBuilder()
+            .update()
+            .set(setProperties)
+            .where("userVaultID = :userVaultID", { userVaultID: newUserVault.userVaultID })
+            .execute();
+    }
+
+    public async deleteFromServerAndVault(vaultID: number)
+    {
+        this.repository.createQueryBuilder()
+            .delete()
+            .where("vaultID = :vaultID", { vaultID })
+            .execute();
     }
 }
 

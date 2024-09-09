@@ -32,9 +32,9 @@ export class GroupStoreState extends StoreState
         return properties;
     }
 
-    protected internalGetBackupableProperties(): string[] 
+    protected neededBackupProperties(): string[] 
     {
-        const properties = super.internalGetBackupableProperties();
+        const properties = super.neededBackupProperties();
         properties.push(nameof<GroupStoreState>("groupStoreStateID"));
 
         return properties;

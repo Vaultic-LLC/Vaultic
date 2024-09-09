@@ -3,6 +3,8 @@ import { stsServer } from "../Server/VaulticServer";
 import { FinishRegistrationResponse, LogUserInResponse, OpaqueResponse } from "../Types/Responses";
 import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
+import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
+import { checkMergeMissingData, getUserDataSignatures } from "../Database/Repositories";
 
 export interface ServerHelper
 {
@@ -61,9 +63,9 @@ async function logUserIn(masterKey: string, email: string): Promise<LogUserInRes
 
     const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
-    let finishResponse = await stsServer.login.finish(startResponse.PendingUserToken!, finishLoginRequest);
+    const currentSignatures = await getUserDataSignatures(masterKey, email);
+    let finishResponse = await stsServer.login.finish(startResponse.PendingUserToken!, finishLoginRequest, currentSignatures);
 
-    // TODO: check backups and set current user
     if (finishResponse.Success)
     {
         await axiosHelper.api.setSessionInfoAndExportKey(finishResponse.Session?.Hash!, sessionKey, exportKey);
@@ -71,16 +73,17 @@ async function logUserIn(masterKey: string, email: string): Promise<LogUserInRes
         // TODO: this will fail when logging in for the first time after registering
         await environment.repositories.users.setCurrentUser(masterKey, email);
 
-        const storeStates = ['AppStoreState', 'SettingsStoreState', 'FilterStoreState', 'GroupStoreState', 'PasswordStoreState',
-            'ValueStoreState', 'UserPreferencesStoreState'];
-
-        const result = await axiosHelper.api.decryptEndToEndData(storeStates, finishResponse);
+        // TODO: this only contains data that the user needs to update, not everything.
+        const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
         if (!result.success)
         {
             return { Success: false, message: result.errorMessage };
         }
 
-        finishResponse = Object.assign(finishResponse, result.value);
+        await checkMergeMissingData(currentSignatures, result);
+
+        // TODO: not needed?
+        // finishResponse = Object.assign(finishResponse, result.value);
     }
 
     return finishResponse;

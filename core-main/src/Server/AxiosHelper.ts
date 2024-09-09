@@ -5,6 +5,7 @@ import vaulticServer from './VaulticServer';
 import { environment } from '../Environment';
 import { DeviceInfo } from '../Types/Device';
 import { PublicPrivateKey } from '../Types/Utilities';
+import { FieldTree } from '../Types/FieldTree';
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
@@ -251,7 +252,7 @@ class APIAxiosWrapper extends AxiosWrapper
         await environment.sessionHandler.setSession(tokenHash);
     }
 
-    async endToEndEncryptPostData(data: { [key: string]: string }): Promise<TypedMethodResponse<any>>
+    async endToEndEncryptPostData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
         if (!this.exportKey)
         {
@@ -259,23 +260,40 @@ class APIAxiosWrapper extends AxiosWrapper
         }
 
         const encryptedData = {};
-        const keys = Object.keys(data);
 
-        for (let i = 0; i < keys.length; i++)
+        if (fieldTree.properties)
         {
-            const response = await environment.utilities.crypt.encrypt(this.exportKey, data[keys[i]]);
-            if (!response.success)
+            for (let i = 0; i < fieldTree.properties.length; i++)
             {
-                return { ...response, errorMessage: `${response.errorMessage}. Prop: ${keys[i]}, Value: ${data[keys[i]]}` };
-            }
+                const response = await environment.utilities.crypt.encrypt(this.exportKey, data[fieldTree.properties[i]]);
+                if (!response.success)
+                {
+                    return { ...response, errorMessage: `${response.errorMessage}. Prop: ${fieldTree.properties[i][i]}, Value: ${data[fieldTree.properties[i]]}` };
+                }
 
-            encryptedData[keys[i]] = response.value!;
+                encryptedData[fieldTree.properties[i]] = response.value!;
+            }
+        }
+
+        if (fieldTree.nestedProperties)
+        {
+            const keys = Object.keys(fieldTree.nestedProperties);
+            for (let i = 0; i < keys.length; i++)
+            {
+                const innerObject = await this.endToEndEncryptPostData(fieldTree.nestedProperties[keys[i]], data[keys[i]])
+                if (!innerObject.success)
+                {
+                    return { success: false }
+                }
+
+                encryptedData[keys[i]] = innerObject.value!;
+            }
         }
 
         return { success: true, value: encryptedData };
     }
 
-    async decryptEndToEndData(properties: string[], data: { [key: string]: string }): Promise<TypedMethodResponse<any>>
+    async decryptEndToEndData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
         if (!this.exportKey)
         {
@@ -283,20 +301,34 @@ class APIAxiosWrapper extends AxiosWrapper
         }
 
         const decryptedData = {};
-        for (let i = 0; i < properties.length; i++)
+
+        if (fieldTree.properties)
         {
-            if (!data[properties[i]])
+            for (let i = 0; i < fieldTree.properties.length; i++)
             {
-                continue;
-            }
+                const response = await environment.utilities.crypt.decrypt(this.exportKey, data[fieldTree.properties[i]]);
+                if (!response.success)
+                {
+                    return response;
+                }
 
-            const response = await environment.utilities.crypt.decrypt(this.exportKey, data[properties[i]]);
-            if (!response.success)
+                decryptedData[fieldTree[i]] = response.value!;
+            }
+        }
+
+        if (fieldTree.nestedProperties)
+        {
+            const keys = Object.keys(fieldTree.nestedProperties);
+            for (let i = 0; i < keys.length; i++)
             {
-                return response;
-            }
+                const nestedObject = await this.decryptEndToEndData(fieldTree.nestedProperties[keys[i]], data[keys[i]]);
+                if (!nestedObject.success)
+                {
+                    return nestedObject;
+                }
 
-            decryptedData[properties[i]] = response.value!;
+                decryptedData[keys[i]] = nestedObject.value;
+            }
         }
 
         return { success: true, value: decryptedData };
