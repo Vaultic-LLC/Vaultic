@@ -1,4 +1,4 @@
-import { Entity, OneToOne, JoinColumn, PrimaryColumn } from "typeorm";
+import { Entity, OneToOne, Column, PrimaryColumn, JoinColumn } from "typeorm";
 import { nameof } from "../../../Helpers/TypeScriptHelper"
 import { StoreState } from "./StoreState";
 import { Vault } from "../Vault";
@@ -10,8 +10,12 @@ export class PasswordStoreState extends StoreState
     @PrimaryColumn("integer")
     passwordStoreStateID: number
 
+    // Matches Server
+    @Column("integer")
+    vaultID: number
+
     @OneToOne(() => Vault, (vault) => vault.passwordStoreState)
-    @JoinColumn({ name: "passwordStoreStateID" })
+    @JoinColumn({ name: "vaultID" })
     vault: Vault;
 
     identifier(): number 
@@ -27,7 +31,10 @@ export class PasswordStoreState extends StoreState
     protected internalGetSignableProperties(): string[] 
     {
         const properties = super.internalGetSignableProperties();
-        properties.push(nameof<PasswordStoreState>("passwordStoreStateID"));
+        properties.push(
+            nameof<PasswordStoreState>("passwordStoreStateID"),
+            nameof<PasswordStoreState>("vaultID")
+        );
 
         return properties;
     }

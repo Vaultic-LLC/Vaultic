@@ -58,7 +58,7 @@ export interface VaulticHelper
 export interface ServerHelper
 {
     registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-    logUserIn: (masterKey: string, email: string) => Promise<LogUserInResponse>;
+    logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<LogUserInResponse>;
 };
 
 export interface Helpers
@@ -203,7 +203,7 @@ export interface UserRepository
     createUser: (masterKey: string, email: string) => Promise<boolean | string>;
     getCurrentUser: () => User | undefined;
     setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
-    getCurrentUserData: (masterKey: string, response: any) => Promise<string>;
+    getCurrentUserData: (masterKey: string) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
     saveUser: (masterKey: string, data: string) => Promise<boolean>;
 }

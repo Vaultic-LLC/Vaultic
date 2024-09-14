@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, PrimaryColumn } from "typeorm"
+import { Entity, Column, OneToMany, PrimaryColumn, OneToOne } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
 import { nameof } from "../../Helpers/TypeScriptHelper";
@@ -33,41 +33,19 @@ export class Vault extends VaulticEntity
     @Column("boolean")
     lastUsed: boolean;
 
-    // matches server
-    @Column("integer")
-    vaultStoreStateID: number
-
-    @OneToOne(() => VaultStoreState, (state: VaultStoreState) => state.vault, { eager: true, cascade: true })
+    @OneToOne(() => VaultStoreState, (state: VaultStoreState) => state.vault, { eager: true })
     vaultStoreState: VaultStoreState;
 
-    // matches server
-    @Column("integer")
-    passwordStoreStateID: number
-
-    @OneToOne(() => PasswordStoreState, (state: PasswordStoreState) => state.vault, { eager: true, cascade: true })
+    @OneToOne(() => PasswordStoreState, (state: PasswordStoreState) => state.vault, { eager: true })
     passwordStoreState: PasswordStoreState;
 
-    // matches server
-    @Column("integer")
-    valueStoreStateID: number
-
-    @OneToOne(() => ValueStoreState, (state: ValueStoreState) => state.vault, { eager: true, cascade: true })
+    @OneToOne(() => ValueStoreState, (state: ValueStoreState) => state.vault, { eager: true })
     valueStoreState: ValueStoreState;
 
-    // Backed Up
-    // Encrypted by Vault Key
-    @Column("integer")
-    filterStoreStateID: number
-
-    @OneToOne(() => FilterStoreState, (state: FilterStoreState) => state.vault, { eager: true, cascade: true })
+    @OneToOne(() => FilterStoreState, (state: FilterStoreState) => state.vault, { eager: true })
     filterStoreState: FilterStoreState;
 
-    // Backed Up
-    // Encrypted by Vault Key
-    @Column("integer")
-    groupStoreStateID: number
-
-    @OneToOne(() => GroupStoreState, (state: GroupStoreState) => state.vault, { eager: true, cascade: true })
+    @OneToOne(() => GroupStoreState, (state: GroupStoreState) => state.vault, { eager: true })
     groupStoreState: GroupStoreState;
 
     identifier(): number 
@@ -85,12 +63,7 @@ export class Vault extends VaulticEntity
         return [
             nameof<Vault>("vaultID"),
             nameof<Vault>("name"),
-            nameof<Vault>("color"),
-            nameof<Vault>("vaultStoreStateID"),
-            nameof<Vault>("passwordStoreStateID"),
-            nameof<Vault>("valueStoreStateID"),
-            nameof<Vault>("filterStoreStateID"),
-            nameof<Vault>("groupStoreStateID"),
+            nameof<Vault>("color")
         ];
     }
 

@@ -1,4 +1,4 @@
-import { EntityManager, Repository } from "typeorm";
+import { Entity, EntityManager, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
 import { EntityState } from "../../Types/Properties";
 
@@ -16,16 +16,15 @@ export class VaulticRepository<T extends VaulticEntity>
         return {}
     }
 
-    init(): boolean
+    init()
     {
         const repository = this.getRepository();
         if (!repository)
         {
-            return false;
+            throw "couldn't get repository";
         }
 
         this.repository = repository;
-        return true;
     }
 
     public async retrieveReactive(predicate: (repository: Repository<T>) => Promise<T | null>): Promise<T | null>
@@ -67,13 +66,30 @@ export class VaulticRepository<T extends VaulticEntity>
 
     public async signAndInsert(manager: EntityManager, key: string, entity: T): Promise<boolean>
     {
+        if (!(await entity.lock(key)))
+        {
+            return false;
+        }
+
         if (!(await entity.sign(key)))
         {
             return false;
         }
 
         const repo = manager.withRepository(this.repository);
-        await repo.insert(this.getSavableEntity(entity) as any);
+        entity.entityState = EntityState.Inserted;
+
+        try 
+        {
+            await repo.insert(this.getSavableEntity(entity) as any);
+        }
+        catch (e)
+        {
+            console.log(`Filed to insert entity: ${JSON.stringify(entity)}`)
+            console.log(e);
+            return false;
+        }
+
         return true;
     }
 
@@ -90,17 +106,43 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         const repo = manager.withRepository(this.repository);
-        const result = await repo.update(entity.identifier(), this.getSavableEntity(entity));
 
-        return result.affected == 1;
+        const mockEntity = {}
+        for (let i = 0; i < entity.updatedProperties.length; i++)
+        {
+            mockEntity[entity.updatedProperties[i]] = entity[entity.updatedProperties[i]];
+        }
+
+        try 
+        {
+            const result = await repo.update(entity.identifier(), mockEntity);
+            return result.affected == 1;
+        }
+        catch (e)
+        {
+            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
+            console.log(e);
+        }
+
+        return false;
     }
 
     public async remove(manager: EntityManager, entity: T): Promise<boolean>
     {
         const repo = manager.withRepository(this.repository);
-        const removedEntity = repo.remove(this.getSavableEntity(entity));
 
-        return !!removedEntity;
+        try 
+        {
+            const removedEntity = await repo.remove(this.getSavableEntity(entity));
+            return removedEntity.length == 1;
+        }
+        catch (e)
+        {
+            console.log(`Filed to delete entity: ${JSON.stringify(entity)}`)
+            console.log(e);
+        }
+
+        return false;
     }
 
     public async retrieveAndVerify(key: string, predicate: (repository: Repository<T>) => Promise<T | null>): Promise<[boolean, T | null]>

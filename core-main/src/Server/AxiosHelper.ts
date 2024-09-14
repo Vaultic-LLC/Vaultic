@@ -265,10 +265,15 @@ class APIAxiosWrapper extends AxiosWrapper
         {
             for (let i = 0; i < fieldTree.properties.length; i++)
             {
+                if (data[fieldTree.properties[i]] == undefined)
+                {
+                    continue;
+                }
+
                 const response = await environment.utilities.crypt.encrypt(this.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
-                    return { ...response, errorMessage: `${response.errorMessage}. Prop: ${fieldTree.properties[i][i]}, Value: ${data[fieldTree.properties[i]]}` };
+                    return { ...response, errorMessage: `${response.errorMessage}. Prop: ${fieldTree.properties[i]}, Value: ${data[fieldTree.properties[i]]}` };
                 }
 
                 encryptedData[fieldTree.properties[i]] = response.value!;
@@ -283,7 +288,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 const innerObject = await this.endToEndEncryptPostData(fieldTree.nestedProperties[keys[i]], data[keys[i]])
                 if (!innerObject.success)
                 {
-                    return { success: false }
+                    return innerObject;
                 }
 
                 encryptedData[keys[i]] = innerObject.value!;
@@ -309,6 +314,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 const response = await environment.utilities.crypt.decrypt(this.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
+                    console.log(`Failed to Decrypt: ${fieldTree.properties[i]}, Data: ${JSON.stringify(data)}]}`)
                     return response;
                 }
 

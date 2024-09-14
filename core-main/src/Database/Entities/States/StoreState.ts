@@ -13,7 +13,6 @@ export class StoreState extends VaulticEntity
     constructor() 
     {
         super();
-        this.state = "{}";
     }
 
     async sign(masterKey: string): Promise<boolean> 
@@ -21,7 +20,7 @@ export class StoreState extends VaulticEntity
         const currentSignature = this.currentSignature;
         if (await (super.sign(masterKey)))
         {
-            this.previousSignature = currentSignature;
+            this.previousSignature = currentSignature ?? this.currentSignature;
             return true;
         }
 

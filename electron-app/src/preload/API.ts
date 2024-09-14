@@ -77,7 +77,7 @@ const vaulticHelper: VaulticHelper =
 const serverHelper: ServerHelper =
 {
 	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
-	logUserIn: (masterKey: string, email: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email)
+	logUserIn: (masterKey: string, email: string, firstLogin: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin)
 };
 
 const environment: Environment =
@@ -92,7 +92,7 @@ const userRepository: UserRepository =
 	createUser: (masterKey: string, email: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email),
 	getCurrentUserData: (masterKey: string, response: any) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey, response),
 	verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
-	saveUser: (masterKey: string, data: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, data)
+	saveUser: (masterKey: string, data: string, backup: boolean) => ipcRenderer.invoke('userRepository:saveUser', masterKey, data, backup)
 };
 
 const vaultRepository: VaultRepository =
@@ -103,7 +103,7 @@ const vaultRepository: VaultRepository =
 
 const userVaultRepository: UserVaultRepository =
 {
-	saveUserVault: (masterKey: string, userVaultID: number, data: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data),
+	saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data, backup),
 };
 
 const api: IAPI =

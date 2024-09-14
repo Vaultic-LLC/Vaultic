@@ -16,7 +16,8 @@ const VaulticHandler = {
             obj.updatedProperties.push(prop);
         }
 
-        if (!obj.propertiesToSync.includes(prop))
+        // don't want to include objects in this
+        if (typeof newValue == 'string' && !obj.propertiesToSync.includes(prop))
         {
             obj.propertiesToSync.push(prop);
             obj.serializedPropertiesToSync = JSON.stringify(obj.updatedProperties);
@@ -29,7 +30,7 @@ const VaulticHandler = {
 
 export class VaulticEntity implements ObjectLiteral
 {
-    // Encrypted
+    // Encrypted in sign
     // Backed Up
     @Column("text")
     signatureSecret: string
@@ -54,13 +55,14 @@ export class VaulticEntity implements ObjectLiteral
     {
         this.serializedPropertiesToSync = "[]";
         this.updatedProperties = [];
+        this.propertiesToSync = [];
 
         // this should be fine to do. TypeORM should override it with the saved value when 
         // retrieving entities.
         this.entityState = EntityState.Inserted;
     }
 
-    @AfterLoad
+    @AfterLoad()
     afterLoad()
     {
         this.propertiesToSync = JSON.parse(this.serializedPropertiesToSync);
@@ -76,7 +78,7 @@ export class VaulticEntity implements ObjectLiteral
         return new VaulticEntity();
     }
 
-    public makeReactive(): VaulticEntity
+    public makeReactive(): typeof this
     {
         return new Proxy(this, VaulticHandler);
     }
@@ -222,18 +224,21 @@ export class VaulticEntity implements ObjectLiteral
     {
         if (!this.signatureSecret || !this.currentSignature)
         {
+            console.log('no signature secret or signature');
             return false;
         }
 
         const secretResponse = await environment.utilities.crypt.decrypt(masterKey, this.signatureSecret);
         if (!secretResponse.success)
         {
+            console.log(`could not decrypt signature secret: ${this.signatureSecret}`)
             return false;
         }
 
         let signatureMakeup = this.getSignatureMakeup();
         if (!signatureMakeup)
         {
+            console.log('no signature makeup')
             return false;
         }
 
@@ -241,7 +246,7 @@ export class VaulticEntity implements ObjectLiteral
         const hashedEntity = environment.utilities.hash.insecureHash(serializedMakeup);
         const secretBytes = new TextEncoder().encode(secretResponse.value!);
 
-        try 
+        try
         {
             const response = await jose.jwtVerify(this.currentSignature, secretBytes, {
                 issuer: 'vaultic',
@@ -255,7 +260,10 @@ export class VaulticEntity implements ObjectLiteral
                 return false;
             }
 
-            return environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
+            const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
+            console.log(`equal hashes: ${equalHashes}`);
+
+            return equalHashes;
         }
         catch (e)
         {

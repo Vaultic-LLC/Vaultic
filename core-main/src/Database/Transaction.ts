@@ -61,6 +61,8 @@ export default class Transaction
         {
             environment.databaseDataSouce.transaction(async (manager) =>
             {
+                manager.queryRunner?.startTransaction();
+
                 let succeeded = true;
                 for (let i = 0; i < this.pendingEntities.length; i++)
                 {
@@ -89,6 +91,15 @@ export default class Transaction
                             break;
                         }
                     }
+                }
+
+                if (succeeded == false)
+                {
+                    manager.queryRunner?.rollbackTransaction();
+                }
+                else 
+                {
+                    manager.queryRunner?.commitTransaction();
                 }
 
                 resolve(succeeded);

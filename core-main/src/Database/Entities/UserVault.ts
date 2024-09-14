@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from "typeorm"
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn, OneToOne } from "typeorm"
 import { User } from "./User"
 import { Vault } from "./Vault"
 import { VaulticEntity } from "./VaulticEntity"
@@ -35,11 +35,7 @@ export class UserVault extends VaulticEntity
     @Column("text")
     vaultKey: string
 
-    // matches server
-    @Column("integer")
-    vaultPreferencesStoreStateID: number
-
-    @OneToOne(() => VaultPreferencesStoreState, (state: VaultPreferencesStoreState) => state.userVault, { eager: true, cascade: true })
+    @OneToOne(() => VaultPreferencesStoreState, (state: VaultPreferencesStoreState) => state.userVault, { eager: true })
     vaultPreferencesStoreState: VaultPreferencesStoreState;
 
     identifier(): number 
@@ -58,8 +54,7 @@ export class UserVault extends VaulticEntity
             nameof<UserVault>("userVaultID"),
             nameof<UserVault>("userID"),
             nameof<UserVault>("vaultID"),
-            nameof<UserVault>("vaultKey"),
-            nameof<UserVault>("vaultPreferencesStoreStateID")
+            nameof<UserVault>("vaultKey")
         ];
     }
 

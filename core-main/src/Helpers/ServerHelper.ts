@@ -9,7 +9,7 @@ import { checkMergeMissingData, getUserDataSignatures } from "../Database/Reposi
 export interface ServerHelper
 {
     registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-    logUserIn: (masterKey: string, email: string) => Promise<LogUserInResponse>;
+    logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<LogUserInResponse>;
 };
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
@@ -37,7 +37,7 @@ async function registerUser(masterKey: string, email: string, firstName: string,
         registrationRecord, firstName, lastName);
 }
 
-async function logUserIn(masterKey: string, email: string): Promise<LogUserInResponse>
+async function logUserIn(masterKey: string, email: string, firstLogin: boolean = false): Promise<LogUserInResponse>
 {
     const passwordHash = environment.utilities.hash.insecureHash(masterKey);
     const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
@@ -63,24 +63,31 @@ async function logUserIn(masterKey: string, email: string): Promise<LogUserInRes
 
     const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
-    const currentSignatures = await getUserDataSignatures(masterKey, email);
-    let finishResponse = await stsServer.login.finish(startResponse.PendingUserToken!, finishLoginRequest, currentSignatures);
+    let currentSignatures = {};
+    if (!firstLogin)
+    {
+        currentSignatures = await getUserDataSignatures(masterKey, email);
+    }
 
+    let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures);
     if (finishResponse.Success)
     {
         await axiosHelper.api.setSessionInfoAndExportKey(finishResponse.Session?.Hash!, sessionKey, exportKey);
 
-        // TODO: this will fail when logging in for the first time after registering
-        await environment.repositories.users.setCurrentUser(masterKey, email);
-
-        // TODO: this only contains data that the user needs to update, not everything.
-        const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
-        if (!result.success)
+        if (!firstLogin)
         {
-            return { Success: false, message: result.errorMessage };
-        }
+            // TODO: this will fail when logging in for the first time after registering
+            await environment.repositories.users.setCurrentUser(masterKey, email);
 
-        await checkMergeMissingData(currentSignatures, result);
+            // TODO: this only contains data that the user needs to update, not everything.
+            const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
+            if (!result.success)
+            {
+                return { Success: false, message: result.errorMessage };
+            }
+
+            await checkMergeMissingData(currentSignatures, result);
+        }
 
         // TODO: not needed?
         // finishResponse = Object.assign(finishResponse, result.value);

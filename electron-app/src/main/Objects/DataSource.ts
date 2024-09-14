@@ -7,6 +7,14 @@ import { UserVault } from "../Core/Database/Entities/UserVault";
 import { Vault } from "../Core/Database/Entities/Vault";
 
 import { CreateSchema1722604318830 } from "../Core/Database/Migrations/1722604318830-CreateSchema";
+import { AppStoreState } from "../Core/Database/Entities/States/AppStoreState";
+import { UserPreferencesStoreState } from "../Core/Database/Entities/States/UserPreferencesStoreState";
+import { VaultPreferencesStoreState } from "../Core/Database/Entities/States/VaultPreferencesStoreState";
+import { VaultStoreState } from "../Core/Database/Entities/States/VaultStoreState";
+import { PasswordStoreState } from "../Core/Database/Entities/States/PasswordStoreState";
+import { ValueStoreState } from "../Core/Database/Entities/States/ValueStoreState";
+import { FilterStoreState } from "../Core/Database/Entities/States/FilterStoreState";
+import { GroupStoreState } from "../Core/Database/Entities/States/GroupStoreState";
 
 export function createDataSource(isTest: boolean)
 {
@@ -23,7 +31,19 @@ export function createDataSource(isTest: boolean)
 	return new DataSource({
 		type: "better-sqlite3",
 		database: database,
-		entities: [User, UserVault, Vault],
+		entities: [
+			User,
+			AppStoreState,
+			UserPreferencesStoreState,
+			UserVault,
+			VaultPreferencesStoreState,
+			Vault,
+			VaultStoreState,
+			PasswordStoreState,
+			ValueStoreState,
+			FilterStoreState,
+			GroupStoreState
+		],
 		migrationsRun: true,
 		migrations: [CreateSchema1722604318830]
 	});

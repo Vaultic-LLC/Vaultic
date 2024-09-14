@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, OneToOne, PrimaryColumn } from "typeorm";
+import { Entity, OneToOne, PrimaryColumn, Column, JoinColumn } from "typeorm";
 import { nameof } from "../../../Helpers/TypeScriptHelper"
 import { StoreState } from "./StoreState";
 import { User } from "../User";
@@ -10,8 +10,12 @@ export class AppStoreState extends StoreState
     @PrimaryColumn("integer")
     appStoreStateID: number
 
-    @OneToOne(() => User, (user: User) => user.appStoreState);
-    @JoinColumn({ name: "appStoreStateID" })
+    // Matches Server
+    @Column("integer")
+    userID: number
+
+    @OneToOne(() => User, (user: User) => user.appStoreState)
+    @JoinColumn({ name: "userID" })
     user: User;
 
     identifier(): number 
@@ -27,7 +31,10 @@ export class AppStoreState extends StoreState
     protected internalGetSignableProperties(): string[] 
     {
         const properties = super.internalGetSignableProperties();
-        properties.push(nameof<AppStoreState>("appStoreStateID"));
+        properties.push(
+            nameof<AppStoreState>("appStoreStateID"),
+            nameof<AppStoreState>("userID")
+        );
 
         return properties;
     }

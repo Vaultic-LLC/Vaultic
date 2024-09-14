@@ -9,7 +9,6 @@ import { Vault } from "../Entities/Vault";
 import { User } from "../Entities/User";
 import { backupData } from ".";
 import { nameof } from "../../Helpers/TypeScriptHelper";
-import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
 import { StoreState } from "../Entities/States/StoreState";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
@@ -39,7 +38,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
     }
 
-    public async getVerifiedUserVaults(masterKey: string, userVaultID?: number, user?: User): Promise<[UserVault[], string[]]>
+    public async getVerifiedUserVaults(masterKey: string, userVaultID?: number, user?: User,
+        query?: (repository: Repository<UserVault>) => Promise<UserVault[] | null>): Promise<[UserVault[], string[]]>
     {
         if (!user)
         {
@@ -53,8 +53,17 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             user = currentUser;
         }
 
-        const userVaults: UserVault[] = await this.getUserVaults(user, userVaultID);
-        if (userVaults.length == 0)
+        let userVaults: UserVault[] | null = [];
+        if (query)
+        {
+            userVaults = await query(this.repository);
+        }
+        else 
+        {
+            userVaults = await this.getUserVaults(user, userVaultID);
+        }
+
+        if (!userVaults || userVaults.length == 0)
         {
             console.log('no user vaults')
             return [[], []];
@@ -167,7 +176,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return true;
     }
 
-    public async getEntitesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<UserVault>[] | null]> 
+    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<UserVault>[] | null]> 
     {
         const currentUser = environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -219,9 +228,10 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 .createQueryBuilder('userVault')
                 .leftJoinAndSelect("userVault.vaultPreferencesStoreState", "vaultPreferencesStoreState")
                 .where("userVault.userID = :userID", { userID: currentUser?.userID })
-                .andWhere(`
-                userVault.entityState != :entityState OR 
-                vaultPreferencesStoreState.entityState != :entityState OR`,
+                .andWhere(`(
+                    userVault.entityState != :entityState OR 
+                    vaultPreferencesStoreState.entityState != :entityState
+                )`,
                     { entityState: EntityState.Unchanged })
                 .getMany();
         }

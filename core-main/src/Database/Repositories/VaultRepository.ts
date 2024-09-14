@@ -35,29 +35,46 @@ class VaultRepository extends VaulticRepository<Vault>
             return false;
         }
 
-        const userVault = new UserVault();
-        userVault.vaultPreferencesStoreState = new VaultPreferencesStoreState();
+        console.log(response);
 
-        const vault = new Vault();
-        userVault.vault = vault;
+        const userVault = new UserVault().makeReactive();
+        userVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
 
+        const vault = new Vault().makeReactive();
         vault.lastUsed = true;
         vault.name = name;
         vault.color = color;
-        vault.vaultStoreState = new VaultStoreState();
-        vault.passwordStoreState = new PasswordStoreState();
-        vault.valueStoreState = new ValueStoreState();
-        vault.filterStoreState = new FilterStoreState();
-        vault.groupStoreState = new GroupStoreState();
+        vault.vaultStoreState = new VaultStoreState().makeReactive();
+        vault.passwordStoreState = new PasswordStoreState().makeReactive();
+        vault.valueStoreState = new ValueStoreState().makeReactive();
+        vault.filterStoreState = new FilterStoreState().makeReactive();
+        vault.groupStoreState = new GroupStoreState().makeReactive();
+
+        userVault.vault = vault;
+        vault.userVaults = [userVault];
 
         userVault.userVaultID = response.UserVaultID!;
+        userVault.vaultID = response.VaultID!;
+        userVault.vaultPreferencesStoreState.userVaultID = response.UserVaultID!;
         userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = response.VaultPreferencesStoreStateID!;
+        userVault.vaultPreferencesStoreState.state = "{}";
+
         vault.vaultID = response.VaultID!;
+        vault.vaultStoreState.vaultID = response.VaultID!;
         vault.vaultStoreState.vaultStoreStateID = response.VaultStoreStateID!;
+        vault.vaultStoreState.state = "{}";
+        vault.passwordStoreState.vaultID = response.VaultID!;
         vault.passwordStoreState.passwordStoreStateID = response.PasswordStoreStateID!;
+        vault.passwordStoreState.state = "{}";
+        vault.valueStoreState.vaultID = response.VaultID!;
         vault.valueStoreState.valueStoreStateID = response.ValueStoreStateID!;
+        vault.valueStoreState.state = "{}";
+        vault.filterStoreState.vaultID = response.VaultID!;
         vault.filterStoreState.filterStoreStateID = response.FilterStoreStateID!;
+        vault.filterStoreState.state = "{}";
+        vault.groupStoreState.vaultID = response.VaultID!;
         vault.groupStoreState.groupStoreStateID = response.GroupStoreStateID!;
+        vault.groupStoreState.state = "{}";
 
         return [userVault, vault];
     }
@@ -119,24 +136,21 @@ class VaultRepository extends VaulticRepository<Vault>
             return [false, null];
         }
 
-        let vaultsToBackup = await this.retrieveAndVerifyAll(masterKey, getVaults);
-        if (!vaultsToBackup)
+        let userVaultsWithVaultsToBackup = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey,
+            undefined, currentUser, vaultQuery);
+
+        // TODO: need to return false here if the vaults where unvarified but true if there just isn't any
+        if (userVaultsWithVaultsToBackup[0].length == 0)
         {
             return [false, null];
         }
 
-        vaultsToBackup = vaultsToBackup as Vault[];
-        if (vaultsToBackup.length == 0)
-        {
-            return [true, null];
-        }
-
         const partialVaultsToBackup: Partial<Vault>[] = [];
 
-        for (let i = 0; i < vaultsToBackup.length; i++)
+        for (let i = 0; i < userVaultsWithVaultsToBackup[0].length; i++)
         {
             const vaultBackup = {};
-            const vault = vaultsToBackup[i];
+            const vault = userVaultsWithVaultsToBackup[0][i].vault;
 
             if (vault.updatedProperties.length > 0)
             {
@@ -177,24 +191,25 @@ class VaultRepository extends VaulticRepository<Vault>
 
         return [true, partialVaultsToBackup];
 
-        function getVaults(repository: Repository<Vault>): Promise<Vault[]>
+        function vaultQuery(repository: Repository<UserVault>): Promise<UserVault[]>
         {
             return repository
-                .createQueryBuilder('vaults')
-                .leftJoinAndSelect("vaults.userVault", "userVault")
-                .leftJoinAndSelect("vaults.vaultStoreState", "vaultStoreState")
-                .leftJoinAndSelect("vaults.passwordStoreState", "passwordStoreState")
-                .leftJoinAndSelect("vaults.valueStoreState", "valueStoreState")
-                .leftJoinAndSelect("vaults.filterStoreState", "filterStoreState")
-                .leftJoinAndSelect("vaults.groupStoreState", "groupStoreState")
-                .where("userVault.userID = :userID", { userID: currentUser?.userID })
-                .andWhere(`
-                    userVault.entityState != :entityState OR 
+                .createQueryBuilder('userVaults')
+                .leftJoinAndSelect("userVaults.vault", "vault")
+                .leftJoinAndSelect("vault.vaultStoreState", "vaultStoreState")
+                .leftJoinAndSelect("vault.passwordStoreState", "passwordStoreState")
+                .leftJoinAndSelect("vault.valueStoreState", "valueStoreState")
+                .leftJoinAndSelect("vault.filterStoreState", "filterStoreState")
+                .leftJoinAndSelect("vault.groupStoreState", "groupStoreState")
+                .where("userVaults.userID = :userID", { userID: currentUser?.userID })
+                .andWhere(`(
+                    vault.entityState != :entityState OR 
                     vaultStoreState.entityState != :entityState OR 
                     passwordStoreState.entityState != :entityState OR 
                     valueStoreState.entityState != :entityState OR 
                     filterStoreState.entityState != :entityState OR 
-                    groupStoreState.entityState != :entityState`,
+                    groupStoreState.entityState != :entityState
+                )`,
                     { entityState: EntityState.Unchanged })
                 .getMany();
         }

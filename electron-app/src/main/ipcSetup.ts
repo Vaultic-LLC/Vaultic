@@ -6,7 +6,6 @@ import cryptUtility from "./Utilities/CryptUtility";
 import generatorUtility from "./Utilities/Generator";
 import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
-import getVaulticFiles from "./Objects/Files/Files";
 import { environment } from "./Core/Environment";
 import serverHelper from "./Core/Helpers/ServerHelper";
 
@@ -57,20 +56,20 @@ export default function setupIPC()
 
 	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, email: string, firstName: string, lastName: string) =>
 		validateSender(e, () => serverHelper.registerUser(masterKey, email, firstName, lastName)));
-	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string) =>
-		validateSender(e, () => serverHelper.logUserIn(masterKey, email)));
+	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean) =>
+		validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin)));
 
 	ipcMain.handle('userRepository:getLastUsedUserEmail', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserEmail()));
 	ipcMain.handle('userRepository:getLastUsedUserPreferences', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserPreferences()));
 	ipcMain.handle('userRepository:createUser', (e, masterKey: string, email: string) => validateSender(e, () => environment.repositories.users.createUser(masterKey, email)));
-	ipcMain.handle('userRepository:getCurrentUserData', (e, masterKey: string, response: any) => validateSender(e, () => environment.repositories.users.getCurrentUserData(masterKey, response)));
+	ipcMain.handle('userRepository:getCurrentUserData', (e, masterKey: string) => validateSender(e, () => environment.repositories.users.getCurrentUserData(masterKey)));
 	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email)));
-	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, data: string) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, data)));
+	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, data: string, backup: boolean) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, data, backup)));
 
 	ipcMain.handle('vaultRepository:getVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.getVault(masterKey, userVaultID)));
 	ipcMain.handle('vaultRepository:saveAndBackup', (e, masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => validateSender(e, () => environment.repositories.vaults.saveAndBackup(masterKey, userVaultID, data, skipBackup)));
 
-	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data)));
+	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data, backup)));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 }

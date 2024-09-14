@@ -122,7 +122,7 @@ export default defineComponent({
                 //await app.currentVault.passwordStore.addPassword(key.value, response.VaulticPassword, true);
                 app.popups.showLoadingIndicator(props.color, "Signing In");
 
-                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email);
+                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true);
                 if (loginResponse.Success)
                 {
                     const createUserResult = await api.repositories.users.createUser(key.value, account.value.email);
@@ -144,7 +144,7 @@ export default defineComponent({
                 }
 
                 showAlertMessage("Your account was created but an error occured when trying to log in." +
-                    "Please try signing in again. If the issue persists", "Unable to sign in", true);
+                    " Please try signing in again. If the issue persists", "Unable to sign in", true);
                 ctx.emit('onLoginFailed');
             }
             else

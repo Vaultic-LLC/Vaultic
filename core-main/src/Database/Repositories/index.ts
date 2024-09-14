@@ -1,6 +1,14 @@
 import { environment } from "../../Environment";
 import vaulticServer from "../../Server/VaulticServer";
 import { EntityState } from "../../Types/Properties";
+import appStoreStateRepository, { AppStoreStateRepositoryType } from "./StoreState/AppStoreStateRepository";
+import filterStoreStateRepository, { FilterStoreStateRepositoryType } from "./StoreState/FilterStoreStateRepository";
+import groupStoreStateRepository, { GroupStoreStateRepositoryType } from "./StoreState/GroupStoreStateRepository";
+import passwordStoreStateRepository, { PasswordStoreStateRepositoryType } from "./StoreState/PasswordStoreStateRepository";
+import userPreferencesStoreStateRepository, { UserPreferencesStoreStateRepositoryType } from "./StoreState/UserPreferencesStoreStateRepository";
+import valueStoreStateRepository, { ValueStoreStateRepositoryType } from "./StoreState/ValueStoreStateRepository";
+import vaultPreferencesStoreStateRepository, { VaultPreferencesStoreStateRepositoryType } from "./StoreState/VaultPreferencesStoreStateRepository";
+import vaultStoreStateRepository, { VaultStoreStateRepositoryType } from "./StoreState/VaultStoreStateRepository";
 import userRepository, { UserRepositoryType } from "./UserRepository";
 import userVaultRepository, { UserVaultRepositoryType } from "./UserVaultRepository";
 import vaultRepository, { VaultRepositoryType } from "./VaultRepository";
@@ -8,26 +16,46 @@ import vaultRepository, { VaultRepositoryType } from "./VaultRepository";
 export interface VaulticRepositories
 {
     users: UserRepositoryType;
-    vaults: VaultRepositoryType;
+    appStoreStates: AppStoreStateRepositoryType;
+    userPreferencesStoreStates: UserPreferencesStoreStateRepositoryType;
     userVaults: UserVaultRepositoryType;
+    vaultPreferencesStoreStates: VaultPreferencesStoreStateRepositoryType;
+    vaults: VaultRepositoryType;
+    vaultStoreStates: VaultStoreStateRepositoryType;
+    passwordStoreStates: PasswordStoreStateRepositoryType;
+    valueStoreStates: ValueStoreStateRepositoryType;
+    filterStoreStates: FilterStoreStateRepositoryType;
+    groupStoreStates: GroupStoreStateRepositoryType;
 }
 
 export function initRepositories(): VaulticRepositories
 {
-    const userRepositorySucceeded = userRepository.init();
-    const vaultRepositorySucceeded = userVaultRepository.init();
-    const userVaultRepositorySucceeded = vaultRepository.init();
+    userRepository.init();
+    appStoreStateRepository.init();
+    userPreferencesStoreStateRepository.init();
 
-    if (!userRepositorySucceeded || !vaultRepositorySucceeded || !userVaultRepositorySucceeded)
-    {
-        // TODO: add a log table that I can write to internally and that users can export 
-        throw "Error from repositories";
-    }
+    userVaultRepository.init();
+    vaultPreferencesStoreStateRepository.init();
+
+    vaultRepository.init();
+    vaultStoreStateRepository.init();
+    passwordStoreStateRepository.init();
+    valueStoreStateRepository.init();
+    filterStoreStateRepository.init();
+    groupStoreStateRepository.init();
 
     const repositories: VaulticRepositories = {
         users: userRepository,
+        appStoreStates: appStoreStateRepository,
+        userPreferencesStoreStates: userPreferencesStoreStateRepository,
+        userVaults: userVaultRepository,
+        vaultPreferencesStoreStates: vaultPreferencesStoreStateRepository,
         vaults: vaultRepository,
-        userVaults: userVaultRepository
+        vaultStoreStates: vaultStoreStateRepository,
+        passwordStoreStates: passwordStoreStateRepository,
+        valueStoreStates: valueStoreStateRepository,
+        filterStoreStates: filterStoreStateRepository,
+        groupStoreStates: groupStoreStateRepository
     };
 
     return repositories;
@@ -115,21 +143,25 @@ export async function getUserDataSignatures(masterKey: string, email: string)
 export async function backupData(masterKey: string)
 {
     // TODO: need to handle differnet false values. aka no current user vs unable to verify record
+    // if unable to verify record, need to re pull data
     const userToBackup = await environment.repositories.users.getEntityThatNeedToBeBackedUp(masterKey);
     if (!userToBackup[0])
     {
+        console.log('no user to backup');
         return false;
     }
 
     const userVaultsToBackup = await environment.repositories.userVaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!userVaultsToBackup[0])
     {
+        console.log('no user vaults to backup');
         return false;
     }
 
     const vaultsToBackup = await environment.repositories.vaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!vaultsToBackup[0])
     {
+        console.log('no vaults to backup');
         return false;
     }
 
@@ -137,6 +169,7 @@ export async function backupData(masterKey: string)
     const backupResponse = await vaulticServer.user.backupData(userToBackup[1], userVaultsToBackup[1], vaultsToBackup[1]);
     if (!backupResponse.Success)
     {
+        console.log('backup failed');
         // TODO: merge objects returned from response and keep trying
     }
     else

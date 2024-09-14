@@ -70,7 +70,8 @@ class UserRepository extends VaulticRepository<User>
         const salt = environment.utilities.generator.randomValue(40);
         const hash = await environment.utilities.hash.hash(masterKey, salt);
 
-        const user = new User();
+        console.log(`Creating User: ${response.UserID}`);
+        const user = new User().makeReactive();
         user.userID = response.UserID!;
         user.email = email;
         user.lastUsed = true;
@@ -79,19 +80,19 @@ class UserRepository extends VaulticRepository<User>
         user.publicKey = keys.public;
         user.privateKey = keys.private;
         user.userVaults = [];
+        console.log(user.propertiesToSync);
 
-        const appStoreState = new AppStoreState();
+        const appStoreState = new AppStoreState().makeReactive();
         appStoreState.appStoreStateID = response.AppStoreStateID!;
+        appStoreState.userID = response.UserID!;
+        appStoreState.state = "{}";
         user.appStoreState = appStoreState;
 
-        const userPreferencesStoreState = new UserPreferencesStoreState();
+        const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
         userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
+        userPreferencesStoreState.userID = response.UserPreferencesStoreStateID!;
+        userPreferencesStoreState.state = "{}"
         user.userPreferencesStoreState = userPreferencesStoreState;
-
-        if (!user.lock(masterKey) || !appStoreState.lock(masterKey) || !userPreferencesStoreState.lock(masterKey))
-        {
-            return "no user lock";
-        }
 
         const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(keys.public, vaultKey);
         if (!encryptedVaultKey.success)
@@ -106,7 +107,7 @@ class UserRepository extends VaulticRepository<User>
         }
 
         const userVault: UserVault = vaults[0];
-        const vault = vaults[1];
+        const vault: Vault = vaults[1];
 
         userVault.userID = user.userID;
         userVault.user = user;
@@ -115,26 +116,27 @@ class UserRepository extends VaulticRepository<User>
             publicKey: encryptedVaultKey.publicKey
         });
 
-        user.userVaults.push(userVault);
-
-        if (!userVault.lock(masterKey))
-        {
-            return "no user vault lock";
-        }
-
-        if (!vault.lock(vaultKey))
-        {
-            return "no vault lock";
-        }
-
+        // Order matters here
         const transaction = new Transaction();
         transaction.insertEntity(user, masterKey, () => this);
+        transaction.insertEntity(user.appStoreState, masterKey, () => environment.repositories.appStoreStates);
+        transaction.insertEntity(user.userPreferencesStoreState, "", () => environment.repositories.userPreferencesStoreStates);
+
         transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
+        transaction.insertEntity(vault.vaultStoreState, vaultKey, () => environment.repositories.vaultStoreStates);
+        transaction.insertEntity(vault.passwordStoreState, vaultKey, () => environment.repositories.passwordStoreStates);
+        transaction.insertEntity(vault.valueStoreState, vaultKey, () => environment.repositories.valueStoreStates);
+        transaction.insertEntity(vault.filterStoreState, vaultKey, () => environment.repositories.filterStoreStates);
+        transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
+
         transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
+        console.log(`VaultPreferencesStoreState.UserVaultID: ${userVault.vaultPreferencesStoreState.userVaultID}`);
+        transaction.insertEntity(userVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
 
         const lastUsedUser = await this.getLastUsedUser();
         if (lastUsedUser)
         {
+            console.log('updating last user');
             lastUsedUser.lastUsed = false;
             transaction.updateEntity(lastUsedUser, '', () => this);
         }
@@ -142,16 +144,19 @@ class UserRepository extends VaulticRepository<User>
         const succeeded = await transaction.commit();
         if (!succeeded)
         {
-            return "no commit";
+            return false;
         }
 
+        // set before backing up
+        currentUser = user;
+
+        console.log('inserting succeeded');
         const backupResponse = await backupData(masterKey);
         if (!backupResponse)
         {
             return false;
         }
 
-        currentUser = user;
         return true;
     }
 
@@ -335,7 +340,7 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async getEntitesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<User> | null]>
+    public async getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<User> | null]>
     {
         const currentUser = this.getCurrentUser();
         if (!currentUser)
@@ -343,6 +348,9 @@ class UserRepository extends VaulticRepository<User>
             return [false, null];
         }
 
+        // TODO: this doesn't verify nested properties =(
+        // can probably just override verify on each main entity to also verify its nested entites as well
+        // like user.verify() should verify itself + appStoreState + userPrefrencesStoreState
         const response = await this.retrieveAndVerify(masterKey, getUsers);
         if (!response[0])
         {
@@ -356,25 +364,25 @@ class UserRepository extends VaulticRepository<User>
 
         const user = response[1];
         const userDataToBackup: Partial<User> = {};
-
+        console.log(user.propertiesToSync);
         if (user.propertiesToSync.length > 0)
         {
-            userDataToBackup["user"] = user.getBackup();
+            Object.assign(userDataToBackup, user.getBackup());
         }
         else 
         {
             // make sure we always add the userID, even if just store states are being updated
-            userDataToBackup["user"] = { userID: user.userID }
+            userDataToBackup.userID = user.userID;
         }
 
         if (user.appStoreState.propertiesToSync.length > 0)
         {
-            userDataToBackup["user"]["appStoreState"] = user.appStoreState.getBackup();
+            userDataToBackup.appStoreState = user.appStoreState.getBackup() as AppStoreState;
         }
 
         if (user.userPreferencesStoreState.propertiesToSync.length > 0)
         {
-            userDataToBackup["user"]["userPreferencesStoreState"] = user.userPreferencesStoreState.getBackup();
+            userDataToBackup.userPreferencesStoreState = user.userPreferencesStoreState.getBackup() as UserPreferencesStoreState;
         }
 
         return [true, userDataToBackup];
@@ -385,11 +393,12 @@ class UserRepository extends VaulticRepository<User>
                 .createQueryBuilder("users")
                 .leftJoinAndSelect("users.appStoreState", "appStoreState")
                 .leftJoinAndSelect("users.userPreferencesStoreState", "userPreferencesStoreState")
-                .where("user.userID = :userID", { userID: currentUser?.userID })
-                .andWhere(`
-                    user.entityState != :entityState OR 
-                    appStoreState.entityState != :entityState OR 
-                    userPreferencesStoreState.entityState != :entityState`,
+                .where("users.userID = :userID", { userID: currentUser?.userID })
+                .andWhere(`(
+                        users.entityState != :entityState OR 
+                        appStoreState.entityState != :entityState OR 
+                        userPreferencesStoreState.entityState != :entityState
+                    )`,
                     { entityState: EntityState.Unchanged })
                 .getOne();
         }

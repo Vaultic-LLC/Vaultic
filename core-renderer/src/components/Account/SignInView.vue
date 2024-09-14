@@ -134,7 +134,7 @@ export default defineComponent({
             masterKeyField.value?.toggleHidden(true);
             app.popups.showLoadingIndicator(props.color, "Signing In");
 
-            const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
+            const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false);
             if (response.Success)
             {
                 // TODO: this is the only time we know that the master key is correct besides

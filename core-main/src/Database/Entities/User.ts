@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, OneToOne, PrimaryColumn } from "typeorm"
+import { Entity, Column, OneToMany, OneToOne, PrimaryColumn, AfterLoad } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
 import { nameof } from "../../Helpers/TypeScriptHelper"
@@ -42,18 +42,10 @@ export class User extends VaulticEntity
     @Column("text")
     privateKey: string
 
-    // Matches Server
-    @Column("integer")
-    appStoreStateID: number;
-
-    @OneToOne(() => AppStoreState, (state: AppStoreState) => state.user, { eager: true, cascade: true });
+    @OneToOne(() => AppStoreState, (state: AppStoreState) => state.user, { eager: true })
     appStoreState: AppStoreState;
 
-    // matches server
-    @Column("integer")
-    userPreferencesStoreStateID: number;
-
-    @OneToOne(() => UserPreferencesStoreState, (state: UserPreferencesStoreState) => state.user, { eager: true, cascade: true });
+    @OneToOne(() => UserPreferencesStoreState, (state: UserPreferencesStoreState) => state.user, { eager: true })
     userPreferencesStoreState: UserPreferencesStoreState;
 
     @OneToMany(() => UserVault, (uv: UserVault) => uv.user)
@@ -79,9 +71,7 @@ export class User extends VaulticEntity
             nameof<User>("masterKeyHash"),
             nameof<User>("masterKeySalt"),
             nameof<User>("publicKey"),
-            nameof<User>("privateKey"),
-            nameof<User>("appStoreStateID"),
-            nameof<User>("userPreferencesStoreStateID")
+            nameof<User>("privateKey")
         ];
     }
 
