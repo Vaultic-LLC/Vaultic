@@ -10,7 +10,7 @@ export class StoreState extends VaulticEntity
     @Column("text")
     previousSignature: string;
 
-    constructor() 
+    constructor()
     {
         super();
     }

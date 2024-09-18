@@ -25,7 +25,7 @@ export class UserVault extends VaulticEntity
     @Column("integer")
     vaultID: number
 
-    @ManyToOne(() => Vault, (vault: Vault) => vault.userVaults)
+    @ManyToOne(() => Vault, (vault: Vault) => vault.userVaults, { eager: true })
     @JoinColumn({ name: "vaultID" })
     vault: Vault;
 
@@ -85,7 +85,7 @@ export class UserVault extends VaulticEntity
             name: this.vault.name,
             color: this.vault.color,
             lastUsed: this.vault.lastUsed,
-            vaultStoreState: this.vault.valueStoreState.state,
+            vaultStoreState: this.vault.vaultStoreState.state,
             passwordStoreState: this.vault.passwordStoreState.state,
             valueStoreState: this.vault.valueStoreState.state,
             filterStoreState: this.vault.filterStoreState.state,

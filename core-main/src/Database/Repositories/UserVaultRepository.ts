@@ -10,6 +10,7 @@ import { User } from "../Entities/User";
 import { backupData } from ".";
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
+import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -26,7 +27,13 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         {
             const userVaultQuery = repository
                 .createQueryBuilder('userVault')
+                .leftJoinAndSelect('userVault.vaultPreferencesStoreState', 'vaultPreferencesStoreState')
                 .leftJoinAndSelect('userVault.vault', 'vault')
+                .leftJoinAndSelect('vault.vaultStoreState', 'vaultStoreState')
+                .leftJoinAndSelect('vault.passwordStoreState', 'passwordStoreState')
+                .leftJoinAndSelect('vault.valueStoreState', 'valueStoreState')
+                .leftJoinAndSelect('vault.filterStoreState', 'filterStoreState')
+                .leftJoinAndSelect('vault.groupStoreState', 'groupStoreState')
                 .where('userVault.userID = :userID', { userID: user.userID });
 
             if (userVaultID)
@@ -43,10 +50,9 @@ class UserVaultRepository extends VaulticRepository<UserVault>
     {
         if (!user)
         {
-            const currentUser = environment.repositories.users.getCurrentUser();
+            const currentUser = await environment.repositories.users.getCurrentUser();
             if (!currentUser)
             {
-                console.log('no user')
                 return [[], []];
             }
 
@@ -121,10 +127,19 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
 
         const condensedDecryptedUserVaults: CondensedVaultData[] = [];
+        const decryptableProperties = propertiesToDecrypt ?? Vault.getDecrypableProperties();
+
         for (let i = 0; i < userVaults[0].length; i++)
         {
             const condensedUserVault = userVaults[0][i].condense();
-            const decryptableProperties = propertiesToDecrypt ?? Vault.getDecrypableProperties();
+
+            const decryptedVaultPreferences = await environment.utilities.crypt.decrypt(masterKey, condensedUserVault.vaultPreferencesStoreState);
+            if (!decryptedVaultPreferences.success)
+            {
+                return null;
+            }
+
+            condensedUserVault.vaultPreferencesStoreState = decryptedVaultPreferences.value!;
 
             for (let j = 0; j < decryptableProperties.length; j++)
             {
@@ -152,15 +167,17 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
 
         const oldUserVault = userVaults[0][0];
-        const parsedData = JSON.parse(data);
+        const newUserVault: CondensedVaultData = JSON.parse(data);
 
-        oldUserVault.copyFrom(parsedData);
-        oldUserVault.entityState = EntityState.Updated;
-
-        // there shouldn't be any encrypted properties that are being updated through this method.
-        // No need to encrypt anything
         const transaction = new Transaction();
-        transaction.updateEntity(oldUserVault, masterKey, () => this);
+        if (newUserVault.vaultPreferencesStoreState)
+        {
+            if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
+                oldUserVault.userVaultID, masterKey, newUserVault.vaultPreferencesStoreState, transaction)))
+            {
+                return false;
+            }
+        }
 
         const saved = await transaction.commit();
         if (!saved)
@@ -178,7 +195,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
 
     public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<UserVault>[] | null]> 
     {
-        const currentUser = environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getCurrentUser();
         if (!currentUser)
         {
             return [false, null];
@@ -203,7 +220,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             const userVaultBackup = {};
             const userVault = userVaultsToBackup[i];
 
-            if (userVault.updatedProperties.length > 0)
+            console.log(`UV properties to update: ${userVault.updatedProperties}`);
+            if (userVault.propertiesToSync.length > 0)
             {
                 Object.assign(userVaultBackup, userVault.getBackup());
             }
@@ -212,7 +230,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 userVaultBackup["userVaultID"] = userVault.userVaultID;
             }
 
-            if (userVault.vaultPreferencesStoreState.updatedProperties.length > 0)
+            if (userVault.vaultPreferencesStoreState.propertiesToSync.length > 0)
             {
                 userVaultBackup["vaultPreferencesStoreState"] = userVault.vaultPreferencesStoreState.getBackup();
             }
@@ -239,29 +257,41 @@ class UserVaultRepository extends VaulticRepository<UserVault>
 
     public async resetBackupTrackingForEntities(entities: Partial<UserVault>[]): Promise<boolean> 
     {
-        const currentUser = environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getCurrentUser();
         if (!currentUser)
         {
             return false;
         }
 
-        this.repository
-            .createQueryBuilder("userVaults")
-            .innerJoin("userVaults.vaultPreferencesStoreState", "vaultPreferencesStoreState")
-            .update()
-            .set(
-                {
-                    entityState: EntityState.Unchanged,
-                    serializedPropertiesToSync: "[]",
-                    vaultPreferencesStoreState: {
+        try 
+        {
+            this.repository
+                .createQueryBuilder("userVaults")
+                .update()
+                .set(
+                    {
                         entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]"
+                        serializedPropertiesToSync: "[]",
                     }
-                }
-            )
-            .where("userID = :userID", { userID: currentUser.userID })
-            .andWhere("userVaultID IN (:...userVaultIDs)", { userVaultIDs: entities.map(e => e.userVaultID) })
-            .execute();
+                )
+                .where("userID = :userID", { userID: currentUser.userID })
+                .andWhere("userVaultID IN (:...userVaultIDs)", { userVaultIDs: entities.map(e => e.userVaultID) })
+                .execute();
+        }
+        catch 
+        {
+            // TODO: log
+            return false;
+        }
+
+        const vaultPreferencesToUpdate: Partial<VaultPreferencesStoreState>[] = entities
+            .filter(uv => uv.vaultPreferencesStoreState && uv.vaultPreferencesStoreState.vaultPreferencesStoreStateID)
+            .map(uv => uv.vaultPreferencesStoreState!);
+
+        if (vaultPreferencesToUpdate.length > 0)
+        {
+            return await environment.repositories.vaultPreferencesStoreStates.resetBackupTrackingForEntities(vaultPreferencesToUpdate);
+        }
 
         return true;
     }

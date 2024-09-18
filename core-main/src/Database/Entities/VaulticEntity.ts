@@ -261,8 +261,6 @@ export class VaulticEntity implements ObjectLiteral
             }
 
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
-            console.log(`equal hashes: ${equalHashes}`);
-
             return equalHashes;
         }
         catch (e)

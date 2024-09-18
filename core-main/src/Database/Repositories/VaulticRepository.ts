@@ -107,6 +107,13 @@ export class VaulticRepository<T extends VaulticEntity>
 
         const repo = manager.withRepository(this.repository);
 
+        // the entity hasn't been synced to the server yet so keeping it 
+        // as inserted makes it easier to merge in case there are conflicts
+        if (entity.entityState != EntityState.Inserted)
+        {
+            entity.entityState = EntityState.Updated;
+        }
+
         const mockEntity = {}
         for (let i = 0; i < entity.updatedProperties.length; i++)
         {

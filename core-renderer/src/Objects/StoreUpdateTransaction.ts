@@ -46,7 +46,7 @@ export default class StoreUpdateTransaction
         const states = {};
         for (let i = 0; i < this.storeUpdateStates.length; i++)
         {
-            states[this.storeUpdateStates[i].store.stateName] = { state: JSON.stringify(this.storeUpdateStates[i].pendingState) };
+            states[this.storeUpdateStates[i].store.stateName] = JSON.stringify(this.storeUpdateStates[i].pendingState);
         }
 
         let success = false;

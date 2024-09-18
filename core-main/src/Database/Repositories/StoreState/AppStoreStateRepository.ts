@@ -1,13 +1,49 @@
 import { Repository } from "typeorm";
 import { environment } from "../../../Environment";
 import { AppStoreState } from "../../Entities/States/AppStoreState";
+import { EntityState } from "../../../Types/Properties";
+import { StoreStateRepository } from "./StoreStateRepository";
 import { VaulticRepository } from "../VaulticRepository";
 
-class AppStoreStateRepository extends VaulticRepository<AppStoreState>
+class AppStoreStateRepository extends StoreStateRepository<AppStoreState>
 {
     protected getRepository(): Repository<AppStoreState> | undefined
     {
         return environment.databaseDataSouce.getRepository(AppStoreState);
+    }
+
+    protected getVaulticRepository(): VaulticRepository<AppStoreState>
+    {
+        return environment.repositories.appStoreStates;
+    }
+
+    public async getByID(id: number): Promise<AppStoreState | null>
+    {
+        return this.retrieveReactive((repository) => repository.findOneBy({
+            appStoreStateID: id
+        }));
+    }
+
+    public async resetBackupTrackingForEntity(entity: Partial<AppStoreState>): Promise<boolean> 
+    {
+        if (!entity.userID || !entity.appStoreStateID)
+        {
+            return false;
+        }
+
+        try 
+        {
+            await this.repository.update(entity.appStoreStateID, {
+                entityState: EntityState.Unchanged,
+                serializedPropertiesToSync: "[]"
+            });
+        }
+        catch 
+        {
+            return false;
+        }
+
+        return true;
     }
 }
 

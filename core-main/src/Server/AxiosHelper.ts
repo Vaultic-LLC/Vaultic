@@ -259,8 +259,6 @@ class APIAxiosWrapper extends AxiosWrapper
             return { success: false, errorMessage: "No Export Key" };
         }
 
-        const encryptedData = {};
-
         if (fieldTree.properties)
         {
             for (let i = 0; i < fieldTree.properties.length; i++)
@@ -276,7 +274,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     return { ...response, errorMessage: `${response.errorMessage}. Prop: ${fieldTree.properties[i]}, Value: ${data[fieldTree.properties[i]]}` };
                 }
 
-                encryptedData[fieldTree.properties[i]] = response.value!;
+                data[fieldTree.properties[i]] = response.value!;
             }
         }
 
@@ -285,17 +283,43 @@ class APIAxiosWrapper extends AxiosWrapper
             const keys = Object.keys(fieldTree.nestedProperties);
             for (let i = 0; i < keys.length; i++)
             {
-                const innerObject = await this.endToEndEncryptPostData(fieldTree.nestedProperties[keys[i]], data[keys[i]])
-                if (!innerObject.success)
+                if (data[keys[i]] == undefined)
                 {
-                    return innerObject;
+                    continue;
                 }
 
-                encryptedData[keys[i]] = innerObject.value!;
+                if (Array.isArray(data[keys[i]]))
+                {
+                    const encryptedValues: any = [];
+                    const nestedProperties: any[] = data[keys[i]];
+
+                    for (let j = 0; j < nestedProperties.length; j++)
+                    {
+                        const innerObject = await this.endToEndEncryptPostData(fieldTree.nestedProperties[keys[i]], data[keys[i]][j])
+                        if (!innerObject.success)
+                        {
+                            return innerObject;
+                        }
+
+                        encryptedValues.push(innerObject.value!);
+                    }
+
+                    data[keys[i]] = encryptedValues;
+                }
+                else 
+                {
+                    const innerObject = await this.endToEndEncryptPostData(fieldTree.nestedProperties[keys[i]] as FieldTree, data[keys[i]])
+                    if (!innerObject.success)
+                    {
+                        return innerObject;
+                    }
+
+                    data[keys[i]] = innerObject.value!;
+                }
             }
         }
 
-        return { success: true, value: encryptedData };
+        return { success: true, value: data };
     }
 
     async decryptEndToEndData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
@@ -305,12 +329,15 @@ class APIAxiosWrapper extends AxiosWrapper
             return { success: false, errorMessage: "No Export Key" };
         }
 
-        const decryptedData = {};
-
         if (fieldTree.properties)
         {
             for (let i = 0; i < fieldTree.properties.length; i++)
             {
+                if (!data[fieldTree.properties[i]])
+                {
+                    continue;
+                }
+
                 const response = await environment.utilities.crypt.decrypt(this.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
@@ -318,7 +345,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     return response;
                 }
 
-                decryptedData[fieldTree[i]] = response.value!;
+                data[fieldTree[i]] = response.value!;
             }
         }
 
@@ -327,17 +354,43 @@ class APIAxiosWrapper extends AxiosWrapper
             const keys = Object.keys(fieldTree.nestedProperties);
             for (let i = 0; i < keys.length; i++)
             {
-                const nestedObject = await this.decryptEndToEndData(fieldTree.nestedProperties[keys[i]], data[keys[i]]);
-                if (!nestedObject.success)
+                if (data[keys[i]] == undefined)
                 {
-                    return nestedObject;
+                    continue;
                 }
 
-                decryptedData[keys[i]] = nestedObject.value;
+                if (Array.isArray(data[keys[i]]))
+                {
+                    const decryptedValues: any = [];
+                    const nestedProperties: any[] = data[keys[i]];
+
+                    for (let j = 0; j < nestedProperties.length; j++)
+                    {
+                        const innerObject = await this.decryptEndToEndData(fieldTree.nestedProperties[keys[i]], data[keys[i]][j])
+                        if (!innerObject.success)
+                        {
+                            return innerObject;
+                        }
+
+                        decryptedValues.push(innerObject.value!);
+                    }
+
+                    data[keys[i]] = decryptedValues;
+                }
+                else 
+                {
+                    const nestedObject = await this.decryptEndToEndData(fieldTree.nestedProperties[keys[i]], data[keys[i]]);
+                    if (!nestedObject.success)
+                    {
+                        return nestedObject;
+                    }
+
+                    data[keys[i]] = nestedObject.value;
+                }
             }
         }
 
-        return { success: true, value: decryptedData };
+        return { success: true, value: data };
     }
 
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 

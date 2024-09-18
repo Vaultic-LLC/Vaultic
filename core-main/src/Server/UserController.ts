@@ -67,16 +67,13 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
             postData.userDataPayload["vaults"] = vaults;
         }
 
-        console.log(JSON.stringify(postData));
         const e2eEncryptedData = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, postData);
-        console.log(e2eEncryptedData);
-
         if (!e2eEncryptedData.success)
         {
             return { Success: false, message: e2eEncryptedData.errorMessage }
         }
 
-        const response = await axiosHelper.api.post("User/BackupData", e2eEncryptedData);
+        const response = await axiosHelper.api.post("User/BackupData", e2eEncryptedData.value);
         return { ...response, message: `Post data: ${JSON.stringify(postData)}` }
     }
 

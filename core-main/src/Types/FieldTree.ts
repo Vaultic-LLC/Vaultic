@@ -10,8 +10,14 @@ export interface FieldTree
     nestedProperties?: { [key: string]: FieldTree };
 }
 
-const vaulticEntityE2EEncryptableProperties = [nameof<VaulticEntity>("signatureSecret")];
-const storeStateE2EEncryptableProperties = [...vaulticEntityE2EEncryptableProperties, nameof<StoreState>("state")];
+const vaulticEntityE2EEncryptableProperties = [
+    nameof<VaulticEntity>("signatureSecret")
+];
+
+const storeStateE2EEncryptableProperties = [
+    ...vaulticEntityE2EEncryptableProperties,
+    nameof<StoreState>("state")
+];
 
 export const userDataE2EEncryptedFieldTree: FieldTree =
 {

@@ -1,8 +1,8 @@
 import { environment } from "../../Environment";
 import { User } from "../Entities/User";
-import { UserData } from "../../Types/Repositories";
+import { CondensedVaultData, UserData } from "../../Types/Repositories";
 import { VaulticRepository } from "./VaulticRepository";
-import { Repository } from "typeorm";
+import { EntitySchema, Repository } from "typeorm";
 import Transaction from "../Transaction";
 import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
@@ -15,7 +15,7 @@ import { backupData } from ".";
 import { StoreState } from "../Entities/States/StoreState";
 
 // TODO: move to cache
-let currentUser: User | undefined;
+let currentUserID: number | undefined;
 
 class UserRepository extends VaulticRepository<User>
 {
@@ -24,9 +24,16 @@ class UserRepository extends VaulticRepository<User>
         return environment.databaseDataSouce.getRepository(User);
     }
 
-    public getCurrentUser()
+    public async getCurrentUser()
     {
-        return currentUser;
+        if (!currentUserID)
+        {
+            return undefined;
+        }
+
+        return this.retrieveReactive((repository) => repository.findOneBy({
+            userID: currentUserID
+        }));
     }
 
     public findByEmail(email: string) 
@@ -70,7 +77,6 @@ class UserRepository extends VaulticRepository<User>
         const salt = environment.utilities.generator.randomValue(40);
         const hash = await environment.utilities.hash.hash(masterKey, salt);
 
-        console.log(`Creating User: ${response.UserID}`);
         const user = new User().makeReactive();
         user.userID = response.UserID!;
         user.email = email;
@@ -80,7 +86,6 @@ class UserRepository extends VaulticRepository<User>
         user.publicKey = keys.public;
         user.privateKey = keys.private;
         user.userVaults = [];
-        console.log(user.propertiesToSync);
 
         const appStoreState = new AppStoreState().makeReactive();
         appStoreState.appStoreStateID = response.AppStoreStateID!;
@@ -130,13 +135,11 @@ class UserRepository extends VaulticRepository<User>
         transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
 
         transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
-        console.log(`VaultPreferencesStoreState.UserVaultID: ${userVault.vaultPreferencesStoreState.userVaultID}`);
         transaction.insertEntity(userVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
 
         const lastUsedUser = await this.getLastUsedUser();
         if (lastUsedUser)
         {
-            console.log('updating last user');
             lastUsedUser.lastUsed = false;
             transaction.updateEntity(lastUsedUser, '', () => this);
         }
@@ -148,9 +151,8 @@ class UserRepository extends VaulticRepository<User>
         }
 
         // set before backing up
-        currentUser = user;
+        currentUserID = user.userID;
 
-        console.log('inserting succeeded');
         const backupResponse = await backupData(masterKey);
         if (!backupResponse)
         {
@@ -169,7 +171,7 @@ class UserRepository extends VaulticRepository<User>
         }
         else 
         {
-            user = currentUser;
+            user = await this.getCurrentUser();
         }
 
         if (!user)
@@ -223,13 +225,15 @@ class UserRepository extends VaulticRepository<User>
             return false;
         }
 
-        currentUser = user;
+        currentUserID = user.userID;
         return true;
     }
 
     public async getCurrentUserData(masterKey: string): Promise<string>
     {
         const failedResponse = JSON.stringify({ success: false });
+
+        const currentUser = await this.getCurrentUser();
         if (!currentUser)
         {
             console.log('no current user');
@@ -246,7 +250,7 @@ class UserRepository extends VaulticRepository<User>
         {
             success: false,
             appStoreState: decryptedAppStoreState.value!,
-            userPreferencesStoreState: currentUser.userPreferencesStoreState,
+            userPreferencesStoreState: currentUser.userPreferencesStoreState.state,
             displayVaults: [],
             currentVault: undefined
         };
@@ -282,6 +286,7 @@ class UserRepository extends VaulticRepository<User>
         {
             if (!(await setCurrentVault(userData.displayVaults![0].userVaultID)))
             {
+                // TODO: return something the client can parse
                 return "issue";
             }
 
@@ -296,35 +301,42 @@ class UserRepository extends VaulticRepository<User>
             const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, id);
             if (!userVault || userVault.length == 0)
             {
-                return "issue";
+                return false;
             }
 
             userData.currentVault = userVault[0];
+            return true;
         }
     }
 
     public async saveUser(masterKey: string, data: string, backup: boolean)
     {
-        const user = this.getCurrentUser();
+        const user = await this.getCurrentUser();
         if (!user)
         {
             return false;
         }
 
-        const parsedData = JSON.parse(data);
-        user.copyFrom(parsedData);
-        user.entityState = EntityState.Updated;
+        const newUser: UserData = JSON.parse(data);
+        const transaction = new Transaction();
 
-        const { userPreferencesStoreState, ...newUser } = parsedData;
-
-        const succeeded = await user.encryptAndSetFromObject!(masterKey, newUser);
-        if (!succeeded)
+        if (newUser.appStoreState)
         {
-            return false;
+            if (!await (environment.repositories.appStoreStates.updateState(
+                user.appStoreState.appStoreStateID, masterKey, newUser.appStoreState, transaction)))
+            {
+                return false;
+            }
         }
 
-        const transaction = new Transaction();
-        transaction.updateEntity(user, masterKey, () => this);
+        if (newUser.userPreferencesStoreState)
+        {
+            if (!await (environment.repositories.userPreferencesStoreStates.updateState(
+                user.userPreferencesStoreState.userPreferencesStoreStateID, "", newUser.userPreferencesStoreState, transaction, false)))
+            {
+                return false;
+            }
+        }
 
         const saved = await transaction.commit();
         if (!saved)
@@ -342,7 +354,7 @@ class UserRepository extends VaulticRepository<User>
 
     public async getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<User> | null]>
     {
-        const currentUser = this.getCurrentUser();
+        const currentUser = await this.getCurrentUser();
         if (!currentUser)
         {
             return [false, null];
@@ -364,7 +376,7 @@ class UserRepository extends VaulticRepository<User>
 
         const user = response[1];
         const userDataToBackup: Partial<User> = {};
-        console.log(user.propertiesToSync);
+
         if (user.propertiesToSync.length > 0)
         {
             Object.assign(userDataToBackup, user.getBackup());
@@ -406,34 +418,36 @@ class UserRepository extends VaulticRepository<User>
 
     public async resetBackupTrackingForEntity(entity: Partial<User>)
     {
-        const currentUser = this.getCurrentUser();
+        const currentUser = await this.getCurrentUser();
         if (!currentUser || !entity.userID || entity.userID != currentUser.userID)
         {
             return false;
         }
 
-        this.repository
-            .createQueryBuilder("users")
-            .innerJoin("users.appStoreState", "appStoreState")
-            .innerJoin("users.userPreferencesStoreState", "userPreferencesStoreState")
-            .update()
-            .set(
-                {
-                    entityState: EntityState.Unchanged,
-                    serializedPropertiesToSync: "[]",
-                    appStoreState: {
-                        entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]"
-                    },
-                    userPreferencesStoreState: {
-                        entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]"
-                    }
-                }
-            )
-            .where("userID = :userID", { userID: entity.userID })
-            .execute();
+        const promises: any[] = [];
+        try 
+        {
+            promises.push(this.repository.update(entity.userID, {
+                entityState: EntityState.Unchanged,
+                serializedPropertiesToSync: "[]"
+            }));
+        }
+        catch 
+        {
+            return false;
+        }
 
+        if (entity.appStoreState)
+        {
+            promises.push(environment.repositories.appStoreStates.resetBackupTrackingForEntity(entity.appStoreState));
+        }
+
+        if (entity.userPreferencesStoreState)
+        {
+            promises.push(environment.repositories.userPreferencesStoreStates.resetBackupTrackingForEntity(entity.userPreferencesStoreState));
+        }
+
+        await Promise.all(promises);
         return true;
     }
 
