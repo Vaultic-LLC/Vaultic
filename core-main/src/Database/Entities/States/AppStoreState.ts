@@ -46,4 +46,14 @@ export class AppStoreState extends StoreState
 
         return properties;
     }
+
+    public static isValid(appStoreState: Partial<AppStoreState>): boolean
+    {
+        return !!appStoreState.signatureSecret &&
+            !!appStoreState.currentSignature &&
+            !!appStoreState.previousSignature &&
+            !!appStoreState.state &&
+            !!appStoreState.appStoreStateID &&
+            !!appStoreState.userID;
+    }
 }

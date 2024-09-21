@@ -59,7 +59,7 @@ export default class StoreUpdateTransaction
                 success = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states));
                 break;
             case Entity.Vault:
-                success = await api.repositories.vaults.saveAndBackup(masterKey, this.userVaultID!, JSON.stringify(states), skipBackup);
+                success = await api.repositories.vaults.saveAndBackup(masterKey, this.userVaultID!, JSON.stringify(states), !skipBackup);
                 break;
         }
 

@@ -46,4 +46,14 @@ export class ValueStoreState extends StoreState
 
         return properties;
     }
+
+    public static isValid(valueStoreState: Partial<ValueStoreState>): boolean
+    {
+        return !!valueStoreState.signatureSecret &&
+            !!valueStoreState.currentSignature &&
+            !!valueStoreState.previousSignature &&
+            !!valueStoreState.state &&
+            !!valueStoreState.valueStoreStateID &&
+            !!valueStoreState.vaultID;
+    }
 }

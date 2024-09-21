@@ -92,7 +92,6 @@ class VaultRepository extends VaulticRepository<Vault>
 
     public async saveAndBackup(masterKey: string, userVaultID: number, data: string, backup: boolean)
     {
-        console.log(data);
         const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, userVaultID);
         if (userVaults[0].length == 0)
         {
@@ -195,6 +194,7 @@ class VaultRepository extends VaulticRepository<Vault>
             const vaultBackup = {};
             const vault = userVaultsWithVaultsToBackup[0][i].vault;
 
+            console.log(`Vault: ${JSON.stringify(vault)}`);
             if (vault.propertiesToSync.length > 0)
             {
                 Object.assign(vaultBackup, vault.getBackup());
@@ -258,7 +258,7 @@ class VaultRepository extends VaulticRepository<Vault>
         }
     }
 
-    public async resetBackupTrackingForEntities(entities: Partial<Vault>[]): Promise<boolean> 
+    public async postBackupEntitiesUpdates(entities: Partial<Vault>[]): Promise<boolean> 
     {
         const currentUser = await environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -324,51 +324,49 @@ class VaultRepository extends VaulticRepository<Vault>
 
         if (vaultStoreStatesToUpdate.length > 0)
         {
-            succeeded = await environment.repositories.vaultStoreStates.resetBackupTrackingForEntities(vaultStoreStatesToUpdate);
+            succeeded = await environment.repositories.vaultStoreStates.postBackupEntitiesUpdates(vaultStoreStatesToUpdate);
         }
 
         if (passwordStoreStatesToUpdate.length > 0)
         {
-            succeeded = await environment.repositories.passwordStoreStates.resetBackupTrackingForEntities(passwordStoreStatesToUpdate);
+            succeeded = await environment.repositories.passwordStoreStates.postBackupEntitiesUpdates(passwordStoreStatesToUpdate);
         }
 
         if (valueStoreStatesToUpdate.length > 0)
         {
-            succeeded = await environment.repositories.valueStoreStates.resetBackupTrackingForEntities(valueStoreStatesToUpdate);
+            succeeded = await environment.repositories.valueStoreStates.postBackupEntitiesUpdates(valueStoreStatesToUpdate);
         }
 
         if (filterStoreStatesToUpdate.length > 0)
         {
-            succeeded = await environment.repositories.filterStoreStates.resetBackupTrackingForEntities(filterStoreStatesToUpdate);
+            succeeded = await environment.repositories.filterStoreStates.postBackupEntitiesUpdates(filterStoreStatesToUpdate);
         }
 
         if (groupStoreStatesToUpdate.length > 0)
         {
-            succeeded = await environment.repositories.groupStoreStates.resetBackupTrackingForEntities(groupStoreStatesToUpdate);
+            succeeded = await environment.repositories.groupStoreStates.postBackupEntitiesUpdates(groupStoreStatesToUpdate);
         }
 
         return succeeded;
     }
 
-    public async addFromServer(vault: Partial<Vault>)
+    public addFromServer(vault: Partial<Vault>, transaction: Transaction): boolean
     {
-        if (!vault.vaultID ||
-            !vault.userVaults ||
-            !vault.signatureSecret ||
-            !vault.currentSignature ||
-            !vault.name ||
-            !vault.color ||
-            !vault.vaultStoreState ||
-            !vault.passwordStoreState ||
-            !vault.valueStoreState ||
-            !vault.filterStoreState ||
-            !vault.groupStoreState)
+        if (!Vault.isValid(vault))
         {
-            return;
+            return false;
         }
 
-        // TODO: make sure this saves vaultPreferencesStoreState correctly
-        this.repository.insert(vault);
+        vault.lastUsed = false;
+
+        transaction.insertExistingEntity(vault, () => environment.repositories.vaults);
+        transaction.insertExistingEntity(vault.vaultStoreState!, () => environment.repositories.vaultStoreStates);
+        transaction.insertExistingEntity(vault.passwordStoreState!, () => environment.repositories.passwordStoreStates);
+        transaction.insertExistingEntity(vault.valueStoreState!, () => environment.repositories.valueStoreStates);
+        transaction.insertExistingEntity(vault.filterStoreState!, () => environment.repositories.filterStoreStates);
+        transaction.insertExistingEntity(vault.groupStoreState!, () => environment.repositories.groupStoreStates);
+
+        return true;
     }
 
     public async updateFromServer(currentVault: Partial<Vault>, newVault: Partial<Vault>)

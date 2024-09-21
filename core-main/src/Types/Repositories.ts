@@ -7,6 +7,7 @@ import { EntityManager } from "typeorm";
 export interface VaulticRepository<T extends VaulticEntity>
 {
     signAndInsert: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
+    insertExisting(manager: EntityManager, entity: Partial<T>): Promise<boolean>;
     signAndUpdate: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
     remove: (manager: EntityManager, entity: T) => Promise<boolean>;
     getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>;

@@ -1,6 +1,7 @@
 import { environment } from "../../Environment";
 import vaulticServer from "../../Server/VaulticServer";
 import { EntityState } from "../../Types/Properties";
+import Transaction from "../Transaction";
 import appStoreStateRepository, { AppStoreStateRepositoryType } from "./StoreState/AppStoreStateRepository";
 import filterStoreStateRepository, { FilterStoreStateRepositoryType } from "./StoreState/FilterStoreStateRepository";
 import groupStoreStateRepository, { GroupStoreStateRepositoryType } from "./StoreState/GroupStoreStateRepository";
@@ -169,45 +170,53 @@ export async function backupData(masterKey: string)
     const backupResponse = await vaulticServer.user.backupData(userToBackup[1], userVaultsToBackup[1], vaultsToBackup[1]);
     if (!backupResponse.Success)
     {
-        console.log('backup failed');
+        console.log(`backup failed: ${JSON.stringify(backupResponse)}`);
         // TODO: merge objects returned from response and keep trying
     }
     else
     {
         if (userToBackup[1])
         {
-            await environment.repositories.users.resetBackupTrackingForEntity(userToBackup[1]);
+            await environment.repositories.users.postBackupEntityUpdates(userToBackup[1]);
         }
 
         if (userVaultsToBackup[1] && userVaultsToBackup[1].length > 0) 
         {
-            await environment.repositories.userVaults.resetBackupTrackingForEntities(userVaultsToBackup[1]);
+            await environment.repositories.userVaults.postBackupEntitiesUpdates(userVaultsToBackup[1]);
         }
 
         if (vaultsToBackup[1] && vaultsToBackup[1].length > 0)
         {
-            await environment.repositories.vaults.resetBackupTrackingForEntities(vaultsToBackup[1]);
+            await environment.repositories.vaults.postBackupEntitiesUpdates(vaultsToBackup[1]);
         }
     }
 
     return true;
 }
 
-export async function checkMergeMissingData(clientUserDataPayload: any, serverUserDataPayload: any)
+export async function checkMergeMissingData(masterKey: string, clientUserDataPayload: any, serverUserDataPayload: any)
 {
+    if (!serverUserDataPayload)
+    {
+        return;
+    }
     // For any data in serverUserDataPayload, if the matching data entityState is unchanged or inserted in 
     // clientUserDataPayload, then just override it
     // If the entity state is updated, then I need to merge them by updatedTime
 
     // for each data in clientUserDataPayload with an entityState of Deleted and that isn't in
     // serverUserDataPayload, remove it
+    const transaction = new Transaction();
 
     let needsToRePushData = false;
     if (serverUserDataPayload.user)
     {
         if (!clientUserDataPayload.user)
         {
-            await environment.repositories.users.addFromServer(serverUserDataPayload.user);
+            if (!(await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction)))
+            {
+                return false;
+            }
         }
         else 
         {
@@ -223,13 +232,16 @@ export async function checkMergeMissingData(clientUserDataPayload: any, serverUs
             const serverVault = serverUserDataPayload.vaults[i];
             const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID);
 
-            if (vaultIndex == -1)
+            if (vaultIndex >= 0)
             {
-                await environment.repositories.vaults.addFromServer(serverVault);
+                await environment.repositories.vaults.updateFromServer(clientUserDataPayload.vaults[vaultIndex], serverVault);
             }
             else 
             {
-                await environment.repositories.vaults.updateFromServer(clientUserDataPayload.vaults[vaultIndex], serverVault);
+                if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
+                {
+                    return false;
+                }
             }
         }
     }
@@ -241,13 +253,16 @@ export async function checkMergeMissingData(clientUserDataPayload: any, serverUs
             const serverUserVault = serverUserDataPayload.userVaults[i];
             const userVaultIndex = clientUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID);
 
-            if (userVaultIndex == -1)
+            if (userVaultIndex >= 0)
             {
-                await environment.repositories.vaults.addFromServer(serverUserVault);
+                await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults[userVaultIndex], serverUserVault);
             }
             else 
             {
-                await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults[userVaultIndex], serverUserVault);
+                if (!environment.repositories.userVaults.addFromServer(serverUserVault, transaction))
+                {
+                    return false;
+                }
             }
         }
     }
@@ -264,8 +279,10 @@ export async function checkMergeMissingData(clientUserDataPayload: any, serverUs
         {
             if (clientUserDataPayload.vaults.entityState == EntityState.Deleted)
             {
-                await environment.repositories.vaults.deleteFromServer(clientUserDataPayload.vaults[i]);
+                //await environment.repositories.vaults.deleteFromServer(clientUserDataPayload.vaults[i]);
             }
         }
     }
+
+    await transaction.commit();
 }

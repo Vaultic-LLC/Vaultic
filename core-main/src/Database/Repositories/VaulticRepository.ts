@@ -1,6 +1,7 @@
-import { Entity, EntityManager, Repository } from "typeorm";
+import { EntityManager, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
 import { EntityState } from "../../Types/Properties";
+import { nameof } from "../../Helpers/TypeScriptHelper";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -76,16 +77,37 @@ export class VaulticRepository<T extends VaulticEntity>
             return false;
         }
 
-        const repo = manager.withRepository(this.repository);
         entity.entityState = EntityState.Inserted;
+        entity.preInsert();
 
         try 
         {
+            const repo = manager.withRepository(this.repository);
             await repo.insert(this.getSavableEntity(entity) as any);
         }
         catch (e)
         {
             console.log(`Filed to insert entity: ${JSON.stringify(entity)}`)
+            console.log(e);
+            return false;
+        }
+
+        return true;
+    }
+
+    public async insertExisting(manager: EntityManager, entity: Partial<T>): Promise<boolean>
+    {
+        entity.entityState = EntityState.Unchanged;
+        entity.serializedPropertiesToSync = "[]";
+
+        try 
+        {
+            const repo = manager.withRepository(this.repository);
+            await repo.insert(entity as any);
+        }
+        catch (e)
+        {
+            console.log(`Filed to insert existing entity: ${JSON.stringify(entity)}`)
             console.log(e);
             return false;
         }
@@ -115,6 +137,8 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         const mockEntity = {}
+        mockEntity[nameof<VaulticEntity>("serializedPropertiesToSync")] = entity.serializedPropertiesToSync;
+
         for (let i = 0; i < entity.updatedProperties.length; i++)
         {
             mockEntity[entity.updatedProperties[i]] = entity[entity.updatedProperties[i]];
@@ -192,12 +216,12 @@ export class VaulticRepository<T extends VaulticEntity>
         return [false, null];
     }
 
-    public async resetBackupTrackingForEntity(entity: Partial<T>): Promise<boolean>
+    public async postBackupEntityUpdates(entity: Partial<T>): Promise<boolean>
     {
         return true;
     }
 
-    public async resetBackupTrackingForEntities(entities: Partial<T>[]): Promise<boolean>
+    public async postBackupEntitiesUpdates(entities: Partial<T>[]): Promise<boolean>
     {
         return true;
     }

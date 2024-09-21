@@ -416,7 +416,7 @@ class UserRepository extends VaulticRepository<User>
         }
     }
 
-    public async resetBackupTrackingForEntity(entity: Partial<User>)
+    public async postBackupEntityUpdates(entity: Partial<User>)
     {
         const currentUser = await this.getCurrentUser();
         if (!currentUser || !entity.userID || entity.userID != currentUser.userID)
@@ -439,34 +439,49 @@ class UserRepository extends VaulticRepository<User>
 
         if (entity.appStoreState)
         {
-            promises.push(environment.repositories.appStoreStates.resetBackupTrackingForEntity(entity.appStoreState));
+            promises.push(environment.repositories.appStoreStates.postBackupEntityUpdates(entity.appStoreState));
         }
 
         if (entity.userPreferencesStoreState)
         {
-            promises.push(environment.repositories.userPreferencesStoreStates.resetBackupTrackingForEntity(entity.userPreferencesStoreState));
+            promises.push(environment.repositories.userPreferencesStoreStates.postBackupEntityUpdates(entity.userPreferencesStoreState));
         }
 
         await Promise.all(promises);
         return true;
     }
 
-    public async addFromServer(user: Partial<User>)
+    public async addFromServer(masterKey: string, user: Partial<User>, transaction: Transaction): Promise<boolean>
     {
-        if (!user.userID ||
-            !user.email ||
-            !user.signatureSecret ||
-            !user.currentSignature ||
-            !user.publicKey ||
-            !user.privateKey ||
-            !user.appStoreState ||
-            !user.userPreferencesStoreState)
+        if (!User.isValid(user))
         {
-            return;
+            return false;
         }
 
-        // TODO: make sure this saves appStoreState and userPreferncesStorState correctly
-        return this.repository.insert(user);
+        const salt = environment.utilities.generator.randomValue(40);
+        const hash = await environment.utilities.hash.hash(masterKey, salt);
+
+        const encryptedSalt = await environment.utilities.crypt.encrypt(masterKey, salt);
+        if (!encryptedSalt.success)
+        {
+            return false;
+        }
+
+        const encryptedHash = await environment.utilities.crypt.encrypt(masterKey, hash);
+        if (!encryptedHash.success)
+        {
+            return false;
+        }
+
+        user.lastUsed = false;
+        user.masterKeySalt = encryptedSalt.value!;
+        user.masterKeyHash = encryptedHash.value!;
+
+        transaction.insertExistingEntity(user, () => this);
+        transaction.insertExistingEntity(user.appStoreState!, () => environment.repositories.appStoreStates);
+        transaction.insertExistingEntity(user.userPreferencesStoreState!, () => environment.repositories.userPreferencesStoreStates);
+
+        return true;
     }
 
     public async updateFromServer(currentUser: Partial<User>, newUser: Partial<User>)

@@ -15,18 +15,6 @@ export class StoreState extends VaulticEntity
         super();
     }
 
-    async sign(masterKey: string): Promise<boolean> 
-    {
-        const currentSignature = this.currentSignature;
-        if (await (super.sign(masterKey)))
-        {
-            this.previousSignature = currentSignature ?? this.currentSignature;
-            return true;
-        }
-
-        return false;
-    }
-
     protected internalGetSignableProperties(): string[] 
     {
         return [
@@ -78,5 +66,10 @@ export class StoreState extends VaulticEntity
         }
 
         return properties;
+    }
+
+    public preInsert(): void
+    {
+        this.previousSignature = this.currentSignature;
     }
 }

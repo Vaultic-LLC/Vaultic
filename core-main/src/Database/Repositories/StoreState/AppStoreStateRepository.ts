@@ -24,7 +24,7 @@ class AppStoreStateRepository extends StoreStateRepository<AppStoreState>
         }));
     }
 
-    public async resetBackupTrackingForEntity(entity: Partial<AppStoreState>): Promise<boolean> 
+    public async postBackupEntityUpdates(entity: Partial<AppStoreState>): Promise<boolean> 
     {
         if (!entity.userID || !entity.appStoreStateID)
         {
@@ -35,7 +35,8 @@ class AppStoreStateRepository extends StoreStateRepository<AppStoreState>
         {
             await this.repository.update(entity.appStoreStateID, {
                 entityState: EntityState.Unchanged,
-                serializedPropertiesToSync: "[]"
+                serializedPropertiesToSync: "[]",
+                previousSignature: entity.currentSignature
             });
         }
         catch 

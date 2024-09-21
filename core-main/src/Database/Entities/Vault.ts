@@ -107,4 +107,23 @@ export class Vault extends VaulticEntity
             nameof<Vault>("groupStoreState")
         ];
     }
+
+    public static isValid(vault: Partial<Vault>): boolean
+    {
+        return !!vault.signatureSecret &&
+            !!vault.currentSignature &&
+            !!vault.vaultID &&
+            !!vault.name &&
+            !!vault.color &&
+            !!vault.vaultStoreState &&
+            !!vault.passwordStoreState &&
+            !!vault.valueStoreState &&
+            !!vault.filterStoreState &&
+            !!vault.groupStoreState &&
+            VaultStoreState.isValid(vault.vaultStoreState) &&
+            PasswordStoreState.isValid(vault.passwordStoreState) &&
+            ValueStoreState.isValid(vault.valueStoreState) &&
+            FilterStoreState.isValid(vault.filterStoreState) &&
+            GroupStoreState.isValid(vault.groupStoreState);
+    }
 }

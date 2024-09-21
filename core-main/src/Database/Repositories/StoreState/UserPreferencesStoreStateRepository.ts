@@ -24,7 +24,7 @@ class UserPreferencesStoreStateRepository extends StoreStateRepository<UserPrefe
         }));
     }
 
-    public async resetBackupTrackingForEntity(entity: Partial<UserPreferencesStoreState>): Promise<boolean> 
+    public async postBackupEntityUpdates(entity: Partial<UserPreferencesStoreState>): Promise<boolean> 
     {
         if (!entity.userID || !entity.userPreferencesStoreStateID)
         {
@@ -35,7 +35,9 @@ class UserPreferencesStoreStateRepository extends StoreStateRepository<UserPrefe
         {
             await this.repository.update(entity.userPreferencesStoreStateID, {
                 entityState: EntityState.Unchanged,
-                serializedPropertiesToSync: "[]"
+                serializedPropertiesToSync: "[]",
+                previousSignature: entity.currentSignature
+
             });
         }
         catch 

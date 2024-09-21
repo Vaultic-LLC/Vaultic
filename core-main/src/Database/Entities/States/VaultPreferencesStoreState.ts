@@ -46,4 +46,14 @@ export class VaultPreferencesStoreState extends StoreState
 
         return properties;
     }
+
+    public static isValid(vaultPreferncesStoreState: Partial<VaultPreferencesStoreState>): boolean
+    {
+        return !!vaultPreferncesStoreState.signatureSecret &&
+            !!vaultPreferncesStoreState.currentSignature &&
+            !!vaultPreferncesStoreState.previousSignature &&
+            !!vaultPreferncesStoreState.state &&
+            !!vaultPreferncesStoreState.vaultPreferencesStoreStateID &&
+            !!vaultPreferncesStoreState.userVaultID;
+    }
 }

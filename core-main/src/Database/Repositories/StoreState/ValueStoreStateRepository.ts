@@ -24,24 +24,23 @@ class ValueStoreStateRepository extends StoreStateRepository<ValueStoreState>
         }));
     }
 
-    public async resetBackupTrackingForEntities(entities: Partial<ValueStoreState>[]): Promise<boolean>
+    public async postBackupEntitiesUpdates(entities: Partial<ValueStoreState>[]): Promise<boolean>
     {
         try 
         {
-            this.repository
-                .createQueryBuilder()
-                .update()
-                .set(
-                    {
-                        entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]",
-                    }
-                )
-                .where("valueStoreStateID IN (:...valueStoreStateIDs)",
-                    {
-                        valueStoreStateIDs: entities.map(e => e.valueStoreStateID)
-                    })
-                .execute();
+            for (let i = 0; i < entities.length; i++)
+            {
+                if (!entities[i].valueStoreStateID)
+                {
+                    continue;
+                }
+
+                await this.repository.update(entities[i].valueStoreStateID!, {
+                    entityState: EntityState.Unchanged,
+                    serializedPropertiesToSync: "[]",
+                    previousSignature: entities[i].currentSignature
+                });
+            }
         }
         catch 
         {

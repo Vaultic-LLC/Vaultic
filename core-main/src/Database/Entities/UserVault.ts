@@ -92,4 +92,16 @@ export class UserVault extends VaulticEntity
             groupStoreState: this.vault.groupStoreState.state
         }
     }
+
+    public static isValid(userVault: Partial<UserVault>): boolean
+    {
+        return !!userVault.signatureSecret &&
+            !!userVault.currentSignature &&
+            !!userVault.userID &&
+            !!userVault.userVaultID &&
+            !!userVault.vaultID &&
+            !!userVault.vaultKey &&
+            !!userVault.vaultPreferencesStoreState &&
+            VaultPreferencesStoreState.isValid(userVault.vaultPreferencesStoreState);
+    }
 }

@@ -24,24 +24,23 @@ class VaultPreferencesStoreStateRepository extends StoreStateRepository<VaultPre
         }));
     }
 
-    public async resetBackupTrackingForEntities(entities: Partial<VaultPreferencesStoreState>[]): Promise<boolean>
+    public async postBackupEntitiesUpdates(entities: Partial<VaultPreferencesStoreState>[]): Promise<boolean>
     {
         try 
         {
-            this.repository
-                .createQueryBuilder()
-                .update()
-                .set(
-                    {
-                        entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]",
-                    }
-                )
-                .where("vaultPreferencesStoreStateID IN (:...vaultPreferencesStoreStateIDs)",
-                    {
-                        vaultPreferencesStoreStateIDs: entities.map(e => e.vaultPreferencesStoreStateID)
-                    })
-                .execute();
+            for (let i = 0; i < entities.length; i++)
+            {
+                if (!entities[i].vaultPreferencesStoreStateID)
+                {
+                    continue;
+                }
+
+                await this.repository.update(entities[i].vaultPreferencesStoreStateID!, {
+                    entityState: EntityState.Unchanged,
+                    serializedPropertiesToSync: "[]",
+                    previousSignature: entities[i].currentSignature
+                });
+            }
         }
         catch 
         {

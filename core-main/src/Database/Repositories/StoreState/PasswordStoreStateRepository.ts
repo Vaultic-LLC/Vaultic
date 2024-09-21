@@ -25,24 +25,23 @@ class PasswordStoreStateRepository extends StoreStateRepository<PasswordStoreSta
         }));
     }
 
-    public async resetBackupTrackingForEntities(entities: Partial<PasswordStoreState>[]): Promise<boolean>
+    public async postBackupEntitiesUpdates(entities: Partial<PasswordStoreState>[]): Promise<boolean>
     {
         try 
         {
-            this.repository
-                .createQueryBuilder()
-                .update()
-                .set(
-                    {
-                        entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]",
-                    }
-                )
-                .where("passwordStoreStateID IN (:...passwordStoreStateIDs)",
-                    {
-                        passwordStoreStateIDs: entities.map(e => e.passwordStoreStateID)
-                    })
-                .execute();
+            for (let i = 0; i < entities.length; i++)
+            {
+                if (!entities[i].passwordStoreStateID)
+                {
+                    continue;
+                }
+
+                await this.repository.update(entities[i].passwordStoreStateID!, {
+                    entityState: EntityState.Unchanged,
+                    serializedPropertiesToSync: "[]",
+                    previousSignature: entities[i].currentSignature
+                });
+            }
         }
         catch 
         {

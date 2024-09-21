@@ -345,7 +345,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     return response;
                 }
 
-                data[fieldTree[i]] = response.value!;
+                data[fieldTree.properties[i]] = response.value!;
             }
         }
 

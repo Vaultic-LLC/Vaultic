@@ -372,4 +372,8 @@ export class VaulticEntity implements ObjectLiteral
     {
         return false;
     }
+
+    public preInsert()
+    {
+    }
 }

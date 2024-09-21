@@ -76,9 +76,6 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
 
         if (!firstLogin)
         {
-            // TODO: this will fail when logging in for the first time after registering
-            await environment.repositories.users.setCurrentUser(masterKey, email);
-
             // TODO: this only contains data that the user needs to update, not everything.
             const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
             if (!result.success)
@@ -86,7 +83,11 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
                 return { Success: false, message: result.errorMessage };
             }
 
-            await checkMergeMissingData(currentSignatures, result);
+            await checkMergeMissingData(masterKey, currentSignatures, result.value.userDataPayload);
+
+            // TODO: this will fail when logging in for the first time after registering
+            // needs to be done after merging data in case the user needed to have been added
+            await environment.repositories.users.setCurrentUser(masterKey, email);
         }
 
         // TODO: not needed?

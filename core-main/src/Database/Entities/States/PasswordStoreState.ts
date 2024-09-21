@@ -46,4 +46,14 @@ export class PasswordStoreState extends StoreState
 
         return properties;
     }
+
+    public static isValid(passwordStoreState: Partial<PasswordStoreState>): boolean
+    {
+        return !!passwordStoreState.signatureSecret &&
+            !!passwordStoreState.currentSignature &&
+            !!passwordStoreState.previousSignature &&
+            !!passwordStoreState.state &&
+            !!passwordStoreState.passwordStoreStateID &&
+            !!passwordStoreState.vaultID;
+    }
 }

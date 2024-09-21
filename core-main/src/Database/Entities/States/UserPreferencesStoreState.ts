@@ -52,4 +52,14 @@ export class UserPreferencesStoreState extends StoreState
 
         return properties;
     }
+
+    public static isValid(userPreferncesStoreState: Partial<UserPreferencesStoreState>): boolean
+    {
+        return !!userPreferncesStoreState.signatureSecret &&
+            !!userPreferncesStoreState.currentSignature &&
+            !!userPreferncesStoreState.previousSignature &&
+            !!userPreferncesStoreState.state &&
+            !!userPreferncesStoreState.userPreferencesStoreStateID &&
+            !!userPreferncesStoreState.userID;
+    }
 }

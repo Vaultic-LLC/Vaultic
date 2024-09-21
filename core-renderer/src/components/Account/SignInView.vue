@@ -139,7 +139,7 @@ export default defineComponent({
             {
                 // TODO: this is the only time we know that the master key is correct besides
                 // when creating the account. Should check to make sure that the masterKey hash
-                // is set / make sure it wasn't tampered with
+                // is set / make sure it wasn't tampered with. Just always re generate it
                 app.isOnline = true;
                 //await stores.loadStoreData(masterKey.value, response);
                 await app.loadUserData(masterKey.value, response);

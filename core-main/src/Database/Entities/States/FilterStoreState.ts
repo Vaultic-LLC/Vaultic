@@ -46,4 +46,14 @@ export class FilterStoreState extends StoreState
 
         return properties;
     }
+
+    public static isValid(filterStoreState: Partial<FilterStoreState>): boolean
+    {
+        return !!filterStoreState.signatureSecret &&
+            !!filterStoreState.currentSignature &&
+            !!filterStoreState.previousSignature &&
+            !!filterStoreState.state &&
+            !!filterStoreState.filterStoreStateID &&
+            !!filterStoreState.vaultID;
+    }
 }

@@ -255,7 +255,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
     }
 
-    public async resetBackupTrackingForEntities(entities: Partial<UserVault>[]): Promise<boolean> 
+    public async postBackupEntitiesUpdates(entities: Partial<UserVault>[]): Promise<boolean> 
     {
         const currentUser = await environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -290,27 +290,23 @@ class UserVaultRepository extends VaulticRepository<UserVault>
 
         if (vaultPreferencesToUpdate.length > 0)
         {
-            return await environment.repositories.vaultPreferencesStoreStates.resetBackupTrackingForEntities(vaultPreferencesToUpdate);
+            return await environment.repositories.vaultPreferencesStoreStates.postBackupEntitiesUpdates(vaultPreferencesToUpdate);
         }
 
         return true;
     }
 
-    public async addFromServer(userVault: Partial<UserVault>)
+    public addFromServer(userVault: Partial<UserVault>, transaction: Transaction): boolean
     {
-        if (!userVault.userVaultID ||
-            !userVault.vaultID ||
-            !userVault.userID ||
-            !userVault.signatureSecret ||
-            !userVault.currentSignature ||
-            !userVault.vaultKey ||
-            !userVault.vaultPreferencesStoreState)
+        if (!UserVault.isValid(userVault))
         {
-            return;
+            return false;
         }
 
-        // TODO: make sure this saves vaultPreferencesStoreState correctly
-        this.repository.insert(userVault);
+        transaction.insertExistingEntity(userVault, () => environment.repositories.userVaults);
+        transaction.insertExistingEntity(userVault.vaultPreferencesStoreState!, () => environment.repositories.vaultPreferencesStoreStates);
+
+        return true;
     }
 
     public async updateFromServer(currentUserVault: Partial<UserVault>, newUserVault: Partial<UserVault>)

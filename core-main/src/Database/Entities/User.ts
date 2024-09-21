@@ -24,11 +24,13 @@ export class User extends VaulticEntity
 
     // Not Backed Up
     // Encrypted By Users Master Key
+    // Not an issue if this is tampered with since we regenerate it every time the user logs in
     @Column("text")
     masterKeyHash: string
 
     // Not Backed Up
     // Encrypted By Users Master Key
+    // Not an issue if this is tampered with since we regenerate it every time the user logs in
     @Column("text")
     masterKeySalt: string
 
@@ -66,10 +68,6 @@ export class User extends VaulticEntity
         return [
             nameof<User>("userID"),
             nameof<User>("email"),
-            // TODO: is signing these an issue since they aren't also backed up? I won't be able to create the same signature
-            // on another device then? Maybe just bakup the salt?
-            nameof<User>("masterKeyHash"),
-            nameof<User>("masterKeySalt"),
             nameof<User>("publicKey"),
             nameof<User>("privateKey")
         ];
@@ -97,5 +95,19 @@ export class User extends VaulticEntity
             nameof<User>("appStoreState"),
             nameof<User>("userPreferencesStoreState")
         ]
+    }
+
+    public static isValid(user: Partial<User>): boolean
+    {
+        return !!user.signatureSecret &&
+            !!user.currentSignature &&
+            !!user.userID &&
+            !!user.email &&
+            !!user.publicKey &&
+            !!user.privateKey &&
+            !!user.appStoreState &&
+            !!user.userPreferencesStoreState &&
+            AppStoreState.isValid(user.appStoreState) &&
+            UserPreferencesStoreState.isValid(user.userPreferencesStoreState);
     }
 }

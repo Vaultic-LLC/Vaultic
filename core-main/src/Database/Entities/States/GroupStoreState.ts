@@ -46,4 +46,14 @@ export class GroupStoreState extends StoreState
 
         return properties;
     }
+
+    public static isValid(groupStoreState: Partial<GroupStoreState>): boolean
+    {
+        return !!groupStoreState.signatureSecret &&
+            !!groupStoreState.currentSignature &&
+            !!groupStoreState.previousSignature &&
+            !!groupStoreState.state &&
+            !!groupStoreState.groupStoreStateID &&
+            !!groupStoreState.vaultID;
+    }
 }
