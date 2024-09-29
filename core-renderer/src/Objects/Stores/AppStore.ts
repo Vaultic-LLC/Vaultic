@@ -8,7 +8,7 @@ import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { ColorPalette, colorPalettes } from "../../Types/Colors";
 import { AutoLockTime } from "../../Types/Settings";
 import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
-import { DisplayVault } from "../../Types/APITypes";
+import { CondensedVaultData, DisplayVault } from "../../Types/APITypes";
 import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
@@ -44,8 +44,8 @@ export class AppStore extends Store<AppStoreState>
 
     private internalIsOnline: Ref<boolean>;
 
-    private internalUserVaults: DisplayVault[];
-    private internalSharedVaults: BasicVaultStore[];
+    private internalUserVaults: Ref<DisplayVault[]>;
+    private internalSharedVaults: Ref<BasicVaultStore[]>;
     private internalCurrentVault: ReactiveVaultStore;
 
     private internalUsersPreferencesStore: UserPreferencesStore;
@@ -59,6 +59,7 @@ export class AppStore extends Store<AppStoreState>
     set activePasswordValuesTable(value: DataType) { this.internalActivePasswordValueTable.value = value; }
     get activeFilterGroupsTable() { return this.internalActiveFilterGroupTable.value; }
     set activeFilterGroupsTable(value: DataType) { this.internalActiveFilterGroupTable.value = value; }
+    get userVaults() { return this.internalUserVaults; }
     get currentVault() { return this.internalCurrentVault; }
     get userPreferences() { return this.internalUsersPreferencesStore; }
     get userDataBreaches() { return this.internalUserDataBreachStore; }
@@ -73,8 +74,8 @@ export class AppStore extends Store<AppStoreState>
         this.internalUserDataBreachStore = new UserDataBreachStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalUserVaults = [];
-        this.internalSharedVaults = [];
+        this.internalUserVaults = ref([]);
+        this.internalSharedVaults = ref([]);
         this.internalCurrentVault = new ReactiveVaultStore();
 
         this.internalIsOnline = ref(false);
@@ -190,7 +191,7 @@ export class AppStore extends Store<AppStoreState>
         }
 
         Object.assign(this.state, JSON.parse(parsedUserData.appStoreState));
-        this.internalUserVaults = parsedUserData.displayVaults!;
+        this.internalUserVaults.value = parsedUserData.displayVaults!;
         // TODO: return shared vaults from server. These also need to include userVault for vaultKey...
         //this.internalSharedVaults = JSON.parse(response.SharedVaults);
         // this.internalArchivedVaults = JSON.parse(response.archivedVaults);
@@ -199,16 +200,45 @@ export class AppStore extends Store<AppStoreState>
         this.loadedUser = true;
     }
 
-    async loadVault(masterKey: string, vaultID: number)
+    async createNewVault(masterKey: string, name: string, setAsActive: boolean)
     {
-        const vault = await api.repositories.vaults.getVault(masterKey, vaultID);
+        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, name, setAsActive, this.isOnline);
+        if (!result)
+        {
+            return false;
+        }
+
+        const vaultData = result as CondensedVaultData;
+        if (setAsActive)
+        {
+            this.internalCurrentVault.setVaultData(masterKey, vaultData);
+        }
+
+        // force trigger reactivity
+        const temp = [...this.internalUserVaults.value];
+        temp.push({
+            userVaultID: vaultData.userVaultID,
+            name: vaultData.name,
+            color: vaultData.color,
+            lastUsed: setAsActive
+        });
+
+        this.internalUserVaults.value = temp;
+        return true;
+    }
+
+    async setActiveVault(masterKey: string, userVaultID: number): Promise<boolean>
+    {
+        // TODO: needs to set last used on the vault as well
+        const vault = await api.repositories.vaults.setActiveVault(masterKey, userVaultID);
         if (!vault)
         {
             // TODO: handle
-            return;
+            return false;
         }
 
-        this.internalCurrentVault.setVaultData(masterKey, vault);
+        this.internalCurrentVault.setVaultData(masterKey, vault as CondensedVaultData);
+        return true;
     }
 
     public shareToVault<T>(value: T, toVault: number)

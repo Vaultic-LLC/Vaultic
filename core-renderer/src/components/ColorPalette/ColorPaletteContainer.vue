@@ -51,7 +51,8 @@ export default defineComponent({
     min-height: 120px;
     height: 20%;
     top: max(30px, 5%);
-    left: max(11px, 2%);
+    /* left: max(11px, 2%); */
+    left: max(11px, 12%);
     column-gap: 10%;
     row-gap: 10%;
     z-index: 1;

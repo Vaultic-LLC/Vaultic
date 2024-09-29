@@ -220,7 +220,6 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             const userVaultBackup = {};
             const userVault = userVaultsToBackup[i];
 
-            console.log(`UV properties to update: ${userVault.updatedProperties}`);
             if (userVault.propertiesToSync.length > 0)
             {
                 Object.assign(userVaultBackup, userVault.getBackup());

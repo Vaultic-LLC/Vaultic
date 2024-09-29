@@ -567,9 +567,9 @@ export default defineComponent({
 <style>
 #passwordValueTable {
     height: 55%;
-    width: 48%;
+    width: 43%;
     min-width: 547px;
-    left: 31%;
+    left: 38%;
     top: max(252px, 42%);
 }
 

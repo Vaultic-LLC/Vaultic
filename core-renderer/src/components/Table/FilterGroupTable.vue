@@ -466,9 +466,9 @@ export default defineComponent({
 <style>
 #filterTable {
     height: 43%;
-    width: 25%;
+    width: 24%;
     min-width: 285px;
-    left: 3%;
+    left: 11%;
     top: max(252px, 42%);
 }
 

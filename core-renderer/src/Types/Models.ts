@@ -192,3 +192,15 @@ export interface CSVHeaderPropertyMapperModel
     property: ImportableDisplayField;
     csvHeader: string | undefined;
 }
+
+export interface TreeNodeModel
+{
+    id: number;
+    text: string;
+    depth: number;
+    icon?: string;
+    selected: ComputedRef<boolean>;
+    isParent: boolean;
+    display: boolean;
+    onClick: () => void;
+}

@@ -1,0 +1,188 @@
+<template>
+    <div class="sideDrawer">
+        <div class="sideDrawer__onlineStatusContainer">
+            <div class="sideDrawer__onlineStatusIcon" :class="{ online: online }">
+            </div>
+            <Transition name="fade" mode="out-in">
+                <div class="sideDrawer__onlineStatusText" :key="refreshKey">
+                    {{ text }}
+                </div>
+            </Transition>
+        </div>
+        <div class="sideDrawer__currentUser">
+            <div class="sideDrawer__currentUserIcon">
+                <PersonOutlineIcon />
+            </div>
+            <div class="sideDrawer__currentUserName">Tyler Wanta</div>
+        </div>
+        <div class="sideDrawer__vaultList">
+            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
+        </div>
+    </div>
+</template>
+
+<script lang="ts">
+import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
+
+import TreeList from "./Tree/TreeList.vue";
+import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
+
+import app from "../Objects/Stores/AppStore";
+import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
+import { Dictionary } from "../Types/DataStructures";
+
+export default defineComponent({
+    name: "SideDrawer",
+    components: {
+        TreeList,
+        PersonOutlineIcon
+    },
+    setup()
+    {
+        const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+
+        const online: Ref<boolean> = ref(app.isOnline);
+        const text: Ref<string> = ref(online.value ? "Online" : "Offline");
+        let refreshKey: Ref<string> = ref('');
+
+        const manager = new TreeNodeListManager();
+
+        const myVaultsID = manager.addRoot("My Vaults", true, true, "FolderIcon");
+        const privateVaultsID = manager.addChild(myVaultsID, "Private", true, true, true, "PersonOutlineIcon");
+        const sharedWithOthersID = manager.addChild(myVaultsID, "Shared", false, true, true, "CloudExportIcon");
+
+        const otherVaultsID = manager.addRoot("Other", false, false, "FolderIcon");
+        const sharedWithMeID = manager.addChild(otherVaultsID, "Shared", false, false, true, "CloudImportIcon")
+        const archivedVaultsID = manager.addChild(otherVaultsID, "Archived", false, false, true, "ArchivedIcon");
+
+        const allNodes: Ref<TreeNodeMember[]> = ref(manager.buildList());
+
+        function openCreateVaultPopup()
+        {
+            app.popups.showVaultPopup((_) => { });
+        }
+
+        async function onLeafClicked(data: Dictionary<any>): Promise<boolean>
+        {
+            return new Promise((resolve) => 
+            {
+                app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => resolve(false));
+
+                async function onKeySuccess(key: string)
+                {
+                    if (!(await app.setActiveVault(key, data['userVaultID'])))
+                    {
+                        app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
+                        resolve(false);
+
+                        return;
+                    }
+
+                    resolve(true);
+                }
+            });
+        }
+
+        watch(() => app.userVaults.value, (newValue, oldValue) => 
+        {
+            const addedVault = newValue.filter(v => !oldValue.find(o => o.userVaultID == v.userVaultID));
+            const removedVault = oldValue.filter(o => !newValue.find(v => v.userVaultID == o.userVaultID));
+
+            addedVault.forEach(v => 
+            {
+                manager.addChild(privateVaultsID, v.name, v.userVaultID == app.currentVault.userVaultID,
+                    true, false, undefined, { userVaultID: v.userVaultID });
+            });
+
+            // TOOD: handle deletes
+
+            allNodes.value = manager.buildList();
+        });
+
+        watch(() => app.isOnline, (newValue) =>
+        {
+            online.value = newValue;
+            text.value = newValue ? "Online" : "Offline";
+            refreshKey.value = Date.now().toString();
+        });
+
+        return {
+            primaryColor,
+            allNodes,
+            refreshKey,
+            online,
+            text,
+            openCreateVaultPopup,
+            onLeafClicked
+        };
+    }
+})
+</script>
+<style>
+.sideDrawer {
+    width: 9%;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    border-right: 1px solid #2d303f;
+}
+
+.sideDrawer__onlineStatusContainer {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    column-gap: 5px;
+    height: 43px;
+    position: relative;
+    width: 42%;
+    border-radius: 10px;
+    background-color: var(--widget-background-color);
+    padding-left: 10px;
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.sideDrawer__onlineStatusIcon {
+    height: 30%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background-color: red;
+    transition: 0.3s;
+}
+
+.sideDrawer__onlineStatusIcon.online {
+    background-color: #52e052;
+}
+
+.sideDrawer__onlineStatusText {
+    color: white;
+    font-size: clamp(7px, 1vw, 18px);
+}
+
+.sideDrawer__currentUser {
+    background-color: var(--widget-background-color);
+    width: 90%;
+    margin-left: 10px;
+    border-radius: 10px;
+    color: white;
+    display: flex;
+    height: 50px;
+    align-items: center;
+    column-gap: 10px;
+    margin-top: 20px;
+}
+
+.sideDrawer__currentUserIcon {
+    margin-left: 10px;
+    font-size: 30px;
+}
+
+.sideDrawer__vaultList {
+    margin-top: 50px;
+}
+</style>

@@ -184,8 +184,8 @@ export default defineComponent({
     position: absolute;
     padding-top: 0.7vw;
     top: max(12px, 4%);
-    left: max(325px, 31%);
-    width: 25%;
+    left: max(325px, 38%);
+    width: 23%;
     height: 24.5%;
     min-width: 280px;
     min-height: 190px;

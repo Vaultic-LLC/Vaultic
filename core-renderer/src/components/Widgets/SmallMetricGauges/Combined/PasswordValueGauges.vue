@@ -170,9 +170,9 @@ export default defineComponent({
 <style>
 .passwordValueGaugesWidget {
     position: absolute;
-    left: 81%;
+    left: 83%;
     top: 4%;
-    width: 17%;
+    width: 16%;
     height: 30%;
 }
 

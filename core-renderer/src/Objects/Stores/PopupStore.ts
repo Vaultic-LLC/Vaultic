@@ -7,8 +7,17 @@ import app from "./AppStore";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
-type PopupName = "loading" | "alert" | "devicePopup" | "incorrectDevice" | "globalAuth" | "requestAuth" | "accountSetup" |
-    "breachedPasswords" | "toast" | "importSelection" | "defaultObjectPopup";
+type PopupName = "loading" |
+    "alert" |
+    "devicePopup" |
+    "incorrectDevice" |
+    "globalAuth" |
+    "requestAuth" |
+    "accountSetup" |
+    "breachedPasswords" |
+    "toast" |
+    "importSelection" |
+    "defaultObjectPopup";
 
 interface PopupInfo
 {
@@ -82,6 +91,9 @@ export function createPopupStore()
     const importProperties: Ref<ImportableDisplayField[]> = ref([]);
     const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: Dictionary<ImportableDisplayField[]>) => Promise<void>> =
         ref(async (_, __) => { });
+
+    const vaultPopupIsShowing: Ref<boolean> = ref(false);
+    const onVaultPopupClose: Ref<(saved: boolean) => void> = ref((_) => { });
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -295,6 +307,17 @@ export function createPopupStore()
         importPopupIsShowing.value = false;
     }
 
+    function showVaultPopup(onClose: (saved: boolean) => void)
+    {
+        onVaultPopupClose.value = (saved: boolean) => 
+        {
+            vaultPopupIsShowing.value = false;
+            onClose(saved);
+        };
+
+        vaultPopupIsShowing.value = true;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -330,6 +353,8 @@ export function createPopupStore()
         get csvImportHeaders() { return csvImportHeaders.value; },
         get importProperties() { return importProperties.value; },
         get onImportConfirmed() { return onImportConfirmed.value; },
+        get vaultPopupIsShowing() { return vaultPopupIsShowing.value; },
+        get onVaultPopupClose() { return onVaultPopupClose.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -354,6 +379,7 @@ export function createPopupStore()
         showBreachedPasswordPopup,
         hideBreachedPasswordPopup,
         showImportPopup,
-        hideImportPopup
+        hideImportPopup,
+        showVaultPopup
     }
 }

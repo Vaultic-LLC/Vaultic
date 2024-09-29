@@ -37,7 +37,8 @@ export interface UserVaultRepository extends VaulticRepository<UserVault>
 export interface VaultRepository extends VaulticRepository<Vault>
 {
     createNewVault: (name: string, color?: string) => Promise<boolean | [UserVault, Vault]>;
-    getVault: (masterKey: string, userVaultID: number) => Promise<CondensedVaultData | null>;
+    createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<boolean | CondensedVaultData>;
+    setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
     saveAndBackup: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
 }
 
@@ -46,6 +47,7 @@ export interface DisplayVault
     name: string;
     userVaultID: number;
     color: string;
+    lastUsed: boolean;
 }
 
 export interface UserData 

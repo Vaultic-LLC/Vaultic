@@ -16,6 +16,7 @@ import { EntityState } from "../../Types/Properties";
 import { backupData } from ".";
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
+import { User } from "../Entities/User";
 
 class VaultRepository extends VaulticRepository<Vault>
 {
@@ -24,7 +25,50 @@ class VaultRepository extends VaulticRepository<Vault>
         return environment.databaseDataSouce.getRepository(Vault);
     }
 
-    public async createNewVault(name: string, color: string = '#FFFFFF'): Promise<boolean | [UserVault, Vault]>
+    public async setLastUsedVault(user: User, userVaultID: number)
+    {
+        const transaction = new Transaction();
+
+        const currentVaults: Vault[] = await this.repository.createQueryBuilder("vaults")
+            .leftJoinAndSelect("vaults.userVaults", "userVaults")
+            .where("userVaults.userID = :userID", { userID: user.userID })
+            .andWhere("vaults.lastUsed = :lastUsed", { lastUsed: true })
+            .getMany();
+
+        for (let i = 0; i < currentVaults.length; i++)
+        {
+            console.log(`updating vault: ${currentVaults[i].name} to lastUsed false`);
+            currentVaults[i].lastUsed = false;
+            transaction.updateEntity(currentVaults[i], "", () => this);
+        }
+
+        const newCurrentVault: Vault | null = await this.repository.createQueryBuilder("vaults")
+            .leftJoinAndSelect("vaults.userVaults", "userVaults")
+            .where("userVaults.userID = :userID", { userID: user.userID })
+            .andWhere("userVaults.userVaultID = :userVaultID", { userVaultID })
+            .getOne();
+
+        if (!newCurrentVault)
+        {
+            return false;
+        }
+
+        newCurrentVault.lastUsed = true;
+        transaction.updateEntity(newCurrentVault, "", () => this);
+
+        return await transaction.commit();
+    }
+
+    protected getLastUsedVault(user: User): Promise<Vault[] | null>
+    {
+        return this.repository.createQueryBuilder("vaults")
+            .leftJoin("vaults.userVaults", "userVaults")
+            .where("userVaults.userID = :userID", { userID: user.userID })
+            .andWhere("vaults.lastUsed = :lastUsed", { lastUsed: true })
+            .execute();
+    }
+
+    public async createNewVault(name: string, color: string = '#FFFFFF'): Promise<boolean | [UserVault, Vault, string]>
     {
         // TODO: what happens if we fail to re back these up after creating them? There will then be pointless records on the server
         // Create an initalized property on the userVault on server and default to false. Once it has been backed up once, set to true.
@@ -35,7 +79,7 @@ class VaultRepository extends VaulticRepository<Vault>
             return false;
         }
 
-        console.log(response);
+        const vaultKey = environment.utilities.generator.randomValue(60);
 
         const userVault = new UserVault().makeReactive();
         userVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
@@ -76,18 +120,109 @@ class VaultRepository extends VaulticRepository<Vault>
         vault.groupStoreState.groupStoreStateID = response.GroupStoreStateID!;
         vault.groupStoreState.state = "{}";
 
-        return [userVault, vault];
+        return [userVault, vault, vaultKey];
     }
 
-    public async getVault(masterKey: string, userVaultID: number): Promise<CondensedVaultData | null>
+    public async createNewVaultForUser(masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean): Promise<boolean | CondensedVaultData>
     {
+        const currentUser = await environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return false;
+        }
+
+        const vaultData = await this.createNewVault(name);
+        if (!vaultData)
+        {
+            return false;
+        }
+
+        const userVault: UserVault = vaultData[0];
+        const vault: Vault = vaultData[1];
+        const vaultKey: string = vaultData[2];
+
+        const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(currentUser.publicKey, vaultKey);
+        if (!encryptedVaultKey.success)
+        {
+            return false;
+        }
+
+        userVault.userID = currentUser.userID;
+        userVault.user = currentUser;
+        userVault.vaultKey = JSON.stringify({
+            vaultKey: encryptedVaultKey.value!,
+            publicKey: encryptedVaultKey.publicKey
+        });
+
+        const transaction = new Transaction();
+
+        if (setAsActive)
+        {
+            vault.lastUsed = true;
+            const lastUsedVaults = await this.getLastUsedVault(currentUser);
+            if (lastUsedVaults?.length == 1)
+            {
+                const reactiveLastUsedVault = lastUsedVaults[0].makeReactive();
+                reactiveLastUsedVault.lastUsed = false;
+
+                transaction.updateEntity(reactiveLastUsedVault, "", () => this);
+            }
+        }
+
+        // Order matters here
+        transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
+        transaction.insertEntity(vault.vaultStoreState, vaultKey, () => environment.repositories.vaultStoreStates);
+        transaction.insertEntity(vault.passwordStoreState, vaultKey, () => environment.repositories.passwordStoreStates);
+        transaction.insertEntity(vault.valueStoreState, vaultKey, () => environment.repositories.valueStoreStates);
+        transaction.insertEntity(vault.filterStoreState, vaultKey, () => environment.repositories.filterStoreStates);
+        transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
+
+        transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
+        transaction.insertEntity(userVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
+
+        if (!(await transaction.commit()))
+        {
+            return false;
+        }
+
+        if (doBackupData)
+        {
+            const backupResponse = await backupData(masterKey);
+            if (!backupResponse)
+            {
+                return false;
+            }
+        }
+
+        const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, userVault.userVaultID);
+        if (!uvData || uvData.length == 0)
+        {
+            return false;
+        }
+
+        return uvData[0];
+    }
+
+    public async setActiveVault(masterKey: string, userVaultID: number): Promise<boolean | CondensedVaultData>
+    {
+        const currentUser = await environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return false;
+        }
+
         const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, userVaultID);
         if (userVaults && userVaults.length == 1)
         {
+            if (!(await this.setLastUsedVault(currentUser, userVaultID)))
+            {
+                return false;
+            }
+
             return userVaults[0]
         }
 
-        return null;
+        return false;
     }
 
     public async saveAndBackup(masterKey: string, userVaultID: number, data: string, backup: boolean)
@@ -194,7 +329,6 @@ class VaultRepository extends VaulticRepository<Vault>
             const vaultBackup = {};
             const vault = userVaultsWithVaultsToBackup[0][i].vault;
 
-            console.log(`Vault: ${JSON.stringify(vault)}`);
             if (vault.propertiesToSync.length > 0)
             {
                 Object.assign(vaultBackup, vault.getBackup());

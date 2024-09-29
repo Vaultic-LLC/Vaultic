@@ -97,8 +97,9 @@ const userRepository: UserRepository =
 
 const vaultRepository: VaultRepository =
 {
-	getVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:getVault', masterKey, userVaultID),
-	saveAndBackup: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => ipcRenderer.invoke('vaultRepository:saveAndBackup', masterKey, userVaultID, data, skipBackup)
+	setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
+	saveAndBackup: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => ipcRenderer.invoke('vaultRepository:saveAndBackup', masterKey, userVaultID, data, skipBackup),
+	createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, setAsActive, doBackup)
 };
 
 const userVaultRepository: UserVaultRepository =

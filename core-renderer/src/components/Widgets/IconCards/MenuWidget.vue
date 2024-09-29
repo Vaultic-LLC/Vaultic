@@ -33,8 +33,8 @@ export default defineComponent({
 .menuWidgetContainer {
     position: absolute;
     top: max(534px, 89%);
-    left: 3%;
-    width: 25%;
+    left: 11%;
+    width: 24%;
     min-width: 285px;
     height: 8%;
     background: var(--widget-background-color);

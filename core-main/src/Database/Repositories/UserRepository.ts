@@ -24,6 +24,7 @@ class UserRepository extends VaulticRepository<User>
         return environment.databaseDataSouce.getRepository(User);
     }
 
+    // TODO: this should verify the user as well
     public async getCurrentUser()
     {
         if (!currentUserID)
@@ -71,7 +72,6 @@ class UserRepository extends VaulticRepository<User>
             return JSON.stringify(response);
         }
 
-        const vaultKey = environment.utilities.generator.randomValue(60);
         const keys = await environment.utilities.generator.ECKeys();
 
         const salt = environment.utilities.generator.randomValue(40);
@@ -99,12 +99,6 @@ class UserRepository extends VaulticRepository<User>
         userPreferencesStoreState.state = "{}"
         user.userPreferencesStoreState = userPreferencesStoreState;
 
-        const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(keys.public, vaultKey);
-        if (!encryptedVaultKey.success)
-        {
-            return "no encrypted vault key";
-        }
-
         const vaults = await environment.repositories.vaults.createNewVault("Personal", "#FFFFFF");
         if (!vaults)
         {
@@ -113,6 +107,15 @@ class UserRepository extends VaulticRepository<User>
 
         const userVault: UserVault = vaults[0];
         const vault: Vault = vaults[1];
+        const vaultKey: string = vaults[2];
+
+        const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(keys.public, vaultKey);
+        if (!encryptedVaultKey.success)
+        {
+            return "no encrypted vault key";
+        }
+
+        vault.lastUsed = true;
 
         userVault.userID = user.userID;
         userVault.user = user;
@@ -267,41 +270,48 @@ class UserRepository extends VaulticRepository<User>
         {
             if (userVaults[i].lastUsed)
             {
-                if (!(await setCurrentVault(userVaults[i].userVaultID)))
+                if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
                 {
                     return "issue";
                 }
             }
-            else 
-            {
-                userData.displayVaults!.push({
-                    userVaultID: userVaults[i].userVaultID,
-                    color: userVaults[i].color,
-                    name: userVaults[i].name
-                });
-            }
+
+            userData.displayVaults!.push({
+                userVaultID: userVaults[i].userVaultID,
+                color: userVaults[i].color,
+                name: userVaults[i].name,
+                lastUsed: userVaults[i].lastUsed
+            });
         }
 
         if (!userData.currentVault)
         {
-            if (!(await setCurrentVault(userData.displayVaults![0].userVaultID)))
+            if (!(await setCurrentVault(userData.displayVaults![0].userVaultID, true)))
             {
                 // TODO: return something the client can parse
                 return "issue";
             }
 
-            userData.displayVaults!.splice(0, 1);
+            userData.displayVaults![0].lastUsed = true;
         }
 
         userData.success = true;
         return JSON.stringify(userData);
 
-        async function setCurrentVault(id: number)
+        async function setCurrentVault(id: number, setAsLastUsed: boolean)
         {
             const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, id);
             if (!userVault || userVault.length == 0)
             {
                 return false;
+            }
+
+            if (setAsLastUsed)
+            {
+                if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!, userVault[0].userVaultID)))
+                {
+                    return false;
+                }
             }
 
             userData.currentVault = userVault[0];

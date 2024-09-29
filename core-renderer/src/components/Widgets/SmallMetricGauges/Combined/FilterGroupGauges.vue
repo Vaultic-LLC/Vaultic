@@ -50,9 +50,9 @@ export default defineComponent({
 <style>
 .filterGroupGaugesWidget {
     position: absolute;
-    left: 81%;
+    left: 83%;
     top: 45%;
-    width: 17%;
+    width: 16%;
 }
 
 @media (max-width: 1450px) {

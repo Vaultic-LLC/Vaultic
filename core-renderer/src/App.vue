@@ -1,7 +1,7 @@
 <template>
-    <StatusBar />
     <Popups />
     <div id="mainUI" class="mainUI">
+        <SideDrawer />
         <div class="center">
             <ColorPaletteContainer />
             <Transition name="fade">
@@ -43,8 +43,8 @@ import LockIconCard from "./components/Widgets/IconCards/LockIconCard.vue"
 import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
-import StatusBar from './components/StatusBar.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
+import SideDrawer from "./components/SideDrawer.vue"
 
 import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
@@ -55,7 +55,6 @@ export default defineComponent({
     name: 'App',
     components:
     {
-        StatusBar,
         Popups,
         TableSelector,
         FilterGroupTable,
@@ -70,7 +69,8 @@ export default defineComponent({
         LockIconCard,
         AboutIconCard,
         LayoutIconCard,
-        MenuWidget
+        MenuWidget,
+        SideDrawer
     },
     setup()
     {
@@ -172,8 +172,8 @@ h2 {
 
 .secureProgressChartWidget {
     top: 4%;
-    left: 58%;
-    width: 21%;
+    left: 62%;
+    width: 19%;
     height: 24.7%;
     min-height: 190px;
     min-width: 250px;
@@ -181,8 +181,8 @@ h2 {
 
 .loginHistoryCalendarWidget {
     top: 70.5%;
-    left: 81%;
-    width: 17%;
+    left: 83%;
+    width: 16%;
     min-width: 240px;
     min-height: 140px;
 }

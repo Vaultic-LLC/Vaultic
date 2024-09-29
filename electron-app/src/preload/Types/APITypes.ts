@@ -132,8 +132,9 @@ export interface UserRepository
 
 export interface VaultRepository
 {
-	getVault: (masterKey: string, vaultID: number) => Promise<CondensedVaultData | null>;
+	setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
 	saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
+	createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<boolean | CondensedVaultData>;
 }
 
 export interface UserVaultRepository
