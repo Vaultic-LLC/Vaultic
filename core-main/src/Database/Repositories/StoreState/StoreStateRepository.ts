@@ -25,20 +25,8 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         }
 
         entity.state = state;
-
-        if (encrypt)
-        {
-            const response = await environment.utilities.crypt.encrypt(key, state);
-            if (!response.success)
-            {
-                console.log('encryption failed');
-                return false;
-            }
-
-            entity.state = response.value!;
-        }
-
         transaction.updateEntity(entity, key, this.getVaulticRepository);
+
         return true;
     }
 }

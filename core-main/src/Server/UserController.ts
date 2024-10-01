@@ -67,6 +67,8 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
             postData.userDataPayload["vaults"] = vaults;
         }
 
+        console.log(`Data to backup: ${JSON.stringify(postData)}`);
+        console.log('\n')
         const e2eEncryptedData = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, postData);
         if (!e2eEncryptedData.success)
         {

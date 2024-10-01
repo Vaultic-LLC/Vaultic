@@ -1,7 +1,7 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField :label="'Name'" v-model="vaultName" class="vaultView__nameInput" :color="color" />
+        <TextInputField :label="'Name'" v-model="vaultState.name" class="vaultView__nameInput" :color="color" />
     </ObjectView>
 </template>
 <script lang="ts">
@@ -23,11 +23,10 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        console.log(props.creating);
         const refreshKey: Ref<string> = ref("");
-        const vaultState: Ref<DisplayVault> = ref(props.model);
+        const vaultState: Ref<DisplayVault> = ref(props.model ?? { name: '' });
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
-
-        const vaultName: Ref<string> = ref('');
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -55,10 +54,11 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Vault");
             if (props.creating)
             {
-                handleSaveResponse((await app.createNewVault(key, vaultName.value, true)))
+                handleSaveResponse((await app.createNewVault(key, vaultState.value.name, true)));
             }
             else
             {
+                handleSaveResponse((await app.updateVault(key, vaultState.value)));
             }
         }
 
@@ -87,7 +87,7 @@ export default defineComponent({
         }
 
         return {
-            vaultName,
+            vaultState,
             color,
             refreshKey,
             gridDefinition,

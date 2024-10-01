@@ -43,6 +43,7 @@ export class AppStoreState extends StoreState
     {
         const properties = super.neededBackupProperties();
         properties.push(nameof<AppStoreState>("appStoreStateID"));
+        properties.push(nameof<AppStoreState>("userID"));
 
         return properties;
     }

@@ -16,7 +16,8 @@
             <div class="sideDrawer__currentUserName">Tyler Wanta</div>
         </div>
         <div class="sideDrawer__vaultList">
-            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
+            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked"
+                :onLeafEdit="onLeafEdit" :onLeafDelete="onLeafDelete" />
         </div>
     </div>
 </template>
@@ -83,6 +84,23 @@ export default defineComponent({
             });
         }
 
+        async function onLeafEdit(data: Dictionary<any>)
+        {
+            const dispalyVault = app.userVaults.value.filter(uv => uv.userVaultID == data['userVaultID']);
+            if (dispalyVault.length != 1)
+            {
+                // TODO: error
+                return;
+            }
+
+            app.popups.showVaultPopup(() => { }, dispalyVault[0]);
+        }
+
+        async function onLeafDelete(data: Dictionary<any>)
+        {
+
+        }
+
         watch(() => app.userVaults.value, (newValue, oldValue) => 
         {
             const addedVault = newValue.filter(v => !oldValue.find(o => o.userVaultID == v.userVaultID));
@@ -113,7 +131,9 @@ export default defineComponent({
             online,
             text,
             openCreateVaultPopup,
-            onLeafClicked
+            onLeafClicked,
+            onLeafEdit,
+            onLeafDelete
         };
     }
 })

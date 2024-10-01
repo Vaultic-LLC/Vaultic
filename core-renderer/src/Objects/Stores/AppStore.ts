@@ -227,6 +227,24 @@ export class AppStore extends Store<AppStoreState>
         return true;
     }
 
+    async updateVault(masterKey: string, displayVault: DisplayVault): Promise<boolean>
+    {
+        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID, JSON.stringify(displayVault), this.isOnline);
+        if (!success)
+        {
+            return false;
+        }
+
+        const index = this.userVaults.value.findIndex(uv => uv.userVaultID == displayVault.userVaultID);
+        if (index == -1)
+        {
+            return false;
+        }
+
+        this.userVaults[index] = displayVault;
+        return true;
+    }
+
     async setActiveVault(masterKey: string, userVaultID: number): Promise<boolean>
     {
         // TODO: needs to set last used on the vault as well

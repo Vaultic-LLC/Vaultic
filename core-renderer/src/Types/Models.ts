@@ -203,4 +203,6 @@ export interface TreeNodeModel
     isParent: boolean;
     display: boolean;
     onClick: () => void;
+    onEdit: () => void;
+    onDelete: () => void;
 }

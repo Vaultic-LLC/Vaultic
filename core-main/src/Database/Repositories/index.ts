@@ -171,6 +171,7 @@ export async function backupData(masterKey: string)
     if (!backupResponse.Success)
     {
         console.log(`backup failed: ${JSON.stringify(backupResponse)}`);
+        console.log('\n')
         // TODO: merge objects returned from response and keep trying
     }
     else

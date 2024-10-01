@@ -65,9 +65,17 @@ export class VaulticRepository<T extends VaulticEntity>
         return saveableEntity;
     }
 
+    private encryptUpdatedProperties(key: string, entity: T): Promise<boolean>
+    {
+        const encryptableProperties = entity.getEncryptableProperties()
+        const propertiesToEncrypt = entity.updatedProperties.filter(p => encryptableProperties.includes(p));
+
+        return entity.encryptAndSetEach(key, propertiesToEncrypt);
+    }
+
     public async signAndInsert(manager: EntityManager, key: string, entity: T): Promise<boolean>
     {
-        if (!(await entity.lock(key)))
+        if (!(await this.encryptUpdatedProperties(key, entity)))
         {
             return false;
         }
@@ -122,6 +130,11 @@ export class VaulticRepository<T extends VaulticEntity>
             return true;
         }
 
+        if (!(await this.encryptUpdatedProperties(key, entity)))
+        {
+            return false;
+        }
+
         if (!(await this.checkAndSign(key, entity)))
         {
             return false;
@@ -131,12 +144,14 @@ export class VaulticRepository<T extends VaulticEntity>
 
         // the entity hasn't been synced to the server yet so keeping it 
         // as inserted makes it easier to merge in case there are conflicts
+        // TODO: only need to do this if we are upating a property that will be 
+        // backed up to the server
         if (entity.entityState != EntityState.Inserted)
         {
             entity.entityState = EntityState.Updated;
         }
 
-        const mockEntity = {}
+        const mockEntity = {};
         mockEntity[nameof<VaulticEntity>("serializedPropertiesToSync")] = entity.serializedPropertiesToSync;
 
         for (let i = 0; i < entity.updatedProperties.length; i++)

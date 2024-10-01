@@ -17,6 +17,8 @@ const VaulticHandler = {
         }
 
         // don't want to include objects in this
+        // TODO: should only include backupable properties? Don't need
+        // to include properties that won't be backed up.
         if (typeof newValue == 'string' && !obj.propertiesToSync.includes(prop))
         {
             obj.propertiesToSync.push(prop);
@@ -107,6 +109,11 @@ export class VaulticEntity implements ObjectLiteral
     }
 
     protected getUserUpdatableProperties(): string[]
+    {
+        return [];
+    }
+
+    public getEncryptableProperties(): string[]
     {
         return [];
     }
@@ -366,11 +373,6 @@ export class VaulticEntity implements ObjectLiteral
 
         runningObject = runningObject.makeReactive();
         return [true, runningObject];
-    }
-
-    async lock(key: string): Promise<boolean>
-    {
-        return false;
     }
 
     public preInsert()

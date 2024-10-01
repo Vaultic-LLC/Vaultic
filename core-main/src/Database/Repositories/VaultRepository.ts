@@ -37,8 +37,8 @@ class VaultRepository extends VaulticRepository<Vault>
 
         for (let i = 0; i < currentVaults.length; i++)
         {
-            console.log(`updating vault: ${currentVaults[i].name} to lastUsed false`);
-            currentVaults[i].lastUsed = false;
+            const reactiveCurrentUserVault = currentVaults[i].makeReactive();
+            reactiveCurrentUserVault.lastUsed = false;
             transaction.updateEntity(currentVaults[i], "", () => this);
         }
 
@@ -53,8 +53,9 @@ class VaultRepository extends VaulticRepository<Vault>
             return false;
         }
 
-        newCurrentVault.lastUsed = true;
-        transaction.updateEntity(newCurrentVault, "", () => this);
+        const rectiveNewCurrentVault = newCurrentVault.makeReactive();
+        rectiveNewCurrentVault.lastUsed = true;
+        transaction.updateEntity(rectiveNewCurrentVault, "", () => this);
 
         return await transaction.commit();
     }
@@ -225,7 +226,7 @@ class VaultRepository extends VaulticRepository<Vault>
         return false;
     }
 
-    public async saveAndBackup(masterKey: string, userVaultID: number, data: string, backup: boolean)
+    public async saveVault(masterKey: string, userVaultID: number, data: string, backup: boolean)
     {
         const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, userVaultID);
         if (userVaults[0].length == 0)
@@ -233,11 +234,17 @@ class VaultRepository extends VaulticRepository<Vault>
             return false;
         }
 
-        const oldVault = userVaults[0][0].vault;
+        const oldVault = userVaults[0][0].vault.makeReactive();
         const vaultKey = userVaults[1][0];
 
         const newVault: CondensedVaultData = JSON.parse(data);
         const transaction = new Transaction();
+
+        if (newVault.name)
+        {
+            oldVault.name = newVault.name;
+            transaction.updateEntity(oldVault, vaultKey, () => this);
+        }
 
         if (newVault.vaultStoreState)
         {

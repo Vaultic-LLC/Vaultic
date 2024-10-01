@@ -74,12 +74,12 @@ export class Vault extends VaulticEntity
         ]
     }
 
-    async lock(key: string): Promise<boolean>
+    getEncryptableProperties(): string[]
     {
-        return this.encryptAndSetEach(key, [
+        return [
             nameof<Vault>("name"),
             nameof<Vault>("color")
-        ]);
+        ];
     }
 
     protected getUserUpdatableProperties(): string[] 
@@ -95,7 +95,7 @@ export class Vault extends VaulticEntity
         ]
     }
 
-    public static getDecrypableProperties()
+    public static getDecryptableProperties()
     {
         return [
             nameof<Vault>("name"),

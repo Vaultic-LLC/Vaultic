@@ -41,7 +41,7 @@ export default defineComponent({
         TreeNode,
         VaulticButton
     },
-    props: ['nodes', 'onLeafClicked'],
+    props: ['nodes', 'onLeafClicked', 'onLeafEdit', 'onLeafDelete'],
     emits: ['onAdd'],
     setup(props)
     {
@@ -54,7 +54,7 @@ export default defineComponent({
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-        const selectedLeafNode: Ref<number> = ref(-1);
+        const selectedLeafNode: Ref<TreeNodeMember | undefined> = ref(treeNodes.value.filter(n => !n.isParent && n.selected)?.[0]);
 
         function buildTreeNodeModels(nodes: TreeNodeMember[]): TreeNodeModel[]
         {
@@ -67,7 +67,7 @@ export default defineComponent({
                     text: n.text,
                     depth: n.depth,
                     icon: n.icon,
-                    selected: computed(() => n.id == selectedLeafNode.value),
+                    selected: computed(() => (n.isParent && n.selected) || (!n.isParent && n.id == selectedLeafNode.value?.id)),
                     isParent: n.isParent,
                     display: n.depth == 0 ||
                         (n.parent?.depth == 0 && n.parent?.selected == true) ||
@@ -99,11 +99,24 @@ export default defineComponent({
                             if (await props.onLeafClicked(n.data))
                             {
                                 n.selected = true;
-                                selectedLeafNode.value = n.id;
+                                if (selectedLeafNode.value)
+                                {
+                                    selectedLeafNode.value.selected = false;
+                                }
+
+                                selectedLeafNode.value = n;
                             }
                         }
 
                         models.value = buildTreeNodeModels(currentTreeNodes.value);
+                    },
+                    onEdit: () => 
+                    {
+                        props.onLeafEdit(n.data);
+                    },
+                    onDelete: () => 
+                    {
+                        props.onLeafDelete(n.data)
                     }
                 }
 
@@ -157,6 +170,13 @@ export default defineComponent({
         {
             currentTreeNodes.value = treeNodes.value;
             models.value = buildTreeNodeModels(currentTreeNodes.value);
+
+            if (selectedLeafNode.value)
+            {
+                selectedLeafNode.value.selected = false;
+            }
+
+            selectedLeafNode.value = treeNodes.value.filter(n => !n.isParent && n.selected)?.[0]
         });
 
         watch(() => searchText.value.value, (newValue) => 

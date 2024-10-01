@@ -4,6 +4,7 @@ import { Ref, ref } from "vue";
 import { ImportableDisplayField } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
 import app from "./AppStore";
+import { DisplayVault } from "../../Types/APITypes";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -94,6 +95,7 @@ export function createPopupStore()
 
     const vaultPopupIsShowing: Ref<boolean> = ref(false);
     const onVaultPopupClose: Ref<(saved: boolean) => void> = ref((_) => { });
+    const vaultModel: Ref<DisplayVault | undefined> = ref(undefined);
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -307,8 +309,9 @@ export function createPopupStore()
         importPopupIsShowing.value = false;
     }
 
-    function showVaultPopup(onClose: (saved: boolean) => void)
+    function showVaultPopup(onClose: (saved: boolean) => void, model?: DisplayVault)
     {
+        vaultModel.value = model;
         onVaultPopupClose.value = (saved: boolean) => 
         {
             vaultPopupIsShowing.value = false;
@@ -354,6 +357,7 @@ export function createPopupStore()
         get importProperties() { return importProperties.value; },
         get onImportConfirmed() { return onImportConfirmed.value; },
         get vaultPopupIsShowing() { return vaultPopupIsShowing.value; },
+        get vaultModel() { return vaultModel.value },
         get onVaultPopupClose() { return onVaultPopupClose.value; },
         addOnEnterHandler,
         removeOnEnterHandler,

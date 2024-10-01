@@ -80,13 +80,13 @@ export class User extends VaulticEntity
         ]
     }
 
-    async lock(key: string): Promise<boolean>
+    getEncryptableProperties(): string[]
     {
-        return this.encryptAndSetEach(key, [
+        return [
             nameof<User>("masterKeyHash"),
             nameof<User>("masterKeySalt"),
             nameof<User>("privateKey")
-        ]);
+        ];
     }
 
     protected getUserUpdatableProperties(): string[] 

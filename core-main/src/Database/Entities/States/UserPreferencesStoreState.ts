@@ -24,9 +24,9 @@ export class UserPreferencesStoreState extends StoreState
     }
 
     // userPreferences isn't encrypted
-    async lock(key: string): Promise<boolean> 
+    getEncryptableProperties(): string[]
     {
-        return true;
+        return [];
     }
 
     protected createNew(): UserPreferencesStoreState 
@@ -49,6 +49,7 @@ export class UserPreferencesStoreState extends StoreState
     {
         const properties = super.neededBackupProperties();
         properties.push(nameof<UserPreferencesStoreState>("userPreferencesStoreStateID"));
+        properties.push(nameof<UserPreferencesStoreState>("userID"));
 
         return properties;
     }

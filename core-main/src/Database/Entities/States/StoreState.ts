@@ -30,9 +30,9 @@ export class StoreState extends VaulticEntity
         ]
     }
 
-    async lock(key: string): Promise<boolean>
+    getEncryptableProperties(): string[]
     {
-        return this.encryptAndSetEach(key, [nameof<StoreState>("state")]);
+        return [nameof<StoreState>("state")];
     }
 
     protected getUserUpdatableProperties(): string[] 

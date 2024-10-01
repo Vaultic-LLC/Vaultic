@@ -127,7 +127,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
 
         const condensedDecryptedUserVaults: CondensedVaultData[] = [];
-        const decryptableProperties = propertiesToDecrypt ?? Vault.getDecrypableProperties();
+        const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
 
         for (let i = 0; i < userVaults[0].length; i++)
         {

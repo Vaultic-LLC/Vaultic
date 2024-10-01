@@ -1,5 +1,5 @@
 <template>
-    <div class="treeNode" @click="onClick">
+    <div class="treeNode" @click="onClick" @mouseenter="hovering = true" @mouseleave="hovering = false">
         <div class="treeNode__parentRow">
             <ion-icon class="treeNode__arrowIcon" v-if="treeNodeModel.isParent"
                 :class="{ selected: treeNodeModel.selected }" name="chevron-forward-outline"></ion-icon>
@@ -9,12 +9,26 @@
                     :borderWidth="'0.06vw'" />
             </div>
             <div class="treeNode__text">{{ treeNodeModel.text }}</div>
+            <Transition name="fade" mode="out-in">
+                <div class="treeNode__buttons" v-if="!treeNodeModel.isParent && hovering">
+                    <div class="treeNode__editButton" @click="onEdit">
+                        <VaulticIcon :fontSize="'21px'">
+                            <ion-icon name="create-outline"></ion-icon>
+                        </VaulticIcon>
+                    </div>
+                    <div class="treeNode__deleteButton" @click="onDelete">
+                        <VaulticIcon :fontSize="'21px'">
+                            <ion-icon name="trash-outline"></ion-icon>
+                        </VaulticIcon>
+                    </div>
+                </div>
+            </Transition>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
 
 import SelectorButton from "../InputFields/SelectorButton.vue";
 import CloudExportIcon from "../Icons/CloudExportIcon.vue";
@@ -22,6 +36,7 @@ import ArchivedIcon from "../Icons/ArchivedIcon.vue";
 import CloudImportIcon from "../Icons/CloudImportIcon.vue";
 import FolderIcon from "../Icons/FolderIcon.vue";
 import PersonOutlineIcon from "../Icons/PersonOutlineIcon.vue";
+import VaulticIcon from "../Icons/VaulticIcon.vue"
 
 import { SelectorButtonModel, TreeNodeModel } from "../../Types/Models";
 
@@ -33,15 +48,17 @@ export default defineComponent({
         ArchivedIcon,
         CloudImportIcon,
         FolderIcon,
-        PersonOutlineIcon
+        PersonOutlineIcon,
+        VaulticIcon
     },
     props: ['model', 'color'],
     setup(props)
     {
         const treeNodeModel: ComputedRef<TreeNodeModel> = computed(() => props.model);
-        const marginLeft: ComputedRef<string> = computed(() => `${treeNodeModel.value.depth * 5}%`)
+        const marginLeft: ComputedRef<string> = computed(() => `${treeNodeModel.value.depth * 5}%`);
+        const hovering: Ref<boolean> = ref(false);
 
-        const isActive = ref(treeNodeModel.value.selected.value)
+        const isActive = ref(treeNodeModel.value.selected ?? false);
         const selectorButtonModel: ComputedRef<SelectorButtonModel> = computed(() =>
         {
             return {
@@ -51,21 +68,38 @@ export default defineComponent({
             }
         });
 
-        watch(() => treeNodeModel.value.selected.value, (newValue) => 
+        watch(() => treeNodeModel.value.selected, (newValue) => 
         {
-            isActive.value = newValue;
-        })
+            // this is getting unwrapped somewhere by vue. NewValue is a boolean, not a computed anymore
+            if (typeof newValue == 'boolean')
+            {
+                isActive.value = newValue;
+            }
+        });
 
         function onClick() 
         {
             treeNodeModel.value.onClick();
         }
 
+        function onEdit()
+        {
+            treeNodeModel.value.onEdit();
+        }
+
+        function onDelete()
+        {
+            treeNodeModel.value.onDelete();
+        }
+
         return {
+            hovering,
             treeNodeModel,
             selectorButtonModel,
             marginLeft,
-            onClick
+            onClick,
+            onEdit,
+            onDelete
         };
     }
 })
@@ -99,5 +133,19 @@ export default defineComponent({
 
 .treeNode__arrowIcon.selected {
     transform: rotate(90deg);
+}
+
+.treeNode__text {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: left;
+    flex-grow: 1;
+}
+
+.treeNode__buttons {
+    display: flex;
+    column-gap: 5px;
+    margin-right: 5px;
 }
 </style>

@@ -67,7 +67,7 @@ export default function setupIPC()
 	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, data: string, backup: boolean) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, data, backup)));
 
 	ipcMain.handle('vaultRepository:setActiveVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.setActiveVault(masterKey, userVaultID)));
-	ipcMain.handle('vaultRepository:saveAndBackup', (e, masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => validateSender(e, () => environment.repositories.vaults.saveAndBackup(masterKey, userVaultID, data, skipBackup)));
+	ipcMain.handle('vaultRepository:saveVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.vaults.saveVault(masterKey, userVaultID, data, backup)));
 	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, name, setAsActive, doBackup)));
 
 	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data, backup)));

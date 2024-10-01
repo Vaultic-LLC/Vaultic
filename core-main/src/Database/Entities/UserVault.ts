@@ -65,9 +65,9 @@ export class UserVault extends VaulticEntity
         ]
     }
 
-    async lock(key: string): Promise<boolean>
+    getEncryptableProperties(): string[]
     {
-        return this.encryptAndSetEach(key, [nameof<UserVault>("vaultKey")]);
+        return [nameof<UserVault>("vaultKey")];
     }
 
     protected getUserUpdatableProperties(): string[] 

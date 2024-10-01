@@ -24,14 +24,14 @@ export interface UserRepository extends VaulticRepository<User>
     setCurrentUser: (masterKey: string, email: string) => Promise<boolean>;
     getCurrentUserData: (masterKey: string) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
-    saveUser: (masterKey: string, data: string) => Promise<boolean>;
+    saveUser: (masterKey: string, data: string, backup: boolean) => Promise<boolean>;
 }
 
 export interface UserVaultRepository extends VaulticRepository<UserVault>
 {
     getVerifiedUserVaults: (masterKey: string, userVaultID?: number) => Promise<[UserVault[], string[]]>;
     getVerifiedAndDecryt: (masterKey: string, propertiesToDecrypt?: string[], userVaultID?: number) => Promise<CondensedVaultData[] | null>;
-    saveUserVault: (masterKey: string, userVaultID: number, data: string) => Promise<boolean>;
+    saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => Promise<boolean>;
 }
 
 export interface VaultRepository extends VaulticRepository<Vault>
@@ -39,7 +39,7 @@ export interface VaultRepository extends VaulticRepository<Vault>
     createNewVault: (name: string, color?: string) => Promise<boolean | [UserVault, Vault]>;
     createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<boolean | CondensedVaultData>;
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
-    saveAndBackup: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
+    saveVault: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
 }
 
 export interface DisplayVault 

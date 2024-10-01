@@ -1,4 +1,5 @@
 import { api } from "../API";
+import app from "./Stores/AppStore";
 import { Store, StoreEvents } from "./Stores/Base";
 
 export enum Entity
@@ -41,7 +42,7 @@ export default class StoreUpdateTransaction
         });
     }
 
-    async commit(masterKey: string, skipBackup: boolean = false)
+    async commit(masterKey: string, backup: boolean = true)
     {
         const states = {};
         for (let i = 0; i < this.storeUpdateStates.length; i++)
@@ -53,13 +54,13 @@ export default class StoreUpdateTransaction
         switch (this.entity)
         {
             case Entity.User:
-                success = await api.repositories.users.saveUser(masterKey, JSON.stringify(states));
+                success = await api.repositories.users.saveUser(masterKey, JSON.stringify(states), backup);
                 break;
             case Entity.UserVault:
-                success = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states));
+                success = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
                 break;
             case Entity.Vault:
-                success = await api.repositories.vaults.saveAndBackup(masterKey, this.userVaultID!, JSON.stringify(states), !skipBackup);
+                success = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
                 break;
         }
 

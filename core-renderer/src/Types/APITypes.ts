@@ -205,19 +205,19 @@ export interface UserRepository
     setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
     getCurrentUserData: (masterKey: string) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
-    saveUser: (masterKey: string, data: string) => Promise<boolean>;
+    saveUser: (masterKey: string, data: string, backup: boolean) => Promise<boolean>;
 }
 
 export interface VaultRepository
 {
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
-    saveAndBackup: (masterKey: string, vaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
+    saveVault: (masterKey: string, userVaultID: number, data: string, doBackup: boolean) => Promise<boolean>;
     createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<boolean | CondensedVaultData>;
 }
 
 export interface UserVaultRepository
 {
-    saveUserVault: (masterKey: string, vaultID: number, data: string) => Promise<boolean>;
+    saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => Promise<boolean>;
 }
 
 export interface Repositories

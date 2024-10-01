@@ -428,6 +428,7 @@ class UserRepository extends VaulticRepository<User>
 
     public async postBackupEntityUpdates(entity: Partial<User>)
     {
+        console.log(`Post backup for user: ${JSON.stringify(entity)}`);
         const currentUser = await this.getCurrentUser();
         if (!currentUser || !entity.userID || entity.userID != currentUser.userID)
         {
@@ -447,6 +448,10 @@ class UserRepository extends VaulticRepository<User>
             return false;
         }
 
+
+        // TODO: what to do if updating previousSignatures on store states fails? The server has been updated
+        // so the client will no longer be able to update. Detect and force update data from server? Should be handled
+        // when merging data?
         if (entity.appStoreState)
         {
             promises.push(environment.repositories.appStoreStates.postBackupEntityUpdates(entity.appStoreState));
