@@ -8,7 +8,7 @@ import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
 import { AppStoreState } from "../Entities/States/AppStoreState";
 import { UserPreferencesStoreState } from "../Entities/States/UserPreferencesStoreState";
-import { nameof } from "../../Helpers/TypeScriptHelper";
+import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { Vault } from "../Entities/Vault";
 import { EntityState } from "../../Types/Properties";
 import { backupData } from ".";
@@ -99,7 +99,7 @@ class UserRepository extends VaulticRepository<User>
         userPreferencesStoreState.state = "{}"
         user.userPreferencesStoreState = userPreferencesStoreState;
 
-        const vaults = await environment.repositories.vaults.createNewVault("Personal", "#FFFFFF");
+        const vaults = await environment.repositories.vaults.createNewVault("Personal");
         if (!vaults)
         {
             return "no vaults";
@@ -259,7 +259,7 @@ class UserRepository extends VaulticRepository<User>
         };
 
         const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey,
-            [nameof<Vault>("color"), nameof<Vault>("name")]);
+            [nameof<Vault>("name")]);
 
         if (!userVaults || userVaults.length == 0)
         {
@@ -278,7 +278,6 @@ class UserRepository extends VaulticRepository<User>
 
             userData.displayVaults!.push({
                 userVaultID: userVaults[i].userVaultID,
-                color: userVaults[i].color,
                 name: userVaults[i].name,
                 lastUsed: userVaults[i].lastUsed
             });
@@ -466,7 +465,7 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async addFromServer(masterKey: string, user: Partial<User>, transaction: Transaction): Promise<boolean>
+    public async addFromServer(masterKey: string, user: DeepPartial<User>, transaction: Transaction): Promise<boolean>
     {
         if (!User.isValid(user))
         {
@@ -499,7 +498,7 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async updateFromServer(currentUser: Partial<User>, newUser: Partial<User>)
+    public async updateFromServer(currentUser: DeepPartial<User>, newUser: DeepPartial<User>)
     {
         if (!newUser.userID)
         {

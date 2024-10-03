@@ -8,9 +8,11 @@ import { CondensedVaultData } from "../../Types/Repositories";
 import { Vault } from "../Entities/Vault";
 import { User } from "../Entities/User";
 import { backupData } from ".";
-import { nameof } from "../../Helpers/TypeScriptHelper";
+import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
+import vaulticServer from "../../Server/VaulticServer";
+import { MethodResponse } from "../../Types/MethodResponse";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -34,7 +36,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 .leftJoinAndSelect('vault.valueStoreState', 'valueStoreState')
                 .leftJoinAndSelect('vault.filterStoreState', 'filterStoreState')
                 .leftJoinAndSelect('vault.groupStoreState', 'groupStoreState')
-                .where('userVault.userID = :userID', { userID: user.userID });
+                .where('userVault.userID = :userID', { userID: user.userID })
+                .andWhere('vault.entityState != :state', { state: EntityState.Deleted });
 
             if (userVaultID)
             {
@@ -43,6 +46,43 @@ class UserVaultRepository extends VaulticRepository<UserVault>
 
             return userVaultQuery.getMany();
         }
+    }
+
+    protected async decryptVaultKey(masterKey: string, privateKey: string, vaultKey: string): Promise<MethodResponse>
+    {
+        const decryptedVaultKeys = await environment.utilities.crypt.decrypt(masterKey, vaultKey);
+        if (!decryptedVaultKeys.success)
+        {
+            return decryptedVaultKeys;
+        }
+
+        const keys: VaultKey = JSON.parse(decryptedVaultKeys.value!);
+        return await environment.utilities.crypt.ECDecrypt(keys.publicKey, privateKey, keys.vaultKey);
+    }
+
+    protected async decryptCondensedUserVault(masterKey: string, vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[])
+    {
+        const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
+        const decryptedVaultPreferences = await environment.utilities.crypt.decrypt(masterKey, condensedVault.vaultPreferencesStoreState);
+        if (!decryptedVaultPreferences.success)
+        {
+            return null;
+        }
+
+        condensedVault.vaultPreferencesStoreState = decryptedVaultPreferences.value!;
+
+        for (let j = 0; j < decryptableProperties.length; j++)
+        {
+            const response = await environment.utilities.crypt.decrypt(vaultKey, condensedVault[decryptableProperties[j]]);
+            if (!response.success)
+            {
+                return null;
+            }
+
+            condensedVault[decryptableProperties[j]] = response.value!;
+        }
+
+        return condensedVault;
     }
 
     public async getVerifiedUserVaults(masterKey: string, userVaultID?: number, user?: User,
@@ -91,18 +131,9 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 return [[], []];
             }
 
-            const decryptedVaultKeys = await environment.utilities.crypt.decrypt(masterKey, userVaults[i].vaultKey);
-            if (!decryptedVaultKeys.success)
-            {
-                console.log('no vault keys decrypt')
-                return [[], []];
-            }
-
-            const keys: VaultKey = JSON.parse(decryptedVaultKeys.value!);
-            const decryptedVaultKey = await environment.utilities.crypt.ECDecrypt(keys.publicKey, decryptedPrivateKey.value!, keys.vaultKey);
+            const decryptedVaultKey = await this.decryptVaultKey(masterKey, decryptedPrivateKey.value!, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
-                console.log('no vault key decrypt')
                 return [[], []];
             }
 
@@ -127,35 +158,71 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
 
         const condensedDecryptedUserVaults: CondensedVaultData[] = [];
-        const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
-
         for (let i = 0; i < userVaults[0].length; i++)
         {
             const condensedUserVault = userVaults[0][i].condense();
-
-            const decryptedVaultPreferences = await environment.utilities.crypt.decrypt(masterKey, condensedUserVault.vaultPreferencesStoreState);
-            if (!decryptedVaultPreferences.success)
+            const decryptedUserVault = await this.decryptCondensedUserVault(masterKey, userVaults[1][i], condensedUserVault, propertiesToDecrypt);
+            if (!decryptedUserVault)
             {
-                return null;
+                // TODO: should probaby re fetch data
+                continue;
             }
 
-            condensedUserVault.vaultPreferencesStoreState = decryptedVaultPreferences.value!;
-
-            for (let j = 0; j < decryptableProperties.length; j++)
-            {
-                const response = await environment.utilities.crypt.decrypt(userVaults[1][i], condensedUserVault[decryptableProperties[j]]);
-                if (!response.success)
-                {
-                    return null;
-                }
-
-                condensedUserVault[decryptableProperties[j]] = response.value!;
-            }
-
-            condensedDecryptedUserVaults.push(condensedUserVault);
+            condensedDecryptedUserVaults.push(decryptedUserVault);
         }
 
         return condensedDecryptedUserVaults;
+    }
+
+    public async loadArchivedVault(masterKey: string, userVaultID: number): Promise<boolean | CondensedVaultData | null>
+    {
+        const currentUser = await environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return false;
+        }
+
+        const response = await vaulticServer.vault.getArchivedVaultData(userVaultID);
+        if (!response.Success)
+        {
+            return false;
+        }
+
+        if (!response.userDataPayload?.userVaults?.[0] || !response.userDataPayload?.vaults?.[0])
+        {
+            return false;
+        }
+
+        const userVault: DeepPartial<UserVault> = response.userDataPayload!.userVaults[0];
+        const vault: DeepPartial<Vault> = response.userDataPayload!.vaults[0];
+
+        const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, currentUser.privateKey);
+        if (!decryptedPrivateKey)
+        {
+            return false;
+        }
+
+        const decryptedVaultKey = await this.decryptVaultKey(masterKey, decryptedPrivateKey.value!, userVault.vaultKey!);
+        if (!decryptedVaultKey.value)
+        {
+            return false;
+        }
+
+        let condensedVault: CondensedVaultData | null =
+        {
+            userVaultID: userVault.userVaultID!,
+            vaultPreferencesStoreState: userVault.vaultPreferencesStoreState!.state!,
+            name: vault.name!,
+            vaultStoreState: vault.vaultStoreState!.state!,
+            passwordStoreState: vault.passwordStoreState!.state!,
+            valueStoreState: vault.vaultStoreState!.state!,
+            filterStoreState: vault.filterStoreState!.state!,
+            groupStoreState: vault.groupStoreState!.state!,
+            lastUsed: false
+        };
+
+        condensedVault = await this.decryptCondensedUserVault(masterKey, decryptedVaultKey.value!, condensedVault);
+        return condensedVault;
     }
 
     public async saveUserVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<boolean>
@@ -295,7 +362,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return true;
     }
 
-    public addFromServer(userVault: Partial<UserVault>, transaction: Transaction): boolean
+    public addFromServer(userVault: DeepPartial<UserVault>, transaction: Transaction): boolean
     {
         if (!UserVault.isValid(userVault))
         {
@@ -308,7 +375,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return true;
     }
 
-    public async updateFromServer(currentUserVault: Partial<UserVault>, newUserVault: Partial<UserVault>)
+    public async updateFromServer(currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>)
     {
         const setProperties = {}
         if (!newUserVault.userVaultID)

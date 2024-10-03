@@ -108,10 +108,6 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "string"
                 },
                 {
-                    name: "color",
-                    type: "string"
-                },
-                {
                     name: "lastUsed",
                     type: "boolean"
                 }

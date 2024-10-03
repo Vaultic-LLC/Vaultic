@@ -179,7 +179,6 @@ export interface CondensedVaultData
     userVaultID: number;
     vaultPreferencesStoreState: string;
     name: string;
-    color: string;
     lastUsed: boolean;
     vaultStoreState: string;
     passwordStoreState: string;
@@ -188,12 +187,18 @@ export interface CondensedVaultData
     groupStoreState: string;
 }
 
+export enum VaultType
+{
+    Personal,
+    Shared,
+    Archived
+};
+
 export interface DisplayVault 
 {
     name: string;
     userVaultID: number;
-    color: string;
-    lastUsed: boolean;
+    lastUsed?: boolean;
 }
 
 export interface UserRepository 
@@ -213,11 +218,13 @@ export interface VaultRepository
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
     saveVault: (masterKey: string, userVaultID: number, data: string, doBackup: boolean) => Promise<boolean>;
     createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<boolean | CondensedVaultData>;
+    archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => Promise<boolean>;
 }
 
 export interface UserVaultRepository
 {
     saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => Promise<boolean>;
+    loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData | null>;
 }
 
 export interface Repositories

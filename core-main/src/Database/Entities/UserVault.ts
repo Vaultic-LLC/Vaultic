@@ -2,7 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn, OneToOne } from "
 import { User } from "./User"
 import { Vault } from "./Vault"
 import { VaulticEntity } from "./VaulticEntity"
-import { nameof } from "../../Helpers/TypeScriptHelper"
+import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData } from "../../Types/Repositories"
 
@@ -83,7 +83,6 @@ export class UserVault extends VaulticEntity
             userVaultID: this.userVaultID,
             vaultPreferencesStoreState: this.vaultPreferencesStoreState.state,
             name: this.vault.name,
-            color: this.vault.color,
             lastUsed: this.vault.lastUsed,
             vaultStoreState: this.vault.vaultStoreState.state,
             passwordStoreState: this.vault.passwordStoreState.state,
@@ -93,7 +92,7 @@ export class UserVault extends VaulticEntity
         }
     }
 
-    public static isValid(userVault: Partial<UserVault>): boolean
+    public static isValid(userVault: DeepPartial<UserVault>): boolean
     {
         return !!userVault.signatureSecret &&
             !!userVault.currentSignature &&

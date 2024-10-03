@@ -14,7 +14,7 @@ import { FilterStoreState } from "../Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Entities/States/GroupStoreState";
 import { EntityState } from "../../Types/Properties";
 import { backupData } from ".";
-import { nameof } from "../../Helpers/TypeScriptHelper";
+import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { User } from "../Entities/User";
 
@@ -60,16 +60,16 @@ class VaultRepository extends VaulticRepository<Vault>
         return await transaction.commit();
     }
 
-    protected getLastUsedVault(user: User): Promise<Vault[] | null>
+    protected getLastUsedVault(user: User): Promise<Vault | null>
     {
         return this.repository.createQueryBuilder("vaults")
             .leftJoin("vaults.userVaults", "userVaults")
             .where("userVaults.userID = :userID", { userID: user.userID })
             .andWhere("vaults.lastUsed = :lastUsed", { lastUsed: true })
-            .execute();
+            .getOne();
     }
 
-    public async createNewVault(name: string, color: string = '#FFFFFF'): Promise<boolean | [UserVault, Vault, string]>
+    public async createNewVault(name: string): Promise<boolean | [UserVault, Vault, string]>
     {
         // TODO: what happens if we fail to re back these up after creating them? There will then be pointless records on the server
         // Create an initalized property on the userVault on server and default to false. Once it has been backed up once, set to true.
@@ -88,7 +88,6 @@ class VaultRepository extends VaulticRepository<Vault>
         const vault = new Vault().makeReactive();
         vault.lastUsed = true;
         vault.name = name;
-        vault.color = color;
         vault.vaultStoreState = new VaultStoreState().makeReactive();
         vault.passwordStoreState = new PasswordStoreState().makeReactive();
         vault.valueStoreState = new ValueStoreState().makeReactive();
@@ -160,10 +159,10 @@ class VaultRepository extends VaulticRepository<Vault>
         if (setAsActive)
         {
             vault.lastUsed = true;
-            const lastUsedVaults = await this.getLastUsedVault(currentUser);
-            if (lastUsedVaults?.length == 1)
+            const lastUsedVault = await this.getLastUsedVault(currentUser);
+            if (lastUsedVault)
             {
-                const reactiveLastUsedVault = lastUsedVaults[0].makeReactive();
+                const reactiveLastUsedVault = lastUsedVault.makeReactive();
                 reactiveLastUsedVault.lastUsed = false;
 
                 transaction.updateEntity(reactiveLastUsedVault, "", () => this);
@@ -309,6 +308,33 @@ class VaultRepository extends VaulticRepository<Vault>
         }
 
         console.log('succeeded');
+        return true;
+    }
+
+    public async archiveVault(masterKey: string, userVaultID: number, backup: boolean): Promise<boolean>
+    {
+        const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, userVaultID);
+        if (userVaults[0].length == 0)
+        {
+            return false;
+        }
+
+        const vault = userVaults[0][0].vault.makeReactive();
+        vault.entityState = EntityState.Deleted;
+
+        const transaction = new Transaction();
+        transaction.updateEntity(vault, userVaults[1][0], () => this);
+
+        if (!(await transaction.commit()))
+        {
+            return false;
+        }
+
+        if (backup)
+        {
+            backupData(masterKey);
+        }
+
         return true;
     }
 
@@ -491,7 +517,7 @@ class VaultRepository extends VaulticRepository<Vault>
         return succeeded;
     }
 
-    public addFromServer(vault: Partial<Vault>, transaction: Transaction): boolean
+    public addFromServer(vault: DeepPartial<Vault>, transaction: Transaction): boolean
     {
         if (!Vault.isValid(vault))
         {
@@ -510,7 +536,7 @@ class VaultRepository extends VaulticRepository<Vault>
         return true;
     }
 
-    public async updateFromServer(currentVault: Partial<Vault>, newVault: Partial<Vault>)
+    public async updateFromServer(currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>)
     {
         const setProperties = {}
         if (!newVault.vaultID)
@@ -531,11 +557,6 @@ class VaultRepository extends VaulticRepository<Vault>
         if (newVault.name)
         {
             setProperties[nameof<Vault>("name")] = newVault.name;
-        }
-
-        if (newVault.color)
-        {
-            setProperties[nameof<Vault>("color")] = newVault.color;
         }
 
         if (newVault.vaultStoreState)

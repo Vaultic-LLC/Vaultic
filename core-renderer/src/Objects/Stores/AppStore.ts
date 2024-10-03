@@ -1,7 +1,7 @@
 import { Ref, ref, ComputedRef, computed } from "vue";
 import { DataType, FilterStatus } from "../../Types/Table"
 import { hideAll } from 'tippy.js';
-import { Store } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
@@ -32,7 +32,9 @@ export interface AppStoreState
     settings: AppSettings;
 }
 
-export class AppStore extends Store<AppStoreState>
+export type AppStoreEvents = StoreEvents | "onVaultUpdated";
+
+export class AppStore extends Store<AppStoreState, AppStoreEvents>
 {
     private loadedUser: boolean;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
@@ -46,6 +48,7 @@ export class AppStore extends Store<AppStoreState>
 
     private internalUserVaults: Ref<DisplayVault[]>;
     private internalSharedVaults: Ref<BasicVaultStore[]>;
+    private internalArchivedVaults: Ref<BasicVaultStore[]>;
     private internalCurrentVault: ReactiveVaultStore;
 
     private internalUsersPreferencesStore: UserPreferencesStore;
@@ -60,6 +63,7 @@ export class AppStore extends Store<AppStoreState>
     get activeFilterGroupsTable() { return this.internalActiveFilterGroupTable.value; }
     set activeFilterGroupsTable(value: DataType) { this.internalActiveFilterGroupTable.value = value; }
     get userVaults() { return this.internalUserVaults; }
+    get archivedVaults() { return this.internalArchivedVaults; }
     get currentVault() { return this.internalCurrentVault; }
     get userPreferences() { return this.internalUsersPreferencesStore; }
     get userDataBreaches() { return this.internalUserDataBreachStore; }
@@ -76,6 +80,7 @@ export class AppStore extends Store<AppStoreState>
 
         this.internalUserVaults = ref([]);
         this.internalSharedVaults = ref([]);
+        this.internalArchivedVaults = ref([]);
         this.internalCurrentVault = new ReactiveVaultStore();
 
         this.internalIsOnline = ref(false);
@@ -172,8 +177,6 @@ export class AppStore extends Store<AppStoreState>
         }, this.internalAutoLockNumberTime.value);
     }
 
-    // TODO: resposne should contain all vaults from server to check if any local ones are out of date. It should also contain 
-    // shared and archived vaults to set in the store only but not save locally
     public async loadUserData(masterKey: string, response?: any)
     {
         if (this.loadedUser)
@@ -192,9 +195,8 @@ export class AppStore extends Store<AppStoreState>
 
         Object.assign(this.state, JSON.parse(parsedUserData.appStoreState));
         this.internalUserVaults.value = parsedUserData.displayVaults!;
-        // TODO: return shared vaults from server. These also need to include userVault for vaultKey...
-        //this.internalSharedVaults = JSON.parse(response.SharedVaults);
-        // this.internalArchivedVaults = JSON.parse(response.archivedVaults);
+        this.internalSharedVaults.value = response.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
+        this.internalArchivedVaults.value = response.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
         this.internalCurrentVault.setVaultData(masterKey, parsedUserData.currentVault);
         this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;
@@ -219,7 +221,6 @@ export class AppStore extends Store<AppStoreState>
         temp.push({
             userVaultID: vaultData.userVaultID,
             name: vaultData.name,
-            color: vaultData.color,
             lastUsed: setAsActive
         });
 
@@ -242,12 +243,70 @@ export class AppStore extends Store<AppStoreState>
         }
 
         this.userVaults[index] = displayVault;
+        this.emit("onVaultUpdated", displayVault);
+
+        return true;
+    }
+
+    async archiveVault(masterKey: string, userVaultID: number): Promise<boolean>
+    {
+        const success = await api.repositories.vaults.archiveVault(masterKey, userVaultID, app.isOnline);
+        if (!success)
+        {
+            return false;
+        }
+
+        const index = this.userVaults.value.findIndex(v => v.userVaultID == userVaultID);
+        if (index == -1)
+        {
+            return false;
+        }
+
+        const archviedDisplayVault = this.userVaults.value.splice(index, 1);
+        const archviedVault = new BasicVaultStore(archviedDisplayVault[0])
+        this.internalArchivedVaults.value.push(archviedVault);
+
+        // force reactivity. For some reason it doesn't work otherwise
+        const tempUserVaults = [...this.internalUserVaults.value];
+        this.internalUserVaults.value = tempUserVaults;
+
+        const tempArchivedVaults = [...this.internalArchivedVaults.value];
+        this.internalArchivedVaults.value = tempArchivedVaults;
+
+        // load the first vault if we archived the current one
+        if (archviedDisplayVault[0].userVaultID == this.internalCurrentVault.userVaultID)
+        {
+            await this.setActiveVault(masterKey, this.internalUserVaults.value[0].userVaultID);
+        }
+
+        return true;
+    }
+
+    async loadArchivedVault(masterKey: string, userVaultID: number): Promise<boolean>
+    {
+        const archivedVault = this.archivedVaults.value.filter(v => v.userVaultID == userVaultID);
+        if (archivedVault.length != 1)
+        {
+            return false;
+        }
+
+        if (!archivedVault[0].isLoaded)
+        {
+            const vaultData = await api.repositories.userVaults.loadArchivedVault(masterKey, userVaultID);
+            if (!vaultData)
+            {
+                return false;
+            }
+
+            archivedVault[0].setVaultData(masterKey, vaultData as CondensedVaultData);
+        }
+
+        this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false);
         return true;
     }
 
     async setActiveVault(masterKey: string, userVaultID: number): Promise<boolean>
     {
-        // TODO: needs to set last used on the vault as well
         const vault = await api.repositories.vaults.setActiveVault(masterKey, userVaultID);
         if (!vault)
         {

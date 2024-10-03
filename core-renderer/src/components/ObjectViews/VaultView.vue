@@ -23,7 +23,6 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
-        console.log(props.creating);
         const refreshKey: Ref<string> = ref("");
         const vaultState: Ref<DisplayVault> = ref(props.model ?? { name: '' });
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);

@@ -11,12 +11,12 @@
             <div class="treeNode__text">{{ treeNodeModel.text }}</div>
             <Transition name="fade" mode="out-in">
                 <div class="treeNode__buttons" v-if="!treeNodeModel.isParent && hovering">
-                    <div class="treeNode__editButton" @click="onEdit">
+                    <div class="treeNode__editButton" @click.stop="onEdit">
                         <VaulticIcon :fontSize="'21px'">
                             <ion-icon name="create-outline"></ion-icon>
                         </VaulticIcon>
                     </div>
-                    <div class="treeNode__deleteButton" @click="onDelete">
+                    <div class="treeNode__deleteButton" @click.stop="onDelete">
                         <VaulticIcon :fontSize="'21px'">
                             <ion-icon name="trash-outline"></ion-icon>
                         </VaulticIcon>
@@ -136,6 +136,7 @@ export default defineComponent({
 }
 
 .treeNode__text {
+    transition: 300ms;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;

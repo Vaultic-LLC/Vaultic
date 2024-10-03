@@ -1,6 +1,7 @@
 import { environment } from "../../Environment";
 import vaulticServer from "../../Server/VaulticServer";
 import { EntityState } from "../../Types/Properties";
+import { UserDataPayload } from "../../Types/ServerTypes";
 import Transaction from "../Transaction";
 import appStoreStateRepository, { AppStoreStateRepositoryType } from "./StoreState/AppStoreStateRepository";
 import filterStoreStateRepository, { FilterStoreStateRepositoryType } from "./StoreState/FilterStoreStateRepository";
@@ -64,7 +65,7 @@ export function initRepositories(): VaulticRepositories
 
 export async function getUserDataSignatures(masterKey: string, email: string)
 {
-    const userData = {};
+    const userData: UserDataPayload = {};
     const user = await environment.repositories.users.findByEmail(email);
     if (!user)
     {
@@ -105,7 +106,7 @@ export async function getUserDataSignatures(masterKey: string, email: string)
                 currentSignature: userVault.currentSignature,
                 entityState: userVault.entityState,
                 vaultPreferencesStoreState: {
-                    vaultPreferencesStoreState: userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
+                    vaultPreferencesStoreStateID: userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
                     currentSignature: userVault.vaultPreferencesStoreState.currentSignature
                 }
             });
@@ -195,7 +196,7 @@ export async function backupData(masterKey: string)
     return true;
 }
 
-export async function checkMergeMissingData(masterKey: string, clientUserDataPayload: any, serverUserDataPayload: any)
+export async function checkMergeMissingData(masterKey: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload)
 {
     if (!serverUserDataPayload)
     {
@@ -231,17 +232,17 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
         for (let i = 0; i < serverUserDataPayload.vaults.length; i++)
         {
             const serverVault = serverUserDataPayload.vaults[i];
-            const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID);
+            const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
 
             if (vaultIndex >= 0)
             {
-                await environment.repositories.vaults.updateFromServer(clientUserDataPayload.vaults[vaultIndex], serverVault);
+                await environment.repositories.vaults.updateFromServer(clientUserDataPayload.vaults![vaultIndex], serverVault);
             }
             else 
             {
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
                 {
-                    return false;
+                    // TODO: log error
                 }
             }
         }
@@ -252,17 +253,17 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
         for (let i = 0; i < serverUserDataPayload.userVaults.length; i++)
         {
             const serverUserVault = serverUserDataPayload.userVaults[i];
-            const userVaultIndex = clientUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID);
+            const userVaultIndex = clientUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID) ?? -1;
 
             if (userVaultIndex >= 0)
             {
-                await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults[userVaultIndex], serverUserVault);
+                await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault);
             }
             else 
             {
                 if (!environment.repositories.userVaults.addFromServer(serverUserVault, transaction))
                 {
-                    return false;
+                    // TODO: log error
                 }
             }
         }
@@ -278,7 +279,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
     {
         for (let i = 0; i < clientUserDataPayload.vaults.length; i++)
         {
-            if (clientUserDataPayload.vaults.entityState == EntityState.Deleted)
+            if (clientUserDataPayload.vaults[i].entityState == EntityState.Deleted)
             {
                 //await environment.repositories.vaults.deleteFromServer(clientUserDataPayload.vaults[i]);
             }

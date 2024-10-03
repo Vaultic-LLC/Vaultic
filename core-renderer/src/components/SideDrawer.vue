@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref, watch, onMounted, onUnmounted } from 'vue';
 
 import TreeList from "./Tree/TreeList.vue";
 import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
@@ -31,6 +31,7 @@ import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
 import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
 import { Dictionary } from "../Types/DataStructures";
+import { DisplayVault, VaultType } from "../Types/APITypes";
 
 export default defineComponent({
     name: "SideDrawer",
@@ -71,12 +72,25 @@ export default defineComponent({
 
                 async function onKeySuccess(key: string)
                 {
-                    if (!(await app.setActiveVault(key, data['userVaultID'])))
+                    if (data['type'] == VaultType.Personal)
                     {
-                        app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
-                        resolve(false);
+                        if (!(await app.setActiveVault(key, data['userVaultID'])))
+                        {
+                            app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
+                            resolve(false);
 
-                        return;
+                            return;
+                        }
+                    }
+                    else if (data['type'] == VaultType.Archived)
+                    {
+                        if (!(await app.loadArchivedVault(key, data['userVaultID'])))
+                        {
+                            app.popups.showToast(primaryColor.value, 'Failed to load archived vault', false);
+                            resolve(false);
+
+                            return;
+                        }
                     }
 
                     resolve(true);
@@ -98,23 +112,62 @@ export default defineComponent({
 
         async function onLeafDelete(data: Dictionary<any>)
         {
+            // can't delete our last vault
+            if (app.userVaults.value.length == 1)
+            {
+                return true;
+            }
 
+            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+            async function onKeySuccess(key: string)
+            {
+                if (!(await app.archiveVault(key, data['userVaultID'])))
+                {
+                    app.popups.showToast(primaryColor.value, 'Failed to load archived vault', false);
+                }
+            }
         }
 
-        watch(() => app.userVaults.value, (newValue, oldValue) => 
+        function onVaultUpdated(dv: DisplayVault)
+        {
+            manager.updateNode(
+                (node) => node.data["userVaultID"] == dv.userVaultID,
+                (node) => node.text = dv.name);
+
+            allNodes.value = manager.buildList();
+        }
+
+        function updateNodeList(parentNodeId: number, type: VaultType, newValue: DisplayVault[], oldValue: DisplayVault[])
         {
             const addedVault = newValue.filter(v => !oldValue.find(o => o.userVaultID == v.userVaultID));
             const removedVault = oldValue.filter(o => !newValue.find(v => v.userVaultID == o.userVaultID));
 
             addedVault.forEach(v => 
             {
-                manager.addChild(privateVaultsID, v.name, v.userVaultID == app.currentVault.userVaultID,
-                    true, false, undefined, { userVaultID: v.userVaultID });
+                manager.addChild(parentNodeId, v.name, v.userVaultID == app.currentVault.userVaultID,
+                    true, false, undefined, { userVaultID: v.userVaultID, type: type });
             });
 
-            // TOOD: handle deletes
+            removedVault.forEach(v => 
+            {
+                const node = manager.findNode((n) => n.data["userVaultID"] == v.userVaultID);
+                if (node)
+                {
+                    manager.deleteNode(node.id);
+                }
+            });
 
             allNodes.value = manager.buildList();
+        }
+
+        watch(() => app.userVaults.value, (newValue, oldValue) => 
+        {
+            updateNodeList(privateVaultsID, VaultType.Personal, newValue, oldValue);
+        });
+
+        watch(() => app.archivedVaults.value, (newValue, oldValue) => 
+        {
+            updateNodeList(archivedVaultsID, VaultType.Archived, newValue, oldValue);
         });
 
         watch(() => app.isOnline, (newValue) =>
@@ -122,6 +175,16 @@ export default defineComponent({
             online.value = newValue;
             text.value = newValue ? "Online" : "Offline";
             refreshKey.value = Date.now().toString();
+        });
+
+        onMounted(() => 
+        {
+            app.addEvent('onVaultUpdated', onVaultUpdated);
+        });
+
+        onUnmounted(() => 
+        {
+            app.removeEvent('onVaultUpdated', onVaultUpdated);
         });
 
         return {

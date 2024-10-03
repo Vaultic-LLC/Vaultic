@@ -1,4 +1,4 @@
-import { CondensedVaultData } from "../../Types/APITypes";
+import { CondensedVaultData, DisplayVault } from "../../Types/APITypes";
 import { Dictionary } from "../../Types/DataStructures";
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { Store } from "./Base";
@@ -63,15 +63,27 @@ export class BaseVaultStore<V extends PasswordStore,
     }
 }
 
-export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, FilterStore, GroupStore>
+export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, FilterStore, GroupStore> implements DisplayVault
 {
-    constructor()
+    protected internalIsLoaded: boolean;
+    protected internalName: string;
+    protected internalUserVaultID: number;
+
+    get isLoaded() { return this.internalIsLoaded; }
+    get name() { return this.internalName; }
+    get userVaultID() { return this.internalUserVaultID; }
+
+    constructor(displayVault: DisplayVault)
     {
         super();
         this.internalPasswordStore = new PasswordStore(this);
         this.internalValueStore = new ValueStore(this);
         this.internalFilterStore = new FilterStore(this);
         this.internalGroupStore = new GroupStore(this);
+
+        this.internalIsLoaded = false;
+        this.internalName = displayVault.name;
+        this.internalUserVaultID = displayVault.userVaultID;
     }
 
     public setVaultData(masterKey: string, data: CondensedVaultData)
@@ -81,6 +93,8 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
         this.internalValueStore.updateState(JSON.parse(data.valueStoreState));
         this.internalFilterStore.updateState(JSON.parse(data.filterStoreState));
         this.internalGroupStore.updateState(JSON.parse(data.groupStoreState));
+
+        this.internalIsLoaded = true;
     }
 }
 
@@ -107,6 +121,23 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         this.internalGroupStore.updateState(JSON.parse(data.groupStoreState));
 
         this.updateLogins(masterKey);
+    }
+
+    public setVaultDataFromBasicVault(masterKey, basicVault: BasicVaultStore, recordLogin: boolean)
+    {
+        this.internalUserVaultID = basicVault.userVaultID;
+        this.updateState(basicVault.getState());
+        this.internalVaultPreferencesStore.updateState(basicVault.vaultPreferencesStore.getState());
+
+        this.internalPasswordStore.updateState(basicVault.passwordStore.getState());
+        this.internalValueStore.updateState(basicVault.valueStore.getState());
+        this.filterStore.updateState(basicVault.filterStore.getState());
+        this.groupStore.updateState(basicVault.groupStore.getState());
+
+        if (recordLogin)
+        {
+            this.updateLogins(masterKey);
+        }
     }
 
     private async updateLogins(masterKey: string)
@@ -143,15 +174,12 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     private async checkRemoveOldLoginRecords(pendingState: VaultStoreState)
     {
-        let removedLogin: boolean = false;
         const daysToStoreLoginsAsMiliseconds: number = this.state.settings.numberOfDaysToStoreLoginRecords * 24 * 60 * 60 * 1000;
-
         Object.keys(pendingState.loginHistory).forEach((s) =>
         {
             const date: number = Date.parse(s);
             if (date - Date.now() > daysToStoreLoginsAsMiliseconds)
             {
-                removedLogin = true;
                 delete pendingState.loginHistory[s];
             }
         });

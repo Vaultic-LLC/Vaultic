@@ -14,7 +14,7 @@ export type StoreEvents = "onChanged";
 
 export class Store<T extends {}, U extends string = StoreEvents>
 {
-    events: Dictionary<{ (): void }[]>;
+    events: Dictionary<{ (...params: any[]): void }[]>;
 
     protected state: Reactive<T>;
     private internalStateName: string;
@@ -72,7 +72,7 @@ export class Store<T extends {}, U extends string = StoreEvents>
         Object.assign(this.state, this.defaultState());
     }
 
-    public addEvent(event: U, callback: () => void)
+    public addEvent(event: U, callback: (...params: any[]) => void)
     {
         if (this.events[event])
         {
@@ -83,7 +83,7 @@ export class Store<T extends {}, U extends string = StoreEvents>
         this.events[event] = [callback];
     }
 
-    public removeEvent(event: U, callback: () => void)
+    public removeEvent(event: U, callback: (...params: any[]) => void)
     {
         if (!this.events[event])
         {
@@ -91,6 +91,11 @@ export class Store<T extends {}, U extends string = StoreEvents>
         }
 
         this.events[event] = this.events[event].filter(c => c != callback);
+    }
+
+    protected emit(event: U, ...params: any[])
+    {
+        this.events[event]?.forEach(f => f(...params));
     }
 }
 

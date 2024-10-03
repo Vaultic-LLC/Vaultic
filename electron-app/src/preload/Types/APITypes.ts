@@ -135,11 +135,13 @@ export interface VaultRepository
 	setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
 	saveVault: (masterKey: string, vaultID: number, data: string, backup: boolean) => Promise<boolean>;
 	createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<boolean | CondensedVaultData>;
+	archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => Promise<boolean>;
 }
 
 export interface UserVaultRepository
 {
 	saveUserVault: (masterKey: string, vaultID: number, data: string, backup: boolean) => Promise<boolean>;
+	loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData | null>;
 }
 
 export interface Repositories

@@ -1,7 +1,7 @@
 import { EntityManager, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
 import { EntityState } from "../../Types/Properties";
-import { nameof } from "../../Helpers/TypeScriptHelper";
+import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -103,7 +103,7 @@ export class VaulticRepository<T extends VaulticEntity>
         return true;
     }
 
-    public async insertExisting(manager: EntityManager, entity: Partial<T>): Promise<boolean>
+    public async insertExisting(manager: EntityManager, entity: DeepPartial<T>): Promise<boolean>
     {
         entity.entityState = EntityState.Unchanged;
         entity.serializedPropertiesToSync = "[]";

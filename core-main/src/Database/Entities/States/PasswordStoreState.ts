@@ -1,5 +1,5 @@
 import { Entity, OneToOne, Column, PrimaryColumn, JoinColumn } from "typeorm";
-import { nameof } from "../../../Helpers/TypeScriptHelper"
+import { DeepPartial, nameof } from "../../../Helpers/TypeScriptHelper"
 import { StoreState } from "./StoreState";
 import { Vault } from "../Vault";
 
@@ -47,7 +47,7 @@ export class PasswordStoreState extends StoreState
         return properties;
     }
 
-    public static isValid(passwordStoreState: Partial<PasswordStoreState>): boolean
+    public static isValid(passwordStoreState: DeepPartial<PasswordStoreState>): boolean
     {
         return !!passwordStoreState.signatureSecret &&
             !!passwordStoreState.currentSignature &&

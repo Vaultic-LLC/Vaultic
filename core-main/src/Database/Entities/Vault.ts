@@ -1,7 +1,7 @@
 import { Entity, Column, OneToMany, PrimaryColumn, OneToOne } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
-import { nameof } from "../../Helpers/TypeScriptHelper";
+import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { VaultStoreState } from "./States/VaultStoreState";
 import { PasswordStoreState } from "./States/PasswordStoreState";
 import { ValueStoreState } from "./States/ValueStoreState";
@@ -22,11 +22,6 @@ export class Vault extends VaulticEntity
     // Encrypted by Vault Key
     @Column("text")
     name: string
-
-    // Backed Up
-    // Encrypted by Vault Key
-    @Column("text")
-    color: string
 
     // Not backed up
     // Not encrypted
@@ -62,8 +57,7 @@ export class Vault extends VaulticEntity
     {
         return [
             nameof<Vault>("vaultID"),
-            nameof<Vault>("name"),
-            nameof<Vault>("color")
+            nameof<Vault>("name")
         ];
     }
 
@@ -77,8 +71,7 @@ export class Vault extends VaulticEntity
     getEncryptableProperties(): string[]
     {
         return [
-            nameof<Vault>("name"),
-            nameof<Vault>("color")
+            nameof<Vault>("name")
         ];
     }
 
@@ -86,7 +79,6 @@ export class Vault extends VaulticEntity
     {
         return [
             nameof<Vault>("name"),
-            nameof<Vault>("color"),
             nameof<Vault>("vaultStoreState"),
             nameof<Vault>("passwordStoreState"),
             nameof<Vault>("valueStoreState"),
@@ -99,7 +91,6 @@ export class Vault extends VaulticEntity
     {
         return [
             nameof<Vault>("name"),
-            nameof<Vault>("color"),
             nameof<Vault>("vaultStoreState"),
             nameof<Vault>("passwordStoreState"),
             nameof<Vault>("valueStoreState"),
@@ -108,13 +99,12 @@ export class Vault extends VaulticEntity
         ];
     }
 
-    public static isValid(vault: Partial<Vault>): boolean
+    public static isValid(vault: DeepPartial<Vault>): boolean
     {
         return !!vault.signatureSecret &&
             !!vault.currentSignature &&
             !!vault.vaultID &&
             !!vault.name &&
-            !!vault.color &&
             !!vault.vaultStoreState &&
             !!vault.passwordStoreState &&
             !!vault.valueStoreState &&

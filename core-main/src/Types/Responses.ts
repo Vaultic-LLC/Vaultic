@@ -1,5 +1,6 @@
 import { Device } from "./Device";
 import { ChartData, LicenseStatus, Session, UserDataBreach } from "./ClientServerTypes";
+import { UserDataPayload } from "./ServerTypes";
 
 export interface EncryptedResponse
 {
@@ -103,21 +104,6 @@ export interface LogResponse extends BaseResponse
     LogID?: number;
 }
 
-export interface DataStoreResponse
-{
-    filterStoreState?: any;
-    groupStoreState?: any;
-    passwordStoreState?: any;
-    valueStoreState?: any;
-}
-
-export interface LoadDataResponse extends DataStoreResponse, InvalidSessionResponse, IncorrectDeviceResponse
-{
-    appStoreState?: any;
-    settingsStoreState?: any;
-    userPreferenceStoreState?: any;
-}
-
 export interface UpdateDeviceRespnose extends InvalidSessionResponse
 {
     Device?: Device;
@@ -171,7 +157,12 @@ export interface StartLoginResponse extends UnknownEmailResponse, PendingUserRes
     StartServerLoginResponse?: string;
 }
 
-export interface FinishLoginResponse extends LoadDataResponse, OpaqueResponse, CreateSessionResponse
+export interface UserDataPayloadResponse
+{
+    userDataPayload?: UserDataPayload;
+}
+
+export interface FinishLoginResponse extends UserDataPayloadResponse, OpaqueResponse, CreateSessionResponse
 {
 }
 
@@ -195,3 +186,5 @@ export interface GetUserIDResponse extends BaseResponse
     AppStoreStateID?: number;
     UserPreferencesStoreStateID?: number;
 }
+
+export interface GetVaultDataResponse extends BaseResponse, UserDataPayloadResponse { }

@@ -2,7 +2,7 @@ import { User } from "../Database/Entities/User";
 import { UserVault } from "../Database/Entities/UserVault";
 import { Vault } from "../Database/Entities/Vault";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, LoadDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface UserController
@@ -11,7 +11,6 @@ export interface UserController
     getUserIDs: () => Promise<GetUserIDResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
     backupData: (user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null) => Promise<BaseResponse>;
-    getUserData: () => Promise<LoadDataResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
     getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
@@ -79,19 +78,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return { ...response, message: `Post data: ${JSON.stringify(postData)}` }
     }
 
-    async function getUserData(): Promise<LoadDataResponse>
-    {
-        let response = await axiosHelper.api.post('User/GetUserData');
-        const decryptedData = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, response);
-        if (!decryptedData.success)
-        {
-            return { Success: false, message: "Unable to decrypt data" };
-        }
-
-        response = Object.assign(response, decryptedData);
-        return response;
-    }
-
     function createCheckout(): Promise<CreateCheckoutResponse>
     {
         return axiosHelper.api.post("User/CreateCheckout");
@@ -135,7 +121,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         deleteDevice,
         getDevices,
         backupData,
-        getUserData,
         createCheckout,
         getChartData,
         getUserDataBreaches,

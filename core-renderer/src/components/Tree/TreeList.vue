@@ -166,16 +166,16 @@ export default defineComponent({
             models.value = buildTreeNodeModels(currentTreeNodes.value);
         }
 
-        watch(() => treeNodes.value, () => 
+        watch(() => treeNodes.value, (newNodes, oldNodes) => 
         {
-            currentTreeNodes.value = treeNodes.value;
-            models.value = buildTreeNodeModels(currentTreeNodes.value);
-
-            if (selectedLeafNode.value)
+            // Adding a new leaf, deselect the current one
+            if (newNodes.length > oldNodes.length && selectedLeafNode.value)
             {
                 selectedLeafNode.value.selected = false;
             }
 
+            currentTreeNodes.value = treeNodes.value;
+            models.value = buildTreeNodeModels(currentTreeNodes.value);
             selectedLeafNode.value = treeNodes.value.filter(n => !n.isParent && n.selected)?.[0]
         });
 

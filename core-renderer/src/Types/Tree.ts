@@ -36,7 +36,7 @@ export class TreeNodeListManager
     private nodesByID: { [key: number]: TreeNodeMember }
     private roots: TreeNodeMember[];
 
-    constructor() 
+    constructor()
     {
         this.currentId = 0;
         this.nodesByID = {};
@@ -68,9 +68,56 @@ export class TreeNodeListManager
         return id;
     }
 
+    findNode(predicate: (node: TreeNodeMember) => boolean): TreeNodeMember | undefined
+    {
+        const nodes = Object.values(this.nodesByID);
+        for (let i = 0; i < nodes.length; i++)
+        {
+            if (predicate(nodes[i]))
+            {
+                return nodes[i]
+            }
+        }
+    }
+
+    updateNode(predicate: (node: TreeNodeMember) => boolean, updater: (node: TreeNodeMember) => void)
+    {
+        const nodes = Object.values(this.nodesByID);
+        for (let i = 0; i < nodes.length; i++)
+        {
+            if (predicate(nodes[i]))
+            {
+                const currentID = nodes[i].id;
+                updater(nodes[i]);
+
+                nodes[i].id = this.currentId++;
+                delete this.nodesByID[currentID];
+
+                this.nodesByID[nodes[i].id] = nodes[i]
+            }
+        }
+    }
+
     getNode(id: number): TreeNodeMember
     {
         return this.nodesByID[id];
+    }
+
+    replaceNode(id: number, node: TreeNodeMember)
+    {
+        this.nodesByID[id] = node;
+    }
+
+    deleteNode(id: number)
+    {
+        const node = this.nodesByID[id];
+        const index = node.parent?.children.findIndex(n => n.id == id) ?? -1;
+        if (index >= 0)
+        {
+            node.parent!.children.splice(index, 1);
+        }
+
+        delete this.nodesByID[id];
     }
 
     buildList(): TreeNodeMember[]

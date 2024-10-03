@@ -1,6 +1,7 @@
 import { environment } from "../Environment";
 import { VaulticEntity } from "./Entities/VaulticEntity";
 import { VaulticRepository } from "../Types/Repositories";
+import { DeepPartial } from "../Helpers/TypeScriptHelper";
 
 enum Operation
 {
@@ -12,7 +13,7 @@ enum Operation
 interface PendingEntity
 {
     operation: Operation;
-    entity: VaulticEntity | Partial<VaulticEntity>;
+    entity: VaulticEntity | DeepPartial<VaulticEntity>;
     existing: boolean;
     signingKey?: string;
     repository: () => VaulticRepository<VaulticEntity>;
@@ -59,7 +60,7 @@ export default class Transaction
         });
     }
 
-    insertExistingEntity<T extends VaulticEntity>(entity: Partial<T>, repository: () => VaulticRepository<any>)
+    insertExistingEntity<T extends VaulticEntity>(entity: DeepPartial<T>, repository: () => VaulticRepository<any>)
     {
         this.pendingEntities.push({
             operation: Operation.Insert,

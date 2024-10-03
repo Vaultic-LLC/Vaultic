@@ -1,7 +1,7 @@
 import { Entity, Column, OneToMany, OneToOne, PrimaryColumn, AfterLoad } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
-import { nameof } from "../../Helpers/TypeScriptHelper"
+import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper"
 import { AppStoreState } from "./States/AppStoreState"
 import { UserPreferencesStoreState } from "./States/UserPreferencesStoreState"
 
@@ -97,7 +97,7 @@ export class User extends VaulticEntity
         ]
     }
 
-    public static isValid(user: Partial<User>): boolean
+    public static isValid(user: DeepPartial<User>): boolean
     {
         return !!user.signatureSecret &&
             !!user.currentSignature &&
