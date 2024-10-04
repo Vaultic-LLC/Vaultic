@@ -10,7 +10,7 @@ export interface VaulticRepository<T extends VaulticEntity>
     signAndInsert: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
     insertExisting(manager: EntityManager, entity: DeepPartial<T>): Promise<boolean>;
     signAndUpdate: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
-    remove: (manager: EntityManager, entity: T) => Promise<boolean>;
+    delete: (manager: EntityManager, entityID: number) => Promise<boolean>;
     getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>;
     getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>;
 }
@@ -50,6 +50,11 @@ export interface DisplayVault
     name: string;
     userVaultID: number;
     lastUsed: boolean;
+}
+
+export interface ServerDisplayVault extends DisplayVault
+{
+    vaultKey: string;
 }
 
 export interface UserData 

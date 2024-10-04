@@ -5,6 +5,7 @@ import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { checkMergeMissingData, getUserDataSignatures } from "../Database/Repositories";
+import { UserDataPayload } from "../Types/ServerTypes";
 
 export interface ServerHelper
 {
@@ -88,6 +89,18 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
             // TODO: this will fail when logging in for the first time after registering
             // needs to be done after merging data in case the user needed to have been added
             await environment.repositories.users.setCurrentUser(masterKey, email);
+
+            console.log(`Payload 1: ${JSON.stringify(finishResponse.userDataPayload)}`)
+            const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
+            if (!payload)
+            {
+                // TODO: log error
+                console.log(`Payload failed`)
+            }
+            else 
+            {
+                finishResponse.userDataPayload = payload as UserDataPayload;
+            }
         }
 
         // TODO: not needed?
@@ -95,6 +108,35 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
     }
 
     return finishResponse;
+}
+
+async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
+{
+    const currentUser = await environment.repositories.users.getCurrentUser();
+    if (!currentUser)
+    {
+        return false;
+    }
+
+    for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
+    {
+        const vault = payload!.archivedVaults![i];
+        const vaultKey = await environment.repositories.userVaults.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!);
+        if (!vaultKey.success)
+        {
+            return false;
+        }
+
+        const decryptedName = await environment.utilities.crypt.decrypt(vaultKey.value!, vault.name!);
+        if (!decryptedName.success)
+        {
+            return false;
+        }
+
+        payload!.archivedVaults![i].name = decryptedName.value;
+    }
+
+    return payload;
 }
 
 const serverHelper: ServerHelper =

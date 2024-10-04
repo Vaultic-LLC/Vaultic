@@ -137,7 +137,7 @@ export default defineComponent({
                     }
 
                     app.isOnline = true;
-                    await app.loadUserData(key.value);
+                    await app.loadUserData(key.value, loginResponse.userDataPayload);
                     ctx.emit('onSuccess');
 
                     return;

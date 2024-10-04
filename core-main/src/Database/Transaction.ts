@@ -13,9 +13,10 @@ enum Operation
 interface PendingEntity
 {
     operation: Operation;
-    entity: VaulticEntity | DeepPartial<VaulticEntity>;
     existing: boolean;
+    entity?: VaulticEntity | DeepPartial<VaulticEntity>;
     signingKey?: string;
+    id?: number;
     repository: () => VaulticRepository<VaulticEntity>;
 }
 
@@ -50,11 +51,11 @@ export default class Transaction
         });
     }
 
-    deleteEntity<T extends VaulticEntity>(entity: T, repository: () => VaulticRepository<any>)
+    deleteEntity<T extends VaulticEntity>(entityID: number, repository: () => VaulticRepository<any>)
     {
         this.pendingEntities.push({
             operation: Operation.Delete,
-            entity,
+            id: entityID,
             existing: false,
             repository
         });
@@ -80,44 +81,58 @@ export default class Transaction
                 manager.queryRunner?.startTransaction();
 
                 let succeeded = true;
-                for (let i = 0; i < this.pendingEntities.length; i++)
+                try 
                 {
-                    const pendingEntity = this.pendingEntities[i];
-                    if (pendingEntity.operation == Operation.Insert)
+                    for (let i = 0; i < this.pendingEntities.length; i++)
                     {
-                        if (pendingEntity.existing)
+                        if (!succeeded)
                         {
-                            if (!(await pendingEntity.repository().insertExisting(manager, pendingEntity.entity)))
+                            break;
+                        }
+
+                        const pendingEntity = this.pendingEntities[i];
+                        if (pendingEntity.operation == Operation.Insert)
+                        {
+                            if (pendingEntity.existing)
+                            {
+                                if (!(await pendingEntity.repository().insertExisting(manager, pendingEntity.entity!)))
+                                {
+                                    succeeded = false;
+                                    break;
+                                }
+                            }
+                            else 
+                            {
+                                if (!(await pendingEntity.repository().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
+                                {
+                                    succeeded = false;
+                                    break;
+                                }
+                            }
+                        }
+                        else if (pendingEntity.operation == Operation.Update)
+                        {
+                            if (!(await pendingEntity.repository().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;
                             }
                         }
-                        else 
+                        else if (pendingEntity.operation == Operation.Delete)
                         {
-                            if (!(await pendingEntity.repository().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
+                            if (!(await pendingEntity.repository().delete(manager, pendingEntity.id!)))
                             {
                                 succeeded = false;
                                 break;
                             }
                         }
                     }
-                    else if (pendingEntity.operation == Operation.Update)
-                    {
-                        if (!(await pendingEntity.repository().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
-                        {
-                            succeeded = false;
-                            break;
-                        }
-                    }
-                    else if (pendingEntity.operation == Operation.Delete)
-                    {
-                        if (!(await pendingEntity.repository().remove(manager, pendingEntity.entity as VaulticEntity)))
-                        {
-                            succeeded = false;
-                            break;
-                        }
-                    }
+                }
+                catch (e)
+                {
+                    console.log('Error in transaction');
+                    console.log(e);
+                    succeeded = false;
                 }
 
                 // the transaction will be rolled back if an error is thrown inside it

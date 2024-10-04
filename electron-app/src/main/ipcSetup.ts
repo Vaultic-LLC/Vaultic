@@ -72,6 +72,7 @@ export default function setupIPC()
 
 	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data, backup)));
 	ipcMain.handle('userVaultRepository:loadArchivedVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.userVaults.loadArchivedVault(masterKey, userVaultID)));
+	ipcMain.handle('userVaultRepository:unarchiveVault', (e, masterKey: string, userVaultID: number, select: boolean) => validateSender(e, () => environment.repositories.userVaults.unarchiveVault(masterKey, userVaultID, select)));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 }

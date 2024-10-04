@@ -7,7 +7,10 @@
             <template #headerControls>
                 <SearchBar v-model="currentSearchText" :color="color" :width="'9vw'" :maxWidth="'250px'"
                     :minWidth="'100px'" :minHeight="'25px'" />
-                <AddDataTableItemButton :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
+                <Transition name="fade" mode="out-in">
+                    <AddDataTableItemButton v-if="!readOnly" :color="color"
+                        :initalActiveContentOnClick="tabToOpenOnAdd" />
+                </Transition>
             </template>
             <template #body>
                 <SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues"
@@ -72,6 +75,7 @@ export default defineComponent({
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const tabToOpenOnAdd: ComputedRef<number> = computed(() => app.activeFilterGroupsTable);
+        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
         const passwordFilters: SortedCollection<Filter> = new SortedCollection(
             app.currentVault.filterStore.passwordFilters, "name");
@@ -442,6 +446,7 @@ export default defineComponent({
         });
 
         return {
+            readOnly,
             tableRef,
             tabToOpenOnAdd,
             headerModels,

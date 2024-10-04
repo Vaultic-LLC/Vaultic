@@ -44,7 +44,6 @@ class AppStoreStateRepository extends StoreStateRepository<AppStoreState>
             return false;
         }
 
-        console.log('post backup app store state succeeded');
         return true;
     }
 }

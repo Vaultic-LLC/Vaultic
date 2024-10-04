@@ -6,24 +6,28 @@
             <div class="settingsView__inputSection">
                 <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
                     v-model="settingsState.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
-                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" />
+                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
                 <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
                     :color="color" v-model="settingsState.multipleFilterBehavior" :optionsEnum="FilterStatus"
-                    fadeIn="true" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'" />
+                    fadeIn="true" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
+                    :disabled="readOnly" />
             </div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
                     :label="'Max Login Records Per Day'" v-model="settingsState.loginRecordsToStorePerDay"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceLoginRecordsPerDay" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceLoginRecordsPerDay" />
                 <TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
                     :label="'Days to Store Login Records'" v-model="settingsState.numberOfDaysToStoreLoginRecords"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
             </div>
             <div class="settingsView__inputSection">
                 <CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
-                    :minHeight="'12.5px'" :label="'Default Additional Information to Markdown on Edit Screens'"
+                    :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Default Additional Information to Markdown on Edit Screens'"
                     v-model="settingsState.defaultMarkdownInEditScreens" />
             </div>
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
@@ -31,21 +35,24 @@
                 <TextInputField class="settingsView__randomPasswordLength" :color="color"
                     :label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceMinRandomPasswordLength" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceMinRandomPasswordLength" />
                 <TextInputField class="settingsView__randomPassphraseLength" :color="color"
                     :label="'Random Passphrase Length'" v-model.number="settingsState.randomPhraseLength"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceMinRandomPassphraseLength" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceMinRandomPassphraseLength" />
             </div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
                     v-model.number="settingsState.oldPasswordDays" :inputType="'number'" :width="'10vw'"
-                    :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
+                    :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceOldPasswordDays" />
                 <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
                     :label="'% Filled Metric for Pulse'" v-model.number="settingsState.percentMetricForPulse"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
                     :toolTipSize="'clamp(15px, 1vw, 28px)'"
                     :toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
             </div>
@@ -85,6 +92,7 @@ export default defineComponent({
         const settingsState: Ref<AppSettings> = ref(props.model);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
+        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -206,6 +214,7 @@ export default defineComponent({
         }
 
         return {
+            readOnly,
             color,
             settingsState,
             refreshKey,

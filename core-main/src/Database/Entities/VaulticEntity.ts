@@ -19,7 +19,7 @@ const VaulticHandler = {
         // don't want to include objects in this
         // TODO: should only include backupable properties? Don't need
         // to include properties that won't be backed up.
-        if (typeof newValue == 'string' && !obj.propertiesToSync.includes(prop))
+        if (typeof newValue != 'object' && !obj.propertiesToSync.includes(prop))
         {
             obj.propertiesToSync.push(prop);
             obj.serializedPropertiesToSync = JSON.stringify(obj.updatedProperties);

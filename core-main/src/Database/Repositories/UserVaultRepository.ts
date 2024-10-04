@@ -1,5 +1,5 @@
 import { environment } from "../../Environment";
-import { Repository } from "typeorm";
+import { EntityRepository, Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
@@ -13,6 +13,9 @@ import { StoreState } from "../Entities/States/StoreState";
 import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
 import vaulticServer from "../../Server/VaulticServer";
 import { MethodResponse } from "../../Types/MethodResponse";
+import axiosHelper from "../../Server/AxiosHelper";
+import { userDataE2EEncryptedFieldTree } from "../../Types/FieldTree";
+import { UserDataPayload } from "../../Types/ServerTypes";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -48,8 +51,19 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
     }
 
-    protected async decryptVaultKey(masterKey: string, privateKey: string, vaultKey: string): Promise<MethodResponse>
+    public async decryptVaultKey(masterKey: string, privateKey: string, decryptPrivateKey: boolean, vaultKey: string): Promise<MethodResponse>
     {
+        if (decryptPrivateKey)
+        {
+            const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, privateKey);
+            if (!decryptedPrivateKey.success)
+            {
+                return decryptedPrivateKey;
+            }
+
+            privateKey = decryptedPrivateKey.value!;
+        }
+
         const decryptedVaultKeys = await environment.utilities.crypt.decrypt(masterKey, vaultKey);
         if (!decryptedVaultKeys.success)
         {
@@ -131,7 +145,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 return [[], []];
             }
 
-            const decryptedVaultKey = await this.decryptVaultKey(masterKey, decryptedPrivateKey.value!, userVaults[i].vaultKey);
+            const decryptedVaultKey = await this.decryptVaultKey(masterKey, decryptedPrivateKey.value!, false, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
                 return [[], []];
@@ -188,21 +202,23 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             return false;
         }
 
-        if (!response.userDataPayload?.userVaults?.[0] || !response.userDataPayload?.vaults?.[0])
+        const decryptedData = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, response);
+        if (!decryptedData.success)
         {
             return false;
         }
 
-        const userVault: DeepPartial<UserVault> = response.userDataPayload!.userVaults[0];
-        const vault: DeepPartial<Vault> = response.userDataPayload!.vaults[0];
+        const userDataPayload: UserDataPayload = decryptedData.value.userDataPayload!;
 
-        const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, currentUser.privateKey);
-        if (!decryptedPrivateKey)
+        if (!userDataPayload.userVaults?.[0] || !userDataPayload.vaults?.[0])
         {
             return false;
         }
 
-        const decryptedVaultKey = await this.decryptVaultKey(masterKey, decryptedPrivateKey.value!, userVault.vaultKey!);
+        const userVault: DeepPartial<UserVault> = userDataPayload.userVaults[0];
+        const vault: DeepPartial<Vault> = userDataPayload.vaults[0];
+
+        const decryptedVaultKey = await this.decryptVaultKey(masterKey, currentUser.privateKey, true, userVault.vaultKey!);
         if (!decryptedVaultKey.value)
         {
             return false;
@@ -220,6 +236,73 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             groupStoreState: vault.groupStoreState!.state!,
             lastUsed: false
         };
+
+        condensedVault = await this.decryptCondensedUserVault(masterKey, decryptedVaultKey.value!, condensedVault);
+        return condensedVault;
+    }
+
+    public async unarchiveVault(masterKey: string, userVaultID: number, select: boolean): Promise<boolean | CondensedVaultData | null>
+    {
+        const currentUser = await environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return true;
+        }
+
+        const response = await vaulticServer.vault.unarchiveVault(userVaultID);
+        if (!response.Success)
+        {
+            return false;
+        }
+
+        const decryptedData = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, response);
+        if (!decryptedData.success)
+        {
+            return false;
+        }
+
+        const userDataPayload: UserDataPayload = decryptedData.value.userDataPayload!;
+
+        if (!userDataPayload.userVaults?.[0] || !userDataPayload.vaults?.[0])
+        {
+            return false;
+        }
+
+        const userVault: DeepPartial<UserVault> = userDataPayload.userVaults[0];
+        const vault: DeepPartial<Vault> = userDataPayload.vaults[0];
+
+        const transaction = new Transaction();
+        environment.repositories.vaults.addFromServer(vault, transaction);
+        this.addFromServer(userVault, transaction);
+
+        if (!(await transaction.commit()))
+        {
+            return false;
+        }
+
+        if (select)
+        {
+            await environment.repositories.vaults.setLastUsedVault(currentUser, userVault.userVaultID!);
+        }
+
+        let condensedVault: CondensedVaultData | null =
+        {
+            userVaultID: userVault.userVaultID!,
+            vaultPreferencesStoreState: userVault.vaultPreferencesStoreState!.state!,
+            name: vault.name!,
+            vaultStoreState: vault.vaultStoreState!.state!,
+            passwordStoreState: vault.passwordStoreState!.state!,
+            valueStoreState: vault.vaultStoreState!.state!,
+            filterStoreState: vault.filterStoreState!.state!,
+            groupStoreState: vault.groupStoreState!.state!,
+            lastUsed: false
+        };
+
+        const decryptedVaultKey = await this.decryptVaultKey(masterKey, currentUser.privateKey, true, userVault.vaultKey!);
+        if (!decryptedVaultKey.value)
+        {
+            return false;
+        }
 
         condensedVault = await this.decryptCondensedUserVault(masterKey, decryptedVaultKey.value!, condensedVault);
         return condensedVault;

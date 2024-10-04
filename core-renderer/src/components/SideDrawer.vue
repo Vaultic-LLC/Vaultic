@@ -32,6 +32,7 @@ import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
 import { Dictionary } from "../Types/DataStructures";
 import { DisplayVault, VaultType } from "../Types/APITypes";
+import { TreeNodeButton } from "../Types/Models";
 
 export default defineComponent({
     name: "SideDrawer",
@@ -58,6 +59,24 @@ export default defineComponent({
         const archivedVaultsID = manager.addChild(otherVaultsID, "Archived", false, false, true, "ArchivedIcon");
 
         const allNodes: Ref<TreeNodeMember[]> = ref(manager.buildList());
+
+        const treeNodeEditButton: TreeNodeButton =
+        {
+            icon: 'create-outline',
+            onClick: onLeafEdit
+        };
+
+        const treeNodeDeleteButton: TreeNodeButton =
+        {
+            icon: 'trash-outline',
+            onClick: onLeafDelete
+        };
+
+        const treeNodeUndoButton: TreeNodeButton =
+        {
+            icon: 'arrow-undo-outline',
+            onClick: onUnarchiveVault
+        };
 
         function openCreateVaultPopup()
         {
@@ -128,6 +147,18 @@ export default defineComponent({
             }
         }
 
+        async function onUnarchiveVault(data: Dictionary<any>)
+        {
+            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+            async function onKeySuccess(key: string)
+            {
+                if (!(await app.unarchiveVault(key, data['userVaultID'])))
+                {
+                    app.popups.showToast(primaryColor.value, 'Failed to unarchive vault', false);
+                }
+            }
+        }
+
         function onVaultUpdated(dv: DisplayVault)
         {
             manager.updateNode(
@@ -137,15 +168,16 @@ export default defineComponent({
             allNodes.value = manager.buildList();
         }
 
-        function updateNodeList(parentNodeId: number, type: VaultType, newValue: DisplayVault[], oldValue: DisplayVault[])
+        function updateNodeList(parentNodeId: number, type: VaultType, buttons: TreeNodeButton[],
+            newValue: DisplayVault[], oldValue: DisplayVault[])
         {
             const addedVault = newValue.filter(v => !oldValue.find(o => o.userVaultID == v.userVaultID));
             const removedVault = oldValue.filter(o => !newValue.find(v => v.userVaultID == o.userVaultID));
 
             addedVault.forEach(v => 
             {
-                manager.addChild(parentNodeId, v.name, v.userVaultID == app.currentVault.userVaultID,
-                    true, false, undefined, { userVaultID: v.userVaultID, type: type });
+                manager.addLeaf(parentNodeId, v.name, v.userVaultID == app.currentVault.userVaultID,
+                    true, buttons, undefined, { userVaultID: v.userVaultID, type: type });
             });
 
             removedVault.forEach(v => 
@@ -162,12 +194,12 @@ export default defineComponent({
 
         watch(() => app.userVaults.value, (newValue, oldValue) => 
         {
-            updateNodeList(privateVaultsID, VaultType.Personal, newValue, oldValue);
+            updateNodeList(privateVaultsID, VaultType.Personal, [treeNodeEditButton, treeNodeDeleteButton], newValue, oldValue);
         });
 
         watch(() => app.archivedVaults.value, (newValue, oldValue) => 
         {
-            updateNodeList(archivedVaultsID, VaultType.Archived, newValue, oldValue);
+            updateNodeList(archivedVaultsID, VaultType.Archived, [treeNodeUndoButton, treeNodeDeleteButton], newValue, oldValue);
         });
 
         watch(() => app.isOnline, (newValue) =>

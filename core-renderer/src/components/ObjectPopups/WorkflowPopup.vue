@@ -63,7 +63,7 @@ export default defineComponent({
         const scrollbarColor: Ref<string> = ref('#0f111d');
         const primaryColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
-        const disableButtons: Ref<boolean> = ref(false);
+        const disableButtons: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const worflowsSelectorItem: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {

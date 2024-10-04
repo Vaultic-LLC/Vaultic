@@ -142,7 +142,7 @@ export default defineComponent({
                 // is set / make sure it wasn't tampered with. Just always re generate it
                 app.isOnline = true;
                 //await stores.loadStoreData(masterKey.value, response);
-                await app.loadUserData(masterKey.value, response);
+                await app.loadUserData(masterKey.value, response.userDataPayload);
                 ctx.emit('onKeySuccess');
             }
             else

@@ -142,11 +142,12 @@ export class VaulticRepository<T extends VaulticEntity>
 
         const repo = manager.withRepository(this.repository);
 
-        // the entity hasn't been synced to the server yet so keeping it 
-        // as inserted makes it easier to merge in case there are conflicts
+        // If EntityState = Insertered, the entity hasn't been synced to the server yet so keeping it 
+        // as inserted makes it easier to merge in case there are conflicts.
+        // If entityState = Deleted, we need to let the server know so don't change it
         // TODO: only need to do this if we are upating a property that will be 
         // backed up to the server
-        if (entity.entityState != EntityState.Inserted)
+        if (entity.entityState == EntityState.Unchanged)
         {
             entity.entityState = EntityState.Updated;
         }
@@ -173,18 +174,18 @@ export class VaulticRepository<T extends VaulticEntity>
         return false;
     }
 
-    public async remove(manager: EntityManager, entity: T): Promise<boolean>
+    public async delete(manager: EntityManager, entityID: number): Promise<boolean>
     {
         const repo = manager.withRepository(this.repository);
 
-        try 
+        try
         {
-            const removedEntity = await repo.remove(this.getSavableEntity(entity));
-            return removedEntity.length == 1;
+            const removedEntity = await repo.delete(entityID);
+            return removedEntity.affected == 1;
         }
         catch (e)
         {
-            console.log(`Filed to delete entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to delete entity: ${JSON.stringify(entityID)}`)
             console.log(e);
         }
 

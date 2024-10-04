@@ -177,7 +177,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }, this.internalAutoLockNumberTime.value);
     }
 
-    public async loadUserData(masterKey: string, response?: any)
+    public async loadUserData(masterKey: string, payload?: any)
     {
         if (this.loadedUser)
         {
@@ -195,9 +195,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         Object.assign(this.state, JSON.parse(parsedUserData.appStoreState));
         this.internalUserVaults.value = parsedUserData.displayVaults!;
-        this.internalSharedVaults.value = response.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
-        this.internalArchivedVaults.value = response.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
-        this.internalCurrentVault.setVaultData(masterKey, parsedUserData.currentVault);
+        this.internalSharedVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
+        this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
+        this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault);
         this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;
     }
@@ -213,7 +213,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const vaultData = result as CondensedVaultData;
         if (setAsActive)
         {
-            this.internalCurrentVault.setVaultData(masterKey, vaultData);
+            this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData);
         }
 
         // force trigger reactivity
@@ -262,22 +262,16 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const archviedDisplayVault = this.userVaults.value.splice(index, 1);
-        const archviedVault = new BasicVaultStore(archviedDisplayVault[0])
-        this.internalArchivedVaults.value.push(archviedVault);
+        const tempUserVaults = [...this.userVaults.value];
+        const archivedDisplayVault = tempUserVaults.splice(index, 1)
+        const archviedVault = new BasicVaultStore(archivedDisplayVault[0])
 
         // force reactivity. For some reason it doesn't work otherwise
-        const tempUserVaults = [...this.internalUserVaults.value];
         this.internalUserVaults.value = tempUserVaults;
 
         const tempArchivedVaults = [...this.internalArchivedVaults.value];
+        tempArchivedVaults.push(archviedVault);
         this.internalArchivedVaults.value = tempArchivedVaults;
-
-        // load the first vault if we archived the current one
-        if (archviedDisplayVault[0].userVaultID == this.internalCurrentVault.userVaultID)
-        {
-            await this.setActiveVault(masterKey, this.internalUserVaults.value[0].userVaultID);
-        }
 
         return true;
     }
@@ -298,10 +292,50 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 return false;
             }
 
-            archivedVault[0].setVaultData(masterKey, vaultData as CondensedVaultData);
+            archivedVault[0].setBasicVaultStoreData(vaultData as CondensedVaultData);
         }
 
-        this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false);
+        this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false, true);
+        return true;
+    }
+
+    async unarchiveVault(masterKey: string, userVaultID: number): Promise<boolean>
+    {
+        const index = this.archivedVaults.value.findIndex(v => v.userVaultID == userVaultID);
+        if (index == -1)
+        {
+            return false;
+        }
+
+        const selected = this.currentVault.userVaultID == userVaultID;
+        let vaultData = await api.repositories.userVaults.unarchiveVault(masterKey, userVaultID, selected);
+
+        if (!vaultData)
+        {
+            return false;
+        }
+
+        vaultData = vaultData as CondensedVaultData;
+
+        const tempUserVaults = [...this.internalUserVaults.value];
+        const tempArchivedVaults = [...this.internalArchivedVaults.value];
+
+        tempArchivedVaults.splice(index, 1);
+        tempUserVaults.push({
+            name: vaultData.name,
+            userVaultID: vaultData.userVaultID,
+            lastUsed: selected
+        });
+
+        // force reactivity. For some reason it doesn't work otherwise
+        this.internalUserVaults.value = tempUserVaults;
+        this.internalArchivedVaults.value = tempArchivedVaults;
+
+        if (selected)
+        {
+            this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData)
+        }
+
         return true;
     }
 
@@ -314,7 +348,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.internalCurrentVault.setVaultData(masterKey, vault as CondensedVaultData);
+        this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vault as CondensedVaultData);
         return true;
     }
 

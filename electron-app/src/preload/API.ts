@@ -107,6 +107,7 @@ const userVaultRepository: UserVaultRepository =
 {
 	saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data, backup),
 	loadArchivedVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('userVaultRepository:loadArchivedVault', masterKey, userVaultID),
+	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => ipcRenderer.invoke('userVaultRepository:unarchiveVault', masterKey, userVaultID, select)
 };
 
 const api: IAPI =

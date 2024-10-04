@@ -69,6 +69,8 @@ export default defineComponent({
                     icon: n.icon,
                     selected: computed(() => (n.isParent && n.selected) || (!n.isParent && n.id == selectedLeafNode.value?.id)),
                     isParent: n.isParent,
+                    buttons: n.buttons,
+                    data: n.data,
                     display: n.depth == 0 ||
                         (n.parent?.depth == 0 && n.parent?.selected == true) ||
                         (n.parent != undefined && n.parent.depth > 0 && n.parent.display == true),

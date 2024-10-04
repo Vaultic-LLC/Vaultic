@@ -44,6 +44,9 @@ export const userDataE2EEncryptedFieldTree: FieldTree =
                             properties: storeStateE2EEncryptableProperties
                         }
                     }
+                },
+                archivedVaults: {
+                    properties: [nameof<UserVault>("vaultKey")]
                 }
             }
         }

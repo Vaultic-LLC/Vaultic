@@ -307,7 +307,6 @@ class VaultRepository extends VaulticRepository<Vault>
             await backupData(masterKey);
         }
 
-        console.log('succeeded');
         return true;
     }
 
@@ -332,7 +331,7 @@ class VaultRepository extends VaulticRepository<Vault>
 
         if (backup)
         {
-            backupData(masterKey);
+            return await backupData(masterKey);
         }
 
         return true;
@@ -435,83 +434,112 @@ class VaultRepository extends VaulticRepository<Vault>
 
         let succeeded = true;
 
-        try 
-        {
-            this.repository
-                .createQueryBuilder("vaults")
-                .update()
-                .set(
-                    {
-                        entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]",
-                    }
-                )
-                .andWhere("vaultID IN (:...vaultIDs)", { vaultIDs: entities.map(e => e.vaultID) })
-                .execute();
-        }
-        catch 
-        {
-            // TODO: log
-            succeeded = false;
-        }
-
-        const vaultStoreStatesToUpdate: Partial<VaultStoreState>[] = [];
-        const passwordStoreStatesToUpdate: Partial<PasswordStoreState>[] = [];
-        const valueStoreStatesToUpdate: Partial<ValueStoreState>[] = [];
-        const filterStoreStatesToUpdate: Partial<FilterStoreState>[] = [];
-        const groupStoreStatesToUpdate: Partial<GroupStoreState>[] = [];
+        const deletedVaults: Partial<Vault>[] = [];
+        const otherVaults: Partial<Vault>[] = [];
 
         for (let i = 0; i < entities.length; i++)
         {
-            if (entities[i].vaultStoreState && entities[i].vaultStoreState!.vaultStoreStateID)
+            if (entities[i].entityState == EntityState.Deleted)
             {
-                vaultStoreStatesToUpdate.push(entities[i].vaultStoreState!);
+                deletedVaults.push(entities[i])
             }
-
-            if (entities[i].passwordStoreState && entities[i].passwordStoreState!.passwordStoreStateID)
+            else 
             {
-                passwordStoreStatesToUpdate.push(entities[i].passwordStoreState!);
-            }
-
-            if (entities[i].valueStoreState && entities[i].valueStoreState!.valueStoreStateID)
-            {
-                valueStoreStatesToUpdate.push(entities[i].valueStoreState!);
-            }
-
-            if (entities[i].filterStoreState && entities[i].filterStoreState!.filterStoreStateID)
-            {
-                filterStoreStatesToUpdate.push(entities[i].filterStoreState!);
-            }
-
-            if (entities[i].groupStoreState && entities[i].groupStoreState!.groupStoreStateID)
-            {
-                groupStoreStatesToUpdate.push(entities[i].groupStoreState!);
+                otherVaults.push(entities[i]);
             }
         }
 
-        if (vaultStoreStatesToUpdate.length > 0)
+        if (deletedVaults.length > 0)
         {
-            succeeded = await environment.repositories.vaultStoreStates.postBackupEntitiesUpdates(vaultStoreStatesToUpdate);
+            for (let i = 0; i < deletedVaults.length; i++)
+            {
+                const transaction = new Transaction();
+                transaction.deleteEntity(deletedVaults[i].vaultID!, () => this);
+
+                await transaction.commit();
+            }
         }
 
-        if (passwordStoreStatesToUpdate.length > 0)
+        if (otherVaults.length > 0)
         {
-            succeeded = await environment.repositories.passwordStoreStates.postBackupEntitiesUpdates(passwordStoreStatesToUpdate);
-        }
+            try 
+            {
+                this.repository
+                    .createQueryBuilder("vaults")
+                    .update()
+                    .set(
+                        {
+                            entityState: EntityState.Unchanged,
+                            serializedPropertiesToSync: "[]",
+                        }
+                    )
+                    .andWhere("vaultID IN (:...vaultIDs)", { vaultIDs: otherVaults.map(e => e.vaultID) })
+                    .execute();
+            }
+            catch 
+            {
+                // TODO: log
+                succeeded = false;
+            }
 
-        if (valueStoreStatesToUpdate.length > 0)
-        {
-            succeeded = await environment.repositories.valueStoreStates.postBackupEntitiesUpdates(valueStoreStatesToUpdate);
-        }
+            const vaultStoreStatesToUpdate: Partial<VaultStoreState>[] = [];
+            const passwordStoreStatesToUpdate: Partial<PasswordStoreState>[] = [];
+            const valueStoreStatesToUpdate: Partial<ValueStoreState>[] = [];
+            const filterStoreStatesToUpdate: Partial<FilterStoreState>[] = [];
+            const groupStoreStatesToUpdate: Partial<GroupStoreState>[] = [];
 
-        if (filterStoreStatesToUpdate.length > 0)
-        {
-            succeeded = await environment.repositories.filterStoreStates.postBackupEntitiesUpdates(filterStoreStatesToUpdate);
-        }
+            for (let i = 0; i < otherVaults.length; i++)
+            {
+                if (otherVaults[i].vaultStoreState && otherVaults[i].vaultStoreState!.vaultStoreStateID)
+                {
+                    vaultStoreStatesToUpdate.push(otherVaults[i].vaultStoreState!);
+                }
 
-        if (groupStoreStatesToUpdate.length > 0)
-        {
-            succeeded = await environment.repositories.groupStoreStates.postBackupEntitiesUpdates(groupStoreStatesToUpdate);
+                if (otherVaults[i].passwordStoreState && otherVaults[i].passwordStoreState!.passwordStoreStateID)
+                {
+                    passwordStoreStatesToUpdate.push(otherVaults[i].passwordStoreState!);
+                }
+
+                if (otherVaults[i].valueStoreState && otherVaults[i].valueStoreState!.valueStoreStateID)
+                {
+                    valueStoreStatesToUpdate.push(otherVaults[i].valueStoreState!);
+                }
+
+                if (otherVaults[i].filterStoreState && otherVaults[i].filterStoreState!.filterStoreStateID)
+                {
+                    filterStoreStatesToUpdate.push(otherVaults[i].filterStoreState!);
+                }
+
+                if (otherVaults[i].groupStoreState && otherVaults[i].groupStoreState!.groupStoreStateID)
+                {
+                    groupStoreStatesToUpdate.push(otherVaults[i].groupStoreState!);
+                }
+            }
+
+            if (vaultStoreStatesToUpdate.length > 0)
+            {
+                succeeded = succeeded && await environment.repositories.vaultStoreStates.postBackupEntitiesUpdates(vaultStoreStatesToUpdate);
+            }
+
+            if (passwordStoreStatesToUpdate.length > 0)
+            {
+                succeeded = succeeded && await environment.repositories.passwordStoreStates.postBackupEntitiesUpdates(passwordStoreStatesToUpdate);
+            }
+
+            if (valueStoreStatesToUpdate.length > 0)
+            {
+                succeeded = succeeded && await environment.repositories.valueStoreStates.postBackupEntitiesUpdates(valueStoreStatesToUpdate);
+            }
+
+            if (filterStoreStatesToUpdate.length > 0)
+            {
+                succeeded = succeeded && await environment.repositories.filterStoreStates.postBackupEntitiesUpdates(filterStoreStatesToUpdate);
+            }
+
+            if (groupStoreStatesToUpdate.length > 0)
+            {
+                succeeded = succeeded && await environment.repositories.groupStoreStates.postBackupEntitiesUpdates(groupStoreStatesToUpdate);
+            }
         }
 
         return succeeded;

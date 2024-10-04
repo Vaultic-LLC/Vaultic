@@ -1,4 +1,5 @@
 import { Dictionary } from "./DataStructures";
+import { TreeNodeButton } from "./Models";
 
 export class TreeNodeMember 
 {
@@ -12,9 +13,11 @@ export class TreeNodeMember
     children: TreeNodeMember[];
     depth: number;
     data: Dictionary<any>;
+    buttons: TreeNodeButton[];
 
     constructor(id: number, text: string, selected: boolean, display: boolean, isParent: boolean, depth: number,
-        children: TreeNodeMember[], icon?: string, parent?: TreeNodeMember, data?: Dictionary<any>)
+        children: TreeNodeMember[], icon?: string, parent?: TreeNodeMember, data?: Dictionary<any>,
+        buttons?: TreeNodeButton[])
     {
         this.id = id;
         this.text = text;
@@ -26,6 +29,7 @@ export class TreeNodeMember
         this.parent = parent;
         this.depth = depth;
         this.data = data ?? {};
+        this.buttons = buttons ?? [];
     }
 }
 
@@ -54,8 +58,7 @@ export class TreeNodeListManager
         return id;
     }
 
-    addChild(parentID: number, text: string, selected: boolean, display: boolean, isParent: boolean, icon?: string,
-        data?: Dictionary<any>)
+    addChild(parentID: number, text: string, selected: boolean, display: boolean, isParent: boolean, icon?: string, data?: Dictionary<any>)
     {
         const id = this.currentId++;
 
@@ -64,6 +67,19 @@ export class TreeNodeListManager
 
         parent.children.push(child);
         this.nodesByID[id] = child;
+
+        return id;
+    }
+
+    addLeaf(parentID: number, text: string, selected: boolean, display: boolean, buttons: TreeNodeButton[],
+        icon?: string, data?: Dictionary<any>)
+    {
+        const id = this.currentId++;
+        const parent = this.nodesByID[parentID];
+        const leaf = new TreeNodeMember(id, text, selected, display, false, parent.depth + 1, [], icon, parent, data, buttons);
+
+        parent.children.push(leaf);
+        this.nodesByID[id] = leaf;
 
         return id;
     }

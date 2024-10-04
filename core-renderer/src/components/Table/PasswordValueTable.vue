@@ -7,7 +7,9 @@
             <template #headerControls>
                 <SearchBar v-model="currentSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
                     :width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" :minHeight="'27px'" />
-                <AddDataTableItemButton :color="color" :initalActiveContentOnClick="activeTable" />
+                <Transition name="fade" mode="out-in">
+                    <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
+                </Transition>
             </template>
             <template #body>
                 <CollapsibleTableRow :shadow="true" v-slot="props"
@@ -87,6 +89,7 @@ export default defineComponent({
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const activeTable: Ref<number> = ref(app.activePasswordValuesTable);
+        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
         const color: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             app.userPreferences.currentColorPalette.passwordsColor.primaryColor : app.userPreferences.currentColorPalette.valuesColor.primaryColor);
 
@@ -542,6 +545,7 @@ export default defineComponent({
         });
 
         return {
+            readOnly,
             tableRef,
             activeTable,
             color,

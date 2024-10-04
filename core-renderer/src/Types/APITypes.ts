@@ -225,6 +225,7 @@ export interface UserVaultRepository
 {
     saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => Promise<boolean>;
     loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData | null>;
+    unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => Promise<boolean | CondensedVaultData | null>;
 }
 
 export interface Repositories

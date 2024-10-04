@@ -1,3 +1,4 @@
+import { ref, Ref } from "vue";
 import { CondensedVaultData, DisplayVault } from "../../Types/APITypes";
 import { Dictionary } from "../../Types/DataStructures";
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
@@ -44,7 +45,7 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
 
-    public setVaultData(masterKey: string, data: CondensedVaultData)
+    protected setBaseVaultStoreData(data: CondensedVaultData)
     {
         this.internalUserVaultID = data.userVaultID;
         this.updateState(JSON.parse(data.vaultStoreState));
@@ -86,9 +87,9 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
         this.internalUserVaultID = displayVault.userVaultID;
     }
 
-    public setVaultData(masterKey: string, data: CondensedVaultData)
+    public setBasicVaultStoreData(data: CondensedVaultData)
     {
-        super.setVaultData(masterKey, data);
+        super.setBaseVaultStoreData(data);
         this.internalPasswordStore.updateState(JSON.parse(data.passwordStoreState));
         this.internalValueStore.updateState(JSON.parse(data.valueStoreState));
         this.internalFilterStore.updateState(JSON.parse(data.filterStoreState));
@@ -101,20 +102,27 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
 export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     ReactiveValueStore, ReactiveFilterStore, ReactiveGroupStore>
 {
+    protected internalIsReadOnly: Ref<boolean>;
+
+    get isReadOnly() { return this.internalIsReadOnly; }
+    get loginHistory() { return this.state.loginHistory; }
+
     constructor()
     {
         super();
+        this.internalIsReadOnly = ref(false);
         this.internalPasswordStore = new ReactivePasswordStore(this);
         this.internalValueStore = new ReactiveValueStore(this);
         this.internalFilterStore = new ReactiveFilterStore(this);
         this.internalGroupStore = new ReactiveGroupStore(this);
     }
 
-    get loginHistory() { return this.state.loginHistory; }
-
-    public setVaultData(masterKey: string, data: CondensedVaultData)
+    public setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData)
     {
-        super.setVaultData(masterKey, data);
+        super.setBaseVaultStoreData(data);
+
+        this.internalIsReadOnly.value = false;
+
         this.internalPasswordStore.updateState(JSON.parse(data.passwordStoreState));
         this.internalValueStore.updateState(JSON.parse(data.valueStoreState));
         this.internalFilterStore.updateState(JSON.parse(data.filterStoreState));
@@ -123,8 +131,9 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         this.updateLogins(masterKey);
     }
 
-    public setVaultDataFromBasicVault(masterKey, basicVault: BasicVaultStore, recordLogin: boolean)
+    public setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)
     {
+        this.internalIsReadOnly.value = readOnly;
         this.internalUserVaultID = basicVault.userVaultID;
         this.updateState(basicVault.getState());
         this.internalVaultPreferencesStore.updateState(basicVault.vaultPreferencesStore.getState());
