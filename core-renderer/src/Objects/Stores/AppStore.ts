@@ -32,7 +32,7 @@ export interface AppStoreState
     settings: AppSettings;
 }
 
-export type AppStoreEvents = StoreEvents | "onVaultUpdated";
+export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
 export class AppStore extends Store<AppStoreState, AppStoreEvents>
 {
@@ -143,7 +143,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return transaction.commit(masterKey);
     }
 
-    public lock(redirect: boolean = true, expireSession: boolean = true)
+    public async lock(redirect: boolean = true, expireSession: boolean = true)
     {
         hideAll();
 
@@ -163,6 +163,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.currentVault.groupStore.resetToDefault();
         this.currentVault.vaultPreferencesStore.resetToDefault();
         this.internalUserDataBreachStore.resetToDefault();
+
+        this.internalUserVaults.value = [];
+        this.internalArchivedVaults.value = [];
+        this.internalSharedVaults.value = [];
+        this.internalCurrentVault.resetToDefault();
+
+        await api.cache.clear();
 
         this.isOnline = false;
         this.loadedUser = false;
@@ -334,6 +341,35 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         if (selected)
         {
             this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData)
+        }
+
+        return true;
+    }
+
+    async permanentlyDeleteVault(masterKey: string, userVaultID: number): Promise<boolean>
+    {
+        const index = this.archivedVaults.value.findIndex(v => v.userVaultID == userVaultID);
+        if (index == -1)
+        {
+            return false;
+        }
+
+        const response = await api.server.vault.deleteVault(userVaultID);
+        if (!response)
+        {
+            return false;
+        }
+
+        const tempArchivedVaults = [...this.internalArchivedVaults.value];
+        tempArchivedVaults.splice(index, 1);
+
+        this.internalArchivedVaults.value = tempArchivedVaults;
+
+        const selected = this.currentVault.userVaultID == userVaultID;
+        if (selected)
+        {
+            await this.setActiveVault(masterKey, this.internalUserVaults.value[0].userVaultID);
+            this.emit('onVaultActive', this.internalUserVaults.value[0].userVaultID);
         }
 
         return true;

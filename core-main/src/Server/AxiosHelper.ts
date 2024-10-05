@@ -232,29 +232,14 @@ class STSAxiosWrapper extends AxiosWrapper
 
 class APIAxiosWrapper extends AxiosWrapper
 {
-    // TODO: create cache and move these into there so that I can clear the cache when a user 
-    // locks the app
-    private sessionKey: string | undefined;
-    private exportKey: string | undefined;
-
     constructor()
     {
         super();
     }
 
-    async setSessionInfoAndExportKey(tokenHash: string, sessionKey: string, exportKey: string)
-    {
-        this.sessionKey = sessionKey;
-        this.exportKey = exportKey;
-
-        // an exception will be thrown when trying to set a cookie with a ';' character.
-        // use the hash to make sure this doesn't happen
-        await environment.sessionHandler.setSession(tokenHash);
-    }
-
     async endToEndEncryptPostData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
-        if (!this.exportKey)
+        if (!environment.cache.exportKey)
         {
             return { success: false, errorMessage: "No Export Key" };
         }
@@ -268,7 +253,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     continue;
                 }
 
-                const response = await environment.utilities.crypt.encrypt(this.exportKey, data[fieldTree.properties[i]]);
+                const response = await environment.utilities.crypt.encrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
                     return { ...response, errorMessage: `${response.errorMessage}. Prop: ${fieldTree.properties[i]}, Value: ${data[fieldTree.properties[i]]}` };
@@ -324,7 +309,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
     async decryptEndToEndData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
-        if (!this.exportKey)
+        if (!environment.cache.exportKey)
         {
             return { success: false, errorMessage: "No Export Key" };
         }
@@ -338,7 +323,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     continue;
                 }
 
-                const response = await environment.utilities.crypt.decrypt(this.exportKey, data[fieldTree.properties[i]]);
+                const response = await environment.utilities.crypt.decrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
                     console.log(`Failed to Decrypt: ${fieldTree.properties[i]}, Data: ${JSON.stringify(data)}]}`)
@@ -395,7 +380,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
     {
-        if (!this.sessionKey)
+        if (!environment.cache.sessionKey)
         {
             return { Success: false, InvalidSession: true } as InvalidSessionResponse;
         }
@@ -413,7 +398,7 @@ class APIAxiosWrapper extends AxiosWrapper
             return [{ success: false, invalidSession: true }, { Key: '', Data: '' }]
         }
 
-        const requestData = await environment.utilities.crypt.encrypt(this.sessionKey!, JSON.stringify(data));
+        const requestData = await environment.utilities.crypt.encrypt(environment.cache.sessionKey!, JSON.stringify(data));
         if (!requestData.success)
         {
             return [requestData, { Data: '' }]
@@ -438,7 +423,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 return [{ success: false, errorMessage: `response: ${JSON.stringify(encryptedResponse)}` }, responseData]
             }
 
-            const decryptedResponse = await environment.utilities.crypt.decrypt(this.sessionKey!, encryptedResponse.Data);
+            const decryptedResponse = await environment.utilities.crypt.decrypt(environment.cache.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
                 return [{ ...decryptedResponse, errorMessage: `response: ${JSON.stringify(encryptedResponse)}` }, responseData];

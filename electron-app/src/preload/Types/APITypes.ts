@@ -105,17 +105,28 @@ export interface ValueController
 	generateRandomPhrase: (length: number) => Promise<GenerateRandomPhraseResponse>;
 }
 
+export interface VaultController
+{
+	deleteVault: (userVaultID: number) => Promise<BaseResponse>;
+}
+
 export interface VaulticServer
 {
 	app: AppController;
 	session: SessionController;
 	user: UserController;
 	value: ValueController;
+	vault: VaultController;
 }
 
 export interface Environment
 {
 	isTest: () => Promise<boolean>;
+}
+
+export interface VaulticCache
+{
+	clear: () => Promise<void>;
 }
 
 export interface UserRepository
@@ -219,4 +230,5 @@ export interface IAPI
 	utilities: Utilities;
 	helpers: Helpers;
 	repositories: Repositories;
+	cache: VaulticCache;
 }

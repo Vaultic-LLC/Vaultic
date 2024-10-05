@@ -16,8 +16,7 @@
             <div class="sideDrawer__currentUserName">Tyler Wanta</div>
         </div>
         <div class="sideDrawer__vaultList">
-            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked"
-                :onLeafEdit="onLeafEdit" :onLeafDelete="onLeafDelete" />
+            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
         </div>
     </div>
 </template>
@@ -66,16 +65,22 @@ export default defineComponent({
             onClick: onLeafEdit
         };
 
-        const treeNodeDeleteButton: TreeNodeButton =
+        const treeNodeArchiveButton: TreeNodeButton =
         {
             icon: 'trash-outline',
-            onClick: onLeafDelete
+            onClick: onLeafArchive
         };
 
         const treeNodeUndoButton: TreeNodeButton =
         {
             icon: 'arrow-undo-outline',
             onClick: onUnarchiveVault
+        };
+
+        const treeNodePermanentlyDeleteButton: TreeNodeButton =
+        {
+            icon: 'trash-outline',
+            onClick: onLeafPermanantlyDelete
         };
 
         function openCreateVaultPopup()
@@ -129,7 +134,7 @@ export default defineComponent({
             app.popups.showVaultPopup(() => { }, dispalyVault[0]);
         }
 
-        async function onLeafDelete(data: Dictionary<any>)
+        async function onLeafArchive(data: Dictionary<any>)
         {
             // can't delete our last vault
             if (app.userVaults.value.length == 1)
@@ -159,11 +164,32 @@ export default defineComponent({
             }
         }
 
+        async function onLeafPermanantlyDelete(data: Dictionary<any>)
+        {
+            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+            async function onKeySuccess(key: string)
+            {
+                if (!(await app.permanentlyDeleteVault(key, data['userVaultID'])))
+                {
+                    app.popups.showToast(primaryColor.value, 'Failed to delete vault', false);
+                }
+            }
+        }
+
         function onVaultUpdated(dv: DisplayVault)
         {
             manager.updateNode(
                 (node) => node.data["userVaultID"] == dv.userVaultID,
                 (node) => node.text = dv.name);
+
+            allNodes.value = manager.buildList();
+        }
+
+        function onVaultActive(userVaultID: number)
+        {
+            manager.updateNode(
+                (node) => node.data["userVaultID"] == userVaultID,
+                (node) => node.selected = true);
 
             allNodes.value = manager.buildList();
         }
@@ -194,12 +220,12 @@ export default defineComponent({
 
         watch(() => app.userVaults.value, (newValue, oldValue) => 
         {
-            updateNodeList(privateVaultsID, VaultType.Personal, [treeNodeEditButton, treeNodeDeleteButton], newValue, oldValue);
+            updateNodeList(privateVaultsID, VaultType.Personal, [treeNodeEditButton, treeNodeArchiveButton], newValue, oldValue);
         });
 
         watch(() => app.archivedVaults.value, (newValue, oldValue) => 
         {
-            updateNodeList(archivedVaultsID, VaultType.Archived, [treeNodeUndoButton, treeNodeDeleteButton], newValue, oldValue);
+            updateNodeList(archivedVaultsID, VaultType.Archived, [treeNodeUndoButton, treeNodePermanentlyDeleteButton], newValue, oldValue);
         });
 
         watch(() => app.isOnline, (newValue) =>
@@ -212,11 +238,13 @@ export default defineComponent({
         onMounted(() => 
         {
             app.addEvent('onVaultUpdated', onVaultUpdated);
+            app.addEvent('onVaultActive', onVaultActive);
         });
 
         onUnmounted(() => 
         {
             app.removeEvent('onVaultUpdated', onVaultUpdated);
+            app.removeEvent('onVaultActive', onVaultActive);
         });
 
         return {
@@ -226,9 +254,7 @@ export default defineComponent({
             online,
             text,
             openCreateVaultPopup,
-            onLeafClicked,
-            onLeafEdit,
-            onLeafDelete
+            onLeafClicked
         };
     }
 })

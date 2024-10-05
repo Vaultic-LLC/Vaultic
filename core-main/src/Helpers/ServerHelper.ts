@@ -73,7 +73,7 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
     let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures);
     if (finishResponse.Success)
     {
-        await axiosHelper.api.setSessionInfoAndExportKey(finishResponse.Session?.Hash!, sessionKey, exportKey);
+        await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
 
         if (!firstLogin)
         {

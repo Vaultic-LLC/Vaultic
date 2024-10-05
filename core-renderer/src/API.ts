@@ -9,6 +9,7 @@ class API
     get utilities() { return this.internalAPI?.utilities; }
     get helpers() { return this.internalAPI?.helpers; }
     get repositories() { return this.internalAPI?.repositories; }
+    get cache() { return this.internalAPI?.cache; }
 
     constructor()
     {

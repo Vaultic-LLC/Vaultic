@@ -41,7 +41,7 @@ export default defineComponent({
         TreeNode,
         VaulticButton
     },
-    props: ['nodes', 'onLeafClicked', 'onLeafEdit', 'onLeafDelete'],
+    props: ['nodes', 'onLeafClicked'],
     emits: ['onAdd'],
     setup(props)
     {
@@ -111,14 +111,6 @@ export default defineComponent({
                         }
 
                         models.value = buildTreeNodeModels(currentTreeNodes.value);
-                    },
-                    onEdit: () => 
-                    {
-                        props.onLeafEdit(n.data);
-                    },
-                    onDelete: () => 
-                    {
-                        props.onLeafDelete(n.data)
                     }
                 }
 

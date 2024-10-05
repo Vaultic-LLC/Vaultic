@@ -4,7 +4,6 @@ import { Dictionary } from "../../Types/DataStructures";
 import { AtRiskType, DataFile, IFilterable, IGroupable, IIdentifiable, NameValuePair, Password } from "../../Types/EncryptedData";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
-import { api } from "../../API"
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 

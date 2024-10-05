@@ -78,24 +78,12 @@ export default defineComponent({
             treeNodeModel.value.onClick();
         }
 
-        function onEdit()
-        {
-            treeNodeModel.value.onEdit();
-        }
-
-        function onDelete()
-        {
-            treeNodeModel.value.onDelete();
-        }
-
         return {
             hovering,
             treeNodeModel,
             selectorButtonModel,
             marginLeft,
-            onClick,
-            onEdit,
-            onDelete
+            onClick
         };
     }
 })

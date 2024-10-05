@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository, UserVaultRepository } from "./Types/APITypes"
+import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository, UserVaultRepository, VaultController, VaulticCache } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -35,6 +35,11 @@ const valueController: ValueController =
 {
 	generateRandomPhrase: (length: number) => ipcRenderer.invoke('valueController:generateRandomPhrase', length)
 };
+
+const vaultController: VaultController =
+{
+	deleteVault: (userVaultID: number) => ipcRenderer.invoke('vaultController:deleteVault', userVaultID)
+}
 
 const cryptUtility: CryptUtility =
 {
@@ -85,6 +90,11 @@ const environment: Environment =
 	isTest: () => ipcRenderer.invoke('environment:isTest')
 };
 
+const cache: VaulticCache =
+{
+	clear: () => ipcRenderer.invoke('cache:clear')
+}
+
 const userRepository: UserRepository =
 {
 	getLastUsedUserEmail: () => ipcRenderer.invoke('userRepository:getLastUsedUserEmail'),
@@ -114,11 +124,13 @@ const api: IAPI =
 {
 	getDeviceInfo,
 	environment,
+	cache,
 	server: {
 		app: appController,
 		session: sessionController,
 		user: userController,
 		value: valueController,
+		vault: vaultController
 	},
 	utilities: {
 		crypt: cryptUtility,

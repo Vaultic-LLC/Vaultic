@@ -14,9 +14,6 @@ import { EntityState } from "../../Types/Properties";
 import { backupData } from ".";
 import { StoreState } from "../Entities/States/StoreState";
 
-// TODO: move to cache
-let currentUserID: number | undefined;
-
 class UserRepository extends VaulticRepository<User>
 {
     protected getRepository(): Repository<User> | undefined
@@ -27,13 +24,13 @@ class UserRepository extends VaulticRepository<User>
     // TODO: this should verify the user as well
     public async getCurrentUser()
     {
-        if (!currentUserID)
+        if (!environment.cache.currentUserID)
         {
             return undefined;
         }
 
         return this.retrieveReactive((repository) => repository.findOneBy({
-            userID: currentUserID
+            userID: environment.cache.currentUserID
         }));
     }
 
@@ -154,7 +151,7 @@ class UserRepository extends VaulticRepository<User>
         }
 
         // set before backing up
-        currentUserID = user.userID;
+        environment.cache.setCurrentUserID(user.userID);
 
         const backupResponse = await backupData(masterKey);
         if (!backupResponse)
@@ -228,7 +225,7 @@ class UserRepository extends VaulticRepository<User>
             return false;
         }
 
-        currentUserID = user.userID;
+        environment.cache.setCurrentUserID(user.userID);
         return true;
     }
 

@@ -29,6 +29,8 @@ export default function setupIPC()
 
 	ipcMain.handle('valueController:generateRandomPhrase', (e, length: number) => validateSender(e, () => vaulticServer.value.generateRandomPhrase(length)));
 
+	ipcMain.handle('vaultController:deleteVault', (e, userVaultID: number) => validateSender(e, () => vaulticServer.vault.deleteVault(userVaultID)));
+
 	ipcMain.handle('cryptUtility:encrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.encrypt(key, value)));
 	ipcMain.handle('cryptUtility:decrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.decrypt(key, value)));
 	ipcMain.handle('cryptUtility:ECEncrypt', (e, recipientPublicKey: string, value: string) => validateSender(e, () => cryptUtility.ECEncrypt(recipientPublicKey, value)));
@@ -75,6 +77,8 @@ export default function setupIPC()
 	ipcMain.handle('userVaultRepository:unarchiveVault', (e, masterKey: string, userVaultID: number, select: boolean) => validateSender(e, () => environment.repositories.userVaults.unarchiveVault(masterKey, userVaultID, select)));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
+
+	ipcMain.handle('cache:clear', (e) => validateSender(e, () => environment.cache.clear()));
 }
 
 function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): any

@@ -6,6 +6,7 @@ export interface VaultController
     create: () => Promise<CreateVaultResponse>;
     getArchivedVaultData: (userVaultID: number) => Promise<GetVaultDataResponse>;
     unarchiveVault: (userVaultID: number) => Promise<GetVaultDataResponse>;
+    deleteVault: (userVaultID: number) => Promise<GetVaultDataResponse>;
 }
 
 export function createVaultController(axiosHelper: AxiosHelper)
@@ -29,9 +30,17 @@ export function createVaultController(axiosHelper: AxiosHelper)
         });
     }
 
+    function deleteVault(userVaultID: number): Promise<GetVaultDataResponse>
+    {
+        return axiosHelper.api.post('Vault/DeleteVault', {
+            UserVaultID: userVaultID
+        });
+    }
+
     return {
         create,
         getArchivedVaultData,
-        unarchiveVault
+        unarchiveVault,
+        deleteVault
     }
 }

@@ -206,8 +206,6 @@ export interface TreeNodeModel
     buttons: TreeNodeButton[];
     data: Dictionary<any>;
     onClick: () => void;
-    onEdit: () => void;
-    onDelete: () => void;
 }
 
 export interface TreeNodeButton 
