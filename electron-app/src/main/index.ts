@@ -11,7 +11,6 @@ import cryptUtility from './Utilities/CryptUtility';
 import hashUtility from './Utilities/HashUtility';
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
-import { initFiles } from './Objects/Files/Files';
 import { createDataSource } from './Objects/DataSource';
 
 async function createWindow(): Promise<void>
@@ -147,9 +146,6 @@ async function setupEnvironment(isTest: boolean)
 		getDeviceInfo,
 		createDataSource
 	});
-
-	// must be called after environment is setup
-	initFiles();
 }
 
 async function setSession(sessionKey: string): Promise<void>

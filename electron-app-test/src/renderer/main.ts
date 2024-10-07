@@ -2,11 +2,11 @@ import { createApp } from 'vue'
 
 import App from './core/App.vue'
 import { api } from "./core/API"
+import app from './core/Objects/Stores/AppStore';
 
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
-import { stores } from './core/Objects/Stores';
 import runAllTests, { runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/index"
 
 api.setAPI(window.api);
@@ -35,7 +35,7 @@ Coloris({
 });
 
 // read userpreferences before any UI elements for themeing
-app.userPreferences.readState('').then(initApp).catch(initApp);
+app.userPreferences.loadLastUsersPreferences().then(initApp).catch(initApp);
 
 async function initApp()
 {
@@ -44,5 +44,5 @@ async function initApp()
     app.use(setupCalendar, {});
     app.mount("#app");
 
-    runCryptUtilityTests();
+    runAllTests();
 }

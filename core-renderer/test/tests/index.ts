@@ -1,6 +1,6 @@
 import { Test, TestResult, TestSuite } from "./test";
-import { stores } from "../src/core/Objects/Stores";
 import { AutoLockTime } from "../src/core/Types/Settings";
+import app from "../src/core/Objects/Stores/AppStore";
 
 import passwordStoreSuite from "./stores/passwordStore.test";
 import valueStoreSuite from "./stores/valueStore.test";
@@ -23,15 +23,6 @@ async function runTests(suite: TestSuite)
     {
         await new Test(suite.tests[i], results).run()
     }
-}
-
-async function setup()
-{
-    // update the auto lock time so our store data doesn't get reset mid test run
-    const settingState = stores.settingsStore.getState();
-    settingState.autoLockTime = AutoLockTime.ThirtyMinutes;
-
-    await stores.settingsStore.update(masterKey, settingState);
 }
 
 async function cleanUp()
@@ -62,17 +53,14 @@ async function cleanUp()
 export default async function runAllTests()
 {
     await cleanUp();
-    await setup();
-
-    await app.setKey(masterKey);
     console.time();
 
+    await runTests(serverHelperTestSuite);
     await runTests(passwordStoreSuite);
     await runTests(valueStoreSuite);
     await runTests(groupStoreSuite);
     await runTests(filterStoreSuite);
     await runTests(transactionTestSuite);
-    await runTests(serverHelperTestSuite);
     await runTests(importExportHelperTestSuite);
     await runTests(cryptUtilityTestSuite);
 

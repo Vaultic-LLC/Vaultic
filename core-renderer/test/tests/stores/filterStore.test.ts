@@ -1,8 +1,8 @@
-import { stores } from "../../src/core/Objects/Stores/index";
 import { IFilterable, IIdentifiable, defaultFilter, defaultPassword, defaultValue } from '../../src/core/Types/EncryptedData';
 import { createTestSuite, type TestContext } from '../test';
 import { DataType, FilterConditionType, type Filter, type FilterCondition } from "../../src/core/Types/Table";
 import { Dictionary } from "src/core/Types/DataStructures";
+import app from "../../src/core/Objects/Stores/AppStore";
 
 let filterStoreSuite = createTestSuite("Filter Store");
 

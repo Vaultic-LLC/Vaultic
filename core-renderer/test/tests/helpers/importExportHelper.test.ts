@@ -1,4 +1,3 @@
-import { stores } from "../../src/core/Objects/Stores";
 import { buildCSVPropertyMappers, getExportablePasswords, getExportableValues, importablePasswordProperties, importableValueProperties, PasswordCSVImporter, ValueCSVImporter } from "../../src/core/Helpers/ImportExportHelper";
 import { createTestSuite, TestContext } from "../test";
 import { parse } from "csv-parse/browser/esm/sync";
@@ -6,6 +5,7 @@ import { CSVHeaderPropertyMapperModel } from "../../src/core/Types/Models";
 import { DataType } from "../../src/core/Types/Table";
 import { defaultGroup, defaultPassword, defaultValue, NameValuePair, NameValuePairType, Password } from "../../src/core/Types/EncryptedData";
 import cryptHelper from "../../src/core/Helpers/cryptHelper";
+import app from "../../src/core/Objects/Stores/AppStore";
 
 let importExportHelperTestSuite = createTestSuite("Import / Export");
 const masterKey = "test";

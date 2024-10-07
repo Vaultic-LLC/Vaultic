@@ -1,5 +1,4 @@
 import { dialog } from "electron";
-import { writeFile } from "../Objects/Files/File";
 import axiosHelper from "../Core/Server/AxiosHelper";
 import { GetUserDeactivationKeyResponse } from "../Core/Types/Responses";
 import fs from "fs";
@@ -92,6 +91,29 @@ async function writeCSV(fileName: string, data: string): Promise<boolean>
 
 	await writeFile(`${filePath}\\${fileName}.csv`, data);
 	return true;
+}
+
+function writeFile(fullPath: string, data: string): Promise<void>
+{
+	return new Promise<void>((resolve, reject) =>
+	{
+		try
+		{
+			fs.writeFile(fullPath, data, { encoding: 'utf8' }, (err) =>
+			{
+				if (err != null)
+				{
+					reject(err);
+				}
+
+				resolve();
+			});
+		}
+		catch
+		{
+			reject();
+		}
+	});
 }
 
 const vaulticHelper: VaulticHelper =

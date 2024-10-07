@@ -1,9 +1,9 @@
-import { stores } from "../../src/core/Objects/Stores/index";
 import { NameValuePairType, defaultFilter, defaultGroup, defaultValue, type NameValuePair } from '../../src/core/Types/EncryptedData';
 import cryptHelper from '../../src/core/Helpers/cryptHelper';
 import { createTestSuite, type TestContext } from '../test';
 import createReactiveValue from "../../src/core/Objects/Stores/ReactiveValue";
 import { DataType, Filter, FilterConditionType, Group } from "../../src/core/Types/Table";
+import app from "../../src/core/Objects/Stores/AppStore";
 
 let valueStoreSuite = createTestSuite("Value Store");
 

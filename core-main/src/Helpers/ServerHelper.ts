@@ -112,9 +112,11 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
 
 async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
 {
+    console.log(JSON.stringify(payload));
     const currentUser = await environment.repositories.users.getCurrentUser();
     if (!currentUser)
     {
+        console.log('no user');
         return false;
     }
 

@@ -1,7 +1,7 @@
 import { electronAPI } from "@electron-toolkit/preload";
+import fs from "fs";
 import { DataSource } from "typeorm";
 import Database from "better-sqlite3";
-import { checkMakeDirectory } from "./Files/File";
 import { User } from "../Core/Database/Entities/User";
 import { UserVault } from "../Core/Database/Entities/UserVault";
 import { Vault } from "../Core/Database/Entities/Vault";
@@ -47,4 +47,16 @@ export function createDataSource(isTest: boolean)
 		migrationsRun: true,
 		migrations: [CreateSchema1722604318830]
 	});
+}
+
+function checkMakeDirectory(directory: string): void
+{
+	if (!fs.existsSync(directory))
+	{
+		try
+		{
+			fs.mkdirSync(directory);
+		}
+		catch { }
+	}
 }
