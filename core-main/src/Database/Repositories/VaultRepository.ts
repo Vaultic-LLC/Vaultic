@@ -194,7 +194,7 @@ class VaultRepository extends VaulticRepository<Vault>
             }
         }
 
-        const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, userVault.userVaultID);
+        const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVault.userVaultID]);
         if (!uvData || uvData.length == 0)
         {
             return false;
@@ -211,7 +211,7 @@ class VaultRepository extends VaulticRepository<Vault>
             return false;
         }
 
-        const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, userVaultID);
+        const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVaultID]);
         if (userVaults && userVaults.length == 1)
         {
             if (!(await this.setLastUsedVault(currentUser, userVaultID)))
@@ -227,7 +227,7 @@ class VaultRepository extends VaulticRepository<Vault>
 
     public async saveVault(masterKey: string, userVaultID: number, data: string, backup: boolean)
     {
-        const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, userVaultID);
+        const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
         if (userVaults[0].length == 0)
         {
             return false;
@@ -312,7 +312,7 @@ class VaultRepository extends VaulticRepository<Vault>
 
     public async archiveVault(masterKey: string, userVaultID: number, backup: boolean): Promise<boolean>
     {
-        const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, userVaultID);
+        const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
         if (userVaults[0].length == 0)
         {
             return false;
@@ -351,6 +351,7 @@ class VaultRepository extends VaulticRepository<Vault>
         // TODO: need to return false here if the vaults where unvarified but true if there just isn't any
         if (userVaultsWithVaultsToBackup[0].length == 0)
         {
+            console.log('\nvault verification failed')
             return [false, null];
         }
 
@@ -404,6 +405,7 @@ class VaultRepository extends VaulticRepository<Vault>
         {
             return repository
                 .createQueryBuilder('userVaults')
+                .leftJoinAndSelect('userVaults.vaultPreferencesStoreState', 'vaultPreferencesStoreState')
                 .leftJoinAndSelect("userVaults.vault", "vault")
                 .leftJoinAndSelect("vault.vaultStoreState", "vaultStoreState")
                 .leftJoinAndSelect("vault.passwordStoreState", "passwordStoreState")
@@ -424,7 +426,7 @@ class VaultRepository extends VaulticRepository<Vault>
         }
     }
 
-    public async postBackupEntitiesUpdates(entities: Partial<Vault>[]): Promise<boolean> 
+    public async postBackupEntitiesUpdates(key: string, entities: Partial<Vault>[], transaction: Transaction): Promise<boolean> 
     {
         const currentUser = await environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -453,92 +455,68 @@ class VaultRepository extends VaulticRepository<Vault>
         {
             for (let i = 0; i < deletedVaults.length; i++)
             {
-                const transaction = new Transaction();
                 transaction.deleteEntity(deletedVaults[i].vaultID!, () => this);
-
-                await transaction.commit();
             }
         }
 
         if (otherVaults.length > 0)
         {
-            try 
-            {
-                this.repository
-                    .createQueryBuilder("vaults")
-                    .update()
-                    .set(
-                        {
-                            entityState: EntityState.Unchanged,
-                            serializedPropertiesToSync: "[]",
-                        }
-                    )
-                    .andWhere("vaultID IN (:...vaultIDs)", { vaultIDs: otherVaults.map(e => e.vaultID) })
-                    .execute();
-            }
-            catch 
-            {
-                // TODO: log
-                succeeded = false;
-            }
-
-            const vaultStoreStatesToUpdate: Partial<VaultStoreState>[] = [];
-            const passwordStoreStatesToUpdate: Partial<PasswordStoreState>[] = [];
-            const valueStoreStatesToUpdate: Partial<ValueStoreState>[] = [];
-            const filterStoreStatesToUpdate: Partial<FilterStoreState>[] = [];
-            const groupStoreStatesToUpdate: Partial<GroupStoreState>[] = [];
+            const vaultIDs = otherVaults.filter(v => v.vaultID).map(v => v.vaultID!);
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, undefined, currentUser, userVaultQuery);
 
             for (let i = 0; i < otherVaults.length; i++)
             {
-                if (otherVaults[i].vaultStoreState && otherVaults[i].vaultStoreState!.vaultStoreStateID)
+                const index = userVaults[0].findIndex(v => v.vault.vaultID == otherVaults[i].vaultID);
+                if (index < 0)
                 {
-                    vaultStoreStatesToUpdate.push(otherVaults[i].vaultStoreState!);
+                    continue;
                 }
 
-                if (otherVaults[i].passwordStoreState && otherVaults[i].passwordStoreState!.passwordStoreStateID)
+                const vault = userVaults[0][index].vault;
+                const vaultKey = userVaults[1][index];
+
+                transaction.resetTracking(vault, vaultKey, () => this);
+
+                if (otherVaults[i].vaultStoreState)
                 {
-                    passwordStoreStatesToUpdate.push(otherVaults[i].passwordStoreState!);
+                    transaction.resetTracking(vault.vaultStoreState, vaultKey, () => environment.repositories.vaultStoreStates);
                 }
 
-                if (otherVaults[i].valueStoreState && otherVaults[i].valueStoreState!.valueStoreStateID)
+                if (otherVaults[i].passwordStoreState)
                 {
-                    valueStoreStatesToUpdate.push(otherVaults[i].valueStoreState!);
+                    transaction.resetTracking(vault.passwordStoreState, vaultKey, () => environment.repositories.passwordStoreStates);
                 }
 
-                if (otherVaults[i].filterStoreState && otherVaults[i].filterStoreState!.filterStoreStateID)
+                if (otherVaults[i].valueStoreState)
                 {
-                    filterStoreStatesToUpdate.push(otherVaults[i].filterStoreState!);
+                    transaction.resetTracking(vault.valueStoreState, vaultKey, () => environment.repositories.valueStoreStates);
                 }
 
-                if (otherVaults[i].groupStoreState && otherVaults[i].groupStoreState!.groupStoreStateID)
+                if (otherVaults[i].filterStoreState)
                 {
-                    groupStoreStatesToUpdate.push(otherVaults[i].groupStoreState!);
+                    transaction.resetTracking(vault.filterStoreState, vaultKey, () => environment.repositories.filterStoreStates);
+                }
+
+                if (otherVaults[i].groupStoreState)
+                {
+                    transaction.resetTracking(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
                 }
             }
 
-            if (vaultStoreStatesToUpdate.length > 0)
+            function userVaultQuery(repository: Repository<UserVault>)
             {
-                succeeded = succeeded && await environment.repositories.vaultStoreStates.postBackupEntitiesUpdates(vaultStoreStatesToUpdate);
-            }
-
-            if (passwordStoreStatesToUpdate.length > 0)
-            {
-                succeeded = succeeded && await environment.repositories.passwordStoreStates.postBackupEntitiesUpdates(passwordStoreStatesToUpdate);
-            }
-
-            if (valueStoreStatesToUpdate.length > 0)
-            {
-                succeeded = succeeded && await environment.repositories.valueStoreStates.postBackupEntitiesUpdates(valueStoreStatesToUpdate);
-            }
-
-            if (filterStoreStatesToUpdate.length > 0)
-            {
-                succeeded = succeeded && await environment.repositories.filterStoreStates.postBackupEntitiesUpdates(filterStoreStatesToUpdate);
-            }
-
-            if (groupStoreStatesToUpdate.length > 0)
-            {
-                succeeded = succeeded && await environment.repositories.groupStoreStates.postBackupEntitiesUpdates(groupStoreStatesToUpdate);
+                return repository
+                    .createQueryBuilder('userVault')
+                    .leftJoinAndSelect('userVault.vaultPreferencesStoreState', 'vaultPreferencesStoreState')
+                    .leftJoinAndSelect('userVault.vault', 'vault')
+                    .leftJoinAndSelect('vault.vaultStoreState', 'vaultStoreState')
+                    .leftJoinAndSelect('vault.passwordStoreState', 'passwordStoreState')
+                    .leftJoinAndSelect('vault.valueStoreState', 'valueStoreState')
+                    .leftJoinAndSelect('vault.filterStoreState', 'filterStoreState')
+                    .leftJoinAndSelect('vault.groupStoreState', 'groupStoreState')
+                    .where('userVault.userID = :userID', { userID: currentUser!.userID })
+                    .andWhere('userVault.vaultID IN (:...vaultIDs)', { vaultIDs })
+                    .getMany();
             }
         }
 

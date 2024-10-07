@@ -3,6 +3,7 @@ import * as jose from 'jose'
 import { Column, ObjectLiteral, AfterLoad } from "typeorm"
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { EntityState } from "../../Types/Properties";
+import { StoreState } from "./States/StoreState";
 
 const VaulticHandler = {
     get(target, prop, receiver)
@@ -179,14 +180,14 @@ export class VaulticEntity implements ObjectLiteral
         return obj;
     }
 
-    async sign(masterKey: string): Promise<boolean>
+    async sign(key: string): Promise<boolean>
     {
         let signatureSecret = "";
         if (!this.signatureSecret)
         {
             signatureSecret = environment.utilities.hash.insecureHash(environment.utilities.generator.randomValue(40));
 
-            const response = await environment.utilities.crypt.encrypt(masterKey, signatureSecret);
+            const response = await environment.utilities.crypt.encrypt(key, signatureSecret);
             if (!response.success)
             {
                 return false;
@@ -196,7 +197,7 @@ export class VaulticEntity implements ObjectLiteral
         }
         else 
         {
-            const response = await environment.utilities.crypt.decrypt(masterKey, this.signatureSecret);
+            const response = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
             if (!response.success)
             {
                 return false;
@@ -227,7 +228,7 @@ export class VaulticEntity implements ObjectLiteral
         return true;
     }
 
-    async verify(masterKey: string): Promise<boolean>
+    async verify(key: string): Promise<boolean>
     {
         if (!this.signatureSecret || !this.currentSignature)
         {
@@ -235,7 +236,7 @@ export class VaulticEntity implements ObjectLiteral
             return false;
         }
 
-        const secretResponse = await environment.utilities.crypt.decrypt(masterKey, this.signatureSecret);
+        const secretResponse = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
         if (!secretResponse.success)
         {
             console.log(`could not decrypt signature secret: ${this.signatureSecret}`)
@@ -260,6 +261,14 @@ export class VaulticEntity implements ObjectLiteral
                 audience: 'vaulticUser',
             });
 
+            if (nameof<StoreState>('previousSignature') in this)
+            {
+                await jose.jwtVerify(this[nameof<StoreState>("previousSignature")], secretBytes, {
+                    issuer: 'vaultic',
+                    audience: 'vaulticUser',
+                });
+            }
+
             const retrievedEntity = response.payload.entity;
             if (!retrievedEntity || typeof retrievedEntity != 'string')
             {
@@ -268,24 +277,29 @@ export class VaulticEntity implements ObjectLiteral
             }
 
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
+            if (!equalHashes)
+            {
+                console.log(`hashes are not equal. H1: ${retrievedEntity}, H2: ${hashedEntity}, Entity: ${serializedMakeup}`)
+            }
+
             return equalHashes;
         }
         catch (e)
         {
-            console.log(`error: ${e}`);
+            console.log(`error: ${e}. Entity: ${JSON.stringify(this)}`);
         }
 
         return false;
     }
 
-    public async encryptAndSet(masterKey: string, property: string): Promise<boolean> 
+    public async encryptAndSet(key: string, property: string): Promise<boolean> 
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
             return false;
         }
 
-        const result = await environment.utilities.crypt.encrypt(masterKey, this[property] as string);
+        const result = await environment.utilities.crypt.encrypt(key, this[property] as string);
         if (!result)
         {
             return false;
@@ -296,11 +310,11 @@ export class VaulticEntity implements ObjectLiteral
         return true;
     }
 
-    public async encryptAndSetEach(masterKey: string, properties: string[]): Promise<boolean> 
+    public async encryptAndSetEach(key: string, properties: string[]): Promise<boolean> 
     {
         for (let i = 0; i < properties.length; i++)
         {
-            if (!await this.encryptAndSet(masterKey, properties[i]))
+            if (!await this.encryptAndSet(key, properties[i]))
             {
                 return false;
             }

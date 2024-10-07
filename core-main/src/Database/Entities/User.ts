@@ -97,6 +97,12 @@ export class User extends VaulticEntity
         ]
     }
 
+    async verify(key: string): Promise<boolean> 
+    {
+        return await super.verify(key) &&
+            await this.appStoreState.verify(key);
+    }
+
     public static isValid(user: DeepPartial<User>): boolean
     {
         return !!user.signatureSecret &&

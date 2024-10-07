@@ -99,6 +99,16 @@ export class Vault extends VaulticEntity
         ];
     }
 
+    async verify(key: string): Promise<boolean> 
+    {
+        return await super.verify(key) &&
+            await this.vaultStoreState.verify(key) &&
+            await this.passwordStoreState.verify(key) &&
+            await this.valueStoreState.verify(key) &&
+            await this.filterStoreState.verify(key) &&
+            await this.groupStoreState.verify(key);
+    }
+
     public static isValid(vault: DeepPartial<Vault>): boolean
     {
         return !!vault.signatureSecret &&

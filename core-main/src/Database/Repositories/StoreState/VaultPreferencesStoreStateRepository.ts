@@ -2,7 +2,6 @@ import { Repository } from "typeorm";
 import { environment } from "../../../Environment";
 import { VaulticRepository } from "../VaulticRepository";
 import { VaultPreferencesStoreState } from "../../Entities/States/VaultPreferencesStoreState";
-import { EntityState } from "../../../Types/Properties";
 import { StoreStateRepository } from "./StoreStateRepository";
 
 class VaultPreferencesStoreStateRepository extends StoreStateRepository<VaultPreferencesStoreState>
@@ -22,33 +21,6 @@ class VaultPreferencesStoreStateRepository extends StoreStateRepository<VaultPre
         return this.retrieveReactive((repository) => repository.findOneBy({
             vaultPreferencesStoreStateID: id
         }));
-    }
-
-    public async postBackupEntitiesUpdates(entities: Partial<VaultPreferencesStoreState>[]): Promise<boolean>
-    {
-        try 
-        {
-            for (let i = 0; i < entities.length; i++)
-            {
-                if (!entities[i].vaultPreferencesStoreStateID)
-                {
-                    continue;
-                }
-
-                await this.repository.update(entities[i].vaultPreferencesStoreStateID!, {
-                    entityState: EntityState.Unchanged,
-                    serializedPropertiesToSync: "[]",
-                    previousSignature: entities[i].currentSignature
-                });
-            }
-        }
-        catch 
-        {
-            // TODO: log
-            return false;
-        }
-
-        return true;
     }
 }
 

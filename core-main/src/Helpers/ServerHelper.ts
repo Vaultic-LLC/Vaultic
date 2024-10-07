@@ -6,6 +6,7 @@ import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { checkMergeMissingData, getUserDataSignatures } from "../Database/Repositories";
 import { UserDataPayload } from "../Types/ServerTypes";
+import vaultHelper from "./VaultHelper";
 
 export interface ServerHelper
 {
@@ -90,7 +91,6 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
             // needs to be done after merging data in case the user needed to have been added
             await environment.repositories.users.setCurrentUser(masterKey, email);
 
-            console.log(`Payload 1: ${JSON.stringify(finishResponse.userDataPayload)}`)
             const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
             if (!payload)
             {
@@ -121,7 +121,7 @@ async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDat
     for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
     {
         const vault = payload!.archivedVaults![i];
-        const vaultKey = await environment.repositories.userVaults.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!);
+        const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!);
         if (!vaultKey.success)
         {
             return false;

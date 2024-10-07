@@ -5,6 +5,7 @@ import { VaulticEntity } from "./VaulticEntity"
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData } from "../../Types/Repositories"
+import { UserPreferencesStore } from "../../../../core-renderer/src/Objects/Stores/UserPreferencesStore"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity
@@ -75,6 +76,12 @@ export class UserVault extends VaulticEntity
         return [
             nameof<UserVault>("vaultPreferencesStoreState"),
         ]
+    }
+
+    async verify(key: string): Promise<boolean> 
+    {
+        return await super.verify(key) &&
+            this.vaultPreferencesStoreState.verify(key);
     }
 
     public condense(): CondensedVaultData

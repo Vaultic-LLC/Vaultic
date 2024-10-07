@@ -18,8 +18,7 @@ export class StoreState extends VaulticEntity
     protected internalGetSignableProperties(): string[] 
     {
         return [
-            nameof<StoreState>("state"),
-            nameof<StoreState>("previousSignature"),
+            nameof<StoreState>("state")
         ];
     }
 

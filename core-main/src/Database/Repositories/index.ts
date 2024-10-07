@@ -74,6 +74,8 @@ export async function getUserDataSignatures(masterKey: string, email: string)
 
     if (!(await user.verify(masterKey)))
     {
+        // TODO: need to override data
+        console.log('no signatures')
         return userData;
     }
 
@@ -138,12 +140,17 @@ export async function getUserDataSignatures(masterKey: string, email: string)
             });
         }
     }
+    else 
+    {
+        console.log('unverified user vaults')
+    }
 
     return userData;
 }
 
 export async function backupData(masterKey: string)
 {
+    console.log('backing up');
     // TODO: need to handle differnet false values. aka no current user vs unable to verify record
     // if unable to verify record, need to re pull data
     const userToBackup = await environment.repositories.users.getEntityThatNeedToBeBackedUp(masterKey);
@@ -179,19 +186,26 @@ export async function backupData(masterKey: string)
     }
     else
     {
+        const transaction = new Transaction();
         if (userToBackup[1])
         {
-            await environment.repositories.users.postBackupEntityUpdates(userToBackup[1]);
+            await environment.repositories.users.postBackupEntityUpdates(masterKey, userToBackup[1], transaction);
         }
 
         if (userVaultsToBackup[1] && userVaultsToBackup[1].length > 0) 
         {
-            await environment.repositories.userVaults.postBackupEntitiesUpdates(userVaultsToBackup[1]);
+            await environment.repositories.userVaults.postBackupEntitiesUpdates(masterKey, userVaultsToBackup[1], transaction);
         }
 
         if (vaultsToBackup[1] && vaultsToBackup[1].length > 0)
         {
-            await environment.repositories.vaults.postBackupEntitiesUpdates(vaultsToBackup[1]);
+            await environment.repositories.vaults.postBackupEntitiesUpdates(masterKey, vaultsToBackup[1], transaction);
+        }
+
+        if (!await transaction.commit())
+        {
+            console.log('backup transaction failed');
+            return false;
         }
     }
 

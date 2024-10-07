@@ -1,8 +1,8 @@
 import { environment } from "../../Environment";
 import { User } from "../Entities/User";
-import { CondensedVaultData, UserData } from "../../Types/Repositories";
+import { UserData } from "../../Types/Repositories";
 import { VaulticRepository } from "./VaulticRepository";
-import { EntitySchema, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import Transaction from "../Transaction";
 import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
@@ -21,7 +21,7 @@ class UserRepository extends VaulticRepository<User>
         return environment.databaseDataSouce.getRepository(User);
     }
 
-    // TODO: this should verify the user as well
+    // TODO: doesn't verify
     public async getCurrentUser()
     {
         if (!environment.cache.currentUserID)
@@ -34,6 +34,7 @@ class UserRepository extends VaulticRepository<User>
         }));
     }
 
+    // TODO: doesn't verify
     public findByEmail(email: string) 
     {
         return this.retrieveReactive((repository) => repository.findOneBy({
@@ -41,6 +42,7 @@ class UserRepository extends VaulticRepository<User>
         }))
     }
 
+    // TODO: doesn't verify
     private getLastUsedUser()
     {
         return this.retrieveReactive((repository) => repository.findOneBy({
@@ -153,6 +155,7 @@ class UserRepository extends VaulticRepository<User>
         // set before backing up
         environment.cache.setCurrentUserID(user.userID);
 
+        console.log('backing up in createUser');
         const backupResponse = await backupData(masterKey);
         if (!backupResponse)
         {
@@ -205,6 +208,7 @@ class UserRepository extends VaulticRepository<User>
 
         if (!(await user.verify(masterKey)))
         {
+            console.log('cant set current');
             return false;
         }
 
@@ -296,7 +300,7 @@ class UserRepository extends VaulticRepository<User>
 
         async function setCurrentVault(id: number, setAsLastUsed: boolean)
         {
-            const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, id);
+            const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [id]);
             if (!userVault || userVault.length == 0)
             {
                 return false;
@@ -366,12 +370,10 @@ class UserRepository extends VaulticRepository<User>
             return [false, null];
         }
 
-        // TODO: this doesn't verify nested properties =(
-        // can probably just override verify on each main entity to also verify its nested entites as well
-        // like user.verify() should verify itself + appStoreState + userPrefrencesStoreState
         const response = await this.retrieveAndVerify(masterKey, getUsers);
         if (!response[0])
         {
+            console.log('\nuser verification failed')
             return [false, null];
         }
 
@@ -422,43 +424,38 @@ class UserRepository extends VaulticRepository<User>
         }
     }
 
-    public async postBackupEntityUpdates(entity: Partial<User>)
+    public async postBackupEntityUpdates(key: string, entity: Partial<User>, transaction: Transaction)
     {
-        console.log(`Post backup for user: ${JSON.stringify(entity)}`);
         const currentUser = await this.getCurrentUser();
         if (!currentUser || !entity.userID || entity.userID != currentUser.userID)
         {
             return false;
         }
 
-        const promises: any[] = [];
-        try 
-        {
-            promises.push(this.repository.update(entity.userID, {
-                entityState: EntityState.Unchanged,
-                serializedPropertiesToSync: "[]"
-            }));
-        }
-        catch 
+        const user = await this.repository.findOneBy({
+            userID: entity.userID
+        });
+
+        if (!user)
         {
             return false;
         }
 
+        transaction.resetTracking(user, "", () => this)
 
         // TODO: what to do if updating previousSignatures on store states fails? The server has been updated
         // so the client will no longer be able to update. Detect and force update data from server? Should be handled
         // when merging data?
         if (entity.appStoreState)
         {
-            promises.push(environment.repositories.appStoreStates.postBackupEntityUpdates(entity.appStoreState));
+            transaction.resetTracking(user.appStoreState, key, () => environment.repositories.appStoreStates);
         }
 
         if (entity.userPreferencesStoreState)
         {
-            promises.push(environment.repositories.userPreferencesStoreStates.postBackupEntityUpdates(entity.userPreferencesStoreState));
+            transaction.resetTracking(user.userPreferencesStoreState, "", () => environment.repositories.userPreferencesStoreStates);
         }
 
-        await Promise.all(promises);
         return true;
     }
 

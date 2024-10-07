@@ -7,29 +7,30 @@ enum Operation
 {
     Insert,
     Update,
+    Reset,
     Delete
 }
 
-interface PendingEntity
+interface PendingEntity<T extends VaulticEntity>
 {
     operation: Operation;
     existing: boolean;
-    entity?: VaulticEntity | DeepPartial<VaulticEntity>;
+    entity?: VaulticEntity | DeepPartial<T>;
     signingKey?: string;
     id?: number;
-    repository: () => VaulticRepository<VaulticEntity>;
+    repository: () => VaulticRepository<T>;
 }
 
 export default class Transaction 
 {
-    protected pendingEntities: PendingEntity[];
+    protected pendingEntities: PendingEntity<any>[];
 
     constructor() 
     {
         this.pendingEntities = [];
     }
 
-    insertEntity<T extends VaulticEntity>(entity: T, signingKey: string, repository: () => VaulticRepository<any>)
+    insertEntity<T extends VaulticEntity>(entity: T, signingKey: string, repository: () => VaulticRepository<T>)
     {
         this.pendingEntities.push({
             operation: Operation.Insert,
@@ -40,7 +41,18 @@ export default class Transaction
         });
     }
 
-    updateEntity<T extends VaulticEntity>(entity: T, signingKey: string, repository: () => VaulticRepository<any>)
+    insertExistingEntity<T extends VaulticEntity>(entity: DeepPartial<T>, repository: () => VaulticRepository<T>)
+    {
+        this.pendingEntities.push({
+            operation: Operation.Insert,
+            entity,
+            existing: true,
+            signingKey: "",
+            repository
+        });
+    }
+
+    updateEntity<T extends VaulticEntity>(entity: T, signingKey: string, repository: () => VaulticRepository<T>)
     {
         this.pendingEntities.push({
             operation: Operation.Update,
@@ -51,23 +63,23 @@ export default class Transaction
         });
     }
 
-    deleteEntity<T extends VaulticEntity>(entityID: number, repository: () => VaulticRepository<any>)
+    resetTracking<T extends VaulticEntity>(entity: T, signingKey: string, repository: () => VaulticRepository<T>)
     {
         this.pendingEntities.push({
-            operation: Operation.Delete,
-            id: entityID,
+            operation: Operation.Reset,
+            entity,
+            signingKey,
             existing: false,
             repository
         });
     }
 
-    insertExistingEntity<T extends VaulticEntity>(entity: DeepPartial<T>, repository: () => VaulticRepository<any>)
+    deleteEntity<T extends VaulticEntity>(entityID: number, repository: () => VaulticRepository<T>)
     {
         this.pendingEntities.push({
-            operation: Operation.Insert,
-            entity,
-            existing: true,
-            signingKey: "",
+            operation: Operation.Delete,
+            id: entityID,
+            existing: false,
             repository
         });
     }
@@ -113,6 +125,14 @@ export default class Transaction
                         else if (pendingEntity.operation == Operation.Update)
                         {
                             if (!(await pendingEntity.repository().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
+                            {
+                                succeeded = false;
+                                break;
+                            }
+                        }
+                        else if (pendingEntity.operation == Operation.Reset)
+                        {
+                            if (!(await pendingEntity.repository().resetTracking(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;

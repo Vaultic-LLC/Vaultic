@@ -2,6 +2,7 @@ import { EntityManager, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
 import { EntityState } from "../../Types/Properties";
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
+import { StoreState } from "../Entities/States/StoreState";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -34,6 +35,17 @@ export class VaulticRepository<T extends VaulticEntity>
         if (entity)
         {
             return entity.makeReactive() as T;
+        }
+
+        return null;
+    }
+
+    public async retrieveVerified(key: string, predicate: (repository: Repository<T>) => Promise<T | null>): Promise<T | null>
+    {
+        const entity = await predicate(this.repository);
+        if (entity && await entity.verify(key))
+        {
+            return entity;
         }
 
         return null;
@@ -85,8 +97,8 @@ export class VaulticRepository<T extends VaulticEntity>
             return false;
         }
 
-        entity.entityState = EntityState.Inserted;
         entity.preInsert();
+        entity.entityState = EntityState.Inserted;
 
         try 
         {
@@ -174,6 +186,39 @@ export class VaulticRepository<T extends VaulticEntity>
         return false;
     }
 
+    public async resetTracking(manager: EntityManager, key: string, entity: T): Promise<boolean>
+    {
+        const mockEntity = {};
+        if ('previousSignature' in entity)
+        {
+            entity.previousSignature = entity.currentSignature;
+            if (!(await entity.sign(key)))
+            {
+                return false;
+            }
+
+            mockEntity[nameof<StoreState>("previousSignature")] = entity.previousSignature;
+            mockEntity[nameof<VaulticEntity>("currentSignature")] = entity.currentSignature;
+        }
+
+        mockEntity[nameof<VaulticEntity>("serializedPropertiesToSync")] = "[]";
+        mockEntity[nameof<VaulticEntity>("entityState")] = EntityState.Unchanged;
+
+        const repo = manager.withRepository(this.repository);
+        try 
+        {
+            const result = await repo.update(entity.identifier(), mockEntity);
+            return result.affected == 1;
+        }
+        catch (e)
+        {
+            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
+            console.log(e);
+        }
+
+        return false;
+    }
+
     public async delete(manager: EntityManager, entityID: number): Promise<boolean>
     {
         const repo = manager.withRepository(this.repository);
@@ -230,15 +275,5 @@ export class VaulticRepository<T extends VaulticEntity>
     public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>
     {
         return [false, null];
-    }
-
-    public async postBackupEntityUpdates(entity: Partial<T>): Promise<boolean>
-    {
-        return true;
-    }
-
-    public async postBackupEntitiesUpdates(entities: Partial<T>[]): Promise<boolean>
-    {
-        return true;
     }
 }

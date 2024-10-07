@@ -1,4 +1,3 @@
-import { environment } from "../../../Environment";
 import { StoreState } from "../../Entities/States/StoreState";
 import Transaction from "../../Transaction";
 import { VaulticRepository } from "../VaulticRepository";

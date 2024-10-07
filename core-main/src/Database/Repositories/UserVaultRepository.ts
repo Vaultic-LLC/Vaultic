@@ -1,21 +1,15 @@
 import { environment } from "../../Environment";
-import { EntityRepository, Repository } from "typeorm";
+import { Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
-import { EntityState, VaultKey } from "../../Types/Properties";
+import { EntityState } from "../../Types/Properties";
 import { CondensedVaultData } from "../../Types/Repositories";
-import { Vault } from "../Entities/Vault";
 import { User } from "../Entities/User";
 import { backupData } from ".";
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
-import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
-import vaulticServer from "../../Server/VaulticServer";
-import { MethodResponse } from "../../Types/MethodResponse";
-import axiosHelper from "../../Server/AxiosHelper";
-import { userDataE2EEncryptedFieldTree } from "../../Types/FieldTree";
-import { UserDataPayload } from "../../Types/ServerTypes";
+import vaultHelper from "../../Helpers/VaultHelper";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -24,7 +18,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return environment.databaseDataSouce.getRepository(UserVault);
     }
 
-    private async getUserVaults(user: User, userVaultID?: number): Promise<UserVault[]>
+    private async getUserVaults(user: User, userVaultIDs?: number[]): Promise<UserVault[]>
     {
         return this.retrieveManyReactive(getUserVaultsQuery);
 
@@ -42,64 +36,16 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 .where('userVault.userID = :userID', { userID: user.userID })
                 .andWhere('vault.entityState != :state', { state: EntityState.Deleted });
 
-            if (userVaultID)
+            if (userVaultIDs && userVaultIDs.length > 0)
             {
-                userVaultQuery.andWhere("userVault.userVaultID = :userVaultID", { userVaultID });
+                userVaultQuery.andWhere("userVault.userVaultID IN (:...userVaultIDs)", { userVaultIDs });
             }
 
             return userVaultQuery.getMany();
         }
     }
 
-    public async decryptVaultKey(masterKey: string, privateKey: string, decryptPrivateKey: boolean, vaultKey: string): Promise<MethodResponse>
-    {
-        if (decryptPrivateKey)
-        {
-            const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, privateKey);
-            if (!decryptedPrivateKey.success)
-            {
-                return decryptedPrivateKey;
-            }
-
-            privateKey = decryptedPrivateKey.value!;
-        }
-
-        const decryptedVaultKeys = await environment.utilities.crypt.decrypt(masterKey, vaultKey);
-        if (!decryptedVaultKeys.success)
-        {
-            return decryptedVaultKeys;
-        }
-
-        const keys: VaultKey = JSON.parse(decryptedVaultKeys.value!);
-        return await environment.utilities.crypt.ECDecrypt(keys.publicKey, privateKey, keys.vaultKey);
-    }
-
-    protected async decryptCondensedUserVault(masterKey: string, vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[])
-    {
-        const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
-        const decryptedVaultPreferences = await environment.utilities.crypt.decrypt(masterKey, condensedVault.vaultPreferencesStoreState);
-        if (!decryptedVaultPreferences.success)
-        {
-            return null;
-        }
-
-        condensedVault.vaultPreferencesStoreState = decryptedVaultPreferences.value!;
-
-        for (let j = 0; j < decryptableProperties.length; j++)
-        {
-            const response = await environment.utilities.crypt.decrypt(vaultKey, condensedVault[decryptableProperties[j]]);
-            if (!response.success)
-            {
-                return null;
-            }
-
-            condensedVault[decryptableProperties[j]] = response.value!;
-        }
-
-        return condensedVault;
-    }
-
-    public async getVerifiedUserVaults(masterKey: string, userVaultID?: number, user?: User,
+    public async getVerifiedUserVaults(masterKey: string, userVaultIDs?: number[], user?: User,
         query?: (repository: Repository<UserVault>) => Promise<UserVault[] | null>): Promise<[UserVault[], string[]]>
     {
         if (!user)
@@ -120,7 +66,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
         else 
         {
-            userVaults = await this.getUserVaults(user, userVaultID);
+            userVaults = await this.getUserVaults(user, userVaultIDs);
         }
 
         if (!userVaults || userVaults.length == 0)
@@ -145,7 +91,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 return [[], []];
             }
 
-            const decryptedVaultKey = await this.decryptVaultKey(masterKey, decryptedPrivateKey.value!, false, userVaults[i].vaultKey);
+            const decryptedVaultKey = await vaultHelper.decryptVaultKey(masterKey, decryptedPrivateKey.value!, false, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
                 return [[], []];
@@ -163,9 +109,9 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return [userVaults, vaultKeys];
     }
 
-    public async getVerifiedAndDecryt(masterKey: string, propertiesToDecrypt?: string[], userVaultID?: number): Promise<CondensedVaultData[] | null>
+    public async getVerifiedAndDecryt(masterKey: string, propertiesToDecrypt?: string[], userVaultIDs?: number[]): Promise<CondensedVaultData[] | null>
     {
-        const userVaults = await this.getVerifiedUserVaults(masterKey, userVaultID);
+        const userVaults = await this.getVerifiedUserVaults(masterKey, userVaultIDs);
         if (userVaults[0].length == 0)
         {
             return null;
@@ -175,7 +121,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         for (let i = 0; i < userVaults[0].length; i++)
         {
             const condensedUserVault = userVaults[0][i].condense();
-            const decryptedUserVault = await this.decryptCondensedUserVault(masterKey, userVaults[1][i], condensedUserVault, propertiesToDecrypt);
+            const decryptedUserVault = await vaultHelper.decryptCondensedUserVault(masterKey, userVaults[1][i], condensedUserVault, propertiesToDecrypt);
             if (!decryptedUserVault)
             {
                 // TODO: should probaby re fetch data
@@ -188,129 +134,9 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return condensedDecryptedUserVaults;
     }
 
-    public async loadArchivedVault(masterKey: string, userVaultID: number): Promise<boolean | CondensedVaultData | null>
-    {
-        const currentUser = await environment.repositories.users.getCurrentUser();
-        if (!currentUser)
-        {
-            return false;
-        }
-
-        const response = await vaulticServer.vault.getArchivedVaultData(userVaultID);
-        if (!response.Success)
-        {
-            return false;
-        }
-
-        const decryptedData = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, response);
-        if (!decryptedData.success)
-        {
-            return false;
-        }
-
-        const userDataPayload: UserDataPayload = decryptedData.value.userDataPayload!;
-
-        if (!userDataPayload.userVaults?.[0] || !userDataPayload.vaults?.[0])
-        {
-            return false;
-        }
-
-        const userVault: DeepPartial<UserVault> = userDataPayload.userVaults[0];
-        const vault: DeepPartial<Vault> = userDataPayload.vaults[0];
-
-        const decryptedVaultKey = await this.decryptVaultKey(masterKey, currentUser.privateKey, true, userVault.vaultKey!);
-        if (!decryptedVaultKey.value)
-        {
-            return false;
-        }
-
-        let condensedVault: CondensedVaultData | null =
-        {
-            userVaultID: userVault.userVaultID!,
-            vaultPreferencesStoreState: userVault.vaultPreferencesStoreState!.state!,
-            name: vault.name!,
-            vaultStoreState: vault.vaultStoreState!.state!,
-            passwordStoreState: vault.passwordStoreState!.state!,
-            valueStoreState: vault.vaultStoreState!.state!,
-            filterStoreState: vault.filterStoreState!.state!,
-            groupStoreState: vault.groupStoreState!.state!,
-            lastUsed: false
-        };
-
-        condensedVault = await this.decryptCondensedUserVault(masterKey, decryptedVaultKey.value!, condensedVault);
-        return condensedVault;
-    }
-
-    public async unarchiveVault(masterKey: string, userVaultID: number, select: boolean): Promise<boolean | CondensedVaultData | null>
-    {
-        const currentUser = await environment.repositories.users.getCurrentUser();
-        if (!currentUser)
-        {
-            return true;
-        }
-
-        const response = await vaulticServer.vault.unarchiveVault(userVaultID);
-        if (!response.Success)
-        {
-            return false;
-        }
-
-        const decryptedData = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, response);
-        if (!decryptedData.success)
-        {
-            return false;
-        }
-
-        const userDataPayload: UserDataPayload = decryptedData.value.userDataPayload!;
-
-        if (!userDataPayload.userVaults?.[0] || !userDataPayload.vaults?.[0])
-        {
-            return false;
-        }
-
-        const userVault: DeepPartial<UserVault> = userDataPayload.userVaults[0];
-        const vault: DeepPartial<Vault> = userDataPayload.vaults[0];
-
-        const transaction = new Transaction();
-        environment.repositories.vaults.addFromServer(vault, transaction);
-        this.addFromServer(userVault, transaction);
-
-        if (!(await transaction.commit()))
-        {
-            return false;
-        }
-
-        if (select)
-        {
-            await environment.repositories.vaults.setLastUsedVault(currentUser, userVault.userVaultID!);
-        }
-
-        let condensedVault: CondensedVaultData | null =
-        {
-            userVaultID: userVault.userVaultID!,
-            vaultPreferencesStoreState: userVault.vaultPreferencesStoreState!.state!,
-            name: vault.name!,
-            vaultStoreState: vault.vaultStoreState!.state!,
-            passwordStoreState: vault.passwordStoreState!.state!,
-            valueStoreState: vault.vaultStoreState!.state!,
-            filterStoreState: vault.filterStoreState!.state!,
-            groupStoreState: vault.groupStoreState!.state!,
-            lastUsed: false
-        };
-
-        const decryptedVaultKey = await this.decryptVaultKey(masterKey, currentUser.privateKey, true, userVault.vaultKey!);
-        if (!decryptedVaultKey.value)
-        {
-            return false;
-        }
-
-        condensedVault = await this.decryptCondensedUserVault(masterKey, decryptedVaultKey.value!, condensedVault);
-        return condensedVault;
-    }
-
     public async saveUserVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<boolean>
     {
-        const userVaults = await this.getVerifiedUserVaults(masterKey, userVaultID);
+        const userVaults = await this.getVerifiedUserVaults(masterKey, [userVaultID]);
         if (userVaults[0].length != 1)
         {
             return false;
@@ -404,7 +230,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
     }
 
-    public async postBackupEntitiesUpdates(entities: Partial<UserVault>[]): Promise<boolean> 
+    public async postBackupEntitiesUpdates(key: string, entities: Partial<UserVault>[], transaction: Transaction): Promise<boolean> 
     {
         const currentUser = await environment.repositories.users.getCurrentUser();
         if (!currentUser)
@@ -412,34 +238,20 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             return false;
         }
 
-        try 
+        const userVaults = await this.getVerifiedUserVaults(key, entities.filter(f => f.userVaultID).map(u => u.userVaultID!), currentUser);
+        for (let i = 0; i < entities.length; i++)
         {
-            this.repository
-                .createQueryBuilder("userVaults")
-                .update()
-                .set(
-                    {
-                        entityState: EntityState.Unchanged,
-                        serializedPropertiesToSync: "[]",
-                    }
-                )
-                .where("userID = :userID", { userID: currentUser.userID })
-                .andWhere("userVaultID IN (:...userVaultIDs)", { userVaultIDs: entities.map(e => e.userVaultID) })
-                .execute();
-        }
-        catch 
-        {
-            // TODO: log
-            return false;
-        }
+            const userVault = userVaults[0].filter(uv => uv.userVaultID == entities[i].userVaultID);
+            if (userVault.length != 1)
+            {
+                continue;
+            }
 
-        const vaultPreferencesToUpdate: Partial<VaultPreferencesStoreState>[] = entities
-            .filter(uv => uv.vaultPreferencesStoreState && uv.vaultPreferencesStoreState.vaultPreferencesStoreStateID)
-            .map(uv => uv.vaultPreferencesStoreState!);
-
-        if (vaultPreferencesToUpdate.length > 0)
-        {
-            return await environment.repositories.vaultPreferencesStoreStates.postBackupEntitiesUpdates(vaultPreferencesToUpdate);
+            transaction.resetTracking(userVault[0], key, () => this);
+            if (entities[i].vaultPreferencesStoreState)
+            {
+                transaction.resetTracking(userVault[0].vaultPreferencesStoreState, key, () => environment.repositories.vaultPreferencesStoreStates);
+            }
         }
 
         return true;
