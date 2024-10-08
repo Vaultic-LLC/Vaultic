@@ -56,6 +56,30 @@ class LogRepository
 
         return JSON.stringify(data);;
     }
+
+    async clearOldLogs(email: string): Promise<boolean>
+    {
+        const milisecondsInAMonth = 1000 * 60 * 60 * 24 * 7 * 30;
+        const timeThreshold = new Date(new Date().getMilliseconds() - milisecondsInAMonth);
+
+        try 
+        {
+            await this.repository
+                .createQueryBuilder()
+                .delete()
+                .where("currentUserEmail = :email", { email })
+                .andWhere("time < :timeThreshold", { timeThreshold })
+                .execute();
+
+            return true;
+        }
+        catch (e) 
+        {
+            console.log(`Failed to clear logs: ${e}`);
+        }
+
+        return false;
+    }
 }
 
 const logRepository = new LogRepository();

@@ -233,6 +233,8 @@ class UserRepository extends VaulticRepository<User>
         }
 
         environment.cache.setCurrentUserID(user.userID);
+        await environment.repositories.logs.clearOldLogs(email);
+
         return true;
     }
 
