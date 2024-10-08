@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import hashUtility from "./HashUtility";
 import vaulticServer from "../Core/Server/VaulticServer";
-import { HybridEncrypionResponse, MethodResponse } from "../Core/Types/MethodResponse";
+import { HybridEncrypionResponse, MethodResponse, TypedMethodResponse } from "../Core/Types/MethodResponse";
 import generatorUtility from "./Generator";
 import { EncryptedResponse } from "../Core/Types/Responses";
 import { CryptUtility, PublicPrivateKey } from "../Core/Types/Utilities";
@@ -26,7 +26,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 			{ 'authTagLength': authTagLength });
 
 		const encryptedValue = Buffer.concat([cipher.update(Buffer.from(value).toString("base64"), "base64"), cipher.final()]);
-		return { success: true, value: Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64") };
+		return TypedMethodResponse.success(Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64"));
 	}
 	catch (e: any)
 	{
@@ -40,10 +40,8 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 			}
 		}
 
-		return { success: false, errorMessage: `Encryption Error: ${JSON.stringify(e)}` };
+		return TypedMethodResponse.fail(undefined, undefined, `Encryption Error: ${JSON.stringify(e)}`, logID);
 	}
-
-	return { success: false, logID };
 }
 
 async function decrypt(key: string, value: string): Promise<MethodResponse>
@@ -66,7 +64,7 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 		let decryptedValue = decipher.update(encryptedValue);
 		decryptedValue = Buffer.concat([decryptedValue, decipher.final()]);
 
-		return { success: true, value: Buffer.from(decryptedValue).toString("ascii") };
+		return TypedMethodResponse.success(Buffer.from(decryptedValue).toString("ascii"));
 	}
 	catch (e: any)
 	{
@@ -78,10 +76,10 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
 		}
 	}
 
-	return { success: false, errorMessage: errorMessage };
+	return TypedMethodResponse.fail(undefined, undefined, errorMessage);
 }
 
-async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
+async function hybridEncrypt(value: string): Promise<TypedMethodResponse<EncryptedResponse>>
 {
 	let logID: number | undefined;
 
@@ -91,13 +89,13 @@ async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
 		const aesResult = await encrypt(aesKey, value);
 		if (!aesResult.success)
 		{
-			return aesResult;
+			return TypedMethodResponse.fail();
 		}
 
 		const keyBytes = Buffer.from(aesKey);
 		const encryptedKey = crypto.publicEncrypt(vaulticPublicKey, keyBytes).toString("base64");
 
-		return { success: true, key: encryptedKey, value: aesResult.value };
+		return TypedMethodResponse.success({ Key: encryptedKey, Data: aesResult.value });
 	}
 	catch (e: any)
 	{
@@ -112,7 +110,7 @@ async function hybridEncrypt(value: string): Promise<HybridEncrypionResponse>
 		}
 	}
 
-	return { success: false, logID: logID }
+	return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
 }
 
 async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<MethodResponse>
@@ -153,7 +151,7 @@ async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedRes
 		}
 	}
 
-	return { success: false, logID: logID }
+	return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
 }
 
 function generateECKeys(): PublicPrivateKey

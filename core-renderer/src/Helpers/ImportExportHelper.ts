@@ -169,7 +169,7 @@ export async function getExportableValues(color: string, masterKey: string): Pro
     return await exportData(data);
 }
 
-async function exportData(data: string[][]): Promise<string>
+export async function exportData(data: string[][]): Promise<string>
 {
     return new Promise((resolve) =>
     {

@@ -77,9 +77,9 @@ class AxiosWrapper
         {
             const newData = await this.prepRequestData(data);
             const requestData = await this.getRequestData(newData);
-            if (!requestData[0].success)
+            if (!requestData.success)
             {
-                if (requestData[0].invalidSession)
+                if (requestData.invalidSession)
                 {
                     return { Success: false, InvalidSession: true } as InvalidSessionResponse;
                 }
@@ -87,7 +87,7 @@ class AxiosWrapper
                 return { Success: false, UnknownError: true, logID: requestData[0].logID, message: "setup" };
             }
 
-            const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData[1]);
+            const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
             const responseResult = await this.handleResponse<T>(response.data);
 
             if (!responseResult[0].success)
@@ -169,9 +169,9 @@ class AxiosWrapper
         return newData;
     }
 
-    protected async getRequestData(data?: any): Promise<[MethodResponse, EncryptedResponse]>
+    protected async getRequestData(data?: any): Promise<TypedMethodResponse<EncryptedResponse>>
     {
-        return [{} as MethodResponse, {}];
+        return {} as TypedMethodResponse<EncryptedResponse>;
     }
 
     protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]>
@@ -187,18 +187,11 @@ class STSAxiosWrapper extends AxiosWrapper
         super();
     }
 
-    protected async getRequestData(data?: any): Promise<[MethodResponse, EncryptedResponse]>
+    protected async getRequestData(data?: any): Promise<TypedMethodResponse<EncryptedResponse>>
     {
         // we don't have our session key yet, use hybrid encryption to encrypt the post data
         data.ResponsePublicKey = responseKeys.public;
-        const encryptedData = await environment.utilities.crypt.hybridEncrypt(JSON.stringify(data));
-
-        if (!encryptedData.success)
-        {
-            return [encryptedData, { Key: '', Data: '' }]
-        }
-
-        return [{ success: true }, { Key: encryptedData.key!, Data: encryptedData.value! }];
+        return await environment.utilities.crypt.hybridEncrypt(JSON.stringify(data));
     }
 
     protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]> 
@@ -209,7 +202,7 @@ class STSAxiosWrapper extends AxiosWrapper
         {
             if (!('Key' in response) || !('Data' in response))
             {
-                return [{ success: false }, responseData]
+                return [TypedMethodResponse.fail(), responseData]
             }
 
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
@@ -221,11 +214,11 @@ class STSAxiosWrapper extends AxiosWrapper
             }
 
             responseData = JSON.parse(decryptedResponse.value!) as T;
-            return [{ success: true }, responseData];
+            return [TypedMethodResponse.success(), responseData];
         }
         catch (e)
         {
-            return [{ success: false }, responseData]
+            return [TypedMethodResponse.fail(), responseData]
         }
     }
 }
@@ -241,7 +234,7 @@ class APIAxiosWrapper extends AxiosWrapper
     {
         if (!environment.cache.exportKey)
         {
-            return { success: false, errorMessage: "No Export Key" };
+            return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
         }
 
         if (fieldTree.properties)
@@ -256,7 +249,8 @@ class APIAxiosWrapper extends AxiosWrapper
                 const response = await environment.utilities.crypt.encrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
-                    return { ...response, errorMessage: `${response.errorMessage}. Prop: ${fieldTree.properties[i]}, Value: ${data[fieldTree.properties[i]]}` };
+                    response.addToErrorMessage(`Prop: ${fieldTree.properties[i]}, Value: ${data[fieldTree.properties[i]]}`);
+                    return response;
                 }
 
                 data[fieldTree.properties[i]] = response.value!;
@@ -304,14 +298,14 @@ class APIAxiosWrapper extends AxiosWrapper
             }
         }
 
-        return { success: true, value: data };
+        return TypedMethodResponse.success(data);
     }
 
     async decryptEndToEndData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
         if (!environment.cache.exportKey)
         {
-            return { success: false, errorMessage: "No Export Key" };
+            return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
         }
 
         if (fieldTree.properties)
@@ -375,7 +369,7 @@ class APIAxiosWrapper extends AxiosWrapper
             }
         }
 
-        return { success: true, value: data };
+        return TypedMethodResponse.success(data);
     }
 
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
@@ -388,28 +382,26 @@ class APIAxiosWrapper extends AxiosWrapper
         return super.post(serverPath, data);
     }
 
-    protected async getRequestData(data?: any): Promise<[MethodResponse, EncryptedResponse]>
+    protected async getRequestData(data?: any): Promise<TypedMethodResponse<EncryptedResponse>>
     {
         data.ResponsePublicKey = responseKeys.public;
 
         const sessionHash = await environment.sessionHandler.getSession();
         if (!sessionHash)
         {
-            return [{ success: false, invalidSession: true }, { Key: '', Data: '' }]
+            return TypedMethodResponse.fail(undefined, undefined, undefined, undefined, true);
         }
 
         const requestData = await environment.utilities.crypt.encrypt(environment.cache.sessionKey!, JSON.stringify(data));
         if (!requestData.success)
         {
-            return [requestData, { Data: '' }]
+            return TypedMethodResponse.fail(undefined, undefined, requestData.errorMessage, requestData.logID);
         }
 
-        const encryptedData = await environment.utilities.crypt.hybridEncrypt(JSON.stringify({
+        return await environment.utilities.crypt.hybridEncrypt(JSON.stringify({
             SessionTokenHash: sessionHash,
             Data: requestData.value
         }));
-
-        return [{ success: true }, { Key: encryptedData.key, Data: encryptedData.value }];
     }
 
     protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]> 
@@ -420,21 +412,21 @@ class APIAxiosWrapper extends AxiosWrapper
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
             if (!encryptedResponse.Data)
             {
-                return [{ success: false, errorMessage: `response: ${JSON.stringify(encryptedResponse)}` }, responseData]
+                return [TypedMethodResponse.fail(undefined, undefined, JSON.stringify(encryptedResponse)), responseData];
             }
 
             const decryptedResponse = await environment.utilities.crypt.decrypt(environment.cache.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
-                return [{ ...decryptedResponse, errorMessage: `response: ${JSON.stringify(encryptedResponse)}` }, responseData];
+                return [TypedMethodResponse.fail(undefined, undefined, JSON.stringify(encryptedResponse)), responseData];
             }
 
             responseData = JSON.parse(decryptedResponse.value!) as T;
-            return [{ success: true }, responseData];
+            return [TypedMethodResponse.success(), responseData];
         }
         catch (e)
         {
-            return [{ success: false, errorMessage: JSON.stringify(e) }, responseData]
+            return [TypedMethodResponse.fail(undefined, undefined, JSON.stringify(e)), responseData]
         }
     }
 }

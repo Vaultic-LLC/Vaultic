@@ -3,6 +3,7 @@ import vaulticServer from "../../Server/VaulticServer";
 import { EntityState } from "../../Types/Properties";
 import { UserDataPayload } from "../../Types/ServerTypes";
 import Transaction from "../Transaction";
+import logRepository, { LogRepositoryType } from "./LogRepository";
 import appStoreStateRepository, { AppStoreStateRepositoryType } from "./StoreState/AppStoreStateRepository";
 import filterStoreStateRepository, { FilterStoreStateRepositoryType } from "./StoreState/FilterStoreStateRepository";
 import groupStoreStateRepository, { GroupStoreStateRepositoryType } from "./StoreState/GroupStoreStateRepository";
@@ -17,6 +18,7 @@ import vaultRepository, { VaultRepositoryType } from "./VaultRepository";
 
 export interface VaulticRepositories
 {
+    logs: LogRepositoryType;
     users: UserRepositoryType;
     appStoreStates: AppStoreStateRepositoryType;
     userPreferencesStoreStates: UserPreferencesStoreStateRepositoryType;
@@ -32,6 +34,8 @@ export interface VaulticRepositories
 
 export function initRepositories(): VaulticRepositories
 {
+    logRepository.init();
+
     userRepository.init();
     appStoreStateRepository.init();
     userPreferencesStoreStateRepository.init();
@@ -46,7 +50,9 @@ export function initRepositories(): VaulticRepositories
     filterStoreStateRepository.init();
     groupStoreStateRepository.init();
 
-    const repositories: VaulticRepositories = {
+    const repositories: VaulticRepositories =
+    {
+        logs: logRepository,
         users: userRepository,
         appStoreStates: appStoreStateRepository,
         userPreferencesStoreStates: userPreferencesStoreStateRepository,
@@ -72,10 +78,12 @@ export async function getUserDataSignatures(masterKey: string, email: string)
         return userData;
     }
 
-    if (!(await user.verify(masterKey)))
+    const verifiedUserResponse = await user.verify(masterKey);
+    if (!verifiedUserResponse.success)
     {
-        // TODO: need to override data
-        console.log('no signatures')
+        verifiedUserResponse.addToCallStack("GetUserDataSignatures");
+        await environment.repositories.logs.logMethodResponse(verifiedUserResponse);
+
         return userData;
     }
 

@@ -60,11 +60,18 @@ export interface ServerHelper
 	logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<LogUserInResponse>;
 };
 
+export interface VaultHelper
+{
+	loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData | null>;
+	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => Promise<boolean | CondensedVaultData | null>
+};
+
 export interface Helpers
 {
 	validation: ValidationHelper;
 	vaultic: VaulticHelper;
 	server: ServerHelper;
+	vault: VaultHelper;
 }
 
 export interface DeviceInfo
@@ -152,8 +159,11 @@ export interface VaultRepository
 export interface UserVaultRepository
 {
 	saveUserVault: (masterKey: string, vaultID: number, data: string, backup: boolean) => Promise<boolean>;
-	loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData | null>;
-	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => Promise<boolean | CondensedVaultData | null>;
+}
+
+export interface LogRepository
+{
+	getExportableLogData: () => Promise<string>;
 }
 
 export interface Repositories
@@ -161,6 +171,7 @@ export interface Repositories
 	users: UserRepository;
 	vaults: VaultRepository;
 	userVaults: UserVaultRepository;
+	logs: LogRepository;
 }
 
 interface User

@@ -4,6 +4,8 @@ import { Column, ObjectLiteral, AfterLoad } from "typeorm"
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { EntityState } from "../../Types/Properties";
 import { StoreState } from "./States/StoreState";
+import { MethodResponse, TypedMethodResponse } from "../../Types/MethodResponse";
+import errorCodes from "../../Types/ErrorCodes";
 
 const VaulticHandler = {
     get(target, prop, receiver)
@@ -228,26 +230,23 @@ export class VaulticEntity implements ObjectLiteral
         return true;
     }
 
-    async verify(key: string): Promise<boolean>
+    async verify(key: string): Promise<MethodResponse>
     {
         if (!this.signatureSecret || !this.currentSignature)
         {
-            console.log('no signature secret or signature');
-            return false;
+            return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_SECRET_OR_SIGNATURE);
         }
 
         const secretResponse = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
         if (!secretResponse.success)
         {
-            console.log(`could not decrypt signature secret: ${this.signatureSecret}`)
-            return false;
+            return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
         }
 
         let signatureMakeup = this.getSignatureMakeup();
         if (!signatureMakeup)
         {
-            console.log('no signature makeup')
-            return false;
+            return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_MAKEUP);
         }
 
         const serializedMakeup = JSON.stringify(signatureMakeup);
@@ -272,24 +271,21 @@ export class VaulticEntity implements ObjectLiteral
             const retrievedEntity = response.payload.entity;
             if (!retrievedEntity || typeof retrievedEntity != 'string')
             {
-                console.log('no entity');
-                return false;
+                return TypedMethodResponse.fail(errorCodes.NO_RETRIEVED_ENTITY);
             }
 
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
             if (!equalHashes)
             {
-                console.log(`hashes are not equal. H1: ${retrievedEntity}, H2: ${hashedEntity}, Entity: ${serializedMakeup}`)
+                return TypedMethodResponse.fail(errorCodes.HASHES_DONT_MATCH);
             }
 
-            return equalHashes;
+            return TypedMethodResponse.success();
         }
         catch (e)
         {
-            console.log(`error: ${e}. Entity: ${JSON.stringify(this)}`);
+            return TypedMethodResponse.fail(errorCodes.VERIFICATION_FAILED, e);
         }
-
-        return false;
     }
 
     public async encryptAndSet(key: string, property: string): Promise<boolean> 

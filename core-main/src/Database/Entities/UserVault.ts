@@ -6,6 +6,8 @@ import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData } from "../../Types/Repositories"
 import { UserPreferencesStore } from "../../../../core-renderer/src/Objects/Stores/UserPreferencesStore"
+import { MethodResponse, TypedMethodResponse } from "../../Types/MethodResponse"
+import { environment } from "../../Environment"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity
@@ -78,10 +80,23 @@ export class UserVault extends VaulticEntity
         ]
     }
 
-    async verify(key: string): Promise<boolean> 
+    async verify(key: string): Promise<MethodResponse> 
     {
-        return await super.verify(key) &&
-            this.vaultPreferencesStoreState.verify(key);
+        const userVaultResponse = await super.verify(key);
+        if (!userVaultResponse.success)
+        {
+            userVaultResponse.addToCallStack("UserVault Verify");
+            return userVaultResponse;
+        }
+
+        const vaultPreferencesResponse = await this.vaultPreferencesStoreState.verify(key);
+        if (!vaultPreferencesResponse.success)
+        {
+            vaultPreferencesResponse.addToCallStack("VaultPreferencesStoreState Verify");
+            return vaultPreferencesResponse;
+        }
+
+        return TypedMethodResponse.success();
     }
 
     public condense(): CondensedVaultData

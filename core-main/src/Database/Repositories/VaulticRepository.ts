@@ -3,6 +3,7 @@ import { VaulticEntity } from "../Entities/VaulticEntity";
 import { EntityState } from "../../Types/Properties";
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
+import { environment } from "../../Environment";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -35,17 +36,6 @@ export class VaulticRepository<T extends VaulticEntity>
         if (entity)
         {
             return entity.makeReactive() as T;
-        }
-
-        return null;
-    }
-
-    public async retrieveVerified(key: string, predicate: (repository: Repository<T>) => Promise<T | null>): Promise<T | null>
-    {
-        const entity = await predicate(this.repository);
-        if (entity && await entity.verify(key))
-        {
-            return entity;
         }
 
         return null;
@@ -245,8 +235,12 @@ export class VaulticRepository<T extends VaulticEntity>
             return [true, null];
         }
 
-        if (!(await entity.verify(key)))
+        const response = await entity.verify(key);
+        if (!response.success)
         {
+            response.addToCallStack("RetrieveAndVerify");
+            await environment.repositories.logs.logMethodResponse(response);
+
             return [false, null];
         }
 
@@ -258,8 +252,12 @@ export class VaulticRepository<T extends VaulticEntity>
         const entities = await predicate(this.repository);
         for (let i = 0; i < entities.length; i++)
         {
-            if (!(await entities[i].verify(key)))
+            const response = await entities[i].verify(key);
+            if (!response.success)
             {
+                response.addToCallStack("RetrieveAndVerifyAll");
+                await environment.repositories.logs.logMethodResponse(response);
+
                 return false;
             }
         }

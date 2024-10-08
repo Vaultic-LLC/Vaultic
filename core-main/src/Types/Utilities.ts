@@ -1,4 +1,4 @@
-import { ECEncryptionResult, HybridEncrypionResponse, MethodResponse } from "./MethodResponse";
+import { ECEncryptionResult, HybridEncrypionResponse, MethodResponse, TypedMethodResponse } from "./MethodResponse";
 import { EncryptedResponse } from "./Responses";
 
 export interface CoreCryptUtility
@@ -11,7 +11,7 @@ export interface CryptUtility extends CoreCryptUtility
 {
     encrypt: (key: string, value: string) => Promise<MethodResponse>;
     decrypt: (key: string, value: string) => Promise<MethodResponse>;
-    hybridEncrypt: (value: string) => Promise<HybridEncrypionResponse>;
+    hybridEncrypt: (value: string) => Promise<TypedMethodResponse<EncryptedResponse>>;
     hybridDecrypt: (privateKey: string, encryptedResponse: EncryptedResponse) => Promise<MethodResponse>;
 }
 

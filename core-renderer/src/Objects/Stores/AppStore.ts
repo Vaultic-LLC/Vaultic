@@ -293,7 +293,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         if (!archivedVault[0].isLoaded)
         {
-            const vaultData = await api.repositories.userVaults.loadArchivedVault(masterKey, userVaultID);
+            const vaultData = await api.helpers.vault.loadArchivedVault(masterKey, userVaultID);
             if (!vaultData)
             {
                 return false;
@@ -315,7 +315,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         const selected = this.currentVault.userVaultID == userVaultID;
-        let vaultData = await api.repositories.userVaults.unarchiveVault(masterKey, userVaultID, selected);
+        let vaultData = await api.helpers.vault.unarchiveVault(masterKey, userVaultID, selected);
 
         if (!vaultData)
         {

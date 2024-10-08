@@ -8,6 +8,7 @@ import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
 import { environment } from "./Core/Environment";
 import serverHelper from "./Core/Helpers/ServerHelper";
+import vaultHelper from "./Core/Helpers/VaultHelper";
 
 export default function setupIPC()
 {
@@ -60,6 +61,9 @@ export default function setupIPC()
 	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean) =>
 		validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin)));
 
+	ipcMain.handle('vaultHelper:loadArchivedVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => vaultHelper.loadArchivedVault(masterKey, userVaultID)));
+	ipcMain.handle('vaultHelper:unarchiveVault', (e, masterKey: string, userVaultID: number, select: boolean) => validateSender(e, () => vaultHelper.unarchiveVault(masterKey, userVaultID, select)));
+
 	ipcMain.handle('userRepository:getLastUsedUserEmail', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserEmail()));
 	ipcMain.handle('userRepository:getLastUsedUserPreferences', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserPreferences()));
 	ipcMain.handle('userRepository:createUser', (e, masterKey: string, email: string) => validateSender(e, () => environment.repositories.users.createUser(masterKey, email)));
@@ -73,8 +77,8 @@ export default function setupIPC()
 	ipcMain.handle('vaultRepository:archiveVault', (e, masterKey: string, userVaultID: number, backup: boolean) => validateSender(e, () => environment.repositories.vaults.archiveVault(masterKey, userVaultID, backup)));
 
 	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data, backup)));
-	ipcMain.handle('userVaultRepository:loadArchivedVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.userVaults.loadArchivedVault(masterKey, userVaultID)));
-	ipcMain.handle('userVaultRepository:unarchiveVault', (e, masterKey: string, userVaultID: number, select: boolean) => validateSender(e, () => environment.repositories.userVaults.unarchiveVault(masterKey, userVaultID, select)));
+
+	ipcMain.handle('logRepository:getExportableLogData', (e) => validateSender(e, () => environment.repositories.logs.getExportableLogData()));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 

@@ -85,9 +85,12 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         const vaultKeys: string[] = [];
         for (let i = 0; i < userVaults.length; i++)
         {
-            if (!(await userVaults[i].verify(masterKey)))
+            const userVaultResponse = await userVaults[i].verify(masterKey);
+            if (!userVaultResponse.success)
             {
-                console.log('un verified user vault')
+                userVaultResponse.addToCallStack("GetVerifiedUserVaults");
+                await environment.repositories.logs.logMethodResponse(userVaultResponse);
+
                 return [[], []];
             }
 
@@ -97,9 +100,12 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 return [[], []];
             }
 
-            if (!(await userVaults[i].vault.verify(decryptedVaultKey.value!)))
+            const vaultResponse = await userVaults[i].vault.verify(decryptedVaultKey.value!);
+            if (!vaultResponse.success)
             {
-                console.log('no vault verify')
+                vaultResponse.addToCallStack("GetVerifiedUserVaults");
+                await environment.repositories.logs.logMethodResponse(vaultResponse);
+
                 return [[], []];
             }
 

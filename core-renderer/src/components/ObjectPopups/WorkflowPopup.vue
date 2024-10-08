@@ -32,6 +32,14 @@
                         :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportValues" />
                 </div>
             </div>
+            <div class="workflowPopupContainer__section">
+                <h2 class="workflowPopupContainer__section__header">Export Logs</h2>
+                <div class="workflowPopupContainer__section__buttons">
+                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Export'" :width="'8vw'"
+                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportLogs" />
+                </div>
+            </div>
         </ScrollView>
     </div>
 </template>
@@ -45,7 +53,7 @@ import ScrollView from "../ObjectViews/ScrollView.vue"
 
 import { defaultInputTextColor } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
-import { importPasswords, importValues, getExportableValues, getExportablePasswords } from "../../Helpers/ImportExportHelper";
+import { importPasswords, importValues, getExportableValues, getExportablePasswords, exportData } from "../../Helpers/ImportExportHelper";
 import { api } from "../../API";
 import { SingleSelectorItemModel } from '../../Types/Models';
 
@@ -97,7 +105,7 @@ export default defineComponent({
                     return;
                 }
 
-                await doExport("vaultic-passwords", formattedData);
+                await doExport("Vaultic-Passwords", formattedData);
             }
         }
 
@@ -113,7 +121,7 @@ export default defineComponent({
                     return;
                 }
 
-                await doExport("vaultic-values", formattedData);
+                await doExport("Vaultic-Values", formattedData);
             }
         }
 
@@ -121,6 +129,26 @@ export default defineComponent({
         {
             // do this here so we can unit test exporting easier
             const success = await api.helpers.vaultic.writeCSV(fileName, formattedData);
+            if (success)
+            {
+                app.popups.showToast(primaryColor.value, "Export Succeeded", true);
+            }
+            else 
+            {
+                app.popups.showToast(primaryColor.value, "Export Failed", false);
+            }
+
+            app.popups.hideLoadingIndicator();
+        }
+
+        async function exportLogs()
+        {
+            app.popups.showLoadingIndicator(primaryColor.value, "Exporting Logs");
+
+            const data = JSON.parse(await api.repositories.logs.getExportableLogData());
+            const formattedData = await exportData(data);
+
+            const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);
             if (success)
             {
                 app.popups.showToast(primaryColor.value, "Export Succeeded", true);
@@ -142,7 +170,8 @@ export default defineComponent({
             doImportPasswords,
             doImportValues,
             exportPasswords,
-            exportValues
+            exportValues,
+            exportLogs
         }
     }
 })

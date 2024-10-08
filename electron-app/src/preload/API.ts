@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository, UserVaultRepository, VaultController, VaulticCache } from "./Types/APITypes"
+import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository, UserVaultRepository, VaultController, VaulticCache, CondensedVaultData, VaultHelper, LogRepository } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -85,6 +85,12 @@ const serverHelper: ServerHelper =
 	logUserIn: (masterKey: string, email: string, firstLogin: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin)
 };
 
+const vaultHelper: VaultHelper =
+{
+	loadArchivedVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultHelper:loadArchivedVault', masterKey, userVaultID),
+	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => ipcRenderer.invoke('vaultHelper:unarchiveVault', masterKey, userVaultID, select)
+}
+
 const environment: Environment =
 {
 	isTest: () => ipcRenderer.invoke('environment:isTest')
@@ -115,10 +121,13 @@ const vaultRepository: VaultRepository =
 
 const userVaultRepository: UserVaultRepository =
 {
-	saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data, backup),
-	loadArchivedVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('userVaultRepository:loadArchivedVault', masterKey, userVaultID),
-	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => ipcRenderer.invoke('userVaultRepository:unarchiveVault', masterKey, userVaultID, select)
+	saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data, backup)
 };
+
+const logRepository: LogRepository =
+{
+	getExportableLogData: () => ipcRenderer.invoke('logRepository:getExportableLogData')
+}
 
 const api: IAPI =
 {
@@ -140,12 +149,14 @@ const api: IAPI =
 	helpers: {
 		validation: validationHelper,
 		vaultic: vaulticHelper,
-		server: serverHelper
+		server: serverHelper,
+		vault: vaultHelper
 	},
 	repositories: {
 		users: userRepository,
 		vaults: vaultRepository,
-		userVaults: userVaultRepository
+		userVaults: userVaultRepository,
+		logs: logRepository
 	}
 };
 

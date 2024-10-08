@@ -105,7 +105,7 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 },
                 {
                     name: "name",
-                    type: "string"
+                    type: "text"
                 },
                 {
                     name: "lastUsed",
@@ -246,6 +246,37 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "vaultID",
                     type: "integer"
+                }
+            ]
+        }));
+
+        await queryRunner.createTable(new Table({
+            name: "logs",
+            columns: [
+                {
+                    name: "logID",
+                    isPrimary: true,
+                    type: "integer"
+                },
+                {
+                    name: "currentUserEmail",
+                    type: "text",
+                },
+                {
+                    name: "time",
+                    type: "datetime"
+                },
+                {
+                    name: "errorCode",
+                    type: "integer"
+                },
+                {
+                    name: "message",
+                    type: "text"
+                },
+                {
+                    name: "callStack",
+                    type: "text"
                 }
             ]
         }));

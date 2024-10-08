@@ -15,6 +15,7 @@ import { PasswordStoreState } from "../Core/Database/Entities/States/PasswordSto
 import { ValueStoreState } from "../Core/Database/Entities/States/ValueStoreState";
 import { FilterStoreState } from "../Core/Database/Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Core/Database/Entities/States/GroupStoreState";
+import { Log } from "../Core/Database/Entities/Log";
 
 export function createDataSource(isTest: boolean)
 {
@@ -32,6 +33,7 @@ export function createDataSource(isTest: boolean)
 		type: "better-sqlite3",
 		database: database,
 		entities: [
+			Log,
 			User,
 			AppStoreState,
 			UserPreferencesStoreState,

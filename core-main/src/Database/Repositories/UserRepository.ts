@@ -206,9 +206,12 @@ class UserRepository extends VaulticRepository<User>
             return false;
         }
 
-        if (!(await user.verify(masterKey)))
+        const verifiedUserResponse = await user.verify(masterKey);
+        if (!verifiedUserResponse.success)
         {
-            console.log('cant set current');
+            verifiedUserResponse.addToCallStack("SetCurrentUser");
+            await environment.repositories.logs.logMethodResponse(verifiedUserResponse);
+
             return false;
         }
 
