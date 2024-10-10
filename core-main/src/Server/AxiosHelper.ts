@@ -71,6 +71,7 @@ class AxiosWrapper
         return encrypt.value ?? "";
     }
 
+    // TOOD: automatically log failed responses locally
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
     {
         try
@@ -249,7 +250,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 const response = await environment.utilities.crypt.encrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
-                    response.addToErrorMessage(`Prop: ${fieldTree.properties[i]}, Value: ${data[fieldTree.properties[i]]}`);
+                    response.addToErrorMessage(`Prop: ${fieldTree.properties[i]}`);
                     return response;
                 }
 

@@ -23,6 +23,11 @@ export class AppStoreState extends StoreState
         return this.appStoreStateID;
     }
 
+    entityName(): string 
+    {
+        return "appStoreState";
+    }
+
     protected createNew(): AppStoreState 
     {
         return new AppStoreState();

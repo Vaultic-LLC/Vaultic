@@ -23,6 +23,11 @@ export class ValueStoreState extends StoreState
         return this.valueStoreStateID;
     }
 
+    entityName(): string 
+    {
+        return "valueStoreState";
+    }
+
     protected createNew(): ValueStoreState 
     {
         return new ValueStoreState();

@@ -13,6 +13,7 @@ import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { UserData } from "../../Types/SharedTypes";
+import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 
 export interface AppSettings 
 {
@@ -107,7 +108,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 randomValueLength: 25,
                 randomPhraseLength: 7,
                 multipleFilterBehavior: FilterStatus.Or,
-                oldPasswordDays: 30,
+                oldPasswordDays: 365,
                 percentMetricForPulse: 1,
                 defaultMarkdownInEditScreens: true
             }
@@ -192,13 +193,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         const userData = await api.repositories.users.getCurrentUserData(masterKey);
-        const parsedUserData: UserData = JSON.parse(userData);
-
-        // TODO: better handle error. No data will be loaded
-        if (!parsedUserData.success)
+        if (!userData.success)
         {
+            defaultHandleFailedResponse(userData);
             return false;
         }
+
+        const parsedUserData: UserData = JSON.parse(userData.value!);
 
         Object.assign(this.state, JSON.parse(parsedUserData.appStoreState));
         this.internalUserVaults.value = parsedUserData.displayVaults!;
@@ -212,12 +213,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     async createNewVault(masterKey: string, name: string, setAsActive: boolean)
     {
         const result = await api.repositories.vaults.createNewVaultForUser(masterKey, name, setAsActive, this.isOnline);
-        if (!result)
+        if (!result.success)
         {
+            defaultHandleFailedResponse(result);
             return false;
         }
 
-        const vaultData = result as CondensedVaultData;
+        const vaultData = result.value!;
         if (setAsActive)
         {
             this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData);
@@ -257,9 +259,10 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async archiveVault(masterKey: string, userVaultID: number): Promise<boolean>
     {
-        const success = await api.repositories.vaults.archiveVault(masterKey, userVaultID, app.isOnline);
-        if (!success)
+        const response = await api.repositories.vaults.archiveVault(masterKey, userVaultID, app.isOnline);
+        if (!response.success)
         {
+            defaultHandleFailedResponse(response);
             return false;
         }
 
@@ -377,14 +380,14 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async setActiveVault(masterKey: string, userVaultID: number): Promise<boolean>
     {
-        const vault = await api.repositories.vaults.setActiveVault(masterKey, userVaultID);
-        if (!vault)
+        const response = await api.repositories.vaults.setActiveVault(masterKey, userVaultID);
+        if (!response.success)
         {
-            // TODO: handle
+            defaultHandleFailedResponse(response)
             return false;
         }
 
-        this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vault as CondensedVaultData);
+        this.internalCurrentVault.setReactiveVaultStoreData(masterKey, response.value!);
         return true;
     }
 

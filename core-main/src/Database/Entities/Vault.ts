@@ -7,7 +7,6 @@ import { PasswordStoreState } from "./States/PasswordStoreState";
 import { ValueStoreState } from "./States/ValueStoreState";
 import { FilterStoreState } from "./States/FilterStoreState";
 import { GroupStoreState } from "./States/GroupStoreState";
-import { MethodResponse, TypedMethodResponse } from "../../Types/MethodResponse";
 
 @Entity({ name: "vaults" })
 export class Vault extends VaulticEntity
@@ -47,6 +46,11 @@ export class Vault extends VaulticEntity
     identifier(): number 
     {
         return this.vaultID;
+    }
+
+    entityName(): string 
+    {
+        return "vault";
     }
 
     protected createNew(): VaulticEntity 
@@ -100,51 +104,15 @@ export class Vault extends VaulticEntity
         ];
     }
 
-    async verify(key: string): Promise<MethodResponse> 
+    protected getNestedVaulticEntities(): string[] 
     {
-        const vaultResponse = await super.verify(key);
-        if (!vaultResponse.success)
-        {
-            vaultResponse.addToCallStack("Vault Verify");
-            return vaultResponse;
-        }
-
-        const vaultStoreStateResponse = await this.vaultStoreState.verify(key);
-        if (!vaultStoreStateResponse.success)
-        {
-            vaultStoreStateResponse.addToCallStack("VaultStoreState Verify");
-            return vaultStoreStateResponse;
-        }
-
-        const passwordStoreStateResponse = await this.passwordStoreState.verify(key);
-        if (!passwordStoreStateResponse.success)
-        {
-            passwordStoreStateResponse.addToCallStack("PasswordStoreState Verify");
-            return passwordStoreStateResponse;
-        }
-
-        const valueStoreStateResponse = await this.valueStoreState.verify(key);
-        if (!valueStoreStateResponse.success)
-        {
-            valueStoreStateResponse.addToCallStack("ValueStoreState Verify");
-            return valueStoreStateResponse;
-        }
-
-        const filterStoreStateResponse = await this.filterStoreState.verify(key);
-        if (!filterStoreStateResponse.success)
-        {
-            filterStoreStateResponse.addToCallStack("FilterStoreState Verify");
-            return filterStoreStateResponse;
-        }
-
-        const groupStoreStateResponse = await this.groupStoreState.verify(key);
-        if (!groupStoreStateResponse.success)
-        {
-            groupStoreStateResponse.addToCallStack("GroupStoreState Verify");
-            return groupStoreStateResponse;
-        }
-
-        return TypedMethodResponse.success();
+        return [
+            nameof<Vault>("vaultStoreState"),
+            nameof<Vault>("passwordStoreState"),
+            nameof<Vault>("valueStoreState"),
+            nameof<Vault>("filterStoreState"),
+            nameof<Vault>("groupStoreState")
+        ];
     }
 
     public static isValid(vault: DeepPartial<Vault>): boolean

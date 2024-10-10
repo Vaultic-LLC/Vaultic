@@ -14,13 +14,18 @@ export class GroupStoreState extends StoreState
     @Column("integer")
     vaultID: number
 
-    @OneToOne(() => Vault, (vault) => vault.filterStoreState)
+    @OneToOne(() => Vault, (vault) => vault.groupStoreState)
     @JoinColumn({ name: "vaultID" })
     vault: Vault;
 
     identifier(): number 
     {
         return this.groupStoreStateID;
+    }
+
+    entityName(): string 
+    {
+        return "groupStoreState";
     }
 
     protected createNew(): GroupStoreState 

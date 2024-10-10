@@ -6,10 +6,12 @@ import Transaction from "../Transaction";
 import { EntityState } from "../../Types/Properties";
 import { CondensedVaultData } from "../../Types/Repositories";
 import { User } from "../Entities/User";
-import { backupData } from ".";
+import { backupData } from "../../Helpers/RepositoryHelper";
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
+import { TypedMethodResponse } from "../../Types/MethodResponse";
+import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -50,7 +52,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
     {
         if (!user)
         {
-            const currentUser = await environment.repositories.users.getCurrentUser();
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
                 return [[], []];
@@ -86,11 +88,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         for (let i = 0; i < userVaults.length; i++)
         {
             const userVaultResponse = await userVaults[i].verify(masterKey);
-            if (!userVaultResponse.success)
+            if (!userVaultResponse)
             {
-                userVaultResponse.addToCallStack("GetVerifiedUserVaults");
-                await environment.repositories.logs.logMethodResponse(userVaultResponse);
-
                 return [[], []];
             }
 
@@ -101,11 +100,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             }
 
             const vaultResponse = await userVaults[i].vault.verify(decryptedVaultKey.value!);
-            if (!vaultResponse.success)
+            if (!vaultResponse)
             {
-                vaultResponse.addToCallStack("GetVerifiedUserVaults");
-                await environment.repositories.logs.logMethodResponse(vaultResponse);
-
                 return [[], []];
             }
 
@@ -140,44 +136,49 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return condensedDecryptedUserVaults;
     }
 
-    public async saveUserVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<boolean>
+    public async saveUserVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
     {
-        const userVaults = await this.getVerifiedUserVaults(masterKey, [userVaultID]);
-        if (userVaults[0].length != 1)
-        {
-            return false;
-        }
+        return await safetifyMethod(this, internalSaveUserVault);
 
-        const oldUserVault = userVaults[0][0];
-        const newUserVault: CondensedVaultData = JSON.parse(data);
-
-        const transaction = new Transaction();
-        if (newUserVault.vaultPreferencesStoreState)
+        async function internalSaveUserVault(this: UserVaultRepository): Promise<TypedMethodResponse<boolean>>
         {
-            if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
-                oldUserVault.userVaultID, masterKey, newUserVault.vaultPreferencesStoreState, transaction)))
+            const userVaults = await this.getVerifiedUserVaults(masterKey, [userVaultID]);
+            if (userVaults[0].length != 1)
             {
-                return false;
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
             }
-        }
 
-        const saved = await transaction.commit();
-        if (!saved)
-        {
-            return false;
-        }
+            const oldUserVault = userVaults[0][0];
+            const newUserVault: CondensedVaultData = JSON.parse(data);
 
-        if (backup)
-        {
-            await backupData(masterKey);
-        }
+            const transaction = new Transaction();
+            if (newUserVault.vaultPreferencesStoreState)
+            {
+                if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
+                    oldUserVault.userVaultID, masterKey, newUserVault.vaultPreferencesStoreState, transaction)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "VaultPreferencesStoreState Update Failed");
+                }
+            }
 
-        return true;
+            const saved = await transaction.commit();
+            if (!saved)
+            {
+                return TypedMethodResponse.transactionFail();
+            }
+
+            if (backup && !(await backupData(masterKey)))
+            {
+                return TypedMethodResponse.backupFail();
+            }
+
+            return TypedMethodResponse.success(true);
+        }
     }
 
     public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<UserVault>[] | null]> 
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
             return [false, null];
@@ -238,7 +239,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
 
     public async postBackupEntitiesUpdates(key: string, entities: Partial<UserVault>[], transaction: Transaction): Promise<boolean> 
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(key);
         if (!currentUser)
         {
             return false;

@@ -1,5 +1,6 @@
 import { api } from "../API";
-import app from "./Stores/AppStore";
+import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
+import { TypedMethodResponse } from "../Types/MethodResponse";
 import { Store, StoreEvents } from "./Stores/Base";
 
 export enum Entity
@@ -50,22 +51,23 @@ export default class StoreUpdateTransaction
             states[this.storeUpdateStates[i].store.stateName] = JSON.stringify(this.storeUpdateStates[i].pendingState);
         }
 
-        let success = false;
+        let response: TypedMethodResponse<any>;
         switch (this.entity)
         {
             case Entity.User:
-                success = await api.repositories.users.saveUser(masterKey, JSON.stringify(states), backup);
+                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(states), backup);
                 break;
             case Entity.UserVault:
-                success = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
+                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
                 break;
             case Entity.Vault:
-                success = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
+                response = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
                 break;
         }
 
-        if (!success)
+        if (!response.success)
         {
+            defaultHandleFailedResponse(response);
             return false;
         }
 

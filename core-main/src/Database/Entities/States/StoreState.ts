@@ -1,5 +1,5 @@
-import { VaulticEntity } from "../VaulticEntity"
-import { nameof } from "../../../Helpers/TypeScriptHelper"
+import { VaulticEntity } from "../VaulticEntity";
+import { nameof } from "../../../Helpers/TypeScriptHelper";
 import { Column } from "typeorm";
 
 export class StoreState extends VaulticEntity

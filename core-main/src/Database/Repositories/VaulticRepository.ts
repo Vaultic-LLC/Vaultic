@@ -3,7 +3,6 @@ import { VaulticEntity } from "../Entities/VaulticEntity";
 import { EntityState } from "../../Types/Properties";
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
-import { environment } from "../../Environment";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -176,6 +175,23 @@ export class VaulticRepository<T extends VaulticEntity>
         return false;
     }
 
+    public async override(manager: EntityManager, id: number, entity: DeepPartial<T>): Promise<boolean>
+    {
+        try 
+        {
+            const repo = manager.withRepository(this.repository);
+            await repo.update(id, entity as any);
+        }
+        catch (e)
+        {
+            console.log(`Filed to override entity: ${JSON.stringify(entity)}`)
+            console.log(e);
+            return false;
+        }
+
+        return true;
+    }
+
     public async resetTracking(manager: EntityManager, key: string, entity: T): Promise<boolean>
     {
         const mockEntity = {};
@@ -236,11 +252,8 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         const response = await entity.verify(key);
-        if (!response.success)
+        if (!response)
         {
-            response.addToCallStack("RetrieveAndVerify");
-            await environment.repositories.logs.logMethodResponse(response);
-
             return [false, null];
         }
 
@@ -253,11 +266,8 @@ export class VaulticRepository<T extends VaulticEntity>
         for (let i = 0; i < entities.length; i++)
         {
             const response = await entities[i].verify(key);
-            if (!response.success)
+            if (!response)
             {
-                response.addToCallStack("RetrieveAndVerifyAll");
-                await environment.repositories.logs.logMethodResponse(response);
-
                 return false;
             }
         }

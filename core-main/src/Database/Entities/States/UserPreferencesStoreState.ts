@@ -23,6 +23,11 @@ export class UserPreferencesStoreState extends StoreState
         return this.userPreferencesStoreStateID;
     }
 
+    entityName(): string 
+    {
+        return "userPreferencesStoreState";
+    }
+
     // userPreferences isn't encrypted
     getEncryptableProperties(): string[]
     {

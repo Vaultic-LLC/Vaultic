@@ -23,6 +23,11 @@ export class PasswordStoreState extends StoreState
         return this.passwordStoreStateID;
     }
 
+    entityName(): string 
+    {
+        return "passwordStoreState";
+    }
+
     protected createNew(): PasswordStoreState 
     {
         return new PasswordStoreState();

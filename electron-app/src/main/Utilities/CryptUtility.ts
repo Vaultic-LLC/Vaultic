@@ -13,7 +13,7 @@ const ivLength: number = 12;
 const authTagLength: number = 16;
 const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
 
-async function encrypt(key: string, value: string): Promise<MethodResponse>
+async function encrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
 {
 	let logID: number | undefined;
 	try
@@ -44,7 +44,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
 	}
 }
 
-async function decrypt(key: string, value: string): Promise<MethodResponse>
+async function decrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
 {
 	let errorMessage: string = "";
 	try

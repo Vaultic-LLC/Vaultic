@@ -5,6 +5,7 @@ import { ImportableDisplayField } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
 import app from "./AppStore";
 import { DisplayVault } from "../../Types/APITypes";
+import { api } from "../../API";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 

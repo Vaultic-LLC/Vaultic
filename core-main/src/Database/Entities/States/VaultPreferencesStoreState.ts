@@ -23,6 +23,11 @@ export class VaultPreferencesStoreState extends StoreState
         return this.vaultPreferencesStoreStateID;
     }
 
+    entityName(): string 
+    {
+        return "vaultPreferencesStoreState";
+    }
+
     protected createNew(): VaultPreferencesStoreState 
     {
         return new VaultPreferencesStoreState();

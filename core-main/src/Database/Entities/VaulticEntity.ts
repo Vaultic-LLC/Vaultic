@@ -4,7 +4,7 @@ import { Column, ObjectLiteral, AfterLoad } from "typeorm"
 import { nameof } from "../../Helpers/TypeScriptHelper";
 import { EntityState } from "../../Types/Properties";
 import { StoreState } from "./States/StoreState";
-import { MethodResponse, TypedMethodResponse } from "../../Types/MethodResponse";
+import { TypedMethodResponse } from "../../Types/MethodResponse";
 import errorCodes from "../../Types/ErrorCodes";
 
 const VaulticHandler = {
@@ -73,9 +73,14 @@ export class VaulticEntity implements ObjectLiteral
         this.propertiesToSync = JSON.parse(this.serializedPropertiesToSync);
     }
 
-    identifier(): number
+    identifier(): number 
     {
         throw "need to override";
+    }
+
+    entityName(): string 
+    {
+        return "vaulticEntity";
     }
 
     protected createNew(): VaulticEntity
@@ -117,6 +122,11 @@ export class VaulticEntity implements ObjectLiteral
     }
 
     public getEncryptableProperties(): string[]
+    {
+        return [];
+    }
+
+    protected getNestedVaulticEntities(): string[]
     {
         return [];
     }
@@ -230,7 +240,7 @@ export class VaulticEntity implements ObjectLiteral
         return true;
     }
 
-    async verify(key: string): Promise<MethodResponse>
+    protected async internalVerify(key: string): Promise<TypedMethodResponse<any>>
     {
         if (!this.signatureSecret || !this.currentSignature)
         {
@@ -240,6 +250,7 @@ export class VaulticEntity implements ObjectLiteral
         const secretResponse = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
         if (!secretResponse.success)
         {
+            console.log(`Key: ${key}, Secret: ${this.signatureSecret}`);
             return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
         }
 
@@ -286,6 +297,44 @@ export class VaulticEntity implements ObjectLiteral
         {
             return TypedMethodResponse.fail(errorCodes.VERIFICATION_FAILED, e);
         }
+    }
+
+    // Attempts to verify entity and all nested entities. Will throw the TypedMethodResponse if 
+    // unsuccessfull. Any call that verifies an entity should be wrapped in entityVerificationWrapper
+    // at the highest level to handle the thrown error
+    async verify(key: string): Promise<boolean>
+    {
+        const selfVerification = await this.internalVerify(key);
+        if (!selfVerification.success)
+        {
+            selfVerification.addToCallStack(`Verifying ${this.entityName()}`);
+            console.log(JSON.stringify(selfVerification));
+            throw selfVerification;
+        }
+
+        const nestedVaulticEntites = this.getNestedVaulticEntities();
+        for (let i = 0; i < nestedVaulticEntites.length; i++)
+        {
+            if (typeof this[nestedVaulticEntites[i]]?.internalVerify == 'function')
+            {
+                const response: TypedMethodResponse<any> = await this[nestedVaulticEntites[i]].internalVerify(key);
+                if (!response.success)
+                {
+                    response.addToCallStack(`Verifying ${nestedVaulticEntites[i]}`);
+                    response.addToErrorMessage(`ID: ${this.identifier()}`);
+                    console.log(JSON.stringify(selfVerification));
+
+                    throw response;
+                }
+            }
+            else
+            {
+                // Expected object to verify but it doesn't exist
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public async encryptAndSet(key: string, property: string): Promise<boolean> 

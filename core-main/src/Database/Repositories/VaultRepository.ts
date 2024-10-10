@@ -13,10 +13,13 @@ import { ValueStoreState } from "../Entities/States/ValueStoreState";
 import { FilterStoreState } from "../Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Entities/States/GroupStoreState";
 import { EntityState } from "../../Types/Properties";
-import { backupData } from ".";
+import { backupData } from "../../Helpers/RepositoryHelper";
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { User } from "../Entities/User";
+import { TypedMethodResponse } from "../../Types/MethodResponse";
+import { safetifyMethod } from "../../Helpers/RepositoryHelper";
+import errorCodes from "../../Types/ErrorCodes";
 
 class VaultRepository extends VaulticRepository<Vault>
 {
@@ -58,15 +61,6 @@ class VaultRepository extends VaulticRepository<Vault>
         transaction.updateEntity(rectiveNewCurrentVault, "", () => this);
 
         return await transaction.commit();
-    }
-
-    protected getLastUsedVault(user: User): Promise<Vault | null>
-    {
-        return this.repository.createQueryBuilder("vaults")
-            .leftJoin("vaults.userVaults", "userVaults")
-            .where("userVaults.userID = :userID", { userID: user.userID })
-            .andWhere("vaults.lastUsed = :lastUsed", { lastUsed: true })
-            .getOne();
     }
 
     public async createNewVault(name: string): Promise<boolean | [UserVault, Vault, string]>
@@ -123,223 +117,229 @@ class VaultRepository extends VaulticRepository<Vault>
         return [userVault, vault, vaultKey];
     }
 
-    public async createNewVaultForUser(masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean): Promise<boolean | CondensedVaultData>
+    public async createNewVaultForUser(masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
-        if (!currentUser)
+        return await safetifyMethod(this, internalCreateNewVaultForUser);
+
+        async function internalCreateNewVaultForUser(this: VaultRepository): Promise<TypedMethodResponse<CondensedVaultData>>
         {
-            return false;
-        }
-
-        const vaultData = await this.createNewVault(name);
-        if (!vaultData)
-        {
-            return false;
-        }
-
-        const userVault: UserVault = vaultData[0];
-        const vault: Vault = vaultData[1];
-        const vaultKey: string = vaultData[2];
-
-        const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(currentUser.publicKey, vaultKey);
-        if (!encryptedVaultKey.success)
-        {
-            return false;
-        }
-
-        userVault.userID = currentUser.userID;
-        userVault.user = currentUser;
-        userVault.vaultKey = JSON.stringify({
-            vaultKey: encryptedVaultKey.value!,
-            publicKey: encryptedVaultKey.publicKey
-        });
-
-        const transaction = new Transaction();
-
-        if (setAsActive)
-        {
-            vault.lastUsed = true;
-            const lastUsedVault = await this.getLastUsedVault(currentUser);
-            if (lastUsedVault)
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
             {
-                const reactiveLastUsedVault = lastUsedVault.makeReactive();
-                reactiveLastUsedVault.lastUsed = false;
-
-                transaction.updateEntity(reactiveLastUsedVault, "", () => this);
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
-        }
 
-        // Order matters here
-        transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
-        transaction.insertEntity(vault.vaultStoreState, vaultKey, () => environment.repositories.vaultStoreStates);
-        transaction.insertEntity(vault.passwordStoreState, vaultKey, () => environment.repositories.passwordStoreStates);
-        transaction.insertEntity(vault.valueStoreState, vaultKey, () => environment.repositories.valueStoreStates);
-        transaction.insertEntity(vault.filterStoreState, vaultKey, () => environment.repositories.filterStoreStates);
-        transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
-
-        transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
-        transaction.insertEntity(userVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
-
-        if (!(await transaction.commit()))
-        {
-            return false;
-        }
-
-        if (doBackupData)
-        {
-            const backupResponse = await backupData(masterKey);
-            if (!backupResponse)
+            const vaultData = await this.createNewVault(name);
+            if (!vaultData)
             {
-                return false;
+                return TypedMethodResponse.fail(undefined, undefined, "No Vault Data");
             }
-        }
 
-        const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVault.userVaultID]);
-        if (!uvData || uvData.length == 0)
-        {
-            return false;
-        }
+            const userVault: UserVault = vaultData[0];
+            const vault: Vault = vaultData[1];
+            const vaultKey: string = vaultData[2];
 
-        return uvData[0];
+            const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(currentUser.publicKey, vaultKey);
+            if (!encryptedVaultKey.success)
+            {
+                return TypedMethodResponse.fail(errorCodes.EC_ENCRYPTION_FAILED);
+            }
+
+            userVault.userID = currentUser.userID;
+            userVault.user = currentUser;
+            userVault.vaultKey = JSON.stringify({
+                vaultKey: encryptedVaultKey.value!,
+                publicKey: encryptedVaultKey.publicKey
+            });
+
+            const transaction = new Transaction();
+
+            // Order matters here
+            transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
+            transaction.insertEntity(vault.vaultStoreState, vaultKey, () => environment.repositories.vaultStoreStates);
+            transaction.insertEntity(vault.passwordStoreState, vaultKey, () => environment.repositories.passwordStoreStates);
+            transaction.insertEntity(vault.valueStoreState, vaultKey, () => environment.repositories.valueStoreStates);
+            transaction.insertEntity(vault.filterStoreState, vaultKey, () => environment.repositories.filterStoreStates);
+            transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
+
+            transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
+            transaction.insertEntity(userVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
+
+            if (!(await transaction.commit()))
+            {
+                return TypedMethodResponse.transactionFail();
+            }
+
+            if (doBackupData)
+            {
+                const backupResponse = await backupData(masterKey);
+                if (!backupResponse)
+                {
+                    return TypedMethodResponse.backupFail();
+                }
+            }
+
+            if (setAsActive)
+            {
+                await this.setLastUsedVault(currentUser, userVault.userVaultID);
+            }
+
+            const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVault.userVaultID]);
+            if (!uvData || uvData.length == 0)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
+            }
+
+            return TypedMethodResponse.success(uvData[0]);
+        }
     }
 
-    public async setActiveVault(masterKey: string, userVaultID: number): Promise<boolean | CondensedVaultData>
+    public async setActiveVault(masterKey: string, userVaultID: number): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
-        if (!currentUser)
-        {
-            return false;
-        }
+        return await safetifyMethod(this, internalSetActiveVault);
 
-        const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVaultID]);
-        if (userVaults && userVaults.length == 1)
+        async function internalSetActiveVault(this: VaultRepository): Promise<TypedMethodResponse<CondensedVaultData>>
         {
-            if (!(await this.setLastUsedVault(currentUser, userVaultID)))
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
             {
-                return false;
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            return userVaults[0]
-        }
+            const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVaultID]);
+            if (userVaults && userVaults.length == 1)
+            {
+                if (!(await this.setLastUsedVault(currentUser, userVaultID)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Last User");
+                }
 
-        return false;
+                return TypedMethodResponse.success(userVaults[0]);
+            }
+
+            return TypedMethodResponse.fail(undefined, undefined, "No User Vault");
+        }
     }
 
-    public async saveVault(masterKey: string, userVaultID: number, data: string, backup: boolean)
+    public async saveVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
     {
-        const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
-        if (userVaults[0].length == 0)
+        return await safetifyMethod(this, internalSaveVault);
+
+        async function internalSaveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
-            return false;
-        }
-
-        const oldVault = userVaults[0][0].vault.makeReactive();
-        const vaultKey = userVaults[1][0];
-
-        const newVault: CondensedVaultData = JSON.parse(data);
-        const transaction = new Transaction();
-
-        if (newVault.name)
-        {
-            oldVault.name = newVault.name;
-            transaction.updateEntity(oldVault, vaultKey, () => this);
-        }
-
-        if (newVault.vaultStoreState)
-        {
-            if (!await (environment.repositories.vaultStoreStates.updateState(
-                oldVault.vaultStoreState.vaultStoreStateID, vaultKey, newVault.vaultStoreState, transaction)))
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
+            if (userVaults[0].length == 0)
             {
-                console.log('vault update failed');
-                return false;
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVault");
             }
-        }
 
-        if (newVault.passwordStoreState)
-        {
-            if (!await (environment.repositories.passwordStoreStates.updateState(
-                oldVault.passwordStoreState.passwordStoreStateID, vaultKey, newVault.passwordStoreState, transaction)))
+            const oldVault = userVaults[0][0].vault.makeReactive();
+            const vaultKey = userVaults[1][0];
+
+            const newVault: CondensedVaultData = JSON.parse(data);
+            const transaction = new Transaction();
+
+            if (newVault.name)
             {
-                console.log('password update failed');
-                return false;
+                oldVault.name = newVault.name;
+                transaction.updateEntity(oldVault, vaultKey, () => this);
             }
-        }
 
-        if (newVault.valueStoreState)
-        {
-            if (!await (environment.repositories.valueStoreStates.updateState(
-                oldVault.valueStoreState.valueStoreStateID, vaultKey, newVault.valueStoreState, transaction)))
+            if (newVault.vaultStoreState)
             {
-                console.log('value update failed');
-                return false;
+                if (!await (environment.repositories.vaultStoreStates.updateState(
+                    oldVault.vaultStoreState.vaultStoreStateID, vaultKey, newVault.vaultStoreState, transaction)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update VaultStoreState");
+                }
             }
-        }
 
-        if (newVault.filterStoreState)
-        {
-            if (!await (environment.repositories.filterStoreStates.updateState(
-                oldVault.filterStoreState.filterStoreStateID, vaultKey, newVault.filterStoreState, transaction)))
+            if (newVault.passwordStoreState)
             {
-                console.log('filter update failed');
-                return false;
+                if (!await (environment.repositories.passwordStoreStates.updateState(
+                    oldVault.passwordStoreState.passwordStoreStateID, vaultKey, newVault.passwordStoreState, transaction)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update PasswordStoreState");
+                }
             }
-        }
 
-        if (newVault.groupStoreState)
-        {
-            if (!await (environment.repositories.groupStoreStates.updateState(
-                oldVault.groupStoreState.groupStoreStateID, vaultKey, newVault.groupStoreState, transaction)))
+            if (newVault.valueStoreState)
             {
-                console.log('group update failed');
-                return false;
+                if (!await (environment.repositories.valueStoreStates.updateState(
+                    oldVault.valueStoreState.valueStoreStateID, vaultKey, newVault.valueStoreState, transaction)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update ValueStoreState");
+                }
             }
-        }
 
-        const saved = await transaction.commit();
-        if (!saved)
-        {
-            console.log('save failed');
-            return false;
-        }
+            if (newVault.filterStoreState)
+            {
+                if (!await (environment.repositories.filterStoreStates.updateState(
+                    oldVault.filterStoreState.filterStoreStateID, vaultKey, newVault.filterStoreState, transaction)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update FilterStoreState");
+                }
+            }
 
-        if (backup)
-        {
-            await backupData(masterKey);
-        }
+            if (newVault.groupStoreState)
+            {
+                if (!await (environment.repositories.groupStoreStates.updateState(
+                    oldVault.groupStoreState.groupStoreStateID, vaultKey, newVault.groupStoreState, transaction)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update GroupStoreState");
+                }
+            }
 
-        return true;
+            const saved = await transaction.commit();
+            if (!saved)
+            {
+                return TypedMethodResponse.transactionFail();
+            }
+
+            if (backup && !(await backupData(masterKey)))
+            {
+                return TypedMethodResponse.backupFail();
+            }
+
+            return TypedMethodResponse.success();
+        }
     }
 
-    public async archiveVault(masterKey: string, userVaultID: number, backup: boolean): Promise<boolean>
+    public async archiveVault(masterKey: string, userVaultID: number, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
     {
-        const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
-        if (userVaults[0].length == 0)
+        return await safetifyMethod(this, internalArchiveVault);
+
+        async function internalArchiveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
-            return false;
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
+            if (userVaults[0].length == 0)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
+            }
+
+            const vault = userVaults[0][0].vault.makeReactive();
+            vault.entityState = EntityState.Deleted;
+
+            const transaction = new Transaction();
+            transaction.updateEntity(vault, userVaults[1][0], () => this);
+
+            if (!(await transaction.commit()))
+            {
+                return TypedMethodResponse.transactionFail();
+            }
+
+            if (backup && !(await backupData(masterKey)))
+            {
+                return TypedMethodResponse.backupFail();
+            }
+
+            return TypedMethodResponse.success(true);
         }
-
-        const vault = userVaults[0][0].vault.makeReactive();
-        vault.entityState = EntityState.Deleted;
-
-        const transaction = new Transaction();
-        transaction.updateEntity(vault, userVaults[1][0], () => this);
-
-        if (!(await transaction.commit()))
-        {
-            return false;
-        }
-
-        if (backup)
-        {
-            return await backupData(masterKey);
-        }
-
-        return true;
     }
 
     public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<Vault>[] | null]> 
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
             return [false, null];
@@ -428,7 +428,7 @@ class VaultRepository extends VaulticRepository<Vault>
 
     public async postBackupEntitiesUpdates(key: string, entities: Partial<Vault>[], transaction: Transaction): Promise<boolean> 
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(key);
         if (!currentUser)
         {
             return false;

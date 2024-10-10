@@ -63,7 +63,7 @@ class VaultHelper
 
     public async loadArchivedVault(masterKey: string, userVaultID: number): Promise<boolean | CondensedVaultData | null>
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
             return false;
@@ -116,7 +116,7 @@ class VaultHelper
 
     public async unarchiveVault(masterKey: string, userVaultID: number, select: boolean): Promise<boolean | CondensedVaultData | null>
     {
-        const currentUser = await environment.repositories.users.getCurrentUser();
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
             return true;

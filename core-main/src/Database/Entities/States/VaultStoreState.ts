@@ -23,6 +23,11 @@ export class VaultStoreState extends StoreState
         return this.vaultStoreStateID;
     }
 
+    entityName(): string 
+    {
+        return "vaultStoreState";
+    }
+
     protected createNew(): VaultStoreState 
     {
         return new VaultStoreState();

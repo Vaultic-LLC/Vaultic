@@ -6,7 +6,9 @@ import { DeepPartial } from "../Helpers/TypeScriptHelper";
 enum Operation
 {
     Insert,
+    InsertExisting,
     Update,
+    Override,
     Reset,
     Delete
 }
@@ -14,7 +16,6 @@ enum Operation
 interface PendingEntity<T extends VaulticEntity>
 {
     operation: Operation;
-    existing: boolean;
     entity?: VaulticEntity | DeepPartial<T>;
     signingKey?: string;
     id?: number;
@@ -35,7 +36,6 @@ export default class Transaction
         this.pendingEntities.push({
             operation: Operation.Insert,
             entity,
-            existing: false,
             signingKey,
             repository
         });
@@ -44,9 +44,8 @@ export default class Transaction
     insertExistingEntity<T extends VaulticEntity>(entity: DeepPartial<T>, repository: () => VaulticRepository<T>)
     {
         this.pendingEntities.push({
-            operation: Operation.Insert,
+            operation: Operation.InsertExisting,
             entity,
-            existing: true,
             signingKey: "",
             repository
         });
@@ -57,8 +56,17 @@ export default class Transaction
         this.pendingEntities.push({
             operation: Operation.Update,
             entity,
-            existing: false,
             signingKey,
+            repository
+        });
+    }
+
+    overrideEntity<T extends VaulticEntity>(entityID: number, entity: DeepPartial<T>, repository: () => VaulticRepository<T>)
+    {
+        this.pendingEntities.push({
+            operation: Operation.Override,
+            id: entityID,
+            entity,
             repository
         });
     }
@@ -69,7 +77,6 @@ export default class Transaction
             operation: Operation.Reset,
             entity,
             signingKey,
-            existing: false,
             repository
         });
     }
@@ -79,7 +86,6 @@ export default class Transaction
         this.pendingEntities.push({
             operation: Operation.Delete,
             id: entityID,
-            existing: false,
             repository
         });
     }
@@ -105,26 +111,32 @@ export default class Transaction
                         const pendingEntity = this.pendingEntities[i];
                         if (pendingEntity.operation == Operation.Insert)
                         {
-                            if (pendingEntity.existing)
+                            if (!(await pendingEntity.repository().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
-                                if (!(await pendingEntity.repository().insertExisting(manager, pendingEntity.entity!)))
-                                {
-                                    succeeded = false;
-                                    break;
-                                }
+                                succeeded = false;
+                                break;
                             }
-                            else 
+
+                        }
+                        else if (pendingEntity.operation == Operation.InsertExisting)
+                        {
+                            if (!(await pendingEntity.repository().insertExisting(manager, pendingEntity.entity!)))
                             {
-                                if (!(await pendingEntity.repository().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
-                                {
-                                    succeeded = false;
-                                    break;
-                                }
+                                succeeded = false;
+                                break;
                             }
                         }
                         else if (pendingEntity.operation == Operation.Update)
                         {
                             if (!(await pendingEntity.repository().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
+                            {
+                                succeeded = false;
+                                break;
+                            }
+                        }
+                        else if (pendingEntity.operation == Operation.Override)
+                        {
+                            if (!(await pendingEntity.repository().override(manager, pendingEntity.id!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;

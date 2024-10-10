@@ -23,6 +23,11 @@ export class FilterStoreState extends StoreState
         return this.filterStoreStateID;
     }
 
+    entityName(): string 
+    {
+        return "filterStoreState";
+    }
+
     protected createNew(): FilterStoreState 
     {
         return new FilterStoreState();

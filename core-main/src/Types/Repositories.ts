@@ -4,12 +4,14 @@ import { VaulticEntity } from "../Database/Entities/VaulticEntity";
 import { UserVault } from "../Database/Entities/UserVault";
 import { EntityManager } from "typeorm";
 import { DeepPartial } from "../Helpers/TypeScriptHelper";
+import { TypedMethodResponse } from "./MethodResponse";
 
 export interface VaulticRepository<T extends VaulticEntity>
 {
     signAndInsert: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
     insertExisting(manager: EntityManager, entity: DeepPartial<T>): Promise<boolean>;
     signAndUpdate: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
+    override(manager: EntityManager, id: number, entity: DeepPartial<T>): Promise<boolean>;
     resetTracking: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
     delete: (manager: EntityManager, entityID: number) => Promise<boolean>;
     getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>;
@@ -22,11 +24,11 @@ export interface UserRepository extends VaulticRepository<User>
     findByEmail: (email: string) => Promise<User | null>;
     getLastUsedUserEmail: () => Promise<string | null>;
     getLastUsedUserPreferences: () => Promise<string | null>;
-    createUser: (masterKey: string, email: string) => Promise<boolean | string>;
+    createUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<boolean | undefined>>
     setCurrentUser: (masterKey: string, email: string) => Promise<boolean>;
     getCurrentUserData: (masterKey: string) => Promise<string>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
-    saveUser: (masterKey: string, data: string, backup: boolean) => Promise<boolean>;
+    saveUser: (masterKey: string, data: string, backup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
 }
 
 export interface UserVaultRepository extends VaulticRepository<UserVault>

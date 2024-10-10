@@ -46,6 +46,8 @@ import { getLinearGradientFromColor } from '../../Helpers/ColorHelper';
 import { EncryptedInputFieldComponent } from '../../Types/Components';
 import app from "../../Objects/Stores/AppStore";
 import { api } from "../../API";
+import { TypedMethodResponse } from "../../Types/MethodResponse";
+import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 
 export default defineComponent({
     name: "AuthenticationPopup",
@@ -108,9 +110,15 @@ export default defineComponent({
 
             lastAuthAttempt = Date.now();
 
-            api.repositories.users.verifyUserMasterKey(key.value).then((isValid: boolean) =>
+            api.repositories.users.verifyUserMasterKey(key.value).then((response: TypedMethodResponse<boolean | undefined>) =>
             {
-                handleKeyIsValid(isValid);
+                if (response.success)
+                {
+                    handleKeyIsValid(response.value!);
+                    return;
+                }
+
+                defaultHandleFailedResponse(response);
             });
         }
 

@@ -1,4 +1,7 @@
-export interface TypedMethodResponse<T>
+import errorCodes from "./ErrorCodes";
+
+// TODO: clean up ffs
+export interface ITypedMethodResponse<T>
 {
     success: boolean;
     errorCode?: number;
@@ -9,7 +12,7 @@ export interface TypedMethodResponse<T>
     value?: T;
 }
 
-export interface MethodResponse extends TypedMethodResponse<string>
+export interface MethodResponse extends ITypedMethodResponse<string>
 {
     value?: string;
 }
@@ -24,7 +27,7 @@ export interface ECEncryptionResult extends MethodResponse
     publicKey: string;
 }
 
-export class TypedMethodResponse<T>
+export class TypedMethodResponse<T> implements ITypedMethodResponse<T>
 {
     success: boolean;
     errorCode?: number;
@@ -45,6 +48,16 @@ export class TypedMethodResponse<T>
         this.value = value;
     }
 
+    addToCallStack(call: string)
+    {
+        this.callStack += `\n${call}`;
+    }
+
+    addToErrorMessage(message: string)
+    {
+        this.errorMessage += `\n${message}`;
+    }
+
     static success<T>(value?: T)
     {
         return new TypedMethodResponse(true, undefined, undefined, undefined, undefined, undefined, value);
@@ -55,13 +68,13 @@ export class TypedMethodResponse<T>
         return new TypedMethodResponse<T>(false, errorCode, callStack, errorMessage, logID, invalidSession, undefined);
     }
 
-    addToCallStack(call: string)
+    static transactionFail<T>()
     {
-        this.callStack += `\n${call}`;
+        return TypedMethodResponse.fail<T>(errorCodes.TRANSACTION_FAILED);
     }
 
-    addToErrorMessage(message: string)
+    static backupFail<T>()
     {
-        this.errorMessage += `\n${message}`;
+        return TypedMethodResponse.fail<T>(errorCodes.BACKUP_FAILED);
     }
 }

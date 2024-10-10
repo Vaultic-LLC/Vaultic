@@ -137,9 +137,9 @@ export default defineComponent({
                 return [false, "Not a valid number"];
             }
 
-            if (numb < 3)
+            if (numb <= 0)
             {
-                return [false, "Value must be greater than 3"];
+                return [false, "Value must be greater than 0"];
             }
 
             if (numb > 20)
@@ -158,14 +158,9 @@ export default defineComponent({
                 return [false, "Not a valid number"];
             }
 
-            if (numb < 7)
+            if (numb <= 0)
             {
-                return [false, "Value must be greater than 7"];
-            }
-
-            if (numb > 365)
-            {
-                return [false, "Value must be less than 365"];
+                return [false, "Value must be greater than 0"];
             }
 
             return [true, ""];
@@ -189,9 +184,9 @@ export default defineComponent({
                 return [false, "Not a valid number"];
             }
 
-            if (numb < 30 || numb > 365)
+            if (numb <= 0)
             {
-                return [false, "Value must be between 30 and 365 days"];
+                return [false, "Value must be greater than 0"];
             }
 
             return [true, ""];

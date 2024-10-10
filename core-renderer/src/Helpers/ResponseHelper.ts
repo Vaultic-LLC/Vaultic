@@ -1,8 +1,14 @@
 import app from "../Objects/Stores/AppStore";
+import { ButtonModel } from "../Types/Models";
 
 export function defaultHandleFailedResponse(response: any, showAlerts: boolean = true)
 {
-    if (response.InvalidLicense === true)
+    // TODO: change to computed property once types pr is done
+    if (response.errorCode && response.errorCode >= 11000 && response.errorCode <= 11004)
+    {
+        showUnVerifiedDataPopup();
+    }
+    else if (response.InvalidLicense === true)
     {
         app.popups.showPaymentSetup();
     }
@@ -30,4 +36,35 @@ export function defaultHandleFailedResponse(response: any, showAlerts: boolean =
             app.popups.showErrorResponseAlert(response);
         }
     }
+}
+
+function showUnVerifiedDataPopup()
+{
+    const buttonModel: ButtonModel = {
+        text: "Ok",
+        onClick: () => 
+        {
+            app.popups.showRequestAuthentication(app.userPreferences.currentPrimaryColor.value,
+                onSuccess, () => { });
+
+            async function onSuccess(key: string)
+            {
+                app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Restoring last backup");
+                const response = await api.repositories.users.overrideUserData(key)
+                app.popups.hideLoadingIndicator();
+
+                if (!response)
+                {
+                    defaultHandleFailedResponse(response);
+                    return;
+                }
+
+                app.popups.showToast(app.userPreferences.currentPrimaryColor.value, "Restore Succeeded", true)
+            }
+        }
+    };
+
+    app.popups.showAlert("Unable To Verify Local Data",
+        "We have detected that your local data has been unexpectedly modified. For security, the last known backup will need to be restored.",
+        false, buttonModel);
 }

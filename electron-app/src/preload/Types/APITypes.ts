@@ -1,4 +1,4 @@
-import { ECEncryptionResult, MethodResponse, PublicPrivateKey } from './MethodResponse';
+import { ECEncryptionResult, MethodResponse, PublicPrivateKey, TypedMethodResponse } from './MethodResponse';
 import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, FinishRegistrationResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, LogUserInResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from './Responses';
 
 export interface CoreCryptUtility
@@ -140,7 +140,7 @@ export interface UserRepository
 {
 	getLastUsedUserEmail: () => Promise<string | null>;
 	getLastUsedUserPreferences: () => Promise<string | null>;
-	createUser: (masterKey: string, email: string) => Promise<boolean | string>;
+	createUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<boolean | undefined>>
 	// getCurrentUser: () => User | undefined;
 	// setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
 	getCurrentUserData: (masterKey: string, response: any) => Promise<string>;

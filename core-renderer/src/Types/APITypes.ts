@@ -1,4 +1,4 @@
-import { ECEncryptionResult, MethodResponse, PublicPrivateKey } from './MethodResponse';
+import { ECEncryptionResult, MethodResponse, PublicPrivateKey, TypedMethodResponse } from './MethodResponse';
 import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, FinishRegistrationResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserDeactivationKeyResponse, LoadDataResponse, LogResponse, LogUserInResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from './Responses';
 import { UserData } from './SharedTypes';
 
@@ -205,25 +205,25 @@ export interface UserRepository
 {
     getLastUsedUserEmail: () => Promise<string | null>;
     getLastUsedUserPreferences: () => Promise<string | null>;
-    createUser: (masterKey: string, email: string) => Promise<boolean | string>;
+    createUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     getCurrentUser: () => User | undefined;
     setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
-    getCurrentUserData: (masterKey: string) => Promise<string>;
-    verifyUserMasterKey: (masterKey: string, email?: string) => Promise<boolean>;
-    saveUser: (masterKey: string, data: string, backup: boolean) => Promise<boolean>;
+    getCurrentUserData: (masterKey: string) => Promise<TypedMethodResponse<string | undefined>>;
+    verifyUserMasterKey: (masterKey: string, email?: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    saveUser: (masterKey: string, data: string, backup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
 }
 
 export interface VaultRepository
 {
-    setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
-    saveVault: (masterKey: string, userVaultID: number, data: string, doBackup: boolean) => Promise<boolean>;
-    createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<boolean | CondensedVaultData>;
-    archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => Promise<boolean>;
+    setActiveVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
+    saveVault: (masterKey: string, userVaultID: number, data: string, doBackup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
+    createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
+    archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
 }
 
 export interface UserVaultRepository
 {
-    saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => Promise<boolean>;
+    saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
 }
 
 export interface LogRepository

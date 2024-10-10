@@ -1,11 +1,9 @@
-import { Entity, Column, OneToMany, OneToOne, PrimaryColumn, AfterLoad } from "typeorm"
+import { Entity, Column, OneToMany, OneToOne, PrimaryColumn } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
 import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper"
 import { AppStoreState } from "./States/AppStoreState"
 import { UserPreferencesStoreState } from "./States/UserPreferencesStoreState"
-import { MethodResponse, TypedMethodResponse } from "../../Types/MethodResponse"
-import { environment } from "../../Environment"
 
 @Entity({ name: "users" })
 export class User extends VaulticEntity
@@ -60,6 +58,11 @@ export class User extends VaulticEntity
         return this.userID;
     }
 
+    entityName(): string 
+    {
+        return "user";
+    }
+
     protected createNew(): User
     {
         return new User();
@@ -99,23 +102,11 @@ export class User extends VaulticEntity
         ]
     }
 
-    async verify(key: string): Promise<MethodResponse> 
+    protected getNestedVaulticEntities(): string[] 
     {
-        const userResponse = await super.verify(key);
-        if (!userResponse.success)
-        {
-            userResponse.addToCallStack("User Verify");
-            return userResponse;
-        }
-
-        const appStoreStateResponse = await this.appStoreState.verify(key);
-        if (!appStoreStateResponse.success)
-        {
-            appStoreStateResponse.addToCallStack("AppStoreState Verify");
-            return userResponse;
-        }
-
-        return TypedMethodResponse.success();
+        return [
+            nameof<User>("appStoreState")
+        ];
     }
 
     public static isValid(user: DeepPartial<User>): boolean

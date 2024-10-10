@@ -1,7 +1,8 @@
 import { Repository } from "typeorm";
 import { Log } from "../Entities/Log";
 import { environment } from "../../Environment";
-import { MethodResponse } from "../../Types/MethodResponse";
+import { MethodResponse, TypedMethodResponse } from "../../Types/MethodResponse";
+import { BaseResponse } from "../../Types/Responses";
 
 class LogRepository
 {
@@ -18,6 +19,7 @@ class LogRepository
 
     async log(errorCode?: number, message?: string, callStack?: string): Promise<boolean>
     {
+        // Not verifying user, but can't really =(
         const currentUser = await environment.repositories.users.getCurrentUser();
 
         const log = new Log();
@@ -37,9 +39,22 @@ class LogRepository
         return false;
     }
 
-    async logMethodResponse(methodResponse: MethodResponse, callStack?: string): Promise<boolean>
+    async logBaseResponse(response: BaseResponse, message?: string): Promise<boolean>
     {
-        return this.log(methodResponse.errorCode, methodResponse.errorMessage, callStack);
+        const errorMessage = `
+            Message: ${message}\n
+            Unknown Error: ${response.UnknownError}\n
+            Invalid Request: ${response.InvalidRequest}\n
+            Status Code: ${response.statusCode}\n
+            Axios Code: ${response.axiosCode}\n
+        `;
+
+        return this.log(undefined, errorMessage);
+    }
+
+    async logMethodResponse<T>(methodResponse: TypedMethodResponse<T>): Promise<boolean>
+    {
+        return this.log(methodResponse.errorCode, methodResponse.errorMessage, methodResponse.callStack);
     }
 
     async getExportableLogData(): Promise<string>

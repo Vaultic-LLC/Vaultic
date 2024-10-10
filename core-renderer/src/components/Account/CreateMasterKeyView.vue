@@ -126,7 +126,7 @@ export default defineComponent({
                 if (loginResponse.Success)
                 {
                     const createUserResult = await api.repositories.users.createUser(key.value, account.value.email);
-                    if (!createUserResult)
+                    if (!createUserResult.success)
                     {
                         // TODO: need to better recover from this. Should take back to main screen since the user is created
                         // on the server

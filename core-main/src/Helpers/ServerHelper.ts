@@ -4,7 +4,7 @@ import { FinishRegistrationResponse, LogUserInResponse, OpaqueResponse } from ".
 import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { checkMergeMissingData, getUserDataSignatures } from "../Database/Repositories";
+import { checkMergeMissingData, getUserDataSignatures } from "../Helpers/RepositoryHelper";
 import { UserDataPayload } from "../Types/ServerTypes";
 import vaultHelper from "./VaultHelper";
 
@@ -71,6 +71,8 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
         currentSignatures = await getUserDataSignatures(masterKey, email);
     }
 
+    // TODO: what if the validation in getUserDataSignature fails before we finish logging in? Should probably break these 2 up, 
+    // i.e. logging in and retrieving data
     let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures);
     if (finishResponse.Success)
     {
@@ -89,6 +91,7 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
 
             // TODO: this will fail when logging in for the first time after registering
             // needs to be done after merging data in case the user needed to have been added
+            // TODO: doesn't account for if verification fails
             await environment.repositories.users.setCurrentUser(masterKey, email);
 
             const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
@@ -113,7 +116,7 @@ async function logUserIn(masterKey: string, email: string, firstLogin: boolean =
 async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
 {
     console.log(JSON.stringify(payload));
-    const currentUser = await environment.repositories.users.getCurrentUser();
+    const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
     if (!currentUser)
     {
         console.log('no user');
