@@ -24,6 +24,12 @@ class UserRepository extends VaulticRepository<User>
         return environment.databaseDataSouce.getRepository(User);
     }
 
+    public async getAllUserIDs(): Promise<number[]>
+    {
+        const users = await this.repository.find();
+        return users.map(u => u.userID);
+    }
+
     // Should only be called when we don't really care about data integrity, like in LogRepository
     public async getCurrentUser()
     {
@@ -196,16 +202,9 @@ class UserRepository extends VaulticRepository<User>
 
         async function internalVerifyUserMasterKey(this: UserRepository): Promise<TypedMethodResponse<boolean>>
         {
-            let user: User | null | undefined;
-            if (email)
-            {
-                user = await this.findByEmail(masterKey, email);
-            }
-            else 
-            {
-                user = await this.getVerifiedCurrentUser(masterKey);
-            }
-
+            // this is ok to not verify since the masterKey hash and salt aren't included in the 
+            // signature anyways
+            let user: User | null = await this.getCurrentUser();
             if (!user)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
@@ -533,86 +532,80 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async updateFromServer(currentUser: DeepPartial<User>, newUser: DeepPartial<User>)
+    public async updateFromServer(currentUser: DeepPartial<User>, newUser: DeepPartial<User>, transaction: Transaction)
     {
         if (!newUser.userID)
         {
             return;
         }
 
-        const setProperties = {};
+        const partialUser: DeepPartial<User> = {};
+        let updatedUser = false;
 
         if (newUser.email)
         {
-            setProperties[nameof<User>("email")] = newUser.email;
+            partialUser[nameof<User>("email")] = newUser.email;
+            updatedUser = true;
         }
 
         if (newUser.publicKey)
         {
-            setProperties[nameof<User>("publicKey")] = newUser.publicKey;
+            partialUser[nameof<User>("publicKey")] = newUser.publicKey;
+            updatedUser = true;
         }
 
         if (newUser.privateKey)
         {
-            setProperties[nameof<User>("privateKey")] = newUser.privateKey;
+            partialUser[nameof<User>("privateKey")] = newUser.privateKey;
+            updatedUser = true;
         }
 
         if (newUser.signatureSecret)
         {
-            setProperties[nameof<User>("signatureSecret")] = newUser.signatureSecret;
+            partialUser[nameof<User>("signatureSecret")] = newUser.signatureSecret;
+            updatedUser = true;
         }
 
         if (newUser.currentSignature)
         {
-            setProperties[nameof<User>("currentSignature")] = newUser.currentSignature;
+            partialUser[nameof<User>("currentSignature")] = newUser.currentSignature;
+            updatedUser = true;
         }
 
-        if (newUser.appStoreState)
+        if (updatedUser)
         {
-            // if (!currentUser.appStoreState?.entityState)
-            // {
-            //     currentUser = (await this.repository.findOneBy({
-            //         userID: newUser.userID
-            //     })) as User;
-            // }
+            transaction.overrideEntity(newUser.userID, partialUser, () => this);
+        }
 
+        if (newUser.appStoreState && newUser.appStoreState.appStoreStateID)
+        {
             if (currentUser?.appStoreState?.entityState == EntityState.Updated)
             {
                 // TODO: merge changes between states
             }
             else 
             {
-                setProperties[nameof<User>("appStoreState")] =
-                    StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
+                const partialAppStoreState: Partial<AppStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
+                transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
             }
         }
 
-        if (newUser.userPreferencesStoreState)
+        if (newUser.userPreferencesStoreState && newUser.userPreferencesStoreState.userPreferencesStoreStateID)
         {
-            // if (!currentUser.userPreferencesStoreState?.entityState)
-            // {
-            //     currentUser = (await this.repository.findOneBy({
-            //         userID: newUser.userID
-            //     })) as User;
-            // }
-
             if (currentUser?.userPreferencesStoreState?.entityState == EntityState.Updated)
             {
                 // TODO: merge changes between states
             }
             else 
             {
-                setProperties[nameof<User>("userPreferencesStoreState")] =
-                    StoreState.getUpdatedPropertiesFromObject(newUser.userPreferencesStoreState);
+                const partialUserPreferencesStoreState: Partial<UserPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.userPreferencesStoreState);
+
+                transaction.overrideEntity(
+                    newUser.userPreferencesStoreState.userPreferencesStoreStateID,
+                    partialUserPreferencesStoreState,
+                    () => environment.repositories.userPreferencesStoreStates);
             }
         }
-
-        return this.repository
-            .createQueryBuilder()
-            .update()
-            .set(setProperties)
-            .where("userID = :userID", { userID: newUser.userID })
-            .execute();
     }
 }
 

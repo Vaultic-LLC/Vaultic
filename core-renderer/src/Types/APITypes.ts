@@ -58,7 +58,7 @@ export interface VaulticHelper
 export interface ServerHelper
 {
     registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-    logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<LogUserInResponse>;
+    logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
 };
 
 export interface VaultHelper

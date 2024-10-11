@@ -122,8 +122,8 @@ export default defineComponent({
                 //await app.currentVault.passwordStore.addPassword(key.value, response.VaulticPassword, true);
                 app.popups.showLoadingIndicator(props.color, "Signing In");
 
-                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true);
-                if (loginResponse.Success)
+                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
+                if (loginResponse.success && loginResponse.value!.Success)
                 {
                     const createUserResult = await api.repositories.users.createUser(key.value, account.value.email);
                     if (!createUserResult.success)
@@ -137,7 +137,7 @@ export default defineComponent({
                     }
 
                     app.isOnline = true;
-                    await app.loadUserData(key.value, loginResponse.userDataPayload);
+                    await app.loadUserData(key.value, loginResponse.value!.userDataPayload);
                     ctx.emit('onSuccess');
 
                     return;

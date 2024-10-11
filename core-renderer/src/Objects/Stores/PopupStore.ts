@@ -199,13 +199,14 @@ export function createPopupStore()
         showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'");
     }
 
-    function showAccountSetup(view: AccountSetupView, message?: string)
+    function showAccountSetup(view: AccountSetupView, message?: string, reloadAllDataIsToggled: boolean = false)
     {
         if (accountSetupIsShowing.value)
         {
             return;
         }
 
+        accountSetupModel.value.reloadAllDataIsToggled = reloadAllDataIsToggled;
         accountSetupModel.value.infoMessage = message;
         accountSetupModel.value.currentView = view;
         accountSetupIsShowing.value = true;

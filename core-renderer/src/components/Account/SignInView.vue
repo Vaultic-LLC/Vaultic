@@ -14,13 +14,20 @@
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
                                 :height="'4vh'" :minHeight="'35px'" />
                         </div>
-                        <div v-else class="signInViewContainer__inputs">
+                        <div class="signInContainer__restoreLastBackup">
+                            <CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Restore Last Backup'"
+                                :color="color" v-model="reloadAllData" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
+                                :minHeight="'10px'" />
+                            <ToolTip :message="'Restore last backup from the server. Will override all local data'"
+                                :size="'20px'" :color="color" />
+                        </div>
+                        <!-- <div v-else class="signInViewContainer__inputs">
                             <EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
                                 v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
                                 :height="'4vh'" :minHeight="'35px'" />
-                        </div>
-                        <div class="signInViewContainer__navigation">
+                    </div> -->
+                        <!-- <div class="signInViewContainer__navigation">
                             <div v-if="showEmailField" class="signInViewContainer__arrow signInViewContainer__arrowLeft"
                                 @click="navigateLeft">
                                 <ion-icon name="chevron-back-outline"></ion-icon>
@@ -38,7 +45,7 @@
                                 @click="navigateRight">
                                 <ion-icon name="chevron-forward-outline"></ion-icon>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </Transition>
@@ -67,7 +74,9 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue
 import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
+import CheckboxInputField from "../InputFields/CheckboxInputField.vue";
 import ButtonLink from '../InputFields/ButtonLink.vue';
+import ToolTip from "../ToolTip.vue";
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { EncryptedInputFieldComponent, InputComponent } from '../../Types/Components';
@@ -83,14 +92,17 @@ export default defineComponent({
         EncryptedInputField,
         AccountSetupView,
         ButtonLink,
+        CheckboxInputField,
+        ToolTip
     },
     emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToSetupPayment'],
-    props: ['color', 'infoMessage'],
+    props: ['color', 'infoMessage', 'reloadAllDataIsToggled'],
     setup(props, ctx)
     {
         const refreshKey: Ref<string> = ref('');
         const container: Ref<HTMLElement | null> = ref(null);
         const resizeHandler: ResizeObserver = new ResizeObserver(checkWidthHeightRatio);
+        const reloadAllData: Ref<boolean> = ref(props.reloadAllDataIsToggled ?? false);
 
         const masterKeyField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const masterKey: Ref<string> = ref('');
@@ -134,15 +146,14 @@ export default defineComponent({
             masterKeyField.value?.toggleHidden(true);
             app.popups.showLoadingIndicator(props.color, "Signing In");
 
-            const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false);
-            if (response.Success)
+            const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value);
+            if (response.success && response.value!.Success)
             {
                 // TODO: this is the only time we know that the master key is correct besides
                 // when creating the account. Should check to make sure that the masterKey hash
                 // is set / make sure it wasn't tampered with. Just always re generate it
                 app.isOnline = true;
-                //await stores.loadStoreData(masterKey.value, response);
-                await app.loadUserData(masterKey.value, response.userDataPayload);
+                await app.loadUserData(masterKey.value, response.value!.userDataPayload);
                 ctx.emit('onKeySuccess');
             }
             else
@@ -220,13 +231,13 @@ export default defineComponent({
         {
             app.popups.hideLoadingIndicator();
             // TODO: not possible any more?
-            if (response.InvalidMasterKey)
+            if (response.value?.InvalidMasterKey)
             {
                 app.popups.hideLoadingIndicator();
 
                 masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
             }
-            else if (response.UnknownEmail)
+            else if (response.value?.UnknownEmail)
             {
                 app.popups.hideLoadingIndicator();
 
@@ -238,7 +249,7 @@ export default defineComponent({
 
                 emailField.value?.invalidate("Incorrect Email. Please try again");
             }
-            else if (response.RestartOpaqueProtocol)
+            else if (response.value?.RestartOpaqueProtocol)
             {
                 app.popups.hideLoadingIndicator();
                 app.popups.showAlert("Unable to sign in", "Please check your Email and Master Key, and try again", false);
@@ -246,6 +257,7 @@ export default defineComponent({
             else
             {
                 defaultHandleFailedResponse(response);
+                defaultHandleFailedResponse(response.value);
             }
         }
 
@@ -325,6 +337,7 @@ export default defineComponent({
         return {
             refreshKey,
             container,
+            reloadAllData,
             masterKeyField,
             masterKey,
             emailField,
@@ -466,5 +479,12 @@ export default defineComponent({
 .signInViewContainer__dot--active {
     background-color: v-bind(color);
     box-shadow: 0 0 10px v-bind(color);
+}
+
+.signInContainer__restoreLastBackup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    column-gap: 10px;
 }
 </style>

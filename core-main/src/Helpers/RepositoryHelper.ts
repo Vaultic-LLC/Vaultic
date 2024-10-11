@@ -3,6 +3,7 @@ import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { TypedMethodResponse } from "../Types/MethodResponse";
 import { EntityState } from "../Types/Properties";
+import { GetVaultDataResponse, LogUserInResponse } from "../Types/Responses";
 import { UserDataPayload } from "../Types/ServerTypes";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>): Promise<TypedMethodResponse<T | undefined>>
@@ -36,7 +37,7 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
 
 export async function getUserDataSignatures(masterKey: string, email: string): Promise<UserDataPayload>
 {
-    const userData: UserDataPayload = {};
+    let userData = {}
     const user = await environment.repositories.users.findByEmail(masterKey, email);
     if (!user)
     {
@@ -183,21 +184,22 @@ export async function backupData(masterKey: string)
     return true;
 }
 
-export async function checkMergeMissingData(masterKey: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload)
+// For any data in serverUserDataPayload, if the matching data entityState is unchanged or inserted in 
+// clientUserDataPayload, then just override it
+// If the entity state is updated, then I need to merge them by updatedTime
+
+// for each data in clientUserDataPayload with an entityState of Deleted and that isn't in
+// serverUserDataPayload, remove it
+export async function checkMergeMissingData(masterKey: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
 {
     if (!serverUserDataPayload)
     {
-        return;
+        return false;
     }
-    // For any data in serverUserDataPayload, if the matching data entityState is unchanged or inserted in 
-    // clientUserDataPayload, then just override it
-    // If the entity state is updated, then I need to merge them by updatedTime
 
-    // for each data in clientUserDataPayload with an entityState of Deleted and that isn't in
-    // serverUserDataPayload, remove it
-    const transaction = new Transaction();
-
+    transaction = transaction ?? new Transaction();
     let needsToRePushData = false;
+
     if (serverUserDataPayload.user)
     {
         if (!clientUserDataPayload.user)
@@ -209,7 +211,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
         }
         else 
         {
-            await environment.repositories.users.updateFromServer(clientUserDataPayload.user, serverUserDataPayload.user);
+            await environment.repositories.users.updateFromServer(clientUserDataPayload.user, serverUserDataPayload.user, transaction);
         }
     }
 
@@ -223,10 +225,11 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
 
             if (vaultIndex >= 0)
             {
-                await environment.repositories.vaults.updateFromServer(clientUserDataPayload.vaults![vaultIndex], serverVault);
+                await environment.repositories.vaults.updateFromServer(clientUserDataPayload.vaults![vaultIndex], serverVault, transaction);
             }
             else 
             {
+                // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
                 {
                     // TODO: log error
@@ -248,6 +251,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
             }
             else 
             {
+                // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.userVaults.addFromServer(serverUserVault, transaction))
                 {
                     // TODO: log error
@@ -273,10 +277,16 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
         }
     }
 
-    await transaction.commit();
+    return await transaction.commit();
 }
 
-async function overrideUserData(masterKey: string): Promise<boolean>
+export async function reloadAllUserData(masterKey: string, userDataPayload: UserDataPayload): Promise<boolean>
 {
+    // Yeet all data so we don't have to worry about different users data potentially being tangled
+    const transaction = new Transaction();
+    transaction.raw("DELETE FROM users");
+    transaction.raw("DELETE FROM vaults");
+    transaction.raw("DELETE FROM userVaults");
 
+    return await checkMergeMissingData(masterKey, {}, userDataPayload, transaction);
 }

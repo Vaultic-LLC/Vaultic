@@ -63,9 +63,14 @@ export class TypedMethodResponse<T> implements ITypedMethodResponse<T>
         return new TypedMethodResponse(true, undefined, undefined, undefined, undefined, undefined, value);
     }
 
-    static fail<T>(errorCode?: number, callStack?: string, errorMessage?: string, logID?: number, invalidSession?: boolean)
+    static fail<T>(errorCode?: number, callStack?: string, errorMessage?: string, logID?: number, invalidSession?: boolean, value?: T)
     {
-        return new TypedMethodResponse<T>(false, errorCode, callStack, errorMessage, logID, invalidSession, undefined);
+        return new TypedMethodResponse<T>(false, errorCode, callStack, errorMessage, logID, invalidSession, value);
+    }
+
+    static failWithValue<T>(value?: T)
+    {
+        return new TypedMethodResponse<T>(false, undefined, undefined, undefined, undefined, undefined, value);
     }
 
     static transactionFail<T>()

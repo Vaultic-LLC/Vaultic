@@ -28,6 +28,12 @@ class VaultRepository extends VaulticRepository<Vault>
         return environment.databaseDataSouce.getRepository(Vault);
     }
 
+    public async getAllVaultIDs(): Promise<number[]>
+    {
+        const vaults = await this.repository.find();
+        return vaults.map(v => v.vaultID);
+    }
+
     public async setLastUsedVault(user: User, userVaultID: number)
     {
         const transaction = new Transaction();
@@ -542,66 +548,62 @@ class VaultRepository extends VaulticRepository<Vault>
         return true;
     }
 
-    public async updateFromServer(currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>)
+    public async updateFromServer(currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>, transaction: Transaction)
     {
-        const setProperties = {}
         if (!newVault.vaultID)
         {
             return;
         }
 
+        const partialVault = {}
+        let updatedVault = false;
+
         if (newVault.signatureSecret)
         {
-            setProperties[nameof<Vault>("signatureSecret")] = newVault.signatureSecret;
+            partialVault[nameof<Vault>("signatureSecret")] = newVault.signatureSecret;
+            updatedVault = true;
         }
 
         if (newVault.currentSignature)
         {
-            setProperties[nameof<Vault>("currentSignature")] = newVault.currentSignature;
+            partialVault[nameof<Vault>("currentSignature")] = newVault.currentSignature;
+            updatedVault = true;
         }
 
         if (newVault.name)
         {
-            setProperties[nameof<Vault>("name")] = newVault.name;
+            partialVault[nameof<Vault>("name")] = newVault.name;
+            updatedVault = true;
         }
 
-        if (newVault.vaultStoreState)
+        if (updatedVault)
         {
-            if (!currentVault.vaultStoreState?.entityState)
-            {
-                currentVault = (await this.repository.findOneBy({
-                    vaultID: newVault.vaultID
-                })) as Vault;
-            }
+            transaction.overrideEntity(newVault.vaultID, partialVault, () => this);
+        }
 
+        if (newVault.vaultStoreState && newVault.vaultStoreState.vaultStoreStateID)
+        {
             if (currentVault.vaultStoreState?.entityState == EntityState.Updated)
             {
                 // TODO: merge changes between states
             }
             else
             {
-                setProperties[nameof<Vault>("vaultStoreState")] =
-                    StoreState.getUpdatedPropertiesFromObject(newVault.vaultStoreState);
+                const partialVaultStoreState: DeepPartial<VaultStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.vaultStoreState);
+                transaction.overrideEntity(newVault.vaultStoreState.vaultStoreStateID, partialVaultStoreState, () => environment.repositories.vaultStoreStates);
             }
         }
 
-        if (newVault.passwordStoreState)
+        if (newVault.passwordStoreState && newVault.passwordStoreState.passwordStoreStateID)
         {
-            if (!currentVault.passwordStoreState?.entityState)
-            {
-                currentVault = (await this.repository.findOneBy({
-                    vaultID: newVault.vaultID
-                })) as Vault;
-            }
-
             if (currentVault.passwordStoreState?.entityState == EntityState.Updated)
             {
                 // TODO: merge changes between states
             }
             else 
             {
-                setProperties[nameof<Vault>("passwordStoreState")] =
-                    StoreState.getUpdatedPropertiesFromObject(newVault.passwordStoreState);
+                const partialPasswordStoreState: DeepPartial<PasswordStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.passwordStoreState);
+                transaction.overrideEntity(newVault.passwordStoreState.passwordStoreStateID, partialPasswordStoreState, () => environment.repositories.passwordStoreStates);
             }
         }
 
@@ -664,13 +666,6 @@ class VaultRepository extends VaulticRepository<Vault>
                     StoreState.getUpdatedPropertiesFromObject(newVault.groupStoreState);
             }
         }
-
-        return this.repository
-            .createQueryBuilder()
-            .update()
-            .set(setProperties)
-            .where("vaultID = :vaultID", { vaultID: newVault.vaultID })
-            .execute();
     }
 
     public async deleteFromServer(vault: Partial<Vault>)

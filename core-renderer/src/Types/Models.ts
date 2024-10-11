@@ -168,6 +168,7 @@ export interface AccountSetupModel
     updateDevicesLeft?: number;
     devices?: Device[];
     infoMessage?: string;
+    reloadAllDataIsToggled?: boolean;
 }
 
 export interface ButtonModel

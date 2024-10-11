@@ -10,7 +10,8 @@ enum Operation
     Update,
     Override,
     Reset,
-    Delete
+    Delete,
+    Raw
 }
 
 interface PendingEntity<T extends VaulticEntity>
@@ -19,7 +20,8 @@ interface PendingEntity<T extends VaulticEntity>
     entity?: VaulticEntity | DeepPartial<T>;
     signingKey?: string;
     id?: number;
-    repository: () => VaulticRepository<T>;
+    sql?: string;
+    repository?: () => VaulticRepository<T>;
 }
 
 export default class Transaction 
@@ -90,6 +92,14 @@ export default class Transaction
         });
     }
 
+    raw(sql: string)
+    {
+        this.pendingEntities.push({
+            operation: Operation.Raw,
+            sql
+        });
+    }
+
     commit(): Promise<boolean>
     {
         return new Promise((resolve) =>
@@ -111,7 +121,7 @@ export default class Transaction
                         const pendingEntity = this.pendingEntities[i];
                         if (pendingEntity.operation == Operation.Insert)
                         {
-                            if (!(await pendingEntity.repository().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
+                            if (!(await pendingEntity.repository!().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;
@@ -120,7 +130,7 @@ export default class Transaction
                         }
                         else if (pendingEntity.operation == Operation.InsertExisting)
                         {
-                            if (!(await pendingEntity.repository().insertExisting(manager, pendingEntity.entity!)))
+                            if (!(await pendingEntity.repository!().insertExisting(manager, pendingEntity.entity!)))
                             {
                                 succeeded = false;
                                 break;
@@ -128,7 +138,7 @@ export default class Transaction
                         }
                         else if (pendingEntity.operation == Operation.Update)
                         {
-                            if (!(await pendingEntity.repository().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
+                            if (!(await pendingEntity.repository!().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;
@@ -136,7 +146,7 @@ export default class Transaction
                         }
                         else if (pendingEntity.operation == Operation.Override)
                         {
-                            if (!(await pendingEntity.repository().override(manager, pendingEntity.id!, pendingEntity.entity as VaulticEntity)))
+                            if (!(await pendingEntity.repository!().override(manager, pendingEntity.id!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;
@@ -144,7 +154,7 @@ export default class Transaction
                         }
                         else if (pendingEntity.operation == Operation.Reset)
                         {
-                            if (!(await pendingEntity.repository().resetTracking(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
+                            if (!(await pendingEntity.repository!().resetTracking(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;
@@ -152,11 +162,15 @@ export default class Transaction
                         }
                         else if (pendingEntity.operation == Operation.Delete)
                         {
-                            if (!(await pendingEntity.repository().delete(manager, pendingEntity.id!)))
+                            if (!(await pendingEntity.repository!().delete(manager, pendingEntity.id!)))
                             {
                                 succeeded = false;
                                 break;
                             }
+                        }
+                        else if (pendingEntity.operation == Operation.Raw)
+                        {
+                            await manager.query(pendingEntity.sql!);
                         }
                     }
                 }

@@ -47,6 +47,12 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         }
     }
 
+    public async getAllUserVaultIDs(): Promise<number[]>
+    {
+        const userVaults = await this.repository.find();
+        return userVaults.map(uv => uv.userVaultID);
+    }
+
     public async getVerifiedUserVaults(masterKey: string, userVaultIDs?: number[], user?: User,
         query?: (repository: Repository<UserVault>) => Promise<UserVault[] | null>): Promise<[UserVault[], string[]]>
     {

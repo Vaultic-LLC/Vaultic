@@ -10,9 +10,10 @@
             </Transition>
             <Transition name="fade" mode="out-in">
                 <SignInView v-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
-                    :infoMessage="accountSetupModel.infoMessage" @onKeySuccess="closeWithAnimation"
-                    @onMoveToCreateAccount="moveToCreateAccount" @onMoveToLimitedMode="close"
-                    @onMoveToSetupPayment="moveToCreatePayment" />
+                    :infoMessage="accountSetupModel.infoMessage"
+                    :reloadAllDataIsToggled="accountSetupModel.reloadAllDataIsToggled"
+                    @onKeySuccess="closeWithAnimation" @onMoveToCreateAccount="moveToCreateAccount"
+                    @onMoveToLimitedMode="close" @onMoveToSetupPayment="moveToCreatePayment" />
                 <CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
                     :color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
                 <CreateMasterKeyView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateMasterKey"

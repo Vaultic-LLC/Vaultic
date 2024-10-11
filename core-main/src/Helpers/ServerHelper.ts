@@ -4,14 +4,15 @@ import { FinishRegistrationResponse, LogUserInResponse, OpaqueResponse } from ".
 import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { checkMergeMissingData, getUserDataSignatures } from "../Helpers/RepositoryHelper";
+import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
 import { UserDataPayload } from "../Types/ServerTypes";
 import vaultHelper from "./VaultHelper";
+import { TypedMethodResponse } from "../Types/MethodResponse";
 
 export interface ServerHelper
 {
     registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-    logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<LogUserInResponse>;
+    logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
 };
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
@@ -39,83 +40,94 @@ async function registerUser(masterKey: string, email: string, firstName: string,
         registrationRecord, firstName, lastName);
 }
 
-async function logUserIn(masterKey: string, email: string, firstLogin: boolean = false): Promise<LogUserInResponse>
+// TODO: wrap in safetify. If verification fails, notify user and then just re do again with reloadAllData = true
+async function logUserIn(masterKey: string, email: string,
+    firstLogin: boolean = false, reloadAllData: boolean = false): Promise<TypedMethodResponse<LogUserInResponse | undefined>>
 {
-    const passwordHash = environment.utilities.hash.insecureHash(masterKey);
-    const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
-        password: passwordHash,
-    });
+    return await safetifyMethod(this, internalLogUserIn);
 
-    const startResponse = await stsServer.login.start(startLoginRequest, email);
-    if (!startResponse.Success)
+    async function internalLogUserIn(): Promise<TypedMethodResponse<LogUserInResponse>>
     {
-        return startResponse;
-    }
+        const passwordHash = environment.utilities.hash.insecureHash(masterKey);
+        const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
+            password: passwordHash,
+        });
 
-    const loginResult = opaque.client.finishLogin({
-        clientLoginState,
-        loginResponse: startResponse.StartServerLoginResponse!,
-        password: passwordHash,
-    });
-
-    if (!loginResult)
-    {
-        return { Success: false, RestartOpaqueProtocol: true } as OpaqueResponse;
-    }
-
-    const { finishLoginRequest, sessionKey, exportKey } = loginResult;
-
-    let currentSignatures = {};
-    if (!firstLogin)
-    {
-        currentSignatures = await getUserDataSignatures(masterKey, email);
-    }
-
-    // TODO: what if the validation in getUserDataSignature fails before we finish logging in? Should probably break these 2 up, 
-    // i.e. logging in and retrieving data
-    let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures);
-    if (finishResponse.Success)
-    {
-        await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
-
-        if (!firstLogin)
+        const startResponse = await stsServer.login.start(startLoginRequest, email);
+        if (!startResponse.Success)
         {
-            // TODO: this only contains data that the user needs to update, not everything.
-            const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
-            if (!result.success)
-            {
-                return { Success: false, message: result.errorMessage };
-            }
-
-            await checkMergeMissingData(masterKey, currentSignatures, result.value.userDataPayload);
-
-            // TODO: this will fail when logging in for the first time after registering
-            // needs to be done after merging data in case the user needed to have been added
-            // TODO: doesn't account for if verification fails
-            await environment.repositories.users.setCurrentUser(masterKey, email);
-
-            const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
-            if (!payload)
-            {
-                // TODO: log error
-                console.log(`Payload failed`)
-            }
-            else 
-            {
-                finishResponse.userDataPayload = payload as UserDataPayload;
-            }
+            return TypedMethodResponse.failWithValue(startResponse);
         }
 
-        // TODO: not needed?
-        // finishResponse = Object.assign(finishResponse, result.value);
-    }
+        const loginResult = opaque.client.finishLogin({
+            clientLoginState,
+            loginResponse: startResponse.StartServerLoginResponse!,
+            password: passwordHash,
+        });
 
-    return finishResponse;
+        if (!loginResult)
+        {
+            return TypedMethodResponse.failWithValue({ Success: false, RestartOpaqueProtocol: true });
+        }
+
+        const { finishLoginRequest, sessionKey, exportKey } = loginResult;
+
+        let currentSignatures = {};
+        if (!firstLogin && !reloadAllData)
+        {
+            currentSignatures = await getUserDataSignatures(masterKey, email);
+        }
+
+        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures);
+        if (finishResponse.Success)
+        {
+            await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
+
+            if (!firstLogin)
+            {
+                // TODO: this only contains data that the user needs to update, not everything.
+                const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
+                if (!result.success)
+                {
+                    return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
+                }
+
+                if (reloadAllData)
+                {
+                    await reloadAllUserData(masterKey, result.value.userDataPayload);
+                }
+                else 
+                {
+                    await checkMergeMissingData(masterKey, currentSignatures, result.value.userDataPayload);
+                }
+
+                // TODO: this will fail when logging in for the first time after registering
+                // needs to be done after merging data in case the user needed to have been added
+                // TODO: doesn't account for if verification fails
+                await environment.repositories.users.setCurrentUser(masterKey, email);
+
+                const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
+                if (!payload)
+                {
+                    // TODO: log error
+                    console.log(`Payload failed`)
+                }
+                else 
+                {
+                    finishResponse.userDataPayload = payload as UserDataPayload;
+                }
+            }
+
+            // TODO: not needed?
+            // finishResponse = Object.assign(finishResponse, result.value);
+        }
+
+        return TypedMethodResponse.success(finishResponse);
+    }
 }
 
 async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
 {
-    console.log(JSON.stringify(payload));
     const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
     if (!currentUser)
     {

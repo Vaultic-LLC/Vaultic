@@ -2,7 +2,7 @@ import { User } from "../Database/Entities/User";
 import { UserVault } from "../Database/Entities/UserVault";
 import { Vault } from "../Database/Entities/Vault";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, GetVaultDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface UserController
@@ -10,13 +10,14 @@ export interface UserController
     validateEmail(email: string): Promise<ValidateEmailResponse>;
     getUserIDs: () => Promise<GetUserIDResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
+    getDevices: () => Promise<GetDevicesResponse>;
+    getUserData: () => Promise<GetVaultDataResponse>;
     backupData: (user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null) => Promise<BaseResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
     getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
     dismissUserDataBreach: (breachID: number) => Promise<BaseResponse>;
     deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
-    getDevices: () => Promise<GetDevicesResponse>;
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
 }
 
@@ -46,6 +47,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
     function getDevices(): Promise<GetDevicesResponse>
     {
         return axiosHelper.api.post('User/GetDevices');
+    }
+
+    function getUserData(): Promise<GetVaultDataResponse>
+    {
+        return axiosHelper.api.post('User/GetUserData');
     }
 
     async function backupData(user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null): Promise<BaseResponse>
@@ -120,6 +126,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         getUserIDs,
         deleteDevice,
         getDevices,
+        getUserData,
         backupData,
         createCheckout,
         getChartData,
