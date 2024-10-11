@@ -12,6 +12,7 @@ import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
 import { TypedMethodResponse } from "../../Types/MethodResponse";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
+import errorCodes from "../../Types/ErrorCodes";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -132,8 +133,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             const decryptedUserVault = await vaultHelper.decryptCondensedUserVault(masterKey, userVaults[1][i], condensedUserVault, propertiesToDecrypt);
             if (!decryptedUserVault)
             {
-                // TODO: should probaby re fetch data
-                continue;
+                // This really should never happen since we get verified vaults above
+                throw TypedMethodResponse.fail(errorCodes.FAILED_TO_DECRYPT_CONDENSED_VAULT);
             }
 
             condensedDecryptedUserVaults.push(decryptedUserVault);
@@ -161,7 +162,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             if (newUserVault.vaultPreferencesStoreState)
             {
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
-                    oldUserVault.userVaultID, masterKey, newUserVault.vaultPreferencesStoreState, transaction)))
+                    oldUserVault.userVaultID, "", newUserVault.vaultPreferencesStoreState, transaction, false)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "VaultPreferencesStoreState Update Failed");
                 }
@@ -263,7 +264,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             transaction.resetTracking(userVault[0], key, () => this);
             if (entities[i].vaultPreferencesStoreState)
             {
-                transaction.resetTracking(userVault[0].vaultPreferencesStoreState, key, () => environment.repositories.vaultPreferencesStoreStates);
+                transaction.resetTracking(userVault[0].vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
             }
         }
 

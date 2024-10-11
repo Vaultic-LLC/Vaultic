@@ -85,6 +85,17 @@ export class User extends VaulticEntity
         ]
     }
 
+    public backupableProperties(): string[]
+    {
+        const properties = super.backupableProperties();
+        properties.push("userID");
+        properties.push("email");
+        properties.push("publicKey");
+        properties.push("privateKey");
+
+        return properties;
+    }
+
     getEncryptableProperties(): string[]
     {
         return [

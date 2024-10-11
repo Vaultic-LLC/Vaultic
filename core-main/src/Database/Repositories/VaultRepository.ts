@@ -181,8 +181,11 @@ class VaultRepository extends VaulticRepository<Vault>
                 const backupResponse = await backupData(masterKey);
                 if (!backupResponse)
                 {
+                    console.log('backup failed')
                     return TypedMethodResponse.backupFail();
                 }
+
+                console.log('backup succeeded');
             }
 
             if (setAsActive)
@@ -354,11 +357,9 @@ class VaultRepository extends VaulticRepository<Vault>
         let userVaultsWithVaultsToBackup = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey,
             undefined, currentUser, vaultQuery);
 
-        // TODO: need to return false here if the vaults where unvarified but true if there just isn't any
         if (userVaultsWithVaultsToBackup[0].length == 0)
         {
-            console.log('\nvault verification failed')
-            return [false, null];
+            return [true, null];
         }
 
         const partialVaultsToBackup: Partial<Vault>[] = [];

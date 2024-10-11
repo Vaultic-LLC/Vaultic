@@ -118,8 +118,6 @@ export default defineComponent({
 
             if (response.Success)
             {
-                // TODO: Not needed anymore?
-                //await app.currentVault.passwordStore.addPassword(key.value, response.VaulticPassword, true);
                 app.popups.showLoadingIndicator(props.color, "Signing In");
 
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
@@ -137,7 +135,13 @@ export default defineComponent({
                     }
 
                     app.isOnline = true;
-                    await app.loadUserData(key.value, loginResponse.value!.userDataPayload);
+                    if (!(await app.loadUserData(key.value, loginResponse.value!.userDataPayload)))
+                    {
+                        return;
+                    }
+
+                    response.VaulticPassword.password = key.value;
+                    await app.currentVault.passwordStore.addPassword(key.value, response.VaulticPassword);
                     ctx.emit('onSuccess');
 
                     return;

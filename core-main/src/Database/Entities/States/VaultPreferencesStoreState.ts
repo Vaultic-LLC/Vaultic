@@ -28,6 +28,12 @@ export class VaultPreferencesStoreState extends StoreState
         return "vaultPreferencesStoreState";
     }
 
+    // vaultPreferences isn't encrypted
+    getEncryptableProperties(): string[]
+    {
+        return [];
+    }
+
     protected createNew(): VaultPreferencesStoreState 
     {
         return new VaultPreferencesStoreState();
@@ -36,10 +42,8 @@ export class VaultPreferencesStoreState extends StoreState
     protected internalGetSignableProperties(): string[] 
     {
         const properties = super.internalGetSignableProperties();
-        properties.push(
-            nameof<VaultPreferencesStoreState>("vaultPreferencesStoreStateID"),
-            nameof<VaultPreferencesStoreState>("userVaultID")
-        );
+        properties.push(nameof<VaultPreferencesStoreState>("vaultPreferencesStoreStateID"));
+        properties.push(nameof<VaultPreferencesStoreState>("userVaultID"));
 
         return properties;
     }

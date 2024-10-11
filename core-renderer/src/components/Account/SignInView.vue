@@ -14,7 +14,7 @@
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
                                 :height="'4vh'" :minHeight="'35px'" />
                         </div>
-                        <div class="signInContainer__restoreLastBackup">
+                        <div v-if="reloadAllDataIsToggled" class="signInContainer__restoreLastBackup">
                             <CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Restore Last Backup'"
                                 :color="color" v-model="reloadAllData" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
                                 :minHeight="'10px'" />
@@ -110,7 +110,7 @@ export default defineComponent({
         const emailField: Ref<InputComponent | null> = ref(null);
         const email: Ref<string> = ref('');
 
-        const showEmailField: Ref<boolean> = ref(false);
+        const showEmailField: Ref<boolean> = ref(true);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
         const contentBottomRowGap: Ref<string> = ref(showEmailField.value ? "min(1.5vh, 25px)" : "min(2.5vh, 40px)");
@@ -131,16 +131,6 @@ export default defineComponent({
             ctx.emit('onMoveToLimitedMode');
         }
 
-        // async function didFailedAutoLogin()
-        // {
-        //     app.popups.showAlert("Unable to auto log in", "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it, or crate a new account.", false);
-        //     refreshKey.value = Date.now().toString();
-        //     await new Promise((resolve) => setTimeout(resolve, 300));
-
-        //     app.popups.hideLoadingIndicator();
-        //     showEmailField.value = true;
-        // }
-
         async function onSubmit()
         {
             masterKeyField.value?.toggleHidden(true);
@@ -149,95 +139,21 @@ export default defineComponent({
             const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value);
             if (response.success && response.value!.Success)
             {
-                // TODO: this is the only time we know that the master key is correct besides
-                // when creating the account. Should check to make sure that the masterKey hash
-                // is set / make sure it wasn't tampered with. Just always re generate it
                 app.isOnline = true;
                 await app.loadUserData(masterKey.value, response.value!.userDataPayload);
+
                 ctx.emit('onKeySuccess');
             }
             else
             {
                 handleFailedResponse(response);
             }
-
-            // TOOD: remove
-            // if (!showEmailField.value)
-            // {
-            //     if (!(await app.canAuthenticateKey()))
-            //     {
-            //         didFailedAutoLogin();
-            //         return;
-            //     }
-            //     else
-            //     {
-            //         const validKey = await app.authenticateKey(masterKey.value);
-            //         if (!validKey)
-            //         {
-            //             app.popups.hideLoadingIndicator();
-            //             masterKeyField.value?.invalidate("Master Key is incorrect");
-            //             resetToDefault();
-
-            //             return;
-            //         }
-
-            //         await app.currentVault.passwordStore.readState(masterKey.value);
-            //         if (!app.currentVault.passwordStore.hasVaulticPassword)
-            //         {
-            //             didFailedAutoLogin();
-            //             resetToDefault();
-
-            //             return;
-            //         }
-
-            //         const password: Password = app.currentVault.passwordStore.passwords.filter(p => p.isVaultic)[0];
-            //         const response = await api.helpers.server.logUserIn(masterKey.value, password.email);
-
-            //         if (response.Success)
-            //         {
-            //             // TODO: this is the only time we know that the master key is correct besides
-            //             // when creating the account. Should check to make sure that the masterKey hash
-            //             // is set / make sure it wasn't tampered with
-            //             app.isOnline = true;
-            //             await stores.loadStoreData(masterKey.value, response);
-            //             await app.recordLogin(masterKey.value, Date.now());
-
-            //             ctx.emit('onKeySuccess');
-            //         }
-            //         else
-            //         {
-            //             handleFailedResponse(response);
-            //         }
-            //     }
-            // }
-            // else
-            // {
-            //     const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
-            //     if (response.Success)
-            //     {
-            //         app.isOnline = true;
-            //         await checkOverrideUserData(response);
-
-            //         ctx.emit('onKeySuccess');
-            //     }
-            //     else
-            //     {
-            //         handleFailedResponse(response);
-            //     }
-            // }
         }
 
         function handleFailedResponse(response: any)
         {
             app.popups.hideLoadingIndicator();
-            // TODO: not possible any more?
-            if (response.value?.InvalidMasterKey)
-            {
-                app.popups.hideLoadingIndicator();
-
-                masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
-            }
-            else if (response.value?.UnknownEmail)
+            if (response.value?.UnknownEmail)
             {
                 app.popups.hideLoadingIndicator();
 
@@ -310,9 +226,6 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            // TODO: can remove
-            showEmailField.value = true;
-
             api.repositories.users.getLastUsedUserEmail().then((lastUsedEmail) =>
             {
                 if (lastUsedEmail)

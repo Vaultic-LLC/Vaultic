@@ -1,6 +1,6 @@
 import errorCodes from "./ErrorCodes";
 
-// TODO: clean up ffs
+// TODO: clean up ffs in type PR
 export interface ITypedMethodResponse<T>
 {
     success: boolean;

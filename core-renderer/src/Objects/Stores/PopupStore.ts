@@ -220,6 +220,8 @@ export function createPopupStore()
 
     function hideAccountSetup()
     {
+        accountSetupModel.value.reloadAllDataIsToggled = false;
+        accountSetupModel.value.infoMessage = "";
         accountSetupIsShowing.value = false;
     }
 

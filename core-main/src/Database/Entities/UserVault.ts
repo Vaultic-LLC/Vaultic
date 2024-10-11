@@ -70,6 +70,17 @@ export class UserVault extends VaulticEntity
         ]
     }
 
+    public backupableProperties(): string[]
+    {
+        const properties = super.backupableProperties();
+        properties.push("userVaultID");
+        properties.push("userID");
+        properties.push("vaultID");
+        properties.push("vaultKey");
+
+        return properties;
+    }
+
     getEncryptableProperties(): string[]
     {
         return [nameof<UserVault>("vaultKey")];
@@ -80,13 +91,6 @@ export class UserVault extends VaulticEntity
         return [
             nameof<UserVault>("vaultPreferencesStoreState"),
         ]
-    }
-
-    protected getNestedVaulticEntities(): string[] 
-    {
-        return [
-            nameof<UserVault>("vaultPreferencesStoreState")
-        ];
     }
 
     public condense(): CondensedVaultData

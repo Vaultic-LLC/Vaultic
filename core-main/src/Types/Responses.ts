@@ -148,7 +148,6 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 
 export interface FinishRegistrationResponse extends BaseResponse
 {
-    // TODO: not needed?
     VaulticPassword?: any;
 }
 

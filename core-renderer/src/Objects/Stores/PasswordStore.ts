@@ -188,7 +188,6 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
     {
         if (!password.isVaultic)
         {
-            password.passwordLength = password.password.length;
             password.lastModifiedTime = new Date().getTime().toString();
 
             const [isWeak, isWeakMessage] = await api.helpers.validation.isWeak(password.password, "Password");
@@ -196,18 +195,17 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
             password.isWeakMessage = isWeakMessage;
 
             password.containsLogin = password.password.includes(password.login);
-
-            const response = await cryptHelper.encrypt(masterKey, password.password);
-            if (!response)
-            {
-                return false;
-            }
-            else
-            {
-                password.password = response.value!;
-            }
         }
 
+        password.passwordLength = password.password.length;
+
+        const response = await cryptHelper.encrypt(masterKey, password.password);
+        if (!response)
+        {
+            return false;
+        }
+
+        password.password = response.value!;
         return true;
     }
 

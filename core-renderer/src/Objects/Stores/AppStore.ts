@@ -189,7 +189,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     {
         if (this.loadedUser)
         {
-            return;
+            return false;
         }
 
         const userData = await api.repositories.users.getCurrentUserData(masterKey);
@@ -208,6 +208,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault);
         this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;
+
+        return true;
     }
 
     async createNewVault(masterKey: string, name: string, setAsActive: boolean)

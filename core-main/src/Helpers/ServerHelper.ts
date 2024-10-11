@@ -40,7 +40,6 @@ async function registerUser(masterKey: string, email: string, firstName: string,
         registrationRecord, firstName, lastName);
 }
 
-// TODO: wrap in safetify. If verification fails, notify user and then just re do again with reloadAllData = true
 async function logUserIn(masterKey: string, email: string,
     firstLogin: boolean = false, reloadAllData: boolean = false): Promise<TypedMethodResponse<LogUserInResponse | undefined>>
 {
@@ -85,7 +84,6 @@ async function logUserIn(masterKey: string, email: string,
 
             if (!firstLogin)
             {
-                // TODO: this only contains data that the user needs to update, not everything.
                 const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
                 if (!result.success)
                 {
@@ -101,25 +99,18 @@ async function logUserIn(masterKey: string, email: string,
                     await checkMergeMissingData(masterKey, currentSignatures, result.value.userDataPayload);
                 }
 
-                // TODO: this will fail when logging in for the first time after registering
-                // needs to be done after merging data in case the user needed to have been added
-                // TODO: doesn't account for if verification fails
                 await environment.repositories.users.setCurrentUser(masterKey, email);
 
                 const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
                 if (!payload)
                 {
-                    // TODO: log error
-                    console.log(`Payload failed`)
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
                 }
                 else 
                 {
                     finishResponse.userDataPayload = payload as UserDataPayload;
                 }
             }
-
-            // TODO: not needed?
-            // finishResponse = Object.assign(finishResponse, result.value);
         }
 
         return TypedMethodResponse.success(finishResponse);
@@ -131,7 +122,6 @@ async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDat
     const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
     if (!currentUser)
     {
-        console.log('no user');
         return false;
     }
 

@@ -73,6 +73,15 @@ export class Vault extends VaulticEntity
         ]
     }
 
+    public backupableProperties(): string[]
+    {
+        const properties = super.backupableProperties();
+        properties.push("vaultID");
+        properties.push("name");
+
+        return properties;
+    }
+
     getEncryptableProperties(): string[]
     {
         return [

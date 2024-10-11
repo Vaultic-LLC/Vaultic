@@ -39,13 +39,13 @@ class VaultHelper
     public async decryptCondensedUserVault(masterKey: string, vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[])
     {
         const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
-        const decryptedVaultPreferences = await environment.utilities.crypt.decrypt(masterKey, condensedVault.vaultPreferencesStoreState);
-        if (!decryptedVaultPreferences.success)
-        {
-            return null;
-        }
+        // const decryptedVaultPreferences = await environment.utilities.crypt.decrypt(masterKey, condensedVault.vaultPreferencesStoreState);
+        // if (!decryptedVaultPreferences.success)
+        // {
+        //     return null;
+        // }
 
-        condensedVault.vaultPreferencesStoreState = decryptedVaultPreferences.value!;
+        // condensedVault.vaultPreferencesStoreState = decryptedVaultPreferences.value!;
 
         for (let j = 0; j < decryptableProperties.length; j++)
         {

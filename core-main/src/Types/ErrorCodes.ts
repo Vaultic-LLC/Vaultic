@@ -15,6 +15,8 @@ class ErrorCodes
     get NO_SIGNATURE_MAKEUP() { return 11001; }
     get NO_RETRIEVED_ENTITY() { return 11002; }
     get VERIFICATION_FAILED() { return 11003; }
+    get FAILED_TO_DECRYPT_CONDENSED_VAULT() { return 11004; }
+    get NESTED_OBJECT_DOES_NOT_EXIST() { return 11005; }
 
     constructor() { }
 }

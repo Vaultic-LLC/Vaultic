@@ -7,7 +7,8 @@ import { StoreState } from "./States/StoreState";
 import { TypedMethodResponse } from "../../Types/MethodResponse";
 import errorCodes from "../../Types/ErrorCodes";
 
-const VaulticHandler = {
+const VaulticHandler =
+{
     get(target, prop, receiver)
     {
         return target[prop];
@@ -19,10 +20,8 @@ const VaulticHandler = {
             obj.updatedProperties.push(prop);
         }
 
-        // don't want to include objects in this
-        // TODO: should only include backupable properties? Don't need
-        // to include properties that won't be backed up.
-        if (typeof newValue != 'object' && !obj.propertiesToSync.includes(prop))
+        // don't want to include objects in this since they have their own tracking
+        if (typeof newValue != 'object' && !obj.propertiesToSync.includes(prop) && obj.backupableProperties().includes(prop))
         {
             obj.propertiesToSync.push(prop);
             obj.serializedPropertiesToSync = JSON.stringify(obj.updatedProperties);
@@ -131,6 +130,20 @@ export class VaulticEntity implements ObjectLiteral
         return [];
     }
 
+    protected neededBackupProperties(): string[]
+    {
+        return []
+    }
+
+    public backupableProperties(): string[]
+    {
+        return [
+            nameof<VaulticEntity>("signatureSecret"),
+            nameof<VaulticEntity>("currentSignature"),
+            nameof<VaulticEntity>("entityState")
+        ];
+    }
+
     public copyFrom(obj: any, target?: VaulticEntity)
     {
         if (target === undefined)
@@ -165,11 +178,6 @@ export class VaulticEntity implements ObjectLiteral
                 target[properties[i]] = obj[properties[i]];
             }
         }
-    }
-
-    protected neededBackupProperties(): string[]
-    {
-        return []
     }
 
     public getBackup()
@@ -300,8 +308,8 @@ export class VaulticEntity implements ObjectLiteral
     }
 
     // Attempts to verify entity and all nested entities. Will throw the TypedMethodResponse if 
-    // unsuccessfull. Any call that verifies an entity should be wrapped in entityVerificationWrapper
-    // at the highest level to handle the thrown error
+    // unsuccessfull. Any call that verifies an entity should be wrapped in safetifyMethod
+    // at the highest level to catch the thrown error
     async verify(key: string): Promise<boolean>
     {
         const selfVerification = await this.internalVerify(key);
@@ -330,7 +338,7 @@ export class VaulticEntity implements ObjectLiteral
             else
             {
                 // Expected object to verify but it doesn't exist
-                return false;
+                throw TypedMethodResponse.fail(errorCodes.NESTED_OBJECT_DOES_NOT_EXIST);
             }
         }
 

@@ -24,6 +24,37 @@ class UserRepository extends VaulticRepository<User>
         return environment.databaseDataSouce.getRepository(User);
     }
 
+    private async setMasterKey(masterKey: string, user: User | DeepPartial<User>, encrypt: boolean): Promise<boolean>
+    {
+        const salt = environment.utilities.generator.randomValue(40);
+        const hash = await environment.utilities.hash.hash(masterKey, salt);
+
+        if (encrypt)
+        {
+            const encryptedSalt = await environment.utilities.crypt.encrypt(masterKey, salt);
+            if (!encryptedSalt.success)
+            {
+                return false;
+            }
+
+            const encryptedHash = await environment.utilities.crypt.encrypt(masterKey, hash);
+            if (!encryptedHash.success)
+            {
+                return false;
+            }
+
+            user.masterKeyHash = encryptedHash.value!;
+            user.masterKeySalt = encryptedSalt.value!;
+
+            return true;
+        }
+
+        user.masterKeyHash = hash;
+        user.masterKeySalt = salt;
+
+        return true;
+    }
+
     public async getAllUserIDs(): Promise<number[]>
     {
         const users = await this.repository.find();
@@ -104,18 +135,15 @@ class UserRepository extends VaulticRepository<User>
 
             const keys = await environment.utilities.generator.ECKeys();
 
-            const salt = environment.utilities.generator.randomValue(40);
-            const hash = await environment.utilities.hash.hash(masterKey, salt);
-
             const user = new User().makeReactive();
             user.userID = response.UserID!;
             user.email = email;
             user.lastUsed = true;
-            user.masterKeyHash = hash;
-            user.masterKeySalt = salt;
             user.publicKey = keys.public;
             user.privateKey = keys.private;
             user.userVaults = [];
+
+            await this.setMasterKey(masterKey, user, false);
 
             const appStoreState = new AppStoreState().makeReactive();
             appStoreState.appStoreStateID = response.AppStoreStateID!;
@@ -168,7 +196,7 @@ class UserRepository extends VaulticRepository<User>
             transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
 
             transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
-            transaction.insertEntity(userVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
+            transaction.insertEntity(userVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
 
             const lastUsedUser = await this.getLastUsedUser();
             if (lastUsedUser)
@@ -259,6 +287,20 @@ class UserRepository extends VaulticRepository<User>
             environment.cache.setCurrentUserID(user.userID);
             await environment.repositories.logs.clearOldLogs(email);
 
+            // Make sure the users masterKey hasn't been tampered with. If so, update it
+            if (!(await this.verifyUserMasterKey(masterKey)).success)
+            {
+                await this.setMasterKey(masterKey, user, false);
+
+                const masterKeyTransaction = new Transaction();
+                masterKeyTransaction.updateEntity(user, masterKey, () => this);
+
+                if (!masterKeyTransaction.commit())
+                {
+                    return TypedMethodResponse.fail();
+                }
+            }
+
             return TypedMethodResponse.success();
         }
     }
@@ -269,8 +311,6 @@ class UserRepository extends VaulticRepository<User>
 
         async function internalGetCurrentUserData(this: UserRepository): Promise<TypedMethodResponse<string | undefined>>
         {
-            const failedResponse = JSON.stringify({ success: false });
-
             const currentUser = await this.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
@@ -506,24 +546,11 @@ class UserRepository extends VaulticRepository<User>
             return false;
         }
 
-        const salt = environment.utilities.generator.randomValue(40);
-        const hash = await environment.utilities.hash.hash(masterKey, salt);
-
-        const encryptedSalt = await environment.utilities.crypt.encrypt(masterKey, salt);
-        if (!encryptedSalt.success)
-        {
-            return false;
-        }
-
-        const encryptedHash = await environment.utilities.crypt.encrypt(masterKey, hash);
-        if (!encryptedHash.success)
-        {
-            return false;
-        }
-
         user.lastUsed = false;
-        user.masterKeySalt = encryptedSalt.value!;
-        user.masterKeyHash = encryptedHash.value!;
+        if (!await this.setMasterKey(masterKey, user, true))
+        {
+            return false;
+        }
 
         transaction.insertExistingEntity(user, () => this);
         transaction.insertExistingEntity(user.appStoreState!, () => environment.repositories.appStoreStates);

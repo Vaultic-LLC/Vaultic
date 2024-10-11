@@ -13,8 +13,7 @@ const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 let deviceInfo: DeviceInfo;
 let axiosInstance: AxiosInstance;
 
-// TODO: create cache and move these into there so that I can clear the cache when a user 
-// locks the app
+// Don't move in cache so I don't have to worry about changing keys while requests may still be in transit
 let responseKeys: PublicPrivateKey;
 
 // can't access environment before it has been initalized

@@ -3,7 +3,6 @@ import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { TypedMethodResponse } from "../Types/MethodResponse";
 import { EntityState } from "../Types/Properties";
-import { GetVaultDataResponse, LogUserInResponse } from "../Types/Responses";
 import { UserDataPayload } from "../Types/ServerTypes";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>): Promise<TypedMethodResponse<T | undefined>>
@@ -123,8 +122,6 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
 
 export async function backupData(masterKey: string)
 {
-    // TODO: need to handle differnet false values. aka no current user vs unable to verify record
-    // if unable to verify record, need to re pull data
     const userToBackup = await environment.repositories.users.getEntityThatNeedToBeBackedUp(masterKey);
     if (!userToBackup[0])
     {
@@ -146,7 +143,6 @@ export async function backupData(masterKey: string)
         return false;
     }
 
-    // TOOD: should pass this in a single object instead of individually so I can also pass that object to merge
     const backupResponse = await vaulticServer.user.backupData(userToBackup[1], userVaultsToBackup[1], vaultsToBackup[1]);
     if (!backupResponse.Success)
     {
@@ -232,7 +228,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
                 {
-                    // TODO: log error
+                    await environment.repositories.logs.log(undefined, `Failed to add vault from server. VaultID: ${serverVault?.vaultID}`);
                 }
             }
         }
@@ -254,7 +250,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.userVaults.addFromServer(serverUserVault, transaction))
                 {
-                    // TODO: log error
+                    await environment.repositories.logs.log(undefined, `Failed to add userVault from server. UserVaultID: ${serverUserVault?.userVaultID}`);
                 }
             }
         }

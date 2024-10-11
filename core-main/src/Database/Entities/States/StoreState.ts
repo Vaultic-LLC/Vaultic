@@ -29,6 +29,15 @@ export class StoreState extends VaulticEntity
         ]
     }
 
+    public backupableProperties(): string[]
+    {
+        const properties = super.backupableProperties();
+        properties.push(nameof<StoreState>("state"));
+        properties.push(nameof<StoreState>("previousSignature"));
+
+        return properties;
+    }
+
     getEncryptableProperties(): string[]
     {
         return [nameof<StoreState>("state")];
