@@ -1,11 +1,12 @@
 import { Filter, DataType, Group, FilterConditionType, PrimaryDataObjectCollection } from "../../Types/Table";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { Dictionary } from "../../Types/DataStructures";
-import { AtRiskType, DataFile, IFilterable, IGroupable, IIdentifiable, NameValuePair, Password } from "../../Types/EncryptedData";
+import { AtRiskType, IFilterable, IGroupable, IIdentifiable, NameValuePair, Password } from "../../Types/EncryptedData";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
+import { api } from "../../API";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
 {
@@ -50,7 +51,7 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
 
     async addFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         filter.id = await generateUniqueID(pendingState.values);
@@ -60,30 +61,28 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         {
             // don't need to create a pending group store since the groups aren't actually being changed
             const pendingPasswordState = this.syncSpecificFiltersForPasswords([filter], this.vault.groupStore.passwordGroups, pendingState);
-            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
         }
         else
         {
             // don't need to create a pending group store since the groups aren't actually being changed
             const pendingValueState = this.syncSpecificFiltersForValues([filter], this.vault.groupStore.valuesGroups, pendingState);
-            transaction.addStore(this.vault.valueStore, pendingValueState);
+            transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
         }
 
-        transaction.addStore(this, pendingState);
+        transaction.updateVaultStore(this, pendingState);
         return await transaction.commit(masterKey);
     }
 
     async updateFilter(masterKey: string, updatedFilter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         let filter: Filter[] = pendingState.values.filter(f => f.id == updatedFilter.id);
         if (filter.length != 1)
         {
-            // TODO
-            // something weird went wrong.
-            // Should just add filter (if the length is 0)?
+            await api.repositories.logs.log(undefined, `Invalid Filter Length: ${filter.length}`, "FilterStore.Update")
             return false;
         }
 
@@ -91,26 +90,27 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
         if (updatedFilter.type == DataType.Passwords)
         {
             const pendingPasswordState = this.syncSpecificFiltersForPasswords([updatedFilter], this.vault.groupStore.passwordGroups, pendingState);
-            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
         }
         else if (updatedFilter.type == DataType.NameValuePairs)
         {
             const pendingValueState = this.syncSpecificFiltersForValues([updatedFilter], this.vault.groupStore.valuesGroups, pendingState);
-            transaction.addStore(this.vault.valueStore, pendingValueState);
+            transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
         }
 
-        transaction.addStore(this, pendingState);
+        transaction.updateVaultStore(this, pendingState);
         return await transaction.commit(masterKey);
     }
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const filterIndex = pendingState.values.findIndex(f => f.id == filter.id);
         if (filterIndex < 0)
         {
+            await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Delete")
             return false;
         }
 
@@ -123,7 +123,7 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, pendingState.emptyPasswordFilters);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, pendingState.duplicatePasswordFilters);
 
-            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
         }
         else if (filter.type == DataType.NameValuePairs)
         {
@@ -132,10 +132,10 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, pendingState.emptyValueFilters);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, pendingState.duplicateValueFilters);
 
-            transaction.addStore(this.vault.valueStore, pendingValueState);
+            transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
         }
 
-        transaction.addStore(this, pendingState);
+        transaction.updateVaultStore(this, pendingState);
         return await transaction.commit(masterKey);
     }
 

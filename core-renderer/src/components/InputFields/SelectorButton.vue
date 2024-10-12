@@ -12,7 +12,7 @@ export default defineComponent({
     props: ['selectorButtonModel', 'width', 'borderWidth'],
     setup(props)
     {
-        const primaryColor: Ref<string> = ref(props.selectorButtonModel.color);
+        const primaryColor: ComputedRef<string> = computed(() => props.selectorButtonModel.color.value);
         const width: ComputedRef<string> = computed(() => props.width ?? 'clamp(14px, 1.1vw, 30px)');
         const borderWidth: ComputedRef<string> = computed(() => props.borderWidth ?? '0.12vw');
 
@@ -31,7 +31,7 @@ export default defineComponent({
     width: v-bind(width);
     aspect-ratio: 1/ 1;
     margin: 5px;
-    transition: 0.1s;
+    transition: 0.3s;
     position: relative;
     border: v-bind(borderWidth) solid v-bind(primaryColor);
     background: #11181e;

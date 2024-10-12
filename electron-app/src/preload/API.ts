@@ -126,7 +126,8 @@ const userVaultRepository: UserVaultRepository =
 
 const logRepository: LogRepository =
 {
-	getExportableLogData: () => ipcRenderer.invoke('logRepository:getExportableLogData')
+	getExportableLogData: () => ipcRenderer.invoke('logRepository:getExportableLogData'),
+	log: (errorCode?: number, message?: string, callStack?: string) => ipcRenderer.invoke('logRepository:log', errorCode, message, callStack)
 }
 
 const api: IAPI =

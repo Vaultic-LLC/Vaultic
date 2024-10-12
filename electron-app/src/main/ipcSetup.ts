@@ -79,6 +79,7 @@ export default function setupIPC()
 	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data, backup)));
 
 	ipcMain.handle('logRepository:getExportableLogData', (e) => validateSender(e, () => environment.repositories.logs.getExportableLogData()));
+	ipcMain.handle('logRepository:log', (e) => validateSender(e, (errorCode?: number, message?: string, callStack?: string) => environment.repositories.logs.log(errorCode, message, callStack)));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 

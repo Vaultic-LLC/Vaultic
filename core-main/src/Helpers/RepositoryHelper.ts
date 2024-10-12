@@ -183,6 +183,7 @@ export async function backupData(masterKey: string)
         }
     }
 
+    console.log('Backup succeeded');
     return true;
 }
 

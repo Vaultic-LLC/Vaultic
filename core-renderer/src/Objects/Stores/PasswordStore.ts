@@ -40,7 +40,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
     {
         backup = backup ?? app.isOnline;
 
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState: PasswordStoreState = this.cloneState();
 
         password.id = await generateUniqueID(pendingState.values);
@@ -64,9 +64,9 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords([reactivePassword],
             pendingGroupState.values.filter(g => g.type == DataType.Passwords));
 
-        transaction.addStore(this, pendingState);
-        transaction.addStore(this.vault.groupStore, pendingGroupState);
-        transaction.addStore(this.vault.filterStore, pendingFilterState);
+        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
+        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
         return await transaction.commit(masterKey, backup);
     }
@@ -74,12 +74,13 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
         updatedSecurityQuestionAnswers: string[]): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const passwordIndex = pendingState.values.findIndex(p => p.id == updatingPassword.id);
         if (passwordIndex < 0)
         {
+            await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Update")
             return false;
         }
 
@@ -138,18 +139,20 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords([updatingPassword],
             pendingGroupState.values.filter(g => g.type == DataType.Passwords));
 
-        transaction.addStore(this, pendingState);
-        transaction.addStore(this.vault.groupStore, pendingGroupState);
-        transaction.addStore(this.vault.filterStore, pendingFilterState);
+        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
+        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
         return await transaction.commit(masterKey);
     }
 
     async deletePassword(masterKey: string, password: ReactivePassword): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
+        // TODO: should just hide the delete button for the vaultic password? Is this even needed anymore? 
+        // Can users update their email another way, like via stripe and then I have a webhook for that?
         if (password.isVaultic)
         {
             app.popups.showAlert("Error", "Can't delete the username / password used for signing into Vaultic Services", false);
@@ -159,6 +162,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         const passwordIndex = pendingState.values.findIndex(p => p.id == password.id);
         if (passwordIndex < 0)
         {
+            await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Delete")
             return false;
         }
 
@@ -169,9 +173,9 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id, [], password.groups);
         const pendingFilterState = this.vault.filterStore.removePasswordFromFilters(password.id);
 
-        transaction.addStore(this, pendingState);
-        transaction.addStore(this.vault.groupStore, pendingGroupState);
-        transaction.addStore(this.vault.filterStore, pendingFilterState);
+        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
+        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
         return await transaction.commit(masterKey);
     }

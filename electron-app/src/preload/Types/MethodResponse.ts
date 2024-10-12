@@ -1,4 +1,4 @@
-// TODO: clean up ffs
+// TODO: clean up ffs after type PR
 export interface ITypedMethodResponse<T>
 {
 	success: boolean;

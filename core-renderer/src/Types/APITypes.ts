@@ -229,6 +229,7 @@ export interface UserVaultRepository
 export interface LogRepository
 {
     getExportableLogData: () => Promise<string>;
+    log: (errorCode?: number, message?: string, callStack?: string) => Promise<boolean>;
 }
 
 export interface Repositories

@@ -5,7 +5,7 @@
             <Transition name="fade">
                 <ObjectPopup v-if="showEditSettingsPopup" :closePopup="closeSettings" :minWidth="'800px'"
                     :minHeight="'480px'">
-                    <EditSettingsPopup :model="settingsState" />
+                    <EditSettingsPopup />
                 </ObjectPopup>
             </Transition>
         </Teleport>
@@ -13,13 +13,12 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { Ref, defineComponent, ref } from 'vue';
 
 import IconCard from "../../IconCard.vue"
 import ObjectPopup from "../../ObjectPopups/ObjectPopup.vue"
 import EditSettingsPopup from "../../ObjectPopups/EditPopups/EditSettingsPopup.vue"
 
-import app, { AppSettings } from "../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "SettingsIconCard",
@@ -32,7 +31,6 @@ export default defineComponent({
     setup()
     {
         const showEditSettingsPopup: Ref<boolean> = ref(false);
-        const settingsState: ComputedRef<AppSettings> = computed(() => app.settings);
 
         function closeSettings()
         {
@@ -40,7 +38,6 @@ export default defineComponent({
         }
 
         return {
-            settingsState,
             showEditSettingsPopup,
             closeSettings
         }

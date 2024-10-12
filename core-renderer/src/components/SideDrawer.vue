@@ -127,7 +127,8 @@ export default defineComponent({
             const dispalyVault = app.userVaults.value.filter(uv => uv.userVaultID == data['userVaultID']);
             if (dispalyVault.length != 1)
             {
-                // TODO: error
+                // Should never happen tbh
+                app.popups.showAlert("Error", "Unable to edit Vault", true);
                 return;
             }
 
@@ -220,7 +221,29 @@ export default defineComponent({
 
         watch(() => app.userVaults.value, (newValue, oldValue) => 
         {
-            updateNodeList(privateVaultsID, VaultType.Personal, [treeNodeEditButton, treeNodeArchiveButton], newValue, oldValue);
+            // Add Archive button as we now have 2 vaults
+            if (oldValue.length == 1)
+            {
+                manager.updateNode(
+                    (node) => node.data["userVaultID"] == oldValue[0].userVaultID,
+                    (node) => node.buttons.push(treeNodeArchiveButton));
+            }
+
+            // Remove Archive button since we only have 1 vault
+            if (newValue.length == 1)
+            {
+                manager.updateNode(
+                    (node) => node.data["userVaultID"] == newValue[0].userVaultID,
+                    (node) => node.buttons.splice(1, 1));
+            }
+
+            const buttons = [treeNodeEditButton];
+            if (newValue.length > 1)
+            {
+                buttons.push(treeNodeArchiveButton);
+            }
+
+            updateNodeList(privateVaultsID, VaultType.Personal, buttons, newValue, oldValue);
         });
 
         watch(() => app.archivedVaults.value, (newValue, oldValue) => 

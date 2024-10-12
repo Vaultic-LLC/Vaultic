@@ -4,7 +4,7 @@ import { hideAll } from 'tippy.js';
 import { Store, StoreEvents } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
-import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { ColorPalette, colorPalettes } from "../../Types/Colors";
 import { AutoLockTime } from "../../Types/Settings";
 import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
@@ -134,14 +134,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     public resetToDefault()
     {
         super.resetToDefault();
-    }
-
-    public async updateSettings(masterKey: string, settings: AppSettings): Promise<boolean>
-    {
-        const transaction = new StoreUpdateTransaction(Entity.User);
-        transaction.addStore(this, { settings });
-
-        return transaction.commit(masterKey);
     }
 
     public async lock(redirect: boolean = true, expireSession: boolean = true)
@@ -400,7 +392,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
     {
-        const transaction = new StoreUpdateTransaction(Entity.User);
+        const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
 
         const oldColorPalette: ColorPalette[] = pendingState.settings.colorPalettes.filter(cp => cp.id == colorPalette.id);
@@ -415,7 +407,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette[0]);
         }
 
-        transaction.addStore(this, pendingState);
+        transaction.updateUserStore(this, pendingState);
         await transaction.commit(masterKey);
     }
 }

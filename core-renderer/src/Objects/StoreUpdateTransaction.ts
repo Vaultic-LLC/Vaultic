@@ -1,5 +1,6 @@
 import { api } from "../API";
 import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
+import { Dictionary } from "../Types/DataStructures";
 import { TypedMethodResponse } from "../Types/MethodResponse";
 import { Store, StoreEvents } from "./Stores/Base";
 
@@ -20,39 +21,69 @@ interface StoreUpdateState
 
 export default class StoreUpdateTransaction
 {
-    storeUpdateStates: StoreUpdateState[];
-    ignoreFail: boolean;
-    entity: Entity;
-    userVaultID: number | undefined;
+    private userStoreUpdateStates: Dictionary<StoreUpdateState>;
+    private userVaultStoreUpdateStates: Dictionary<StoreUpdateState>;
+    private vaultStoreUpdateStates: Dictionary<StoreUpdateState>;
 
-    constructor(entity: Entity, userVaultID?: number)
+    private userVaultID: number | undefined;
+
+    constructor(userVaultID?: number)
     {
-        this.entity = entity;
-        this.storeUpdateStates = [];
         this.userVaultID = userVaultID;
+
+        this.userStoreUpdateStates = {};
+        this.userVaultStoreUpdateStates = {};
+        this.vaultStoreUpdateStates = {};
     }
 
-    addStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    private addStore(updateStoreStates: Dictionary<StoreUpdateState>, store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
         pendingState.version += 1;
-        this.storeUpdateStates.push({
+        if (updateStoreStates[store.stateName])
+        {
+            return;
+        }
+
+        updateStoreStates[store.stateName] =
+        {
             store,
             currentState: store.getState(),
             pendingState,
             postSave
-        });
+        };
     }
 
-    async commit(masterKey: string, backup: boolean = true)
+    updateUserStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    {
+        this.addStore(this.userStoreUpdateStates, store, pendingState, postSave);
+    }
+
+    updateUserVaultStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    {
+        this.addStore(this.userVaultStoreUpdateStates, store, pendingState, postSave);
+    }
+
+    updateVaultStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    {
+        this.addStore(this.vaultStoreUpdateStates, store, pendingState, postSave);
+    }
+
+    private async saveStoreStates(masterKey: string, entity: Entity, updateStoreStates: Dictionary<StoreUpdateState>, backup: boolean)
     {
         const states = {};
-        for (let i = 0; i < this.storeUpdateStates.length; i++)
+        const stores = Object.values(updateStoreStates);
+        if (stores.length == 0)
         {
-            states[this.storeUpdateStates[i].store.stateName] = JSON.stringify(this.storeUpdateStates[i].pendingState);
+            return true;
+        }
+
+        for (let i = 0; i < stores.length; i++)
+        {
+            states[stores[i].store.stateName] = JSON.stringify(stores[i].pendingState);
         }
 
         let response: TypedMethodResponse<any>;
-        switch (this.entity)
+        switch (entity)
         {
             case Entity.User:
                 response = await api.repositories.users.saveUser(masterKey, JSON.stringify(states), backup);
@@ -71,12 +102,39 @@ export default class StoreUpdateTransaction
             return false;
         }
 
-        // commit the states in memory. This is just an object.assign so it shouldn't fail
-        for (let i = 0; i < this.storeUpdateStates.length; i++)
+        return true;
+    }
+
+    private async commitStoreStates(storeUpdateStates: Dictionary<StoreUpdateState>)
+    {
+        const stores = Object.values(storeUpdateStates);
+        for (let i = 0; i < stores.length; i++)
         {
-            this.storeUpdateStates[i].store.updateState(this.storeUpdateStates[i].pendingState);
-            this.storeUpdateStates[i].postSave?.();
+            stores[i].store.updateState(stores[i].pendingState);
+            stores[i].postSave?.();
         }
+    }
+
+    async commit(masterKey: string, backup: boolean = true)
+    {
+        if (!(await this.saveStoreStates(masterKey, Entity.User, this.userStoreUpdateStates, backup)))
+        {
+            return false;
+        }
+
+        if (!(await this.saveStoreStates(masterKey, Entity.UserVault, this.userVaultStoreUpdateStates, backup)))
+        {
+            return false;
+        }
+
+        if (!(await this.saveStoreStates(masterKey, Entity.Vault, this.vaultStoreUpdateStates, backup)))
+        {
+            return false;
+        }
+
+        this.commitStoreStates(this.userStoreUpdateStates);
+        this.commitStoreStates(this.userVaultStoreUpdateStates);
+        this.commitStoreStates(this.vaultStoreUpdateStates);
 
         return true;
     }

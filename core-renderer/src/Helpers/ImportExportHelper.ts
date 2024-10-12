@@ -230,7 +230,7 @@ class CSVImporter<T extends IGroupable>
         return {} as T;
     }
 
-    protected async saveValue(masterKey: string, value: T, skipBackup: boolean)
+    protected async saveValue(masterKey: string, value: T, backup: boolean)
     {
     }
 
@@ -315,13 +315,11 @@ class CSVImporter<T extends IGroupable>
                 }
             }
 
-            // save, only backup the last value
-            await this.saveValue(masterKey, value, i != records.length - 1);
+            // save, only backup after the last value
+            await this.saveValue(masterKey, value, i == records.length - 1);
         }
 
         app.popups.hideLoadingIndicator();
-
-        // TODO: should actually do some error handling
         app.popups.showToast(color, "Import Complete", true);
     }
 
@@ -346,9 +344,9 @@ export class PasswordCSVImporter extends CSVImporter<Password>
         return defaultPassword();
     }
 
-    protected async saveValue(masterKey: string, value: Password, skipBackup: boolean): Promise<void> 
+    protected async saveValue(masterKey: string, value: Password, backup: boolean): Promise<void> 
     {
-        await app.currentVault.passwordStore.addPassword(masterKey, value, skipBackup);
+        await app.currentVault.passwordStore.addPassword(masterKey, value, backup);
     }
 
     protected async customSetProperty(value: Password, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
@@ -438,9 +436,9 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
         return defaultValue();
     }
 
-    protected async saveValue(masterKey: string, value: NameValuePair, skipBackup: boolean): Promise<void> 
+    protected async saveValue(masterKey: string, value: NameValuePair, backup: boolean): Promise<void> 
     {
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value, skipBackup);
+        await app.currentVault.valueStore.addNameValuePair(masterKey, value, backup);
     }
 
     protected async customSetProperty(value: NameValuePair, property: ImportableDisplayField, cellValue: string): Promise<boolean> 

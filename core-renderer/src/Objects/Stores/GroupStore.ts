@@ -5,6 +5,8 @@ import { Dictionary } from "../../Types/DataStructures";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import app from "./AppStore";
+import { api } from "../../API";
 
 export interface GroupStoreState extends DataTypeStoreState<Group>
 {
@@ -48,9 +50,11 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         }
     }
 
-    async addGroup(masterKey: string, group: Group, skipBackup: boolean = false): Promise<boolean>
+    async addGroup(masterKey: string, group: Group, backup?: boolean): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        backup = backup ?? app.isOnline;
+
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         group.id = await generateUniqueID(pendingState.values);
@@ -74,8 +78,8 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
                 const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
 
-                transaction.addStore(this.vault.passwordStore, pendingPasswordState);
-                transaction.addStore(this.vault.filterStore, pendingFilterState);
+                transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
+                transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
             }
         }
         else if (group.type == DataType.NameValuePairs)
@@ -94,24 +98,24 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
                 const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
 
-                transaction.addStore(this.vault.valueStore, pendingValueState);
-                transaction.addStore(this.vault.filterStore, pendingFilterState);
+                transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
+                transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
             }
         }
 
-        transaction.addStore(this, pendingState);
-        return await transaction.commit(masterKey);
+        transaction.updateVaultStore(this, pendingState);
+        return await transaction.commit(masterKey, backup);
     }
 
     async updateGroup(masterKey: string, updatedGroup: Group): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const currentGroup = pendingState.groupsById[updatedGroup.id];
         if (!currentGroup)
         {
-            // TODO: do something
+            await api.repositories.logs.log(undefined, `No Group`, "GroupStore.Update")
             return false;
         }
 
@@ -131,8 +135,8 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
             const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
 
-            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
-            transaction.addStore(this.vault.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
         else if (updatedGroup.type == DataType.NameValuePairs)
         {
@@ -145,26 +149,28 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
             const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
 
-            transaction.addStore(this.vault.valueStore, pendingValueState);
-            transaction.addStore(this.vault.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
 
         Object.assign(pendingState.groupsById[updatedGroup.id], updatedGroup);
         Object.assign(pendingState.values.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
-        transaction.addStore(this, pendingState);
+        transaction.updateVaultStore(this, pendingState);
         return await transaction.commit(masterKey);
     }
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         delete pendingState.groupsById[group.id];
         const groupIndex = pendingState.values.findIndex(g => g.id == group.id);
+
         if (groupIndex < 0)
         {
+            await api.repositories.logs.log(undefined, `No Group`, "GroupStore.Delete")
             return false;
         }
 
@@ -181,8 +187,8 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyPasswordGroups);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicatePasswordGroups);
 
-            transaction.addStore(this.vault.passwordStore, pendingPasswordState);
-            transaction.addStore(this.vault.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
         else if (group.type == DataType.NameValuePairs)
         {
@@ -195,11 +201,11 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyValueGroups);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicateValueGroups);
 
-            transaction.addStore(this.vault.valueStore, pendingValueState);
-            transaction.addStore(this.vault.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
 
-        transaction.addStore(this, pendingState);
+        transaction.updateVaultStore(this, pendingState);
         return await transaction.commit(masterKey);
     }
 

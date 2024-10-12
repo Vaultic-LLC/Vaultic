@@ -59,7 +59,7 @@ export default defineComponent({
         {
             return {
                 isActive,
-                color: props.color,
+                color: ref(props.color),
                 onClick
             }
         });

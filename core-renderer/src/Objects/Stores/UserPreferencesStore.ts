@@ -2,7 +2,7 @@ import { ColorPalette, colorPalettes } from "../../Types/Colors";
 import { Store } from "./Base";
 import { Ref, ref, watch } from "vue";
 import { DataType } from "../../Types/Table";
-import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
 import app, { AppStore } from "./AppStore";
 
@@ -11,11 +11,6 @@ export interface UserPreferencesStoreState
     currentColorPalette: ColorPalette;
 }
 
-// TODO: this should use the state of the last known users prefereences before signing in, and then, 
-// if a different user signed in, use their state instead
-
-// TODO: this stuff isn't that important and is mostly visual. We should update the state first
-// so that the app doesn't seem like its slow from waitin for it to save. 
 export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 {
     private internalCurrentPrimaryColor: Ref<string>;
@@ -84,7 +79,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
     public async updateAndCommitCurrentColorPalette(colorPalette: ColorPalette)
     {
-        const transaction = new StoreUpdateTransaction(Entity.User);
+        const transaction = new StoreUpdateTransaction();
         this.updateCurrentColorPalette(transaction, colorPalette);
 
         await transaction.commit('');
@@ -92,11 +87,11 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
     public async updateCurrentColorPalette(transaction: StoreUpdateTransaction, colorPalette: ColorPalette)
     {
+        // Update the state right away so there is no potential delay for themeing
+        this.state.currentColorPalette = colorPalette;
+        this.setCurrentPrimaryColor(app.activePasswordValuesTable);
+
         const pendingState = this.cloneState();
-        // TODO: remove comment
-        // This is needed for tracking to work. Otherwise some things won't register that the color palette has changed
-        // this.state.currentColorPalette = emptyColorPalette;
-        pendingState.currentColorPalette = colorPalette;
-        transaction.addStore(this, pendingState, () => this.setCurrentPrimaryColor(app.activePasswordValuesTable))
+        transaction.updateUserStore(this, pendingState, () => this.setCurrentPrimaryColor(app.activePasswordValuesTable))
     }
 }

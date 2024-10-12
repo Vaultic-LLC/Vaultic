@@ -1,4 +1,4 @@
-import { NameValuePair, CurrentAndSafeStructure, AtRiskType, NameValuePairType, DataFile } from "../../Types/EncryptedData";
+import { NameValuePair, CurrentAndSafeStructure, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
 import { Dictionary } from "../../Types/DataStructures";
@@ -40,7 +40,7 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
     {
         backup = backup ?? app.isOnline;
 
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         value.id = await generateUniqueID(pendingState.values);
@@ -62,21 +62,22 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
         const pendingFilterState = this.vault.filterStore.syncFiltersForValues([value],
             pendingGroupState.values.filter(g => g.type == DataType.NameValuePairs));
 
-        transaction.addStore(this, pendingState);
-        transaction.addStore(this.vault.groupStore, pendingGroupState);
-        transaction.addStore(this.vault.filterStore, pendingFilterState);
+        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
+        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
         return await transaction.commit(masterKey, backup);
     }
 
     async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         let currentValueIndex = pendingState.values.findIndex(v => v.id == updatedValue.id);
         if (currentValueIndex < 0)
         {
+            await api.repositories.logs.log(undefined, `No Value`, "ValueStore.Upate")
             return false;
         }
 
@@ -113,21 +114,22 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
         const pendingFilterState = this.vault.filterStore.syncFiltersForValues([updatedValue],
             pendingGroupState.values.filter(g => g.type == DataType.NameValuePairs));
 
-        transaction.addStore(this, pendingState);
-        transaction.addStore(this.vault.groupStore, pendingGroupState);
-        transaction.addStore(this.vault.filterStore, pendingFilterState);
+        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
+        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
         return await transaction.commit(masterKey);
     }
 
     async deleteNameValuePair(masterKey: string, value: ReactiveValue): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const valueIndex = pendingState.values.findIndex(v => v.id == value.id);
         if (valueIndex < 0)
         {
+            await api.repositories.logs.log(undefined, `No Value`, "ValueStore.Delete")
             return false;
         }
 
@@ -138,9 +140,9 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
         const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id, [], value.groups);
         const pendingFilterState = this.vault.filterStore.removeValuesFromFilters(value.id);
 
-        transaction.addStore(this, pendingState);
-        transaction.addStore(this.vault.groupStore, pendingGroupState);
-        transaction.addStore(this.vault.filterStore, pendingFilterState);
+        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
+        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
         return await transaction.commit(masterKey);
     }

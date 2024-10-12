@@ -9,7 +9,7 @@ import { PasswordStore, ReactivePasswordStore } from "./PasswordStore";
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 
-interface VaultSettings 
+export interface VaultSettings 
 {
     loginRecordsToStorePerDay: number;
     numberOfDaysToStoreLoginRecords: number;
@@ -32,6 +32,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalVaultPreferencesStore: VaultPreferencesStore;
 
     get userVaultID() { return this.internalUserVaultID; }
+    get settings() { return this.state.settings; }
 
     get passwordStore() { return this.internalPasswordStore; }
     get valueStore() { return this.internalValueStore; }
@@ -155,8 +156,8 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         await this.recordLogin(pendingState, Date.now());
         await this.checkRemoveOldLoginRecords(pendingState);
 
-        const transaction = new StoreUpdateTransaction(Entity.Vault, this.userVaultID);
-        transaction.addStore(this, pendingState);
+        const transaction = new StoreUpdateTransaction(this.userVaultID);
+        transaction.updateVaultStore(this, pendingState);
 
         await transaction.commit(masterKey);
     }

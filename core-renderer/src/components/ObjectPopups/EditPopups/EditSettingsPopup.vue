@@ -4,7 +4,7 @@
     </div>
     <div class="settingPopupContainer">
         <Transition name="fade" mode="out-in">
-            <SettingsView v-if="activeSection == 0" :creating="false" :model="currentSettings" />
+            <SettingsView v-if="activeSection == 0" :creating="false" />
             <DevicesView v-else-if="activeSection == 1" :color="currentPrimaryColor" />
             <AccountInfoView v-else-if="activeSection == 2" />
         </Transition>
@@ -19,7 +19,7 @@ import TableSelector from '../../../components/TableSelector.vue';
 import ButtonLink from '../../../components/InputFields/ButtonLink.vue';
 import AccountInfoView from '../../../components/Account/AccountInfoView.vue';
 
-import app, { AppSettings } from "../../../Objects/Stores/AppStore";
+import app from "../../../Objects/Stores/AppStore";
 import { SingleSelectorItemModel } from '../../../Types/Models';
 
 export default defineComponent({
@@ -32,13 +32,11 @@ export default defineComponent({
         DevicesView,
         AccountInfoView
     },
-    props: ['model'],
     setup(props)
     {
         const activeSection: Ref<number> = ref(0);
 
         // copy the object so that we don't edit the original one
-        const currentSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(props.model)));
         const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const settingsView: ComputedRef<SingleSelectorItemModel> = computed(() =>
@@ -84,7 +82,6 @@ export default defineComponent({
         });
 
         return {
-            currentSettings,
             settingsView,
             devicesView,
             paymentView,

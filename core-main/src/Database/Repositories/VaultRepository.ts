@@ -129,6 +129,7 @@ class VaultRepository extends VaulticRepository<Vault>
 
         async function internalCreateNewVaultForUser(this: VaultRepository): Promise<TypedMethodResponse<CondensedVaultData>>
         {
+            console.log('creating vault');
             const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
@@ -169,7 +170,7 @@ class VaultRepository extends VaulticRepository<Vault>
             transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
 
             transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
-            transaction.insertEntity(userVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
+            transaction.insertEntity(userVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
 
             if (!(await transaction.commit()))
             {
@@ -469,7 +470,7 @@ class VaultRepository extends VaulticRepository<Vault>
         if (otherVaults.length > 0)
         {
             const vaultIDs = otherVaults.filter(v => v.vaultID).map(v => v.vaultID!);
-            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, undefined, currentUser, userVaultQuery);
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, vaultIDs, currentUser, userVaultQuery);
 
             for (let i = 0; i < otherVaults.length; i++)
             {
