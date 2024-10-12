@@ -29,6 +29,8 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
 
             return response;
         }
+
+        await environment.repositories.logs.log(undefined, `Exception: ${JSON.stringify(e)}`, method.name);
     }
 
     return TypedMethodResponse.fail();
@@ -143,6 +145,10 @@ export async function backupData(masterKey: string)
         return false;
     }
 
+    console.log(`\nBacking up user: ${JSON.stringify(userToBackup[1])}`);
+    console.log(`\nBacking up userVaults: ${JSON.stringify(userVaultsToBackup[1])}`);
+    console.log(`\nBacking up vaults: ${JSON.stringify(vaultsToBackup[1])}`);
+
     const backupResponse = await vaulticServer.user.backupData(userToBackup[1], userVaultsToBackup[1], vaultsToBackup[1]);
     if (!backupResponse.Success)
     {
@@ -243,7 +249,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
 
             if (userVaultIndex >= 0)
             {
-                await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault);
+                await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, transaction);
             }
             else 
             {

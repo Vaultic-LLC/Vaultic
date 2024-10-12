@@ -70,7 +70,7 @@ class AxiosWrapper
         return encrypt.value ?? "";
     }
 
-    // TOOD: automatically log failed responses locally
+    // TODO: automatically log failed responses locally
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
     {
         try

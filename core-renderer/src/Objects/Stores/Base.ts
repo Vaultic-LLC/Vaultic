@@ -53,7 +53,7 @@ export class Store<T extends {}, U extends string = StoreEvents>
 
     public updateState(state: T): void
     {
-        // TOOD: this should instead validate that the state has and only has the properties
+        // TODO: this should instead validate that the state has and only has the properties
         // that I expect. Entites should then initalize their states with all the expected properties
         // instead of just '{}'
         if (Object.keys(state).length == 0)

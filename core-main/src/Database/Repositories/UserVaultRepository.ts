@@ -13,6 +13,7 @@ import vaultHelper from "../../Helpers/VaultHelper";
 import { TypedMethodResponse } from "../../Types/MethodResponse";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import errorCodes from "../../Types/ErrorCodes";
+import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -149,16 +150,36 @@ class UserVaultRepository extends VaulticRepository<UserVault>
 
         async function internalSaveUserVault(this: UserVaultRepository): Promise<TypedMethodResponse<boolean>>
         {
-            const userVaults = await this.getVerifiedUserVaults(masterKey, [userVaultID]);
-            if (userVaults[0].length != 1)
+            let userVaults: UserVault[];
+
+            // masterKey will be "" when updating vaultPreferencesStoreState. This is fine since it'll be the only thing
+            // being updated at that point
+            if (masterKey)
             {
-                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
+                const verifiedUserVaults = await this.getVerifiedUserVaults(masterKey, [userVaultID]);
+                userVaults = verifiedUserVaults[0];
+            }
+            else 
+            {
+                const user = await environment.repositories.users.getCurrentUser();
+                if (!user)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "No User");
+                }
+
+                userVaults = await this.getUserVaults(user, [userVaultID]);
             }
 
-            const oldUserVault = userVaults[0][0];
+            if (userVaults.length != 1)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, `Invalid number of UserVaulst: ${userVaults.length}`)
+            }
+
+            const oldUserVault = userVaults[0];
             const newUserVault: CondensedVaultData = JSON.parse(data);
 
             const transaction = new Transaction();
+            console.log(`saving vaultPreferences: ${JSON.stringify(newUserVault)}`);
             if (newUserVault.vaultPreferencesStoreState)
             {
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
@@ -174,7 +195,8 @@ class UserVaultRepository extends VaulticRepository<UserVault>
                 return TypedMethodResponse.transactionFail();
             }
 
-            if (backup && !(await backupData(masterKey)))
+            console.log('saved vaultPreferences');
+            if (masterKey && backup && !(await backupData(masterKey)))
             {
                 return TypedMethodResponse.backupFail();
             }
@@ -284,55 +306,54 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return true;
     }
 
-    public async updateFromServer(currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>)
+    public async updateFromServer(currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>, transaction: Transaction)
     {
-        const setProperties = {}
         if (!newUserVault.userVaultID)
         {
             return;
         }
 
+        const partialUserVault = {};
+        let updatedUserVault = false;
+
         if (newUserVault.signatureSecret)
         {
-            setProperties[nameof<UserVault>("signatureSecret")] = newUserVault.signatureSecret;
+            partialUserVault[nameof<UserVault>("signatureSecret")] = newUserVault.signatureSecret;
+            updatedUserVault = true;
         }
 
         if (newUserVault.currentSignature)
         {
-            setProperties[nameof<UserVault>("currentSignature")] = newUserVault.currentSignature;
+            partialUserVault[nameof<UserVault>("currentSignature")] = newUserVault.currentSignature;
+            updatedUserVault = true;
         }
 
         if (newUserVault.vaultKey)
         {
-            setProperties[nameof<UserVault>("vaultKey")] = newUserVault.vaultKey;
+            partialUserVault[nameof<UserVault>("vaultKey")] = newUserVault.vaultKey;
+            updatedUserVault = true;
         }
 
-        if (newUserVault.vaultPreferencesStoreState)
+        if (updatedUserVault)
         {
-            if (!currentUserVault.vaultPreferencesStoreState?.entityState)
-            {
-                currentUserVault = (await this.repository.findOneBy({
-                    userVaultID: newUserVault.userVaultID
-                })) as UserVault;
-            }
+            transaction.overrideEntity(newUserVault.userVaultID, partialUserVault, () => this);
+        }
 
+        if (newUserVault.vaultPreferencesStoreState && newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID)
+        {
             if (currentUserVault.vaultPreferencesStoreState?.entityState == EntityState.Updated)
             {
                 // TODO: merge changes between states
             }
             else 
             {
-                setProperties[nameof<UserVault>("vaultPreferencesStoreState")] =
+                const partialVaultPreferencesStoreState: DeepPartial<VaultPreferencesStoreState> =
                     StoreState.getUpdatedPropertiesFromObject(newUserVault.vaultPreferencesStoreState);
+
+                transaction.overrideEntity(newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
+                    partialVaultPreferencesStoreState, () => environment.repositories.vaultPreferencesStoreStates);
             }
         }
-
-        return this.repository
-            .createQueryBuilder()
-            .update()
-            .set(setProperties)
-            .where("userVaultID = :userVaultID", { userVaultID: newUserVault.userVaultID })
-            .execute();
     }
 
     public async deleteFromServerAndVault(vaultID: number)

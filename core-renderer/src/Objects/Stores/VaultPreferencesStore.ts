@@ -19,7 +19,7 @@ export class VaultPreferencesStore extends VaultContrainedStore<VaultPreferences
 
     constructor(vault)
     {
-        super(vault, "vaultPreferencesStore");
+        super(vault, "vaultPreferencesStoreState");
     }
 
     protected defaultState(): VaultPreferencesState

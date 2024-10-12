@@ -608,27 +608,20 @@ class VaultRepository extends VaulticRepository<Vault>
             }
         }
 
-        if (newVault.valueStoreState)
+        if (newVault.valueStoreState && newVault.valueStoreState.valueStoreStateID)
         {
-            if (!currentVault.valueStoreState?.entityState)
-            {
-                currentVault = (await this.repository.findOneBy({
-                    vaultID: newVault.vaultID
-                })) as Vault;
-            }
-
             if (currentVault.valueStoreState?.entityState == EntityState.Updated)
             {
                 // TODO: merge changes between states
             }
             else 
             {
-                setProperties[nameof<Vault>("valueStoreState")] =
-                    StoreState.getUpdatedPropertiesFromObject(newVault.valueStoreState);
+                const partialValueStoreState: DeepPartial<ValueStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.valueStoreState);
+                transaction.overrideEntity(newVault.valueStoreState.valueStoreStateID, partialValueStoreState, () => environment.repositories.valueStoreStates);
             }
         }
 
-        if (newVault.filterStoreState)
+        if (newVault.filterStoreState && newVault.filterStoreState.filterStoreStateID)
         {
             if (!currentVault.filterStoreState?.entityState)
             {
@@ -643,12 +636,12 @@ class VaultRepository extends VaulticRepository<Vault>
             }
             else 
             {
-                setProperties[nameof<Vault>("filterStoreState")] =
-                    StoreState.getUpdatedPropertiesFromObject(newVault.filterStoreState);
+                const partialFilterStoreState: DeepPartial<FilterStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.filterStoreState);
+                transaction.overrideEntity(newVault.filterStoreState.filterStoreStateID, partialFilterStoreState, () => environment.repositories.filterStoreStates);
             }
         }
 
-        if (newVault.groupStoreState)
+        if (newVault.groupStoreState && newVault.groupStoreState.groupStoreStateID)
         {
             if (!currentVault.groupStoreState?.entityState)
             {
@@ -663,8 +656,8 @@ class VaultRepository extends VaulticRepository<Vault>
             }
             else 
             {
-                setProperties[nameof<Vault>("groupStoreState")] =
-                    StoreState.getUpdatedPropertiesFromObject(newVault.groupStoreState);
+                const partialGroupStoreState: DeepPartial<GroupStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.groupStoreState);
+                transaction.overrideEntity(newVault.groupStoreState.groupStoreStateID, partialGroupStoreState, () => environment.repositories.groupStoreStates);
             }
         }
     }
@@ -676,7 +669,7 @@ class VaultRepository extends VaulticRepository<Vault>
             return;
         }
 
-        const deleteVaultPromise = this.repository.createQueryBuilder()
+        const deleteVaultPromise = await this.repository.createQueryBuilder()
             .delete()
             .where("vaultID = :vaultID", { vaultID: vault.vaultID })
             .execute();

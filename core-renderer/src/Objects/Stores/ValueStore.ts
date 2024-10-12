@@ -9,6 +9,7 @@ import { api } from "../../API"
 import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
 import { DataType } from "../../Types/Table";
 import { VaultStoreParameter } from "./VaultStore";
+import app from "./AppStore";
 
 export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 {
@@ -35,8 +36,10 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
         }
     }
 
-    async addNameValuePair(masterKey: string, value: NameValuePair, skipBackup: boolean = false): Promise<boolean>
+    async addNameValuePair(masterKey: string, value: NameValuePair, backup?: boolean): Promise<boolean>
     {
+        backup = backup ?? app.isOnline;
+
         const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState = this.cloneState();
 
@@ -63,7 +66,7 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
         transaction.addStore(this.vault.groupStore, pendingGroupState);
         transaction.addStore(this.vault.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey, skipBackup);
+        return await transaction.commit(masterKey, backup);
     }
 
     async updateNameValuePair(masterKey: string, updatedValue: NameValuePair, valueWasUpdated: boolean): Promise<boolean>

@@ -36,8 +36,10 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         }
     }
 
-    async addPassword(masterKey: string, password: Password, skipBackup: boolean = false): Promise<boolean>
+    async addPassword(masterKey: string, password: Password, backup?: boolean): Promise<boolean>
     {
+        backup = backup ?? app.isOnline;
+
         const transaction = new StoreUpdateTransaction(Entity.Vault, this.vault.userVaultID);
         const pendingState: PasswordStoreState = this.cloneState();
 
@@ -66,7 +68,7 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         transaction.addStore(this.vault.groupStore, pendingGroupState);
         transaction.addStore(this.vault.filterStore, pendingFilterState);
 
-        return await transaction.commit(masterKey, skipBackup);
+        return await transaction.commit(masterKey, backup);
     }
 
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],

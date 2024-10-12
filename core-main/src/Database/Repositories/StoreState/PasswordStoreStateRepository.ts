@@ -18,7 +18,6 @@ class PasswordStoreStateRepository extends StoreStateRepository<PasswordStoreSta
 
     public async getByID(id: number): Promise<PasswordStoreState | null>
     {
-        console.log('getting entity');
         return this.retrieveReactive((repository) => repository.findOneBy({
             passwordStoreStateID: id
         }));
