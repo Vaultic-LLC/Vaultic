@@ -105,7 +105,7 @@ const userRepository: UserRepository =
 {
 	getLastUsedUserEmail: () => ipcRenderer.invoke('userRepository:getLastUsedUserEmail'),
 	getLastUsedUserPreferences: () => ipcRenderer.invoke('userRepository:getLastUsedUserPreferences'),
-	createUser: (masterKey: string, email: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email),
+	createUser: (masterKey: string, email: string, publicKey: string, privateKey: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email, publicKey, privateKey),
 	getCurrentUserData: (masterKey: string, response: any) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey, response),
 	verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
 	saveUser: (masterKey: string, data: string, backup: boolean) => ipcRenderer.invoke('userRepository:saveUser', masterKey, data, backup)

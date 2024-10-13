@@ -140,7 +140,7 @@ export interface UserRepository
 {
 	getLastUsedUserEmail: () => Promise<string | null>;
 	getLastUsedUserPreferences: () => Promise<string | null>;
-	createUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<boolean | undefined>>
+	createUser: (masterKey: string, email: string, publicKey: string, privateKey: string) => Promise<TypedMethodResponse<boolean | undefined>>
 	// getCurrentUser: () => User | undefined;
 	// setCurrentUser: (masterKey: string, userIdentifier: string) => Promise<boolean>;
 	getCurrentUserData: (masterKey: string, response: any) => Promise<string>;

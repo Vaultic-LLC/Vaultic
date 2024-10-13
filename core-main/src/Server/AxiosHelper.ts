@@ -70,37 +70,47 @@ class AxiosWrapper
         return encrypt.value ?? "";
     }
 
-    // TODO: automatically log failed responses locally
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
     {
+        let returnResponse: BaseResponse = { Success: false };
+
         try
         {
             const newData = await this.prepRequestData(data);
             const requestData = await this.getRequestData(newData);
-            if (!requestData.success)
+
+            if (requestData.success)
+            {
+                const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
+                const responseResult = await this.handleResponse<T>(response.data);
+
+                if (responseResult[0].success)
+                {
+                    return responseResult[1];
+                }
+                else
+                {
+                    if (responseResult[0].invalidSession)
+                    {
+                        returnResponse = { Success: false, InvalidSession: true } as InvalidSessionResponse;
+                    }
+                    else 
+                    {
+                        returnResponse = { Success: false, UnknownError: true, logID: responseResult[0].logID, message: `code: ${response.status}` };
+                    }
+                }
+            }
+            else 
             {
                 if (requestData.invalidSession)
                 {
-                    return { Success: false, InvalidSession: true } as InvalidSessionResponse;
+                    returnResponse = { Success: false, InvalidSession: true } as InvalidSessionResponse;
                 }
-
-                return { Success: false, UnknownError: true, logID: requestData[0].logID, message: "setup" };
-            }
-
-            const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
-            const responseResult = await this.handleResponse<T>(response.data);
-
-            if (!responseResult[0].success)
-            {
-                if (responseResult[0].invalidSession)
+                else
                 {
-                    return { Success: false, InvalidSession: true } as InvalidSessionResponse;
+                    returnResponse = { Success: false, UnknownError: true, logID: requestData[0].logID };
                 }
-
-                return { Success: false, UnknownError: true, logID: responseResult[0].logID, message: `code: ${response.status}` };
             }
-
-            return responseResult[1];
         }
         catch (e: any)
         {
@@ -109,30 +119,33 @@ class AxiosWrapper
                 // Bad request data response, we can handle that
                 if (e.status == 400)
                 {
-                    return { Success: false, InvalidRequest: true, message: "400" };
+                    returnResponse = { Success: false, InvalidRequest: true, message: "400" };
                 }
-
-                if (e.response)
+                else if (e.response)
                 {
-                    return { Success: false, UnknownError: true, statusCode: e?.response?.status, axiosCode: e?.code, message: "Invalid response, please try again. If the issue persists, check your connection, restart the app or" };
+                    returnResponse = { Success: false, UnknownError: true, statusCode: e?.response?.status, axiosCode: e?.code, message: "Invalid response, please try again. If the issue persists, check your connection, restart the app or" };
                 }
-
-                if (e.request)
+                else if (e.request)
                 {
-                    return { Success: false, UnknownError: true, axiosCode: e?.code, message: "Invalid request, please try again. If the issue persists, check your connection, restart the app or" };
+                    returnResponse = { Success: false, UnknownError: true, axiosCode: e?.code, message: "Invalid request, please try again. If the issue persists, check your connection, restart the app or" };
                 }
             }
-
             // something internal threw an error, like crypt helper or something
-            if (e?.message)
+            else if (e?.message)
             {
-                return {
+                returnResponse = {
                     Success: false, UnknownError: true, message: e.message + ". If the issue persists, check your connection, restart the app or"
                 };
             }
-
-            return { Success: false, UnknownError: true, message: "good luck" };
+            else 
+            {
+                returnResponse = { Success: false, UnknownError: true, message: `Unknown Error in AxiosHelper` };
+            }
         }
+
+        // we failed, log it
+        await environment.repositories.logs.log(undefined, JSON.stringify(returnResponse), "AxiosHelper");
+        return returnResponse as BaseResponse;
     }
 
     protected async prepRequestData(data?: any): Promise<any>

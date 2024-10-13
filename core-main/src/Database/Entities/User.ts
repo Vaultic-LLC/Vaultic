@@ -90,6 +90,8 @@ export class User extends VaulticEntity
         const properties = super.backupableProperties();
         properties.push("userID");
         properties.push("email");
+
+        // TODO: remove since they should never change
         properties.push("publicKey");
         properties.push("privateKey");
 
@@ -100,8 +102,7 @@ export class User extends VaulticEntity
     {
         return [
             nameof<User>("masterKeyHash"),
-            nameof<User>("masterKeySalt"),
-            nameof<User>("privateKey")
+            nameof<User>("masterKeySalt")
         ];
     }
 

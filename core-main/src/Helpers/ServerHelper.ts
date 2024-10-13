@@ -1,6 +1,6 @@
 import * as opaque from "@serenity-kit/opaque";
 import { stsServer } from "../Server/VaulticServer";
-import { FinishRegistrationResponse, LogUserInResponse, OpaqueResponse } from "../Types/Responses";
+import { FinishRegistrationResponse, LogUserInResponse } from "../Types/Responses";
 import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
@@ -8,6 +8,7 @@ import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safeti
 import { UserDataPayload } from "../Types/ServerTypes";
 import vaultHelper from "./VaultHelper";
 import { TypedMethodResponse } from "../Types/MethodResponse";
+import errorCodes from "../Types/ErrorCodes";
 
 export interface ServerHelper
 {
@@ -30,14 +31,41 @@ async function registerUser(masterKey: string, email: string, firstName: string,
         return startResponse;
     }
 
-    const { registrationRecord } = opaque.client.finishRegistration({
+    const { registrationRecord, exportKey } = opaque.client.finishRegistration({
         clientRegistrationState,
         registrationResponse: startResponse.ServerRegistrationResponse!,
         password: passwordHash,
     });
 
-    return await stsServer.registration.finish(startResponse.PendingUserToken!,
-        registrationRecord, firstName, lastName);
+    const keys = await environment.utilities.generator.ECKeys();
+
+    // wrap private key in masterKey encryption and exportKey encryption for future use
+    const masterKeyEncryptedPrivateKey = await environment.utilities.crypt.encrypt(masterKey, keys.private);
+    if (!masterKeyEncryptedPrivateKey.success)
+    {
+        await environment.repositories.logs.log(errorCodes.ENCRYPTION_FAILED, "Private Key Master Key Encryption");
+        return { Success: false }
+    }
+
+    const exportKeyEncryptedPrivateKey = await environment.utilities.crypt.encrypt(exportKey, masterKeyEncryptedPrivateKey.value!);
+    if (!exportKeyEncryptedPrivateKey.success)
+    {
+        await environment.repositories.logs.log(errorCodes.ENCRYPTION_FAILED, "Private Key Export Key Encryption");
+        return { Success: false }
+    }
+
+    const response = await stsServer.registration.finish(startResponse.PendingUserToken!,
+        registrationRecord, firstName, lastName, keys.public, exportKeyEncryptedPrivateKey.value!);
+
+    if (response.Success)
+    {
+        response.PublicKey = keys.public;
+
+        // only return the masterKey encrypted private key since we're already local
+        response.PrivateKey = masterKeyEncryptedPrivateKey.value!;
+    }
+
+    return response;
 }
 
 async function logUserIn(masterKey: string, email: string,
@@ -92,11 +120,11 @@ async function logUserIn(masterKey: string, email: string,
 
                 if (reloadAllData)
                 {
-                    await reloadAllUserData(masterKey, result.value.userDataPayload);
+                    await reloadAllUserData(masterKey, email, result.value.userDataPayload);
                 }
                 else 
                 {
-                    await checkMergeMissingData(masterKey, currentSignatures, result.value.userDataPayload);
+                    await checkMergeMissingData(masterKey, email, currentSignatures, result.value.userDataPayload);
                 }
 
                 await environment.repositories.users.setCurrentUser(masterKey, email);

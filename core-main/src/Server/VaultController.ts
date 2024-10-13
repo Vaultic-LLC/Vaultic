@@ -1,4 +1,4 @@
-import { CreateVaultResponse, GetVaultDataResponse } from "../Types/Responses";
+import { BaseResponse, CreateVaultResponse, GetVaultDataResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface VaultController
@@ -7,6 +7,7 @@ export interface VaultController
     getArchivedVaultData: (userVaultID: number) => Promise<GetVaultDataResponse>;
     unarchiveVault: (userVaultID: number) => Promise<GetVaultDataResponse>;
     deleteVault: (userVaultID: number) => Promise<GetVaultDataResponse>;
+    failedToSaveVault: (userVaultID: number) => Promise<BaseResponse>;
 }
 
 export function createVaultController(axiosHelper: AxiosHelper)
@@ -37,10 +38,18 @@ export function createVaultController(axiosHelper: AxiosHelper)
         });
     }
 
+    function failedToSaveVault(userVaultID: number): Promise<BaseResponse>
+    {
+        return axiosHelper.api.post('Vault/FailedToSaveVault', {
+            UserVaultID: userVaultID
+        });
+    }
+
     return {
         create,
         getArchivedVaultData,
         unarchiveVault,
-        deleteVault
+        deleteVault,
+        failedToSaveVault
     }
 }

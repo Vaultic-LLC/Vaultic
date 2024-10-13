@@ -115,7 +115,7 @@ export default defineComponent({
         function onLoginFailedAfterRegistration()
         {
             navigationStack.value = [];
-            accountSetupModel.value.currentView = AccountSetupView.SetupPayment;
+            accountSetupModel.value.currentView = AccountSetupView.SignIn;
         }
 
         function onSubscriptionCreated()

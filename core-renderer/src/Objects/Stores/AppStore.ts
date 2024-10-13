@@ -197,7 +197,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalUserVaults.value = parsedUserData.displayVaults!;
         this.internalSharedVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
         this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
-        this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault);
+        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault);
         this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;
 
@@ -216,7 +216,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const vaultData = result.value!;
         if (setAsActive)
         {
-            this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData);
+            await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData);
         }
 
         // force trigger reactivity
@@ -299,7 +299,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             archivedVault[0].setBasicVaultStoreData(vaultData as CondensedVaultData);
         }
 
-        this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false, true);
+        await this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false, true);
         return true;
     }
 
@@ -337,7 +337,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         if (selected)
         {
-            this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData)
+            await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData)
         }
 
         return true;
@@ -381,7 +381,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.internalCurrentVault.setReactiveVaultStoreData(masterKey, response.value!);
+        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, response.value!);
         return true;
     }
 

@@ -123,20 +123,27 @@ export default defineComponent({
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
                 if (loginResponse.success && loginResponse.value!.Success)
                 {
-                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email);
+                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email, response.PublicKey!, response.PrivateKey!);
                     if (!createUserResult.success)
                     {
-                        // TODO: need to better recover from this. Should take back to main screen since the user is created
-                        // on the server
                         app.popups.hideLoadingIndicator();
-                        showAlertMessage("Unable to create account, please try again. If the issue persists", "Unable to create account", true);
-
-                        return;
+                        // TODO: change to errorcode property after types PR. Only need to return if we fail to save. If we fail to backup, we are technically still
+                        // fine to continue
+                        if (createUserResult.errorCode == 12000)
+                        {
+                            showAlertMessage("Unable to create local data, please try again. If the issue persists", "Unable to create local data", true);
+                            ctx.emit('onLoginFailed');
+                            return;
+                        }
                     }
 
                     app.isOnline = true;
                     if (!(await app.loadUserData(key.value, loginResponse.value!.userDataPayload)))
                     {
+                        app.popups.hideLoadingIndicator();
+                        showAlertMessage("An unexpected error occured when trying to load data. Please try signing in. If the issue persists", "Unable to load data", true);
+                        ctx.emit('onLoginFailed');
+
                         return;
                     }
 

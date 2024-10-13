@@ -146,9 +146,7 @@ export class VaulticRepository<T extends VaulticEntity>
         // If EntityState = Insertered, the entity hasn't been synced to the server yet so keeping it 
         // as inserted makes it easier to merge in case there are conflicts.
         // If entityState = Deleted, we need to let the server know so don't change it
-        // TODO: only need to do this if we are upating a property that will be 
-        // backed up to the server
-        if (entity.entityState == EntityState.Unchanged)
+        if (entity.entityState == EntityState.Unchanged && entity.propertiesToSync.length > 0)
         {
             entity.entityState = EntityState.Updated;
         }

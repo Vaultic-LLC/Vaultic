@@ -18,7 +18,19 @@ class ErrorCodes
     get FAILED_TO_DECRYPT_CONDENSED_VAULT() { return 11004; }
     get NESTED_OBJECT_DOES_NOT_EXIST() { return 11005; }
 
+    // Entity Creation Errors
+    get FAILED_TO_GET_USER_IDS() { return 12000; }
+    get FAILED_TO_CREATE_NEW_VAULT() { return 12001; }
+
     constructor() { }
+
+    userFailedToSave(errorCode: number): boolean
+    {
+        return errorCode == this.FAILED_TO_CREATE_NEW_VAULT ||
+            errorCode == this.FAILED_TO_CREATE_NEW_VAULT ||
+            errorCode == this.EC_ENCRYPTION_FAILED ||
+            errorCode == this.TRANSACTION_FAILED;
+    }
 }
 
 const errorCodes = new ErrorCodes();

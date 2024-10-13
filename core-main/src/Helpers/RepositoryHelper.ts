@@ -1,3 +1,4 @@
+import { User } from "../Database/Entities/User";
 import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
@@ -193,7 +194,7 @@ export async function backupData(masterKey: string)
 
 // for each data in clientUserDataPayload with an entityState of Deleted and that isn't in
 // serverUserDataPayload, remove it
-export async function checkMergeMissingData(masterKey: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
+export async function checkMergeMissingData(masterKey: string, email: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
 {
     if (!serverUserDataPayload)
     {
@@ -207,12 +208,24 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
     {
         if (!clientUserDataPayload.user)
         {
+            // The user was never successfully created
+            if (!User.isValid(serverUserDataPayload.user))
+            {
+                if (!serverUserDataPayload.user.publicKey || !serverUserDataPayload.user.privateKey)
+                {
+                    await environment.repositories.logs.log(undefined, "No Public or Private Key for User", "checkMergeMissingData")
+                    return false;
+                }
+
+                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.publicKey!, serverUserDataPayload.user.privateKey!, transaction)).success;
+            }
+
             if (!(await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction)))
             {
                 return false;
             }
         }
-        else 
+        else
         {
             await environment.repositories.users.updateFromServer(clientUserDataPayload.user, serverUserDataPayload.user, transaction);
         }
@@ -275,6 +288,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
         {
             if (clientUserDataPayload.vaults[i].entityState == EntityState.Deleted)
             {
+                // TODO: implement
                 //await environment.repositories.vaults.deleteFromServer(clientUserDataPayload.vaults[i]);
             }
         }
@@ -283,7 +297,7 @@ export async function checkMergeMissingData(masterKey: string, clientUserDataPay
     return await transaction.commit();
 }
 
-export async function reloadAllUserData(masterKey: string, userDataPayload: UserDataPayload): Promise<boolean>
+export async function reloadAllUserData(masterKey: string, email: string, userDataPayload: UserDataPayload): Promise<boolean>
 {
     // Yeet all data so we don't have to worry about different users data potentially being tangled
     const transaction = new Transaction();
@@ -291,5 +305,5 @@ export async function reloadAllUserData(masterKey: string, userDataPayload: User
     transaction.raw("DELETE FROM vaults");
     transaction.raw("DELETE FROM userVaults");
 
-    return await checkMergeMissingData(masterKey, {}, userDataPayload, transaction);
+    return await checkMergeMissingData(masterKey, email, {}, userDataPayload, transaction);
 }

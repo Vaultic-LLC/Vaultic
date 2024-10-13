@@ -71,9 +71,6 @@ class VaultRepository extends VaulticRepository<Vault>
 
     public async createNewVault(name: string): Promise<boolean | [UserVault, Vault, string]>
     {
-        // TODO: what happens if we fail to re back these up after creating them? There will then be pointless records on the server
-        // Create an initalized property on the userVault on server and default to false. Once it has been backed up once, set to true.
-        // Have scheduled task to remove all userVaults with initalized is false for more than a day
         const response = await vaulticServer.vault.create();
         if (!response.Success)
         {
@@ -174,6 +171,7 @@ class VaultRepository extends VaulticRepository<Vault>
 
             if (!(await transaction.commit()))
             {
+                await vaulticServer.vault.failedToSaveVault(userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 

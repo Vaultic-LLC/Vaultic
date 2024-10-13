@@ -118,7 +118,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         this.internalGroupStore = new ReactiveGroupStore(this);
     }
 
-    public setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData)
+    public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData)
     {
         super.setBaseVaultStoreData(data);
 
@@ -129,10 +129,10 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         this.internalFilterStore.updateState(JSON.parse(data.filterStoreState));
         this.internalGroupStore.updateState(JSON.parse(data.groupStoreState));
 
-        this.updateLogins(masterKey);
+        await this.updateLogins(masterKey);
     }
 
-    public setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)
+    public async setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)
     {
         this.internalIsReadOnly.value = readOnly;
         this.internalUserVaultID = basicVault.userVaultID;
@@ -146,7 +146,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
         if (recordLogin)
         {
-            this.updateLogins(masterKey);
+            await this.updateLogins(masterKey);
         }
     }
 

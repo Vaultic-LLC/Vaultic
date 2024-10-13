@@ -121,7 +121,7 @@ class UserRepository extends VaulticRepository<User>
         return lastUsedUser?.userPreferencesStoreState?.state ?? null;
     }
 
-    public async createUser(masterKey: string, email: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async createUser(masterKey: string, email: string, publicKey: string, privateKey: string, transaction?: Transaction): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalCreateUser);
 
@@ -130,17 +130,15 @@ class UserRepository extends VaulticRepository<User>
             const response = await vaulticServer.user.getUserIDs();
             if (!response.Success)
             {
-                return TypedMethodResponse.fail(undefined, undefined, "Get User Ids");
+                return TypedMethodResponse.fail(errorCodes.FAILED_TO_GET_USER_IDS, undefined, "Get User Ids");
             }
-
-            const keys = await environment.utilities.generator.ECKeys();
 
             const user = new User().makeReactive();
             user.userID = response.UserID!;
             user.email = email;
             user.lastUsed = true;
-            user.publicKey = keys.public;
-            user.privateKey = keys.private;
+            user.publicKey = publicKey;
+            user.privateKey = privateKey;
             user.userVaults = [];
 
             await this.setMasterKey(masterKey, user, false);
@@ -160,14 +158,14 @@ class UserRepository extends VaulticRepository<User>
             const vaults = await environment.repositories.vaults.createNewVault("Personal");
             if (!vaults)
             {
-                return TypedMethodResponse.fail(undefined, undefined, "Create new Vault");
+                return TypedMethodResponse.fail(errorCodes.FAILED_TO_CREATE_NEW_VAULT, undefined, "Create new Vault");
             }
 
             const userVault: UserVault = vaults[0];
             const vault: Vault = vaults[1];
             const vaultKey: string = vaults[2];
 
-            const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(keys.public, vaultKey);
+            const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(publicKey, vaultKey);
             if (!encryptedVaultKey.success)
             {
                 return TypedMethodResponse.fail(errorCodes.EC_ENCRYPTION_FAILED);
@@ -183,7 +181,7 @@ class UserRepository extends VaulticRepository<User>
             });
 
             // Order matters here
-            const transaction = new Transaction();
+            transaction = transaction ?? new Transaction();
             transaction.insertEntity(user, masterKey, () => this);
             transaction.insertEntity(user.appStoreState, masterKey, () => environment.repositories.appStoreStates);
             transaction.insertEntity(user.userPreferencesStoreState, "", () => environment.repositories.userPreferencesStoreStates);
@@ -208,6 +206,7 @@ class UserRepository extends VaulticRepository<User>
             const succeeded = await transaction.commit();
             if (!succeeded)
             {
+                await vaulticServer.vault.failedToSaveVault(userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 
@@ -525,7 +524,8 @@ class UserRepository extends VaulticRepository<User>
 
         // TODO: what to do if updating previousSignatures on store states fails? The server has been updated
         // so the client will no longer be able to update. Detect and force update data from server? Should be handled
-        // when merging data?
+        // when merging data? Should just be able to fix during merge. Nothing will actually be different, so the merge
+        // will just basically end up taking the servers previous signature
         if (entity.appStoreState)
         {
             transaction.resetTracking(currentUser.appStoreState, key, () => environment.repositories.appStoreStates);
