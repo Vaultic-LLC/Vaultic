@@ -38,7 +38,6 @@ export default class StoreUpdateTransaction
 
     private addStore(updateStoreStates: Dictionary<StoreUpdateState>, store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
-        pendingState.version += 1;
         if (updateStoreStates[store.stateName])
         {
             return;

@@ -4,6 +4,7 @@ import { DataType, Filter, Group, PrimaryDataObjectCollection } from "../../Type
 import { Dictionary } from "../../Types/DataStructures";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
+import { api } from "../../API";
 
 export interface DataTypeStoreState<T>
 {
@@ -53,9 +54,6 @@ export class Store<T extends {}, U extends string = StoreEvents>
 
     public updateState(state: T): void
     {
-        // TODO: this should instead validate that the state has and only has the properties
-        // that I expect. Entites should then initalize their states with all the expected properties
-        // instead of just '{}'. Do after type PR
         if (Object.keys(state).length == 0)
         {
             state = this.defaultState();
@@ -63,6 +61,24 @@ export class Store<T extends {}, U extends string = StoreEvents>
 
         Object.assign(this.state, state);
         this.events['onChanged']?.forEach(f => f());
+    }
+
+    public async updateStateFromJSON(jsonString: string): Promise<void>
+    {
+        try
+        {
+            const state = JSON.parse(jsonString);
+            this.updateState(state);
+
+            return;
+        }
+        catch (e)
+        {
+            await api.repositories.logs.log(undefined, `Exception when parsing JSON state for ${this.stateName}`);
+        }
+
+        // fallback to default state
+        this.updateState(this.defaultState());
     }
 
     protected postAssignState(_: T): void { }

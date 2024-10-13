@@ -1,5 +1,6 @@
+import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { Dictionary } from "../../Types/DataStructures";
-import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultContrainedStore } from "./Base";
 
 export interface VaultPreferencesState
@@ -9,6 +10,15 @@ export interface VaultPreferencesState
     pinnedPasswords: Dictionary<any>;
     pinnedValues: Dictionary<any>;
 }
+
+// just used for validation
+const emptyVaultPreferncesState: VaultPreferencesState =
+{
+    pinnedFilters: {},
+    pinnedGroups: {},
+    pinnedPasswords: {},
+    pinnedValues: {}
+};
 
 export class VaultPreferencesStore extends VaultContrainedStore<VaultPreferencesState>
 {
@@ -29,6 +39,22 @@ export class VaultPreferencesStore extends VaultContrainedStore<VaultPreferences
             pinnedGroups: {},
             pinnedPasswords: {},
             pinnedValues: {}
+        }
+    }
+
+    public updateState(state: VaultPreferencesState): void 
+    {
+        let stateToUse = state;
+        if (!validateObject(stateToUse, emptyVaultPreferncesState, undefined, keyIsGuid))
+        {
+            stateToUse = this.defaultState();
+        }
+
+        super.updateState(stateToUse);
+
+        function keyIsGuid(propName: string, _: any)
+        {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(propName);
         }
     }
 

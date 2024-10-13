@@ -46,17 +46,18 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
 
-    protected setBaseVaultStoreData(data: CondensedVaultData)
+    protected async setBaseVaultStoreData(data: CondensedVaultData)
     {
         this.internalUserVaultID = data.userVaultID;
-        this.updateState(JSON.parse(data.vaultStoreState));
-        this.internalVaultPreferencesStore.updateState(JSON.parse(data.vaultPreferencesStoreState));
+        await this.updateStateFromJSON(data.vaultStoreState);
+        await this.internalVaultPreferencesStore.updateStateFromJSON(data.vaultPreferencesStoreState);
     }
 
     protected defaultState(): VaultStoreState 
     {
         return {
-            settings: {
+            settings:
+            {
                 loginRecordsToStorePerDay: 13,
                 numberOfDaysToStoreLoginRecords: 30
             },
@@ -88,13 +89,13 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
         this.internalUserVaultID = displayVault.userVaultID;
     }
 
-    public setBasicVaultStoreData(data: CondensedVaultData)
+    public async setBasicVaultStoreData(data: CondensedVaultData)
     {
-        super.setBaseVaultStoreData(data);
-        this.internalPasswordStore.updateState(JSON.parse(data.passwordStoreState));
-        this.internalValueStore.updateState(JSON.parse(data.valueStoreState));
-        this.internalFilterStore.updateState(JSON.parse(data.filterStoreState));
-        this.internalGroupStore.updateState(JSON.parse(data.groupStoreState));
+        await super.setBaseVaultStoreData(data);
+        await this.internalPasswordStore.updateStateFromJSON(data.passwordStoreState);
+        await this.internalValueStore.updateStateFromJSON(data.valueStoreState);
+        await this.internalFilterStore.updateStateFromJSON(data.filterStoreState);
+        await this.internalGroupStore.updateStateFromJSON(data.groupStoreState);
 
         this.internalIsLoaded = true;
     }
@@ -120,14 +121,14 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData)
     {
-        super.setBaseVaultStoreData(data);
+        await super.setBaseVaultStoreData(data);
 
         this.internalIsReadOnly.value = false;
 
-        this.internalPasswordStore.updateState(JSON.parse(data.passwordStoreState));
-        this.internalValueStore.updateState(JSON.parse(data.valueStoreState));
-        this.internalFilterStore.updateState(JSON.parse(data.filterStoreState));
-        this.internalGroupStore.updateState(JSON.parse(data.groupStoreState));
+        await this.internalPasswordStore.updateStateFromJSON(data.passwordStoreState);
+        await this.internalValueStore.updateStateFromJSON(data.valueStoreState);
+        await this.internalFilterStore.updateStateFromJSON(data.filterStoreState);
+        await this.internalGroupStore.updateStateFromJSON(data.groupStoreState);
 
         await this.updateLogins(masterKey);
     }

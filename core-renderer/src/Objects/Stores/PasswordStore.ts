@@ -27,7 +27,6 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
     protected defaultState()
     {
         return {
-            version: 0,
             hash: "",
             hashSalt: "",
             values: [],

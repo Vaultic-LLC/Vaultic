@@ -1,10 +1,12 @@
-import { ColorPalette, colorPalettes } from "../../Types/Colors";
+import { ColorPalette, colorPalettes, emptyColorPalette } from "../../Types/Colors";
 import { Store } from "./Base";
 import { Ref, ref, watch } from "vue";
 import { DataType } from "../../Types/Table";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
 import app, { AppStore } from "./AppStore";
+import { validateObject } from "../../Helpers/TypeScriptHelper";
+import { isHexString } from "../../Helpers/ColorHelper";
 
 export interface UserPreferencesStoreState
 {
@@ -27,6 +29,40 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         this.setCurrentPrimaryColor(DataType.Passwords);
 
         this.init(appStore)
+    }
+
+    public updateState(state: UserPreferencesStoreState): void 
+    {
+        let stateToUse = state;
+        if (!stateToUse.currentColorPalette)
+        {
+            stateToUse = this.defaultState();
+        }
+        else 
+        {
+            if (!validateObject(stateToUse.currentColorPalette, emptyColorPalette, testProperty))
+            {
+                stateToUse = this.defaultState();
+            }
+        }
+
+        super.updateState(stateToUse);
+
+        function testProperty(propName: string, propValue: string): boolean
+        {
+            if (propName == 'id')
+            {
+                return typeof propValue == "number";
+            }
+            else if (propName == 'active' || propName == 'isCreated' || propName == 'editable')
+            {
+                return typeof propValue == 'boolean';
+            }
+            else 
+            {
+                return isHexString(propValue);
+            }
+        }
     }
 
     public init(appStore: AppStore)

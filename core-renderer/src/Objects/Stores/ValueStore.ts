@@ -27,7 +27,6 @@ export class ValueStore extends PrimaryDataObjectStore<ReactiveValue, ValueStore
     protected defaultState()
     {
         return {
-            version: 0,
             hash: "",
             hashSalt: "",
             values: [],

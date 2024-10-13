@@ -26,7 +26,6 @@ export class FilterStore extends SecondaryObjectStore<Filter, FilterStoreState>
     protected defaultState()
     {
         return {
-            version: 0,
             hash: '',
             hashSalt: '',
             values: [],

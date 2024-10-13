@@ -94,7 +94,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     protected defaultState()
     {
         return {
-            version: 0,
             masterKeyHash: '',
             masterKeySalt: '',
             privateKey: '',
@@ -193,12 +192,14 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         const parsedUserData: UserData = JSON.parse(userData.value!);
 
-        Object.assign(this.state, JSON.parse(parsedUserData.appStoreState));
+        await this.updateStateFromJSON(parsedUserData.appStoreState);
+        await this.internalUsersPreferencesStore.updateStateFromJSON(parsedUserData.userPreferencesStoreState);
+
         this.internalUserVaults.value = parsedUserData.displayVaults!;
         this.internalSharedVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
         this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
+
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault);
-        this.internalUsersPreferencesStore.updateState(JSON.parse(parsedUserData.userPreferencesStoreState));
         this.loadedUser = true;
 
         return true;
@@ -296,7 +297,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 return false;
             }
 
-            archivedVault[0].setBasicVaultStoreData(vaultData as CondensedVaultData);
+            await archivedVault[0].setBasicVaultStoreData(vaultData as CondensedVaultData);
         }
 
         await this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false, true);
