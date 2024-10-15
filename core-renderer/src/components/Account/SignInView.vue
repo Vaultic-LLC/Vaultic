@@ -69,7 +69,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -102,7 +102,7 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref('');
         const container: Ref<HTMLElement | null> = ref(null);
         const resizeHandler: ResizeObserver = new ResizeObserver(checkWidthHeightRatio);
-        const reloadAllData: Ref<boolean> = ref(props.reloadAllDataIsToggled ?? false);
+        const reloadAllData: Ref<boolean> = ref(props.reloadAllDataIsToggled != undefined ? props.reloadAllDataIsToggled : false);
 
         const masterKeyField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const masterKey: Ref<string> = ref('');
@@ -223,6 +223,11 @@ export default defineComponent({
                 contentBottomRowGap.value = "min(2.5vh, 40px)"
             }
         }
+
+        watch(() => props.reloadAllDataIsToggled, (newValue) => 
+        {
+            reloadAllData.value = newValue;
+        });
 
         onMounted(() =>
         {

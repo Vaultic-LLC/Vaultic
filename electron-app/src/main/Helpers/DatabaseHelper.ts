@@ -17,21 +17,41 @@ import { FilterStoreState } from "../Core/Database/Entities/States/FilterStoreSt
 import { GroupStoreState } from "../Core/Database/Entities/States/GroupStoreState";
 import { Log } from "../Core/Database/Entities/Log";
 
-export function createDataSource(isTest: boolean)
+let database: Database;
+
+function getDirectory(isTest: boolean)
 {
 	let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
 	directory += isTest ? "\\Vaultic\\VTest" : "\\Vaultic\\VCustom";
 
+	return directory;
+}
+
+function checkMakeDirectory(directory: string): void
+{
+	if (!fs.existsSync(directory))
+	{
+		try
+		{
+			fs.mkdirSync(directory);
+		}
+		catch { }
+	}
+}
+
+export function createDataSource(isTest: boolean)
+{
+	const directory = getDirectory(isTest);
 	checkMakeDirectory(directory);
 
-	const database = directory + "\\vaultic.db";
+	const databaseDirectory = directory + "\\vaultic.db";
 
 	// create the database if it doesn't already exist
-	new Database(database, { verbose: console.log });
+	database = new Database(databaseDirectory, { verbose: console.log });
 
 	return new DataSource({
 		type: "better-sqlite3",
-		database: database,
+		database: databaseDirectory,
 		entities: [
 			Log,
 			User,
@@ -51,14 +71,14 @@ export function createDataSource(isTest: boolean)
 	});
 }
 
-function checkMakeDirectory(directory: string): void
+export function deleteDatabase(isTest: boolean)
 {
-	if (!fs.existsSync(directory))
+	database?.close();
+	return new Promise<boolean>((resolve) =>
 	{
-		try
+		fs.unlink(getDirectory(isTest) + "\\vaultic.db", (err) =>
 		{
-			fs.mkdirSync(directory);
-		}
-		catch { }
-	}
+			resolve(!err);
+		});
+	})
 }

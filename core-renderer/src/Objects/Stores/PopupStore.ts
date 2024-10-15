@@ -201,10 +201,13 @@ export function createPopupStore()
 
     function showAccountSetup(view: AccountSetupView, message?: string, reloadAllDataIsToggled: boolean = false)
     {
-        if (accountSetupIsShowing.value)
-        {
-            return;
-        }
+        // TODO: not needed? I think this was to prevent being redirected when on the payment or download activation key screen when session expires
+        // might not be needed after redoing the log flow?
+        // its preventing reloading data when the database fails to initalize
+        // if (accountSetupIsShowing.value)
+        // {
+        //     return;
+        // }
 
         accountSetupModel.value.reloadAllDataIsToggled = reloadAllDataIsToggled;
         accountSetupModel.value.infoMessage = message;

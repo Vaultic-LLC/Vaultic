@@ -11,7 +11,6 @@ export interface UserController
     getUserIDs: () => Promise<GetUserIDResponse>;
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
     getDevices: () => Promise<GetDevicesResponse>;
-    getUserData: () => Promise<GetVaultDataResponse>;
     backupData: (user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null) => Promise<BaseResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
@@ -47,11 +46,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
     function getDevices(): Promise<GetDevicesResponse>
     {
         return axiosHelper.api.post('User/GetDevices');
-    }
-
-    function getUserData(): Promise<GetVaultDataResponse>
-    {
-        return axiosHelper.api.post('User/GetUserData');
     }
 
     async function backupData(user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null): Promise<BaseResponse>
@@ -126,7 +120,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         getUserIDs,
         deleteDevice,
         getDevices,
-        getUserData,
         backupData,
         createCheckout,
         getChartData,

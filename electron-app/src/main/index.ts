@@ -11,7 +11,7 @@ import cryptUtility from './Utilities/CryptUtility';
 import hashUtility from './Utilities/HashUtility';
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
-import { createDataSource } from './Objects/DataSource';
+import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 
 async function createWindow(): Promise<void>
 {
@@ -143,8 +143,12 @@ async function setupEnvironment(isTest: boolean)
 			hash: hashUtility,
 			generator: generatorUtility
 		},
+		database:
+		{
+			createDataSource,
+			deleteDatabase
+		},
 		getDeviceInfo,
-		createDataSource
 	});
 }
 

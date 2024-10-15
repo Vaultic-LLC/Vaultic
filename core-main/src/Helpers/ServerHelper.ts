@@ -13,7 +13,7 @@ import errorCodes from "../Types/ErrorCodes";
 export interface ServerHelper
 {
     registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-    logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
+    logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
 };
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>

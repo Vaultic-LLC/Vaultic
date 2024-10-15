@@ -36,7 +36,6 @@ export interface UserVaultRepository extends VaulticRepository<UserVault>
     getVerifiedUserVaults: (masterKey: string, userVaultIDs?: number[]) => Promise<[UserVault[], string[]]>;
     getVerifiedAndDecryt: (masterKey: string, propertiesToDecrypt?: string[], userVaultID?: number) => Promise<CondensedVaultData[] | null>;
     saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => Promise<boolean>;
-    loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData | null>;
 }
 
 export interface VaultRepository extends VaulticRepository<Vault>

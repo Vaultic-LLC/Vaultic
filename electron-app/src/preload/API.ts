@@ -21,7 +21,6 @@ const userController: UserController =
 {
 	validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
-	getUserData: () => ipcRenderer.invoke('userController:getUserData'),
 	createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
 	getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),
 	getUserDataBreaches: (passwordStoreState: string) => ipcRenderer.invoke('userController:getUserDataBreaches', passwordStoreState),
@@ -82,7 +81,7 @@ const vaulticHelper: VaulticHelper =
 const serverHelper: ServerHelper =
 {
 	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
-	logUserIn: (masterKey: string, email: string, firstLogin: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin)
+	logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData)
 };
 
 const vaultHelper: VaultHelper =
@@ -93,7 +92,9 @@ const vaultHelper: VaultHelper =
 
 const environment: Environment =
 {
-	isTest: () => ipcRenderer.invoke('environment:isTest')
+	isTest: () => ipcRenderer.invoke('environment:isTest'),
+	failedToInitalizeDatabase: () => ipcRenderer.invoke('environment:failedToInitalizeDatabase'),
+	recreateDatabase: () => ipcRenderer.invoke('environment:recreateDatabase')
 };
 
 const cache: VaulticCache =

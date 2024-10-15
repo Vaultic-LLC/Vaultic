@@ -292,12 +292,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         if (!archivedVault[0].isLoaded)
         {
             const vaultData = await api.helpers.vault.loadArchivedVault(masterKey, userVaultID);
-            if (!vaultData)
+            if (!vaultData.success)
             {
                 return false;
             }
 
-            await archivedVault[0].setBasicVaultStoreData(vaultData as CondensedVaultData);
+            await archivedVault[0].setBasicVaultStoreData(vaultData.value as CondensedVaultData);
         }
 
         await this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false, true);
@@ -313,14 +313,14 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         const selected = this.currentVault.userVaultID == userVaultID;
-        let vaultData = await api.helpers.vault.unarchiveVault(masterKey, userVaultID, selected);
+        let response = await api.helpers.vault.unarchiveVault(masterKey, userVaultID, selected);
 
-        if (!vaultData)
+        if (!response.success)
         {
             return false;
         }
 
-        vaultData = vaultData as CondensedVaultData;
+        const vaultData = response.value! as CondensedVaultData;
 
         const tempUserVaults = [...this.internalUserVaults.value];
         const tempArchivedVaults = [...this.internalArchivedVaults.value];

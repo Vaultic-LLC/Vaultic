@@ -1,7 +1,7 @@
 import { ref, Ref } from "vue";
 import { CondensedVaultData, DisplayVault } from "../../Types/APITypes";
 import { Dictionary } from "../../Types/DataStructures";
-import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { Store } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
 import { GroupStore, ReactiveGroupStore } from "./GroupStore";

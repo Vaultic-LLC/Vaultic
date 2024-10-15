@@ -4,7 +4,7 @@ import { AccountSetupView } from "../Types/Models";
 export function defaultHandleFailedResponse(response: any, showAlerts: boolean = true)
 {
     // TODO: change to computed property once types pr is done
-    if (response.errorCode && response.errorCode >= 11000 && response.errorCode <= 11004)
+    if (response?.errorCode && response?.errorCode >= 11000 && response?.errorCode <= 11004)
     {
         app.popups.showAccountSetup(AccountSetupView.SignIn, undefined, true);
         app.popups.showAlert("Unable To Verify Local Data",

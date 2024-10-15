@@ -57,13 +57,13 @@ export interface VaulticHelper
 export interface ServerHelper
 {
 	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-	logUserIn: (masterKey: string, email: string, firstLogin: boolean) => Promise<LogUserInResponse>;
+	logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => Promise<LogUserInResponse>;
 };
 
 export interface VaultHelper
 {
-	loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData | null>;
-	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => Promise<boolean | CondensedVaultData | null>
+	loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<boolean | CondensedVaultData | null | undefined>>;
+	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => Promise<TypedMethodResponse<boolean | CondensedVaultData | undefined>>;
 };
 
 export interface Helpers
@@ -97,7 +97,6 @@ export interface UserController
 {
 	validateEmail(email: string): Promise<ValidateEmailResponse>;
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-	getUserData: () => Promise<LoadDataResponse>;
 	createCheckout: () => Promise<CreateCheckoutResponse>;
 	getChartData: (data: string) => Promise<GetChartDataResponse>;
 	getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
@@ -129,6 +128,8 @@ export interface VaulticServer
 export interface Environment
 {
 	isTest: () => Promise<boolean>;
+	failedToInitalizeDatabase: () => Promise<boolean>;
+	recreateDatabase: () => Promise<boolean>;
 }
 
 export interface VaulticCache

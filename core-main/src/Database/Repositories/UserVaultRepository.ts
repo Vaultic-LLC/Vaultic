@@ -131,7 +131,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         for (let i = 0; i < userVaults[0].length; i++)
         {
             const condensedUserVault = userVaults[0][i].condense();
-            const decryptedUserVault = await vaultHelper.decryptCondensedUserVault(masterKey, userVaults[1][i], condensedUserVault, propertiesToDecrypt);
+            const decryptedUserVault = await vaultHelper.decryptCondensedUserVault(userVaults[1][i], condensedUserVault, propertiesToDecrypt);
             if (!decryptedUserVault)
             {
                 // This really should never happen since we get verified vaults above

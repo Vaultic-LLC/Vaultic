@@ -21,8 +21,12 @@ export interface InternalEnvironment
         hash: HashUtility;
         generator: GeneratorUtility;
     };
+    database:
+    {
+        createDataSource: (isTest: boolean) => DataSource;
+        deleteDatabase: (isTest: boolean) => Promise<boolean>
+    };
     getDeviceInfo: () => DeviceInfo;
-    createDataSource: (isTest: boolean) => DataSource;
 }
 
 class Environment
@@ -32,6 +36,8 @@ class Environment
     private internalRepositories: VaulticRepositories;
     private internalCache: VaulticCache;
 
+    private internalFailedToInitalizeDatabase: boolean;
+
     get isTest() { return this.internalEnvironment.isTest; }
     get sessionHandler() { return this.internalEnvironment.sessionHandler; }
     get utilities() { return this.internalEnvironment.utilities; }
@@ -39,9 +45,12 @@ class Environment
     get repositories() { return this.internalRepositories; }
     get cache() { return this.internalCache; }
 
+    get failedToInitalizeDatabase() { return this.internalFailedToInitalizeDatabase; }
+
     constructor()
     {
         this.internalCache = new VaulticCache();
+        this.internalFailedToInitalizeDatabase = false;
     }
 
     async init(environment: InternalEnvironment)
@@ -49,10 +58,35 @@ class Environment
         this.internalEnvironment = environment;
         axiosHelper.init();
 
-        this.internalDatabaseDataSouce = environment.createDataSource(this.internalEnvironment.isTest);
-        await this.internalDatabaseDataSouce.initialize();
+        await this.setupDatabase();
+    }
 
-        this.internalRepositories = initRepositories();
+    async setupDatabase()
+    {
+        try
+        {
+            this.internalDatabaseDataSouce = this.internalEnvironment.database.createDataSource(this.internalEnvironment.isTest);
+            await this.internalDatabaseDataSouce.initialize();
+            this.internalRepositories = initRepositories();
+
+            this.internalFailedToInitalizeDatabase = false;
+        }
+        catch (e)
+        {
+            console.log(e);
+            this.internalFailedToInitalizeDatabase = true;
+        }
+    }
+
+    async recreateDatabase()
+    {
+        if (!(await this.internalEnvironment.database.deleteDatabase(this.internalEnvironment.isTest)))
+        {
+            return false;
+        }
+
+        await this.setupDatabase();
+        return this.internalFailedToInitalizeDatabase;
     }
 
     getDeviceInfo()

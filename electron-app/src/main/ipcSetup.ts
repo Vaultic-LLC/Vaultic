@@ -58,8 +58,8 @@ export default function setupIPC()
 
 	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, email: string, firstName: string, lastName: string) =>
 		validateSender(e, () => serverHelper.registerUser(masterKey, email, firstName, lastName)));
-	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean) =>
-		validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin)));
+	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) =>
+		validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData)));
 
 	ipcMain.handle('vaultHelper:loadArchivedVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => vaultHelper.loadArchivedVault(masterKey, userVaultID)));
 	ipcMain.handle('vaultHelper:unarchiveVault', (e, masterKey: string, userVaultID: number, select: boolean) => validateSender(e, () => vaultHelper.unarchiveVault(masterKey, userVaultID, select)));
@@ -82,6 +82,8 @@ export default function setupIPC()
 	ipcMain.handle('logRepository:log', (e) => validateSender(e, (errorCode?: number, message?: string, callStack?: string) => environment.repositories.logs.log(errorCode, message, callStack)));
 
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
+	ipcMain.handle('environment:failedToInitalizeDatabase', (e) => validateSender(e, () => environment.failedToInitalizeDatabase));
+	ipcMain.handle('environment:recreateDatabase', (e) => validateSender(e, () => environment.recreateDatabase()));
 
 	ipcMain.handle('cache:clear', (e) => validateSender(e, () => environment.cache.clear()));
 }
