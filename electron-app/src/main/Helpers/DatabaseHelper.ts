@@ -47,7 +47,14 @@ export function createDataSource(isTest: boolean)
 	const databaseDirectory = directory + "\\vaultic.db";
 
 	// create the database if it doesn't already exist
-	database = new Database(databaseDirectory, { verbose: console.log });
+	if (isTest)
+	{
+		database = new Database(databaseDirectory, { verbose: console.log });
+	}
+	else
+	{
+		database = new Database(databaseDirectory);
+	}
 
 	return new DataSource({
 		type: "better-sqlite3",

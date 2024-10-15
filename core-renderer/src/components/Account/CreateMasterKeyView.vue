@@ -129,9 +129,9 @@ export default defineComponent({
                         app.popups.hideLoadingIndicator();
                         // TODO: change to errorcode property after types PR. Only need to return if we fail to save. If we fail to backup, we are technically still
                         // fine to continue
-                        if (createUserResult.errorCode == 12000)
+                        if (createUserResult.errorCode == 10003)
                         {
-                            showAlertMessage("Unable to create local data, please try again. If the issue persists", "Unable to create local data", true);
+                            showAlertMessage("Unable to create local data, please try signing in. If the issue persists", "Unable to create local data", true);
                             ctx.emit('onLoginFailed');
                             return;
                         }
