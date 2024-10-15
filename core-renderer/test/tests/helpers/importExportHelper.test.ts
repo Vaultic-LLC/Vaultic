@@ -1,4 +1,3 @@
-import { stores } from "../../src/core/Objects/Stores";
 import { buildCSVPropertyMappers, getExportablePasswords, getExportableValues, importablePasswordProperties, importableValueProperties, PasswordCSVImporter, ValueCSVImporter } from "../../src/core/Helpers/ImportExportHelper";
 import { createTestSuite, TestContext } from "../test";
 import { parse } from "csv-parse/browser/esm/sync";
@@ -6,6 +5,7 @@ import { CSVHeaderPropertyMapperModel } from "../../src/core/Types/Models";
 import { DataType } from "../../src/core/Types/Table";
 import { defaultGroup, defaultPassword, defaultValue, NameValuePair, NameValuePairType, Password } from "../../src/core/Types/EncryptedData";
 import cryptHelper from "../../src/core/Helpers/cryptHelper";
+import app from "../../src/core/Objects/Stores/AppStore";
 
 let importExportHelperTestSuite = createTestSuite("Import / Export");
 const masterKey = "test";
@@ -32,15 +32,15 @@ importExportHelperTestSuite.tests.push({
         const importer = new PasswordCSVImporter();
         await importer.import('', masterKey, records, csvHeaderPropertiesDict);
 
-        const googleGroup = stores.groupStore.passwordGroups.filter(g => g.name == "google");
+        const googleGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.name == "google");
         ctx.assertEquals("Imported Google Group exists", googleGroup.length, 1);
         ctx.assertEquals("Groogle Group has 2 passwords", googleGroup[0].passwords.length, 2);
 
-        const facebookGroup = stores.groupStore.passwordGroups.filter(g => g.name == "facebook");
+        const facebookGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.name == "facebook");
         ctx.assertEquals("Imported Facebook Group exists", facebookGroup.length, 1);
         ctx.assertEquals("Facebook Group has 2 passwords", facebookGroup[0].passwords.length, 2);
 
-        const passwordOne = stores.passwordStore.passwords.filter(p => p.login == "johnp");
+        const passwordOne = app.currentVault.passwordStore.passwords.filter(p => p.login == "johnp");
         const decryptedPassword = await cryptHelper.decrypt(masterKey, passwordOne[0].password);
 
         ctx.assertEquals("First password exists", passwordOne.length, 1);
@@ -51,7 +51,7 @@ importExportHelperTestSuite.tests.push({
         ctx.assertEquals("First password email set properly", passwordOne[0].email, "john@gmail.com");
         ctx.assertEquals("First password no security questions", passwordOne[0].securityQuestions.length, 0);
 
-        const passwordTwo = stores.passwordStore.passwords.filter(p => p.login == "johnpeterson");
+        const passwordTwo = app.currentVault.passwordStore.passwords.filter(p => p.login == "johnpeterson");
         const decryptedPasswordTwo = await cryptHelper.decrypt(masterKey, passwordTwo[0].password);
 
         ctx.assertEquals("Second password exists", passwordTwo.length, 1);
@@ -66,7 +66,7 @@ importExportHelperTestSuite.tests.push({
         ctx.assertEquals("Second password security question question", decryptedPasswordTwoQuestion.value, "Who Am I");
         ctx.assertEquals("Second password security question answer", decryptedPasswordTwoAnswer.value, "Me");
 
-        const passwordThree = stores.passwordStore.passwords.filter(p => p.login == "johnJPeter");
+        const passwordThree = app.currentVault.passwordStore.passwords.filter(p => p.login == "johnJPeter");
         const decryptedPasswordThree = await cryptHelper.decrypt(masterKey, passwordThree[0].password);
 
         ctx.assertEquals("Third password exists", passwordThree.length, 1);
@@ -109,18 +109,18 @@ importExportHelperTestSuite.tests.push({
         const importer = new ValueCSVImporter();
         await importer.import('', masterKey, records, csvHeaderPropertiesDict);
 
-        const mfaGroup = stores.groupStore.valuesGroups.filter(g => g.name == "MFA Codes");
+        const mfaGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.name == "MFA Codes");
         ctx.assertEquals("Imported MFA Codes Group exists", mfaGroup.length, 1);
         ctx.assertEquals("MFA Codes Group has 1 value", mfaGroup[0].values.length, 1);
 
-        const valueOne = stores.valueStore.nameValuePairs.filter(v => v.name == "phone code");
+        const valueOne = app.currentVault.valueStore.nameValuePairs.filter(v => v.name == "phone code");
         const decryptedValueOne = await cryptHelper.decrypt(masterKey, valueOne[0].value);
 
         ctx.assertEquals("First value exists", valueOne.length, 1);
         ctx.assertEquals("First value value set properly", decryptedValueOne.value!, "1234");
         ctx.assertEquals("First value type", valueOne[0].valueType, NameValuePairType.Passcode);
 
-        const valueTwo = stores.valueStore.nameValuePairs.filter(v => v.name == "mfa code");
+        const valueTwo = app.currentVault.valueStore.nameValuePairs.filter(v => v.name == "mfa code");
         const decryptedValueTwo = await cryptHelper.decrypt(masterKey, valueTwo[0].value);
 
         ctx.assertEquals("Second value exists", valueTwo.length, 1);
@@ -129,7 +129,7 @@ importExportHelperTestSuite.tests.push({
         ctx.assertTruthy("Second value has mfa group", valueTwo[0].groups.includes(mfaGroup[0].id));
         ctx.assertEquals("Second value type", valueTwo[0].valueType, NameValuePairType.MFAKey);
 
-        const valueThree = stores.valueStore.nameValuePairs.filter(v => v.name == "bank verbal code");
+        const valueThree = app.currentVault.valueStore.nameValuePairs.filter(v => v.name == "bank verbal code");
         const decryptedValueThree = await cryptHelper.decrypt(masterKey, valueThree[0].value);
 
         ctx.assertEquals("Third value exists", valueOne.length, 1);
@@ -145,11 +145,11 @@ importExportHelperTestSuite.tests.push({
     {
         const groupOne = defaultGroup(DataType.Passwords);
         groupOne.name = "Any's Group";
-        await stores.groupStore.addGroup(masterKey, groupOne);
+        await app.currentVault.groupStore.addGroup(masterKey, groupOne);
 
         const groupTwo = defaultGroup(DataType.Passwords);
         groupTwo.name = "Mary's Group";
-        await stores.groupStore.addGroup(masterKey, groupTwo);
+        await app.currentVault.groupStore.addGroup(masterKey, groupTwo);
 
         await createPassword("John", "facebook.com", "john@google.com", "JohnP", "Facebook", "", [], [], [groupOne.id]);
         await createPassword("Mary", "google.com", "maryL@outlook.com", "VJweiohgoinu2ith29hiodg", "Google", "For google",
@@ -162,7 +162,7 @@ importExportHelperTestSuite.tests.push({
         for (let i = 1; i < rows.length; i++)
         {
             const rowValues = rows[i].replace(/"|\\"/g, '').split(',');
-            let password: Password = stores.passwordStore.passwords.filter(p => p.login == rowValues[0])[0];
+            let password: Password = app.currentVault.passwordStore.passwords.filter(p => p.login == rowValues[0])[0];
 
             for (let j = 1; j < rowValues.length; j++)
             {
@@ -233,7 +233,7 @@ importExportHelperTestSuite.tests.push({
 
                     for (let k = 0; k < groups.length; k++)
                     {
-                        const group = stores.groupStore.passwordGroups.filter(g => g.name == groups[k]);
+                        const group = app.currentVault.groupStore.passwordGroups.filter(g => g.name == groups[k]);
                         ctx.assertTruthy(`Group has password`, group[0].passwords.includes(password.id));
                     }
                 }
@@ -275,7 +275,7 @@ importExportHelperTestSuite.tests.push({
                 });
             }
 
-            return stores.passwordStore.addPassword(masterKey, testPassword);
+            return app.currentVault.passwordStore.addPassword(masterKey, testPassword);
         }
     }
 });
@@ -286,11 +286,11 @@ importExportHelperTestSuite.tests.push({
     {
         const groupOne = defaultGroup(DataType.NameValuePairs);
         groupOne.name = "Any";
-        await stores.groupStore.addGroup(masterKey, groupOne);
+        await app.currentVault.groupStore.addGroup(masterKey, groupOne);
 
         const groupTwo = defaultGroup(DataType.NameValuePairs);
         groupTwo.name = "Banks";
-        await stores.groupStore.addGroup(masterKey, groupTwo);
+        await app.currentVault.groupStore.addGroup(masterKey, groupTwo);
 
         await createValue("Phone Code", "1234", NameValuePairType.Passcode, "", [groupOne.id]);
         await createValue("Bank Verbal Code", "sleepy time", NameValuePairType.Passcode, "For the bank", [groupOne.id, groupTwo.id]);
@@ -302,7 +302,7 @@ importExportHelperTestSuite.tests.push({
         for (let i = 1; i < rows.length; i++)
         {
             const rowValues = rows[i].replace(/"|\\"/g, '').split(',');
-            let value: NameValuePair = stores.valueStore.nameValuePairs.filter(v => v.name == rowValues[0])[0];
+            let value: NameValuePair = app.currentVault.valueStore.nameValuePairs.filter(v => v.name == rowValues[0])[0];
 
             for (let j = 1; j < rowValues.length; j++)
             {
@@ -329,7 +329,7 @@ importExportHelperTestSuite.tests.push({
 
                     for (let k = 0; k < groups.length; k++)
                     {
-                        const group = stores.groupStore.valuesGroups.filter(g => g.name == groups[k]);
+                        const group = app.currentVault.groupStore.valuesGroups.filter(g => g.name == groups[k]);
                         ctx.assertTruthy("Group has value", group[0].values.includes(value.id));
                     }
                 }
@@ -348,7 +348,7 @@ importExportHelperTestSuite.tests.push({
             }
         }
 
-        stores.popupStore.hideLoadingIndicator();
+        app.popups.hideLoadingIndicator();
 
         async function createValue(name: string, value: string, valueType: NameValuePairType, additionalInfo: string, groups: string[])
         {
@@ -359,7 +359,7 @@ importExportHelperTestSuite.tests.push({
             testValue.additionalInfo = additionalInfo;
             testValue.groups = groups;
 
-            return stores.valueStore.addNameValuePair(masterKey, testValue);
+            return app.currentVault.valueStore.addNameValuePair(masterKey, testValue);
         }
     }
 });

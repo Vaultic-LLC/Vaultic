@@ -1,101 +1,140 @@
-import cryptHelper from "../Helpers/cryptHelper";
-import { File } from "../Types/APITypes";
-import { Store, StoreEvents, StoreState } from "./Stores/Base";
+import { api } from "../API";
+import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
+import { Dictionary } from "../Types/DataStructures";
+import { TypedMethodResponse } from "../Types/MethodResponse";
+import { Store, StoreEvents } from "./Stores/Base";
+
+export enum Entity
+{
+    User,
+    UserVault,
+    Vault
+};
 
 interface StoreUpdateState
 {
-    store: Store<StoreState, StoreEvents>;
-    currentState: StoreState;
-    pendingState: StoreState;
-    committed: boolean;
+    store: Store<any, StoreEvents>;
+    currentState: any;
+    pendingState: any;
     postSave?: () => void;
 }
 
 export default class StoreUpdateTransaction
 {
-    storeUpdateStates: StoreUpdateState[];
-    ignoreFail: boolean;
+    private userStoreUpdateStates: Dictionary<StoreUpdateState>;
+    private userVaultStoreUpdateStates: Dictionary<StoreUpdateState>;
+    private vaultStoreUpdateStates: Dictionary<StoreUpdateState>;
 
-    constructor(ignoreFail: boolean = false)
+    private userVaultID: number | undefined;
+
+    constructor(userVaultID?: number)
     {
-        this.ignoreFail = ignoreFail;
-        this.storeUpdateStates = [];
+        this.userVaultID = userVaultID;
+
+        this.userStoreUpdateStates = {};
+        this.userVaultStoreUpdateStates = {};
+        this.vaultStoreUpdateStates = {};
     }
 
-    addStore(store: Store<StoreState, StoreEvents>, pendingState: StoreState, postSave: ((() => void) | undefined) = undefined)
+    private addStore(updateStoreStates: Dictionary<StoreUpdateState>, store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
-        pendingState.version += 1;
-        this.storeUpdateStates.push({
+        if (updateStoreStates[store.stateName])
+        {
+            return;
+        }
+
+        updateStoreStates[store.stateName] =
+        {
             store,
             currentState: store.getState(),
             pendingState,
-            committed: false,
             postSave
-        });
+        };
     }
 
-    async commit(masterKey: string)
+    updateUserStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
-        let failed = false;
-        for (let i = 0; i < this.storeUpdateStates.length; i++)
-        {
-            try
-            {
-                const success = await this.writeFile(masterKey, this.storeUpdateStates[i].store.getFile(),
-                    this.storeUpdateStates[i].pendingState, this.storeUpdateStates[i].store.encrypted());
+        this.addStore(this.userStoreUpdateStates, store, pendingState, postSave);
+    }
 
-                if (!success && !this.ignoreFail)
-                {
-                    failed = true;
-                    break;
-                }
-            }
-            catch 
-            {
-                failed = true;
+    updateUserVaultStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    {
+        this.addStore(this.userVaultStoreUpdateStates, store, pendingState, postSave);
+    }
+
+    updateVaultStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    {
+        this.addStore(this.vaultStoreUpdateStates, store, pendingState, postSave);
+    }
+
+    private async saveStoreStates(masterKey: string, entity: Entity, updateStoreStates: Dictionary<StoreUpdateState>, backup: boolean)
+    {
+        const states = {};
+        const stores = Object.values(updateStoreStates);
+        if (stores.length == 0)
+        {
+            return true;
+        }
+
+        for (let i = 0; i < stores.length; i++)
+        {
+            states[stores[i].store.stateName] = JSON.stringify(stores[i].pendingState);
+        }
+
+        let response: TypedMethodResponse<any>;
+        switch (entity)
+        {
+            case Entity.User:
+                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(states), backup);
                 break;
-            }
-
-            this.storeUpdateStates[i].committed = true;
+            case Entity.UserVault:
+                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
+                break;
+            case Entity.Vault:
+                response = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
+                break;
         }
 
-        // we failed to write a file. Revert any that were updated
-        if (failed)
+        if (!response.success)
         {
-            const committedFiles = this.storeUpdateStates.filter(f => f.committed === true);
-            for (let i = 0; i < committedFiles.length; i++)
-            {
-                await this.writeFile(masterKey, committedFiles[i].store.getFile(),
-                    committedFiles[i].currentState, committedFiles[i].store.encrypted());
-            }
-        }
-        else 
-        {
-            // commit the states in memory. This is just an object.assign so it shouldn't fail
-            for (let i = 0; i < this.storeUpdateStates.length; i++)
-            {
-                this.storeUpdateStates[i].store.updateState(this.storeUpdateStates[i].pendingState);
-                this.storeUpdateStates[i].postSave?.();
-            }
+            defaultHandleFailedResponse(response);
+            return false;
         }
 
-        return !failed;
+        return true;
     }
 
-    private async writeFile(masterKey: string, file: File, state: any, encrypt: boolean): Promise<boolean>
+    private async commitStoreStates(storeUpdateStates: Dictionary<StoreUpdateState>)
     {
-        let data: string = JSON.stringify(state);
-        if (encrypt)
+        const stores = Object.values(storeUpdateStates);
+        for (let i = 0; i < stores.length; i++)
         {
-            const response = await cryptHelper.encrypt(masterKey, data);
-            if (!response.success)
-            {
-                return false;
-            }
+            stores[i].store.updateState(stores[i].pendingState);
+            stores[i].postSave?.();
+        }
+    }
 
-            data = response.value!;
+    async commit(masterKey: string, backup: boolean = true)
+    {
+        if (!(await this.saveStoreStates(masterKey, Entity.User, this.userStoreUpdateStates, backup)))
+        {
+            return false;
         }
 
-        return (await file.write(data)).success;
+        if (!(await this.saveStoreStates(masterKey, Entity.UserVault, this.userVaultStoreUpdateStates, backup)))
+        {
+            return false;
+        }
+
+        if (!(await this.saveStoreStates(masterKey, Entity.Vault, this.vaultStoreUpdateStates, backup)))
+        {
+            return false;
+        }
+
+        this.commitStoreStates(this.userStoreUpdateStates);
+        this.commitStoreStates(this.userVaultStoreUpdateStates);
+        this.commitStoreStates(this.vaultStoreUpdateStates);
+
+        return true;
     }
 }

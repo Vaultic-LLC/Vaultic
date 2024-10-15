@@ -5,6 +5,7 @@ import { SessionController, createSessionController } from "./SessionController"
 import { ValueController, createValueController } from "./ValueController";
 import { LoginController, createLoginController } from "./loginController";
 import { RegistrationController, createRegistrationController } from "./RegistrationController";
+import { createVaultController, VaultController } from "./VaultController";
 
 export interface VaulticServer
 {
@@ -12,6 +13,7 @@ export interface VaulticServer
     session: SessionController;
     user: UserController;
     value: ValueController;
+    vault: VaultController;
 }
 
 export interface STSServer 
@@ -25,7 +27,8 @@ const vaulticServer: VaulticServer =
     app: createAppController(axiosHelper),
     session: createSessionController(axiosHelper),
     user: createUserController(axiosHelper),
-    value: createValueController(axiosHelper)
+    value: createValueController(axiosHelper),
+    vault: createVaultController(axiosHelper)
 }
 
 export default vaulticServer;

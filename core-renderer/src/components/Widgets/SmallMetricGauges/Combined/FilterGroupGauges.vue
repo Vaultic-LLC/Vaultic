@@ -15,7 +15,7 @@ import DuplicateFilterGroupGauge from '../Single/DuplicateFilterGroupGauge.vue';
 import CombinedMetricGaugeContainer from '../../../SmallMetricGauges/CombinedMetricGaugeContainer.vue';
 
 import { DataType } from '../../../../Types/Table';
-import { stores } from '../../../../Objects/Stores';
+import app from "../../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "FilterGroupGauges",
@@ -28,14 +28,14 @@ export default defineComponent({
     setup()
     {
         const refreshKey: Ref<string> = ref('');
-        const title: ComputedRef<string> = computed(() => stores.appStore.activeFilterGroupsTable == DataType.Filters ? "Filters to Fix" : "Groups to Fix");
+        const title: ComputedRef<string> = computed(() => app.activeFilterGroupsTable == DataType.Filters ? "Filters to Fix" : "Groups to Fix");
 
-        watch(() => stores.appStore.activeFilterGroupsTable, () =>
+        watch(() => app.activeFilterGroupsTable, () =>
         {
             refreshKey.value = Date.now().toString();
         });
 
-        watch(() => stores.appStore.activePasswordValuesTable, () =>
+        watch(() => app.activePasswordValuesTable, () =>
         {
             refreshKey.value = Date.now().toString();
         });
@@ -50,9 +50,9 @@ export default defineComponent({
 <style>
 .filterGroupGaugesWidget {
     position: absolute;
-    left: 81%;
+    left: 83%;
     top: 45%;
-    width: 17%;
+    width: 16%;
 }
 
 @media (max-width: 1450px) {

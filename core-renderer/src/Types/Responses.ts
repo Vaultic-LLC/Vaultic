@@ -163,6 +163,8 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 export interface FinishRegistrationResponse extends BaseResponse
 {
     VaulticPassword?: any;
+    PublicKey?: string;
+    PrivateKey?: string;
 }
 
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse

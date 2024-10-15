@@ -1,5 +1,6 @@
 import { Device } from "./Device";
 import { ChartData, LicenseStatus, Session, UserDataBreach } from "./ClientServerTypes";
+import { UserDataPayload } from "./ServerTypes";
 
 export interface EncryptedResponse
 {
@@ -103,21 +104,6 @@ export interface LogResponse extends BaseResponse
     LogID?: number;
 }
 
-export interface DataStoreResponse
-{
-    filterStoreState?: any;
-    groupStoreState?: any;
-    passwordStoreState?: any;
-    valueStoreState?: any;
-}
-
-export interface LoadDataResponse extends DataStoreResponse, InvalidSessionResponse, IncorrectDeviceResponse
-{
-    appStoreState?: any;
-    settingsStoreState?: any;
-    userPreferenceStoreState?: any;
-}
-
 export interface UpdateDeviceRespnose extends InvalidSessionResponse
 {
     Device?: Device;
@@ -163,6 +149,8 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 export interface FinishRegistrationResponse extends BaseResponse
 {
     VaulticPassword?: any;
+    PublicKey?: string;
+    PrivateKey?: string;
 }
 
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
@@ -170,8 +158,34 @@ export interface StartLoginResponse extends UnknownEmailResponse, PendingUserRes
     StartServerLoginResponse?: string;
 }
 
-export interface FinishLoginResponse extends LoadDataResponse, OpaqueResponse, CreateSessionResponse
+export interface UserDataPayloadResponse
+{
+    userDataPayload?: UserDataPayload;
+}
+
+export interface FinishLoginResponse extends UserDataPayloadResponse, OpaqueResponse, CreateSessionResponse
 {
 }
 
 export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse { }
+
+export interface CreateVaultResponse extends BaseResponse
+{
+    UserVaultID?: number;
+    VaultPreferencesStoreStateID?: number;
+    VaultID?: number;
+    VaultStoreStateID?: number;
+    PasswordStoreStateID?: number;
+    ValueStoreStateID?: number;
+    FilterStoreStateID?: number;
+    GroupStoreStateID?: number;
+}
+
+export interface GetUserIDResponse extends BaseResponse
+{
+    UserID?: number;
+    AppStoreStateID?: number;
+    UserPreferencesStoreStateID?: number;
+}
+
+export interface GetVaultDataResponse extends BaseResponse, UserDataPayloadResponse { }

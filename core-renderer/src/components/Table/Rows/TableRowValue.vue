@@ -14,7 +14,7 @@ import { computed, ComputedRef, defineComponent } from 'vue';
 
 import { TextTableRowValue } from '../../../Types/Models';
 import clipboard from 'clipboardy';
-import { stores } from '../../../Objects/Stores';
+import app from "../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "TableRowValue",
@@ -27,7 +27,7 @@ export default defineComponent({
         function copyText(text: string)
         {
             clipboard.write(text);
-            stores.popupStore.showToast(primaryColor.value, "Copied", true);
+            app.popups.showToast(primaryColor.value, "Copied", true);
         }
 
         return {

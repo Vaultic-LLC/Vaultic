@@ -39,7 +39,7 @@ import TableRowColorValue from './TableRowColorValue.vue';
 
 import { TableRowData } from '../../../Types/Models';
 import { ColorPalette } from '../../..//Types/Colors';
-import { stores } from '../../../Objects/Stores';
+import app from "../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "TableRow",
@@ -53,7 +53,7 @@ export default defineComponent({
         'clickable', 'hideAtRisk', 'zIndexing', 'animateDelete', 'height'],
     setup(props)
     {
-        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
+        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
         const tableRowData: ComputedRef<TableRowData> = computed(() => props.model);
         const isPinned: Ref<boolean> = ref(tableRowData.value.isPinned ?? false);
         const primaryColor: ComputedRef<string> = computed(() => props.color);
@@ -68,7 +68,7 @@ export default defineComponent({
 
         function setAnimationDelay(numb: number)
         {
-            animationDelay.value = `${(numb % stores.settingsStore.rowChunkAmount) / 8}s`;
+            animationDelay.value = `${(numb % app.settings.rowChunkAmount) / 8}s`;
         }
 
         function onPin()

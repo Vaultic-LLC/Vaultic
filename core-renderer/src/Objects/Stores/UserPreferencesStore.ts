@@ -1,112 +1,103 @@
 import { ColorPalette, colorPalettes, emptyColorPalette } from "../../Types/Colors";
-import { Store, StoreState } from "./Base";
-import { DataFile } from "../../Types/EncryptedData";
-import fileHelper from "../../Helpers/fileHelper";
+import { Store } from "./Base";
 import { Ref, ref, watch } from "vue";
 import { DataType } from "../../Types/Table";
-import { Stores, stores } from ".";
-import { Dictionary } from "../../Types/DataStructures";
-import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import { api } from "../../API";
+import app, { AppStore } from "./AppStore";
+import { validateObject } from "../../Helpers/TypeScriptHelper";
+import { isHexString } from "../../Helpers/ColorHelper";
 
-export interface UserPreferencesStoreState extends StoreState
+export interface UserPreferencesStoreState
 {
     currentColorPalette: ColorPalette;
-    pinnedFilters: Dictionary<any>;
-    pinnedGroups: Dictionary<any>;
-    pinnedPasswords: Dictionary<any>;
-    pinnedValues: Dictionary<any>;
 }
 
-class UserPreferenceStore extends Store<UserPreferencesStoreState>
+export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 {
     private internalCurrentPrimaryColor: Ref<string>;
 
     get currentColorPalette() { return this.state.currentColorPalette; }
     set currentColorPalette(value: ColorPalette) { this.state.currentColorPalette = value; }
     get currentPrimaryColor() { return this.internalCurrentPrimaryColor }
-    get pinnedFilters() { return this.state.pinnedFilters; }
-    get pinnedGroups() { return this.state.pinnedGroups; }
-    get pinnedPasswords() { return this.state.pinnedPasswords; }
-    get pinnedValues() { return this.state.pinnedValues; }
 
-    constructor()
+    constructor(appStore: AppStore)
     {
-        super("UserPreferencesStoreState");
+        super("userPreferencesStoreState");
 
         this.internalCurrentPrimaryColor = ref('');
         this.setCurrentPrimaryColor(DataType.Passwords);
+
+        this.init(appStore)
     }
 
-    public init(stores: Stores)
+    public updateState(state: UserPreferencesStoreState): void 
+    {
+        let stateToUse = state;
+        if (!stateToUse.currentColorPalette)
+        {
+            stateToUse = this.defaultState();
+        }
+        else 
+        {
+            if (!validateObject(stateToUse.currentColorPalette, emptyColorPalette, testProperty))
+            {
+                stateToUse = this.defaultState();
+            }
+        }
+
+        super.updateState(stateToUse);
+
+        function testProperty(propName: string, propValue: string): boolean
+        {
+            if (propName == 'id')
+            {
+                return typeof propValue == "number";
+            }
+            else if (propName == 'active' || propName == 'isCreated' || propName == 'editable')
+            {
+                return typeof propValue == 'boolean';
+            }
+            else 
+            {
+                return isHexString(propValue);
+            }
+        }
+    }
+
+    public init(appStore: AppStore)
     {
         watch(() => this.state.currentColorPalette, () =>
         {
-            this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
+            this.setCurrentPrimaryColor(appStore.activePasswordValuesTable);
         });
 
-        watch(() => stores.appStore.activePasswordValuesTable, (newValue) =>
+        watch(() => appStore.activePasswordValuesTable, (newValue) =>
         {
             this.setCurrentPrimaryColor(newValue);
         });
 
-        this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable);
+        this.setCurrentPrimaryColor(appStore.activePasswordValuesTable);
     }
 
     protected defaultState(): UserPreferencesStoreState
     {
         return {
-            version: 0,
-            currentColorPalette: colorPalettes[0],
-            pinnedFilters: {},
-            pinnedGroups: {},
-            pinnedPasswords: {},
-            pinnedValues: {}
+            currentColorPalette: colorPalettes[0]
         };
     }
 
-    public getFile(): DataFile
+    public async loadLastUsersPreferences()
     {
-        return api.files.userPreferences;
-    }
-
-    public encrypted(): boolean
-    {
-        return false;
-    }
-
-    public async readState(_: string)
-    {
-        if (this.loadedFile)
+        const state = await api.repositories.users.getLastUsedUserPreferences();
+        if (state)
         {
-            return true;
+            const parsedState: UserPreferencesStoreState = JSON.parse(state);
+            if (parsedState.currentColorPalette)
+            {
+                Object.assign(this.state, parsedState);
+            }
         }
-
-        if (!(await api.files.userPreferences.exists()))
-        {
-            return true;
-        }
-
-        const [succeeded, state] = await fileHelper.readUnencrypted<UserPreferencesStoreState>(this.getFile());
-        if (!succeeded)
-        {
-            return false;
-        }
-
-        this.loadedFile = true;
-        Object.assign(this.state, state);
-        this.postAssignState(state);
-        this.events['onChanged']?.forEach(f => f());
-
-        return true;
-    }
-
-    private async update()
-    {
-        const transaction = new StoreUpdateTransaction();
-        transaction.addStore(this, this.state);
-
-        await this.commitAndBackup('', transaction);
     }
 
     private setCurrentPrimaryColor(dataType: DataType)
@@ -127,69 +118,16 @@ class UserPreferenceStore extends Store<UserPreferencesStoreState>
         const transaction = new StoreUpdateTransaction();
         this.updateCurrentColorPalette(transaction, colorPalette);
 
-        await this.commitAndBackup('', transaction);
+        await transaction.commit('');
     }
 
     public async updateCurrentColorPalette(transaction: StoreUpdateTransaction, colorPalette: ColorPalette)
     {
+        // Update the state right away so there is no potential delay for themeing
+        this.state.currentColorPalette = colorPalette;
+        this.setCurrentPrimaryColor(app.activePasswordValuesTable);
+
         const pendingState = this.cloneState();
-        // TODO: remove comment
-        // This is needed for tracking to work. Otherwise some things won't register that the color palette has changed
-        // this.state.currentColorPalette = emptyColorPalette;
-        pendingState.currentColorPalette = colorPalette;
-
-        transaction.addStore(this, pendingState, () => this.setCurrentPrimaryColor(stores.appStore.activePasswordValuesTable))
-    }
-
-    public async addPinnedFilter(id: string)
-    {
-        this.state.pinnedFilters[id] = {};
-        await this.update();
-    }
-
-    public async removePinnedFilters(id: string)
-    {
-        delete this.state.pinnedFilters[id];
-        await this.update();
-    }
-
-    public async addPinnedGroup(id: string)
-    {
-        this.state.pinnedGroups[id] = {};
-        await this.update();
-    }
-
-    public async removePinnedGroups(id: string)
-    {
-        delete this.state.pinnedGroups[id];
-        await this.update();
-    }
-
-    public async addPinnedPassword(id: string)
-    {
-        this.state.pinnedPasswords[id] = {};
-        await this.update();
-    }
-
-    public async removePinnedPasswords(id: string)
-    {
-        delete this.state.pinnedPasswords[id];
-        await this.update();
-    }
-
-    public async addPinnedValue(id: string)
-    {
-        this.state.pinnedValues[id] = {};
-        await this.update();
-    }
-
-    public async removePinnedValues(id: string)
-    {
-        delete this.state.pinnedValues[id];
-        await this.update();
+        transaction.updateUserStore(this, pendingState, () => this.setCurrentPrimaryColor(app.activePasswordValuesTable))
     }
 }
-
-const userPreferenceStore = new UserPreferenceStore();
-export default userPreferenceStore;
-export type UserPreferenceStoreType = typeof userPreferenceStore;

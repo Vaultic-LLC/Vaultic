@@ -1,5 +1,5 @@
 import { ipcRenderer } from "electron"
-import { IAPI, AppController, CryptUtility, Environment, File, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper } from "./Types/APITypes"
+import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository, UserVaultRepository, VaultController, VaulticCache, CondensedVaultData, VaultHelper, LogRepository } from "./Types/APITypes"
 import { DeviceInfo } from "./Types/Device";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -21,8 +21,6 @@ const userController: UserController =
 {
 	validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
-	backupStores: (data: string) => ipcRenderer.invoke('userController:backupStores', data),
-	getUserData: () => ipcRenderer.invoke('userController:getUserData'),
 	createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
 	getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),
 	getUserDataBreaches: (passwordStoreState: string) => ipcRenderer.invoke('userController:getUserDataBreaches', passwordStoreState),
@@ -36,6 +34,11 @@ const valueController: ValueController =
 {
 	generateRandomPhrase: (length: number) => ipcRenderer.invoke('valueController:generateRandomPhrase', length)
 };
+
+const vaultController: VaultController =
+{
+	deleteVault: (userVaultID: number) => ipcRenderer.invoke('vaultController:deleteVault', userVaultID)
+}
 
 const cryptUtility: CryptUtility =
 {
@@ -78,72 +81,67 @@ const vaulticHelper: VaulticHelper =
 const serverHelper: ServerHelper =
 {
 	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
-	logUserIn: (masterKey: string, email: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email)
+	logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData)
 };
 
-const appFile: File =
+const vaultHelper: VaultHelper =
 {
-	exists: () => ipcRenderer.invoke('appFile:exists'),
-	read: () => ipcRenderer.invoke('appFile:read'),
-	write: (data: string) => ipcRenderer.invoke('appFile:write', data)
-};
-
-const settingsFile: File =
-{
-	exists: () => ipcRenderer.invoke('settingsFile:exists'),
-	read: () => ipcRenderer.invoke('settingsFile:read'),
-	write: (data: string) => ipcRenderer.invoke('settingsFile:write', data)
-};
-
-const passwordFile: File =
-{
-	exists: () => ipcRenderer.invoke('passwordFile:exists'),
-	read: () => ipcRenderer.invoke('passwordFile:read'),
-	write: (data: string) => ipcRenderer.invoke('passwordFile:write', data)
-};
-
-const valueFile: File =
-{
-	exists: () => ipcRenderer.invoke('valueFile:exists'),
-	read: () => ipcRenderer.invoke('valueFile:read'),
-	write: (data: string) => ipcRenderer.invoke('valueFile:write', data)
-};
-
-const filterFile: File =
-{
-	exists: () => ipcRenderer.invoke('filterFile:exists'),
-	read: () => ipcRenderer.invoke('filterFile:read'),
-	write: (data: string) => ipcRenderer.invoke('filterFile:write', data)
-};
-
-const groupFile: File =
-{
-	exists: () => ipcRenderer.invoke('groupFile:exists'),
-	read: () => ipcRenderer.invoke('groupFile:read'),
-	write: (data: string) => ipcRenderer.invoke('groupFile:write', data)
-};
-
-const userPreferencesFile: File =
-{
-	exists: () => ipcRenderer.invoke('userPreferencesFile:exists'),
-	read: () => ipcRenderer.invoke('userPreferencesFile:read'),
-	write: (data: string) => ipcRenderer.invoke('userPreferencesFile:write', data)
-};
+	loadArchivedVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultHelper:loadArchivedVault', masterKey, userVaultID),
+	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => ipcRenderer.invoke('vaultHelper:unarchiveVault', masterKey, userVaultID, select)
+}
 
 const environment: Environment =
 {
-	isTest: () => ipcRenderer.invoke('environment:isTest')
+	isTest: () => ipcRenderer.invoke('environment:isTest'),
+	failedToInitalizeDatabase: () => ipcRenderer.invoke('environment:failedToInitalizeDatabase'),
+	recreateDatabase: () => ipcRenderer.invoke('environment:recreateDatabase')
 };
+
+const cache: VaulticCache =
+{
+	clear: () => ipcRenderer.invoke('cache:clear')
+}
+
+const userRepository: UserRepository =
+{
+	getLastUsedUserEmail: () => ipcRenderer.invoke('userRepository:getLastUsedUserEmail'),
+	getLastUsedUserPreferences: () => ipcRenderer.invoke('userRepository:getLastUsedUserPreferences'),
+	createUser: (masterKey: string, email: string, publicKey: string, privateKey: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email, publicKey, privateKey),
+	getCurrentUserData: (masterKey: string, response: any) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey, response),
+	verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
+	saveUser: (masterKey: string, data: string, backup: boolean) => ipcRenderer.invoke('userRepository:saveUser', masterKey, data, backup)
+};
+
+const vaultRepository: VaultRepository =
+{
+	setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
+	saveVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('vaultRepository:saveVault', masterKey, userVaultID, data, backup),
+	createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, setAsActive, doBackup),
+	archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => ipcRenderer.invoke('vaultRepository:archiveVault', masterKey, userVaultID, backup)
+};
+
+const userVaultRepository: UserVaultRepository =
+{
+	saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data, backup)
+};
+
+const logRepository: LogRepository =
+{
+	getExportableLogData: () => ipcRenderer.invoke('logRepository:getExportableLogData'),
+	log: (errorCode?: number, message?: string, callStack?: string) => ipcRenderer.invoke('logRepository:log', errorCode, message, callStack)
+}
 
 const api: IAPI =
 {
 	getDeviceInfo,
 	environment,
+	cache,
 	server: {
 		app: appController,
 		session: sessionController,
 		user: userController,
 		value: valueController,
+		vault: vaultController
 	},
 	utilities: {
 		crypt: cryptUtility,
@@ -153,16 +151,14 @@ const api: IAPI =
 	helpers: {
 		validation: validationHelper,
 		vaultic: vaulticHelper,
-		server: serverHelper
+		server: serverHelper,
+		vault: vaultHelper
 	},
-	files: {
-		app: appFile,
-		settings: settingsFile,
-		password: passwordFile,
-		value: valueFile,
-		filter: filterFile,
-		group: groupFile,
-		userPreferences: userPreferencesFile
+	repositories: {
+		users: userRepository,
+		vaults: vaultRepository,
+		userVaults: userVaultRepository,
+		logs: logRepository
 	}
 };
 

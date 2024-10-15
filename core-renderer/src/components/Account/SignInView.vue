@@ -14,13 +14,20 @@
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
                                 :height="'4vh'" :minHeight="'35px'" />
                         </div>
-                        <div v-else class="signInViewContainer__inputs">
+                        <div v-if="reloadAllDataIsToggled" class="signInContainer__restoreLastBackup">
+                            <CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Restore Last Backup'"
+                                :color="color" v-model="reloadAllData" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
+                                :minHeight="'10px'" />
+                            <ToolTip :message="'Restore last backup from the server. Will override all local data'"
+                                :size="'20px'" :color="color" />
+                        </div>
+                        <!-- <div v-else class="signInViewContainer__inputs">
                             <EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
                                 v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
                                 :height="'4vh'" :minHeight="'35px'" />
-                        </div>
-                        <div class="signInViewContainer__navigation">
+                    </div> -->
+                        <!-- <div class="signInViewContainer__navigation">
                             <div v-if="showEmailField" class="signInViewContainer__arrow signInViewContainer__arrowLeft"
                                 @click="navigateLeft">
                                 <ion-icon name="chevron-back-outline"></ion-icon>
@@ -38,7 +45,7 @@
                                 @click="navigateRight">
                                 <ion-icon name="chevron-forward-outline"></ion-icon>
                             </div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </Transition>
@@ -62,17 +69,18 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
+import CheckboxInputField from "../InputFields/CheckboxInputField.vue";
 import ButtonLink from '../InputFields/ButtonLink.vue';
+import ToolTip from "../ToolTip.vue";
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { EncryptedInputFieldComponent, InputComponent } from '../../Types/Components';
-import { stores } from '../../Objects/Stores';
-import { Password } from '../../Types/EncryptedData';
+import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 
@@ -84,14 +92,17 @@ export default defineComponent({
         EncryptedInputField,
         AccountSetupView,
         ButtonLink,
+        CheckboxInputField,
+        ToolTip
     },
     emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToSetupPayment'],
-    props: ['color', 'infoMessage'],
+    props: ['color', 'infoMessage', 'reloadAllDataIsToggled'],
     setup(props, ctx)
     {
         const refreshKey: Ref<string> = ref('');
         const container: Ref<HTMLElement | null> = ref(null);
         const resizeHandler: ResizeObserver = new ResizeObserver(checkWidthHeightRatio);
+        const reloadAllData: Ref<boolean> = ref(props.reloadAllDataIsToggled != undefined ? props.reloadAllDataIsToggled : false);
 
         const masterKeyField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const masterKey: Ref<string> = ref('');
@@ -99,7 +110,7 @@ export default defineComponent({
         const emailField: Ref<InputComponent | null> = ref(null);
         const email: Ref<string> = ref('');
 
-        const showEmailField: Ref<boolean> = ref(false);
+        const showEmailField: Ref<boolean> = ref(true);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
         const contentBottomRowGap: Ref<string> = ref(showEmailField.value ? "min(1.5vh, 25px)" : "min(2.5vh, 40px)");
@@ -110,168 +121,60 @@ export default defineComponent({
             ctx.emit('onMoveToCreateAccount');
         }
 
+        // TODO: should only show this after the user has signed up 
+        // otherwise the user, userVault, and vault won't be created
+        // Instead just show a toggle for online / offline? Something simplier
+        // than than going to a new popup. Either way, a user shouldn't be 
+        // able to use the app without signing up and having data
         async function moveToLimitedMode()
         {
-            if (await stores.appStore.canAuthenticateKey())
-            {
-                stores.popupStore.showGlobalAuthentication(props.color, true);
-            }
-
             ctx.emit('onMoveToLimitedMode');
-        }
-
-        async function didFailedAutoLogin()
-        {
-            stores.popupStore.showAlert("Unable to auto log in", "Unable to find the email used for your Vaultic account in your Passwords. Please enter your email manually to sign in and re add it, or crate a new account.", false);
-            refreshKey.value = Date.now().toString();
-            await new Promise((resolve) => setTimeout(resolve, 300));
-
-            stores.popupStore.hideLoadingIndicator();
-            showEmailField.value = true;
         }
 
         async function onSubmit()
         {
             masterKeyField.value?.toggleHidden(true);
-            stores.popupStore.showLoadingIndicator(props.color, "Signing In");
+            app.popups.showLoadingIndicator(props.color, "Signing In");
 
-            if (!showEmailField.value)
+            const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value);
+            if (response.success && response.value!.Success)
             {
-                if (!(await stores.appStore.canAuthenticateKey()))
-                {
-                    didFailedAutoLogin();
-                    return;
-                }
-                else
-                {
-                    const validKey = await stores.appStore.authenticateKey(masterKey.value);
-                    if (!validKey)
-                    {
-                        stores.popupStore.hideLoadingIndicator();
-                        masterKeyField.value?.invalidate("Master Key is incorrect");
-                        resetToDefault();
+                app.isOnline = true;
+                await app.loadUserData(masterKey.value, response.value!.userDataPayload);
 
-                        return;
-                    }
-
-                    await stores.passwordStore.readState(masterKey.value);
-                    if (!stores.passwordStore.hasVaulticPassword)
-                    {
-                        didFailedAutoLogin();
-                        resetToDefault();
-
-                        return;
-                    }
-
-                    const password: Password = stores.passwordStore.passwords.filter(p => p.isVaultic)[0];
-                    const response = await api.helpers.server.logUserIn(masterKey.value, password.email);
-
-                    if (response.Success)
-                    {
-                        stores.appStore.isOnline = true;
-                        await stores.loadStoreData(masterKey.value, response);
-                        await stores.appStore.recordLogin(masterKey.value, Date.now());
-
-                        ctx.emit('onKeySuccess');
-                    }
-                    else
-                    {
-                        handleFailedResponse(response);
-                    }
-                }
+                ctx.emit('onKeySuccess');
             }
             else
             {
-                const response = await api.helpers.server.logUserIn(masterKey.value, email.value);
-                if (response.Success)
-                {
-                    stores.appStore.isOnline = true;
-                    await checkOverrideUserData(response);
-
-                    ctx.emit('onKeySuccess');
-                }
-                else
-                {
-                    handleFailedResponse(response);
-                }
-            }
-        }
-
-        async function checkOverrideUserData(response: any)
-        {
-            if (!(await stores.appStore.canAuthenticateKey()))
-            {
-                // TODO: What if the user only lost the appFile? We wouldn't want to override 
-                // other stores then. Unless its a new user, then we would.
-                // Also, what if its a new user and there is only some files? 
-                // Seems like I need to add a way to group / identify files
-                // Could just add an identifier to the files that matches across all 
-                // of them per user per vault? This part would be a lot easier with sqlLite and a db.
-                // Maybe thats what I should use sqlLite for. Not for the state, but just to replicate the 
-                // UserData table on the server. Basically each file is just a column in the db. Could then add a
-                // 'vaults' table to group the states under
-                // This also doesn't call stores.loadStoreData, so if there aren't any backups, no data at all will get loaded.
-                // Is that an issue?
-
-                // user lost data files, force override all data
-                await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
-            }
-            else
-            {
-                const validKey = await stores.appStore.authenticateKey(masterKey.value);
-                if (!validKey)
-                {
-                    // new user, force override all data
-                    await stores.checkUpdateStoresWithBackup(masterKey.value, response, true);
-                }
-                else
-                {
-                    // same user, probably just lost passwords file somehow
-                    await stores.checkUpdateStoresWithBackup(masterKey.value, response);
-                }
+                handleFailedResponse(response);
             }
         }
 
         function handleFailedResponse(response: any)
         {
-            stores.popupStore.hideLoadingIndicator();
-            if (response.InvalidMasterKey)
+            app.popups.hideLoadingIndicator();
+            if (response.value?.UnknownEmail)
             {
-                stores.popupStore.hideLoadingIndicator();
-
-                masterKeyField.value?.invalidate("Incorrect Master Key. Pleaes try again");
-                resetToDefault();
-            }
-            else if (response.UnknownEmail)
-            {
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
 
                 if (!showEmailField.value)
                 {
                     showEmailField.value = true;
-                    stores.popupStore.showAlert("Unable to auto sign in", "The Email for your Vaultic account stored on your computer is incorrect. Please enter it manually in order to log in and update it locally.", false);
+                    app.popups.showAlert("Unable to sign in", "The Email you entered is not correct. Please try again", false);
                 }
 
                 emailField.value?.invalidate("Incorrect Email. Please try again");
-                resetToDefault();
             }
-            else if (response.RestartOpaqueProtocol)
+            else if (response.value?.RestartOpaqueProtocol)
             {
-                stores.popupStore.hideLoadingIndicator();
-                stores.popupStore.showAlert("Unable to sign in", "Please check your Email and Master Key, and try again", false);
-
-                resetToDefault();
+                app.popups.hideLoadingIndicator();
+                app.popups.showAlert("Unable to sign in", "Please check your Email and Master Key, and try again", false);
             }
             else
             {
                 defaultHandleFailedResponse(response);
+                defaultHandleFailedResponse(response.value);
             }
-        }
-
-        async function resetToDefault()
-        {
-            stores.appStore.resetToDefault();
-            stores.passwordStore.resetToDefault();
         }
 
         function navigateLeft()
@@ -321,11 +224,25 @@ export default defineComponent({
             }
         }
 
+        watch(() => props.reloadAllDataIsToggled, (newValue) => 
+        {
+            reloadAllData.value = newValue;
+        });
+
         onMounted(() =>
         {
+            api.repositories.users.getLastUsedUserEmail().then((lastUsedEmail) =>
+            {
+                if (lastUsedEmail)
+                {
+                    email.value = lastUsedEmail;
+                    // TODO: set user profile pic
+                }
+            });
+
             if (props.infoMessage)
             {
-                stores.popupStore.showAlert("Alert", props.infoMessage, false);
+                app.popups.showAlert("Alert", props.infoMessage, false);
             }
 
             const body = document.getElementById('body');
@@ -338,6 +255,7 @@ export default defineComponent({
         return {
             refreshKey,
             container,
+            reloadAllData,
             masterKeyField,
             masterKey,
             emailField,
@@ -479,5 +397,12 @@ export default defineComponent({
 .signInViewContainer__dot--active {
     background-color: v-bind(color);
     box-shadow: 0 0 10px v-bind(color);
+}
+
+.signInContainer__restoreLastBackup {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    column-gap: 10px;
 }
 </style>

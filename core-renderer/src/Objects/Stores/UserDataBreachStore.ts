@@ -1,28 +1,27 @@
 import { UserDataBreach } from "../../Types/SharedTypes";
-import { Store, StoreEvents, StoreState } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
 
-export interface UserDataBreachStoreState extends StoreState
+export interface UserDataBreachStoreState
 {
     userBreaches: UserDataBreach[];
 }
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed";
 
-class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBreachStoreEvent>
+export class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBreachStoreEvent>
 {
     get userDataBreaches() { return this.state.userBreaches; }
 
     constructor()
     {
-        super();
+        super('userDataBreachStore');
     }
 
     protected defaultState()
     {
         return {
-            version: 0,
             userBreaches: []
         };
     }
@@ -73,9 +72,4 @@ class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBreachStor
         return false;
     }
 }
-
-const userDataBreachStore = new UserDataBreachStore();
-export default userDataBreachStore;
-
-export type UserDataBreachStoreType = typeof userDataBreachStore;
 

@@ -1,3 +1,5 @@
+import "reflect-metadata";
+
 import { app, shell, BrowserWindow, session } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -9,13 +11,13 @@ import cryptUtility from './Utilities/CryptUtility';
 import hashUtility from './Utilities/HashUtility';
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
-import { initFiles } from './Objects/Files/Files';
+import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 
-function createWindow(): void
+async function createWindow(): Promise<void>
 {
 	//@ts-ignore
 	const isTest = import.meta.env.VITE_ISTEST === "true";
-	setupEnvironment(isTest);
+	await setupEnvironment(isTest);
 
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
@@ -127,9 +129,9 @@ app.on('web-contents-created', (event, contents) =>
 	});
 });
 
-function setupEnvironment(isTest: boolean)
+async function setupEnvironment(isTest: boolean)
 {
-	environment.init({
+	await environment.init({
 		isTest,
 		sessionHandler: {
 			setSession,
@@ -141,11 +143,13 @@ function setupEnvironment(isTest: boolean)
 			hash: hashUtility,
 			generator: generatorUtility
 		},
-		getDeviceInfo
+		database:
+		{
+			createDataSource,
+			deleteDatabase
+		},
+		getDeviceInfo,
 	});
-
-	// must be called after environment is setup
-	initFiles();
 }
 
 async function setSession(sessionKey: string): Promise<void>

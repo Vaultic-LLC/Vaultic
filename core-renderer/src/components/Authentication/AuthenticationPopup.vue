@@ -42,9 +42,12 @@ import PopupButton from '../InputFields/PopupButton.vue';
 
 import { ColorPalette } from '../../Types/Colors';
 import { defaultInputColorModel, InputColorModel } from '../../Types/Models';
-import { stores } from '../../Objects/Stores';
 import { getLinearGradientFromColor } from '../../Helpers/ColorHelper';
 import { EncryptedInputFieldComponent } from '../../Types/Components';
+import app from "../../Objects/Stores/AppStore";
+import { api } from "../../API";
+import { TypedMethodResponse } from "../../Types/MethodResponse";
+import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 
 export default defineComponent({
     name: "AuthenticationPopup",
@@ -66,7 +69,7 @@ export default defineComponent({
         const loadingIndicator: Ref<null> = ref(null);
 
         const key: Ref<string> = ref("");
-        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
+        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
         const primaryColor: ComputedRef<string> = computed(() => props.color);
         const authTitle: ComputedRef<string> = computed(() => "Please enter your Key");
         const unlocked: Ref<boolean> = ref(false);
@@ -96,7 +99,7 @@ export default defineComponent({
 
             encryptedInputField.value?.toggleHidden(true);
 
-            stores.popupStore.showLoadingIndicator(primaryColor.value, "Checking Key");
+            app.popups.showLoadingIndicator(primaryColor.value, "Checking Key");
             disabled.value = true;
             if (Date.now() - lastAuthAttempt < 1000)
             {
@@ -107,9 +110,15 @@ export default defineComponent({
 
             lastAuthAttempt = Date.now();
 
-            stores.appStore.authenticateKey(key.value).then((isValid: boolean) =>
+            api.repositories.users.verifyUserMasterKey(key.value).then((response: TypedMethodResponse<boolean | undefined>) =>
             {
-                handleKeyIsValid(isValid);
+                if (response.success)
+                {
+                    handleKeyIsValid(response.value!);
+                    return;
+                }
+
+                defaultHandleFailedResponse(response);
             });
         }
 
@@ -141,13 +150,13 @@ export default defineComponent({
 
         async function playUnlockAnimation()
         {
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             unlocked.value = true;
         }
 
         function jiggleContainer()
         {
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             unlockFailed.value = true;
             setTimeout(() => unlockFailed.value = false, 1000);
         }
@@ -172,7 +181,7 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            stores.popupStore.addOnEnterHandler(props.popupIndex, onEnter);
+            app.popups.addOnEnterHandler(props.popupIndex, onEnter);
 
             if (authenticationPopup.value)
             {
@@ -188,7 +197,7 @@ export default defineComponent({
             }
         });
 
-        onUnmounted(() => stores.popupStore.removeOnEnterHandler(props.popupIndex));
+        onUnmounted(() => app.popups.removeOnEnterHandler(props.popupIndex));
 
         const backgroundGradient = getLinearGradientFromColor(colorModel.value.color);
 

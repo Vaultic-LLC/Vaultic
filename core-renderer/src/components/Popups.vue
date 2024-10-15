@@ -53,6 +53,14 @@
                 :csvHeaders="popupStore.csvImportHeaders" :properties="popupStore.importProperties"
                 @onConfirm="popupStore.onImportConfirmed" @onClose="popupStore.hideImportPopup" />
         </Transition>
+        <Teleport to="#body">
+            <Transition name="fade">
+                <ObjectPopup v-if="popupStore.vaultPopupIsShowing" :closePopup="popupStore.onVaultPopupClose"
+                    :minWidth="'800px'" :minHeight="'480px'">
+                    <VaultView :creating="popupStore.vaultModel == undefined" :model="popupStore.vaultModel" />
+                </ObjectPopup>
+            </Transition>
+        </Teleport>
     </div>
 </template>
 
@@ -69,7 +77,10 @@ import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue
 import ToastPopup from './ToastPopup.vue';
 import ImportSelectionPopup from "./Workflow/ImportSelectionPopup.vue"
 
-import { stores } from '..//Objects/Stores';
+import ObjectPopup from "./ObjectPopups/ObjectPopup.vue";
+import VaultView from "./ObjectViews/VaultView.vue";
+
+import app from "../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: 'Popups',
@@ -83,12 +94,14 @@ export default defineComponent({
         RequestedAuthenticationPopup,
         BreachedPasswordPopup,
         ToastPopup,
-        ImportSelectionPopup
+        ImportSelectionPopup,
+        ObjectPopup,
+        VaultView
     },
     setup()
     {
         return {
-            popupStore: stores.popupStore,
+            popupStore: app.popups,
         }
     }
 });

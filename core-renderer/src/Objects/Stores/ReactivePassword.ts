@@ -1,6 +1,6 @@
 import { Password, IIdentifiable, IGroupable, IFilterable, SecurityQuestion } from "../../Types/EncryptedData";
 import { ComputedRef, computed, reactive } from "vue";
-import { stores } from ".";
+import app from "./AppStore";
 
 export interface ReactivePassword extends Password
 {
@@ -21,7 +21,7 @@ export default function createReactivePassword(password: Password): ReactivePass
         const lastModifiedTime = Date.parse(passwordState.lastModifiedTime);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
-        return differenceInDays >= stores.settingsStore.oldPasswordDays;
+        return differenceInDays >= app.settings.oldPasswordDays;
     });
 
     const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !passwordState.isWeak && !passwordState.containsLogin && !passwordState.isDuplicate);

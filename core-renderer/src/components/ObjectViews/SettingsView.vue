@@ -5,47 +5,54 @@
             <div class="settingsView__sectionTitle settingsView__appSettings">App Settings</div>
             <div class="settingsView__inputSection">
                 <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
-                    v-model="settingsState.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
-                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" />
+                    v-model="appSettings.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
+                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
                 <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
-                    :color="color" v-model="settingsState.multipleFilterBehavior" :optionsEnum="FilterStatus"
-                    fadeIn="true" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'" />
+                    :color="color" v-model="appSettings.multipleFilterBehavior" :optionsEnum="FilterStatus"
+                    fadeIn="true" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
+                    :disabled="readOnly" />
             </div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
-                    :label="'Max Login Records Per Day'" v-model="settingsState.loginRecordsToStorePerDay"
+                    :label="'Max Login Records Per Day'" v-model="vaultSettings.loginRecordsToStorePerDay"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceLoginRecordsPerDay" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceLoginRecordsPerDay" />
                 <TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
-                    :label="'Days to Store Login Records'" v-model="settingsState.numberOfDaysToStoreLoginRecords"
+                    :label="'Days to Store Login Records'" v-model="vaultSettings.numberOfDaysToStoreLoginRecords"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
             </div>
             <div class="settingsView__inputSection">
                 <CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
-                    :minHeight="'12.5px'" :label="'Default Additional Information to Markdown on Edit Screens'"
-                    v-model="settingsState.defaultMarkdownInEditScreens" />
+                    :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Default Additional Information to Markdown on Edit Screens'"
+                    v-model="appSettings.defaultMarkdownInEditScreens" />
             </div>
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__randomPasswordLength" :color="color"
-                    :label="'Random Password Length'" v-model.number="settingsState.randomValueLength"
+                    :label="'Random Password Length'" v-model.number="appSettings.randomValueLength"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceMinRandomPasswordLength" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceMinRandomPasswordLength" />
                 <TextInputField class="settingsView__randomPassphraseLength" :color="color"
-                    :label="'Random Passphrase Length'" v-model.number="settingsState.randomPhraseLength"
+                    :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforceMinRandomPassphraseLength" />
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceMinRandomPassphraseLength" />
             </div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
-                    v-model.number="settingsState.oldPasswordDays" :inputType="'number'" :width="'10vw'"
-                    :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
+                    v-model.number="appSettings.oldPasswordDays" :inputType="'number'" :width="'10vw'"
+                    :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceOldPasswordDays" />
                 <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
-                    :label="'% Filled Metric for Pulse'" v-model.number="settingsState.percentMetricForPulse"
+                    :label="'% Filled Metric for Pulse'" v-model.number="appSettings.percentMetricForPulse"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
                     :toolTipSize="'clamp(15px, 1vw, 28px)'"
                     :toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
             </div>
@@ -65,8 +72,9 @@ import ScrollView from './ScrollView.vue';
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
 import { FilterStatus } from '../../Types/Table';
-import { stores } from '../../Objects/Stores';
-import { SettingsStoreState } from '../../Objects/Stores/SettingsStore';
+import app, { AppSettings } from "../../Objects/Stores/AppStore";
+import { VaultSettings } from "../../Objects/Stores/VaultStore";
+import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
 
 export default defineComponent({
     name: "ValueView",
@@ -78,13 +86,21 @@ export default defineComponent({
         EnumInputField,
         ScrollView
     },
-    props: ['creating', 'model', 'currentView'],
+    props: ['creating', 'currentView'],
     setup(props)
     {
         const refreshKey: Ref<string> = ref("");
-        const settingsState: Ref<SettingsStoreState> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+
+        // copy the objects so that we don't edit the original one
+        const originalAppSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
+        const appSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
+
+        const originalVaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings)));
+        const vaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings)));
+
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
+        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -98,7 +114,7 @@ export default defineComponent({
 
         function onSave()
         {
-            stores.popupStore.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -106,14 +122,30 @@ export default defineComponent({
             });
         }
 
-        async function onAuthenticationSuccessful(masterkey: string)
+        async function onAuthenticationSuccessful(masterKey: string)
         {
-            stores.popupStore.showLoadingIndicator(color.value, "Saving Settings");
-            // TODO: Error handling?
-            await stores.settingsStore.update(masterkey, settingsState.value);
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.showLoadingIndicator(color.value, "Saving Settings");
 
-            saveSucceeded(true);
+            const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+            if (JSON.stringify(originalAppSettings.value) != JSON.stringify(appSettings.value))
+            {
+                const state = app.cloneState();
+                state.settings = appSettings.value;
+
+                transaction.updateUserStore(app, state);
+            }
+
+            if (JSON.stringify(originalVaultSettings.value) != JSON.stringify(vaultSettings.value))
+            {
+                const state = app.currentVault.cloneState();
+                state.settings = vaultSettings.value;
+
+                transaction.updateVaultStore(app.currentVault, state);
+            }
+
+            const succeeded = await transaction.commit(masterKey, app.isOnline);
+            app.popups.hideLoadingIndicator();
+            saveSucceeded(succeeded);
         }
 
         function onAuthenticationCanceled()
@@ -129,9 +161,9 @@ export default defineComponent({
                 return [false, "Not a valid number"];
             }
 
-            if (numb < 3)
+            if (numb <= 0)
             {
-                return [false, "Value must be greater than 3"];
+                return [false, "Value must be greater than 0"];
             }
 
             if (numb > 20)
@@ -150,14 +182,9 @@ export default defineComponent({
                 return [false, "Not a valid number"];
             }
 
-            if (numb < 7)
+            if (numb <= 0)
             {
-                return [false, "Value must be greater than 7"];
-            }
-
-            if (numb > 365)
-            {
-                return [false, "Value must be less than 365"];
+                return [false, "Value must be greater than 0"];
             }
 
             return [true, ""];
@@ -181,9 +208,9 @@ export default defineComponent({
                 return [false, "Not a valid number"];
             }
 
-            if (numb < 30 || numb > 365)
+            if (numb <= 0)
             {
-                return [false, "Value must be between 30 and 365 days"];
+                return [false, "Value must be greater than 0"];
             }
 
             return [true, ""];
@@ -206,8 +233,10 @@ export default defineComponent({
         }
 
         return {
+            readOnly,
             color,
-            settingsState,
+            appSettings,
+            vaultSettings,
             refreshKey,
             gridDefinition,
             AutoLockTime,

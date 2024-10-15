@@ -1,5 +1,5 @@
 import { MethodResponse } from "../Types/EncryptedData";
-import { stores } from "../Objects/Stores";
+import app from "../Objects/Stores/AppStore";
 import { api } from "../API";
 
 export interface CryptHelper
@@ -13,7 +13,7 @@ async function encrypt(key: string, value: string): Promise<MethodResponse>
     const result = await api.utilities.crypt.encrypt(key, value);
     if (!result.success)
     {
-        stores.popupStore.showErrorAlert(result.logID);
+        app.popups.showErrorAlert(result.logID);
     }
 
     return result;

@@ -1,0 +1,91 @@
+import { electronAPI } from "@electron-toolkit/preload";
+import fs from "fs";
+import { DataSource } from "typeorm";
+import Database from "better-sqlite3";
+import { User } from "../Core/Database/Entities/User";
+import { UserVault } from "../Core/Database/Entities/UserVault";
+import { Vault } from "../Core/Database/Entities/Vault";
+
+import { CreateSchema1722604318830 } from "../Core/Database/Migrations/1722604318830-CreateSchema";
+import { AppStoreState } from "../Core/Database/Entities/States/AppStoreState";
+import { UserPreferencesStoreState } from "../Core/Database/Entities/States/UserPreferencesStoreState";
+import { VaultPreferencesStoreState } from "../Core/Database/Entities/States/VaultPreferencesStoreState";
+import { VaultStoreState } from "../Core/Database/Entities/States/VaultStoreState";
+import { PasswordStoreState } from "../Core/Database/Entities/States/PasswordStoreState";
+import { ValueStoreState } from "../Core/Database/Entities/States/ValueStoreState";
+import { FilterStoreState } from "../Core/Database/Entities/States/FilterStoreState";
+import { GroupStoreState } from "../Core/Database/Entities/States/GroupStoreState";
+import { Log } from "../Core/Database/Entities/Log";
+
+let database: Database;
+
+function getDirectory(isTest: boolean)
+{
+	let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
+	directory += isTest ? "\\Vaultic\\VTest" : "\\Vaultic\\VCustom";
+
+	return directory;
+}
+
+function checkMakeDirectory(directory: string): void
+{
+	if (!fs.existsSync(directory))
+	{
+		try
+		{
+			fs.mkdirSync(directory);
+		}
+		catch { }
+	}
+}
+
+export function createDataSource(isTest: boolean)
+{
+	const directory = getDirectory(isTest);
+	checkMakeDirectory(directory);
+
+	const databaseDirectory = directory + "\\vaultic.db";
+
+	// create the database if it doesn't already exist
+	if (isTest)
+	{
+		database = new Database(databaseDirectory, { verbose: console.log });
+	}
+	else
+	{
+		database = new Database(databaseDirectory);
+	}
+
+	return new DataSource({
+		type: "better-sqlite3",
+		database: databaseDirectory,
+		entities: [
+			Log,
+			User,
+			AppStoreState,
+			UserPreferencesStoreState,
+			UserVault,
+			VaultPreferencesStoreState,
+			Vault,
+			VaultStoreState,
+			PasswordStoreState,
+			ValueStoreState,
+			FilterStoreState,
+			GroupStoreState
+		],
+		migrationsRun: true,
+		migrations: [CreateSchema1722604318830]
+	});
+}
+
+export function deleteDatabase(isTest: boolean)
+{
+	database?.close();
+	return new Promise<boolean>((resolve) =>
+	{
+		fs.unlink(getDirectory(isTest) + "\\vaultic.db", (err) =>
+		{
+			resolve(!err);
+		});
+	})
+}

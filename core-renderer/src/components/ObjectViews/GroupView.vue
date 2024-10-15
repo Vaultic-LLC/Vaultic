@@ -37,7 +37,7 @@ import { HeaderDisplayField, defaultGroup } from '../../Types/EncryptedData';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
@@ -62,29 +62,29 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const mounted: Ref<boolean> = ref(false);
         const groupState: Ref<Group> = ref(props.model);
-        const groupColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.groupsColor);
+        const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor);
 
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
-        const title: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
+        const title: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             'Passwords in Group' : 'Values in Group');
 
         // @ts-ignore
         const tableRowDatas: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
 
-        const passwordSortedCollection: SortedCollection<ReactivePassword> = new SortedCollection(stores.passwordStore.passwords, "passwordFor");
-        const valueSortedCollection: SortedCollection<ReactiveValue> = new SortedCollection(stores.valueStore.nameValuePairs, "name");
+        const passwordSortedCollection: SortedCollection<ReactivePassword> = new SortedCollection(app.currentVault.passwordStore.passwords, "passwordFor");
+        const valueSortedCollection: SortedCollection<ReactiveValue> = new SortedCollection(app.currentVault.valueStore.nameValuePairs, "name");
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
 
         const emptyMessage: ComputedRef<string> = computed(() =>
         {
-            if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+            if (app.activePasswordValuesTable == DataType.Passwords)
             {
                 return getObjectPopupEmptyTableMessage("Passwords", "Group", "Password", props.creating);
             }
-            else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
                 return getObjectPopupEmptyTableMessage("Values", "Group", "Value", props.creating);
             }
@@ -94,7 +94,7 @@ export default defineComponent({
 
         let tableHeaderModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
         {
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
                     return createSortableHeaderModels<ReactiveValue>(
@@ -106,7 +106,7 @@ export default defineComponent({
             }
         });
 
-        let headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
+        let headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             passwordHeaderTab : valueHeaderTab);
 
         const gridDefinition: GridDefinition =
@@ -119,7 +119,7 @@ export default defineComponent({
 
         const activePasswordHeader: Ref<number> = ref(1);
         const activeValueHeader: Ref<number> = ref(1);
-        const activeHeader: ComputedRef<number> = computed(() => stores.appStore.activePasswordValuesTable ==
+        const activeHeader: ComputedRef<number> = computed(() => app.activePasswordValuesTable ==
             DataType.Passwords ? activePasswordHeader.value : activeValueHeader.value);
 
         const passwordHeaderTab: HeaderTabModel[] = [
@@ -185,7 +185,7 @@ export default defineComponent({
         function setTableRows()
         {
             let pendingRows: Promise<SelectableTableRowData>[] = [];
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
                     pendingRows = valueSortedCollection.calculatedValues.map(async nvp =>
@@ -285,7 +285,7 @@ export default defineComponent({
 
         function onSave()
         {
-            stores.popupStore.showRequestAuthentication(groupColor.value, doSave, onAuthCanceld);
+            app.popups.showRequestAuthentication(groupColor.value, doSave, onAuthCanceld);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -295,10 +295,10 @@ export default defineComponent({
 
         async function doSave(key: string)
         {
-            stores.popupStore.showLoadingIndicator(groupColor.value, "Saving Group");
+            app.popups.showLoadingIndicator(groupColor.value, "Saving Group");
             if (props.creating)
             {
-                if (await stores.groupStore.addGroup(key, groupState.value))
+                if (await app.currentVault.groupStore.addGroup(key, groupState.value))
                 {
                     groupState.value = defaultGroup(groupState.value.type);
                     setTableRows();
@@ -312,7 +312,7 @@ export default defineComponent({
             }
             else
             {
-                if (await stores.groupStore.updateGroup(key, groupState.value))
+                if (await app.currentVault.groupStore.updateGroup(key, groupState.value))
                 {
                     handleSaveResponse(true);
                     return;
@@ -324,7 +324,7 @@ export default defineComponent({
 
         function handleSaveResponse(succeeded: boolean)
         {
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             if (succeeded)
             {
                 if (saveSucceeded)
@@ -357,21 +357,21 @@ export default defineComponent({
             setTableRows();
         });
 
-        watch(() => stores.appStore.activePasswordValuesTable, () =>
+        watch(() => app.activePasswordValuesTable, () =>
         {
             setTableRows();
         });
 
-        watch(() => stores.passwordStore.passwords.length, setTableRows);
-        watch(() => stores.valueStore.nameValuePairs.length, setTableRows);
+        watch(() => app.currentVault.passwordStore.passwords.length, setTableRows);
+        watch(() => app.currentVault.valueStore.nameValuePairs.length, setTableRows);
 
         watch(() => searchText.value.value, (newValue) =>
         {
-            if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+            if (app.activePasswordValuesTable == DataType.Passwords)
             {
                 passwordSortedCollection.search(newValue);
             }
-            else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
                 valueSortedCollection.search(newValue);
             }

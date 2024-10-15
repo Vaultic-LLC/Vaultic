@@ -13,7 +13,7 @@
 import { ComputedRef, computed, defineComponent } from "vue";
 import { ColorPalette } from '../../Types/Colors';
 import ColorPaletteDisplay from "./ColorPaletteDisplay.vue";
-import { stores } from "../../Objects/Stores";
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "ColorPaletteContainer",
@@ -22,12 +22,12 @@ export default defineComponent({
     },
     setup()
     {
-        const cpOne: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[0]);
-        const cpTwo: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[1]);
-        const cpThree: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[2]);
-        const cpFour: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[3]);
-        const cpFive: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[4]);
-        const cpSix: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[5]);
+        const cpOne: ComputedRef<ColorPalette> = computed(() => app.settings.colorPalettes[0]);
+        const cpTwo: ComputedRef<ColorPalette> = computed(() => app.settings.colorPalettes[1]);
+        const cpThree: ComputedRef<ColorPalette> = computed(() => app.settings.colorPalettes[2]);
+        const cpFour: ComputedRef<ColorPalette> = computed(() => app.settings.colorPalettes[3]);
+        const cpFive: ComputedRef<ColorPalette> = computed(() => app.settings.colorPalettes[4]);
+        const cpSix: ComputedRef<ColorPalette> = computed(() => app.settings.colorPalettes[5]);
 
         return {
             cpOne,
@@ -51,7 +51,8 @@ export default defineComponent({
     min-height: 120px;
     height: 20%;
     top: max(30px, 5%);
-    left: max(11px, 2%);
+    /* left: max(11px, 2%); */
+    left: max(11px, 12%);
     column-gap: 10%;
     row-gap: 10%;
     z-index: 1;

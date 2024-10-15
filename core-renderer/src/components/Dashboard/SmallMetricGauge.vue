@@ -17,7 +17,7 @@ import { Doughnut } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { mixHexes } from '../../Helpers/ColorHelper';
 import animationHelper from '../../Helpers/animationHelper';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -44,7 +44,7 @@ export default defineComponent({
                 return false;
             }
 
-            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= stores.settingsStore.percentMetricForPulse);
+            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.percentMetricForPulse);
         });
 
         const totalAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 1 : props.model.totalAmount);

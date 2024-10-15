@@ -23,7 +23,7 @@ import PopupButton from '../InputFields/PopupButton.vue';
 
 import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey, ValidationFunctionsKey } from '../../Types/Keys';
 import { popups } from '../../Objects/Stores/PopupStore';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "AccountSetupView",
@@ -67,12 +67,12 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            stores.popupStore.addOnEnterHandler(popupInfo.enterOrder!, onSubmit);
+            app.popups.addOnEnterHandler(popupInfo.enterOrder!, onSubmit);
         });
 
         onUnmounted(() =>
         {
-            stores.popupStore.removeOnEnterHandler(popupInfo.enterOrder!);
+            app.popups.removeOnEnterHandler(popupInfo.enterOrder!);
         });
 
         return {

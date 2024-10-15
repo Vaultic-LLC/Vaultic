@@ -11,7 +11,7 @@
 import { ComputedRef, computed, defineComponent } from 'vue';
 
 import { getLinearGradientFromColor, mixHexes } from '../Helpers/ColorHelper';
-import { stores } from '../Objects/Stores';
+import app from "../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "IconCard",
@@ -20,7 +20,7 @@ export default defineComponent({
     {
         const color: ComputedRef<string> = computed(() =>
         {
-            return stores.userPreferenceStore.currentPrimaryColor.value
+            return app.userPreferences.currentPrimaryColor.value
         });
 
         const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(color.value));

@@ -2,6 +2,7 @@ import { ComputedRef, Ref, ref } from "vue";
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "./SharedTypes";
 import { ImportableDisplayField } from "./EncryptedData";
+import { Dictionary } from "./DataStructures";
 
 export interface SmallMetricGaugeModel
 {
@@ -167,6 +168,7 @@ export interface AccountSetupModel
     updateDevicesLeft?: number;
     devices?: Device[];
     infoMessage?: string;
+    reloadAllDataIsToggled?: boolean;
 }
 
 export interface ButtonModel
@@ -191,4 +193,24 @@ export interface CSVHeaderPropertyMapperModel
 {
     property: ImportableDisplayField;
     csvHeader: string | undefined;
+}
+
+export interface TreeNodeModel
+{
+    id: number;
+    text: string;
+    depth: number;
+    icon?: string;
+    selected: ComputedRef<boolean>;
+    isParent: boolean;
+    display: boolean;
+    buttons: TreeNodeButton[];
+    data: Dictionary<any>;
+    onClick: () => void;
+}
+
+export interface TreeNodeButton 
+{
+    icon: string;
+    onClick: (data: Dictionary<any>) => Promise<any>;
 }

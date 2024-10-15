@@ -46,7 +46,7 @@ import ToolTip from '../ToolTip.vue';
 
 import { GridDefinition } from '../../Types/Models';
 import { ColorPalette } from '../../Types/Colors';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "ColorPaletteView",
@@ -61,7 +61,7 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
         const colorPaletteState: Ref<ColorPalette> = ref(props.model);
         const color: ComputedRef<string> = computed(() => '#d0d0d0');
-        const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -76,7 +76,7 @@ export default defineComponent({
 
         function onSave()
         {
-            stores.popupStore.showRequestAuthentication(primaryColor.value, doSave, onAuthCancelled);
+            app.popups.showRequestAuthentication(primaryColor.value, doSave, onAuthCancelled);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -86,15 +86,15 @@ export default defineComponent({
 
         async function doSave(key: string)
         {
-            stores.popupStore.showLoadingIndicator(primaryColor.value, "Saving Color Palette");
+            app.popups.showLoadingIndicator(primaryColor.value, "Saving Color Palette");
             colorPaletteState.value.isCreated = true;
             colorPaletteState.value.editable = true;
 
-            await stores.settingsStore.updateColorPalette(key, colorPaletteState.value);
+            await app.updateColorPalette(key, colorPaletteState.value);
 
             refreshKey.value = Date.now().toString();
 
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             saveSucceeded(true);
         }
 

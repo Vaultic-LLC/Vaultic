@@ -93,3 +93,9 @@ export function toSolidHex(hex: string): string
 
     return hex;
 }
+
+export function isHexString(hex: string): boolean
+{
+    return /^#([0-9A-F]{3}){1,2}$/i.test(hex) // 3 color hex string
+        || /^#[0-9A-F]{6}[0-9a-f]{0,2}$/i.test(hex); // 6 color hex string with transparency support
+}

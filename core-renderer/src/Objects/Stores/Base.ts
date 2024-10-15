@@ -1,53 +1,35 @@
-import { AtRiskType, DataFile, IIdentifiable, SecondaryDataObjectCollection, SecretProperty } from "../../Types/EncryptedData";
-import { Ref, reactive, ref } from "vue";
+import { AtRiskType, IIdentifiable, SecondaryDataObjectCollection, SecretProperty } from "../../Types/EncryptedData";
+import { Reactive, Ref, reactive, ref } from "vue";
 import { DataType, Filter, Group, PrimaryDataObjectCollection } from "../../Types/Table";
 import { Dictionary } from "../../Types/DataStructures";
-import { Stores, stores } from ".";
 import cryptHelper from "../../Helpers/cryptHelper";
-import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
-import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 
-export interface StoreState
-{
-    version: number;
-}
-
-export interface DataTypeStoreState<T> extends StoreState
+export interface DataTypeStoreState<T>
 {
     values: T[];
 }
 
 export type StoreEvents = "onChanged";
 
-export class Store<T extends {} & StoreState, U extends string = StoreEvents>
+export class Store<T extends {}, U extends string = StoreEvents>
 {
-    loadedFile: boolean;
-    events: Dictionary<{ (): void }[]>;
+    events: Dictionary<{ (...params: any[]): void }[]>;
 
-    protected state: T;
-    private stateName: string;
+    protected state: Reactive<T>;
+    private internalStateName: string;
+
+    get stateName() { return this.internalStateName; }
 
     constructor(stateName: string)
     {
-        // @ts-ignore
         this.state = reactive(this.defaultState());
-        this.loadedFile = false;
+        this.internalStateName = stateName;
         this.events = {};
-        this.stateName = stateName;
     }
 
-    public encrypted(): boolean 
-    {
-        return true;
-    }
-
-    public getVersion(): number
-    {
-        return this.state.version;
-    }
-
-    public getState(): T
+    public getState(): Reactive<T>
     {
         return this.state;
     }
@@ -55,7 +37,7 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
     public getBackupableState(): any
     {
         const state = {};
-        state[this.stateName] = JSON.stringify(this.getState());
+        state[this.internalStateName] = JSON.stringify(this.getState());
 
         return state;
     }
@@ -70,96 +52,43 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
         return {} as T;
     }
 
-    public getFile(): DataFile
-    {
-        return {} as DataFile;
-    }
-
     public updateState(state: T): void
     {
+        if (Object.keys(state).length == 0)
+        {
+            state = this.defaultState();
+        }
+
         Object.assign(this.state, state);
         this.events['onChanged']?.forEach(f => f());
     }
 
-    protected async commitAndBackup(masterKey: string, transaction: StoreUpdateTransaction, skipBackup: boolean = false): Promise<boolean>
+    public async updateStateFromJSON(jsonString: string): Promise<void>
     {
-        const savedSuccessfully = await transaction.commit(masterKey);
-        if (savedSuccessfully && !skipBackup && stores.appStore.isOnline)
+        try
         {
-            let storesToBackup = {};
+            const state = JSON.parse(jsonString);
+            this.updateState(state);
 
-            transaction.storeUpdateStates.forEach(s => 
-            {
-                const storeState = s.store.getBackupableState();
-                Object.assign(storesToBackup, storeState);
-            });
-
-            const response = await api.server.user.backupStores(JSON.stringify(storesToBackup));
-            if (!response.Success)
-            {
-                defaultHandleFailedResponse(response);
-            }
-
-            return response.Success;
+            return;
+        }
+        catch (e)
+        {
+            await api.repositories.logs.log(undefined, `Exception when parsing JSON state for ${this.stateName}`);
         }
 
-        return savedSuccessfully;
+        // fallback to default state
+        this.updateState(this.defaultState());
     }
 
     protected postAssignState(_: T): void { }
 
-    public init(_: Stores) { }
-
     public resetToDefault()
     {
-        this.loadedFile = false;
         Object.assign(this.state, this.defaultState());
     }
 
-    public async readState(key: string): Promise<boolean>
-    {
-        if (this.loadedFile)
-        {
-            return true;
-        }
-
-        const file = this.getFile();
-        if (!(await file.exists()))
-        {
-            return true;
-        }
-
-        const result = await file.read();
-        if (!result.success)
-        {
-            stores.popupStore.showErrorAlert(result.logID);
-            return false;
-        }
-
-        const decryptedData = await cryptHelper.decrypt(key, result.value!);
-        if (!decryptedData.success)
-        {
-            // don't show an error since this can happen if the key is wrong
-            return false;
-        }
-
-        try
-        {
-            const state = JSON.parse(decryptedData.value!) as T;
-            this.loadedFile = true;
-
-            Object.assign(this.state, state);
-            this.postAssignState(state);
-
-            this.events['onChanged']?.forEach(f => f());
-            return true;
-        }
-        catch (e) { }
-
-        return false;
-    }
-
-    public addEvent(event: U, callback: () => void)
+    public addEvent(event: U, callback: (...params: any[]) => void)
     {
         if (this.events[event])
         {
@@ -170,7 +99,7 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
         this.events[event] = [callback];
     }
 
-    public removeEvent(event: U, callback: () => void)
+    public removeEvent(event: U, callback: (...params: any[]) => void)
     {
         if (!this.events[event])
         {
@@ -179,15 +108,26 @@ export class Store<T extends {} & StoreState, U extends string = StoreEvents>
 
         this.events[event] = this.events[event].filter(c => c != callback);
     }
+
+    protected emit(event: U, ...params: any[])
+    {
+        this.events[event]?.forEach(f => f(...params));
+    }
 }
 
-export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends Store<T>
+export class VaultContrainedStore<T extends {}, U extends string = StoreEvents> extends Store<T, U>
 {
-    constructor(stateName: string)
-    {
-        super(stateName)
-    }
+    protected vault: VaultStoreParameter;
 
+    constructor(vault: VaultStoreParameter, stateName: string)
+    {
+        super(stateName);
+        this.vault = vault;
+    }
+}
+
+export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends VaultContrainedStore<T>
+{
     public resetToDefault()
     {
         super.resetToDefault();

@@ -39,7 +39,7 @@ import { hexToRgb, mixHexes, rgbToHex, toSolidHex } from '../../Helpers/ColorHel
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { tween } from '../../Helpers/TweenHelper';
 import { RGBColor } from '../../Types/Colors';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { api } from '../../API';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler, zoomPlugin)
@@ -59,15 +59,15 @@ export default defineComponent({
         const chartContainer: Ref<HTMLElement | null> = ref(null);
         const lineChart: Ref<any> = ref(null);
 
-        const color: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ?
-            stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor : stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor);
+        const color: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ?
+            app.userPreferences.currentColorPalette.passwordsColor.primaryColor : app.userPreferences.currentColorPalette.valuesColor.primaryColor);
 
-        let lableArray: Ref<number[]> = ref([...stores.passwordStore.currentAndSafePasswords.current]);
-        let chartOneArray: Ref<number[]> = ref([...stores.passwordStore.currentAndSafePasswords.safe]);
+        let lableArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswords.current]);
+        let chartOneArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswords.safe]);
 
-        let table: Ref<string> = ref(stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values")
-        let target: Ref<(number | undefined)[]> = ref(stores.passwordStore.currentAndSafePasswords.current.map(_ => stores.passwordStore.passwords.length));
-        let max: Ref<number> = ref(Math.max(...stores.passwordStore.currentAndSafePasswords.safe));
+        let table: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values")
+        let target: Ref<(number | undefined)[]> = ref(app.currentVault.passwordStore.currentAndSafePasswords.current.map(_ => app.currentVault.passwordStore.passwords.length));
+        let max: Ref<number> = ref(Math.max(...app.currentVault.passwordStore.currentAndSafePasswords.safe));
 
         const resizeObserver: ResizeObserver = new ResizeObserver(refreshChart);
 
@@ -320,17 +320,17 @@ export default defineComponent({
 
         async function recalcData()
         {
-            if (!stores.appStore.isOnline)
+            if (!app.isOnline)
             {
                 return;
             }
 
             let newColor: string = "";
             let requestData: any = {};
-            if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+            if (app.activePasswordValuesTable == DataType.Passwords)
             {
                 // no need to send the request since we don't have enough data anyways
-                if (stores.passwordStore.currentAndSafePasswords.current.length < 2)
+                if (app.currentVault.passwordStore.currentAndSafePasswords.current.length < 2)
                 {
                     // make sure there isn't any old data in the way of the message
                     chartOneArray.value = [];
@@ -339,14 +339,14 @@ export default defineComponent({
                     return;
                 }
 
-                requestData.Values = stores.passwordStore.currentAndSafePasswords;
-                newColor = stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor;
+                requestData.Values = app.currentVault.passwordStore.currentAndSafePasswords;
+                newColor = app.userPreferences.currentColorPalette.passwordsColor.primaryColor;
                 table.value = "Passwords";
             }
-            else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
                 // no need to send the request since we don't have enough data anyways
-                if (stores.valueStore.currentAndSafeValues.current.length < 2)
+                if (app.currentVault.valueStore.currentAndSafeValues.current.length < 2)
                 {
                     // make sure there isn't any old data in the way of the message
                     chartOneArray.value = [];
@@ -355,8 +355,8 @@ export default defineComponent({
                     return;
                 }
 
-                requestData.Values = stores.valueStore.currentAndSafeValues;
-                newColor = stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor;
+                requestData.Values = app.currentVault.valueStore.currentAndSafeValues;
+                newColor = app.userPreferences.currentColorPalette.valuesColor.primaryColor;
                 table.value = "Values";
             }
 
@@ -406,19 +406,19 @@ export default defineComponent({
             recalcData();
         }
 
-        watch(() => stores.appStore.activePasswordValuesTable, () =>
+        watch(() => app.activePasswordValuesTable, () =>
         {
             recalcData();
         });
 
-        watch(() => stores.userPreferenceStore.currentColorPalette, (newValue, oldValue) =>
+        watch(() => app.userPreferences.currentColorPalette, (newValue, oldValue) =>
         {
-            if (stores.appStore.activePasswordValuesTable == DataType.Passwords)
+            if (app.activePasswordValuesTable == DataType.Passwords)
             {
                 updateColors(newValue.passwordsColor.primaryColor, oldValue.passwordsColor.primaryColor, 0);
                 color.value = newValue.passwordsColor.primaryColor;
             }
-            else if (stores.appStore.activePasswordValuesTable == DataType.NameValuePairs)
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
                 updateColors(newValue.valuesColor.primaryColor, oldValue.valuesColor.primaryColor, 0);
                 color.value = newValue.valuesColor.primaryColor;
@@ -435,7 +435,7 @@ export default defineComponent({
             if (newValue <= 1)
             {
                 showStatusMessage.value = true;
-                statusMessage.value = `Not enough data. Add at least 2 ${stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"} to get started.`;
+                statusMessage.value = `Not enough data. Add at least 2 ${app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"} to get started.`;
             }
         });
 
@@ -446,14 +446,14 @@ export default defineComponent({
                 resizeObserver.observe(chartContainer.value)
             }
 
-            stores.passwordStore.addEvent("onChanged", onDataChange);
-            stores.valueStore.addEvent("onChanged", onDataChange);
+            app.currentVault.passwordStore.addEvent("onChanged", onDataChange);
+            app.currentVault.valueStore.addEvent("onChanged", onDataChange);
         });
 
         onUnmounted(() =>
         {
-            stores.passwordStore.removeEvent("onChanged", onDataChange);
-            stores.valueStore.removeEvent("onChanged", onDataChange);
+            app.currentVault.passwordStore.removeEvent("onChanged", onDataChange);
+            app.currentVault.valueStore.removeEvent("onChanged", onDataChange);
         });
 
         setOptions(1000);

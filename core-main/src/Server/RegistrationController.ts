@@ -5,7 +5,7 @@ export interface RegistrationController
 {
     start: (startClientRegistrationRequest: string, email: string) => Promise<StartRegistrationResponse>;
     finish: (token: string, finishClientRegistrationRecord: string,
-        firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
+        firstName: string, lastName: string, publicKey: string, privateKey: string) => Promise<FinishRegistrationResponse>;
 }
 
 export function createRegistrationController(axiosHelper: AxiosHelper)
@@ -19,13 +19,15 @@ export function createRegistrationController(axiosHelper: AxiosHelper)
     }
 
     function finish(token: string, finishClientRegistrationRecord: string,
-        firstName: string, lastName: string): Promise<FinishRegistrationResponse>
+        firstName: string, lastName: string, publicKey: string, privateKey: string): Promise<FinishRegistrationResponse>
     {
         return axiosHelper.sts.post('Register/Finish', {
             Token: token,
             FinishClientRegistrationRecord: finishClientRegistrationRecord,
             FirstName: firstName,
-            LastName: lastName
+            LastName: lastName,
+            PublicKey: publicKey,
+            PrivateKey: privateKey
         });
     }
 

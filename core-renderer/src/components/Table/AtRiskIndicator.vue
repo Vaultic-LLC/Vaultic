@@ -13,7 +13,7 @@ import { ColorPalette } from '../../Types/Colors';
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import 'tippy.js/animations/scale.css';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "AtRiskIndicator",
@@ -21,7 +21,7 @@ export default defineComponent({
     setup(props)
     {
         const atRiskIcon: Ref<HTMLElement | null> = ref(null);
-        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => stores.userPreferenceStore.currentColorPalette);
+        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
 
         onMounted(() =>
         {

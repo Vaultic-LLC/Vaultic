@@ -30,7 +30,7 @@ import { DataType, Filter } from '../../Types/Table';
 import { DisplayField, FilterablePasswordProperties, FilterableValueProperties, defaultFilter } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { generateUniqueID } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
 
@@ -50,8 +50,8 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const filterState: Ref<Filter> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentColorPalette.filtersColor);
-        const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ?
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor);
+        const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
         let saveSucceeded: (value: boolean) => void;
@@ -78,7 +78,7 @@ export default defineComponent({
 
         function onSave()
         {
-            stores.popupStore.showRequestAuthentication(color.value, doSave, onAuthCancelled);
+            app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -88,10 +88,10 @@ export default defineComponent({
 
         async function doSave(key: string)
         {
-            stores.popupStore.showLoadingIndicator(color.value, "Saving Filter");
+            app.popups.showLoadingIndicator(color.value, "Saving Filter");
             if (props.creating)
             {
-                if (await stores.filterStore.addFilter(key, filterState.value))
+                if (await app.currentVault.filterStore.addFilter(key, filterState.value))
                 {
                     filterState.value = await defaultFilter(filterState.value.type);
                     await onAdd();
@@ -105,7 +105,7 @@ export default defineComponent({
             }
             else
             {
-                if (await stores.filterStore.updateFilter(key, filterState.value))
+                if (await app.currentVault.filterStore.updateFilter(key, filterState.value))
                 {
                     handleSaveResponse(true);
                     return;
@@ -117,7 +117,7 @@ export default defineComponent({
 
         function handleSaveResponse(succeeded: boolean)
         {
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
             if (succeeded)
             {
                 if (saveSucceeded)

@@ -12,7 +12,7 @@ import SmallMetricGauge from "../../../Dashboard/SmallMetricGauge.vue"
 import { AtRiskType } from '../../../../Types/EncryptedData';
 import { DataType } from '../../../../Types/Table';
 import { SmallMetricGaugeModel } from "../../../../Types/Models"
-import { stores } from '../../../../Objects/Stores';
+import app from "../../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "DuplicateFilterGroupGauge",
@@ -24,68 +24,68 @@ export default defineComponent({
     {
         const model: ComputedRef<SmallMetricGaugeModel> = computed(() =>
         {
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    switch (stores.appStore.activeFilterGroupsTable)
+                    switch (app.activeFilterGroupsTable)
                     {
                         case DataType.Groups:
                             return {
-                                key: `vgdup${stores.groupStore.duplicateValueGroupLength}${stores.groupStore.valuesGroups.length}`,
+                                key: `vgdup${app.currentVault.groupStore.duplicateValueGroupLength}${app.currentVault.groupStore.valuesGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: stores.groupStore.duplicateValueGroupLength,
-                                totalAmount: stores.groupStore.valuesGroups.length,
-                                color: stores.userPreferenceStore.currentColorPalette.groupsColor,
-                                active: stores.groupStore.activeAtRiskValueGroupType == AtRiskType.Duplicate,
+                                filledAmount: app.currentVault.groupStore.duplicateValueGroupLength,
+                                totalAmount: app.currentVault.groupStore.valuesGroups.length,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
-                                    stores.groupStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Duplicate);
+                                    app.currentVault.groupStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Duplicate);
                                 }
                             };
                         case DataType.Filters:
                         default:
                             return {
-                                key: `vfdup${stores.filterStore.duplicateValueFiltersLength}${stores.filterStore.nameValuePairFilters.length}`,
+                                key: `vfdup${app.currentVault.filterStore.duplicateValueFiltersLength}${app.currentVault.filterStore.nameValuePairFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: stores.filterStore.duplicateValueFiltersLength,
-                                totalAmount: stores.filterStore.nameValuePairFilters.length,
-                                color: stores.userPreferenceStore.currentColorPalette.filtersColor,
-                                active: stores.filterStore.activeAtRiskValueFilterType == AtRiskType.Duplicate,
+                                filledAmount: app.currentVault.filterStore.duplicateValueFiltersLength,
+                                totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
-                                    stores.filterStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Duplicate);
+                                    app.currentVault.filterStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Duplicate);
                                 }
                             };
                     }
                 case DataType.Passwords:
                 default:
-                    switch (stores.appStore.activeFilterGroupsTable)
+                    switch (app.activeFilterGroupsTable)
                     {
                         case DataType.Groups:
                             return {
-                                key: `pgdup${stores.groupStore.duplicatePasswordGroupLength}${stores.groupStore.passwordGroups.length}`,
+                                key: `pgdup${app.currentVault.groupStore.duplicatePasswordGroupLength}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: stores.groupStore.duplicatePasswordGroupLength,
-                                totalAmount: stores.groupStore.passwordGroups.length,
-                                color: stores.userPreferenceStore.currentColorPalette.groupsColor,
-                                active: stores.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Duplicate,
+                                filledAmount: app.currentVault.groupStore.duplicatePasswordGroupLength,
+                                totalAmount: app.currentVault.groupStore.passwordGroups.length,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
-                                    stores.groupStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Duplicate);
+                                    app.currentVault.groupStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Duplicate);
                                 }
                             };
                         case DataType.Filters:
                         default:
                             return {
-                                key: `pfdup${stores.filterStore.duplicatePasswordFiltersLength}${stores.filterStore.passwordFilters.length}`,
+                                key: `pfdup${app.currentVault.filterStore.duplicatePasswordFiltersLength}${app.currentVault.filterStore.passwordFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: stores.filterStore.duplicatePasswordFiltersLength,
-                                totalAmount: stores.filterStore.passwordFilters.length,
-                                color: stores.userPreferenceStore.currentColorPalette.filtersColor,
-                                active: stores.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Duplicate,
+                                filledAmount: app.currentVault.filterStore.duplicatePasswordFiltersLength,
+                                totalAmount: app.currentVault.filterStore.passwordFilters.length,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
-                                    stores.filterStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Duplicate);
+                                    app.currentVault.filterStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Duplicate);
                                 }
                             };
                     }

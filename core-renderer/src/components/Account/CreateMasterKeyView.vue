@@ -49,7 +49,7 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import { InputComponent } from '../../Types/Components';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { Account } from '../../Types/SharedTypes';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -90,10 +90,10 @@ export default defineComponent({
 
         async function showAlertMessage(message: string, title: string = 'Unable to create master key', showContactSupport: boolean = false)
         {
-            stores.popupStore.showAlert(title, message, showContactSupport);
+            app.popups.showAlert(title, message, showContactSupport);
             refreshKey.value = Date.now.toString();
             await new Promise((resolve) => setTimeout(resolve, 300));
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
         }
 
         async function onSubmit()
@@ -112,41 +112,55 @@ export default defineComponent({
                 return;
             }
 
-            const data = {
-                FirstName: account.value.firstName,
-                LastName: account.value.lastName,
-                Email: account.value.email,
-                MasterKey: key.value,
-                ...stores.getStates(),
-            }
-
-            stores.popupStore.showLoadingIndicator(props.color, "Creating Account");
+            app.popups.showLoadingIndicator(props.color, "Creating Account");
             const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
                 account.value.lastName);
 
             if (response.Success)
             {
-                await stores.appStore.setKey(key.value);
-                await stores.passwordStore.addPassword(key.value, response.VaulticPassword, true);
+                app.popups.showLoadingIndicator(props.color, "Signing In");
 
-                stores.popupStore.showLoadingIndicator(props.color, "Signing In");
-
-                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email);
-                if (loginResponse.Success)
+                const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
+                if (loginResponse.success && loginResponse.value!.Success)
                 {
-                    stores.appStore.isOnline = true;
+                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email, response.PublicKey!, response.PrivateKey!);
+                    if (!createUserResult.success)
+                    {
+                        app.popups.hideLoadingIndicator();
+                        // TODO: change to errorcode property after types PR. Only need to return if we fail to save. If we fail to backup, we are technically still
+                        // fine to continue
+                        if (createUserResult.errorCode == 10003)
+                        {
+                            showAlertMessage("Unable to create local data, please try signing in. If the issue persists", "Unable to create local data", true);
+                            ctx.emit('onLoginFailed');
+                            return;
+                        }
+                    }
+
+                    app.isOnline = true;
+                    if (!(await app.loadUserData(key.value, loginResponse.value!.userDataPayload)))
+                    {
+                        app.popups.hideLoadingIndicator();
+                        showAlertMessage("An unexpected error occured when trying to load data. Please try signing in. If the issue persists", "Unable to load data", true);
+                        ctx.emit('onLoginFailed');
+
+                        return;
+                    }
+
+                    response.VaulticPassword.password = key.value;
+                    await app.currentVault.passwordStore.addPassword(key.value, response.VaulticPassword);
                     ctx.emit('onSuccess');
 
                     return;
                 }
 
                 showAlertMessage("Your account was created but an error occured when trying to log in." +
-                    "Please try signing in again. If the issue persists", "Unable to sign in", true);
+                    " Please try signing in again. If the issue persists", "Unable to sign in", true);
                 ctx.emit('onLoginFailed');
             }
             else
             {
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
                 if (response.EmailIsTaken)
                 {
                     showAlertMessage("Email is already in use. Please use a different one");

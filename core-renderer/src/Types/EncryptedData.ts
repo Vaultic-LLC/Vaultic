@@ -18,6 +18,13 @@ export interface IGroupable
     groups: string[];
 }
 
+export interface StoreStateProperty<T>
+{
+    value: T;
+    lastModifiedTime: number;
+    displayComponent?: string;
+}
+
 export interface DisplayField
 {
     backingProperty: string;
@@ -55,32 +62,32 @@ export interface PropertySelectorDisplayFields extends DisplayField
 
 export const FilterablePasswordProperties: PropertySelectorDisplayFields[] = [
     {
-        backingProperty: "PasswordFor",
+        backingProperty: "passwordFor",
         displayName: "Password For",
         type: PropertyType.String,
     },
     {
-        backingProperty: "Domain",
+        backingProperty: "domain",
         displayName: "Domain",
         type: PropertyType.String,
     },
     {
-        backingProperty: "Email",
+        backingProperty: "email",
         displayName: "Email",
         type: PropertyType.String,
     },
     {
-        backingProperty: "Login",
+        backingProperty: "login",
         displayName: "Username",
         type: PropertyType.String,
     },
     {
-        backingProperty: "AdditionalInformation",
+        backingProperty: "additionalInformation",
         displayName: "Additional Info",
         type: PropertyType.String,
     },
     {
-        backingProperty: "Groups",
+        backingProperty: "groups",
         displayName: "Group Name",
         type: PropertyType.Object,
     }
@@ -127,23 +134,23 @@ export const nameValuePairTypesValues = Object.values(NameValuePairType);
 
 export const FilterableValueProperties: PropertySelectorDisplayFields[] = [
     {
-        backingProperty: "Name",
+        backingProperty: "name",
         displayName: "Name",
         type: PropertyType.String,
     },
     {
-        backingProperty: "AdditionalInformation",
+        backingProperty: "additionalInformation",
         displayName: "Additional Info",
         type: PropertyType.String,
     },
     {
-        backingProperty: "ValueType",
+        backingProperty: "valueType",
         displayName: "Type",
         type: PropertyType.Enum,
         enum: NameValuePairType,
     },
     {
-        backingProperty: "Groups",
+        backingProperty: "groups",
         displayName: "Group Name",
         type: PropertyType.Object,
     }

@@ -32,6 +32,14 @@
                         :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportValues" />
                 </div>
             </div>
+            <div class="workflowPopupContainer__section">
+                <h2 class="workflowPopupContainer__section__header">Export Logs</h2>
+                <div class="workflowPopupContainer__section__buttons">
+                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Export'" :width="'8vw'"
+                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportLogs" />
+                </div>
+            </div>
         </ScrollView>
     </div>
 </template>
@@ -44,8 +52,8 @@ import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from "../ObjectViews/ScrollView.vue"
 
 import { defaultInputTextColor } from '../../Types/Colors';
-import { stores } from '../../Objects/Stores';
-import { importPasswords, importValues, getExportableValues, getExportablePasswords } from "../../Helpers/ImportExportHelper";
+import app from "../../Objects/Stores/AppStore";
+import { importPasswords, importValues, getExportableValues, getExportablePasswords, exportData } from "../../Helpers/ImportExportHelper";
 import { api } from "../../API";
 import { SingleSelectorItemModel } from '../../Types/Models';
 
@@ -61,15 +69,15 @@ export default defineComponent({
     setup()
     {
         const scrollbarColor: Ref<string> = ref('#0f111d');
-        const primaryColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
-        const disableButtons: Ref<boolean> = ref(false);
+        const disableButtons: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const worflowsSelectorItem: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
             return {
                 title: ref("Workflows"),
-                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                color: ref(app.userPreferences.currentPrimaryColor.value),
                 isActive: computed(() => true),
                 onClick: () => { }
             }
@@ -87,7 +95,7 @@ export default defineComponent({
 
         async function exportPasswords()
         {
-            stores.popupStore.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { })
 
             async function doExportPasswords(masterKey: string)
             {
@@ -97,13 +105,13 @@ export default defineComponent({
                     return;
                 }
 
-                await doExport("vaultic-passwords", formattedData);
+                await doExport("Vaultic-Passwords", formattedData);
             }
         }
 
         async function exportValues()
         {
-            stores.popupStore.showRequestAuthentication(primaryColor.value, doExportValues, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportValues, () => { })
 
             async function doExportValues(masterKey: string)
             {
@@ -113,7 +121,7 @@ export default defineComponent({
                     return;
                 }
 
-                await doExport("vaultic-values", formattedData);
+                await doExport("Vaultic-Values", formattedData);
             }
         }
 
@@ -123,14 +131,34 @@ export default defineComponent({
             const success = await api.helpers.vaultic.writeCSV(fileName, formattedData);
             if (success)
             {
-                stores.popupStore.showToast(primaryColor.value, "Export Succeeded", true);
+                app.popups.showToast(primaryColor.value, "Export Succeeded", true);
             }
             else 
             {
-                stores.popupStore.showToast(primaryColor.value, "Export Failed", false);
+                app.popups.showToast(primaryColor.value, "Export Failed", false);
             }
 
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
+        }
+
+        async function exportLogs()
+        {
+            app.popups.showLoadingIndicator(primaryColor.value, "Exporting Logs");
+
+            const data = JSON.parse(await api.repositories.logs.getExportableLogData());
+            const formattedData = await exportData(data);
+
+            const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);
+            if (success)
+            {
+                app.popups.showToast(primaryColor.value, "Export Succeeded", true);
+            }
+            else 
+            {
+                app.popups.showToast(primaryColor.value, "Export Failed", false);
+            }
+
+            app.popups.hideLoadingIndicator();
         }
 
         return {
@@ -142,7 +170,8 @@ export default defineComponent({
             doImportPasswords,
             doImportValues,
             exportPasswords,
-            exportValues
+            exportValues,
+            exportLogs
         }
     }
 })

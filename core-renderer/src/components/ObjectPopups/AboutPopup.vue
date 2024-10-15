@@ -116,7 +116,7 @@ import ScrollView from "../ObjectViews/ScrollView.vue"
 
 import { InputColorModel, SingleSelectorItemModel, defaultInputColorModel } from '../../Types/Models';
 import { defaultInputTextColor } from '../../Types/Colors';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 
@@ -133,7 +133,7 @@ export default defineComponent({
     {
         const activeSection: Ref<number> = ref(0);
         const scrollbarColor: Ref<string> = ref('#0f111d');
-        const primaryColor: Ref<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const bugDescription: Ref<string> = ref('');
         const colorModel: Ref<InputColorModel> = ref(defaultInputColorModel(primaryColor.value));
@@ -144,7 +144,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Additional Features"),
-                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                color: ref(app.userPreferences.currentPrimaryColor.value),
                 isActive: computed(() => activeSection.value == 0),
                 onClick: () => { activeSection.value = 0; }
             }
@@ -154,7 +154,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Info"),
-                color: ref(stores.userPreferenceStore.currentPrimaryColor.value),
+                color: ref(app.userPreferences.currentPrimaryColor.value),
                 isActive: computed(() => activeSection.value == 1),
                 onClick: () => { activeSection.value = 1; }
             }
@@ -162,13 +162,13 @@ export default defineComponent({
 
         async function reportBug()
         {
-            stores.popupStore.showLoadingIndicator(primaryColor.value, "Reporting Bug");
+            app.popups.showLoadingIndicator(primaryColor.value, "Reporting Bug");
             const response = await api.server.user.reportBug(bugDescription.value);
-            stores.popupStore.hideLoadingIndicator();
+            app.popups.hideLoadingIndicator();
 
             if (response.Success)
             {
-                stores.popupStore.showToast(primaryColor.value, "Reported Bug", true);
+                app.popups.showToast(primaryColor.value, "Reported Bug", true);
                 bugDescription.value = "";
             }
             else

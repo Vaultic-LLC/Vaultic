@@ -20,7 +20,7 @@ import { defineComponent, Ref, ref } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { api } from '../../API';
 
 export default defineComponent({
@@ -37,12 +37,12 @@ export default defineComponent({
 
         async function onDownload()
         {
-            stores.popupStore.showLoadingIndicator(props.color, "Downloading");
+            app.popups.showLoadingIndicator(props.color, "Downloading");
 
             const result = await api.helpers.vaultic.downloadDeactivationKey();
             if (!result.Success)
             {
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
                 defaultHandleFailedResponse(result);
 
                 hideButton.value = true;

@@ -43,7 +43,7 @@ import ObjectPopup from './ObjectPopups/ObjectPopup.vue';
 import PopupButton from './InputFields/PopupButton.vue';
 import ButtonLink from './InputFields/ButtonLink.vue';
 
-import { stores } from '../Objects/Stores';
+import app from "../Objects/Stores/AppStore";
 import { popups } from '../Objects/Stores/PopupStore';
 import { ButtonModel } from '../Types/Models';
 
@@ -62,7 +62,7 @@ export default defineComponent({
         const okButtonModel: ButtonModel = { text: "Ok", onClick: () => { } };
         const title: ComputedRef<string> = computed(() => props.title ? props.title : "An Error has occured");
         const computedMessage: ComputedRef<string> = computed(getMessage);
-        const primaryColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const popupInfo = popups.alert;
 
         const leftButton: ComputedRef<ButtonModel> = computed(() => props.leftButton ?? okButtonModel);
@@ -106,12 +106,12 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            stores.popupStore.addOnEnterHandler(popupInfo.enterOrder!, onLeftButtonClick);
+            app.popups.addOnEnterHandler(popupInfo.enterOrder!, onLeftButtonClick);
         });
 
         onUnmounted(() =>
         {
-            stores.popupStore.removeOnEnterHandler(popupInfo.enterOrder!);
+            app.popups.removeOnEnterHandler(popupInfo.enterOrder!);
         });
 
         return {

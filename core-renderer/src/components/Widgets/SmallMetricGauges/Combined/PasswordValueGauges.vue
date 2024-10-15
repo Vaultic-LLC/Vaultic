@@ -21,7 +21,7 @@ import SmallMetricGauge from '../../../../components/Dashboard/SmallMetricGauge.
 import { DataType } from '../../../../Types/Table';
 import { AtRiskType } from '../../../../Types/EncryptedData';
 import { SmallMetricGaugeModel } from '../../../../Types/Models';
-import { stores } from '../../../../Objects/Stores';
+import app from "../../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "PasswordValueGauges",
@@ -33,9 +33,9 @@ export default defineComponent({
     setup()
     {
         const refreshKey: Ref<string> = ref('');
-        const title: ComputedRef<string> = computed(() => stores.appStore.activePasswordValuesTable == DataType.Passwords ? "Passwords at Risk" : "Values at Risk");
+        const title: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Passwords at Risk" : "Values at Risk");
 
-        watch(() => stores.appStore.activePasswordValuesTable, () =>
+        watch(() => app.activePasswordValuesTable, () =>
         {
             refreshKey.value = Date.now().toString();
         });
@@ -43,59 +43,59 @@ export default defineComponent({
         const passwordValueMetricGaugeModels: ComputedRef<SmallMetricGaugeModel[]> = computed(() =>
         {
             let models: SmallMetricGaugeModel[] = [];
-            switch (stores.appStore.activePasswordValuesTable)
+            switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
                     models.push(
                         {
-                            key: `vold${stores.valueStore.oldNameValuePairs.value.length}${stores.valueStore.nameValuePairs.length}`,
+                            key: `vold${app.currentVault.valueStore.oldNameValuePairs.value.length}${app.currentVault.valueStore.nameValuePairs.length}`,
                             title: 'Old',
-                            filledAmount: stores.valueStore.oldNameValuePairs.value.length,
-                            totalAmount: stores.valueStore.nameValuePairs.length,
-                            color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-                            active: stores.valueStore.activeAtRiskValueType == AtRiskType.Old,
+                            filledAmount: app.currentVault.valueStore.oldNameValuePairs.value.length,
+                            totalAmount: app.currentVault.valueStore.nameValuePairs.length,
+                            color: app.userPreferences.currentColorPalette.valuesColor.primaryColor,
+                            active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.Old,
                             onClick: function ()
                             {
-                                stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Old)
+                                app.currentVault.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Old)
                             }
                         });
                     models.push(
                         {
-                            key: `vdup${stores.valueStore.duplicateNameValuePairsLength}${stores.valueStore.nameValuePairs.length}`,
+                            key: `vdup${app.currentVault.valueStore.duplicateNameValuePairsLength}${app.currentVault.valueStore.nameValuePairs.length}`,
                             title: 'Duplicate',
-                            filledAmount: stores.valueStore.duplicateNameValuePairsLength,
-                            totalAmount: stores.valueStore.nameValuePairs.length,
-                            color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-                            active: stores.valueStore.activeAtRiskValueType == AtRiskType.Duplicate,
+                            filledAmount: app.currentVault.valueStore.duplicateNameValuePairsLength,
+                            totalAmount: app.currentVault.valueStore.nameValuePairs.length,
+                            color: app.userPreferences.currentColorPalette.valuesColor.primaryColor,
+                            active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.Duplicate,
                             onClick: function ()
                             {
-                                stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Duplicate);
+                                app.currentVault.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Duplicate);
                             }
                         });
                     models.push(
                         {
-                            key: `vwv${stores.valueStore.weakPassphraseValues.value.length}${stores.valueStore.nameValuePairs.length}`,
+                            key: `vwv${app.currentVault.valueStore.weakPassphraseValues.value.length}${app.currentVault.valueStore.nameValuePairs.length}`,
                             title: 'Weak Phrase',
-                            filledAmount: stores.valueStore.weakPassphraseValues.value.length,
-                            totalAmount: stores.valueStore.nameValuePairs.length,
-                            color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-                            active: stores.valueStore.activeAtRiskValueType == AtRiskType.WeakPhrase,
+                            filledAmount: app.currentVault.valueStore.weakPassphraseValues.value.length,
+                            totalAmount: app.currentVault.valueStore.nameValuePairs.length,
+                            color: app.userPreferences.currentColorPalette.valuesColor.primaryColor,
+                            active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.WeakPhrase,
                             onClick: function ()
                             {
-                                stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.WeakPhrase)
+                                app.currentVault.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.WeakPhrase)
                             }
                         });
                     models.push(
                         {
-                            key: `vwp${stores.valueStore.weakPasscodeValues.value.length}${stores.valueStore.nameValuePairs.length}`,
+                            key: `vwp${app.currentVault.valueStore.weakPasscodeValues.value.length}${app.currentVault.valueStore.nameValuePairs.length}`,
                             title: 'Weak Passcode',
-                            filledAmount: stores.valueStore.weakPasscodeValues.value.length,
-                            totalAmount: stores.valueStore.nameValuePairs.length,
-                            color: stores.userPreferenceStore.currentColorPalette.valuesColor.primaryColor,
-                            active: stores.valueStore.activeAtRiskValueType == AtRiskType.Weak,
+                            filledAmount: app.currentVault.valueStore.weakPasscodeValues.value.length,
+                            totalAmount: app.currentVault.valueStore.nameValuePairs.length,
+                            color: app.userPreferences.currentColorPalette.valuesColor.primaryColor,
+                            active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.Weak,
                             onClick: function ()
                             {
-                                stores.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Weak);
+                                app.currentVault.valueStore.toggleAtRiskType(DataType.NameValuePairs, AtRiskType.Weak);
                             }
                         });
                     break;
@@ -103,54 +103,54 @@ export default defineComponent({
                 default:
                     models.push(
                         {
-                            key: `pold${stores.passwordStore.oldPasswords.value.length}${stores.passwordStore.passwords.length}`,
+                            key: `pold${app.currentVault.passwordStore.oldPasswords.value.length}${app.currentVault.passwordStore.passwords.length}`,
                             title: 'Old',
-                            filledAmount: stores.passwordStore.oldPasswords.value.length,
-                            totalAmount: stores.passwordStore.passwords.length,
-                            color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-                            active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Old,
+                            filledAmount: app.currentVault.passwordStore.oldPasswords.value.length,
+                            totalAmount: app.currentVault.passwordStore.passwords.length,
+                            color: app.userPreferences.currentColorPalette.passwordsColor.primaryColor,
+                            active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Old,
                             onClick: function ()
                             {
-                                stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Old);
+                                app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Old);
                             }
                         });
                     models.push(
                         {
-                            key: `pdup${stores.passwordStore.duplicatePasswordsLength}${stores.passwordStore.passwords.length}`,
+                            key: `pdup${app.currentVault.passwordStore.duplicatePasswordsLength}${app.currentVault.passwordStore.passwords.length}`,
                             title: 'Duplicate',
-                            filledAmount: stores.passwordStore.duplicatePasswordsLength,
-                            totalAmount: stores.passwordStore.passwords.length,
-                            color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-                            active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Duplicate,
+                            filledAmount: app.currentVault.passwordStore.duplicatePasswordsLength,
+                            totalAmount: app.currentVault.passwordStore.passwords.length,
+                            color: app.userPreferences.currentColorPalette.passwordsColor.primaryColor,
+                            active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Duplicate,
                             onClick: function ()
                             {
-                                stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Duplicate);
+                                app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Duplicate);
                             }
                         });
                     models.push(
                         {
-                            key: `pweak${stores.passwordStore.weakPasswords.value.length}${stores.passwordStore.passwords.length}`,
+                            key: `pweak${app.currentVault.passwordStore.weakPasswords.value.length}${app.currentVault.passwordStore.passwords.length}`,
                             title: 'Weak',
-                            filledAmount: stores.passwordStore.weakPasswords.value.length,
-                            totalAmount: stores.passwordStore.passwords.length,
-                            color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-                            active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.Weak,
+                            filledAmount: app.currentVault.passwordStore.weakPasswords.value.length,
+                            totalAmount: app.currentVault.passwordStore.passwords.length,
+                            color: app.userPreferences.currentColorPalette.passwordsColor.primaryColor,
+                            active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Weak,
                             onClick: function ()
                             {
-                                stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Weak);
+                                app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Weak);
                             }
                         });
                     models.push(
                         {
-                            key: `pcl${stores.passwordStore.containsLoginPasswords.value.length}${stores.passwordStore.passwords.length}`,
+                            key: `pcl${app.currentVault.passwordStore.containsLoginPasswords.value.length}${app.currentVault.passwordStore.passwords.length}`,
                             title: 'Contains Username',
-                            filledAmount: stores.passwordStore.containsLoginPasswords.value.length,
-                            totalAmount: stores.passwordStore.passwords.length,
-                            color: stores.userPreferenceStore.currentColorPalette.passwordsColor.primaryColor,
-                            active: stores.passwordStore.activeAtRiskPasswordType == AtRiskType.ContainsLogin,
+                            filledAmount: app.currentVault.passwordStore.containsLoginPasswords.value.length,
+                            totalAmount: app.currentVault.passwordStore.passwords.length,
+                            color: app.userPreferences.currentColorPalette.passwordsColor.primaryColor,
+                            active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.ContainsLogin,
                             onClick: function ()
                             {
-                                stores.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.ContainsLogin);
+                                app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.ContainsLogin);
                             }
                         });
             }
@@ -170,9 +170,9 @@ export default defineComponent({
 <style>
 .passwordValueGaugesWidget {
     position: absolute;
-    left: 81%;
+    left: 83%;
     top: 4%;
-    width: 17%;
+    width: 16%;
     height: 30%;
 }
 

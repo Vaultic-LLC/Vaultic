@@ -1,15 +1,17 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { DataType, Group, PrimaryDataObjectCollection } from "../../Types/Table";
-import { AtRiskType, DataFile, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
+import { AtRiskType, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
-import { stores } from ".";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
-import { api } from "../../API"
-import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import app from "./AppStore";
+import { api } from "../../API";
 
 export interface GroupStoreState extends DataTypeStoreState<Group>
 {
+    // TODO: this shold be hoisted up to a DataTypeStoreState and by Dictionary<number> where 
+    // number is the index in values[].
     groupsById: Dictionary<Group>;
     emptyPasswordGroups: string[];
     emptyValueGroups: string[];
@@ -17,71 +19,25 @@ export interface GroupStoreState extends DataTypeStoreState<Group>
     duplicateValueGroups: Dictionary<string[]>;
 }
 
-class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
+export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 {
-    private internalPasswordGroups: ComputedRef<Group[]>;
-    private internalValueGroups: ComputedRef<Group[]>;
+    protected internalPasswordGroups: ComputedRef<Group[]>;
+    protected internalValueGroups: ComputedRef<Group[]>;
 
-    private internalSortedPasswordsGroups: ComputedRef<Group[]>;
-    private internalSortedValuesGroups: ComputedRef<Group[]>;
-
-    private internalDuplicatePasswordGroupsLength: ComputedRef<number>;
-    private internalDuplicateValuesGroupsLength: ComputedRef<number>;
-
-    private internalActiveAtRiskPasswordGroupType: Ref<AtRiskType>;
-    private internalActiveAtRiskValueGroupType: Ref<AtRiskType>;
-
-    private internalPinnedPasswordGroups: ComputedRef<Group[]>;
-    private internalUnpinnedPasswordGroups: ComputedRef<Group[]>;
-
-    private internalPinnedValueGroups: ComputedRef<Group[]>;
-    private internalUnpinnedValueGroups: ComputedRef<Group[]>;
-
-    get groups() { return this.state.values; }
     get passwordGroups() { return this.internalPasswordGroups.value; }
-    get activeAtRiskPasswordGroupType() { return this.internalActiveAtRiskPasswordGroupType.value; }
-    get activeAtRiskValueGroupType() { return this.internalActiveAtRiskValueGroupType.value; }
-    get emptyPasswordGroups() { return this.state.emptyPasswordGroups; }
-    get duplicatePasswordGroups() { return this.state.duplicatePasswordGroups; }
-    get duplicatePasswordGroupLength() { return this.internalDuplicatePasswordGroupsLength.value; }
     get valuesGroups() { return this.internalValueGroups.value; }
-    get emptyValueGroups() { return this.state.emptyValueGroups; }
-    get duplicateValueGroups() { return this.state.duplicateValueGroups; }
-    get duplicateValueGroupLength() { return this.internalDuplicateValuesGroupsLength.value; }
-    get sortedPasswordsGroups() { return this.internalSortedPasswordsGroups.value; }
-    get sortedValuesGroups() { return this.internalSortedValuesGroups.value }
-    get pinnedPasswordGroups() { return this.internalPinnedPasswordGroups.value; }
-    get unpinnedPasswordGroups() { return this.internalUnpinnedPasswordGroups.value; }
-    get pinnedValueGroups() { return this.internalPinnedValueGroups.value; }
-    get unpinnedValueGroups() { return this.internalUnpinnedValueGroups.value; }
 
-    constructor()
+    constructor(vault: any)
     {
-        super("GroupStoreState");
+        super(vault, "groupStoreState");
 
         this.internalPasswordGroups = computed(() => this.state.values.filter(g => g.type == DataType.Passwords));
         this.internalValueGroups = computed(() => this.state.values.filter(g => g.type == DataType.NameValuePairs));
-
-        this.internalSortedPasswordsGroups = computed(() => this.internalPasswordGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
-        this.internalSortedValuesGroups = computed(() => this.internalValueGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
-
-        this.internalDuplicatePasswordGroupsLength = computed(() => Object.keys(this.state.duplicatePasswordGroups).length);
-        this.internalDuplicateValuesGroupsLength = computed(() => Object.keys(this.state.duplicateValueGroups).length);
-
-        this.internalActiveAtRiskPasswordGroupType = ref(AtRiskType.None);
-        this.internalActiveAtRiskValueGroupType = ref(AtRiskType.None);
-
-        this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
-        this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
-
-        this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
-        this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !stores.userPreferenceStore.pinnedGroups.hasOwnProperty(f.id)));
     }
 
     protected defaultState()
     {
         return {
-            version: 0,
             hash: '',
             hashSalt: '',
             values: [],
@@ -93,24 +49,11 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         }
     }
 
-    public getFile(): DataFile
+    async addGroup(masterKey: string, group: Group, backup?: boolean): Promise<boolean>
     {
-        return api.files.group;
-    }
+        backup = backup ?? app.isOnline;
 
-    protected getPasswordAtRiskType(): Ref<AtRiskType>
-    {
-        return this.internalActiveAtRiskPasswordGroupType;
-    }
-
-    protected getValueAtRiskType(): Ref<AtRiskType>
-    {
-        return this.internalActiveAtRiskValueGroupType;
-    }
-
-    async addGroup(masterKey: string, group: Group, skipBackup: boolean = false): Promise<boolean>
-    {
-        const transaction = new StoreUpdateTransaction();
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         group.id = await generateUniqueID(pendingState.values);
@@ -125,17 +68,17 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             }
             else
             {
-                const pendingPasswordState = stores.passwordStore.cloneState();
+                const pendingPasswordState = this.vault.passwordStore.cloneState();
                 const passwordGroups = pendingState.values.filter(g => g.type == DataType.Passwords);
 
                 this.syncPrimaryDataObjectsForGroup(group, "passwords", group.passwords, [],
                     pendingPasswordState.values, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
                     passwordGroups);
 
-                const pendingFilterState = stores.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
+                const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
 
-                transaction.addStore(stores.passwordStore, pendingPasswordState);
-                transaction.addStore(stores.filterStore, pendingFilterState);
+                transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
+                transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
             }
         }
         else if (group.type == DataType.NameValuePairs)
@@ -146,32 +89,32 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             }
             else
             {
-                const pendingValueState = stores.valueStore.cloneState();
+                const pendingValueState = this.vault.valueStore.cloneState();
                 const valueGroups = pendingState.values.filter(g => g.type == DataType.NameValuePairs);
 
                 this.syncPrimaryDataObjectsForGroup(group, "values", group.values, [], pendingValueState.values,
                     pendingState.emptyValueGroups, pendingState.duplicateValueGroups, valueGroups);
 
-                const pendingFilterState = stores.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
+                const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
 
-                transaction.addStore(stores.valueStore, pendingValueState);
-                transaction.addStore(stores.filterStore, pendingFilterState);
+                transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
+                transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
             }
         }
 
-        transaction.addStore(this, pendingState);
-        return await this.commitAndBackup(masterKey, transaction, skipBackup);
+        transaction.updateVaultStore(this, pendingState);
+        return await transaction.commit(masterKey, backup);
     }
 
     async updateGroup(masterKey: string, updatedGroup: Group): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction();
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         const currentGroup = pendingState.groupsById[updatedGroup.id];
         if (!currentGroup)
         {
-            // TODO: do something
+            await api.repositories.logs.log(undefined, `No Group`, "GroupStore.Update")
             return false;
         }
 
@@ -182,49 +125,51 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
         if (updatedGroup.type == DataType.Passwords)
         {
-            const pendingPasswordState = stores.passwordStore.cloneState();
+            const pendingPasswordState = this.vault.passwordStore.cloneState();
             const passwordGroups = pendingState.values.filter(g => g.type == DataType.Passwords);
 
             this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
                 pendingPasswordState.values, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
                 passwordGroups);
 
-            const pendingFilterState = stores.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
+            const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.values, passwordGroups);
 
-            transaction.addStore(stores.passwordStore, pendingPasswordState);
-            transaction.addStore(stores.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
         else if (updatedGroup.type == DataType.NameValuePairs)
         {
-            const pendingValueState = stores.valueStore.cloneState();
+            const pendingValueState = this.vault.valueStore.cloneState();
             const valueGroups = pendingState.values.filter(g => g.type == DataType.NameValuePairs);
 
             this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
                 pendingValueState.values, pendingState.emptyValueGroups, pendingState.duplicateValueGroups,
                 valueGroups);
 
-            const pendingFilterState = stores.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
+            const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
 
-            transaction.addStore(stores.valueStore, pendingValueState);
-            transaction.addStore(stores.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
 
         Object.assign(pendingState.groupsById[updatedGroup.id], updatedGroup);
         Object.assign(pendingState.values.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
 
-        transaction.addStore(this, pendingState);
-        return await this.commitAndBackup(masterKey, transaction);
+        transaction.updateVaultStore(this, pendingState);
+        return await transaction.commit(masterKey);
     }
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction();
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
         delete pendingState.groupsById[group.id];
         const groupIndex = pendingState.values.findIndex(g => g.id == group.id);
+
         if (groupIndex < 0)
         {
+            await api.repositories.logs.log(undefined, `No Group`, "GroupStore.Delete")
             return false;
         }
 
@@ -232,35 +177,35 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
         if (group.type == DataType.Passwords)
         {
-            const pendingPasswordState = stores.passwordStore.removeSecondaryObjectFromValues(group.id, "groups");
+            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(group.id, "groups");
 
             // do this here since it can update passwords
-            const pendingFilterState = stores.filterStore.syncFiltersForPasswords(pendingPasswordState.values,
+            const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.values,
                 pendingState.values.filter(g => g.type == DataType.Passwords));
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyPasswordGroups);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicatePasswordGroups);
 
-            transaction.addStore(stores.passwordStore, pendingPasswordState);
-            transaction.addStore(stores.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
         else if (group.type == DataType.NameValuePairs)
         {
-            const pendingValueState = stores.valueStore.removeSecondaryObjectFromValues(group.id, "groups");
+            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(group.id, "groups");
 
             // do this here since it can update values
-            const pendingFilterState = stores.filterStore.syncFiltersForValues(pendingValueState.values,
+            const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.values,
                 pendingState.values.filter(g => g.type == DataType.NameValuePairs));
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyValueGroups);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicateValueGroups);
 
-            transaction.addStore(stores.valueStore, pendingValueState);
-            transaction.addStore(stores.filterStore, pendingFilterState);
+            transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
 
-        transaction.addStore(this, pendingState);
-        return await this.commitAndBackup(masterKey, transaction);
+        transaction.updateVaultStore(this, pendingState);
+        return await transaction.commit(masterKey);
     }
 
     syncGroupsForPasswords(
@@ -377,7 +322,66 @@ class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
     }
 }
 
-const groupStore = new GroupStore();
-export default groupStore;
+export class ReactiveGroupStore extends GroupStore 
+{
+    private internalSortedPasswordsGroups: ComputedRef<Group[]>;
+    private internalSortedValuesGroups: ComputedRef<Group[]>;
 
-export type GroupStoreType = typeof groupStore;
+    private internalDuplicatePasswordGroupsLength: ComputedRef<number>;
+    private internalDuplicateValuesGroupsLength: ComputedRef<number>;
+
+    private internalActiveAtRiskPasswordGroupType: Ref<AtRiskType>;
+    private internalActiveAtRiskValueGroupType: Ref<AtRiskType>;
+
+    private internalPinnedPasswordGroups: ComputedRef<Group[]>;
+    private internalUnpinnedPasswordGroups: ComputedRef<Group[]>;
+
+    private internalPinnedValueGroups: ComputedRef<Group[]>;
+    private internalUnpinnedValueGroups: ComputedRef<Group[]>;
+
+    get groups() { return this.state.values; }
+    get activeAtRiskPasswordGroupType() { return this.internalActiveAtRiskPasswordGroupType.value; }
+    get activeAtRiskValueGroupType() { return this.internalActiveAtRiskValueGroupType.value; }
+    get emptyPasswordGroups() { return this.state.emptyPasswordGroups; }
+    get duplicatePasswordGroups() { return this.state.duplicatePasswordGroups; }
+    get duplicatePasswordGroupLength() { return this.internalDuplicatePasswordGroupsLength.value; }
+    get emptyValueGroups() { return this.state.emptyValueGroups; }
+    get duplicateValueGroups() { return this.state.duplicateValueGroups; }
+    get duplicateValueGroupLength() { return this.internalDuplicateValuesGroupsLength.value; }
+    get sortedPasswordsGroups() { return this.internalSortedPasswordsGroups.value; }
+    get sortedValuesGroups() { return this.internalSortedValuesGroups.value }
+    get pinnedPasswordGroups() { return this.internalPinnedPasswordGroups.value; }
+    get unpinnedPasswordGroups() { return this.internalUnpinnedPasswordGroups.value; }
+    get pinnedValueGroups() { return this.internalPinnedValueGroups.value; }
+    get unpinnedValueGroups() { return this.internalUnpinnedValueGroups.value; }
+
+    constructor(vault: any)
+    {
+        super(vault);
+
+        this.internalSortedPasswordsGroups = computed(() => this.internalPasswordGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
+        this.internalSortedValuesGroups = computed(() => this.internalValueGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
+
+        this.internalDuplicatePasswordGroupsLength = computed(() => Object.keys(this.state.duplicatePasswordGroups).length);
+        this.internalDuplicateValuesGroupsLength = computed(() => Object.keys(this.state.duplicateValueGroups).length);
+
+        this.internalActiveAtRiskPasswordGroupType = ref(AtRiskType.None);
+        this.internalActiveAtRiskValueGroupType = ref(AtRiskType.None);
+
+        this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+
+        this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+    }
+
+    protected getPasswordAtRiskType(): Ref<AtRiskType>
+    {
+        return this.internalActiveAtRiskPasswordGroupType;
+    }
+
+    protected getValueAtRiskType(): Ref<AtRiskType>
+    {
+        return this.internalActiveAtRiskValueGroupType;
+    }
+}

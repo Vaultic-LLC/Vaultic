@@ -38,7 +38,7 @@ import EnumInputField from '../InputFields/EnumInputField.vue';
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import ObjectView from "../ObjectViews/ObjectView.vue";
 
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import { CSVHeaderPropertyMapperModel, GridDefinition } from "../../Types/Models";
 import { defaultInputTextColor } from '../../Types/Colors';
 import { buildCSVPropertyMappers } from "../../Helpers/ImportExportHelper";
@@ -82,7 +82,7 @@ export default defineComponent({
 
         function onConfirm()
         {
-            return stores.popupStore.showRequestAuthentication(props.color, buildAndEmit, () => { });
+            return app.popups.showRequestAuthentication(props.color, buildAndEmit, () => { });
         }
 
         function buildAndEmit(masterKey: string)

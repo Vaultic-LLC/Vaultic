@@ -15,7 +15,7 @@ import { ComputedRef, computed, defineComponent } from 'vue';
 import { Calendar } from 'v-calendar-tw';
 
 import 'v-calendar-tw/style.css';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "LoginHistoryCalendar",
@@ -26,14 +26,14 @@ export default defineComponent({
     props: ['refresh'],
     setup()
     {
-        const color: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const attributes = computed(() =>
         {
             let attr: any[] = [];
-            Object.keys(stores.appStore.loginHistory).forEach(day =>
+            Object.keys(app.currentVault.loginHistory).forEach(day =>
             {
-                attr.push(...stores.appStore.loginHistory[day].map((l) =>
+                attr.push(...app.currentVault.loginHistory[day].map((l) =>
                 {
                     return {
                         key: l,

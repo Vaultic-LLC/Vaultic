@@ -1,14 +1,25 @@
 import { BaseResponse, IncorrectDeviceResponse } from "../../Types/SharedTypes";
 import { AccountSetupModel, AccountSetupView, ButtonModel } from "../../Types/Models";
 import { Ref, ref } from "vue";
-import { stores } from ".";
-import { GroupCSVHeader, ImportableDisplayField } from "../../Types/EncryptedData";
+import { ImportableDisplayField } from "../../Types/EncryptedData";
 import { Dictionary } from "../../Types/DataStructures";
+import app from "./AppStore";
+import { DisplayVault } from "../../Types/APITypes";
+import { api } from "../../API";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
-type PopupName = "loading" | "alert" | "devicePopup" | "incorrectDevice" | "globalAuth" | "requestAuth" | "accountSetup" |
-    "breachedPasswords" | "toast" | "importSelection" | "defaultObjectPopup";
+type PopupName = "loading" |
+    "alert" |
+    "devicePopup" |
+    "incorrectDevice" |
+    "globalAuth" |
+    "requestAuth" |
+    "accountSetup" |
+    "breachedPasswords" |
+    "toast" |
+    "importSelection" |
+    "defaultObjectPopup";
 
 interface PopupInfo
 {
@@ -35,7 +46,7 @@ export const popups: Popups =
     "defaultObjectPopup": { zIndex: 7 }
 }
 
-export default function createPopupStore()
+export function createPopupStore()
 {
     const onEnterHandlers: ({ (): void } | undefined)[] = [];
     const color: Ref<string> = ref('');
@@ -82,6 +93,10 @@ export default function createPopupStore()
     const importProperties: Ref<ImportableDisplayField[]> = ref([]);
     const onImportConfirmed: Ref<(masterKey: string, columnIndexToProperty: Dictionary<ImportableDisplayField[]>) => Promise<void>> =
         ref(async (_, __) => { });
+
+    const vaultPopupIsShowing: Ref<boolean> = ref(false);
+    const onVaultPopupClose: Ref<(saved: boolean) => void> = ref((_) => { });
+    const vaultModel: Ref<DisplayVault | undefined> = ref(undefined);
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -180,17 +195,21 @@ export default function createPopupStore()
 
     function showSessionExpired()
     {
-        stores.appStore.lock(false, false);
+        app.lock(false, false);
         showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'");
     }
 
-    function showAccountSetup(view: AccountSetupView, message?: string)
+    function showAccountSetup(view: AccountSetupView, message?: string, reloadAllDataIsToggled: boolean = false)
     {
-        if (accountSetupIsShowing.value)
-        {
-            return;
-        }
+        // TODO: not needed? I think this was to prevent being redirected when on the payment or download activation key screen when session expires
+        // might not be needed after redoing the log flow?
+        // its preventing reloading data when the database fails to initalize
+        // if (accountSetupIsShowing.value)
+        // {
+        //     return;
+        // }
 
+        accountSetupModel.value.reloadAllDataIsToggled = reloadAllDataIsToggled;
         accountSetupModel.value.infoMessage = message;
         accountSetupModel.value.currentView = view;
         accountSetupIsShowing.value = true;
@@ -204,6 +223,8 @@ export default function createPopupStore()
 
     function hideAccountSetup()
     {
+        accountSetupModel.value.reloadAllDataIsToggled = false;
+        accountSetupModel.value.infoMessage = "";
         accountSetupIsShowing.value = false;
     }
 
@@ -236,12 +257,6 @@ export default function createPopupStore()
     async function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
     {
         color.value = clr;
-
-        if (!(await stores.appStore.canAuthenticateKey()))
-        {
-            return;
-        }
-
         onSuccess.value = (key: string) =>
         {
             requestAuthenticationIsShowing.value = false;
@@ -301,6 +316,18 @@ export default function createPopupStore()
         importPopupIsShowing.value = false;
     }
 
+    function showVaultPopup(onClose: (saved: boolean) => void, model?: DisplayVault)
+    {
+        vaultModel.value = model;
+        onVaultPopupClose.value = (saved: boolean) => 
+        {
+            vaultPopupIsShowing.value = false;
+            onClose(saved);
+        };
+
+        vaultPopupIsShowing.value = true;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -336,6 +363,9 @@ export default function createPopupStore()
         get csvImportHeaders() { return csvImportHeaders.value; },
         get importProperties() { return importProperties.value; },
         get onImportConfirmed() { return onImportConfirmed.value; },
+        get vaultPopupIsShowing() { return vaultPopupIsShowing.value; },
+        get vaultModel() { return vaultModel.value },
+        get onVaultPopupClose() { return onVaultPopupClose.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -360,6 +390,7 @@ export default function createPopupStore()
         showBreachedPasswordPopup,
         hideBreachedPasswordPopup,
         showImportPopup,
-        hideImportPopup
+        hideImportPopup,
+        showVaultPopup
     }
 }

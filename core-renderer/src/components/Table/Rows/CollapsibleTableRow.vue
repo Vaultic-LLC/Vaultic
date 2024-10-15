@@ -20,7 +20,7 @@ import TableRow from "./TableRow.vue"
 
 import { Group } from '../../../Types/Table';
 import { GroupIconModel } from '../../../Types/Models';
-import { stores } from '../../../Objects/Stores';
+import app from "../../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "CollapsibleTableRow",
@@ -45,7 +45,7 @@ export default defineComponent({
 
         let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
         {
-            const allGroups: Group[] = stores.groupStore.groups.filter(g => props.groups.includes(g.id));
+            const allGroups: Group[] = app.currentVault.groupStore.groups.filter(g => props.groups.includes(g.id));
             if (allGroups.length <= 4)
             {
                 return allGroups.map((g) =>
@@ -102,7 +102,7 @@ export default defineComponent({
                 return;
             }
 
-            stores.popupStore.showRequestAuthentication(primaryColor.value, onAuthenticationSuccessful, onAuthenticationCanceld);
+            app.popups.showRequestAuthentication(primaryColor.value, onAuthenticationSuccessful, onAuthenticationCanceld);
             authPromise.value = new Promise((resolve, reject) =>
             {
                 resolveFunc = resolve;

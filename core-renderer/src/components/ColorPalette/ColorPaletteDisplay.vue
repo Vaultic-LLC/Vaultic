@@ -41,10 +41,10 @@ import { SelectorButtonModel } from "../../Types/Models";
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import EditColorPalettePopup from "../ObjectPopups/EditPopups/EditColorPalettePopup.vue";
 import { getLinearGradientFromColor } from "../../Helpers/ColorHelper";
-import * as TWEEN from '@tweenjs/tween.js'
+import * as TWEEN from '@tweenjs/tween.js';
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
-import { stores } from "../../Objects/Stores";
+import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "ColorPaletteDisplay",
@@ -58,7 +58,7 @@ export default defineComponent({
     setup(props)
     {
         const editButton: Ref<HTMLElement | null> = ref(null);
-        const colorPalette: ComputedRef<ColorPalette> = computed(() => stores.settingsStore.colorPalettes[props.index]);
+        const colorPalette: ComputedRef<ColorPalette> = computed(() => app.settings.colorPalettes[props.index]);
 
         const primaryColor: ComputedRef<string> = computed(() => colorPalette.value.passwordsColor.primaryColor);
         const valuesColor: ComputedRef<string> = computed(() => colorPalette.value.valuesColor.primaryColor);
@@ -69,8 +69,8 @@ export default defineComponent({
         const created: ComputedRef<boolean> = computed(() => colorPalette.value.isCreated);
         const editable: ComputedRef<boolean> = computed(() => colorPalette.value.editable);
 
-        const addColor: ComputedRef<string> = computed(() => stores.userPreferenceStore.currentPrimaryColor.value);
-        const addColorGradient: Ref<string> = ref(getLinearGradientFromColor(stores.userPreferenceStore.currentPrimaryColor.value));
+        const addColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const addColorGradient: Ref<string> = ref(getLinearGradientFromColor(app.userPreferences.currentPrimaryColor.value));
 
         const hoveringDisplay: Ref<boolean> = ref(false);
         const hoveringIcon: Ref<boolean> = ref(false);
@@ -80,7 +80,7 @@ export default defineComponent({
         const selectorButtonModel: ComputedRef<SelectorButtonModel> = computed(() =>
         {
             return {
-                isActive: computed(() => colorPalette.value.id == stores.userPreferenceStore.currentColorPalette.id),
+                isActive: computed(() => colorPalette.value.id == app.userPreferences.currentColorPalette.id),
                 color: computed(() => colorPalette.value.passwordsColor.primaryColor),
                 onClick: onPaletteSelected
             }
@@ -95,7 +95,7 @@ export default defineComponent({
             }
 
             colorPalette.value.active = true;
-            stores.userPreferenceStore.updateAndCommitCurrentColorPalette(colorPalette.value);
+            app.userPreferences.updateAndCommitCurrentColorPalette(colorPalette.value);
         }
 
         function onEditColorPalettePopupClosed()
@@ -108,7 +108,7 @@ export default defineComponent({
             showEditColorPalettePopup.value = true;
         }
 
-        watch(() => stores.userPreferenceStore.currentPrimaryColor.value, (newValue, oldValue): void =>
+        watch(() => app.userPreferences.currentPrimaryColor.value, (newValue, oldValue): void =>
         {
             const previousColor: RGBColor | null = hexToRgb(oldValue);
             const newColor: RGBColor | null = hexToRgb(newValue);

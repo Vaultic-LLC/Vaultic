@@ -32,7 +32,7 @@ export default defineComponent({
     name: "EnumInputField",
     emits: ["update:modelValue"],
     props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth', 'zIndex', 'required'],
+        'width', 'minWidth', 'maxWidth', 'zIndex', 'required', 'disabled'],
     setup(props, ctx)
     {
         const container: Ref<HTMLElement | null> = ref(null);
@@ -57,6 +57,11 @@ export default defineComponent({
 
         function onSelectorClick()
         {
+            if (props.disabled)
+            {
+                return;
+            }
+
             opened.value = !opened.value;
             if (selectedValue.value == '')
             {
@@ -71,6 +76,11 @@ export default defineComponent({
             // Prevent the popup from capturing the enter handler and trying to save / do whatever its doing
             e.preventDefault();
             e.stopPropagation();
+
+            if (props.disabled)
+            {
+                return;
+            }
 
             if (!opened.value)
             {

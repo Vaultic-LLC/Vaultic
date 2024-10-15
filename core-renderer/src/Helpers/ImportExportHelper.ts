@@ -1,6 +1,6 @@
 import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, NameValuePairType, Password, ImportableDisplayField, GroupCSVHeader, SecurityQuestion, nameValuePairTypesValues } from "../Types/EncryptedData";
 import { DataType } from "../Types/Table";
-import { stores } from "../Objects/Stores/index";
+import app from "../Objects/Stores/AppStore";
 import { parse } from "csv-parse/browser/esm/sync";
 import { stringify } from 'csv-stringify/browser/esm';
 import cryptHelper from "./cryptHelper";
@@ -41,13 +41,13 @@ export async function importPasswords(color: string)
 
     if (!content)
     {
-        stores.popupStore.showAlert("Unable to read file", "Please check to make sure the file is formatted properly.", false);
+        app.popups.showAlert("Unable to read file", "Please check to make sure the file is formatted properly.", false);
         return;
     }
 
     const records: string[][] = parse(content, { bom: true });
     const importer = new PasswordCSVImporter();
-    stores.popupStore.showImportPopup(color, records[0], importablePasswordProperties,
+    app.popups.showImportPopup(color, records[0], importablePasswordProperties,
         (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
 }
 
@@ -61,26 +61,26 @@ export async function importValues(color: string)
 
     if (!content)
     {
-        stores.popupStore.showAlert("Unable to read file", "Please check to make sure the file is formatted properly.", false);
+        app.popups.showAlert("Unable to read file", "Please check to make sure the file is formatted properly.", false);
         return;
     }
 
     const records: string[][] = parse(content, { bom: true });
 
     const importer = new ValueCSVImporter();
-    stores.popupStore.showImportPopup(color, records[0], importableValueProperties,
+    app.popups.showImportPopup(color, records[0], importableValueProperties,
         (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
 }
 
 export async function getExportablePasswords(color: string, masterKey: string): Promise<string>
 {
-    stores.popupStore.showLoadingIndicator(color, "Exporting Passwords");
+    app.popups.showLoadingIndicator(color, "Exporting Passwords");
     let data: string[][] = [['Login', 'Domain', 'Email', 'Password For', 'Password', 'Security Question Questions',
         'Security Question Answers', 'Additional Info', 'Groups']];
 
-    for (let i = 0; i < stores.passwordStore.passwords.length; i++)
+    for (let i = 0; i < app.currentVault.passwordStore.passwords.length; i++)
     {
-        let password = stores.passwordStore.passwords[i];
+        let password = app.currentVault.passwordStore.passwords[i];
         if (password.isVaultic)
         {
             continue;
@@ -119,7 +119,7 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         let groups: string[] = [];
         for (let j = 0; j < password.groups.length; j++)
         {
-            const group = stores.groupStore.passwordGroups.filter(g => g.id == password.groups[j]);
+            const group = app.currentVault.groupStore.passwordGroups.filter(g => g.id == password.groups[j]);
             if (group.length == 1)
             {
                 groups.push(group[0].name);
@@ -139,12 +139,12 @@ export async function getExportablePasswords(color: string, masterKey: string): 
 
 export async function getExportableValues(color: string, masterKey: string): Promise<string>
 {
-    stores.popupStore.showLoadingIndicator(color, "Exporting Values");
+    app.popups.showLoadingIndicator(color, "Exporting Values");
     let data: string[][] = [['Name', 'Value', 'Value Type', 'Additional Info', 'Groups']];
 
-    for (let i = 0; i < stores.valueStore.nameValuePairs.length; i++)
+    for (let i = 0; i < app.currentVault.valueStore.nameValuePairs.length; i++)
     {
-        let value = stores.valueStore.nameValuePairs[i];
+        let value = app.currentVault.valueStore.nameValuePairs[i];
 
         let decryptedValueResponse = await cryptHelper.decrypt(masterKey, value.value);
         if (!decryptedValueResponse.success)
@@ -156,7 +156,7 @@ export async function getExportableValues(color: string, masterKey: string): Pro
         let groups: string[] = [];
         for (let j = 0; j < value.groups.length; j++)
         {
-            const group = stores.groupStore.valuesGroups.filter(g => g.id == value.groups[j]);
+            const group = app.currentVault.groupStore.valuesGroups.filter(g => g.id == value.groups[j]);
             if (group.length == 1)
             {
                 groups.push(group[0].name);
@@ -169,7 +169,7 @@ export async function getExportableValues(color: string, masterKey: string): Pro
     return await exportData(data);
 }
 
-async function exportData(data: string[][]): Promise<string>
+export async function exportData(data: string[][]): Promise<string>
 {
     return new Promise((resolve) =>
     {
@@ -212,8 +212,8 @@ async function exportData(data: string[][]): Promise<string>
 
 function showExportError()
 {
-    stores.popupStore.showAlert("", "An error occured while trying to export. Please try again or", true);
-    stores.popupStore.hideLoadingIndicator();
+    app.popups.showAlert("", "An error occured while trying to export. Please try again or", true);
+    app.popups.hideLoadingIndicator();
 }
 
 class CSVImporter<T extends IGroupable>
@@ -230,13 +230,13 @@ class CSVImporter<T extends IGroupable>
         return {} as T;
     }
 
-    protected async saveValue(masterKey: string, value: T, skipBackup: boolean)
+    protected async saveValue(masterKey: string, value: T, backup: boolean)
     {
     }
 
     public async import(color: string, masterKey: string, records: string[][], columnToProperty: Dictionary<ImportableDisplayField[]>)
     {
-        stores.popupStore.showLoadingIndicator(color, "Importing");
+        app.popups.showLoadingIndicator(color, "Importing");
 
         let groupsAdded: Dictionary<string> = {};
         const headers: string[] = records[0];
@@ -289,7 +289,7 @@ class CSVImporter<T extends IGroupable>
                                         const group = defaultGroup(this.dataType);
                                         group.name = groups[l];
 
-                                        await stores.groupStore.addGroup(masterKey, group, true);
+                                        await app.currentVault.groupStore.addGroup(masterKey, group, true);
 
                                         groupId = group.id;
                                         groupsAdded[group.name] = group.id;
@@ -315,14 +315,12 @@ class CSVImporter<T extends IGroupable>
                 }
             }
 
-            // save, only backup the last value
-            await this.saveValue(masterKey, value, i != records.length - 1);
+            // save, only backup after the last value
+            await this.saveValue(masterKey, value, i == records.length - 1);
         }
 
-        stores.popupStore.hideLoadingIndicator();
-
-        // TOOD: should actually do some error handling
-        stores.popupStore.showToast(color, "Import Complete", true);
+        app.popups.hideLoadingIndicator();
+        app.popups.showToast(color, "Import Complete", true);
     }
 
     protected async customSetProperty(value: T, property: ImportableDisplayField, cellValue: string)
@@ -346,9 +344,9 @@ export class PasswordCSVImporter extends CSVImporter<Password>
         return defaultPassword();
     }
 
-    protected async saveValue(masterKey: string, value: Password, skipBackup: boolean): Promise<void> 
+    protected async saveValue(masterKey: string, value: Password, backup: boolean): Promise<void> 
     {
-        await stores.passwordStore.addPassword(masterKey, value, skipBackup);
+        await app.currentVault.passwordStore.addPassword(masterKey, value, backup);
     }
 
     protected async customSetProperty(value: Password, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
@@ -438,9 +436,9 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
         return defaultValue();
     }
 
-    protected async saveValue(masterKey: string, value: NameValuePair, skipBackup: boolean): Promise<void> 
+    protected async saveValue(masterKey: string, value: NameValuePair, backup: boolean): Promise<void> 
     {
-        await stores.valueStore.addNameValuePair(masterKey, value, skipBackup);
+        await app.currentVault.valueStore.addNameValuePair(masterKey, value, backup);
     }
 
     protected async customSetProperty(value: NameValuePair, property: ImportableDisplayField, cellValue: string): Promise<boolean> 

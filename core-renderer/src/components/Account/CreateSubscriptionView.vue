@@ -45,7 +45,7 @@
 import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
-import { stores } from '../../Objects/Stores';
+import app from "../../Objects/Stores/AppStore";
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
@@ -83,19 +83,19 @@ export default defineComponent({
 
         onMounted(async () =>
         {
-            stores.popupStore.showLoadingIndicator(props.color);
+            app.popups.showLoadingIndicator(props.color);
             const response = await api.server.user.createCheckout();
 
             if (response.Success)
             {
                 alreadyCreated.value = response.AlreadyCreated;
                 url.value = response.Url;
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
             }
             else
             {
                 hideButton.value = true;
-                stores.popupStore.hideLoadingIndicator();
+                app.popups.hideLoadingIndicator();
                 defaultHandleFailedResponse(response);
             }
         });
