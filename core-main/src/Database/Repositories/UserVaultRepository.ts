@@ -179,7 +179,6 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             const newUserVault: CondensedVaultData = JSON.parse(data);
 
             const transaction = new Transaction();
-            console.log(`saving vaultPreferences: ${JSON.stringify(newUserVault)}`);
             if (newUserVault.vaultPreferencesStoreState)
             {
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(

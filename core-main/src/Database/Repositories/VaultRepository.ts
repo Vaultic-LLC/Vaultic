@@ -28,12 +28,6 @@ class VaultRepository extends VaulticRepository<Vault>
         return environment.databaseDataSouce.getRepository(Vault);
     }
 
-    public async getAllVaultIDs(): Promise<number[]>
-    {
-        const vaults = await this.repository.find();
-        return vaults.map(v => v.vaultID);
-    }
-
     public async setLastUsedVault(user: User, userVaultID: number)
     {
         const transaction = new Transaction();

@@ -115,10 +115,6 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
             });
         }
     }
-    else 
-    {
-        console.log('unverified user vaults')
-    }
 
     return userData;
 }
