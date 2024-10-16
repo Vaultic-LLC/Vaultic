@@ -1,3 +1,4 @@
+import { Promisify } from "../Helpers/TypeScriptHelper";
 import { AppController, ClientUserController, ClientVaultController, SessionController, ValueController } from "./Controllers";
 import { DeviceInfo } from "./Device";
 import { ClientEnvironment, ClientVaulticCache } from "./Environment";
@@ -8,13 +9,13 @@ import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "./Utili
 export interface Utilities
 {
     crypt: ClientCryptUtility;
-    hash: HashUtility;
-    generator: ClientGeneratorUtility;
+    hash: Promisify<HashUtility>;
+    generator: Promisify<ClientGeneratorUtility>;
 }
 
 export interface Helpers
 {
-    validation: ValidationHelper;
+    validation: Promisify<ValidationHelper>;
     vaultic: VaulticHelper;
     server: ServerHelper;
     vault: ClientVaultHelper;

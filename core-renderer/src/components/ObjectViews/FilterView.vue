@@ -5,7 +5,7 @@
             :width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
         <TableTemplate ref="tableRef" id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color"
             :row-gap="0" :border="true" :emptyMessage="emptyMessage"
-            :showEmptyMessage="filterState?.conditions?.length == 0 ?? true" :headerTabs="headerTabs">
+            :showEmptyMessage="filterState.conditions.length == 0" :headerTabs="headerTabs">
             <template #headerControls>
                 <AddButton :color="color" @click="onAdd" />
             </template>
