@@ -1,7 +1,7 @@
 import { environment } from "../Environment";
 import { VaulticEntity } from "./Entities/VaulticEntity";
 import { VaulticRepository } from "../Types/Repositories";
-import { DeepPartial } from "../Helpers/TypeScriptHelper";
+import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 enum Operation
 {

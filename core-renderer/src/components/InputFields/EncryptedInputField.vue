@@ -38,7 +38,6 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 
-import { DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import clipboard from 'clipboardy';
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
@@ -48,6 +47,7 @@ import app from "../../Objects/Stores/AppStore";
 import cryptHelper from '../../Helpers/cryptHelper';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
+import { ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "EncryptedInputField",

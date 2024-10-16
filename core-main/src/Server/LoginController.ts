@@ -1,4 +1,4 @@
-import { FinishLoginResponse, StartLoginResponse } from "../Types/Responses";
+import { FinishLoginResponse, StartLoginResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface LoginController

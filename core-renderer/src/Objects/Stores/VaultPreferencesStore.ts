@@ -1,5 +1,5 @@
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { validateObject } from "../../Helpers/TypeScriptHelper";
-import { Dictionary } from "../../Types/DataStructures";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultContrainedStore } from "./Base";
 

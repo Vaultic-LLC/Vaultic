@@ -1,7 +1,7 @@
-import { UserDataBreach } from "../../Types/SharedTypes";
 import { Store, StoreEvents } from "./Base";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
+import { UserDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
 
 export interface UserDataBreachStoreState
 {

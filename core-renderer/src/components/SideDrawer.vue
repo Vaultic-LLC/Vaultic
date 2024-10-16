@@ -29,9 +29,9 @@ import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
 
 import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
-import { Dictionary } from "../Types/DataStructures";
-import { DisplayVault, VaultType } from "../Types/APITypes";
 import { TreeNodeButton } from "../Types/Models";
+import { Dictionary } from '@vaultic/shared/Types/DataStructures';
+import { DisplayVault, VaultType } from '@vaultic/shared/Types/Entities';
 
 export default defineComponent({
     name: "SideDrawer",

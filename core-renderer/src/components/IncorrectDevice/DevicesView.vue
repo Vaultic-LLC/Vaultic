@@ -36,7 +36,6 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import TableRow from '../Table/Rows/TableRow.vue';
 import ToolTip from '../ToolTip.vue';
 
-import { Device, IncorrectDeviceResponse } from '../../Types/SharedTypes';
 import { ButtonModel, HeaderTabModel, SortableHeaderModel, TableRowData, TextTableRowValue } from '../../Types/Models';
 import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
@@ -46,6 +45,8 @@ import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { TableTemplateComponent } from '../../Types/Components';
 import { api } from '../../API';
+import { IncorrectDeviceResponse } from '@vaultic/shared/Types/Responses';
+import { Device } from '@vaultic/shared/Types/Device';
 
 export default defineComponent({
     name: "DevicesView",

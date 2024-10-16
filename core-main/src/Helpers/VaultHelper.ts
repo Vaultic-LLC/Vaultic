@@ -1,17 +1,17 @@
+import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { UserVault } from "../Database/Entities/UserVault";
 import { Vault } from "../Database/Entities/Vault";
 import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
 import axiosHelper from "../Server/AxiosHelper";
 import vaulticServer from "../Server/VaulticServer";
-import errorCodes from "../Types/ErrorCodes";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { MethodResponse, TypedMethodResponse } from "../Types/MethodResponse";
 import { VaultKey } from "../Types/Properties";
-import { CondensedVaultData } from "../Types/Repositories";
-import { UserDataPayload } from "../Types/ServerTypes";
 import { safetifyMethod } from "./RepositoryHelper";
-import { DeepPartial } from "./TypeScriptHelper";
+import { MethodResponse, TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 class VaultHelper 
 {
@@ -197,5 +197,4 @@ class VaultHelper
 }
 
 const vaultHelper: VaultHelper = new VaultHelper();
-export type VaultHelperType = typeof vaultHelper;
 export default vaultHelper;

@@ -1,6 +1,5 @@
 import { environment } from "../../Environment";
 import { User } from "../Entities/User";
-import { UserData } from "../../Types/Repositories";
 import { VaulticRepository } from "./VaulticRepository";
 import { Repository } from "typeorm";
 import Transaction from "../Transaction";
@@ -8,14 +7,14 @@ import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
 import { AppStoreState } from "../Entities/States/AppStoreState";
 import { UserPreferencesStoreState } from "../Entities/States/UserPreferencesStoreState";
-import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { Vault } from "../Entities/Vault";
-import { EntityState } from "../../Types/Properties";
 import { backupData } from "../../Helpers/RepositoryHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
-import { TypedMethodResponse } from "../../Types/MethodResponse";
-import errorCodes from "../../Types/ErrorCodes";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
+import { EntityState, UserData } from "@vaultic/shared/Types/Entities";
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 class UserRepository extends VaulticRepository<User>
 {
@@ -53,12 +52,6 @@ class UserRepository extends VaulticRepository<User>
         user.masterKeySalt = salt;
 
         return true;
-    }
-
-    public async getAllUserIDs(): Promise<number[]>
-    {
-        const users = await this.repository.find();
-        return users.map(u => u.userID);
     }
 
     // Should only be called when we don't really care about data integrity, like in LogRepository

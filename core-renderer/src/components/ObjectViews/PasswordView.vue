@@ -63,7 +63,6 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 
 import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
-import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Types/Keys';
 import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Group } from '../../Types/Table';
@@ -72,6 +71,7 @@ import app from "../../Objects/Stores/AppStore";
 import { generateUniqueID } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { api } from "../../API"
+import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "PasswordView",

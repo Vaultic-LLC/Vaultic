@@ -25,9 +25,10 @@ async function decrypt(key: string, value: string): Promise<MethodResponse>
     return await api.utilities.crypt.decrypt(key, value);
 }
 
-const cryptHelper: CryptHelper = {
+const cryptHelper: CryptHelper =
+{
     encrypt,
     decrypt
-}
+};
 
 export default cryptHelper;

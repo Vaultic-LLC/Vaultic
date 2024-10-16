@@ -3,17 +3,16 @@ import { Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
-import { EntityState } from "../../Types/Properties";
-import { CondensedVaultData } from "../../Types/Repositories";
 import { User } from "../Entities/User";
 import { backupData } from "../../Helpers/RepositoryHelper";
-import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
-import { TypedMethodResponse } from "../../Types/MethodResponse";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
-import errorCodes from "../../Types/ErrorCodes";
 import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
+import { CondensedVaultData, EntityState } from "@vaultic/shared/Types/Entities";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 class UserVaultRepository extends VaulticRepository<UserVault>
 {
@@ -47,12 +46,6 @@ class UserVaultRepository extends VaulticRepository<UserVault>
 
             return userVaultQuery.getMany();
         }
-    }
-
-    public async getAllUserVaultIDs(): Promise<number[]>
-    {
-        const userVaults = await this.repository.find();
-        return userVaults.map(uv => uv.userVaultID);
     }
 
     public async getVerifiedUserVaults(masterKey: string, userVaultIDs?: number[], user?: User,

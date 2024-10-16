@@ -1,6 +1,6 @@
 import { x25519 } from '@noble/curves/ed25519';
 import { bytesToHex } from '@noble/curves/abstract/utils';
-import { CoreGeneratorUtility, PublicPrivateKey } from '../Types/Utilities';
+import { PublicPrivateKey, CoreGeneratorUtility } from '@vaultic/shared/Types/Utilities';
 
 async function ECKeys(): Promise<PublicPrivateKey>
 {

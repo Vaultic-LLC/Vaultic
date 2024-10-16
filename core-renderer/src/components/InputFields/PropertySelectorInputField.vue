@@ -27,8 +27,8 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { PropertySelectorDisplayFields, PropertyType } from '../../Types/EncryptedData';
-import { ValidationFunctionsKey } from '../../Types/Keys';
 import tippy from 'tippy.js';
+import { ValidationFunctionsKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "PropertySelectorInputField",

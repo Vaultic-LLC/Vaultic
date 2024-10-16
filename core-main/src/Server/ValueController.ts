@@ -1,10 +1,6 @@
-import { GenerateRandomPhraseResponse } from "../Types/Responses";
+import { GenerateRandomPhraseResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
-
-export interface ValueController
-{
-    generateRandomPhrase: (length: number) => Promise<GenerateRandomPhraseResponse>;
-}
+import { ValueController } from "@vaultic/shared/Types/Controllers";
 
 export function createValueController(axiosHelper: AxiosHelper): ValueController
 {

@@ -1,8 +1,8 @@
+import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { StoreState } from "../Database/Entities/States/StoreState";
 import { User } from "../Database/Entities/User";
 import { UserVault } from "../Database/Entities/UserVault";
 import { VaulticEntity } from "../Database/Entities/VaulticEntity";
-import { nameof } from "../Helpers/TypeScriptHelper";
 
 export interface FieldTree
 {

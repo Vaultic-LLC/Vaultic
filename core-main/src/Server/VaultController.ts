@@ -1,12 +1,12 @@
-import { BaseResponse, CreateVaultResponse, GetVaultDataResponse } from "../Types/Responses";
+import { CreateVaultResponse, GetVaultDataResponse, BaseResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
+import { ClientVaultController } from "@vaultic/shared/Types/Controllers";
 
-export interface VaultController
+export interface VaultController extends ClientVaultController
 {
     create: () => Promise<CreateVaultResponse>;
     getArchivedVaultData: (userVaultID: number) => Promise<GetVaultDataResponse>;
     unarchiveVault: (userVaultID: number) => Promise<GetVaultDataResponse>;
-    deleteVault: (userVaultID: number) => Promise<GetVaultDataResponse>;
     failedToSaveVault: (userVaultID: number) => Promise<BaseResponse>;
 }
 

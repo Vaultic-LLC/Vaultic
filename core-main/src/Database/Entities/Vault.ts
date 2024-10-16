@@ -1,15 +1,16 @@
 import { Entity, Column, OneToMany, PrimaryColumn, OneToOne } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity";
-import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { VaultStoreState } from "./States/VaultStoreState";
 import { PasswordStoreState } from "./States/PasswordStoreState";
 import { ValueStoreState } from "./States/ValueStoreState";
 import { FilterStoreState } from "./States/FilterStoreState";
 import { GroupStoreState } from "./States/GroupStoreState";
+import { IVault } from "@vaultic/shared/Types/Entities";
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 @Entity({ name: "vaults" })
-export class Vault extends VaulticEntity
+export class Vault extends VaulticEntity implements IVault
 {
     // Matches Server
     @PrimaryColumn("integer")

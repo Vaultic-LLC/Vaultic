@@ -9,6 +9,7 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
+        "@vaultic/shared": "../core-shared",
         "@noble/curves": "^1.4.2",
         "@serenity-kit/opaque": "^0.8.4",
         "axios": "^1.6.7",

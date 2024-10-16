@@ -57,10 +57,10 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
-import { ValidationFunctionsKey } from '../../Types/Keys';
 import { InputComponent } from '../../Types/Components';
 import { api } from "../../API";
 import app from "../../Objects/Stores/AppStore";
+import { ValidationFunctionsKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "AccountInfoView",

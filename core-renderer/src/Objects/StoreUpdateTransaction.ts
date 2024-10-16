@@ -1,7 +1,7 @@
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { api } from "../API";
 import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
-import { Dictionary } from "../Types/DataStructures";
-import { TypedMethodResponse } from "../Types/MethodResponse";
 import { Store, StoreEvents } from "./Stores/Base";
 
 export enum Entity

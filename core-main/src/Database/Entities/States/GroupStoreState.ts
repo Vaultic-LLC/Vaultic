@@ -1,10 +1,11 @@
 import { Entity, OneToOne, PrimaryColumn, Column, JoinColumn } from "typeorm";
-import { DeepPartial, nameof } from "../../../Helpers/TypeScriptHelper"
 import { StoreState } from "./StoreState";
 import { Vault } from "../Vault";
+import { IGroupStoreState } from "@vaultic/shared/Types/Entities";
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 @Entity({ name: "groupStoreStates" })
-export class GroupStoreState extends StoreState
+export class GroupStoreState extends StoreState implements IGroupStoreState
 {
     // Matches Server
     @PrimaryColumn("integer")

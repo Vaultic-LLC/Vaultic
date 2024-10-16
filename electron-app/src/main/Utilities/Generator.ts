@@ -1,8 +1,9 @@
-import { randomBytes, generateKeyPairSync, KeyPairSyncResult } from "crypto"
+import { randomBytes, generateKeyPairSync } from "crypto"
 import validationHelper from '../Core/Helpers/ValidationHelper';
 import crypto from "crypto";
-import { GeneratorUtility, PublicPrivateKey } from "../Core/Types/Utilities";
+import { GeneratorUtility } from "../Core/Types/Utilities";
 import coreGenerator from "../Core/Utilities/CoreGeneratorUtility";
+import { PublicPrivateKey } from "@vaultic/shared/Types/Utilities";
 
 function uniqueId(): string
 {

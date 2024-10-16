@@ -1,8 +1,8 @@
 import { ComputedRef, Ref, ref } from "vue";
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
-import { Device } from "./SharedTypes";
 import { ImportableDisplayField } from "./EncryptedData";
-import { Dictionary } from "./DataStructures";
+import { Device } from "@vaultic/shared/Types/Device";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 
 export interface SmallMetricGaugeModel
 {
@@ -213,4 +213,12 @@ export interface TreeNodeButton
 {
     icon: string;
     onClick: (data: Dictionary<any>) => Promise<any>;
+}
+
+export interface Account
+{
+    firstName: string;
+    lastName: string;
+    email: string;
+    masterKey: string;
 }

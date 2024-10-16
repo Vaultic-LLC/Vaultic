@@ -1,11 +1,10 @@
-import { BaseResponse, IncorrectDeviceResponse } from "../../Types/SharedTypes";
 import { AccountSetupModel, AccountSetupView, ButtonModel } from "../../Types/Models";
 import { Ref, ref } from "vue";
 import { ImportableDisplayField } from "../../Types/EncryptedData";
-import { Dictionary } from "../../Types/DataStructures";
 import app from "./AppStore";
-import { DisplayVault } from "../../Types/APITypes";
-import { api } from "../../API";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { DisplayVault } from "@vaultic/shared/Types/Entities";
+import { IncorrectDeviceResponse, BaseResponse } from "@vaultic/shared/Types/Responses";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -66,7 +65,7 @@ export function createPopupStore()
     const axiosCode: Ref<string | undefined> = ref('');
 
     const incorrectDeviceIsShowing: Ref<boolean> = ref(false);
-    const response: Ref<IncorrectDeviceResponse> = ref({});
+    const response: Ref<IncorrectDeviceResponse | undefined> = ref();
 
     const accountSetupIsShowing: Ref<boolean> = ref(true);
     const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
@@ -182,9 +181,9 @@ export function createPopupStore()
         alertIsShowing.value = false;
     }
 
-    function showIncorrectDevice(rsponse?: IncorrectDeviceResponse)
+    function showIncorrectDevice(incorrectDeviceResponse?: IncorrectDeviceResponse)
     {
-        response.value = rsponse ?? {};
+        response.value = incorrectDeviceResponse;
         incorrectDeviceIsShowing.value = true;
     }
 

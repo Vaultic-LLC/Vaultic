@@ -1,11 +1,6 @@
 import { environment } from "../Environment";
-import { LogResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
-
-export interface AppController
-{
-    log: (exception: string, stack: string) => Promise<LogResponse>;
-}
+import { AppController } from "@vaultic/shared/Types/Controllers";
 
 export function createAppController(axiosHelper: AxiosHelper): AppController
 {

@@ -1,9 +1,10 @@
 import { DataSource } from "typeorm";
 import axiosHelper from "./Server/AxiosHelper";
-import { DeviceInfo } from "./Types/Device";
-import { CryptUtility, GeneratorUtility, HashUtility } from "./Types/Utilities";
 import { initRepositories, VaulticRepositories } from "./Database/Repositories";
 import { VaulticCache } from "./Cache";
+import { DeviceInfo } from "@vaultic/shared/Types/Device";
+import { HashUtility } from "@vaultic/shared/Types/Utilities";
+import { CryptUtility, GeneratorUtility } from "./Types/Utilities";
 
 export interface SessionHandler
 {

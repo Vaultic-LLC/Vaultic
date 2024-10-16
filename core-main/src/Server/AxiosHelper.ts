@@ -1,11 +1,11 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '../Types/Responses';
-import { MethodResponse, TypedMethodResponse } from '../Types/MethodResponse';
 import vaulticServer from './VaulticServer';
 import { environment } from '../Environment';
-import { DeviceInfo } from '../Types/Device';
-import { PublicPrivateKey } from '../Types/Utilities';
 import { FieldTree } from '../Types/FieldTree';
+import { DeviceInfo } from '@vaultic/shared/Types/Device';
+import { PublicPrivateKey } from '@vaultic/shared/Types/Utilities';
+import { MethodResponse, TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
+import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaultic/shared/Types/Responses';
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";

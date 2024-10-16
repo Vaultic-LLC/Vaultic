@@ -1,10 +1,11 @@
 import { Entity, PrimaryColumn, OneToOne, Column, JoinColumn } from "typeorm";
-import { DeepPartial, nameof } from "../../../Helpers/TypeScriptHelper"
 import { StoreState } from "./StoreState";
 import { User } from "../User";
+import { IUserPreferencesStoreState } from "@vaultic/shared/Types/Entities";
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 @Entity({ name: "userPreferencesStoreStates" })
-export class UserPreferencesStoreState extends StoreState
+export class UserPreferencesStoreState extends StoreState implements IUserPreferencesStoreState
 {
     // Matches Server
     @PrimaryColumn("integer")

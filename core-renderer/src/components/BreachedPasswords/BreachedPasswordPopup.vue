@@ -51,9 +51,9 @@ import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import app from "../../Objects/Stores/AppStore";
-import { UserDataBreach } from '../../Types/SharedTypes';
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { popups } from '../../Objects/Stores/PopupStore';
+import { UserDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
 
 export default defineComponent({
     name: "DeviceView",

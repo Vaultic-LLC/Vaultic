@@ -50,8 +50,7 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import { InputComponent } from '../../Types/Components';
 import app from "../../Objects/Stores/AppStore";
-import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
-import { Account } from '../../Types/SharedTypes';
+import { Account, InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 

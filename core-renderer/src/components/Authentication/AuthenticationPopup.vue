@@ -46,8 +46,8 @@ import { getLinearGradientFromColor } from '../../Helpers/ColorHelper';
 import { EncryptedInputFieldComponent } from '../../Types/Components';
 import app from "../../Objects/Stores/AppStore";
 import { api } from "../../API";
-import { TypedMethodResponse } from "../../Types/MethodResponse";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
+import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 
 export default defineComponent({
     name: "AuthenticationPopup",

@@ -1,9 +1,9 @@
 import { x25519 } from '@noble/curves/ed25519';
 import { bytesToHex } from '@noble/curves/abstract/utils';
 import coreGenerator from './CoreGeneratorUtility';
-import { ECEncryptionResult, MethodResponse } from '../Types/MethodResponse';
 import { environment } from '../Environment';
-import { CoreCryptUtility } from '../Types/Utilities';
+import { ECEncryptionResult, MethodResponse } from '@vaultic/shared/Types/MethodResponse';
+import { CoreCryptUtility } from '@vaultic/shared/Types/Utilities';
 
 async function ECEncrypt(recipientPublicKey: string, value: string): Promise<ECEncryptionResult>
 {

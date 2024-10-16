@@ -2,12 +2,12 @@ import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn, OneToOne } from "
 import { User } from "./User"
 import { Vault } from "./Vault"
 import { VaulticEntity } from "./VaulticEntity"
-import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
-import { CondensedVaultData } from "../../Types/Repositories"
+import { CondensedVaultData, IUserVault } from "@vaultic/shared/Types/Entities"
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
 
 @Entity({ name: "userVaults" })
-export class UserVault extends VaulticEntity
+export class UserVault extends VaulticEntity implements IUserVault
 {
     // Matches Server
     @PrimaryColumn("integer")
