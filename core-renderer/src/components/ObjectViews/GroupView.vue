@@ -31,9 +31,7 @@ import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 
-import { DataType, Group } from '../../Types/Table';
 import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
-import { HeaderDisplayField, defaultGroup } from '../../Types/EncryptedData';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
@@ -42,6 +40,8 @@ import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
 import { api } from '../../API';
+import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
+import { HeaderDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: "GroupView",

@@ -58,8 +58,6 @@ import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue'
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
 
-import { DataType, Filter, FilterStatus } from '../../Types/Table';
-import { HeaderDisplayField, IFilterable, IGroupable, IIdentifiable } from '../../Types/EncryptedData';
 import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
@@ -68,6 +66,8 @@ import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
+import { DataType, Filter, FilterStatus, IFilterable, IGroupable, IIdentifiable } from '../../Types/DataTypes';
+import { HeaderDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: "PasswordValueTable",

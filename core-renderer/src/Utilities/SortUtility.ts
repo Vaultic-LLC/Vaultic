@@ -1,8 +1,7 @@
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
-import { IGroupable } from "../Types/EncryptedData";
-import { Group } from "../Types/Table";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
+import { IGroupable, Group } from "../Types/DataTypes";
 
 class SortUtility
 {

@@ -1,12 +1,7 @@
-import { DataType, Filter, Group } from "./Table";
-
 export interface IIdentifiable
 {
     id: string;
 }
-
-export type SecondaryDataObjectCollection = "filters" | "groups";
-export type SecretProperty = "password" | "value";
 
 export interface IFilterable
 {
@@ -18,80 +13,19 @@ export interface IGroupable
     groups: string[];
 }
 
-export interface StoreStateProperty<T>
+export enum DataType
 {
-    value: T;
-    lastModifiedTime: number;
-    displayComponent?: string;
+    Passwords,
+    NameValuePairs,
+    Filters,
+    Groups
 }
 
-export interface DisplayField
+export enum FilterStatus
 {
-    backingProperty: string;
-    displayName: string;
+    And = "And",
+    Or = "Or"
 }
-
-export interface HeaderDisplayField extends DisplayField
-{
-    width: string;
-    clickable: boolean;
-    padding?: string;
-    centered?: boolean;
-    headerSpaceRight?: string;
-}
-
-export interface ImportableDisplayField extends DisplayField
-{
-    required: boolean;
-    requiresDelimiter?: boolean;
-    delimiter?: string;
-}
-
-export enum PropertyType
-{
-    String,
-    Enum,
-    Object
-}
-
-export interface PropertySelectorDisplayFields extends DisplayField
-{
-    type: PropertyType;
-    enum?: { [key: string]: string | number };
-}
-
-export const FilterablePasswordProperties: PropertySelectorDisplayFields[] = [
-    {
-        backingProperty: "passwordFor",
-        displayName: "Password For",
-        type: PropertyType.String,
-    },
-    {
-        backingProperty: "domain",
-        displayName: "Domain",
-        type: PropertyType.String,
-    },
-    {
-        backingProperty: "email",
-        displayName: "Email",
-        type: PropertyType.String,
-    },
-    {
-        backingProperty: "login",
-        displayName: "Username",
-        type: PropertyType.String,
-    },
-    {
-        backingProperty: "additionalInformation",
-        displayName: "Additional Info",
-        type: PropertyType.String,
-    },
-    {
-        backingProperty: "groups",
-        displayName: "Group Name",
-        type: PropertyType.Object,
-    }
-]
 
 export interface Password extends IFilterable, IIdentifiable, IGroupable
 {
@@ -131,30 +65,6 @@ export enum NameValuePairType
 }
 
 export const nameValuePairTypesValues = Object.values(NameValuePairType);
-
-export const FilterableValueProperties: PropertySelectorDisplayFields[] = [
-    {
-        backingProperty: "name",
-        displayName: "Name",
-        type: PropertyType.String,
-    },
-    {
-        backingProperty: "additionalInformation",
-        displayName: "Additional Info",
-        type: PropertyType.String,
-    },
-    {
-        backingProperty: "valueType",
-        displayName: "Type",
-        type: PropertyType.Enum,
-        enum: NameValuePairType,
-    },
-    {
-        backingProperty: "groups",
-        displayName: "Group Name",
-        type: PropertyType.Object,
-    }
-];
 
 export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable
 {
@@ -197,6 +107,48 @@ export interface AtRisks
     containsLogin?: boolean;
     isDuplicate?: boolean;
     isEmpty?: boolean;
+}
+
+interface ISecondaryDataObject
+{
+    passwords: string[];
+    values: string[];
+    type: DataType;
+}
+
+export interface Filter extends IIdentifiable, ISecondaryDataObject
+{
+    [key: string]: any;
+    name: string;
+    isActive: boolean;
+    conditions: FilterCondition[];
+}
+
+export interface FilterCondition extends IIdentifiable
+{
+    property: string;
+    filterType?: FilterConditionType;
+    value: string;
+}
+
+export enum EqualFilterConditionType
+{
+    EqualTo = "Equal To"
+}
+
+export enum FilterConditionType
+{
+    StartsWith = "Starts With",
+    EndsWith = "Ends With",
+    Contains = "Contains",
+    EqualTo = "Equal To"
+}
+
+export interface Group extends IIdentifiable, ISecondaryDataObject
+{
+    [key: string]: any;
+    name: string;
+    color: string; // hex value
 }
 
 export function defaultPassword(): Password
@@ -267,10 +219,4 @@ export function defaultGroup(type: DataType): Group
         type: type,
         color: ''
     }
-}
-
-export interface GroupCSVHeader 
-{
-    csvHeader: string;
-    delimiter?: string;
 }

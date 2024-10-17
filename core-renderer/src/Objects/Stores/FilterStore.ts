@@ -1,12 +1,12 @@
-import { Filter, DataType, Group, FilterConditionType, PrimaryDataObjectCollection } from "../../Types/Table";
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { AtRiskType, IFilterable, IGroupable, IIdentifiable, NameValuePair, Password } from "../../Types/EncryptedData";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { Group, Filter, DataType, Password, NameValuePair, IGroupable, FilterConditionType, IFilterable, IIdentifiable, AtRiskType } from "../../Types/DataTypes";
+import { PrimaryDataObjectCollection } from "../../Types/Fields";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
 {

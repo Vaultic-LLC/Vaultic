@@ -1,10 +1,10 @@
 import { AccountSetupModel, AccountSetupView, ButtonModel } from "../../Types/Models";
 import { Ref, ref } from "vue";
-import { ImportableDisplayField } from "../../Types/EncryptedData";
 import app from "./AppStore";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { DisplayVault } from "@vaultic/shared/Types/Entities";
 import { IncorrectDeviceResponse, BaseResponse } from "@vaultic/shared/Types/Responses";
+import { ImportableDisplayField } from "../../Types/Fields";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 

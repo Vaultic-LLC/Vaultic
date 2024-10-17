@@ -11,7 +11,7 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 
 import FilterView from "../../ObjectViews/FilterView.vue";
 
-import { Filter } from '../../../Types/Table';
+import { Filter } from '../../../Types/DataTypes';
 
 export default defineComponent({
 	name: "EditGroupPopup",

@@ -1,10 +1,10 @@
-import { AtRiskType, IIdentifiable, SecondaryDataObjectCollection, SecretProperty } from "../../Types/EncryptedData";
 import { Reactive, Ref, reactive, ref } from "vue";
-import { DataType, Filter, Group, PrimaryDataObjectCollection } from "../../Types/Table";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { AtRiskType, DataType, IIdentifiable, Filter, Group } from "../../Types/DataTypes";
+import { SecondaryDataObjectCollection, SecretProperty, PrimaryDataObjectCollection } from "../../Types/Fields";
 
 export interface DataTypeStoreState<T>
 {

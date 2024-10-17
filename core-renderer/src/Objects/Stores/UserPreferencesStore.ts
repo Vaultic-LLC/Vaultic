@@ -1,12 +1,12 @@
 import { ColorPalette, colorPalettes, emptyColorPalette } from "../../Types/Colors";
 import { Store } from "./Base";
 import { Ref, ref, watch } from "vue";
-import { DataType } from "../../Types/Table";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
 import app, { AppStore } from "./AppStore";
 import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
+import { DataType } from "../../Types/DataTypes";
 
 export interface UserPreferencesStoreState
 {

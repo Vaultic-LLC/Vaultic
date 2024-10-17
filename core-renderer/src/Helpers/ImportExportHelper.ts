@@ -1,5 +1,3 @@
-import { defaultGroup, defaultPassword, defaultValue, IGroupable, NameValuePair, NameValuePairType, Password, ImportableDisplayField, GroupCSVHeader, SecurityQuestion, nameValuePairTypesValues } from "../Types/EncryptedData";
-import { DataType } from "../Types/Table";
 import app from "../Objects/Stores/AppStore";
 import { parse } from "csv-parse/browser/esm/sync";
 import { stringify } from 'csv-stringify/browser/esm';
@@ -8,6 +6,8 @@ import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
 import { generateUniqueID } from "./generatorHelper";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { IGroupable, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue } from "../Types/DataTypes";
+import { ImportableDisplayField } from "../Types/Fields";
 
 export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): Dictionary<ImportableDisplayField[]>
 {

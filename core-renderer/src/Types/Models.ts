@@ -1,8 +1,8 @@
 import { ComputedRef, Ref, ref } from "vue";
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
-import { ImportableDisplayField } from "./EncryptedData";
 import { Device } from "@vaultic/shared/Types/Device";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { ImportableDisplayField } from "./Fields";
 
 export interface SmallMetricGaugeModel
 {

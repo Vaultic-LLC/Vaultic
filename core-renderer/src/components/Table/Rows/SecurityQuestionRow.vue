@@ -28,9 +28,9 @@ import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue
 import TableRow from './TableRow.vue';
 import EncryptedInputField from '../../../components/InputFields/EncryptedInputField.vue';
 
-import { SecurityQuestion } from '../../../Types/EncryptedData';
 import { TableRowData } from '../../../Types/Models';
 import { screenWidthIsAtRatioOfMax } from "../../../Helpers/screenSizeHelepr";
+import { SecurityQuestion } from '../../../Types/DataTypes';
 
 export default defineComponent({
 	name: 'SecurityQuestionRow',

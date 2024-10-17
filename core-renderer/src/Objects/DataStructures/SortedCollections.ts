@@ -1,6 +1,6 @@
-import { IGroupable, IIdentifiable } from "../../Types/EncryptedData";
-import { DataType, Group } from "../../Types/Table";
+
 import app from "../../Objects/Stores/AppStore";
+import { IIdentifiable, IGroupable, DataType, Group } from "../../Types/DataTypes";
 
 export class SortedCollection<T extends { [key: string]: string } & IIdentifiable>
 {

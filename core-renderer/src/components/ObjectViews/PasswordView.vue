@@ -61,17 +61,17 @@ import UnlockButton from "../UnlockButton.vue"
 import ToolTip from '../ToolTip.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 
-import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
+import { Password, Group, defaultPassword } from '../../Types/DataTypes';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
 import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueID } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { api } from "../../API"
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Constants/Keys';
+import { HeaderDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: "PasswordView",

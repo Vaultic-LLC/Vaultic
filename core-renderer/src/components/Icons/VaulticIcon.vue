@@ -14,7 +14,7 @@ export default defineComponent({
     components: {
     },
     props: ['fontSize'],
-    setup(props)
+    setup()
     {
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         return {

@@ -39,7 +39,6 @@ import ToolTip from '../ToolTip.vue';
 import { ButtonModel, HeaderTabModel, SortableHeaderModel, TableRowData, TextTableRowValue } from '../../Types/Models';
 import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { HeaderDisplayField } from '../../Types/EncryptedData';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -47,6 +46,7 @@ import { TableTemplateComponent } from '../../Types/Components';
 import { api } from '../../API';
 import { IncorrectDeviceResponse } from '@vaultic/shared/Types/Responses';
 import { Device } from '@vaultic/shared/Types/Device';
+import { HeaderDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: "DevicesView",

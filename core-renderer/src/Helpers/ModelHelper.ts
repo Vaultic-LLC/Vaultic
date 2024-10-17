@@ -1,13 +1,13 @@
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
 import { CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowValue } from "../Types/Models";
 import { Ref, computed, ref } from "vue";
-import { AtRiskType, HeaderDisplayField, IIdentifiable } from "../Types/EncryptedData";
-import { DataType, Filter } from "../Types/Table";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { api } from "../API";
+import { IIdentifiable, DataType, AtRiskType, Filter } from "../Types/DataTypes";
+import { HeaderDisplayField } from "../Types/Fields";
 
 export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
     sortableCollection: SortedCollection<T>, pinnedCollection?: SortedCollection<T>, updateModels?: () => void): SortableHeaderModel[]

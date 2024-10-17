@@ -71,10 +71,10 @@ import ScrollView from './ScrollView.vue';
 
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
-import { FilterStatus } from '../../Types/Table';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import { VaultSettings } from "../../Objects/Stores/VaultStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
+import { FilterStatus } from '../../Types/DataTypes';
 
 export default defineComponent({
     name: "ValueView",

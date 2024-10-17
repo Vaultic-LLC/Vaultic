@@ -1,5 +1,4 @@
 import { Ref, ref, ComputedRef, computed } from "vue";
-import { DataType, FilterStatus } from "../../Types/Table"
 import { hideAll } from 'tippy.js';
 import { Store, StoreEvents } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
@@ -13,6 +12,7 @@ import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Types/Entities";
+import { FilterStatus, DataType } from "../../Types/DataTypes";
 
 export interface AppSettings 
 {

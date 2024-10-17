@@ -27,8 +27,7 @@ import GroupView from "../ObjectViews/GroupView.vue";
 import TableSelector from '../../components/TableSelector.vue';
 
 import { ColorPalette } from '../../Types/Colors';
-import { DataType, Filter, Group } from '../../Types/Table';
-import { NameValuePair, Password, defaultFilter, defaultGroup, defaultPassword, defaultValue } from '../../Types/EncryptedData';
+import { DataType, defaultFilter, defaultGroup, defaultPassword, defaultValue, Filter, Group, NameValuePair, Password } from '../../Types/DataTypes';
 import { SingleSelectorItemModel } from '../../Types/Models';
 import { hideAll } from 'tippy.js';
 import app from "../../Objects/Stores/AppStore";

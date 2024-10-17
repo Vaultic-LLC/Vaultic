@@ -34,13 +34,13 @@ import LoadingIndicator from '../Loading/LoadingIndicator.vue';
 
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
-import { DataType } from '../../Types/Table';
 import { hexToRgb, mixHexes, rgbToHex, toSolidHex } from '../../Helpers/ColorHelper';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import { tween } from '../../Helpers/TweenHelper';
 import { RGBColor } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
 import { api } from '../../API';
+import { DataType } from '../../Types/DataTypes';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler, zoomPlugin)
 

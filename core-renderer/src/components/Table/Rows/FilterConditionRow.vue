@@ -34,9 +34,9 @@ import TextInputField from '../../../components/InputFields/TextInputField.vue';
 import PropertySelectorInputField from '../../../components/InputFields/PropertySelectorInputField.vue';
 import EnumInputField from '../../../components/InputFields/EnumInputField.vue';
 
-import { FilterCondition, FilterConditionType, EqualFilterConditionType } from '../../../Types/Table';
-import { PropertyType } from '../../../Types/EncryptedData';
 import { TableRowData } from '../../../Types/Models';
+import { EqualFilterConditionType, FilterCondition, FilterConditionType } from '../../../Types/DataTypes';
+import { PropertyType } from '../../../Types/Fields';
 
 export default defineComponent({
     name: 'FilterConditionRow',

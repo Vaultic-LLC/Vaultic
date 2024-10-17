@@ -23,7 +23,7 @@
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
-import { DataType } from '../../Types/Table';
+import { DataType } from '../../Types/DataTypes';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';

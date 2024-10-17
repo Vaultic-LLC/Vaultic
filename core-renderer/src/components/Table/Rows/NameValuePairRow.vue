@@ -24,8 +24,8 @@ import { defaultInputColor } from '../../../Types/Colors';
 import { InputColorModel } from '../../../Types/Models';
 import { ReactiveValue } from '../../../Objects/Stores/ReactiveValue';
 import cryptHelper from '../../../Helpers/cryptHelper';
-import { NameValuePairType } from '../../../Types/EncryptedData';
 import { generateMFAQRCode } from '../../../Helpers/generatorHelper';
+import { NameValuePairType } from '../../../Types/DataTypes';
 
 export default defineComponent({
     name: "NameValuePairRow",

@@ -18,10 +18,9 @@ import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 import CombinedMetricGaugeContainer from '../../../SmallMetricGauges/CombinedMetricGaugeContainer.vue';
 import SmallMetricGauge from '../../../../components/Dashboard/SmallMetricGauge.vue';
 
-import { DataType } from '../../../../Types/Table';
-import { AtRiskType } from '../../../../Types/EncryptedData';
 import { SmallMetricGaugeModel } from '../../../../Types/Models';
 import app from "../../../../Objects/Stores/AppStore";
+import { DataType, AtRiskType } from '../../../../Types/DataTypes';
 
 export default defineComponent({
     name: "PasswordValueGauges",

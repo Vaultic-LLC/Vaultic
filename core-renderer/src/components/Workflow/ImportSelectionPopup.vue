@@ -43,7 +43,7 @@ import { CSVHeaderPropertyMapperModel, GridDefinition } from "../../Types/Models
 import { defaultInputTextColor } from '../../Types/Colors';
 import { buildCSVPropertyMappers } from "../../Helpers/ImportExportHelper";
 import { popups } from "../../Objects/Stores/PopupStore";
-import { ImportableDisplayField } from "../../Types/EncryptedData";
+import { ImportableDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: "WorkflowPopup",

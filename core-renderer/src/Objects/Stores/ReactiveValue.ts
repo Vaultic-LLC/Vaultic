@@ -1,4 +1,4 @@
-import { NameValuePair } from "../../Types/EncryptedData";
+import { NameValuePair } from "../../Types/DataTypes";
 import { ComputedRef, computed, reactive } from "vue";
 import app from "./AppStore";
 

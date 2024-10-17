@@ -31,10 +31,9 @@ import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
 
 import { SmallMetricGaugeModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { AtRiskType } from '../../Types/EncryptedData';
-import { DataType } from '../../Types/Table';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
+import { AtRiskType, DataType } from '../../Types/DataTypes';
 
 export default defineComponent({
     name: "BreachedPasswords",

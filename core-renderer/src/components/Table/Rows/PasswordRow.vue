@@ -28,11 +28,11 @@ import SecurityQuestionRow from '../Rows/SecurityQuestionRow.vue';
 
 import TextAreaInputField from '../../../components/InputFields/TextAreaInputField.vue';
 import EncryptedInputField from '../../../components/InputFields/EncryptedInputField.vue';
-import { SecurityQuestion } from '../../../Types/EncryptedData';
 import { HeaderTabModel, InputColorModel } from '../../../Types/Models';
 import { defaultInputColor } from '../../../Types/Colors';
 import { ReactivePassword } from '../../../Objects/Stores/ReactivePassword';
 import cryptHelper from '../../../Helpers/cryptHelper';
+import { SecurityQuestion } from '../../../Types/DataTypes';
 
 export default defineComponent({
     name: "PasswordRow",

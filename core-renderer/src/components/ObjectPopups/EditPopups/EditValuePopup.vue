@@ -11,7 +11,7 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 
 import ValueView from "../../ObjectViews/ValueView.vue";
 
-import { Password } from '../../../Types/EncryptedData';
+import { Password } from '../../../Types/DataTypes';
 
 export default defineComponent({
 	name: "EditValuePopup",

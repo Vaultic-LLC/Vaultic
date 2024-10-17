@@ -11,7 +11,7 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 
 import GroupView from "../../ObjectViews/GroupView.vue";
 
-import { Group } from '../../../Types/Table';
+import { Group } from '../../../Types/DataTypes';
 
 export default defineComponent({
 	name: "EditGroupPopup",

@@ -1,4 +1,4 @@
-import { Password } from "../../Types/EncryptedData";
+import { Password } from "../../Types/DataTypes";
 import { ComputedRef, computed, reactive } from "vue";
 import app from "./AppStore";
 

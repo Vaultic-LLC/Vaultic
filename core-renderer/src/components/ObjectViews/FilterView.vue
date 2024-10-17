@@ -26,13 +26,13 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import FilterConditionRow from '../Table/Rows/FilterConditionRow.vue';
 
-import { DataType, Filter } from '../../Types/Table';
-import { DisplayField, FilterablePasswordProperties, FilterableValueProperties, defaultFilter } from '../../Types/EncryptedData';
+import { DataType, defaultFilter, Filter } from '../../Types/DataTypes';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueID } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
+import { DisplayField, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
 
 export default defineComponent({
     name: "FilterView",

@@ -49,14 +49,14 @@ import EditFilterPopup from '../ObjectPopups/EditPopups/EditFilterPopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
 import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 
-import { DataType, Filter, Group } from '../../Types/Table';
 import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
+import { Filter, DataType, Group } from '../../Types/DataTypes';
+import { HeaderDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: 'FilterGroupTable',

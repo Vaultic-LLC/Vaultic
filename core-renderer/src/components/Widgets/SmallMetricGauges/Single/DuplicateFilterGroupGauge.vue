@@ -9,10 +9,9 @@ import { ComputedRef, computed, defineComponent } from 'vue';
 
 import SmallMetricGauge from "../../../Dashboard/SmallMetricGauge.vue"
 
-import { AtRiskType } from '../../../../Types/EncryptedData';
-import { DataType } from '../../../../Types/Table';
 import { SmallMetricGaugeModel } from "../../../../Types/Models"
 import app from "../../../../Objects/Stores/AppStore";
+import { DataType, AtRiskType } from '../../../../Types/DataTypes';
 
 export default defineComponent({
     name: "DuplicateFilterGroupGauge",

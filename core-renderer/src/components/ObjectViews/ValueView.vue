@@ -53,16 +53,16 @@ import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import ToolTip from '../ToolTip.vue';
 
-import { NameValuePair, defaultValue, NameValuePairType, HeaderDisplayField } from '../../Types/EncryptedData';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { api } from "../../API"
+import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
+import { HeaderDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: "ValueView",

@@ -14,8 +14,8 @@ import EmptyFilterGroupGauge from '../Single/EmptyFilterGroupGauge.vue';
 import DuplicateFilterGroupGauge from '../Single/DuplicateFilterGroupGauge.vue';
 import CombinedMetricGaugeContainer from '../../../SmallMetricGauges/CombinedMetricGaugeContainer.vue';
 
-import { DataType } from '../../../../Types/Table';
 import app from "../../../../Objects/Stores/AppStore";
+import { DataType } from '../../../../Types/DataTypes';
 
 export default defineComponent({
     name: "FilterGroupGauges",

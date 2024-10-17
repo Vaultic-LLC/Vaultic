@@ -1,6 +1,6 @@
 import { api } from "../API";
-import { IIdentifiable } from "../Types/EncryptedData";
 import qrCode from "qrcode";
+import { IIdentifiable } from "../Types/DataTypes";
 
 export async function generateUniqueID<T extends IIdentifiable>(existingItems: T[]): Promise<string>
 {

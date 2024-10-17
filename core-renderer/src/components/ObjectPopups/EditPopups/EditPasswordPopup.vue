@@ -11,7 +11,7 @@ import { defineComponent, ComputedRef, computed, ref } from 'vue';
 
 import PasswordView from "../../ObjectViews/PasswordView.vue";
 
-import { Password } from '../../../Types/EncryptedData';
+import { Password } from '../../../Types/DataTypes';
 import { SingleSelectorItemModel } from '../../../Types/Models';
 import app from "../../../Objects/Stores/AppStore";
 

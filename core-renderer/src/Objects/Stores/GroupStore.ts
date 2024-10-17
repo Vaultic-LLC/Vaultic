@@ -1,12 +1,12 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { DataType, Group, PrimaryDataObjectCollection } from "../../Types/Table";
-import { AtRiskType, IGroupable, IIdentifiable } from "../../Types/EncryptedData";
 import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { DataType, IIdentifiable, IGroupable, AtRiskType, Group } from "../../Types/DataTypes";
+import { PrimaryDataObjectCollection } from "../../Types/Fields";
 
 export interface GroupStoreState extends DataTypeStoreState<Group>
 {
