@@ -53,6 +53,7 @@ import app from "../../Objects/Stores/AppStore";
 import { Account, InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
+import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 
 export default defineComponent({
     name: "CreateMasterKeyView",
@@ -126,9 +127,7 @@ export default defineComponent({
                     if (!createUserResult.success)
                     {
                         app.popups.hideLoadingIndicator();
-                        // TODO: change to errorcode property after types PR. Only need to return if we fail to save. If we fail to backup, we are technically still
-                        // fine to continue
-                        if (createUserResult.errorCode == 10003)
+                        if (errorCodes.userFailedToSave(createUserResult.errorCode))
                         {
                             showAlertMessage("Unable to create local data, please try signing in. If the issue persists", "Unable to create local data", true);
                             ctx.emit('onLoginFailed');

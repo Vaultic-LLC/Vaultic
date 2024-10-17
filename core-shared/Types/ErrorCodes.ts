@@ -24,10 +24,15 @@ class ErrorCodes
 
     constructor() { }
 
+    verificationFailed(errorCode: number): boolean
+    {
+        return errorCode >= this.NO_SIGNATURE_SECRET_OR_SIGNATURE &&
+            errorCode <= this.NESTED_OBJECT_DOES_NOT_EXIST;
+    }
+
     userFailedToSave(errorCode: number): boolean
     {
         return errorCode == this.FAILED_TO_CREATE_NEW_VAULT ||
-            errorCode == this.FAILED_TO_CREATE_NEW_VAULT ||
             errorCode == this.EC_ENCRYPTION_FAILED ||
             errorCode == this.TRANSACTION_FAILED;
     }
