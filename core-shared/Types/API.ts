@@ -46,5 +46,5 @@ export interface IAPI
     utilities: Utilities;
     helpers: Helpers;
     repositories: Repositories;
-    cache: ClientVaulticCache;
+    cache: Promisify<ClientVaulticCache>;
 }

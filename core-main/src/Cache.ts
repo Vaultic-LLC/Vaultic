@@ -1,7 +1,7 @@
 import { ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { environment } from "./Environment";
 
-export class VaulticCache implements ClientVaulticCache
+export class VaulticCache
 {
     private internalCurrentUserID: number | undefined;
     private internalSessionKey: string | undefined;
@@ -16,7 +16,7 @@ export class VaulticCache implements ClientVaulticCache
         this.clear();
     }
 
-    async clear()
+    clear()
     {
         this.internalCurrentUserID = undefined;
         this.internalSessionKey = undefined;

@@ -7,5 +7,5 @@ export interface ClientEnvironment
 
 export interface ClientVaulticCache 
 {
-    clear: () => Promise<void>;
+    clear: () => void;
 }

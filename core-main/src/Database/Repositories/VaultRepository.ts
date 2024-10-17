@@ -145,8 +145,8 @@ class VaultRepository extends VaulticRepository<Vault>
             userVault.userID = currentUser.userID;
             userVault.user = currentUser;
             userVault.vaultKey = JSON.stringify({
-                vaultKey: encryptedVaultKey.value!,
-                publicKey: encryptedVaultKey.publicKey
+                vaultKey: encryptedVaultKey.value.data,
+                publicKey: encryptedVaultKey.value.publicKey
             });
 
             const transaction = new Transaction();

@@ -169,8 +169,8 @@ class UserRepository extends VaulticRepository<User>
             userVault.userID = user.userID;
             userVault.user = user;
             userVault.vaultKey = JSON.stringify({
-                vaultKey: encryptedVaultKey.value!,
-                publicKey: encryptedVaultKey.publicKey
+                vaultKey: encryptedVaultKey.value.data,
+                publicKey: encryptedVaultKey.value.publicKey
             });
 
             // Order matters here

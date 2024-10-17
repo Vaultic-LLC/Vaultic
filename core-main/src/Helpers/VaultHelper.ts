@@ -8,14 +8,14 @@ import vaulticServer from "../Server/VaulticServer";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { VaultKey } from "../Types/Properties";
 import { safetifyMethod } from "./RepositoryHelper";
-import { MethodResponse, TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 class VaultHelper 
 {
-    public async decryptVaultKey(masterKey: string, privateKey: string, decryptPrivateKey: boolean, vaultKey: string): Promise<MethodResponse>
+    public async decryptVaultKey(masterKey: string, privateKey: string, decryptPrivateKey: boolean, vaultKey: string): Promise<TypedMethodResponse<string>>
     {
         if (decryptPrivateKey)
         {

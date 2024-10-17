@@ -104,7 +104,7 @@ const environment: ClientEnvironment =
 	recreateDatabase: () => ipcRenderer.invoke('environment:recreateDatabase')
 };
 
-const cache: ClientVaulticCache =
+const cache: Promisify<ClientVaulticCache> =
 {
 	clear: () => ipcRenderer.invoke('cache:clear')
 }

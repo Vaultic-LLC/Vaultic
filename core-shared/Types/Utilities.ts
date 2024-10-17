@@ -1,9 +1,9 @@
-import { ECEncryptionResult, MethodResponse, TypedMethodResponse } from "./MethodResponse";
+import { ECEncryptionResult, TypedMethodResponse } from "./MethodResponse";
 
 export interface CoreCryptUtility
 {
-    ECEncrypt: (recipientPublicKey: string, value: string) => Promise<ECEncryptionResult>;
-    ECDecrypt: (tempPublicKey: string, usersPrivateKey: string, value: string) => Promise<MethodResponse>;
+    ECEncrypt: (recipientPublicKey: string, value: string) => Promise<TypedMethodResponse<ECEncryptionResult>>;
+    ECDecrypt: (tempPublicKey: string, usersPrivateKey: string, value: string) => Promise<TypedMethodResponse<string>>;
 }
 
 export interface ClientCryptUtility extends CoreCryptUtility

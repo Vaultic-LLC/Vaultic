@@ -4,7 +4,7 @@ import vaulticServer from "../Core/Server/VaulticServer";
 import generatorUtility from "./Generator";
 import { CryptUtility } from "../Core/Types/Utilities";
 import coreCrypt from "../Core/Utilities/CoreCryptUtility";
-import { MethodResponse, TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { EncryptedResponse } from "@vaultic/shared/Types/Responses";
 
 const vaulticPublicKey = "-----BEGIN RSA PUBLIC KEY-----\nMIICCgKCAgEAoHTMLCg0A3Mr3GIxF/xcPhCDDcp/4OG5wox8bUsWIXExtFKJmLew\nswVRFUxRhUtgyz4O+auJmiDvEgaFHVw4KQ3Fve3K9wjbQ0N51tqTipyj/DMrrJHu\nlUx2cB6JZhgHRiUQb3o+Bhu4CQ6HZd/8QDILAHMtH7eTcx0h6cA4azAWy/1xnc+G\nv71imLyGhRg/FnR3YoegkIuOSRSK9rjBsrw7k7M8Asp0A3FZSRL/Cs82SkadVcEA\nc8VcWEnf9Bdc/exArIgV0H6jA0exPteJK+mts4u8/L0drxMSnXaRYJf8vPckz8M2\n1BuaugZ8uY7ZAVtqB4QQ3C9kZ/0kuYSNE7Dg/oaTWnylOqPQX5Yr/xwU1/QaK7nA\nyrXlVajJhUB+b5QK0L4invuMWarq6bddOldaC4yqMmum+SCLZzEkiYE0CSFX5XIB\nGVI9O3RDdZrt0wx1fsIGCGNBWhinsqxtPw96P9MC1KMGgNIdw/Fc2nFV4NbuwmDM\n3/1X0MJXNt1y22YkFJfXXDmJJuC9naxeK/etasy5uDEpCDxOG6Kww+L54UJmr0o3\neZw7aRcDXrvrDXaalWFHV/JMSxzivTpBeD1MdcBK53JMrZEOuslvWYqo8MapdKfl\na76OBNLXIv4t3E4ARbw7oqkXN9wbn0JZ0PkEjoSKp0aDq/fiNObO3vkCAwEAAQ==\n-----END RSA PUBLIC KEY-----";
@@ -113,7 +113,7 @@ async function hybridEncrypt(value: string): Promise<TypedMethodResponse<Encrypt
 	return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
 }
 
-async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<MethodResponse>
+async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<TypedMethodResponse<string>>
 {
 	let logID: number | undefined;
 
