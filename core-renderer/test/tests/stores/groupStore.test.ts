@@ -1,8 +1,8 @@
 import { IGroupable, IIdentifiable, defaultGroup, defaultPassword, defaultValue } from '../../src/core/Types/EncryptedData';
-import { createTestSuite, type ITest, type TestContext } from '../test';
+import { createTestSuite, type TestContext } from '../test';
 import { DataType, Group, PrimaryDataObjectCollection } from "../../src/core/Types/Table";
-import { Dictionary } from "../../src/core/Types/DataStructures";
 import app from "../../src/core/Objects/Stores/AppStore";
+import { Dictionary } from '@vaultic/shared/Types/DataStructures';
 
 let groupStoreSuite = createTestSuite("Group Store");
 

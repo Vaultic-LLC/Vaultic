@@ -16,6 +16,7 @@
         "vue": "^3.4.29"
     },
     "devDependencies": {
+        "@vaultic/shared": "../../core-shared",
         "@tsconfig/node20": "^20.1.4",
         "@types/jsdom": "^21.1.7",
         "@types/node": "^20.14.5",

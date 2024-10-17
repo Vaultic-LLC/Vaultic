@@ -9,13 +9,13 @@ import cryptUtility from './Utilities/CryptUtility';
 import hashUtility from './Utilities/HashUtility';
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
-import { createDataSource } from './Objects/DataSource';
+import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 
-function createWindow(): void
+async function createWindow(): Promise<void>
 {
     //@ts-ignore
     const isTest = import.meta.env.VITE_ISTEST === "true";
-    setupEnvironment(isTest);
+    await setupEnvironment(isTest);
 
     // needed for test environment to bypass ssl errors
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
@@ -130,9 +130,9 @@ app.on('web-contents-created', (event, contents) =>
     });
 });
 
-function setupEnvironment(isTest: boolean)
+async function setupEnvironment(isTest: boolean)
 {
-    environment.init({
+    await environment.init({
         isTest,
         sessionHandler: {
             setSession,
@@ -144,8 +144,12 @@ function setupEnvironment(isTest: boolean)
             hash: hashUtility,
             generator: generatorUtility
         },
+        database:
+        {
+            createDataSource,
+            deleteDatabase
+        },
         getDeviceInfo,
-        createDataSource
     });
 }
 
