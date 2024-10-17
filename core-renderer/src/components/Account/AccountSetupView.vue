@@ -21,7 +21,7 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import PopupButton from '../InputFields/PopupButton.vue';
 
-import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey, ValidationFunctionsKey } from '../../Types/Keys';
+import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey, ValidationFunctionsKey } from '../../Constants/Keys';
 import { popups } from '../../Objects/Stores/PopupStore';
 import app from "../../Objects/Stores/AppStore";
 

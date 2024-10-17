@@ -1,8 +1,9 @@
 import { VaulticEntity } from "../VaulticEntity";
-import { nameof } from "../../../Helpers/TypeScriptHelper";
 import { Column } from "typeorm";
+import { IStoreState } from "@vaultic/shared/Types/Entities";
+import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
-export class StoreState extends VaulticEntity
+export class StoreState extends VaulticEntity implements IStoreState
 {
     @Column("text")
     state: string;

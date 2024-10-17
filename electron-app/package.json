@@ -64,6 +64,7 @@
 		"vue-chartjs": "^5.2.0"
 	},
 	"devDependencies": {
+		"@vaultic/shared": "../core-shared",
 		"@electron-forge/cli": "^6.2.1",
 		"@electron-forge/maker-deb": "^6.2.1",
 		"@electron-forge/maker-rpm": "^6.2.1",

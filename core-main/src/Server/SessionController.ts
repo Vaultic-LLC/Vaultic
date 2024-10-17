@@ -1,4 +1,4 @@
-import { BaseResponse } from "../Types/Responses";
+import { BaseResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface SessionController

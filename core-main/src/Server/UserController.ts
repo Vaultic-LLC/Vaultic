@@ -1,23 +1,15 @@
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { User } from "../Database/Entities/User";
 import { UserVault } from "../Database/Entities/UserVault";
 import { Vault } from "../Database/Entities/Vault";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, GetVaultDataResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "../Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
+import { ClientUserController } from "@vaultic/shared/Types/Controllers";
 
-export interface UserController
+export interface UserController extends ClientUserController
 {
-    validateEmail(email: string): Promise<ValidateEmailResponse>;
     getUserIDs: () => Promise<GetUserIDResponse>;
-    deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
-    getDevices: () => Promise<GetDevicesResponse>;
     backupData: (user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null) => Promise<BaseResponse>;
-    createCheckout: () => Promise<CreateCheckoutResponse>;
-    getChartData: (data: string) => Promise<GetChartDataResponse>;
-    getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
-    dismissUserDataBreach: (breachID: number) => Promise<BaseResponse>;
-    deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
-    reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController

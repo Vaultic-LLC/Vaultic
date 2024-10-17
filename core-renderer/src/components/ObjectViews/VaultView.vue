@@ -12,7 +12,7 @@ import TextInputField from '../InputFields/TextInputField.vue';
 
 import { GridDefinition } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { DisplayVault } from '../../Types/APITypes';
+import { DisplayVault } from '@vaultic/shared/Types/Entities';
 
 export default defineComponent({
     name: "VaultView",

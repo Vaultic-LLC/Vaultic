@@ -24,13 +24,13 @@
 import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
 import { DataType } from '../../Types/Table';
-import { ClosePopupFuncctionKey } from '../../Types/Keys';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import { hideAll } from 'tippy.js';
 import app from "../../Objects/Stores/AppStore";
 import { popups } from "../../Objects/Stores/PopupStore";
+import { ClosePopupFuncctionKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "ObjectPopup",

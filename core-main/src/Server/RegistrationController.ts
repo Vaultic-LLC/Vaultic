@@ -1,4 +1,4 @@
-import { FinishRegistrationResponse, StartRegistrationResponse } from "../Types/Responses";
+import { StartRegistrationResponse, FinishRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 
 export interface RegistrationController

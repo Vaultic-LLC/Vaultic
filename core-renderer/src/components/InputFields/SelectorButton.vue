@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from "vue";
+import { ComputedRef, computed, defineComponent } from "vue";
 
 export default defineComponent({
     name: "SelectorButton",

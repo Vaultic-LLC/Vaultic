@@ -269,20 +269,6 @@ export function defaultGroup(type: DataType): Group
     }
 }
 
-export interface DataFile
-{
-    exists: () => Promise<boolean>;
-    write: (data: string) => Promise<MethodResponse>;
-    read: () => Promise<MethodResponse>;
-}
-
-export interface MethodResponse
-{
-    success: boolean;
-    logID?: number;
-    value?: string;
-}
-
 export interface GroupCSVHeader 
 {
     csvHeader: string;

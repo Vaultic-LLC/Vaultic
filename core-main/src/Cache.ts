@@ -1,6 +1,7 @@
+import { ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { environment } from "./Environment";
 
-export class VaulticCache 
+export class VaulticCache
 {
     private internalCurrentUserID: number | undefined;
     private internalSessionKey: string | undefined;

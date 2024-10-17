@@ -1,4 +1,4 @@
-import { Dictionary } from "./DataStructures";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { TreeNodeButton } from "./Models";
 
 export class TreeNodeMember 

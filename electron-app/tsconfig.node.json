@@ -33,6 +33,7 @@
 		],
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
-		"strictPropertyInitialization": false
+		"strictPropertyInitialization": false,
+		"target": "ES2023"
 	}
 }

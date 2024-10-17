@@ -8,12 +8,11 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { ColorPalette, colorPalettes } from "../../Types/Colors";
 import { AutoLockTime } from "../../Types/Settings";
 import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
-import { CondensedVaultData, DisplayVault } from "../../Types/APITypes";
 import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
-import { UserData } from "../../Types/SharedTypes";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
+import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Types/Entities";
 
 export interface AppSettings 
 {

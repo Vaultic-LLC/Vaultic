@@ -1,6 +1,5 @@
 import { environment } from "../../Environment";
 import { Vault } from "../Entities/Vault";
-import { CondensedVaultData } from "../../Types/Repositories";
 import { Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
 import vaulticServer from "../../Server/VaulticServer";
@@ -12,14 +11,14 @@ import { PasswordStoreState } from "../Entities/States/PasswordStoreState";
 import { ValueStoreState } from "../Entities/States/ValueStoreState";
 import { FilterStoreState } from "../Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Entities/States/GroupStoreState";
-import { EntityState } from "../../Types/Properties";
 import { backupData } from "../../Helpers/RepositoryHelper";
-import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { User } from "../Entities/User";
-import { TypedMethodResponse } from "../../Types/MethodResponse";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
-import errorCodes from "../../Types/ErrorCodes";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
+import { CondensedVaultData, EntityState } from "@vaultic/shared/Types/Entities";
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 class VaultRepository extends VaulticRepository<Vault>
 {
@@ -146,8 +145,8 @@ class VaultRepository extends VaulticRepository<Vault>
             userVault.userID = currentUser.userID;
             userVault.user = currentUser;
             userVault.vaultKey = JSON.stringify({
-                vaultKey: encryptedVaultKey.value!,
-                publicKey: encryptedVaultKey.publicKey
+                vaultKey: encryptedVaultKey.value.data,
+                publicKey: encryptedVaultKey.value.publicKey
             });
 
             const transaction = new Transaction();
@@ -462,7 +461,7 @@ class VaultRepository extends VaulticRepository<Vault>
         if (otherVaults.length > 0)
         {
             const vaultIDs = otherVaults.filter(v => v.vaultID).map(v => v.vaultID!);
-            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, vaultIDs, currentUser, userVaultQuery);
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, vaultIDs, currentUser, (repository) => userVaultQuery(repository, vaultIDs));
 
             for (let i = 0; i < otherVaults.length; i++)
             {
@@ -502,25 +501,25 @@ class VaultRepository extends VaulticRepository<Vault>
                     transaction.resetTracking(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
                 }
             }
-
-            function userVaultQuery(repository: Repository<UserVault>)
-            {
-                return repository
-                    .createQueryBuilder('userVault')
-                    .leftJoinAndSelect('userVault.vaultPreferencesStoreState', 'vaultPreferencesStoreState')
-                    .leftJoinAndSelect('userVault.vault', 'vault')
-                    .leftJoinAndSelect('vault.vaultStoreState', 'vaultStoreState')
-                    .leftJoinAndSelect('vault.passwordStoreState', 'passwordStoreState')
-                    .leftJoinAndSelect('vault.valueStoreState', 'valueStoreState')
-                    .leftJoinAndSelect('vault.filterStoreState', 'filterStoreState')
-                    .leftJoinAndSelect('vault.groupStoreState', 'groupStoreState')
-                    .where('userVault.userID = :userID', { userID: currentUser!.userID })
-                    .andWhere('userVault.vaultID IN (:...vaultIDs)', { vaultIDs })
-                    .getMany();
-            }
         }
 
         return succeeded;
+
+        function userVaultQuery(repository: Repository<UserVault>, vaultIDs: number[])
+        {
+            return repository
+                .createQueryBuilder('userVault')
+                .leftJoinAndSelect('userVault.vaultPreferencesStoreState', 'vaultPreferencesStoreState')
+                .leftJoinAndSelect('userVault.vault', 'vault')
+                .leftJoinAndSelect('vault.vaultStoreState', 'vaultStoreState')
+                .leftJoinAndSelect('vault.passwordStoreState', 'passwordStoreState')
+                .leftJoinAndSelect('vault.valueStoreState', 'valueStoreState')
+                .leftJoinAndSelect('vault.filterStoreState', 'filterStoreState')
+                .leftJoinAndSelect('vault.groupStoreState', 'groupStoreState')
+                .where('userVault.userID = :userID', { userID: currentUser!.userID })
+                .andWhere('userVault.vaultID IN (:...vaultIDs)', { vaultIDs })
+                .getMany();
+        }
     }
 
     public addFromServer(vault: DeepPartial<Vault>, transaction: Transaction): boolean

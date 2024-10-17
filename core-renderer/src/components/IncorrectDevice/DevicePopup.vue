@@ -20,8 +20,8 @@ import DevicesView from './DevicesView.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 
-import { IncorrectDeviceResponse } from '../../Types/SharedTypes';
 import { popups } from '../../Objects/Stores/PopupStore';
+import { IncorrectDeviceResponse } from "@vaultic/shared/Types/Responses";
 
 export default defineComponent({
     name: "DevicePopup",

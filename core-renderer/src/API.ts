@@ -1,4 +1,4 @@
-import { IAPI } from "./Types/APITypes"
+import { IAPI } from "@vaultic/shared/Types/API"
 
 class API 
 {

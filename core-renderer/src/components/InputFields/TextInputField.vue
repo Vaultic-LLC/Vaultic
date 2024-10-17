@@ -12,11 +12,11 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref } from 'vue';
 
-import { ValidationFunctionsKey } from '../../Types/Keys';
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import tippy from 'tippy.js';
 import ToolTip from '../ToolTip.vue';
+import { ValidationFunctionsKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "TextInputField",

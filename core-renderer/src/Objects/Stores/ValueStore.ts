@@ -1,15 +1,15 @@
 import { NameValuePair, CurrentAndSafeStructure, AtRiskType, NameValuePairType } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
-import { Dictionary } from "../../Types/DataStructures";
 import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
-import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { DataType } from "../../Types/Table";
 import { VaultStoreParameter } from "./VaultStore";
 import app from "./AppStore";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 
 export interface ValueStoreState extends DataTypeStoreState<ReactiveValue>
 {

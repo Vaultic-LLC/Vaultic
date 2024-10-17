@@ -1,20 +1,15 @@
 import * as opaque from "@serenity-kit/opaque";
 import { stsServer } from "../Server/VaulticServer";
-import { FinishRegistrationResponse, LogUserInResponse } from "../Types/Responses";
 import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
-import { UserDataPayload } from "../Types/ServerTypes";
 import vaultHelper from "./VaultHelper";
-import { TypedMethodResponse } from "../Types/MethodResponse";
-import errorCodes from "../Types/ErrorCodes";
-
-export interface ServerHelper
-{
-    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-    logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
-};
+import { FinishRegistrationResponse, LogUserInResponse } from "@vaultic/shared/Types/Responses";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
+import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
 {

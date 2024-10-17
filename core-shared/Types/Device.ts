@@ -1,4 +1,6 @@
-export interface Device {
+export interface Device
+{
+    [key: string]: any;
     id: string;
     UserDesktopDeviceID?: number;
     UserMobileDeviceID?: number;
@@ -7,7 +9,9 @@ export interface Device {
     Version: string;
     Type: string;
 }
-export interface DeviceInfo {
+
+export interface DeviceInfo
+{
     deviceName: string;
     model: string;
     version: string;

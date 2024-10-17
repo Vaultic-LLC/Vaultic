@@ -1,6 +1,13 @@
-import { ipcRenderer } from "electron"
-import { IAPI, AppController, CryptUtility, Environment, GeneratorUtility, HashUtility, ServerHelper, SessionController, UserController, ValidationHelper, ValueController, VaulticHelper, UserRepository, VaultRepository, UserVaultRepository, VaultController, VaulticCache, CondensedVaultData, VaultHelper, LogRepository } from "./Types/APITypes"
-import { DeviceInfo } from "./Types/Device";
+import { ipcRenderer } from "electron";
+
+import { DeviceInfo } from "@vaultic/shared/Types/Device";
+import { AppController, ClientUserController, ClientVaultController, SessionController, ValueController } from "@vaultic/shared/Types/Controllers";
+import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
+import { ClientVaultHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
+import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
+import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
+import { IAPI } from "@vaultic/shared/Types/API";
+import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
 {
@@ -17,7 +24,7 @@ const sessionController: SessionController =
 	expire: () => ipcRenderer.invoke('sessionController:expire')
 };
 
-const userController: UserController =
+const userController: ClientUserController =
 {
 	validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
@@ -35,12 +42,12 @@ const valueController: ValueController =
 	generateRandomPhrase: (length: number) => ipcRenderer.invoke('valueController:generateRandomPhrase', length)
 };
 
-const vaultController: VaultController =
+const vaultController: ClientVaultController =
 {
 	deleteVault: (userVaultID: number) => ipcRenderer.invoke('vaultController:deleteVault', userVaultID)
 }
 
-const cryptUtility: CryptUtility =
+const cryptUtility: ClientCryptUtility =
 {
 	encrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:encrypt', key, value),
 	decrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:decrypt', key, value),
@@ -48,14 +55,14 @@ const cryptUtility: CryptUtility =
 	ECDecrypt: (tempPublicKey: string, userPrivateKey: string, value: string) => ipcRenderer.invoke('cryptUtility:ECDecrypt', tempPublicKey, userPrivateKey, value)
 };
 
-const hashUtility: HashUtility =
+const hashUtility: Promisify<HashUtility> =
 {
 	hash: (value: string, salt: string) => ipcRenderer.invoke('hashUtility:hash', value, salt),
 	insecureHash: (value: string) => ipcRenderer.invoke('hashUtility:insecureHash', value),
 	compareHashes: (a: string, b: string) => ipcRenderer.invoke('hashUtility:compareHashes', a, b)
 };
 
-const generatorUtility: GeneratorUtility =
+const generatorUtility: Promisify<ClientGeneratorUtility> =
 {
 	uniqueId: () => ipcRenderer.invoke('generatorUtility:uniqueId'),
 	randomValue: (length: number) => ipcRenderer.invoke('generatorUtility:randomValue', length),
@@ -63,7 +70,7 @@ const generatorUtility: GeneratorUtility =
 	ECKeys: () => ipcRenderer.invoke('generatorUtility:ECKeys')
 };
 
-const validationHelper: ValidationHelper =
+const validationHelper: Promisify<ValidationHelper> =
 {
 	isWeak: (value: string, type: string) => ipcRenderer.invoke('validationHelper:isWeak', value, type),
 	containsNumber: (value: string) => ipcRenderer.invoke('validationHelper:containsNumber', value),
@@ -84,35 +91,35 @@ const serverHelper: ServerHelper =
 	logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData)
 };
 
-const vaultHelper: VaultHelper =
+const vaultHelper: ClientVaultHelper =
 {
 	loadArchivedVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultHelper:loadArchivedVault', masterKey, userVaultID),
 	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => ipcRenderer.invoke('vaultHelper:unarchiveVault', masterKey, userVaultID, select)
 }
 
-const environment: Environment =
+const environment: ClientEnvironment =
 {
 	isTest: () => ipcRenderer.invoke('environment:isTest'),
 	failedToInitalizeDatabase: () => ipcRenderer.invoke('environment:failedToInitalizeDatabase'),
 	recreateDatabase: () => ipcRenderer.invoke('environment:recreateDatabase')
 };
 
-const cache: VaulticCache =
+const cache: Promisify<ClientVaulticCache> =
 {
 	clear: () => ipcRenderer.invoke('cache:clear')
 }
 
-const userRepository: UserRepository =
+const userRepository: ClientUserRepository =
 {
 	getLastUsedUserEmail: () => ipcRenderer.invoke('userRepository:getLastUsedUserEmail'),
 	getLastUsedUserPreferences: () => ipcRenderer.invoke('userRepository:getLastUsedUserPreferences'),
 	createUser: (masterKey: string, email: string, publicKey: string, privateKey: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email, publicKey, privateKey),
-	getCurrentUserData: (masterKey: string, response: any) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey, response),
+	getCurrentUserData: (masterKey: string) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey),
 	verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
 	saveUser: (masterKey: string, data: string, backup: boolean) => ipcRenderer.invoke('userRepository:saveUser', masterKey, data, backup)
 };
 
-const vaultRepository: VaultRepository =
+const vaultRepository: ClientVaultRepository =
 {
 	setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
 	saveVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('vaultRepository:saveVault', masterKey, userVaultID, data, backup),
@@ -120,12 +127,12 @@ const vaultRepository: VaultRepository =
 	archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => ipcRenderer.invoke('vaultRepository:archiveVault', masterKey, userVaultID, backup)
 };
 
-const userVaultRepository: UserVaultRepository =
+const userVaultRepository: ClientUserVaultRepository =
 {
 	saveUserVault: (masterKey: string, userVaultID: number, data: string, backup: boolean) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, data, backup)
 };
 
-const logRepository: LogRepository =
+const logRepository: ClientLogRepository =
 {
 	getExportableLogData: () => ipcRenderer.invoke('logRepository:getExportableLogData'),
 	log: (errorCode?: number, message?: string, callStack?: string) => ipcRenderer.invoke('logRepository:log', errorCode, message, callStack)

@@ -41,11 +41,10 @@ import CreateSubscriptionView from './CreateSubscriptionView.vue';
 import CreateMasterKeyView from './CreateMasterKeyView.vue';
 import DownloadDeactivationKeyView from "./DownloadDeactivationKeyView.vue"
 
-import { AccountSetupModel, AccountSetupView } from '../../Types/Models';
-import { Account } from '../../Types/SharedTypes';
-import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey } from '../../Types/Keys';
+import { Account, AccountSetupModel, AccountSetupView } from '../../Types/Models';
 import { popups } from '../../Objects/Stores/PopupStore';
 import app from "../../Objects/Stores/AppStore";
+import { DisableBackButtonFunctionKey, EnableBackButtonFunctionKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "AccountSetupPopup",

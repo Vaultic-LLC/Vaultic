@@ -2,13 +2,7 @@ import { dialog } from "electron";
 import axiosHelper from "../Core/Server/AxiosHelper";
 import { GetUserDeactivationKeyResponse } from "../Core/Types/Responses";
 import fs from "fs";
-
-export interface VaulticHelper
-{
-	downloadDeactivationKey: () => Promise<GetUserDeactivationKeyResponse>;
-	readCSV: () => Promise<[boolean, string]>;
-	writeCSV: (fileName: string, data: string) => Promise<boolean>;
-}
+import { VaulticHelper } from "@vaultic/shared/Types/Helpers";
 
 async function selectDirectory()
 {

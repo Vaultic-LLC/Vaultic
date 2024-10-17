@@ -1,12 +1,13 @@
 import { Entity, Column, OneToMany, OneToOne, PrimaryColumn } from "typeorm"
 import { UserVault } from "./UserVault"
 import { VaulticEntity } from "./VaulticEntity"
-import { DeepPartial, nameof } from "../../Helpers/TypeScriptHelper"
 import { AppStoreState } from "./States/AppStoreState"
 import { UserPreferencesStoreState } from "./States/UserPreferencesStoreState"
+import { IUser } from "@vaultic/shared/Types/Entities"
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
 
 @Entity({ name: "users" })
-export class User extends VaulticEntity
+export class User extends VaulticEntity implements IUser
 {
     // Matches Server
     @PrimaryColumn("integer")
@@ -90,10 +91,6 @@ export class User extends VaulticEntity
         const properties = super.backupableProperties();
         properties.push("userID");
         properties.push("email");
-
-        // TODO: remove since they should never change
-        properties.push("publicKey");
-        properties.push("privateKey");
 
         return properties;
     }

@@ -1,10 +1,10 @@
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { User } from "../Database/Entities/User";
 import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
-import { TypedMethodResponse } from "../Types/MethodResponse";
-import { EntityState } from "../Types/Properties";
-import { UserDataPayload } from "../Types/ServerTypes";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { EntityState } from "@vaultic/shared/Types/Entities";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>): Promise<TypedMethodResponse<T | undefined>>
 {

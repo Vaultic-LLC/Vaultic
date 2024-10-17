@@ -24,7 +24,7 @@ cryptUtilityTestSuite.tests.push({
         const keys = await api.utilities.generator.ECKeys();
 
         const encryptResponse = await api.utilities.crypt.ECEncrypt(keys.public, test);
-        const decryptResponse = await api.utilities.crypt.ECDecrypt(encryptResponse.publicKey, keys.private, encryptResponse.value!);
+        const decryptResponse = await api.utilities.crypt.ECDecrypt(encryptResponse.value.publicKey, keys.private, encryptResponse.value.data);
 
         ctx.assertEquals("EC Encryption and EC Decryption Work", decryptResponse.value, test);
     }

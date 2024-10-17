@@ -17,9 +17,9 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 
-import { ClosePopupFuncctionKey, ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Types/Keys';
 import PopupButton from '../InputFields/PopupButton.vue';
 import app from "../../Objects/Stores/AppStore";
+import { ClosePopupFuncctionKey, DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "ObjectView",

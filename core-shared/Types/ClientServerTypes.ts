@@ -1,0 +1,49 @@
+import { DeepPartial } from "../Helpers/TypeScriptHelper";
+import { IUser, IUserVault, IVault, ServerDisplayVault } from "./Entities";
+
+export interface Session
+{
+    Token?: string;
+    Hash?: string;
+}
+
+export interface UserDataBreach
+{
+    UserDataBreachID: number;
+    PasswordID: string;
+    BreachedDate: number;
+    PasswordsWereBreached: boolean;
+    BreachedDataTypes: string;
+};
+
+export interface ChartData
+{
+    Y: number[];
+    DataX: number[];
+    TargetX: number[];
+    Max: number;
+}
+
+export enum LicenseStatus
+{
+    NotActivated,
+    Active,
+    Inactive,
+    Cancelled,
+    Unknown
+};
+
+export interface EncryptedRequest
+{
+    Key: string;
+    Data: string;
+};
+
+export interface UserDataPayload 
+{
+    user?: DeepPartial<IUser>;
+    userVaults?: DeepPartial<IUserVault>[];
+    vaults?: DeepPartial<IVault>[];
+    archivedVaults?: DeepPartial<ServerDisplayVault>[];
+    sharedVaults?: DeepPartial<ServerDisplayVault>[];
+};

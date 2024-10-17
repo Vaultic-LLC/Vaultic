@@ -1,11 +1,11 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '../Types/Responses';
-import { MethodResponse, TypedMethodResponse } from '../Types/MethodResponse';
 import vaulticServer from './VaulticServer';
 import { environment } from '../Environment';
-import { DeviceInfo } from '../Types/Device';
-import { PublicPrivateKey } from '../Types/Utilities';
 import { FieldTree } from '../Types/FieldTree';
+import { DeviceInfo } from '@vaultic/shared/Types/Device';
+import { PublicPrivateKey } from '@vaultic/shared/Types/Utilities';
+import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
+import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaultic/shared/Types/Responses';
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
@@ -66,7 +66,7 @@ class AxiosWrapper
         const date = new Date();
         const string = `${apiKeyPrefix}${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
 
-        const encrypt: MethodResponse = await environment.utilities.crypt.encrypt(APIKeyEncryptionKey, string);
+        const encrypt = await environment.utilities.crypt.encrypt(APIKeyEncryptionKey, string);
         return encrypt.value ?? "";
     }
 
@@ -84,19 +84,19 @@ class AxiosWrapper
                 const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
                 const responseResult = await this.handleResponse<T>(response.data);
 
-                if (responseResult[0].success)
+                if (responseResult.success)
                 {
-                    return responseResult[1];
+                    return responseResult.value;
                 }
                 else
                 {
-                    if (responseResult[0].invalidSession)
+                    if (responseResult.invalidSession)
                     {
                         returnResponse = { Success: false, InvalidSession: true } as InvalidSessionResponse;
                     }
                     else 
                     {
-                        returnResponse = { Success: false, UnknownError: true, logID: responseResult[0].logID, message: `code: ${response.status}` };
+                        returnResponse = { Success: false, UnknownError: true, logID: responseResult.logID, message: `code: ${response.status}` };
                     }
                 }
             }
@@ -144,7 +144,7 @@ class AxiosWrapper
         }
 
         // we failed, log it
-        await environment.repositories.logs.log(undefined, JSON.stringify(returnResponse), "AxiosHelper");
+        await environment.repositories.logs.log(undefined, JSON.stringify({ result: returnResponse, endpoint: serverPath }), "AxiosHelper");
         return returnResponse as BaseResponse;
     }
 
@@ -187,9 +187,9 @@ class AxiosWrapper
         return {} as TypedMethodResponse<EncryptedResponse>;
     }
 
-    protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]>
+    protected async handleResponse<T>(response?: any): Promise<TypedMethodResponse<T>>
     {
-        return [{} as MethodResponse, {} as T]
+        return TypedMethodResponse.fail(undefined, undefined, "Not attempted");
     }
 }
 
@@ -207,7 +207,7 @@ class STSAxiosWrapper extends AxiosWrapper
         return await environment.utilities.crypt.hybridEncrypt(JSON.stringify(data));
     }
 
-    protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]> 
+    protected async handleResponse<T>(response?: any): Promise<TypedMethodResponse<T>> 
     {
         let responseData: T = {} as T;
 
@@ -215,7 +215,7 @@ class STSAxiosWrapper extends AxiosWrapper
         {
             if (!('Key' in response) || !('Data' in response))
             {
-                return [TypedMethodResponse.fail(), responseData]
+                return TypedMethodResponse.fail();
             }
 
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
@@ -223,15 +223,15 @@ class STSAxiosWrapper extends AxiosWrapper
 
             if (!decryptedResponse.success)
             {
-                return [decryptedResponse, responseData];
+                return TypedMethodResponse.propagateFail(decryptedResponse, "handleResponse");
             }
 
             responseData = JSON.parse(decryptedResponse.value!) as T;
-            return [TypedMethodResponse.success(), responseData];
+            return TypedMethodResponse.success(responseData);
         }
         catch (e)
         {
-            return [TypedMethodResponse.fail(), responseData]
+            return TypedMethodResponse.fail(undefined, "handleResposne", `Exception: ${e?.message}`);
         }
     }
 }
@@ -417,7 +417,7 @@ class APIAxiosWrapper extends AxiosWrapper
         }));
     }
 
-    protected async handleResponse<T>(response?: any): Promise<[MethodResponse, T]> 
+    protected async handleResponse<T>(response?: any): Promise<TypedMethodResponse<T>> 
     {
         let responseData: T = {} as T;
         try
@@ -425,21 +425,21 @@ class APIAxiosWrapper extends AxiosWrapper
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
             if (!encryptedResponse.Data)
             {
-                return [TypedMethodResponse.fail(undefined, undefined, JSON.stringify(encryptedResponse)), responseData];
+                return TypedMethodResponse.fail(undefined, "handleResponse", "No Data");
             }
 
             const decryptedResponse = await environment.utilities.crypt.decrypt(environment.cache.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
-                return [TypedMethodResponse.fail(undefined, undefined, JSON.stringify(encryptedResponse)), responseData];
+                return TypedMethodResponse.propagateFail(decryptedResponse, "handleResponse");
             }
 
             responseData = JSON.parse(decryptedResponse.value!) as T;
-            return [TypedMethodResponse.success(), responseData];
+            return TypedMethodResponse.success(responseData);
         }
         catch (e)
         {
-            return [TypedMethodResponse.fail(undefined, undefined, JSON.stringify(e)), responseData]
+            return TypedMethodResponse.fail(undefined, "handleResposne", `Exception: ${e?.message}`);
         }
     }
 }

@@ -3,8 +3,9 @@ import { Vault } from "../Database/Entities/Vault";
 import { VaulticEntity } from "../Database/Entities/VaulticEntity";
 import { UserVault } from "../Database/Entities/UserVault";
 import { EntityManager } from "typeorm";
-import { DeepPartial } from "../Helpers/TypeScriptHelper";
-import { TypedMethodResponse } from "./MethodResponse";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 
 export interface VaulticRepository<T extends VaulticEntity>
 {
@@ -45,43 +46,4 @@ export interface VaultRepository extends VaulticRepository<Vault>
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<boolean | CondensedVaultData>;
     saveVault: (masterKey: string, userVaultID: number, data: string, skipBackup: boolean) => Promise<boolean>;
     archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => Promise<boolean>;
-}
-
-export interface DisplayVault 
-{
-    name: string;
-    userVaultID: number;
-    lastUsed: boolean;
-}
-
-export interface ServerDisplayVault extends DisplayVault
-{
-    vaultKey: string;
-}
-
-export interface UserData 
-{
-    success: boolean;
-    appStoreState?: any;
-    userPreferencesStoreState?: any;
-    displayVaults?: DisplayVault[];
-    currentVault?: CondensedVaultData;
-}
-
-export interface VaultData extends Vault
-{
-    vaultPreferencesStoreState: string;
-}
-
-export interface CondensedVaultData
-{
-    userVaultID: number;
-    vaultPreferencesStoreState: string;
-    name: string;
-    lastUsed: boolean;
-    vaultStoreState: string;
-    passwordStoreState: string;
-    valueStoreState: string;
-    filterStoreState: string;
-    groupStoreState: string;
 }

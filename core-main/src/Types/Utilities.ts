@@ -1,43 +1,20 @@
-import { ECEncryptionResult, MethodResponse, TypedMethodResponse } from "./MethodResponse";
-import { EncryptedResponse } from "./Responses";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { EncryptedResponse } from "@vaultic/shared/Types/Responses";
+import { ClientCryptUtility, ClientGeneratorUtility, PublicPrivateKey } from "@vaultic/shared/Types/Utilities";
 
-export interface CoreCryptUtility
-{
-    ECEncrypt: (recipientPublicKey: string, value: string) => Promise<ECEncryptionResult>;
-    ECDecrypt: (tempPublicKey: string, usersPrivateKey: string, value: string) => Promise<MethodResponse>;
-}
-
-export interface CryptUtility extends CoreCryptUtility
+export interface CryptUtility extends ClientCryptUtility
 {
     encrypt: (key: string, value: string) => Promise<TypedMethodResponse<string>>;
     decrypt: (key: string, value: string) => Promise<TypedMethodResponse<string>>;
     hybridEncrypt: (value: string) => Promise<TypedMethodResponse<EncryptedResponse>>;
-    hybridDecrypt: (privateKey: string, encryptedResponse: EncryptedResponse) => Promise<MethodResponse>;
+    hybridDecrypt: (privateKey: string, encryptedResponse: EncryptedResponse) => Promise<TypedMethodResponse<string>>;
 }
 
-export interface PublicPrivateKey
-{
-    public: string;
-    private: string;
-}
-
-export interface CoreGeneratorUtility
-{
-    ECKeys: () => Promise<PublicPrivateKey>;
-}
-
-export interface GeneratorUtility extends CoreGeneratorUtility
+export interface GeneratorUtility extends ClientGeneratorUtility
 {
     uniqueId: () => string;
     randomValue: (length: number) => string;
     randomPassword: (length: number) => string;
     randomValueOfByteLength: (byteLength: number) => string;
     publicPrivateKey: () => PublicPrivateKey;
-}
-
-export interface HashUtility
-{
-    hash: (value: string, salt: string) => Promise<string>;
-    insecureHash: (value: string) => string;
-    compareHashes: (a: string, b: string) => boolean;
 }

@@ -6,8 +6,8 @@ import { stringify } from 'csv-stringify/browser/esm';
 import cryptHelper from "./cryptHelper";
 import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
-import { Dictionary } from "../Types/DataStructures";
 import { generateUniqueID } from "./generatorHelper";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 
 export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): Dictionary<ImportableDisplayField[]>
 {

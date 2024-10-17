@@ -1,15 +1,15 @@
 import { Password, CurrentAndSafeStructure, AtRiskType } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
-import { Dictionary } from "../../Types/DataStructures";
 import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
-import StoreUpdateTransaction, { Entity } from "../StoreUpdateTransaction";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { DataType } from "../../Types/Table";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 
 export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
 {

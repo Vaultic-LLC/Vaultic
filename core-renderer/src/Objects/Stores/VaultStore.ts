@@ -1,6 +1,4 @@
 import { ref, Ref } from "vue";
-import { CondensedVaultData, DisplayVault } from "../../Types/APITypes";
-import { Dictionary } from "../../Types/DataStructures";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { Store } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
@@ -8,6 +6,8 @@ import { GroupStore, ReactiveGroupStore } from "./GroupStore";
 import { PasswordStore, ReactivePasswordStore } from "./PasswordStore";
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 
 export interface VaultSettings 
 {

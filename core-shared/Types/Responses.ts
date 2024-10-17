@@ -1,6 +1,5 @@
 import { Device } from "./Device";
-import { ChartData, LicenseStatus, Session, UserDataBreach } from "./ClientServerTypes";
-import { UserDataPayload } from "./ServerTypes";
+import { ChartData, LicenseStatus, Session, UserDataBreach, UserDataPayload } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -39,7 +38,7 @@ export interface DeviceResponse extends BaseResponse
     MobileDevices?: Device[];
 }
 
-interface IncorrectDeviceResponse extends DeviceResponse
+export interface IncorrectDeviceResponse extends DeviceResponse
 {
     IncorrectDevice?: boolean;
 }

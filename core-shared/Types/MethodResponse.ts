@@ -1,33 +1,6 @@
 import errorCodes from "./ErrorCodes";
 
-// TODO: clean up ffs in type PR
-export interface ITypedMethodResponse<T>
-{
-    success: boolean;
-    errorCode?: number;
-    callStack?: string;
-    errorMessage?: string;
-    logID?: number;
-    invalidSession?: boolean;
-    value?: T;
-}
-
-export interface MethodResponse extends ITypedMethodResponse<string>
-{
-    value?: string;
-}
-
-export interface HybridEncrypionResponse extends MethodResponse
-{
-    key?: string;
-}
-
-export interface ECEncryptionResult extends MethodResponse
-{
-    publicKey: string;
-}
-
-export class TypedMethodResponse<T> implements ITypedMethodResponse<T>
+export class TypedMethodResponse<T>
 {
     success: boolean;
     errorCode?: number;
@@ -68,6 +41,12 @@ export class TypedMethodResponse<T> implements ITypedMethodResponse<T>
         return new TypedMethodResponse<T>(false, errorCode, callStack, errorMessage, logID, invalidSession, value);
     }
 
+    static propagateFail<T>(response: TypedMethodResponse<any>, callStack?: string)
+    {
+        response.addToCallStack(callStack);
+        return TypedMethodResponse.fail<T>(response.errorCode, response.callStack, response.errorMessage, response.logID, response.invalidSession);
+    }
+
     static failWithValue<T>(value?: T)
     {
         return new TypedMethodResponse<T>(false, undefined, undefined, undefined, undefined, undefined, value);
@@ -82,4 +61,10 @@ export class TypedMethodResponse<T> implements ITypedMethodResponse<T>
     {
         return TypedMethodResponse.fail<T>(errorCodes.BACKUP_FAILED);
     }
+}
+
+export interface ECEncryptionResult
+{
+    data: string;
+    publicKey: string;
 }

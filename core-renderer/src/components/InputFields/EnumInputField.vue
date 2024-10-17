@@ -25,8 +25,8 @@
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
-import { ValidationFunctionsKey } from '../../Types/Keys';
 import tippy from 'tippy.js';
+import { ValidationFunctionsKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "EnumInputField",

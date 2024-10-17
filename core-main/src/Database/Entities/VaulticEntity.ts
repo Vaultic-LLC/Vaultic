@@ -1,11 +1,11 @@
 import { environment } from "../../Environment";
 import * as jose from 'jose'
 import { Column, ObjectLiteral, AfterLoad } from "typeorm"
-import { nameof } from "../../Helpers/TypeScriptHelper";
-import { EntityState } from "../../Types/Properties";
 import { StoreState } from "./States/StoreState";
-import { TypedMethodResponse } from "../../Types/MethodResponse";
-import errorCodes from "../../Types/ErrorCodes";
+import { EntityState, IVaulticEntity } from "@vaultic/shared/Types/Entities";
+import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 
 const VaulticHandler =
 {
@@ -32,7 +32,7 @@ const VaulticHandler =
     }
 };
 
-export class VaulticEntity implements ObjectLiteral
+export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 {
     // Encrypted in sign
     // Backed Up

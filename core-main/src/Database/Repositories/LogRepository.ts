@@ -1,8 +1,8 @@
 import { Repository } from "typeorm";
 import { Log } from "../Entities/Log";
 import { environment } from "../../Environment";
-import { MethodResponse, TypedMethodResponse } from "../../Types/MethodResponse";
-import { BaseResponse } from "../../Types/Responses";
+import { BaseResponse } from "@vaultic/shared/Types/Responses";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 
 class LogRepository
 {
