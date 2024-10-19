@@ -1,17 +1,17 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name"
+        <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
         <TableTemplate ref="tableRef" id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color"
             :row-gap="0" :border="true" :emptyMessage="emptyMessage"
-            :showEmptyMessage="filterState.conditions.length == 0" :headerTabs="headerTabs">
+            :showEmptyMessage="filterState.conditions.value.length == 0" :headerTabs="headerTabs">
             <template #headerControls>
                 <AddButton :color="color" @click="onAdd" />
             </template>
             <template #body>
-                <FilterConditionRow v-for="( fc, index ) in  filterState.conditions" :key="fc.id" :rowNumber="index"
-                    :color="color" :model="fc" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc.id)" />
+                <FilterConditionRow v-for="( fc, index ) in  filterState.conditions.value" :key="fc.id.value" :rowNumber="index"
+                    :color="color" :model="fc" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc.id.value)" />
             </template>
         </TableTemplate>
     </ObjectView>
@@ -32,7 +32,7 @@ import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueID } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DisplayField, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
+import { DisplayField, Field, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
 
 export default defineComponent({
     name: "FilterView",
@@ -93,7 +93,7 @@ export default defineComponent({
             {
                 if (await app.currentVault.filterStore.addFilter(key, filterState.value))
                 {
-                    filterState.value = await defaultFilter(filterState.value.type);
+                    filterState.value = await defaultFilter(filterState.value.type.value);
                     await onAdd();
                     refreshKey.value = Date.now().toString();
 
@@ -141,9 +141,9 @@ export default defineComponent({
 
         async function onAdd()
         {
-            filterState.value.conditions.push(
+            filterState.value.conditions.value.push(
                 {
-                    id: await generateUniqueID(filterState.value.conditions),
+                    id: Field.newReactive(await generateUniqueID(filterState.value.conditions.value)),
                     property: '',
                     value: ''
                 });
@@ -153,13 +153,13 @@ export default defineComponent({
 
         function onDelete(id: string)
         {
-            filterState.value.conditions = filterState.value.conditions.filter(f => f.id != id);
+            filterState.value.conditions.value = filterState.value.conditions.value.filter(f => f.id.value != id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         onMounted(() =>
         {
-            if (filterState.value.conditions.length == 0)
+            if (filterState.value.conditions.value.length == 0)
             {
                 onAdd();
             }

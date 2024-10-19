@@ -12,6 +12,7 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 import ValueView from "../../ObjectViews/ValueView.vue";
 
 import { Password } from '../../../Types/DataTypes';
+import { reactifyFields } from '../../../Types/Fields';
 
 export default defineComponent({
 	name: "EditValuePopup",
@@ -23,7 +24,7 @@ export default defineComponent({
 	setup(props)
 	{
 		// copy the object so that we don't edit the original one
-		const valueModel: ComputedRef<Password> = computed(() => JSON.parse(JSON.stringify(props.model)));
+		const valueModel: ComputedRef<Password> = computed(() => reactifyFields(JSON.parse(JSON.stringify(props.model))));
 
 		return {
 			valueModel,

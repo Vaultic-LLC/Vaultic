@@ -191,8 +191,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         const parsedUserData: UserData = JSON.parse(userData.value!);
 
-        await this.updateStateFromJSON(parsedUserData.appStoreState);
-        await this.internalUsersPreferencesStore.updateStateFromJSON(parsedUserData.userPreferencesStoreState);
+        await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
+        await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
 
         this.internalUserVaults.value = parsedUserData.displayVaults!;
         this.internalSharedVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];

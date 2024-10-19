@@ -1,9 +1,9 @@
 <template>
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField class="groupView__name" :label="'Name'" :color="groupColor" v-model="groupState.name"
+        <TextInputField class="groupView__name" :label="'Name'" :color="groupColor" v-model="groupState.name.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
-        <ColorPickerInputField class="groupView__color" :label="'Color'" :color="groupColor" v-model="groupState.color"
+        <ColorPickerInputField class="groupView__color" :label="'Color'" :color="groupColor" v-model="groupState.color.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :minWidth="'125px'" />
         <TableTemplate ref="tableRef" id="addGroupTable" class="scrollbar border" :scrollbar-size="1"
             :color="groupColor" :border="true" :headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
@@ -193,13 +193,13 @@ export default defineComponent({
                         const values: TextTableRowValue[] = [
                             {
                                 component: "TableRowTextValue",
-                                value: nvp.name,
+                                value: nvp.name.value,
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             },
                             {
                                 component: 'TableRowTextValue',
-                                value: nvp.valueType ?? '',
+                                value: nvp.valueType?.value ?? '',
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             }
@@ -208,19 +208,19 @@ export default defineComponent({
                         const id = await api.utilities.generator.uniqueId();
                         return {
                             id: id,
-                            key: nvp.id,
+                            key: nvp.id.value,
                             values: values,
-                            isActive: ref(groupState.value.values.includes(nvp.id)),
+                            isActive: ref(groupState.value.values.value.includes(nvp.id.value)),
                             selectable: true,
                             onClick: function ()
                             {
-                                if (groupState.value.values.includes(nvp.id))
+                                if (groupState.value.values.value.includes(nvp.id.value))
                                 {
-                                    groupState.value.values = groupState.value.values.filter(id => id != nvp.id);
+                                    groupState.value.values.value = groupState.value.values.value.filter(id => id != nvp.id.value);
                                 }
                                 else
                                 {
-                                    groupState.value.values.push(nvp.id);
+                                    groupState.value.values.value.push(nvp.id.value);
                                 }
                             }
                         }
@@ -233,13 +233,13 @@ export default defineComponent({
                         const values: TextTableRowValue[] = [
                             {
                                 component: "TableRowTextValue",
-                                value: p.passwordFor,
+                                value: p.passwordFor.value,
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             },
                             {
                                 component: "TableRowTextValue",
-                                value: p.login,
+                                value: p.login.value,
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             }
@@ -248,19 +248,19 @@ export default defineComponent({
                         const id = await api.utilities.generator.uniqueId();
                         const model: SelectableTableRowData = {
                             id: id,
-                            key: p.id,
+                            key: p.id.value,
                             values: values,
-                            isActive: ref(groupState.value.passwords.includes(p.id)),
+                            isActive: ref(groupState.value.passwords.value.includes(p.id.value)),
                             selectable: true,
                             onClick: function ()
                             {
-                                if (groupState.value.passwords.includes(p.id))
+                                if (groupState.value.passwords.value.includes(p.id.value))
                                 {
-                                    groupState.value.passwords = groupState.value.passwords.filter(id => id != p.id);
+                                    groupState.value.passwords.value = groupState.value.passwords.value.filter(id => id != p.id.value);
                                 }
                                 else
                                 {
-                                    groupState.value.passwords.push(p.id);
+                                    groupState.value.passwords.value.push(p.id.value);
                                 }
                             }
                         }
@@ -300,7 +300,7 @@ export default defineComponent({
             {
                 if (await app.currentVault.groupStore.addGroup(key, groupState.value))
                 {
-                    groupState.value = defaultGroup(groupState.value.type);
+                    groupState.value = defaultGroup(groupState.value.type.value);
                     setTableRows();
                     refreshKey.value = Date.now().toString();
 

@@ -32,7 +32,7 @@ export default defineComponent({
         DevicesView,
         AccountInfoView
     },
-    setup(props)
+    setup()
     {
         const activeSection: Ref<number> = ref(0);
 

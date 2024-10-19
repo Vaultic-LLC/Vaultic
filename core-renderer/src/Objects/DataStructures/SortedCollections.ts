@@ -2,7 +2,7 @@
 import app from "../../Objects/Stores/AppStore";
 import { IIdentifiable, IGroupable, DataType, Group } from "../../Types/DataTypes";
 
-export class SortedCollection<T extends { [key: string]: string } & IIdentifiable>
+export class SortedCollection<T extends { [key: string]: any } & IIdentifiable>
 {
     descending: boolean;
     property: string;
@@ -87,8 +87,8 @@ export class SortedCollection<T extends { [key: string]: string } & IIdentifiabl
 
     remove(id: string)
     {
-        this.values = this.values.filter(v => v.id != id);
-        this.calculatedValues = this.calculatedValues.filter(v => v.id != id);
+        this.values = this.values.filter(v => v.id.value != id);
+        this.calculatedValues = this.calculatedValues.filter(v => v.id.value != id);
     }
 
     search(search: string)
@@ -166,12 +166,12 @@ export class IGroupableSortedCollection<T extends IGroupable & { [key: string]: 
             if (this.dataType == DataType.Passwords)
             {
                 this.calculatedValues =
-                    this.values.filter(v => this.internalGroupSearch(this.searchText, v.groups, app.currentVault.groupStore.passwordGroups));
+                    this.values.filter(v => this.internalGroupSearch(this.searchText, v.groups.value, app.currentVault.groupStore.passwordGroups));
             }
             else if (this.dataType == DataType.NameValuePairs)
             {
                 this.calculatedValues =
-                    this.values.filter(v => this.internalGroupSearch(this.searchText, v.groups, app.currentVault.groupStore.valuesGroups))
+                    this.values.filter(v => this.internalGroupSearch(this.searchText, v.groups.value, app.currentVault.groupStore.valuesGroups))
 
             }
         }
@@ -183,12 +183,12 @@ export class IGroupableSortedCollection<T extends IGroupable & { [key: string]: 
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.groups.length == 0)
+                if (a.groups.value.length == 0)
                 {
                     return 1;
                 }
 
-                if (b.groups.length == 0)
+                if (b.groups.value.length == 0)
                 {
                     return -1;
                 }
@@ -200,12 +200,12 @@ export class IGroupableSortedCollection<T extends IGroupable & { [key: string]: 
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.groups.length == 0)
+                if (a.groups.value.length == 0)
                 {
                     return -1;
                 }
 
-                if (b.groups.length == 0)
+                if (b.groups.value.length == 0)
                 {
                     return 1;
                 }
@@ -216,18 +216,18 @@ export class IGroupableSortedCollection<T extends IGroupable & { [key: string]: 
 
         function getLowestGroup(item: T): number
         {
-            return Math.min(...item.groups.map(id => sortedGroups.findIndex(g => g.id == id)));
+            return Math.min(...item.groups.value.map(id => sortedGroups.findIndex(g => g.id.value == id)));
         }
     }
 
     private internalGroupSearch(search: string, groupIds: string[], allGroups: Group[]): boolean
     {
-        const groups: Group[] = allGroups.filter(g => groupIds.includes(g.id));
+        const groups: Group[] = allGroups.filter(g => groupIds.includes(g.id.value));
         if (groups.length == 0)
         {
             return false;
         }
 
-        return groups.some(g => g.name.toLowerCase().indexOf(search.toLowerCase()) != -1);
+        return groups.some(g => g.name.value.toLowerCase().indexOf(search.toLowerCase()) != -1);
     }
 }

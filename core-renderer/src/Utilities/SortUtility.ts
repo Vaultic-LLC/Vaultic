@@ -35,12 +35,12 @@ class SortUtility
         {
             values = values.sort((a, b) =>
             {
-                if (a.groups.length == 0)
+                if (a.groups.value.length == 0)
                 {
                     return -1;
                 }
 
-                if (b.groups.length == 0)
+                if (b.groups.value.length == 0)
                 {
                     return 1;
                 }
@@ -52,12 +52,12 @@ class SortUtility
         {
             values = values.sort((a, b) =>
             {
-                if (a.groups.length == 0)
+                if (a.groups.value.length == 0)
                 {
                     return 1;
                 }
 
-                if (b.groups.length == 0)
+                if (b.groups.value.length == 0)
                 {
                     return -1;
                 }
@@ -68,7 +68,7 @@ class SortUtility
 
         function getHighestGroup(item: T): number
         {
-            return Math.max(...item.groups.map(id => sortedGroups.findIndex(g => g.id == id)));
+            return Math.max(...item.groups.value.map(id => sortedGroups.findIndex(g => g.id.value == id)));
         }
     }
 }

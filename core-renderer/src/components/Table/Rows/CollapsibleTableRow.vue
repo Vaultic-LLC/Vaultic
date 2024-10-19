@@ -45,16 +45,16 @@ export default defineComponent({
 
         let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
         {
-            const allGroups: Group[] = app.currentVault.groupStore.groups.filter(g => props.groups.includes(g.id));
+            const allGroups: Group[] = app.currentVault.groupStore.groups.filter(g => props.groups.includes(g.id.value));
             if (allGroups.length <= 4)
             {
                 return allGroups.map((g) =>
                 {
                     const groupIconModel: GroupIconModel =
                     {
-                        iconDisplayText: g.name[0],
-                        toolTipText: g.name,
-                        color: g.color
+                        iconDisplayText: g.name.value[0],
+                        toolTipText: g.name.value,
+                        color: g.color.value
                     }
 
                     return groupIconModel;
@@ -65,9 +65,9 @@ export default defineComponent({
             {
                 const groupIconModel: GroupIconModel =
                 {
-                    iconDisplayText: g.name[0],
-                    toolTipText: g.name,
-                    color: g.color
+                    iconDisplayText: g.name.value[0],
+                    toolTipText: g.name.value,
+                    color: g.color.value
                 }
 
                 return groupIconModel;
@@ -82,7 +82,7 @@ export default defineComponent({
 
             for (let i = 3; i < allGroups.length; i++)
             {
-                lastGroupModel.toolTipText += `${allGroups[i].name}`;
+                lastGroupModel.toolTipText += `${allGroups[i].name.value}`;
                 if (i != allGroups.length - 1)
                 {
                     lastGroupModel.toolTipText += ", ";

@@ -1,7 +1,7 @@
-import { defaultFilter, defaultGroup, defaultPassword } from "../../src/core/Types/EncryptedData";
 import { TestContext, createTestSuite } from "../test";
-import { DataType, FilterConditionType } from "../../src/core/Types/Table";
 import app from "../../src/core/Objects/Stores/AppStore";
+import { defaultFilter, DataType, FilterConditionType, defaultGroup, defaultPassword } from "../../src/core/Types/DataTypes";
+import { Field } from "../../src/core/Types/Fields";
 
 let transactionTestSuite = createTestSuite("Transaction");
 
@@ -13,8 +13,8 @@ transactionTestSuite.tests.push({
         const test = "Transaction rollbacks store states on fail";
 
         const filter = defaultFilter(DataType.Passwords);
-        filter.conditions.push({
-            id: test,
+        filter.conditions.value.push({
+            id: Field.newReactive(test),
             property: "login",
             filterType: FilterConditionType.EqualTo,
             value: test
@@ -26,8 +26,8 @@ transactionTestSuite.tests.push({
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
         const password = defaultPassword();
-        password.login = test;
-        password.groups.push(group.id);
+        password.login.value = test;
+        password.groups.value.push(group.id.value);
 
         const passwordStoreState = JSON.stringify(app.currentVault.passwordStore.getState());
         const filterStoreState = JSON.stringify(app.currentVault.filterStore.getState());

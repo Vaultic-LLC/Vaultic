@@ -54,6 +54,7 @@ import { Account, InputColorModel, defaultInputColorModel } from '../../Types/Mo
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
+import { fieldifyObject } from '../../Types/Fields';
 
 export default defineComponent({
     name: "CreateMasterKeyView",
@@ -146,7 +147,9 @@ export default defineComponent({
                     }
 
                     response.VaulticPassword.password = key.value;
-                    await app.currentVault.passwordStore.addPassword(key.value, response.VaulticPassword);
+                    const vaulticPassword = fieldifyObject(response.VaulticPassword);
+
+                    await app.currentVault.passwordStore.addPassword(key.value, vaulticPassword);
                     ctx.emit('onSuccess');
 
                     return;

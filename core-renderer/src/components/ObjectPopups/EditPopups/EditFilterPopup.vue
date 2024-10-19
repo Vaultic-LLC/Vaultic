@@ -12,6 +12,7 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 import FilterView from "../../ObjectViews/FilterView.vue";
 
 import { Filter } from '../../../Types/DataTypes';
+import { reactifyFields } from '../../../Types/Fields';
 
 export default defineComponent({
 	name: "EditGroupPopup",
@@ -23,7 +24,7 @@ export default defineComponent({
 	setup(props)
 	{
 		// copy the object so that we don't edit the original one
-		const filterModel: ComputedRef<Filter> = computed(() => JSON.parse(JSON.stringify(props.model)));
+		const filterModel: ComputedRef<Filter> = computed(() => reactifyFields(JSON.parse(JSON.stringify(props.model))));
 
 		return {
 			filterModel,

@@ -235,8 +235,8 @@ export default defineComponent({
                     createPinnableSelectableTableRowModels<Group>(DataType.Groups, app.activePasswordValuesTable, tableRowDatas,
                         currentGroups.value, currentPinnedGroups.value, (g: Group) =>
                     {
-                        return [{ component: 'TableRowTextValue', value: g.name, copiable: false, width: 'calc(clamp(60px, 4.3vw, 112px) - clamp(5px, 0.5vw, 12px))', margin: true },
-                        { component: "TableRowColorValue", color: g.color, copiable: true, width: 'clamp(60px, 4.3vw, 100px)', margin: false }]
+                        return [{ component: 'TableRowTextValue', value: g.name.value, copiable: false, width: 'calc(clamp(60px, 4.3vw, 112px) - clamp(5px, 0.5vw, 12px))', margin: true },
+                        { component: "TableRowColorValue", color: g.color.value, copiable: true, width: 'clamp(60px, 4.3vw, 100px)', margin: false }]
                     },
                         false, "", false, undefined, onEditGroup,
                         onGroupDeleteInitiated);
@@ -245,8 +245,8 @@ export default defineComponent({
                 default:
                     createPinnableSelectableTableRowModels<Filter>(DataType.Filters, app.activePasswordValuesTable,
                         tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
-                    { return [{ component: 'TableRowTextValue', value: f.name, copiable: false, width: 'clamp(60px, 4.3vw, 100px)' }] },
-                        true, "isActive", true, (f: Filter) => app.currentVault.filterStore.toggleFilter(f.id), onEditFilter, onFilterDeleteInitiated);
+                    { return [{ component: 'TableRowTextValue', value: f.name.value, copiable: false, width: 'clamp(60px, 4.3vw, 100px)' }] },
+                        true, "isActive", true, (f: Filter) => app.currentVault.filterStore.toggleFilter(f.id.value), onEditFilter, onFilterDeleteInitiated);
             }
 
             if (tableRef.value)

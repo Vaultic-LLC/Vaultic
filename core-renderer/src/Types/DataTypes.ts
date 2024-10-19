@@ -1,16 +1,23 @@
+import { Field, PrimaryDataObjectCollectionType } from "./Fields";
+
 export interface IIdentifiable
 {
-    id: string;
+    id: Field<string>;
+}
+
+export interface IFieldObject
+{
+    [key: string]: Field<any>;
 }
 
 export interface IFilterable
 {
-    filters: string[];
+    filters: Field<string[]>;
 }
 
 export interface IGroupable
 {
-    groups: string[];
+    groups: Field<string[]>;
 }
 
 export enum DataType
@@ -30,20 +37,22 @@ export enum FilterStatus
 export interface Password extends IFilterable, IIdentifiable, IGroupable
 {
     [key: string]: any;
-    isVaultic: boolean;
-    login: string;
-    domain: string;
-    email: string;
-    password: string;
-    passwordFor: string;
-    securityQuestions: SecurityQuestion[];
-    additionalInformation: string;
-    lastModifiedTime: string;
-    isWeak: boolean;
-    isWeakMessage: string;
-    containsLogin: boolean;
-    passwordLength: number;
-    isDuplicate: boolean;
+    isVaultic: Field<boolean>;
+    login: Field<string>;
+    domain: Field<string>;
+    email: Field<string>;
+    password: Field<string>;
+    passwordFor: Field<string>;
+    securityQuestions: Field<SecurityQuestion[]>;
+    additionalInformation: Field<string>;
+    lastModifiedTime: Field<string>;
+    isWeak: Field<boolean>;
+    isWeakMessage: Field<string>;
+    containsLogin: Field<boolean>;
+    passwordLength: Field<number>;
+
+    // TODO: remove? Doesn't look to be used anywhere. Also on reactivePassword then
+    isDuplicate: Field<boolean>;
 }
 
 export interface SecurityQuestion extends IIdentifiable
@@ -69,16 +78,18 @@ export const nameValuePairTypesValues = Object.values(NameValuePairType);
 export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable
 {
     [key: string]: any;
-    name: string;
-    value: string;
-    valueType?: NameValuePairType;
-    notifyIfWeak: boolean;
-    additionalInformation: string;
-    lastModifiedTime: string;
-    isDuplicate: boolean;
-    isWeak: boolean;
-    isWeakMessage: string;
-    valueLength: number;
+    name: Field<string>;
+    value: Field<string>;
+    valueType: Field<NameValuePairType | undefined>;
+    notifyIfWeak: Field<boolean>;
+    additionalInformation: Field<string>;
+    lastModifiedTime: Field<string>;
+
+    // TODO: remove? Doesn't look to be used anywhere. Also on reactiveValue then
+    isDuplicate: Field<boolean>;
+    isWeak: Field<boolean>;
+    isWeakMessage: Field<string>;
+    valueLength: Field<number>;
 }
 
 export interface CurrentAndSafeStructure
@@ -109,19 +120,16 @@ export interface AtRisks
     isEmpty?: boolean;
 }
 
-interface ISecondaryDataObject
+export interface ISecondaryDataObject extends IIdentifiable, IFieldObject, PrimaryDataObjectCollectionType
 {
-    passwords: string[];
-    values: string[];
-    type: DataType;
+    type: Field<DataType>;
 }
 
-export interface Filter extends IIdentifiable, ISecondaryDataObject
+export interface Filter extends ISecondaryDataObject
 {
-    [key: string]: any;
-    name: string;
-    isActive: boolean;
-    conditions: FilterCondition[];
+    name: Field<string>;
+    isActive: Field<boolean>;
+    conditions: Field<FilterCondition[]>;
 }
 
 export interface FilterCondition extends IIdentifiable
@@ -144,79 +152,79 @@ export enum FilterConditionType
     EqualTo = "Equal To"
 }
 
-export interface Group extends IIdentifiable, ISecondaryDataObject
+export interface Group extends ISecondaryDataObject
 {
-    [key: string]: any;
-    name: string;
-    color: string; // hex value
+    name: Field<string>;
+    color: Field<string>; // hex value
 }
 
 export function defaultPassword(): Password
 {
     return {
-        id: "",
-        key: "",
-        isVaultic: false,
-        passwordFor: '',
-        login: '',
-        domain: '',
-        email: '',
-        password: '',
-        passwordLength: 0,
-        securityQuestions: [],
-        additionalInformation: '',
-        lastModifiedTime: '',
-        isDuplicate: false,
-        isWeak: false,
-        isWeakMessage: '',
-        containsLogin: false,
-        filters: [],
-        groups: [],
+        id: Field.newReactive(""),
+        key: Field.newReactive(""),
+        isVaultic: Field.newReactive(false),
+        passwordFor: Field.newReactive(''),
+        login: Field.newReactive(''),
+        domain: Field.newReactive(''),
+        email: Field.newReactive(''),
+        password: Field.newReactive(''),
+        passwordLength: Field.newReactive(0),
+        securityQuestions: Field.newReactive([]),
+        additionalInformation: Field.newReactive(''),
+        lastModifiedTime: Field.newReactive(''),
+        isDuplicate: Field.newReactive(false),
+        isWeak: Field.newReactive(false),
+        isWeakMessage: Field.newReactive(''),
+        containsLogin: Field.newReactive(false),
+        filters: Field.newReactive([]),
+        groups: Field.newReactive([]),
     }
 }
 
 export function defaultValue(): NameValuePair
 {
     return {
-        id: "",
-        key: '',
-        name: '',
-        value: '',
-        notifyIfWeak: true,
-        additionalInformation: '',
-        lastModifiedTime: '',
-        isDuplicate: false,
-        filters: [],
-        groups: [],
-        isWeak: false,
-        isWeakMessage: '',
-        valueLength: 0
+        id: Field.newReactive(""),
+        key: Field.newReactive(''),
+        name: Field.newReactive(''),
+        value: Field.newReactive(''),
+        valueType: Field.newReactive(undefined),
+        notifyIfWeak: Field.newReactive(true),
+        additionalInformation: Field.newReactive(''),
+        lastModifiedTime: Field.newReactive(''),
+        isDuplicate: Field.newReactive(false),
+        filters: Field.newReactive([]),
+        groups: Field.newReactive([]),
+        isWeak: Field.newReactive(false),
+        isWeakMessage: Field.newReactive(''),
+        valueLength: Field.newReactive(0)
     }
 }
 
 export function defaultFilter(type: DataType): Filter
 {
     return {
-        id: "",
-        key: '',
-        passwords: [],
-        values: [],
-        type: type,
-        isActive: false,
-        name: '',
-        conditions: []
+        id: Field.newReactive(""),
+        key: Field.newReactive(''),
+        passwords: Field.newReactive([]),
+        values: Field.newReactive([]),
+        type: Field.newReactive(type),
+        isActive: Field.newReactive(false),
+        name: Field.newReactive(''),
+        conditions: Field.newReactive([])
     }
 }
 
 export function defaultGroup(type: DataType): Group
 {
     return {
-        id: "",
-        key: "",
-        passwords: [],
-        values: [],
-        name: '',
-        type: type,
-        color: ''
+        id: Field.newReactive(""),
+        key: Field.newReactive(""),
+        passwords: Field.newReactive([]),
+        values: Field.newReactive([]),
+        name: Field.newReactive(''),
+        type: Field.newReactive(type),
+        color: Field.newReactive('')
     }
 }

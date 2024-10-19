@@ -13,7 +13,7 @@
             :showEmptyMessage="securityQuestions.length == 0" :backgroundColor="backgroundColor"
             :initialPaddingRow="false">
             <template #body>
-                <SecurityQuestionRow v-for="(sq, index) in securityQuestions" :key="sq.id" :rowNumber="index"
+                <SecurityQuestionRow v-for="(sq, index) in securityQuestions" :key="sq.id.value" :rowNumber="index"
                     :colorModel="colorModel" :model="sq" :disabled="true" :isInitiallyEncrypted="false" />
             </template>
         </TableTemplate>
@@ -58,8 +58,8 @@ export default defineComponent({
 
         // copy password so we don't accidentally edit it
         const password: ComputedRef<ReactivePassword> = computed(() => JSON.parse(JSON.stringify(props.value)));
-        let passwordValue: Ref<string> = ref(password.value.password);
-        let securityQuestions: Ref<SecurityQuestion[]> = ref(password.value.securityQuestions);
+        let passwordValue: Ref<string> = ref(password.value.password.value);
+        let securityQuestions: Ref<SecurityQuestion[]> = ref(password.value.securityQuestions.value);
 
         const emptyMessage: Ref<string> = ref('This Password does not have any Security Questions. Click the Edit Icon to add some');
 
@@ -119,8 +119,8 @@ export default defineComponent({
         {
             if (!newValue)
             {
-                passwordValue.value = password.value.password;
-                securityQuestions.value = password.value.securityQuestions;
+                passwordValue.value = password.value.password.value;
+                securityQuestions.value = password.value.securityQuestions.value;
             }
         });
 

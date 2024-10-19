@@ -1,11 +1,12 @@
 import { Password } from "../../Types/DataTypes";
 import { ComputedRef, computed, reactive } from "vue";
 import app from "./AppStore";
+import { Field } from "../../Types/Fields";
 
 export interface ReactivePassword extends Password
 {
-    isOld: boolean;
-    isSafe: boolean;
+    isOld: () => boolean;
+    isSafe: () => boolean;
 }
 
 // Used to prevent modifing a password directly and to and some computed methods
@@ -18,7 +19,7 @@ export default function createReactivePassword(password: Password): ReactivePass
     const isOld: ComputedRef<boolean> = computed(() =>
     {
         const today = new Date().getTime();
-        const lastModifiedTime = Date.parse(passwordState.lastModifiedTime);
+        const lastModifiedTime = Date.parse(passwordState.lastModifiedTime.value);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
         return differenceInDays >= app.settings.oldPasswordDays;
@@ -38,15 +39,14 @@ export default function createReactivePassword(password: Password): ReactivePass
         get lastModifiedTime() { return passwordState.lastModifiedTime; },
         get filters() { return passwordState.filters; },
         get groups() { return passwordState.groups; },
-        get isOld() { return isOld.value; },
         get isWeak() { return passwordState.isWeak; },
         get isWeakMessage() { return passwordState.isWeakMessage; },
         get containsLogin() { return passwordState.containsLogin; },
         get isDuplicate() { return passwordState.isDuplicate; },
-        set isDuplicate(value: boolean) { passwordState.isDuplicate = value; },
+        set isDuplicate(value: Field<boolean>) { passwordState.isDuplicate = value; },
         get passwordLength() { return passwordState.passwordLength; },
-        get isSafe() { return isSafe.value; },
-        get key() { return passwordState.key; },
-        get isVaultic() { return passwordState.isVaultic; }
+        get isVaultic() { return passwordState.isVaultic; },
+        isOld() { return isOld.value },
+        isSafe() { return isSafe.value }
     }
 }

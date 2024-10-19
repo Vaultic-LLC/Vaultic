@@ -14,19 +14,20 @@ import PasswordView from "../../ObjectViews/PasswordView.vue";
 import { Password } from '../../../Types/DataTypes';
 import { SingleSelectorItemModel } from '../../../Types/Models';
 import app from "../../../Objects/Stores/AppStore";
+import { reactifyFields } from '../../../Types/Fields';
 
 export default defineComponent({
     name: "EditPasswordPopup",
     components:
     {
         PasswordView
-        // SingleSelectorItem
     },
     props: ['model'],
     setup(props)
     {
         // copy the object so that we don't edit the original one
-        const passwordModel: ComputedRef<Password> = computed(() => JSON.parse(JSON.stringify(props.model)));
+        const passwordModel: ComputedRef<Password> = computed(() => reactifyFields(JSON.parse(JSON.stringify(props.model))));
+
         const selectorItemModel: SingleSelectorItemModel = {
             isActive: ref(true),
             title: ref("Edit Password"),

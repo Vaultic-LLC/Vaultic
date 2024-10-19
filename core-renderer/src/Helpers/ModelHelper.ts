@@ -79,13 +79,13 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
                 case AtRiskType.Empty:
                     app.currentVault.groupStore.emptyPasswordGroups.forEach(g =>
                     {
-                        addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroups.filter(gr => gr.id == g)[0]);
+                        addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroups.filter(gr => gr.id.value == g)[0]);
                     });
                     break;
                 case AtRiskType.Duplicate:
                     Object.keys(app.currentVault.groupStore.duplicatePasswordGroups).forEach(g =>
                     {
-                        addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroups.filter(gr => gr.id == g)[0]);
+                        addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroups.filter(gr => gr.id.value == g)[0]);
                     });
                     break;
             }
@@ -97,13 +97,13 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
                 case AtRiskType.Empty:
                     app.currentVault.groupStore.emptyValueGroups.forEach(g =>
                     {
-                        addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valuesGroups.filter(gr => gr.id == g)[0]);
+                        addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valuesGroups.filter(gr => gr.id.value == g)[0]);
                     });
                     break;
                 case AtRiskType.Duplicate:
                     Object.keys(app.currentVault.groupStore.duplicateValueGroups).forEach(g =>
                     {
-                        addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valuesGroups.filter(gr => gr.id == g)[0]);
+                        addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valuesGroups.filter(gr => gr.id.value == g)[0]);
                     });
                     break;
             }
@@ -118,13 +118,13 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
                 case AtRiskType.Empty:
                     app.currentVault.filterStore.emptyPasswordFilters.forEach(v =>
                     {
-                        addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFilters.filter(f => f.id == v)[0]);
+                        addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFilters.filter(f => f.id.value == v)[0]);
                     });
                     break;
                 case AtRiskType.Duplicate:
                     Object.keys(app.currentVault.filterStore.duplicatePasswordFilters).forEach(v =>
                     {
-                        addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFilters.filter(f => f.id == v)[0]);
+                        addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFilters.filter(f => f.id.value == v)[0]);
                     });
             }
         }
@@ -135,13 +135,13 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
                 case AtRiskType.Empty:
                     app.currentVault.filterStore.emptyValueFilters.forEach(v =>
                     {
-                        addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == v)[0]);
+                        addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id.value == v)[0]);
                     });
                     break;
                 case AtRiskType.Duplicate:
                     Object.keys(app.currentVault.filterStore.duplicateValueFilters).forEach(v =>
                     {
-                        addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == v)[0]);
+                        addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id.value == v)[0]);
                     });
             }
         }
@@ -157,8 +157,8 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
 
     function addAtRiskValues<U extends IIdentifiable>(message: string, value: U)
     {
-        pinnedCollection.remove(value.id);
-        sortedCollection.remove(value.id);
+        pinnedCollection.remove(value.id.value);
+        sortedCollection.remove(value.id.value);
 
         temp.push(buildModel(value as any as T, message));
     }
@@ -168,11 +168,11 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
         const id = await api.utilities.generator.uniqueId();
         return {
             id: id,
-            key: v.id,
+            key: v.id.value,
             selectable: selectable,
-            isPinned: ((isFilter && app.currentVault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(v.id)) ||
-                (isGroup && app.currentVault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(v.id))),
-            isActive: ref(v[isActiveProp] ?? false),
+            isPinned: ((isFilter && app.currentVault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(v.id.value)) ||
+                (isGroup && app.currentVault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(v.id.value))),
+            isActive: ref(v[isActiveProp]?.value ?? false),
             values: getValues(v),
             atRiskModel:
             {
@@ -199,16 +199,16 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             },
             onPin: function ()
             {
-                if (((isFilter && app.currentVault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(v.id)) ||
-                    (isGroup && app.currentVault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(v.id))))
+                if (((isFilter && app.currentVault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(v.id.value)) ||
+                    (isGroup && app.currentVault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(v.id.value))))
                 {
                     if (isFilter)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedFilters(v.id);
+                        app.currentVault.vaultPreferencesStore.removePinnedFilters(v.id.value);
                     }
                     else if (isGroup)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedGroups(v.id);
+                        app.currentVault.vaultPreferencesStore.removePinnedGroups(v.id.value);
                     }
 
                     const index: number = pinnedCollection.values.indexOf(v);
@@ -220,7 +220,7 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
                     }
                     else
                     {
-                        const modelIndex: number = selectableTableRowModels.value.visualValues.findIndex(m => m.key = v.id);
+                        const modelIndex: number = selectableTableRowModels.value.visualValues.findIndex(m => m.key = v.id.value);
                         selectableTableRowModels.value.visualValues.splice(modelIndex, 1);
                     }
                 }
@@ -228,11 +228,11 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
                 {
                     if (isFilter)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedFilter(v.id);
+                        app.currentVault.vaultPreferencesStore.addPinnedFilter(v.id.value);
                     }
                     else if (isGroup)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedGroup(v.id);
+                        app.currentVault.vaultPreferencesStore.addPinnedGroup(v.id.value);
                     }
 
                     const index: number = sortedCollection.values.indexOf(v);
@@ -269,20 +269,20 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             {
                 return 1;
             }
-            else if (pinnedCollection.values.find(pc => pc.id == a.key) && pinnedCollection.values.find(pc => pc.id == b.key))
+            else if (pinnedCollection.values.find(pc => pc.id.value == a.key) && pinnedCollection.values.find(pc => pc.id.value == b.key))
             {
-                return pinnedCollection.values.findIndex(pc => pc.id == a.key) >= pinnedCollection.values.findIndex(pc => pc.id == b.key) ? 1 : -1;
+                return pinnedCollection.values.findIndex(pc => pc.id.value == a.key) >= pinnedCollection.values.findIndex(pc => pc.id.value == b.key) ? 1 : -1;
             }
-            else if (pinnedCollection.values.find(pc => pc.id == a.key))
+            else if (pinnedCollection.values.find(pc => pc.id.value == a.key))
             {
                 return -1;
             }
-            else if (pinnedCollection.values.find(pc => pc.id == b.key))
+            else if (pinnedCollection.values.find(pc => pc.id.value == b.key))
             {
                 return 1;
             }
 
-            return sortedCollection.values.findIndex(sc => sc.id == a.key) >= sortedCollection.values.findIndex(sc => sc.id == b.key) ? 1 : -1;
+            return sortedCollection.values.findIndex(sc => sc.id.value == a.key) >= sortedCollection.values.findIndex(sc => sc.id.value == b.key) ? 1 : -1;
         });
     }
 }
@@ -304,26 +304,26 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
             case AtRiskType.Old:
                 app.currentVault.passwordStore.oldPasswords.value.forEach(p =>
                 {
-                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.oldPasswordDays} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0]);
+                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.oldPasswordDays} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.id.value == p)[0]);
                 });
                 break;
             case AtRiskType.Duplicate:
                 app.currentVault.passwordStore.duplicatePasswords.value.forEach(p =>
                 {
-                    addAtRiskValues("This Password is used more than once", app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0]);
+                    addAtRiskValues("This Password is used more than once", app.currentVault.passwordStore.passwords.filter(pw => pw.id.value == p)[0]);
                 });
                 break;
             case AtRiskType.Weak:
                 app.currentVault.passwordStore.weakPasswords.value.forEach(p =>
                 {
-                    const passwordStore: ReactivePassword = app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0];
-                    addAtRiskValues(passwordStore.isWeakMessage, passwordStore);
+                    const passwordStore: ReactivePassword = app.currentVault.passwordStore.passwords.filter(pw => pw.id.value == p)[0];
+                    addAtRiskValues(passwordStore.isWeakMessage.value, passwordStore);
                 });
                 break;
             case AtRiskType.ContainsLogin:
                 app.currentVault.passwordStore.containsLoginPasswords.value.forEach(p =>
                 {
-                    addAtRiskValues("This Password contains its Username", app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0]);
+                    addAtRiskValues("This Password contains its Username", app.currentVault.passwordStore.passwords.filter(pw => pw.id.value == p)[0]);
                 });
                 break;
             case AtRiskType.Breached:
@@ -335,7 +335,7 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
                     };
 
                     addAtRiskValues("This domain had a data breach. Click to learn more!",
-                        app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0], onClick);
+                        app.currentVault.passwordStore.passwords.filter(pw => pw.id.value == p)[0], onClick);
                 });
                 break;
         }
@@ -347,27 +347,27 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
             case AtRiskType.Old:
                 app.currentVault.valueStore.oldNameValuePairs.value.forEach(v =>
                 {
-                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.oldPasswordDays} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.oldPasswordDays} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id.value == v)[0]);
                 });
                 break;
             case AtRiskType.Duplicate:
                 app.currentVault.valueStore.duplicateNameValuePairs.value.forEach(v =>
                 {
-                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id.value == v)[0]);
                 });
                 break;
             case AtRiskType.WeakPhrase:
                 app.currentVault.valueStore.weakPassphraseValues.value.forEach(v =>
                 {
-                    const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
-                    addAtRiskValues(valueStore.isWeakMessage, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+                    const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id.value == v)[0];
+                    addAtRiskValues(valueStore.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id.value == v)[0]);
                 });
                 break;
             case AtRiskType.Weak:
                 app.currentVault.valueStore.weakPasscodeValues.value.forEach(v =>
                 {
-                    const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
-                    addAtRiskValues(valueStore.isWeakMessage, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+                    const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id.value == v)[0];
+                    addAtRiskValues(valueStore.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id.value == v)[0]);
                 });
         }
     }
@@ -380,8 +380,8 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
 
     function addAtRiskValues<U extends IIdentifiable>(message: string, value: U, onClick?: () => void)
     {
-        pinnedCollection.remove(value.id);
-        sortedCollection.remove(value.id);
+        pinnedCollection.remove(value.id.value);
+        sortedCollection.remove(value.id.value);
 
         temp.push(buildModel(value as any as T, message, onClick))
     }
@@ -391,8 +391,8 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
         const id = await api.utilities.generator.uniqueId();
         return {
             id: id,
-            isPinned: ((isPassword && app.currentVault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(v.id)) ||
-                (isValue && app.currentVault.vaultPreferencesStore.hasOwnProperty(v.id))),
+            isPinned: ((isPassword && app.currentVault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(v.id.value)) ||
+                (isValue && app.currentVault.vaultPreferencesStore.hasOwnProperty(v.id.value))),
             data: v,
             values: getValues(v),
             atRiskModel:
@@ -415,16 +415,16 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
                     return;
                 }
 
-                if ((isPassword && app.currentVault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(v.id)) ||
-                    (isValue && app.currentVault.vaultPreferencesStore.pinnedValues.hasOwnProperty(v.id)))
+                if ((isPassword && app.currentVault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(v.id.value)) ||
+                    (isValue && app.currentVault.vaultPreferencesStore.pinnedValues.hasOwnProperty(v.id.value)))
                 {
                     if (isPassword)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedPasswords(v.id);
+                        app.currentVault.vaultPreferencesStore.removePinnedPasswords(v.id.value);
                     }
                     else if (isValue)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedValues(v.id);
+                        app.currentVault.vaultPreferencesStore.removePinnedValues(v.id.value);
                     }
 
                     const index: number = pinnedCollection.values.indexOf(v);
@@ -459,11 +459,11 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
                 {
                     if (isPassword)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedPassword(v.id);
+                        app.currentVault.vaultPreferencesStore.addPinnedPassword(v.id.value);
                     }
                     else if (isValue)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedValue(v.id);
+                        app.currentVault.vaultPreferencesStore.addPinnedValue(v.id.value);
                     }
                     const index: number = sortedCollection.values.indexOf(v);
 

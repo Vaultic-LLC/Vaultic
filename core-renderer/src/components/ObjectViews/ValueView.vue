@@ -1,16 +1,16 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name" :width="'8vw'"
+        <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name.value" :width="'8vw'"
             :height="'4vh'" :minHeight="'35px'" />
         <div class="valueView__valueTypeContainer">
-            <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType"
+            <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType.value"
                 :optionsEnum="NameValuePairType" :fadeIn="true" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
                 :minWidth="'130px'" :maxHeight="'50px'" :showRandom="showRandom" />
             <Transition name="fade">
                 <div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
                     <CheckboxInputField class="valueView__notifyIfWeak" :label="'Notify if Weak'" :color="color"
-                        v-model="valuesState.notifyIfWeak" :fadeIn="false" :width="''" :height="'0.7vw'"
+                        v-model="valuesState.notifyIfWeak.value" :fadeIn="false" :width="''" :height="'0.7vw'"
                         :minHeight="'12px'" />
                     <ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
                         :message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
@@ -18,12 +18,12 @@
             </Transition>
         </div>
         <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
-            v-model="valuesState.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
+            v-model="valuesState.value.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
             :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
             :required="true" :width="'11vw'" :maxWidth="'300px'" :minWidth="'150px'" :height="'4vh'" :minHeight="'35px'"
             @onDirty="valueIsDirty = true" />
         <TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
-            v-model="valuesState.additionalInformation" :width="'19vw'" :height="'18vh'" :maxHeight="'238px'"
+            v-model="valuesState.additionalInformation.value" :width="'19vw'" :height="'18vh'" :maxHeight="'238px'"
             :minWidth="'216px'" :minHeight="'100px'" :isEditing="!creating" />
         <TableTemplate ref="tableRef" id="valueView__addGroupsTable" class="scrollbar" :scrollbar-size="1"
             :color="color" :headerModels="groupHeaderModels" :border="true" :emptyMessage="emptyMessage"
@@ -93,14 +93,14 @@ export default defineComponent({
         const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(app.currentVault.groupStore.valuesGroups, "name"));
         // @ts-ignore
         const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
-        const initalLength: Ref<number> = ref(valuesState.value.valueLength ?? 0);
+        const initalLength: Ref<number> = ref(valuesState.value.valueLength?.value ?? 0);
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
 
-        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.valueType == NameValuePairType.Passcode);
-        const showRandom: ComputedRef<boolean> = computed(() => valuesState.value.valueType == NameValuePairType.Passphrase ||
-            valuesState.value.valueType == NameValuePairType.Passcode || valuesState.value.valueType == NameValuePairType.Other);
-        const randomValueType: ComputedRef<number> = computed(() => valuesState.value.valueType == NameValuePairType.Passphrase ? 0 : 1);
+        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.valueType?.value == NameValuePairType.Passcode);
+        const showRandom: ComputedRef<boolean> = computed(() => valuesState.value.valueType?.value == NameValuePairType.Passphrase ||
+            valuesState.value.valueType?.value == NameValuePairType.Passcode || valuesState.value.valueType?.value == NameValuePairType.Other);
+        const randomValueType: ComputedRef<number> = computed(() => valuesState.value.valueType?.value == NameValuePairType.Passphrase ? 0 : 1);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -176,19 +176,19 @@ export default defineComponent({
                 const model: SelectableTableRowData =
                 {
                     id: id,
-                    key: g.id,
+                    key: g.id.value,
                     values: values,
-                    isActive: ref(valuesState.value.groups.includes(g.id)),
+                    isActive: ref(valuesState.value.groups.value.includes(g.id.value)),
                     selectable: true,
                     onClick: function ()
                     {
-                        if (valuesState.value.groups.includes(g.id))
+                        if (valuesState.value.groups.value.includes(g.id.value))
                         {
-                            valuesState.value.groups = valuesState.value.groups.filter(id => id != g.id);
+                            valuesState.value.groups.value = valuesState.value.groups.value.filter(id => id != g.id.value);
                         }
                         else
                         {
-                            valuesState.value.groups.push(g.id);
+                            valuesState.value.groups.value.push(g.id.value);
                         }
                     }
                 }
@@ -280,7 +280,7 @@ export default defineComponent({
             mounted.value = true;
         });
 
-        watch(() => valuesState.value.valueType, (newValue) =>
+        watch(() => valuesState.value.valueType.value, (newValue) =>
         {
             showNotifyIfWeak.value = newValue == NameValuePairType.Passcode;
         });

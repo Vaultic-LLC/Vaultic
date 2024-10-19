@@ -1,5 +1,5 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { SecondaryObjectStore, DataTypeStoreState } from "./Base";
+import { SecondaryDataTypeStore, DataTypeStoreState } from "./Base";
 import { generateUniqueID } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
@@ -19,7 +19,7 @@ export interface GroupStoreState extends DataTypeStoreState<Group>
     duplicateValueGroups: Dictionary<string[]>;
 }
 
-export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
+export class GroupStore extends SecondaryDataTypeStore<Group, GroupStoreState>
 {
     protected internalPasswordGroups: ComputedRef<Group[]>;
     protected internalValueGroups: ComputedRef<Group[]>;
@@ -31,8 +31,8 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
     {
         super(vault, "groupStoreState");
 
-        this.internalPasswordGroups = computed(() => this.state.values.filter(g => g.type == DataType.Passwords));
-        this.internalValueGroups = computed(() => this.state.values.filter(g => g.type == DataType.NameValuePairs));
+        this.internalPasswordGroups = computed(() => this.state.values.filter(g => g.type.value == DataType.Passwords));
+        this.internalValueGroups = computed(() => this.state.values.filter(g => g.type.value == DataType.NameValuePairs));
     }
 
     protected defaultState()
@@ -56,22 +56,22 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        group.id = await generateUniqueID(pendingState.values);
-        pendingState.groupsById[group.id] = group;
+        group.id.value = await generateUniqueID(pendingState.values);
+        pendingState.groupsById[group.id.value] = group;
         pendingState.values.push(group);
 
-        if (group.type == DataType.Passwords)
+        if (group.type.value == DataType.Passwords)
         {
-            if (group.passwords.length == 0)
+            if (group.passwords.value.length == 0)
             {
-                pendingState.emptyPasswordGroups.push(group.id);
+                pendingState.emptyPasswordGroups.push(group.id.value);
             }
             else
             {
                 const pendingPasswordState = this.vault.passwordStore.cloneState();
-                const passwordGroups = pendingState.values.filter(g => g.type == DataType.Passwords);
+                const passwordGroups = pendingState.values.filter(g => g.type.value == DataType.Passwords);
 
-                this.syncPrimaryDataObjectsForGroup(group, "passwords", group.passwords, [],
+                this.syncPrimaryDataObjectsForGroup(group, "passwords", group.passwords.value, [],
                     pendingPasswordState.values, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
                     passwordGroups);
 
@@ -81,18 +81,18 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
                 transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
             }
         }
-        else if (group.type == DataType.NameValuePairs)
+        else if (group.type.value == DataType.NameValuePairs)
         {
-            if (group.values.length == 0)
+            if (group.values.value.length == 0)
             {
-                pendingState.emptyValueGroups.push(group.id);
+                pendingState.emptyValueGroups.push(group.id.value);
             }
             else
             {
                 const pendingValueState = this.vault.valueStore.cloneState();
-                const valueGroups = pendingState.values.filter(g => g.type == DataType.NameValuePairs);
+                const valueGroups = pendingState.values.filter(g => g.type.value == DataType.NameValuePairs);
 
-                this.syncPrimaryDataObjectsForGroup(group, "values", group.values, [], pendingValueState.values,
+                this.syncPrimaryDataObjectsForGroup(group, "values", group.values.value, [], pendingValueState.values,
                     pendingState.emptyValueGroups, pendingState.duplicateValueGroups, valueGroups);
 
                 const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.values, valueGroups);
@@ -111,7 +111,7 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        const currentGroup = pendingState.groupsById[updatedGroup.id];
+        const currentGroup = pendingState.groupsById[updatedGroup.id.value];
         if (!currentGroup)
         {
             await api.repositories.logs.log(undefined, `No Group`, "GroupStore.Update")
@@ -119,14 +119,14 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         }
 
         // need to get added and removed groups before updating the old group with the new one
-        const primaryObjectCollection = updatedGroup.type == DataType.Passwords ? "passwords" : "values";
-        const addedPrimaryObjects = updatedGroup[primaryObjectCollection].filter(p => !currentGroup[primaryObjectCollection].includes(p));
-        const removedPrimaryObjects = currentGroup[primaryObjectCollection].filter(p => !updatedGroup[primaryObjectCollection].includes(p));
+        const primaryObjectCollection = updatedGroup.type.value == DataType.Passwords ? "passwords" : "values";
+        const addedPrimaryObjects = updatedGroup[primaryObjectCollection].value.filter(p => !currentGroup[primaryObjectCollection].value.includes(p));
+        const removedPrimaryObjects = currentGroup[primaryObjectCollection].value.filter(p => !updatedGroup[primaryObjectCollection].value.includes(p));
 
-        if (updatedGroup.type == DataType.Passwords)
+        if (updatedGroup.type.value == DataType.Passwords)
         {
             const pendingPasswordState = this.vault.passwordStore.cloneState();
-            const passwordGroups = pendingState.values.filter(g => g.type == DataType.Passwords);
+            const passwordGroups = pendingState.values.filter(g => g.type.value == DataType.Passwords);
 
             this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
                 pendingPasswordState.values, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
@@ -137,10 +137,10 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
             transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
-        else if (updatedGroup.type == DataType.NameValuePairs)
+        else if (updatedGroup.type.value == DataType.NameValuePairs)
         {
             const pendingValueState = this.vault.valueStore.cloneState();
-            const valueGroups = pendingState.values.filter(g => g.type == DataType.NameValuePairs);
+            const valueGroups = pendingState.values.filter(g => g.type.value == DataType.NameValuePairs);
 
             this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
                 pendingValueState.values, pendingState.emptyValueGroups, pendingState.duplicateValueGroups,
@@ -152,8 +152,8 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
             transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
 
-        Object.assign(pendingState.groupsById[updatedGroup.id], updatedGroup);
-        Object.assign(pendingState.values.filter(g => g.id == updatedGroup.id)[0], updatedGroup);
+        Object.assign(pendingState.groupsById[updatedGroup.id.value], updatedGroup);
+        Object.assign(pendingState.values.filter(g => g.id.value == updatedGroup.id.value)[0], updatedGroup);
 
         transaction.updateVaultStore(this, pendingState);
         return await transaction.commit(masterKey);
@@ -164,8 +164,8 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        delete pendingState.groupsById[group.id];
-        const groupIndex = pendingState.values.findIndex(g => g.id == group.id);
+        delete pendingState.groupsById[group.id.value];
+        const groupIndex = pendingState.values.findIndex(g => g.id.value == group.id.value);
 
         if (groupIndex < 0)
         {
@@ -175,30 +175,30 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
         pendingState.values.splice(groupIndex, 1);
 
-        if (group.type == DataType.Passwords)
+        if (group.type.value == DataType.Passwords)
         {
-            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(group.id, "groups");
+            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(group.id.value, "groups");
 
             // do this here since it can update passwords
             const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.values,
-                pendingState.values.filter(g => g.type == DataType.Passwords));
+                pendingState.values.filter(g => g.type.value == DataType.Passwords));
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyPasswordGroups);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicatePasswordGroups);
+            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id.value, pendingState.emptyPasswordGroups);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id.value, pendingState.duplicatePasswordGroups);
 
             transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
             transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
         }
-        else if (group.type == DataType.NameValuePairs)
+        else if (group.type.value == DataType.NameValuePairs)
         {
-            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(group.id, "groups");
+            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(group.id.value, "groups");
 
             // do this here since it can update values
             const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.values,
-                pendingState.values.filter(g => g.type == DataType.NameValuePairs));
+                pendingState.values.filter(g => g.type.value == DataType.NameValuePairs));
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id, pendingState.emptyValueGroups);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id, pendingState.duplicateValueGroups);
+            this.removeSeconaryObjectFromEmptySecondaryObjects(group.id.value, pendingState.emptyValueGroups);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id.value, pendingState.duplicateValueGroups);
 
             transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
             transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
@@ -215,7 +215,7 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
     {
         const pendingState = this.cloneState();
         this.syncGroupsForPrimaryObject(passwordID, "passwords", addedGroups, removedGroups,
-            pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups, pendingState.values.filter(g => g.type == DataType.Passwords));
+            pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups, pendingState.values.filter(g => g.type.value == DataType.Passwords));
 
         return pendingState;
     }
@@ -227,7 +227,7 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
     {
         const pendingState = this.cloneState();
         this.syncGroupsForPrimaryObject(valueID, "values", addedGroups, removedGroups,
-            pendingState.emptyValueGroups, pendingState.duplicateValueGroups, pendingState.values.filter(g => g.type == DataType.NameValuePairs));
+            pendingState.emptyValueGroups, pendingState.duplicateValueGroups, pendingState.values.filter(g => g.type.value == DataType.NameValuePairs));
 
         return pendingState;
     }
@@ -244,19 +244,19 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
     {
         addedGroups.forEach(g =>
         {
-            const groups = allSecondaryObjects.filter(grp => grp.id == g);
+            const groups = allSecondaryObjects.filter(grp => grp.id.value == g);
             if (groups.length != 1)
             {
                 return;
             }
 
-            if (!groups[0][primaryDataObjectCollection].includes(primaryObjectID))
+            if (!groups[0][primaryDataObjectCollection].value.includes(primaryObjectID))
             {
-                groups[0][primaryDataObjectCollection].push(primaryObjectID);
+                groups[0][primaryDataObjectCollection].value.push(primaryObjectID);
             }
 
             this.checkUpdateEmptySecondaryObject(
-                groups[0].id, groups[0][primaryDataObjectCollection], currentEmptyGroups);
+                groups[0].id.value, groups[0][primaryDataObjectCollection].value, currentEmptyGroups);
 
             this.checkUpdateDuplicateSecondaryObjects(groups[0], primaryDataObjectCollection,
                 currentDuplicateSecondaryObjects, allSecondaryObjects)
@@ -264,20 +264,20 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
 
         removedGroups.forEach(g =>
         {
-            const groups = allSecondaryObjects.filter(grp => grp.id == g);
+            const groups = allSecondaryObjects.filter(grp => grp.id.value == g);
             if (groups.length != 1)
             {
                 return;
             }
 
-            const primaryObjectIndex = groups[0][primaryDataObjectCollection].indexOf(primaryObjectID);
+            const primaryObjectIndex = groups[0][primaryDataObjectCollection].value.indexOf(primaryObjectID);
             if (primaryObjectIndex >= 0)
             {
-                groups[0][primaryDataObjectCollection].splice(primaryObjectIndex, 1);
+                groups[0][primaryDataObjectCollection].value.splice(primaryObjectIndex, 1);
             }
 
             this.checkUpdateEmptySecondaryObject(
-                groups[0].id, groups[0][primaryDataObjectCollection], currentEmptyGroups);
+                groups[0].id.value, groups[0][primaryDataObjectCollection].value, currentEmptyGroups);
 
             this.checkUpdateDuplicateSecondaryObjects(groups[0], primaryDataObjectCollection,
                 currentDuplicateSecondaryObjects, allSecondaryObjects)
@@ -297,27 +297,27 @@ export class GroupStore extends SecondaryObjectStore<Group, GroupStoreState>
     {
         addedPrimaryObjects.forEach(o =>
         {
-            const primaryObject = allPrimaryObjects.filter(po => po.id == o);
+            const primaryObject = allPrimaryObjects.filter(po => po.id.value == o);
             if (primaryObject.length == 1)
             {
-                primaryObject[0].groups.push(group.id);
+                primaryObject[0].groups.value.push(group.id.value);
             }
         });
 
         removedPrimaryObjects.forEach(o =>
         {
-            const primaryObject = allPrimaryObjects.filter(po => po.id == o);
+            const primaryObject = allPrimaryObjects.filter(po => po.id.value == o);
             if (primaryObject.length == 1)
             {
-                const groupIndex = primaryObject[0].groups.indexOf(group.id);
+                const groupIndex = primaryObject[0].groups.value.indexOf(group.id.value);
                 if (groupIndex >= 0)
                 {
-                    primaryObject[0].groups.splice(groupIndex, 1);
+                    primaryObject[0].groups.value.splice(groupIndex, 1);
                 }
             }
         });
 
-        this.checkUpdateEmptySecondaryObject(group.id, group[primaryDataObjectCollection], currentEmptyGroups);
+        this.checkUpdateEmptySecondaryObject(group.id.value, group[primaryDataObjectCollection].value, currentEmptyGroups);
         this.checkUpdateDuplicateSecondaryObjects(group, primaryDataObjectCollection, currentDuplicateGroups, allSecondaryObjects)
     }
 }
@@ -359,8 +359,8 @@ export class ReactiveGroupStore extends GroupStore
     {
         super(vault);
 
-        this.internalSortedPasswordsGroups = computed(() => this.internalPasswordGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
-        this.internalSortedValuesGroups = computed(() => this.internalValueGroups.value.sort((a, b) => a.name >= b.name ? 1 : -1));
+        this.internalSortedPasswordsGroups = computed(() => this.internalPasswordGroups.value.sort((a, b) => a.name.value >= b.name.value ? 1 : -1));
+        this.internalSortedValuesGroups = computed(() => this.internalValueGroups.value.sort((a, b) => a.name.value >= b.name.value ? 1 : -1));
 
         this.internalDuplicatePasswordGroupsLength = computed(() => Object.keys(this.state.duplicatePasswordGroups).length);
         this.internalDuplicateValuesGroupsLength = computed(() => Object.keys(this.state.duplicateValueGroups).length);
@@ -368,11 +368,11 @@ export class ReactiveGroupStore extends GroupStore
         this.internalActiveAtRiskPasswordGroupType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueGroupType = ref(AtRiskType.None);
 
-        this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
-        this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id.value)));
+        this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id.value)));
 
-        this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
-        this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id)));
+        this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id.value)));
+        this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !this.vault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(f.id.value)));
     }
 
     protected getPasswordAtRiskType(): Ref<AtRiskType>

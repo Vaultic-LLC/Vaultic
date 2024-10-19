@@ -4,6 +4,11 @@ export type PrimaryDataObjectCollection = "passwords" | "values";
 export type SecondaryDataObjectCollection = "filters" | "groups";
 export type SecretProperty = "password" | "value";
 
+export type PrimaryDataObjectCollectionType =
+    {
+        [key in PrimaryDataObjectCollection]: Field<string[]>;
+    }
+
 export interface DisplayField
 {
     backingProperty: string;
@@ -96,11 +101,18 @@ export const FilterableValueProperties: PropertySelectorDisplayFields[] = [
     }
 ];
 
+const isFieldProxy = "isFieldProxy";
 
+// TODO: will this catch array and object properties?
 const fieldHandler =
 {
     get(target, prop, _)
     {
+        if (prop == isFieldProxy)
+        {
+            return true;
+        }
+
         return target[prop];
     },
     set(obj: Field<any>, prop: string, newValue: any)
@@ -118,9 +130,9 @@ export interface GroupCSVHeader
     delimiter?: string;
 }
 
-class Field<T>
+export class Field<T>
 {
-    value?: T;
+    value: T;
     lastModifiedTime: number;
     width: string;
     height: string;
@@ -129,17 +141,54 @@ class Field<T>
     component?: string;
     mask?: string;
 
-    constructor()
+    constructor(value: T) 
     {
+        this.value = value;
+        this.lastModifiedTime = Date.now();
+    }
+
+    static newReactive<T>(value: T)
+    {
+        return new Proxy(new Field<T>(value), fieldHandler);
+    }
+
+    static makeReactive<T>(field: Field<T>)
+    {
+        return new Proxy(field, fieldHandler);
     }
 }
 
-export class FieldConstructor
+export class ArrayField<T> extends Field<T[]>
 {
-    constructor() { }
-
-    new<T>()
+    push(value: T)
     {
-        return new Proxy(new Field<T>(), fieldHandler);
+
     }
+}
+
+export function reactifyFields(obj: any)
+{
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i++)
+    {
+        if (obj[keys[i]]?.[isFieldProxy])
+        {
+            continue;
+        }
+
+        obj[keys[i]] = Field.makeReactive(obj[keys[i]]);
+    }
+
+    return obj;
+}
+
+export function fieldifyObject(obj: any)
+{
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i++)
+    {
+        obj[keys[i]] = Field.newReactive(obj[keys[i]]);
+    }
+
+    return obj;
 }

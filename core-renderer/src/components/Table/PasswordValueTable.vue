@@ -14,7 +14,7 @@
             <template #body>
                 <CollapsibleTableRow :shadow="true" v-slot="props"
                     v-for="(model, index) in collapsibleTableRowModels.visualValues" :key="model.id"
-                    :groups="model.data.groups" :model="model" :rowNumber="index" :color="color">
+                    :groups="model.data.groups.value" :model="model" :rowNumber="index" :color="color">
                     <SlideInRow :isShowing="props.isShowing" :colspan="headerModels.length + 1"
                         :defaultHeight="'clamp(100px, 22vh, 300px)'">
                         <component :is="rowComponent" :value="model.data"
@@ -246,7 +246,7 @@ export default defineComponent({
                 let temp: T[] = [];
                 newValue.forEach(f =>
                 {
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.includes(f.id)));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.includes(f.id.value)));
                 });
 
                 localVariable.updateValues(temp);
@@ -261,13 +261,13 @@ export default defineComponent({
                     const filtersActivated: Filter[] = newValue.filter(f => !oldValue.includes(f));
                     filtersActivated.forEach(f =>
                     {
-                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.includes(f.id)));
+                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.includes(f.id.value)));
                     });
                 }
                 else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.includes(f.id))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.includes(f.id.value))));
                 }
 
                 localVariable.updateValues(temp);
@@ -286,20 +286,20 @@ export default defineComponent({
                         temp = temp.filter(v =>
                         {
                             // keep values that the removed filter doesn't apply to
-                            if (!v.filters.includes(f.id))
+                            if (!v.filters.value.includes(f.id.value))
                             {
                                 return true;
                             }
 
                             // remove value if it doesn't have a current active filter
-                            return newValue.filter(nv => v.filters.includes(nv.id)).length > 0;
+                            return newValue.filter(nv => v.filters.value.includes(nv.id.value)).length > 0;
                         })
                     });
                 }
                 else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.includes(f.id))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.includes(f.id.value))));
                 }
 
                 localVariable.updateValues(temp);
@@ -334,10 +334,10 @@ export default defineComponent({
                         {
                             return [
                                 {
-                                    component: 'TableRowTextValue', value: p.passwordFor, copiable: false, width: 'clamp(110px, 7vw, 150px)',
+                                    component: 'TableRowTextValue', value: p.passwordFor.value, copiable: false, width: 'clamp(110px, 7vw, 150px)',
                                 },
                                 {
-                                    component: 'TableRowTextValue', value: p.login, copiable: true, width: 'clamp(100px, 9vw, 300px)'
+                                    component: 'TableRowTextValue', value: p.login.value, copiable: true, width: 'clamp(100px, 9vw, 300px)'
                                 }]
                         },
                         onEditPassword, onPasswordDeleteInitiated);
