@@ -27,7 +27,7 @@ passwordStoreSuite.tests.push({
 
         const sequrityQuestion: SecurityQuestion =
         {
-            id: Field.newReactive("SecurityQuestion"),
+            id: new Field("SecurityQuestion"),
             question: "Question",
             questionLength: 0,
             answer: "Answer",
@@ -161,7 +161,7 @@ passwordStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Add With Filter Works";
         filter.conditions.value.push({
-            id: Field.newReactive("PasswordStore Add With Filter Works"),
+            id: new Field("PasswordStore Add With Filter Works"),
             property: "login",
             filterType: FilterConditionType.EqualTo,
             value: "PasswordStore Add With Filter Works"
@@ -243,7 +243,7 @@ passwordStoreSuite.tests.push({
         password.login.value = "MVOmewpobwjbiophniones";
         const securityQuestion: SecurityQuestion =
         {
-            id: Field.newReactive("SecurityQuestion"),
+            id: new Field("SecurityQuestion"),
             question: "Question",
             questionLength: 0,
             answer: "Answer",
@@ -415,7 +415,7 @@ passwordStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Update With Filter Works";
         filter.conditions.value.push({
-            id: Field.newReactive("Id"),
+            id: new Field("Id"),
             property: "login",
             filterType: FilterConditionType.EqualTo,
             value: "UpdateWithFilterWorks--Filter"
@@ -585,7 +585,7 @@ passwordStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Update With Filter Works";
         filter.conditions.value.push({
-            id: Field.newReactive("DeleteWithFilterWorks--Condition"),
+            id: new Field("DeleteWithFilterWorks--Condition"),
             property: "login",
             filterType: FilterConditionType.EqualTo,
             value: "DeleteWithFilterWorks"

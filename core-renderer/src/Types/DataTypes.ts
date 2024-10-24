@@ -161,70 +161,70 @@ export interface Group extends ISecondaryDataObject
 export function defaultPassword(): Password
 {
     return {
-        id: Field.newReactive(""),
-        key: Field.newReactive(""),
-        isVaultic: Field.newReactive(false),
-        passwordFor: Field.newReactive(''),
-        login: Field.newReactive(''),
-        domain: Field.newReactive(''),
-        email: Field.newReactive(''),
-        password: Field.newReactive(''),
-        passwordLength: Field.newReactive(0),
-        securityQuestions: Field.newReactive([]),
-        additionalInformation: Field.newReactive(''),
-        lastModifiedTime: Field.newReactive(''),
-        isDuplicate: Field.newReactive(false),
-        isWeak: Field.newReactive(false),
-        isWeakMessage: Field.newReactive(''),
-        containsLogin: Field.newReactive(false),
-        filters: Field.newReactive([]),
-        groups: Field.newReactive([]),
+        id: new Field(""),
+        key: new Field(""),
+        isVaultic: new Field(false),
+        passwordFor: new Field(''),
+        login: new Field(''),
+        domain: new Field(''),
+        email: new Field(''),
+        password: new Field(''),
+        passwordLength: new Field(0),
+        securityQuestions: new Field([]),
+        additionalInformation: new Field(''),
+        lastModifiedTime: new Field(''),
+        isDuplicate: new Field(false),
+        isWeak: new Field(false),
+        isWeakMessage: new Field(''),
+        containsLogin: new Field(false),
+        filters: new Field([]),
+        groups: new Field([]),
     }
 }
 
 export function defaultValue(): NameValuePair
 {
     return {
-        id: Field.newReactive(""),
-        key: Field.newReactive(''),
-        name: Field.newReactive(''),
-        value: Field.newReactive(''),
-        valueType: Field.newReactive(undefined),
-        notifyIfWeak: Field.newReactive(true),
-        additionalInformation: Field.newReactive(''),
-        lastModifiedTime: Field.newReactive(''),
-        isDuplicate: Field.newReactive(false),
-        filters: Field.newReactive([]),
-        groups: Field.newReactive([]),
-        isWeak: Field.newReactive(false),
-        isWeakMessage: Field.newReactive(''),
-        valueLength: Field.newReactive(0)
+        id: new Field(""),
+        key: new Field(''),
+        name: new Field(''),
+        value: new Field(''),
+        valueType: new Field(undefined),
+        notifyIfWeak: new Field(true),
+        additionalInformation: new Field(''),
+        lastModifiedTime: new Field(''),
+        isDuplicate: new Field(false),
+        filters: new Field([]),
+        groups: new Field([]),
+        isWeak: new Field(false),
+        isWeakMessage: new Field(''),
+        valueLength: new Field(0)
     }
 }
 
 export function defaultFilter(type: DataType): Filter
 {
     return {
-        id: Field.newReactive(""),
-        key: Field.newReactive(''),
-        passwords: Field.newReactive([]),
-        values: Field.newReactive([]),
-        type: Field.newReactive(type),
-        isActive: Field.newReactive(false),
-        name: Field.newReactive(''),
-        conditions: Field.newReactive([])
+        id: new Field(""),
+        key: new Field(''),
+        passwords: new Field([]),
+        values: new Field([]),
+        type: new Field(type),
+        isActive: new Field(false),
+        name: new Field(''),
+        conditions: new Field([])
     }
 }
 
 export function defaultGroup(type: DataType): Group
 {
     return {
-        id: Field.newReactive(""),
-        key: Field.newReactive(""),
-        passwords: Field.newReactive([]),
-        values: Field.newReactive([]),
-        name: Field.newReactive(''),
-        type: Field.newReactive(type),
-        color: Field.newReactive('')
+        id: new Field(""),
+        key: new Field(""),
+        passwords: new Field([]),
+        values: new Field([]),
+        name: new Field(''),
+        type: new Field(type),
+        color: new Field('')
     }
 }

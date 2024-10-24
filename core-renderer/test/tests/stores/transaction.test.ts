@@ -14,7 +14,7 @@ transactionTestSuite.tests.push({
 
         const filter = defaultFilter(DataType.Passwords);
         filter.conditions.value.push({
-            id: Field.newReactive(test),
+            id: new Field(test),
             property: "login",
             filterType: FilterConditionType.EqualTo,
             value: test

@@ -40,6 +40,7 @@ import TableRowColorValue from './TableRowColorValue.vue';
 import { TableRowData } from '../../../Types/Models';
 import { ColorPalette } from '../../..//Types/Colors';
 import app from "../../../Objects/Stores/AppStore";
+import { rowChunkAmount } from '../../../Constants/Misc';
 
 export default defineComponent({
     name: "TableRow",
@@ -68,7 +69,7 @@ export default defineComponent({
 
         function setAnimationDelay(numb: number)
         {
-            animationDelay.value = `${(numb % app.settings.rowChunkAmount) / 8}s`;
+            animationDelay.value = `${(numb % rowChunkAmount) / 8}s`;
         }
 
         function onPin()

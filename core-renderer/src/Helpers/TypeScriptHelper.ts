@@ -3,7 +3,7 @@
 // false negatives when comparing those nested objects
 // can do additional property validation via propertyTest
 export function validateObject(tester: any, actual: any, propertyTest?: (propName: string, propValue: any) => boolean,
-    anonymousObjectTest?: (propName: string, propValue: any) => boolean)
+    anonymousObjectTest?: (objName: string, propname: string, propValue: any) => boolean)
 {
     const actualKeys = Object.keys(tester);
     const expectedKeys = Object.keys(actual);
@@ -45,7 +45,7 @@ export function validateObject(tester: any, actual: any, propertyTest?: (propNam
                     const anonymousObjectKeys = Object.keys(tester[expectedKeys[i]]);
                     for (let i = 0; i < anonymousObjectKeys.length; i++)
                     {
-                        if (!anonymousObjectTest(anonymousObjectKeys[i], tester[expectedKeys[i]][anonymousObjectKeys[i]]))
+                        if (!anonymousObjectTest(expectedKeys[i], anonymousObjectKeys[i], tester[expectedKeys[i]][anonymousObjectKeys[i]]))
                         {
                             return false;
                         }

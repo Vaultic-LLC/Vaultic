@@ -5,6 +5,7 @@ import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { EntityState } from "@vaultic/shared/Types/Entities";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>): Promise<TypedMethodResponse<T | undefined>>
 {
@@ -119,6 +120,7 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
     return userData;
 }
 
+// Only call within a method wrapped in safetifyMethod
 export async function backupData(masterKey: string)
 {
     const userToBackup = await environment.repositories.users.getEntityThatNeedToBeBackedUp(masterKey);
@@ -142,16 +144,31 @@ export async function backupData(masterKey: string)
         return false;
     }
 
+    const postData: { userDataPayload: UserDataPayload } = { userDataPayload: {} };
+    if (userToBackup[1])
+    {
+        postData.userDataPayload["user"] = userToBackup[1];
+    }
+
+    if (userVaultsToBackup[1] && userVaultsToBackup[1].length > 0)
+    {
+        postData.userDataPayload["userVaults"] = userVaultsToBackup[1];
+    }
+
+    if (vaultsToBackup[1] && vaultsToBackup[1].length > 0)
+    {
+        postData.userDataPayload["vaults"] = vaultsToBackup[1];
+    }
+
     console.log(`\nBacking up user: ${JSON.stringify(userToBackup[1])}`);
     console.log(`\nBacking up userVaults: ${JSON.stringify(userVaultsToBackup[1])}`);
     console.log(`\nBacking up vaults: ${JSON.stringify(vaultsToBackup[1])}`);
 
-    const backupResponse = await vaulticServer.user.backupData(userToBackup[1], userVaultsToBackup[1], vaultsToBackup[1]);
+    const backupResponse = await vaulticServer.user.backupData(postData);
     if (!backupResponse.Success)
     {
         console.log(`backup failed: ${JSON.stringify(backupResponse)}`);
-        console.log('\n')
-        // TODO: merge objects returned from response and keep trying
+        checkMergeMissingData(masterKey, "", postData.userDataPayload, backupResponse.userDataPayload)
 
         return false;
     }
@@ -184,6 +201,22 @@ export async function backupData(masterKey: string)
     return true;
 }
 
+export async function safeBackupData(masterKey: string): Promise<TypedMethodResponse<boolean | undefined>>
+{
+    return await safetifyMethod(this, internalDoBackupData);
+
+    async function internalDoBackupData(this: any): Promise<TypedMethodResponse<boolean>>
+    {
+        const success = await backupData(masterKey);
+        if (!success)
+        {
+            return TypedMethodResponse.fail();
+        }
+
+        return TypedMethodResponse.success(true);
+    }
+}
+
 // For any data in serverUserDataPayload, if the matching data entityState is unchanged or inserted in 
 // clientUserDataPayload, then just override it
 // If the entity state is updated, then I need to merge them by updatedTime
@@ -199,6 +232,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
 
     transaction = transaction ?? new Transaction();
     let needsToRePushData = false;
+    const changeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsByID(masterKey);
 
     if (serverUserDataPayload.user)
     {
@@ -223,7 +257,10 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
         }
         else
         {
-            await environment.repositories.users.updateFromServer(clientUserDataPayload.user, serverUserDataPayload.user, transaction);
+            if (await environment.repositories.users.updateFromServer(masterKey, clientUserDataPayload.user, serverUserDataPayload.user, changeTrackings, transaction))
+            {
+                needsToRePushData = true;
+            }
         }
     }
 
@@ -272,12 +309,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
         }
     }
 
-    if (needsToRePushData)
-    {
-        // If we merged data, need to push the updated states back to the server. If there are more updates, then 
-        // can just call this method again with new data
-    }
-
+    // TODO: is this how deleted vaults on another device should be handled? Waht about in updateFromServer?
     if (clientUserDataPayload.vaults)
     {
         for (let i = 0; i < clientUserDataPayload.vaults.length; i++)
@@ -290,7 +322,20 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
         }
     }
 
-    return await transaction.commit();
+    // we've handled all trackedChanges. Clear them
+    transaction.raw('DELETE FROM changeTrackings');
+
+    if (!(await transaction.commit()))
+    {
+        return false;
+    }
+
+    if (needsToRePushData)
+    {
+        return await backupData(masterKey);
+    }
+
+    return true;
 }
 
 export async function reloadAllUserData(masterKey: string, email: string, userDataPayload: UserDataPayload): Promise<boolean>
@@ -300,6 +345,7 @@ export async function reloadAllUserData(masterKey: string, email: string, userDa
     transaction.raw("DELETE FROM users");
     transaction.raw("DELETE FROM vaults");
     transaction.raw("DELETE FROM userVaults");
+    transaction.raw("DELETE FROM changeTrackings");
 
     return await checkMergeMissingData(masterKey, email, {}, userDataPayload, transaction);
 }

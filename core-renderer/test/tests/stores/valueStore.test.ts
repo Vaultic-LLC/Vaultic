@@ -146,7 +146,7 @@ valueStoreSuite.tests.push({
         filter.name.value = "ValueStore Add With Filter Works";
 
         filter.conditions.value.push({
-            id: Field.newReactive("ValueStore Add With Filter Works"),
+            id: new Field("ValueStore Add With Filter Works"),
             property: "name",
             filterType: FilterConditionType.EqualTo,
             value: "ValueStore Add With Filter Works"
@@ -389,7 +389,7 @@ valueStoreSuite.tests.push({
         filter.name.value = "ValueStore Update With Filter Works";
 
         filter.conditions.value.push({
-            id: Field.newReactive("ValueStore Update With Filter Works"),
+            id: new Field("ValueStore Update With Filter Works"),
             property: "name",
             filterType: FilterConditionType.EqualTo,
             value: "ValueStore Update With Filter Works"
@@ -591,7 +591,7 @@ valueStoreSuite.tests.push({
         filter.name.value = name;
 
         filter.conditions.value.push({
-            id: Field.newReactive(name),
+            id: new Field(name),
             property: "name",
             filterType: FilterConditionType.EqualTo,
             value: name

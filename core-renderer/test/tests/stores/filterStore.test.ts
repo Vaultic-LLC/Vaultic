@@ -17,7 +17,7 @@ filterStoreSuite.tests.push({
             const filter: Filter = defaultFilter(type);
             filter.name.value = name;
             filter.conditions.value.push({
-                id: Field.newReactive(name),
+                id: new Field(name),
                 property: property,
                 filterType: FilterConditionType.EqualTo,
                 value: name
@@ -47,7 +47,7 @@ filterStoreSuite.tests.push({
         {
             const filter: Filter = defaultFilter(type);
             filter.conditions.value.push({
-                id: Field.newReactive("Hi"),
+                id: new Field("Hi"),
                 property: conditionProperty,
                 filterType: FilterConditionType.EqualTo,
                 value: "FilterStore Add With Current Primary Objects Works"
@@ -99,7 +99,7 @@ filterStoreSuite.tests.push({
 
             const duplicateFilterOne: Filter = defaultFilter(type);
             duplicateFilterOne.conditions.value.push({
-                id: Field.newReactive("Hi"),
+                id: new Field("Hi"),
                 property: conditionProperty,
                 filterType: FilterConditionType.EqualTo,
                 value: "FilterStore Add With Current Primary Objects Works"
@@ -107,7 +107,7 @@ filterStoreSuite.tests.push({
 
             const duplicateFilterTwo: Filter = defaultFilter(type);
             duplicateFilterTwo.conditions.value.push({
-                id: Field.newReactive("Hii"),
+                id: new Field("Hii"),
                 property: conditionProperty,
                 filterType: FilterConditionType.EqualTo,
                 value: "FilterStore Add With Current Primary Objects Works"
@@ -188,7 +188,7 @@ filterStoreSuite.tests.push({
             const filter: Filter = defaultFilter(type);
             let filterCondition: FilterCondition =
             {
-                id: Field.newReactive("Condition"),
+                id: new Field("Condition"),
                 filterType: FilterConditionType.EqualTo,
                 property: originalProperty,
                 value: originalFilterValue
@@ -234,7 +234,7 @@ filterStoreSuite.tests.push({
         {
             const filter: Filter = defaultFilter(type);
             filter.conditions.value.push({
-                id: Field.newReactive("Hi"),
+                id: new Field("Hi"),
                 property: conditionProperty,
                 filterType: FilterConditionType.EqualTo,
                 value: filterValue
@@ -290,7 +290,7 @@ filterStoreSuite.tests.push({
             getDuplicateFilters: () => Dictionary<string[]>)
         {
             const condition: FilterCondition = {
-                id: Field.newReactive("Hi"),
+                id: new Field("Hi"),
                 property: conditionProperty,
                 filterType: FilterConditionType.EqualTo,
                 value: filterValue
@@ -402,7 +402,7 @@ filterStoreSuite.tests.push({
             const filter: Filter = defaultFilter(type);
             let filterCondition: FilterCondition =
             {
-                id: Field.newReactive("Condition"),
+                id: new Field("Condition"),
                 filterType: FilterConditionType.EqualTo,
                 property: property,
                 value: "Value"
@@ -439,7 +439,7 @@ filterStoreSuite.tests.push({
         {
             const filter: Filter = defaultFilter(type);
             filter.conditions.value.push({
-                id: Field.newReactive("Hi"),
+                id: new Field("Hi"),
                 property: conditionProperty,
                 filterType: FilterConditionType.EqualTo,
                 value: filterValue
@@ -487,7 +487,7 @@ filterStoreSuite.tests.push({
             getDuplicateFilters: () => Dictionary<string[]>)
         {
             const condition: FilterCondition = {
-                id: Field.newReactive("Hi"),
+                id: new Field("Hi"),
                 property: conditionProperty,
                 filterType: FilterConditionType.EqualTo,
                 value: filterValue

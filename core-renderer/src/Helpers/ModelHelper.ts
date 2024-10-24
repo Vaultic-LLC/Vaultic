@@ -62,7 +62,7 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 
 export function createPinnableSelectableTableRowModels<T extends { [key: string]: any } & IIdentifiable>(groupFilterType: DataType, passwordValueType: DataType,
     selectableTableRowModels: Ref<InfiniteScrollCollection<SelectableTableRowData>>, sortedCollection: SortedCollection<T>, pinnedCollection: SortedCollection<T>,
-    getValues: (value: T) => TableRowValue[], selectable: boolean, isActiveProp: string, sortOnClick: boolean, onClick?: (value: T) => void, onEdit?: (value: T) => void, onDelete?: (value: T) => void)
+    getValues: (value: T) => TableRowValue[], selectable: boolean, isActiveProp: string, sortOnClick: boolean, onClick?: (value: T) => Promise<void>, onEdit?: (value: T) => void, onDelete?: (value: T) => void)
 {
     const isFilter = groupFilterType == DataType.Filters;
     const isGroup = groupFilterType == DataType.Groups;
@@ -170,19 +170,19 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             id: id,
             key: v.id.value,
             selectable: selectable,
-            isPinned: ((isFilter && app.currentVault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(v.id.value)) ||
-                (isGroup && app.currentVault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(v.id.value))),
+            isPinned: ((isFilter && app.userPreferences.pinnedFilters.hasOwnProperty(v.id.value)) ||
+                (isGroup && app.userPreferences.pinnedGroups.hasOwnProperty(v.id.value))),
             isActive: ref(v[isActiveProp]?.value ?? false),
             values: getValues(v),
             atRiskModel:
             {
                 message: message ?? "",
             },
-            onClick: function ()
+            onClick: async function ()
             {
                 if (onClick)
                 {
-                    onClick(v);
+                    await onClick(v);
                     if (sortOnClick)
                     {
                         sortedCollection.updateSort(sortedCollection.property, sortedCollection.descending);
@@ -199,16 +199,16 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             },
             onPin: function ()
             {
-                if (((isFilter && app.currentVault.vaultPreferencesStore.pinnedFilters.hasOwnProperty(v.id.value)) ||
-                    (isGroup && app.currentVault.vaultPreferencesStore.pinnedGroups.hasOwnProperty(v.id.value))))
+                if (((isFilter && app.userPreferences.pinnedFilters.hasOwnProperty(v.id.value)) ||
+                    (isGroup && app.userPreferences.pinnedGroups.hasOwnProperty(v.id.value))))
                 {
                     if (isFilter)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedFilters(v.id.value);
+                        app.userPreferences.removePinnedFilters(v.id.value);
                     }
                     else if (isGroup)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedGroups(v.id.value);
+                        app.userPreferences.removePinnedGroups(v.id.value);
                     }
 
                     const index: number = pinnedCollection.values.indexOf(v);
@@ -228,11 +228,11 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
                 {
                     if (isFilter)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedFilter(v.id.value);
+                        app.userPreferences.addPinnedFilter(v.id.value);
                     }
                     else if (isGroup)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedGroup(v.id.value);
+                        app.userPreferences.addPinnedGroup(v.id.value);
                     }
 
                     const index: number = sortedCollection.values.indexOf(v);
@@ -391,7 +391,7 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
         const id = await api.utilities.generator.uniqueId();
         return {
             id: id,
-            isPinned: ((isPassword && app.currentVault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(v.id.value)) ||
+            isPinned: ((isPassword && app.userPreferences.pinnedPasswords.hasOwnProperty(v.id.value)) ||
                 (isValue && app.currentVault.vaultPreferencesStore.hasOwnProperty(v.id.value))),
             data: v,
             values: getValues(v),
@@ -415,16 +415,16 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
                     return;
                 }
 
-                if ((isPassword && app.currentVault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(v.id.value)) ||
-                    (isValue && app.currentVault.vaultPreferencesStore.pinnedValues.hasOwnProperty(v.id.value)))
+                if ((isPassword && app.userPreferences.pinnedPasswords.hasOwnProperty(v.id.value)) ||
+                    (isValue && app.userPreferences.pinnedValues.hasOwnProperty(v.id.value)))
                 {
                     if (isPassword)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedPasswords(v.id.value);
+                        app.userPreferences.removePinnedPasswords(v.id.value);
                     }
                     else if (isValue)
                     {
-                        app.currentVault.vaultPreferencesStore.removePinnedValues(v.id.value);
+                        app.userPreferences.removePinnedValues(v.id.value);
                     }
 
                     const index: number = pinnedCollection.values.indexOf(v);
@@ -459,11 +459,11 @@ export async function createCollapsibleTableRowModels<T extends { [key: string]:
                 {
                     if (isPassword)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedPassword(v.id.value);
+                        app.userPreferences.addPinnedPassword(v.id.value);
                     }
                     else if (isValue)
                     {
-                        app.currentVault.vaultPreferencesStore.addPinnedValue(v.id.value);
+                        app.userPreferences.addPinnedValue(v.id.value);
                     }
                     const index: number = sortedCollection.values.indexOf(v);
 

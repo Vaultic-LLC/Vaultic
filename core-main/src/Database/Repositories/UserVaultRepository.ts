@@ -4,7 +4,6 @@ import { VaulticRepository } from "./VaulticRepository";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
 import { User } from "../Entities/User";
-import { backupData } from "../../Helpers/RepositoryHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
@@ -13,8 +12,9 @@ import { CondensedVaultData, EntityState } from "@vaultic/shared/Types/Entities"
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { IUserVaultRepository } from "../../Types/Repositories";
 
-class UserVaultRepository extends VaulticRepository<UserVault>
+class UserVaultRepository extends VaulticRepository<UserVault> implements IUserVaultRepository
 {
     protected getRepository(): Repository<UserVault> | undefined
     {
@@ -137,7 +137,7 @@ class UserVaultRepository extends VaulticRepository<UserVault>
         return condensedDecryptedUserVaults;
     }
 
-    public async saveUserVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveUserVault(masterKey: string, userVaultID: number, newData: string, currentData: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveUserVault);
 
@@ -169,13 +169,13 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             }
 
             const oldUserVault = userVaults[0];
-            const newUserVault: CondensedVaultData = JSON.parse(data);
+            const newUserVault: CondensedVaultData = JSON.parse(newData);
 
             const transaction = new Transaction();
             if (newUserVault.vaultPreferencesStoreState)
             {
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
-                    oldUserVault.userVaultID, "", newUserVault.vaultPreferencesStoreState, transaction, false)))
+                    oldUserVault.userVaultID, "", newUserVault.vaultPreferencesStoreState, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "VaultPreferencesStoreState Update Failed");
                 }
@@ -185,12 +185,6 @@ class UserVaultRepository extends VaulticRepository<UserVault>
             if (!saved)
             {
                 return TypedMethodResponse.transactionFail();
-            }
-
-            console.log('saved vaultPreferences');
-            if (masterKey && backup && !(await backupData(masterKey)))
-            {
-                return TypedMethodResponse.backupFail();
             }
 
             return TypedMethodResponse.success(true);

@@ -26,9 +26,7 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
     protected defaultState()
     {
         return {
-            hash: "",
-            hashSalt: "",
-            values: [],
+            dataTypesByID: {},
             duplicatePasswords: {},
             currentAndSafePasswords: { current: [], safe: [] },
         }
@@ -40,11 +38,12 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
 
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState: PasswordStoreState = this.cloneState();
+        const passwords = Object.values(pendingState.dataTypesByID);
 
-        password.id.value = await generateUniqueID(pendingState.values);
+        password.id.value = await generateUniqueID(passwords);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingState.values, "password", pendingState.duplicatePasswords);
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, passwords, "password", pendingState.duplicatePasswords);
 
         if (!(await this.setPasswordProperties(masterKey, password)))
         {
@@ -54,13 +53,16 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
         await this.updateSecurityQuestions(masterKey, password, true, [], []);
 
         const reactivePassword = createReactivePassword(password);
-        pendingState.values.push(reactivePassword);
-        this.incrementCurrentAndSafePasswords(pendingState);
+        pendingState.dataTypesByID[password.id.value] = reactivePassword;
+
+        // add to temp list since we built the list before adding it to dataTypesByID
+        passwords.push(reactivePassword);
+        this.incrementCurrentAndSafePasswords(pendingState, passwords);
 
         // update groups before filters
         const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.id.value, reactivePassword.groups.value, []);
         const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords([reactivePassword],
-            pendingGroupState.values.filter(g => g.type.value == DataType.Passwords));
+            Object.values(pendingGroupState.dataTypesByID).filter(g => g.type.value == DataType.Passwords));
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -75,20 +77,20 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        const passwordIndex = pendingState.values.findIndex(p => p.id.value == updatingPassword.id.value);
-        if (passwordIndex < 0)
+        const currentPassword = pendingState.dataTypesByID[updatingPassword.id.value];
+        if (!currentPassword)
         {
             await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Update")
             return false;
         }
+
+        const passwords = Object.values(pendingState.dataTypesByID);
 
         // TODO: Check update email on sever if isVaultic
         if (updatingPassword.isVaultic.value && !app.isOnline)
         {
             return false;
         }
-
-        const currentPassword = pendingState.values[passwordIndex];
 
         // retrieve these before updating
         const addedGroups = updatingPassword.groups.value.filter(g => !currentPassword.groups.value.includes(g));
@@ -104,7 +106,7 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
 
             // do this before re encrypting the password
             await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword,
-                pendingState.values.filter(p => p.id != updatingPassword.id), "password", pendingState.duplicatePasswords);
+                passwords.filter(p => p.id != updatingPassword.id), "password", pendingState.duplicatePasswords);
 
             if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
             {
@@ -130,13 +132,13 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
 
         // TODO: Breaks field reactivity. Is this an issue since I re setup reactivity on the edit views?
         const newPassword = createReactivePassword(updatingPassword);
-        pendingState.values[passwordIndex] = newPassword;
+        pendingState.dataTypesByID[newPassword.id.value] = newPassword;
 
-        this.incrementCurrentAndSafePasswords(pendingState);
+        this.incrementCurrentAndSafePasswords(pendingState, passwords);
 
         const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id.value, addedGroups, removedGroups);
         const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords([updatingPassword],
-            pendingGroupState.values.filter(g => g.type.value == DataType.Passwords));
+            Object.values(pendingGroupState.dataTypesByID).filter(g => g.type.value == DataType.Passwords));
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -158,16 +160,17 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
             return false;
         }
 
-        const passwordIndex = pendingState.values.findIndex(p => p.id.value == password.id.value);
-        if (passwordIndex < 0)
+        const currentPassword = pendingState.dataTypesByID[password.id.value];
+        if (!currentPassword)
         {
             await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Delete")
             return false;
         }
 
         this.checkRemoveFromDuplicate(password, pendingState.duplicatePasswords);
-        pendingState.values.splice(passwordIndex, 1);
-        this.incrementCurrentAndSafePasswords(pendingState);
+        delete pendingState.dataTypesByID[currentPassword.id.value]
+
+        this.incrementCurrentAndSafePasswords(pendingState, Object.values(pendingState.dataTypesByID));
 
         const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id.value, [], password.groups.value);
         const pendingFilterState = this.vault.filterStore.removePasswordFromFilters(password.id.value);
@@ -179,11 +182,11 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
         return await transaction.commit(masterKey);
     }
 
-    private incrementCurrentAndSafePasswords(pendingState: PasswordStoreState)
+    private incrementCurrentAndSafePasswords(pendingState: PasswordStoreState, passwords: ReactivePassword[])
     {
-        pendingState.currentAndSafePasswords.current.push(pendingState.values.length);
+        pendingState.currentAndSafePasswords.current.push(passwords.length);
 
-        const safePasswords = pendingState.values.filter(p => p.isSafe());
+        const safePasswords = passwords.filter(p => p.isSafe());
         pendingState.currentAndSafePasswords.safe.push(safePasswords.length);
     }
 
@@ -283,7 +286,7 @@ export class ReactivePasswordStore extends PasswordStore
 
     private internalBreachedPasswords: ComputedRef<string[]>;
 
-    get passwords() { return this.state.values; }
+    get passwords() { return this.dataTypes; }
     get pinnedPasswords() { return this.internalPinnedPasswords.value; }
     get unpinnedPasswords() { return this.internalUnpinnedPasswords.value; }
     get oldPasswords() { return this.internalOldPasswords }
@@ -300,29 +303,31 @@ export class ReactivePasswordStore extends PasswordStore
     {
         super(vault);
 
-        this.internalOldPasswords = computed(() => this.state.values.filter(p => p.isOld()).map(p => p.id.value));
-        this.internalWeakPasswords = computed(() => this.state.values.filter(p => p.isWeak.value).map(p => p.id.value));
+        this.internalOldPasswords = computed(() => this.dataTypes.filter(p => p.isOld()).map(p => p.id.value));
+        this.internalWeakPasswords = computed(() => this.dataTypes.filter(p => p.isWeak.value).map(p => p.id.value));
 
-        this.internalContainsLoginPasswords = computed(() => this.state.values.filter(p => p.containsLogin.value).map(p => p.id.value));
+        this.internalContainsLoginPasswords = computed(() => this.dataTypes.filter(p => p.containsLogin.value).map(p => p.id.value));
         this.internalDuplicatePasswords = computed(() => Object.keys(this.state.duplicatePasswords));
 
         this.internalDuplicatePasswordsLength = computed(() => Object.keys(this.state.duplicatePasswords).length);
-        this.internalPinnedPasswords = computed(() => this.state.values.filter(p => this.vault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(p.id.value)));
-        this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !this.vault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(p.id.value)));
+        this.internalPinnedPasswords = computed(() => this.dataTypes.filter(p => app.userPreferences.pinnedPasswords.hasOwnProperty(p.id.value)));
+        this.internalUnpinnedPasswords = computed(() => this.dataTypes.filter(p => !app.userPreferences.pinnedPasswords.hasOwnProperty(p.id.value)));
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
-        this.internalHasVaulticPassword = computed(() => this.state.values.filter(p => p.isVaultic).length > 0);
+        this.internalHasVaulticPassword = computed(() => this.dataTypes.filter(p => p.isVaultic).length > 0);
 
         this.internalBreachedPasswords = computed(() => !app.userDataBreaches.userDataBreaches ? [] :
-            this.state.values.filter(p => app.userDataBreaches.userDataBreaches.filter(b => b.PasswordID == p.id.value).length > 0).map(p => p.id.value));
+            this.dataTypes.filter(p => app.userDataBreaches.userDataBreaches.filter(b => b.PasswordID == p.id.value).length > 0).map(p => p.id.value));
     }
 
     protected preAssignState(state: PasswordStoreState): void 
     {
         super.preAssignState(state);
-        for (let i = 0; i < state.values.length; i++)
+
+        const keys = Object.keys(this.state.dataTypesByID);
+        for (let i = 0; i < keys.length; i++)
         {
-            state.values[i] = createReactivePassword(state.values[i]);
+            state.dataTypesByID[keys[i]] = createReactivePassword(state.dataTypesByID[keys[i]])
         }
     }
 

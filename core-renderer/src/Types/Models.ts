@@ -70,7 +70,7 @@ export interface SelectableTableRowData extends TableRowData
     key: string;
     selectable: boolean;
     isActive?: Ref<boolean>;
-    onClick?: () => void;
+    onClick?: () => Promise<void>;
 }
 
 export interface SelectorButtonModel

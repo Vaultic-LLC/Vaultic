@@ -1,14 +1,15 @@
-import { Reactive, Ref, reactive, ref } from "vue";
+import { ComputedRef, Reactive, Ref, computed, reactive, ref } from "vue";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, IIdentifiable, Filter, Group, ISecondaryDataObject } from "../../Types/DataTypes";
-import { SecondaryDataObjectCollection, SecretProperty, PrimaryDataObjectCollection, reactifyFields } from "../../Types/Fields";
+import { SecondaryDataObjectCollection, SecretProperty, PrimaryDataObjectCollection } from "../../Types/Fields";
+import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 export interface DataTypeStoreState<T>
 {
-    values: T[];
+    dataTypesByID: Dictionary<T>;
 }
 
 export type StoreEvents = "onChanged";
@@ -50,6 +51,9 @@ export class Store<T extends {}, U extends string = StoreEvents>
         return state;
     }
 
+    // TODO: default state will prevent objects on the highest level of the state to break things
+    // since they won't get an ID, since they'll always be there. Just need to initalize them as 
+    // a Field
     protected defaultState(): T
     {
         return {} as T;
@@ -137,19 +141,22 @@ export class VaultContrainedStore<T extends {}, U extends string = StoreEvents> 
 
 export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends VaultContrainedStore<T>
 {
+    protected internalDataTypes: ComputedRef<U[]>;
+
+    get dataTypes() { return this.internalDataTypes.value; }
+
+    constructor(vault: VaultStoreParameter, stateName: string)
+    {
+        super(vault, stateName);
+
+        this.internalDataTypes = computed(() => Object.values(this.state.dataTypesByID));
+    }
+
     public resetToDefault()
     {
         super.resetToDefault();
         this.getPasswordAtRiskType().value = AtRiskType.None;
         this.getValueAtRiskType().value = AtRiskType.None;
-    }
-
-    protected preAssignState(state: T): void
-    {
-        for (let i = 0; i < state.values.length; i++)
-        {
-            state.values[i] = reactifyFields(state.values[i]);
-        }
     }
 
     protected getPasswordAtRiskType(): Ref<AtRiskType>
@@ -191,7 +198,7 @@ export class PrimaryDataTypeStore<U, T extends DataTypeStoreState<U>> extends Da
     public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
     {
         const pendingState = this.cloneState();
-        pendingState.values.forEach(v =>
+        Object.values(pendingState.dataTypesByID).forEach(v =>
         {
             const index = v[secondaryObjectCollection].value.indexOf(secondaryObjectID);
             if (index >= 0)

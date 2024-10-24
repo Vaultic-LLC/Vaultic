@@ -101,94 +101,58 @@ export const FilterableValueProperties: PropertySelectorDisplayFields[] = [
     }
 ];
 
-const isFieldProxy = "isFieldProxy";
-
-// TODO: will this catch array and object properties?
-const fieldHandler =
-{
-    get(target, prop, _)
-    {
-        if (prop == isFieldProxy)
-        {
-            return true;
-        }
-
-        return target[prop];
-    },
-    set(obj: Field<any>, prop: string, newValue: any)
-    {
-        obj.lastModifiedTime = Date.now();
-        obj[prop] = newValue;
-
-        return true;
-    }
-};
-
 export interface GroupCSVHeader 
 {
     csvHeader: string;
     delimiter?: string;
 }
 
-export class Field<T>
+interface DataTypeViewTemplate 
 {
-    value: T;
-    lastModifiedTime: number;
+    id: string;
+
+    // these will be undefined if we are a DataTypeView using a template
+    fields?: DataTypeViewField[];
+    dataTypeIdFor?: string;
+}
+
+interface DataTypeView extends DataTypeViewTemplate
+{
+    // which template, if any, this view is for. 
+    template?: string
+}
+
+// TODO: how to handle security questions? is that just a single field that takes an object or a group of fields that 
+// each pull their own data?
+export interface DataTypeViewField
+{
+    // constant id for the field. like skywardIDs. Can store them in appStoreState, but only need to store ones the user creates
+    // current ones can just be in constants
+    fieldTypeID: string;
+    encrypted: boolean;
     width: string;
     height: string;
     x: number;
     y: number;
-    component?: string;
+    component: string;
     mask?: string;
+}
 
-    constructor(value: T) 
+export class Field<T>
+{
+    id: string;
+    value: T;
+    lastModifiedTime: number;
+
+    constructor(value: T)
     {
+        this.id = "";
         this.value = value;
         this.lastModifiedTime = Date.now();
     }
-
-    static newReactive<T>(value: T)
-    {
-        return new Proxy(new Field<T>(value), fieldHandler);
-    }
-
-    static makeReactive<T>(field: Field<T>)
-    {
-        return new Proxy(field, fieldHandler);
-    }
 }
 
-export class ArrayField<T> extends Field<T[]>
+class BaseField<T> extends Field<T>
 {
-    push(value: T)
-    {
-
-    }
-}
-
-export function reactifyFields(obj: any)
-{
-    const keys = Object.keys(obj);
-    for (let i = 0; i < keys.length; i++)
-    {
-        if (obj[keys[i]]?.[isFieldProxy])
-        {
-            continue;
-        }
-
-        obj[keys[i]] = Field.makeReactive(obj[keys[i]]);
-    }
-
-    return obj;
-}
-
-export function fieldifyObject(obj: any)
-{
-    const keys = Object.keys(obj);
-    for (let i = 0; i < keys.length; i++)
-    {
-        obj[keys[i]] = Field.newReactive(obj[keys[i]]);
-    }
-
-    return obj;
+    fieldTypeID: string;
 }

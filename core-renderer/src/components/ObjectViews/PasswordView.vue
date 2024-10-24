@@ -227,7 +227,7 @@ export default defineComponent({
                     values: values,
                     isActive: ref(passwordState.value.groups.value.includes(g.id.value)),
                     selectable: true,
-                    onClick: function ()
+                    onClick: async function ()
                     {
                         if (passwordState.value.groups.value.includes(g.id.value))
                         {
@@ -323,7 +323,7 @@ export default defineComponent({
         async function onAddSecurityQuestion()
         {
             passwordState.value.securityQuestions.value.push({
-                id: Field.newReactive(await generateUniqueID(passwordState.value.securityQuestions.value)),
+                id: new Field(await generateUniqueID(passwordState.value.securityQuestions.value)),
                 question: '',
                 questionLength: 0,
                 answer: '',

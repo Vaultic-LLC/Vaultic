@@ -19,8 +19,9 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { CondensedVaultData, EntityState } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { IVaultRepository } from "../../Types/Repositories";
 
-class VaultRepository extends VaulticRepository<Vault>
+class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
     protected getRepository(): Repository<Vault> | undefined
     {
@@ -222,7 +223,7 @@ class VaultRepository extends VaulticRepository<Vault>
         }
     }
 
-    public async saveVault(masterKey: string, userVaultID: number, data: string, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveVault(masterKey: string, userVaultID: number, newData: string, currentData?: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveVault);
 
@@ -237,57 +238,89 @@ class VaultRepository extends VaulticRepository<Vault>
             const oldVault = userVaults[0][0].vault.makeReactive();
             const vaultKey = userVaults[1][0];
 
-            const newVault: CondensedVaultData = JSON.parse(data);
+            const newVaultData: CondensedVaultData = JSON.parse(newData);
+            const currentVaultData: CondensedVaultData | undefined = currentData ? JSON.parse(currentData) : undefined;
+
             const transaction = new Transaction();
 
-            if (newVault.name)
+            if (newVaultData.name)
             {
-                oldVault.name = newVault.name;
+                oldVault.name = newVaultData.name;
                 transaction.updateEntity(oldVault, vaultKey, () => this);
             }
 
-            if (newVault.vaultStoreState)
+            if (newVaultData.vaultStoreState)
             {
                 if (!await (environment.repositories.vaultStoreStates.updateState(
-                    oldVault.vaultStoreState.vaultStoreStateID, vaultKey, newVault.vaultStoreState, transaction)))
+                    oldVault.vaultStoreState.vaultStoreStateID, vaultKey, newVaultData.vaultStoreState, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update VaultStoreState");
                 }
+
+                if (currentVaultData)
+                {
+                    environment.repositories.changeTrackings.trackObjectDifferences(
+                        masterKey, JSON.parse(newVaultData.vaultStoreState), JSON.parse(currentVaultData.vaultStoreState), transaction);
+                }
             }
 
-            if (newVault.passwordStoreState)
+            if (newVaultData.passwordStoreState)
             {
                 if (!await (environment.repositories.passwordStoreStates.updateState(
-                    oldVault.passwordStoreState.passwordStoreStateID, vaultKey, newVault.passwordStoreState, transaction)))
+                    oldVault.passwordStoreState.passwordStoreStateID, vaultKey, newVaultData.passwordStoreState, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update PasswordStoreState");
                 }
+
+                if (currentVaultData)
+                {
+                    environment.repositories.changeTrackings.trackObjectDifferences(
+                        masterKey, JSON.parse(newVaultData.passwordStoreState), JSON.parse(currentVaultData.passwordStoreState), transaction);
+                }
             }
 
-            if (newVault.valueStoreState)
+            if (newVaultData.valueStoreState)
             {
                 if (!await (environment.repositories.valueStoreStates.updateState(
-                    oldVault.valueStoreState.valueStoreStateID, vaultKey, newVault.valueStoreState, transaction)))
+                    oldVault.valueStoreState.valueStoreStateID, vaultKey, newVaultData.valueStoreState, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update ValueStoreState");
                 }
-            }
 
-            if (newVault.filterStoreState)
-            {
-                if (!await (environment.repositories.filterStoreStates.updateState(
-                    oldVault.filterStoreState.filterStoreStateID, vaultKey, newVault.filterStoreState, transaction)))
+                if (currentVaultData)
                 {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update FilterStoreState");
+                    environment.repositories.changeTrackings.trackObjectDifferences(
+                        masterKey, JSON.parse(newVaultData.valueStoreState), JSON.parse(currentVaultData.valueStoreState), transaction);
                 }
             }
 
-            if (newVault.groupStoreState)
+            if (newVaultData.filterStoreState)
+            {
+                if (!await (environment.repositories.filterStoreStates.updateState(
+                    oldVault.filterStoreState.filterStoreStateID, vaultKey, newVaultData.filterStoreState, transaction)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update FilterStoreState");
+                }
+
+                if (currentVaultData)
+                {
+                    environment.repositories.changeTrackings.trackObjectDifferences(
+                        masterKey, JSON.parse(newVaultData.filterStoreState), JSON.parse(currentVaultData.filterStoreState), transaction);
+                }
+            }
+
+            if (newVaultData.groupStoreState)
             {
                 if (!await (environment.repositories.groupStoreStates.updateState(
-                    oldVault.groupStoreState.groupStoreStateID, vaultKey, newVault.groupStoreState, transaction)))
+                    oldVault.groupStoreState.groupStoreStateID, vaultKey, newVaultData.groupStoreState, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update GroupStoreState");
+                }
+
+                if (currentVaultData)
+                {
+                    environment.repositories.changeTrackings.trackObjectDifferences(
+                        masterKey, JSON.parse(newVaultData.groupStoreState), JSON.parse(currentVaultData.groupStoreState), transaction);
                 }
             }
 
@@ -295,11 +328,6 @@ class VaultRepository extends VaulticRepository<Vault>
             if (!saved)
             {
                 return TypedMethodResponse.transactionFail();
-            }
-
-            if (backup && !(await backupData(masterKey)))
-            {
-                return TypedMethodResponse.backupFail();
             }
 
             return TypedMethodResponse.success();

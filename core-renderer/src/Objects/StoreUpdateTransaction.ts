@@ -67,10 +67,12 @@ export default class StoreUpdateTransaction
         this.addStore(this.vaultStoreUpdateStates, store, pendingState, postSave);
     }
 
-    private async saveStoreStates(masterKey: string, entity: Entity, updateStoreStates: Dictionary<StoreUpdateState>, backup: boolean)
+    private async saveStoreStates(masterKey: string, entity: Entity, updateStoreStates: Dictionary<StoreUpdateState>)
     {
-        const states = {};
+        const newStates = {};
+        const currentStates = {};
         const stores = Object.values(updateStoreStates);
+
         if (stores.length == 0)
         {
             return true;
@@ -78,20 +80,21 @@ export default class StoreUpdateTransaction
 
         for (let i = 0; i < stores.length; i++)
         {
-            states[stores[i].store.stateName] = JSON.stringify(stores[i].pendingState);
+            newStates[stores[i].store.stateName] = JSON.stringify(stores[i].pendingState);
+            currentStates[stores[i].store.stateName] = JSON.stringify(stores[i].store.getState());
         }
 
         let response: TypedMethodResponse<any>;
         switch (entity)
         {
             case Entity.User:
-                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(states), backup);
+                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(newStates), JSON.stringify(currentStates));
                 break;
             case Entity.UserVault:
-                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
+                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(newStates), JSON.stringify(currentStates));
                 break;
             case Entity.Vault:
-                response = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.stringify(states), backup);
+                response = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.stringify(newStates), JSON.stringify(currentStates));
                 break;
         }
 
@@ -116,17 +119,17 @@ export default class StoreUpdateTransaction
 
     async commit(masterKey: string, backup: boolean = true)
     {
-        if (!(await this.saveStoreStates(masterKey, Entity.User, this.userStoreUpdateStates, backup)))
+        if (!(await this.saveStoreStates(masterKey, Entity.User, this.userStoreUpdateStates)))
         {
             return false;
         }
 
-        if (!(await this.saveStoreStates(masterKey, Entity.UserVault, this.userVaultStoreUpdateStates, backup)))
+        if (!(await this.saveStoreStates(masterKey, Entity.UserVault, this.userVaultStoreUpdateStates)))
         {
             return false;
         }
 
-        if (!(await this.saveStoreStates(masterKey, Entity.Vault, this.vaultStoreUpdateStates, backup)))
+        if (!(await this.saveStoreStates(masterKey, Entity.Vault, this.vaultStoreUpdateStates)))
         {
             return false;
         }
@@ -134,6 +137,17 @@ export default class StoreUpdateTransaction
         this.commitStoreStates(this.userStoreUpdateStates);
         this.commitStoreStates(this.userVaultStoreUpdateStates);
         this.commitStoreStates(this.vaultStoreUpdateStates);
+
+        // masterKey will be "" when updating userPreferences or vaultPreferences
+        if (masterKey && backup)
+        {
+            const response = await api.helpers.repositories.backupData(masterKey);
+            if (!response.success)
+            {
+                defaultHandleFailedResponse(response);
+                return false;
+            }
+        }
 
         return true;
     }

@@ -10,7 +10,7 @@ export async function generateUniqueID<T extends IIdentifiable>(existingItems: T
     while (hasDuplicate)
     {
         id = await api.utilities.generator.uniqueId();
-        hasDuplicate = existingItems.some(i => i.id == id);
+        hasDuplicate = existingItems.some(i => i.id.value == id);
     }
 
     return id;

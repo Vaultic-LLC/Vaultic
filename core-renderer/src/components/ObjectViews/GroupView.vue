@@ -212,7 +212,7 @@ export default defineComponent({
                             values: values,
                             isActive: ref(groupState.value.values.value.includes(nvp.id.value)),
                             selectable: true,
-                            onClick: function ()
+                            onClick: async function ()
                             {
                                 if (groupState.value.values.value.includes(nvp.id.value))
                                 {
@@ -252,7 +252,7 @@ export default defineComponent({
                             values: values,
                             isActive: ref(groupState.value.passwords.value.includes(p.id.value)),
                             selectable: true,
-                            onClick: function ()
+                            onClick: async function ()
                             {
                                 if (groupState.value.passwords.value.includes(p.id.value))
                                 {

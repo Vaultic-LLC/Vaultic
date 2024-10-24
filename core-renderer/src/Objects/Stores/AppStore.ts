@@ -16,7 +16,6 @@ import { FilterStatus, DataType } from "../../Types/DataTypes";
 
 export interface AppSettings 
 {
-    readonly rowChunkAmount: number;
     colorPalettes: ColorPalette[];
     autoLockTime: AutoLockTime;
     randomValueLength: number;
@@ -93,14 +92,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     protected defaultState()
     {
         return {
-            masterKeyHash: '',
-            masterKeySalt: '',
-            privateKey: '',
             isOnline: false,
-            userDataVersion: 0,
             loginHistory: {},
             settings: {
-                rowChunkAmount: 10,
                 colorPalettes: colorPalettes,
                 autoLockTime: AutoLockTime.OneMinute,
                 randomValueLength: 25,
@@ -233,7 +227,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async updateVault(masterKey: string, displayVault: DisplayVault): Promise<boolean>
     {
-        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID, JSON.stringify(displayVault), this.isOnline);
+        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID, JSON.stringify(displayVault));
         if (!success)
         {
             return false;

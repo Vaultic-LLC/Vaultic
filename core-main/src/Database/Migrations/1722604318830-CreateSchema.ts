@@ -281,6 +281,30 @@ export class CreateSchema1722604318830 implements MigrationInterface
             ]
         }));
 
+        await queryRunner.createTable(new Table({
+            name: "changeTrackings",
+            columns: [
+                ...vaulticEntityProperties,
+                {
+                    name: "changeTrackingID",
+                    isPrimary: true,
+                    type: "integer",
+                },
+                {
+                    name: "objectID",
+                    type: "text"
+                },
+                {
+                    name: "objectState",
+                    type: "number"
+                },
+                {
+                    name: "lastModifiedTime",
+                    type: "number"
+                }
+            ]
+        }));
+
         await queryRunner.createForeignKey(
             "userVaults",
             new TableForeignKey({

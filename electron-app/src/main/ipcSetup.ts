@@ -9,6 +9,7 @@ import vaulticHelper from "./Helpers/VaulticHelper";
 import { environment } from "./Core/Environment";
 import serverHelper from "./Core/Helpers/ServerHelper";
 import vaultHelper from "./Core/Helpers/VaultHelper";
+import { safeBackupData } from "./Core/Helpers/RepositoryHelper";
 
 export default function setupIPC()
 {
@@ -64,19 +65,21 @@ export default function setupIPC()
 	ipcMain.handle('vaultHelper:loadArchivedVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => vaultHelper.loadArchivedVault(masterKey, userVaultID)));
 	ipcMain.handle('vaultHelper:unarchiveVault', (e, masterKey: string, userVaultID: number, select: boolean) => validateSender(e, () => vaultHelper.unarchiveVault(masterKey, userVaultID, select)));
 
+	ipcMain.handle('repositoryHelper:backupData', (e, masterKey: string) => validateSender(e, () => safeBackupData(masterKey)));
+
 	ipcMain.handle('userRepository:getLastUsedUserEmail', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserEmail()));
 	ipcMain.handle('userRepository:getLastUsedUserPreferences', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserPreferences()));
 	ipcMain.handle('userRepository:createUser', (e, masterKey: string, email: string, publicKey: string, privateKey: string) => validateSender(e, () => environment.repositories.users.createUser(masterKey, email, publicKey, privateKey)));
 	ipcMain.handle('userRepository:getCurrentUserData', (e, masterKey: string) => validateSender(e, () => environment.repositories.users.getCurrentUserData(masterKey)));
 	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email)));
-	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, data: string, backup: boolean) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, data, backup)));
+	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, newData: string, currentData: string) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, newData, currentData)));
 
 	ipcMain.handle('vaultRepository:setActiveVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.setActiveVault(masterKey, userVaultID)));
-	ipcMain.handle('vaultRepository:saveVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.vaults.saveVault(masterKey, userVaultID, data, backup)));
+	ipcMain.handle('vaultRepository:saveVault', (e, masterKey: string, userVaultID: number, newData: string, currentData?: string) => validateSender(e, () => environment.repositories.vaults.saveVault(masterKey, userVaultID, newData, currentData)));
 	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, name, setAsActive, doBackup)));
 	ipcMain.handle('vaultRepository:archiveVault', (e, masterKey: string, userVaultID: number, backup: boolean) => validateSender(e, () => environment.repositories.vaults.archiveVault(masterKey, userVaultID, backup)));
 
-	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, data: string, backup: boolean) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, data, backup)));
+	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, newData: string, currentData: string) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, newData, currentData)));
 
 	ipcMain.handle('logRepository:getExportableLogData', (e) => validateSender(e, () => environment.repositories.logs.getExportableLogData()));
 	ipcMain.handle('logRepository:log', (e) => validateSender(e, (errorCode?: number, message?: string, callStack?: string) => environment.repositories.logs.log(errorCode, message, callStack)));

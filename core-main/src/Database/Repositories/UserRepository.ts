@@ -15,8 +15,11 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { EntityState, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { IUserRepository } from "../../Types/Repositories";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { ChangeTracking } from "../Entities/ChangeTracking";
 
-class UserRepository extends VaulticRepository<User>
+class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
     protected getRepository(): Repository<User> | undefined
     {
@@ -384,7 +387,7 @@ class UserRepository extends VaulticRepository<User>
         }
     }
 
-    public async saveUser(masterKey: string, data: string, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveUser(masterKey: string, newData: string, currentData: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveUser);
 
@@ -408,7 +411,7 @@ class UserRepository extends VaulticRepository<User>
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const newUser: UserData = JSON.parse(data);
+            const newUser: UserData = JSON.parse(newData);
             const transaction = new Transaction();
 
             if (newUser.appStoreState)
@@ -418,12 +421,15 @@ class UserRepository extends VaulticRepository<User>
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update AppStoreState");
                 }
+
+                const currentAppStoreState = JSON.parse(JSON.parse(currentData).appStoreState);
+                environment.repositories.changeTrackings.trackObjectDifferences(masterKey, JSON.parse(newUser.appStoreState), currentAppStoreState, transaction);
             }
 
             if (newUser.userPreferencesStoreState)
             {
                 if (!await (environment.repositories.userPreferencesStoreStates.updateState(
-                    user.userPreferencesStoreState.userPreferencesStoreStateID, "", newUser.userPreferencesStoreState, transaction, false)))
+                    user.userPreferencesStoreState.userPreferencesStoreStateID, "", newUser.userPreferencesStoreState, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update UserPreferencesStoreState");
                 }
@@ -433,11 +439,6 @@ class UserRepository extends VaulticRepository<User>
             if (!saved)
             {
                 return TypedMethodResponse.transactionFail();
-            }
-
-            if (masterKey && backup && !(await backupData(masterKey)))
-            {
-                return TypedMethodResponse.backupFail();
             }
 
             return TypedMethodResponse.success(true);
@@ -552,7 +553,7 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async updateFromServer(currentUser: DeepPartial<User>, newUser: DeepPartial<User>, transaction: Transaction)
+    public async updateFromServer(masterKey: string, currentUser: DeepPartial<User>, newUser: DeepPartial<User>, changeTrackings: Dictionary<ChangeTracking>, transaction: Transaction)
     {
         if (!newUser.userID)
         {
@@ -561,6 +562,7 @@ class UserRepository extends VaulticRepository<User>
 
         const partialUser: DeepPartial<User> = {};
         let updatedUser = false;
+        let needsToRePushData = false;
 
         if (newUser.email)
         {
@@ -601,7 +603,13 @@ class UserRepository extends VaulticRepository<User>
         {
             if (currentUser?.appStoreState?.entityState == EntityState.Updated)
             {
-                // TODO: merge changes between states
+                if (!await (environment.repositories.appStoreStates.mergeStates(masterKey, currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
+                    changeTrackings, transaction)))
+                {
+                    return;
+                }
+
+                needsToRePushData = true;
             }
             else 
             {
@@ -614,7 +622,13 @@ class UserRepository extends VaulticRepository<User>
         {
             if (currentUser?.userPreferencesStoreState?.entityState == EntityState.Updated)
             {
-                // TODO: merge changes between states
+                if (!await (environment.repositories.appStoreStates.mergeStates("", currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
+                    changeTrackings, transaction, false)))
+                {
+                    return;
+                }
+
+                needsToRePushData = true;
             }
             else 
             {
@@ -626,6 +640,8 @@ class UserRepository extends VaulticRepository<User>
                     () => environment.repositories.userPreferencesStoreStates);
             }
         }
+
+        return needsToRePushData;
     }
 }
 

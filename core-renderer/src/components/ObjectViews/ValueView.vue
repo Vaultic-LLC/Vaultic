@@ -180,7 +180,7 @@ export default defineComponent({
                     values: values,
                     isActive: ref(valuesState.value.groups.value.includes(g.id.value)),
                     selectable: true,
-                    onClick: function ()
+                    onClick: async function ()
                     {
                         if (valuesState.value.groups.value.includes(g.id.value))
                         {

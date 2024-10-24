@@ -362,7 +362,7 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 {
                     const id = await generateUniqueID(this.temporarySecurityQuestions);
                     this.temporarySecurityQuestions.push({
-                        id: Field.newReactive(id),
+                        id: new Field(id),
                         question: questions[i],
                         questionLength: questions[i].length,
                         answer: '',
@@ -396,7 +396,7 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 {
                     const id = await generateUniqueID(this.temporarySecurityQuestions);
                     this.temporarySecurityQuestions.push({
-                        id: Field.newReactive(id),
+                        id: new Field(id),
                         question: '',
                         questionLength: 0,
                         answer: answers[i],

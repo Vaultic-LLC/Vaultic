@@ -143,7 +143,7 @@ export default defineComponent({
         {
             filterState.value.conditions.value.push(
                 {
-                    id: Field.newReactive(await generateUniqueID(filterState.value.conditions.value)),
+                    id: new Field(await generateUniqueID(filterState.value.conditions.value)),
                     property: '',
                     value: ''
                 });

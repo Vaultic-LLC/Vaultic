@@ -1,15 +1,13 @@
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
-import { User } from "../Database/Entities/User";
-import { UserVault } from "../Database/Entities/UserVault";
-import { Vault } from "../Database/Entities/Vault";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 
 export interface UserController extends ClientUserController
 {
     getUserIDs: () => Promise<GetUserIDResponse>;
-    backupData: (user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null) => Promise<BaseResponse>;
+    backupData: (postData: { userDataPayload: UserDataPayload }) => Promise<BackupResponse>;
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -40,24 +38,8 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetDevices');
     }
 
-    async function backupData(user?: Partial<User> | null, userVaults?: Partial<UserVault>[] | null, vaults?: Partial<Vault>[] | null): Promise<BaseResponse>
+    async function backupData(postData: { userDataPayload: UserDataPayload }): Promise<BackupResponse>
     {
-        const postData = { userDataPayload: {} };
-        if (user)
-        {
-            postData.userDataPayload["user"] = user;
-        }
-
-        if (userVaults && userVaults.length > 0)
-        {
-            postData.userDataPayload["userVaults"] = userVaults;
-        }
-
-        if (vaults && vaults.length > 0)
-        {
-            postData.userDataPayload["vaults"] = vaults;
-        }
-
         console.log(`Data to backup: ${JSON.stringify(postData)}`);
         console.log('\n')
         const e2eEncryptedData = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, postData);

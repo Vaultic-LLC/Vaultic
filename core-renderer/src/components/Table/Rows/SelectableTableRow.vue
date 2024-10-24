@@ -13,7 +13,7 @@ import { ComputedRef, Ref, computed, defineComponent, ref, } from 'vue';
 import TableRow from './TableRow.vue';
 import SelectorButton from '../../InputFields/SelectorButton.vue';
 
-import { SelectorButtonModel } from '../../../Types/Models';
+import { SelectableTableRowData, SelectorButtonModel } from '../../../Types/Models';
 
 export default defineComponent({
 	name: 'SelectableTableRow',
@@ -25,11 +25,11 @@ export default defineComponent({
 	props: ["selectableTableRowData", "preventDeselect", "color", "rowNumber", 'editable'],
 	setup(props)
 	{
-		let values: ComputedRef<string[]> = computed(() => props.selectableTableRowData.values);
+        const model: ComputedRef<SelectableTableRowData> = computed(() => props.selectableTableRowData);
 		const primaryColor: ComputedRef<string> = computed(() => props.color);
 
-		let active: Ref<boolean> = ref(props.selectableTableRowData.isActive ?? false);
-		const selectable: Ref<boolean> = ref(props.selectableTableRowData.selectable);
+		let active: Ref<boolean> = ref(model.value.isActive ?? false);
+		const selectable: Ref<boolean> = ref(model.value.selectable);
 
 		const selectorButtonModel: ComputedRef<SelectorButtonModel> = computed(() =>
 		{
@@ -40,20 +40,19 @@ export default defineComponent({
 			}
 		})
 
-		function onRowClicked()
+		async function onRowClicked()
 		{
 			if (!props.preventDeselect || !active.value)
 			{
 				active.value = !active.value;
-				if (props.selectableTableRowData.onClick)
+				if (model.value.onClick)
 				{
-					props.selectableTableRowData.onClick();
+					await model.value.onClick();
 				}
 			}
 		}
 
 		return {
-			values,
 			primaryColor,
 			active,
 			selectable,

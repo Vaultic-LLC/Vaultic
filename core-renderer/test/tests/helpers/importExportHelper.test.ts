@@ -267,7 +267,7 @@ importExportHelperTestSuite.tests.push({
             for (let i = 0; i < secrutiyQuestionQuestions.length; i++)
             {
                 testPassword.securityQuestions.value.push({
-                    id: Field.newReactive(i.toString()),
+                    id: new Field(i.toString()),
                     question: secrutiyQuestionQuestions[i],
                     questionLength: 0,
                     answer: securityQuestionAnswers[i],

@@ -2,7 +2,7 @@ import { Promisify } from "../Helpers/TypeScriptHelper";
 import { AppController, ClientUserController, ClientVaultController, SessionController, ValueController } from "./Controllers";
 import { DeviceInfo } from "./Device";
 import { ClientEnvironment, ClientVaulticCache } from "./Environment";
-import { ClientVaultHelper, ServerHelper, ValidationHelper, VaulticHelper } from "./Helpers";
+import { ClientVaultHelper, RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "./Helpers";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "./Repositories";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "./Utilities";
 
@@ -19,6 +19,7 @@ export interface Helpers
     vaultic: VaulticHelper;
     server: ServerHelper;
     vault: ClientVaultHelper;
+    repositories: RepositoryHelper;
 }
 
 export interface VaulticServer

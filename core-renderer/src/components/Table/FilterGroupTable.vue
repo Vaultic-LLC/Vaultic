@@ -246,7 +246,7 @@ export default defineComponent({
                     createPinnableSelectableTableRowModels<Filter>(DataType.Filters, app.activePasswordValuesTable,
                         tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
                     { return [{ component: 'TableRowTextValue', value: f.name.value, copiable: false, width: 'clamp(60px, 4.3vw, 100px)' }] },
-                        true, "isActive", true, (f: Filter) => app.currentVault.filterStore.toggleFilter(f.id.value), onEditFilter, onFilterDeleteInitiated);
+                        true, "isActive", true, async (f: Filter) => await app.currentVault.filterStore.toggleFilter(f.id.value), onEditFilter, onFilterDeleteInitiated);
             }
 
             if (tableRef.value)
