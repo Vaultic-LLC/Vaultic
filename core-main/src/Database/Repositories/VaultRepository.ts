@@ -145,7 +145,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             userVault.userID = currentUser.userID;
             userVault.user = currentUser;
-            userVault.vaultKey = JSON.stringify({
+            userVault.vaultKey = JSON.vaulticStringify({
                 vaultKey: encryptedVaultKey.value.data,
                 publicKey: encryptedVaultKey.value.publicKey
             });
@@ -238,8 +238,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const oldVault = userVaults[0][0].vault.makeReactive();
             const vaultKey = userVaults[1][0];
 
-            const newVaultData: CondensedVaultData = JSON.parse(newData);
-            const currentVaultData: CondensedVaultData | undefined = currentData ? JSON.parse(currentData) : undefined;
+            const newVaultData: CondensedVaultData = JSON.vaulticParse(newData);
+            const currentVaultData: CondensedVaultData | undefined = currentData ? JSON.vaulticParse(currentData) : undefined;
 
             const transaction = new Transaction();
 
@@ -260,7 +260,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 if (currentVaultData)
                 {
                     environment.repositories.changeTrackings.trackObjectDifferences(
-                        masterKey, JSON.parse(newVaultData.vaultStoreState), JSON.parse(currentVaultData.vaultStoreState), transaction);
+                        masterKey, JSON.vaulticParse(newVaultData.vaultStoreState), JSON.vaulticParse(currentVaultData.vaultStoreState), transaction);
                 }
             }
 
@@ -275,7 +275,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 if (currentVaultData)
                 {
                     environment.repositories.changeTrackings.trackObjectDifferences(
-                        masterKey, JSON.parse(newVaultData.passwordStoreState), JSON.parse(currentVaultData.passwordStoreState), transaction);
+                        masterKey, JSON.vaulticParse(newVaultData.passwordStoreState), JSON.vaulticParse(currentVaultData.passwordStoreState), transaction);
                 }
             }
 
@@ -290,7 +290,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 if (currentVaultData)
                 {
                     environment.repositories.changeTrackings.trackObjectDifferences(
-                        masterKey, JSON.parse(newVaultData.valueStoreState), JSON.parse(currentVaultData.valueStoreState), transaction);
+                        masterKey, JSON.vaulticParse(newVaultData.valueStoreState), JSON.vaulticParse(currentVaultData.valueStoreState), transaction);
                 }
             }
 
@@ -305,7 +305,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 if (currentVaultData)
                 {
                     environment.repositories.changeTrackings.trackObjectDifferences(
-                        masterKey, JSON.parse(newVaultData.filterStoreState), JSON.parse(currentVaultData.filterStoreState), transaction);
+                        masterKey, JSON.vaulticParse(newVaultData.filterStoreState), JSON.vaulticParse(currentVaultData.filterStoreState), transaction);
                 }
             }
 
@@ -320,7 +320,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 if (currentVaultData)
                 {
                     environment.repositories.changeTrackings.trackObjectDifferences(
-                        masterKey, JSON.parse(newVaultData.groupStoreState), JSON.parse(currentVaultData.groupStoreState), transaction);
+                        masterKey, JSON.vaulticParse(newVaultData.groupStoreState), JSON.vaulticParse(currentVaultData.groupStoreState), transaction);
                 }
             }
 

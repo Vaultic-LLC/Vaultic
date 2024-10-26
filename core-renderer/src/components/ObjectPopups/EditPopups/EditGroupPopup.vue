@@ -12,7 +12,6 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 import GroupView from "../../ObjectViews/GroupView.vue";
 
 import { Group } from '../../../Types/DataTypes';
-import { reactifyFields } from '../../../Types/Fields';
 
 export default defineComponent({
 	name: "EditGroupPopup",
@@ -24,7 +23,7 @@ export default defineComponent({
 	setup(props)
 	{
 		// copy the object so that we don't edit the original one
-		const groupModel: ComputedRef<Group> = computed(() => reactifyFields(JSON.parse(JSON.stringify(props.model))));
+		const groupModel: ComputedRef<Group> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.model)));
 
 		return {
 			groupModel,

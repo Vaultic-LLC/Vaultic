@@ -14,6 +14,9 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 
     public trackObjectDifferences(masterKey: string, newObj: any, oldObj: any, transaction: Transaction)
     {
+        // TODO: does this work with Sets? No. 
+        // This also doesn't work for arrays either. Could just turn all arrays and Sets in Maps keyed by field.id or 
+        // whatever the application for it is
         if (typeof newObj.value == 'object')
         {
             const keys = Object.keys(newObj);

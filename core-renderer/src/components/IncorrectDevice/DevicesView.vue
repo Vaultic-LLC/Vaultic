@@ -105,6 +105,7 @@ export default defineComponent({
             }
         ];
 
+        // TODO: fix ts error
         const headers: SortableHeaderModel[] = createSortableHeaderModels<Device>(activeHeader, headerDisplayFields,
             devices.value, undefined, setTableRows);
 

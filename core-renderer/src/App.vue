@@ -50,6 +50,8 @@ import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import app from "./Objects/Stores/AppStore";
+import * as PolyFills from "@vaultic/shared/Types/PolyFills";
+PolyFills.a;
 
 export default defineComponent({
     name: 'App',

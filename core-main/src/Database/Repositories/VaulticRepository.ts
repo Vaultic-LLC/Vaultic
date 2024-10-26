@@ -96,7 +96,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to insert entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
             return false;
         }
@@ -116,7 +116,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert existing entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to insert existing entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
             return false;
         }
@@ -166,7 +166,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
         }
 
@@ -182,7 +182,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to override entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to override entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
             return false;
         }
@@ -216,7 +216,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
         }
 
@@ -234,7 +234,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to delete entity: ${JSON.stringify(entityID)}`)
+            console.log(`Filed to delete entity: ${JSON.vaulticStringify(entityID)}`)
             console.log(e);
         }
 

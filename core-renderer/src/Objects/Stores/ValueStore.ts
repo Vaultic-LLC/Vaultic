@@ -58,7 +58,7 @@ export class ValueStore extends PrimaryDataTypeStore<ReactiveValue, ValueStoreSt
         this.incrementCurrentAndSafeValues(pendingState, values);
 
         // update groups before filters
-        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, value.groups.value, []);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, value.groups.value, new Map());
         const pendingFilterState = this.vault.filterStore.syncFiltersForValues([value],
             Object.values(pendingGroupState.dataTypesByID).filter(g => g.type.value == DataType.NameValuePairs));
 
@@ -82,8 +82,8 @@ export class ValueStore extends PrimaryDataTypeStore<ReactiveValue, ValueStoreSt
             return false;
         }
 
-        const addedGroups = updatedValue.groups.value.filter(g => !currentValue.groups.value.includes(g));
-        const removedGroups = currentValue.groups.value.filter(g => !updatedValue.groups.value.includes(g));
+        const addedGroups = updatedValue.groups.value.difference(currentValue.groups.value);
+        const removedGroups = currentValue.groups.value.difference(updatedValue.groups.value);
 
         if (valueWasUpdated)
         {
@@ -139,7 +139,7 @@ export class ValueStore extends PrimaryDataTypeStore<ReactiveValue, ValueStoreSt
 
         this.incrementCurrentAndSafeValues(pendingState, Object.values(pendingState.dataTypesByID));
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, [], value.groups.value);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, new Map(), value.groups.value);
         const pendingFilterState = this.vault.filterStore.removeValuesFromFilters(value.id.value);
 
         transaction.updateVaultStore(this, pendingState);
@@ -249,7 +249,7 @@ export class ReactiveValueStore extends ValueStore
     {
         super.preAssignState(state);
 
-        const keys = Object.keys(this.state.dataTypesByID);
+        const keys = Object.keys(state.dataTypesByID);
         for (let i = 0; i < keys.length; i++)
         {
             state.dataTypesByID[keys[i]] = createReactiveValue(state.dataTypesByID[keys[i]])

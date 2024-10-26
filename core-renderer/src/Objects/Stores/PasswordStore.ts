@@ -60,7 +60,7 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
         this.incrementCurrentAndSafePasswords(pendingState, passwords);
 
         // update groups before filters
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.id.value, reactivePassword.groups.value, []);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.id.value, reactivePassword.groups.value, new Map());
         const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords([reactivePassword],
             Object.values(pendingGroupState.dataTypesByID).filter(g => g.type.value == DataType.Passwords));
 
@@ -93,8 +93,8 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
         }
 
         // retrieve these before updating
-        const addedGroups = updatingPassword.groups.value.filter(g => !currentPassword.groups.value.includes(g));
-        const removedGroups = currentPassword.groups.value.filter(g => !updatingPassword.groups.value.includes(g));
+        const addedGroups = updatingPassword.groups.value.difference(currentPassword.groups.value);
+        const removedGroups = currentPassword.groups.value.difference(updatingPassword.groups.value);
 
         if (passwordWasUpdated)
         {
@@ -172,7 +172,7 @@ export class PasswordStore extends PrimaryDataTypeStore<ReactivePassword, Passwo
 
         this.incrementCurrentAndSafePasswords(pendingState, Object.values(pendingState.dataTypesByID));
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id.value, [], password.groups.value);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id.value, new Map(), password.groups.value);
         const pendingFilterState = this.vault.filterStore.removePasswordFromFilters(password.id.value);
 
         transaction.updateVaultStore(this, pendingState);
@@ -324,7 +324,7 @@ export class ReactivePasswordStore extends PasswordStore
     {
         super.preAssignState(state);
 
-        const keys = Object.keys(this.state.dataTypesByID);
+        const keys = Object.keys(state.dataTypesByID);
         for (let i = 0; i < keys.length; i++)
         {
             state.dataTypesByID[keys[i]] = createReactivePassword(state.dataTypesByID[keys[i]])

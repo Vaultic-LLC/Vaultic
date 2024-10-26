@@ -1,8 +1,8 @@
 import { createTestSuite, type TestContext } from '../test';
 import app from "../../src/core/Objects/Stores/AppStore";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
-import { DataType, defaultGroup, IIdentifiable, IGroupable, defaultPassword, defaultValue, Group } from '../../src/core/Types/DataTypes';
-import { PrimaryDataObjectCollection } from '../../src/core/Types/Fields';
+import { DataType, defaultGroup, IGroupable, defaultPassword, defaultValue, Group } from '../../src/core/Types/DataTypes';
+import { Field, IIdentifiable, PrimaryDataObjectCollection } from '@vaultic/shared/Types/Fields';
 
 let groupStoreSuite = createTestSuite("Group Store");
 
@@ -41,7 +41,7 @@ groupStoreSuite.tests.push({
             getPrimaryObject: () => T)
         {
             const group: Group = defaultGroup(type);
-            group[property].value.push(primaryObject.id.value);
+            group[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
             group.name.value = `GroupStore Add With Primary Object Works Type ${type}`;
             group.color.value = "#FFFFFF";
 
@@ -51,7 +51,7 @@ groupStoreSuite.tests.push({
             const retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
-            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.includes(group.id.value));
+            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.has(group.id.value));
         }
 
         const password = defaultPassword();
@@ -98,8 +98,8 @@ groupStoreSuite.tests.push({
             const duplicateGroupTwo = defaultGroup(type);
             duplicateGroupTwo.name.value = `GroupStore Add Metrics Work Dup Two Type ${type}`;
 
-            duplicateGroupOne[property].value.push(primaryObject.id.value);
-            duplicateGroupTwo[property].value.push(primaryObject.id.value);
+            duplicateGroupOne[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
+            duplicateGroupTwo[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
 
@@ -184,7 +184,7 @@ groupStoreSuite.tests.push({
             getPrimaryObject: () => T)
         {
             const group: Group = defaultGroup(type);
-            group[property].value.push(primaryObject.id.value);
+            group[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
             group.name.value = `GroupStore Update With Primary Object Works Type ${type}`;
             group.color.value = "#FFFFFF";
 
@@ -194,29 +194,29 @@ groupStoreSuite.tests.push({
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
-            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.includes(group.id.value));
+            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.has(group.id.value));
 
-            const groupWithoutPrimaryObject: Group = JSON.parse(JSON.stringify(group));
-            groupWithoutPrimaryObject[property].value = []
+            const groupWithoutPrimaryObject: Group = JSON.vaulticParse(JSON.vaulticStringify(group));
+            groupWithoutPrimaryObject[property].value = new Map();
 
             await app.currentVault.groupStore.updateGroup(masterKey, groupWithoutPrimaryObject);
 
             retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
             retrievedPrimaryObject = getPrimaryObject();
 
-            ctx.assertTruthy(`Group doesn't have ${type} id`, !retrievedGroup[property].value.includes(retrievedPrimaryObject.id.value));
-            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.groups.value.includes(group.id.value));
+            ctx.assertTruthy(`Group doesn't have ${type} id`, !retrievedGroup[property].value.has(retrievedPrimaryObject.id.value));
+            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.groups.value.has(group.id.value));
 
-            const groupWithPrimaryObject: Group = JSON.parse(JSON.stringify(groupWithoutPrimaryObject));
-            groupWithPrimaryObject[property].value.push(primaryObject.id.value);
+            const groupWithPrimaryObject: Group = JSON.vaulticParse(JSON.vaulticStringify(groupWithoutPrimaryObject));
+            groupWithPrimaryObject[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
             await app.currentVault.groupStore.updateGroup(masterKey, groupWithPrimaryObject);
 
             retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
             retrievedPrimaryObject = getPrimaryObject();
 
-            ctx.assertTruthy(`Group has ${type} id after update`, retrievedGroup[property].value.includes(retrievedPrimaryObject.id.value));
-            ctx.assertTruthy(`${type} has group id after update`, retrievedPrimaryObject.groups.value.includes(group.id.value));
+            ctx.assertTruthy(`Group has ${type} id after update`, retrievedGroup[property].value.has(retrievedPrimaryObject.id.value));
+            ctx.assertTruthy(`${type} has group id after update`, retrievedPrimaryObject.groups.value.has(group.id.value));
         }
 
         const password = defaultPassword();
@@ -257,13 +257,13 @@ groupStoreSuite.tests.push({
             let retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
             ctx.assertEquals(`Empty Group Exist for type ${type}`, retrievedEmptyGroup.length, 1);
 
-            emptyGroup[property].value.push(primaryObject.id.value);
+            emptyGroup[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
             await app.currentVault.groupStore.updateGroup(masterKey, emptyGroup);
 
             retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
             ctx.assertEquals(`Empty Group Doesn't Exist for type ${type}`, retrievedEmptyGroup.length, 0);
 
-            emptyGroup[property].value = [];
+            emptyGroup[property].value = new Map();
             await app.currentVault.groupStore.updateGroup(masterKey, emptyGroup);
 
             retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
@@ -275,8 +275,8 @@ groupStoreSuite.tests.push({
             const duplicateGroupTwo = defaultGroup(type);
             duplicateGroupTwo.name.value = `GroupStore Update Metrics Work Dup Two Type ${type}`;
 
-            duplicateGroupOne[property].value.push(primaryObject.id.value);
-            duplicateGroupTwo[property].value.push(primaryObject.id.value);
+            duplicateGroupOne[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
+            duplicateGroupTwo[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupTwo);
@@ -287,7 +287,7 @@ groupStoreSuite.tests.push({
             ctx.assertEquals(`Duplicate Group one Exists for type ${type}`, retrievedDuplicateGroupOne.length, 1);
             ctx.assertEquals(`Duplicate Group two Exists for type ${type}`, retrievedDuplicateGroupTwo.length, 1);
 
-            duplicateGroupOne[property].value = [];
+            duplicateGroupOne[property].value = new Map();
 
             await app.currentVault.groupStore.updateGroup(masterKey, duplicateGroupOne);
 
@@ -298,7 +298,7 @@ groupStoreSuite.tests.push({
             ctx.assertTruthy(`Duplicate group one doesn't have group two ${type}`, !retrievedDuplicateGroupOne.includes(duplicateGroupTwo.id.value));
             ctx.assertEquals(`Duplicate group two isn't a duplicate ${type}`, retrievedDuplicateGroupTwo, undefined);
 
-            duplicateGroupOne[property].value.push(primaryObject.id.value);
+            duplicateGroupOne[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
             await app.currentVault.groupStore.updateGroup(masterKey, duplicateGroupOne);
 
@@ -360,7 +360,7 @@ groupStoreSuite.tests.push({
             getPrimaryObject: () => T)
         {
             const group: Group = defaultGroup(type);
-            group[property].value.push(primaryObject.id.value);
+            group[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
             group.name.value = `GroupStore Delete With Primary Object Works Type ${type}`;
             group.color.value = "#FFFFFF";
 
@@ -370,12 +370,12 @@ groupStoreSuite.tests.push({
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup[0]);
-            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.includes(group.id.value));
+            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.has(group.id.value));
 
             await app.currentVault.groupStore.deleteGroup(masterKey, group);
             retrievedPrimaryObject = getPrimaryObject();
 
-            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.groups.value.includes(group.id.value));
+            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.groups.value.has(group.id.value));
         }
 
         const password = defaultPassword();
@@ -427,8 +427,8 @@ groupStoreSuite.tests.push({
             const duplicateGroupTwo = defaultGroup(type);
             duplicateGroupTwo.name.value = `GroupStore Delete Metrics Work Dup Two Type ${type}`;
 
-            duplicateGroupOne[property].value.push(primaryObject.id.value);
-            duplicateGroupTwo[property].value.push(primaryObject.id.value);
+            duplicateGroupOne[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
+            duplicateGroupTwo[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupTwo);

@@ -1,13 +1,7 @@
 import { NameValuePairType } from "./DataTypes";
+import { Field } from "@vaultic/shared/Types/Fields";
 
-export type PrimaryDataObjectCollection = "passwords" | "values";
-export type SecondaryDataObjectCollection = "filters" | "groups";
 export type SecretProperty = "password" | "value";
-
-export type PrimaryDataObjectCollectionType =
-    {
-        [key in PrimaryDataObjectCollection]: Field<string[]>;
-    }
 
 export interface DisplayField
 {
@@ -138,21 +132,18 @@ export interface DataTypeViewField
     mask?: string;
 }
 
-export class Field<T>
-{
-    id: string;
-    value: T;
-    lastModifiedTime: number;
-
-    constructor(value: T)
-    {
-        this.id = "";
-        this.value = value;
-        this.lastModifiedTime = Date.now();
-    }
-}
-
 class BaseField<T> extends Field<T>
 {
     fieldTypeID: string;
+}
+
+export function fieldifyObject(obj: any): any
+{
+    const keys = Object.keys(obj);
+    for (let i = 0; i < keys.length; i++)
+    {
+        obj[keys[i]] = new Field(obj[keys[i]]);
+    }
+
+    return obj;
 }

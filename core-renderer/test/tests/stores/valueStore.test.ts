@@ -3,7 +3,7 @@ import { createTestSuite, type TestContext } from '../test';
 import createReactiveValue from "../../src/core/Objects/Stores/ReactiveValue";
 import app from "../../src/core/Objects/Stores/AppStore";
 import { NameValuePair, defaultValue, NameValuePairType, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType } from '../../src/core/Types/DataTypes';
-import { Field } from '../../src/core/Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 let valueStoreSuite = createTestSuite("Value Store");
 
@@ -122,7 +122,7 @@ valueStoreSuite.tests.push({
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
-        value.groups.value.push(group.id.value);
+        value.groups.value.set(group.id.value, new Field(group.id.value));
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
@@ -131,8 +131,8 @@ valueStoreSuite.tests.push({
 
         ctx.assertTruthy("Value exists", retrieveValue);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertEquals("Value has group id", retrieveValue.groups.value.filter(g => g == retrievedGroup.id.value).length, 1);
-        ctx.assertEquals("Group has value id", retrievedGroup.values.value.filter(v => v == retrieveValue.id.value).length, 1);
+        ctx.assertTruthy("Value has group id", retrieveValue.groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group has value id", retrievedGroup.values.value.has(retrieveValue.id.value));
     }
 });
 
@@ -160,8 +160,8 @@ valueStoreSuite.tests.push({
 
         ctx.assertTruthy("Value exists", retrievedValue);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertEquals("Value has filter id", retrievedValue.filters.value.filter(f => f == retrievedFilter.id.value).length, 1);
-        ctx.assertEquals("Filter has value id", retrievedFilter.values.value.filter(p => p == retrievedValue.id.value).length, 1);
+        ctx.assertTruthy("Value has filter id", retrievedValue.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter has value id", retrievedFilter.values.value.has(retrievedValue.id.value));
     }
 });
 
@@ -352,8 +352,8 @@ valueStoreSuite.tests.push({
         await app.currentVault.groupStore.addGroup(masterKey, group);
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
-        const valueWithGroup = JSON.parse(JSON.stringify(value));
-        valueWithGroup.groups.value.push(group.id.value);
+        const valueWithGroup: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(value));
+        valueWithGroup.groups.value.set(group.id.value, new Field(group.id.value));
 
         await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithGroup, false);
 
@@ -362,19 +362,19 @@ valueStoreSuite.tests.push({
 
         ctx.assertTruthy("Value exists", retrieveValue);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertEquals("Value has group id", retrieveValue.groups.value.filter(g => g == retrievedGroup.id.value).length, 1);
-        ctx.assertEquals("Group has value id", retrievedGroup.values.value.filter(v => v == retrieveValue.id.value).length, 1);
+        ctx.assertTruthy("Value has group id", retrieveValue.groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group has value id", retrievedGroup.values.value.has(retrieveValue.id.value));
 
-        const valueWithoutGroup: NameValuePair = JSON.parse(JSON.stringify(valueWithGroup));
-        valueWithoutGroup.groups.value = [];
+        const valueWithoutGroup: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(valueWithGroup));
+        valueWithoutGroup.groups.value = new Map();
 
         await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithoutGroup, false);
 
         retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id.value == value.id.value)[0];
         retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.id.value == group.id.value)[0];
 
-        ctx.assertEquals("Value doens't have group id", retrieveValue.groups.value.filter(g => g == retrievedGroup.id.value).length, 0);
-        ctx.assertEquals("Group doesn't have value id", retrievedGroup.values.value.filter(v => v == retrieveValue.id.value).length, 0);
+        ctx.assertTruthy("Value doens't have group id", !retrieveValue.groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group doesn't have value id", !retrievedGroup.values.value.has(retrieveValue.id.value));
     }
 });
 
@@ -403,8 +403,8 @@ valueStoreSuite.tests.push({
 
         ctx.assertTruthy("Value exists", retrievedValue);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertEquals("Value doesn't has filter id", retrievedValue.filters.value.filter(f => f == retrievedFilter.id.value).length, 0);
-        ctx.assertEquals("Filter doesn't has value id", retrievedFilter.values.value.filter(p => p == retrievedValue.id.value).length, 0);
+        ctx.assertTruthy("Value doesn't has filter id", !retrievedValue.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter doesn't has value id", !retrievedFilter.values.value.has(retrievedValue.id.value));
 
         value.name.value = name;
         await app.currentVault.valueStore.updateNameValuePair(masterKey, value, false);
@@ -412,8 +412,8 @@ valueStoreSuite.tests.push({
         retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id.value == value.id.value)[0];
         retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id.value == filter.id.value)[0];
 
-        ctx.assertEquals("Value has filter id", retrievedValue.filters.value.filter(f => f == retrievedFilter.id.value).length, 1);
-        ctx.assertEquals("Filter has value id", retrievedFilter.values.value.filter(p => p == retrievedValue.id.value).length, 1);
+        ctx.assertTruthy("Value has filter id", retrievedValue.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter has value id", retrievedFilter.values.value.has(retrievedValue.id.value));
 
         value.name.value = name + "--noFilter";
         await app.currentVault.valueStore.updateNameValuePair(masterKey, value, false);
@@ -421,8 +421,8 @@ valueStoreSuite.tests.push({
         retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id.value == value.id.value)[0];
         retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id.value == filter.id.value)[0];
 
-        ctx.assertEquals("Value doesn't has filter after update", retrievedValue.filters.value.filter(f => f == retrievedFilter.id.value).length, 0);
-        ctx.assertEquals("Filter doesn't has value after update", retrievedFilter.values.value.filter(p => p == retrievedValue.id.value).length, 0);
+        ctx.assertTruthy("Value doesn't has filter after update", !retrievedValue.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter doesn't has value after update", !retrievedFilter.values.value.has(retrievedValue.id.value));
     }
 });
 
@@ -560,7 +560,7 @@ valueStoreSuite.tests.push({
         group.color.value = "#FFFFFF";
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
-        value.groups.value.push(group.id.value);
+        value.groups.value.set(group.id.value, new Field(group.id.value));
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
@@ -569,14 +569,14 @@ valueStoreSuite.tests.push({
 
         ctx.assertTruthy("Value exists", retrieveValue);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertEquals("Value has group id", retrieveValue.groups.value.filter(g => g == retrievedGroup.id.value).length, 1);
-        ctx.assertEquals("Group has value id", retrievedGroup.values.value.filter(v => v == retrieveValue.id.value).length, 1);
+        ctx.assertTruthy("Value has group id", retrieveValue.groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group has value id", retrievedGroup.values.value.has(retrieveValue.id.value));
 
         const reactiveValue = createReactiveValue(value);
         await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveValue);
 
         retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.id.value == group.id.value)[0];
-        ctx.assertEquals("Group doesn't value id", retrievedGroup.values.value.filter(v => v == retrieveValue.id.value).length, 0);
+        ctx.assertTruthy("Group doesn't value id", !retrievedGroup.values.value.has(retrieveValue.id.value));
     }
 });
 
@@ -605,14 +605,14 @@ valueStoreSuite.tests.push({
 
         ctx.assertTruthy("Value exists", retrievedValue);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertEquals("Value has filter id", retrievedValue.filters.value.filter(f => f == retrievedFilter.id.value).length, 1);
-        ctx.assertEquals("Filter has value id", retrievedFilter.values.value.filter(p => p == retrievedValue.id.value).length, 1);
+        ctx.assertTruthy("Value has filter id", retrievedValue.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter has value id", retrievedFilter.values.value.has(retrievedValue.id.value));
 
         const reactiveValue = createReactiveValue(value);
         await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveValue);
 
         retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id.value == filter.id.value)[0];
-        ctx.assertEquals("Filter doesn't has value", retrievedFilter.values.value.filter(p => p == retrievedValue.id.value).length, 0);
+        ctx.assertTruthy("Filter doesn't has value", !retrievedFilter.values.value.has(retrievedValue.id.value));
     }
 });
 

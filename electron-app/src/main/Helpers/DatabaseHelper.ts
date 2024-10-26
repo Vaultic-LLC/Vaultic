@@ -16,6 +16,7 @@ import { ValueStoreState } from "../Core/Database/Entities/States/ValueStoreStat
 import { FilterStoreState } from "../Core/Database/Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Core/Database/Entities/States/GroupStoreState";
 import { Log } from "../Core/Database/Entities/Log";
+import { ChangeTracking } from "../Core/Database/Entities/ChangeTracking";
 
 let database: Database;
 
@@ -71,7 +72,8 @@ export function createDataSource(isTest: boolean)
 			PasswordStoreState,
 			ValueStoreState,
 			FilterStoreState,
-			GroupStoreState
+			GroupStoreState,
+			ChangeTracking
 		],
 		migrationsRun: true,
 		migrations: [CreateSchema1722604318830]

@@ -1,7 +1,7 @@
 import { Password } from "../../Types/DataTypes";
 import { ComputedRef, computed, reactive } from "vue";
 import app from "./AppStore";
-import { Field } from "../../Types/Fields";
+import { Field } from "@vaultic/shared/Types/Fields";
 
 export interface ReactivePassword extends Password
 {

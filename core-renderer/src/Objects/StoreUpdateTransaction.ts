@@ -80,21 +80,21 @@ export default class StoreUpdateTransaction
 
         for (let i = 0; i < stores.length; i++)
         {
-            newStates[stores[i].store.stateName] = JSON.stringify(stores[i].pendingState);
-            currentStates[stores[i].store.stateName] = JSON.stringify(stores[i].store.getState());
+            newStates[stores[i].store.stateName] = JSON.vaulticStringify(stores[i].pendingState);
+            currentStates[stores[i].store.stateName] = JSON.vaulticStringify(stores[i].store.getState());
         }
 
         let response: TypedMethodResponse<any>;
         switch (entity)
         {
             case Entity.User:
-                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(newStates), JSON.stringify(currentStates));
+                response = await api.repositories.users.saveUser(masterKey, JSON.vaulticStringify(newStates), JSON.vaulticStringify(currentStates));
                 break;
             case Entity.UserVault:
-                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(newStates), JSON.stringify(currentStates));
+                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.vaulticStringify(newStates), JSON.vaulticStringify(currentStates));
                 break;
             case Entity.Vault:
-                response = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.stringify(newStates), JSON.stringify(currentStates));
+                response = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.vaulticStringify(newStates), JSON.vaulticStringify(currentStates));
                 break;
         }
 

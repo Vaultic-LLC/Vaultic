@@ -71,7 +71,8 @@ import { generateUniqueID } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { api } from "../../API"
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Constants/Keys';
-import { Field, HeaderDisplayField } from '../../Types/Fields';
+import { HeaderDisplayField } from '../../Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "PasswordView",
@@ -225,17 +226,17 @@ export default defineComponent({
                     id: id,
                     key: g.id.value,
                     values: values,
-                    isActive: ref(passwordState.value.groups.value.includes(g.id.value)),
+                    isActive: ref(passwordState.value.groups.value.has(g.id.value)),
                     selectable: true,
                     onClick: async function ()
                     {
-                        if (passwordState.value.groups.value.includes(g.id.value))
+                        if (passwordState.value.groups.value.has(g.id.value))
                         {
-                            passwordState.value.groups.value = passwordState.value.groups.value.filter(id => id != g.id.value);
+                            passwordState.value.groups.value.delete(g.id.value);
                         }
                         else
                         {
-                            passwordState.value.groups.value.push(g.id.value);
+                            passwordState.value.groups.value.set(g.id.value, new Field(g.id.value));
                         }
                     }
                 }

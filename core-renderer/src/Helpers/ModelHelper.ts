@@ -6,8 +6,9 @@ import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { api } from "../API";
-import { IIdentifiable, DataType, AtRiskType, Filter } from "../Types/DataTypes";
+import { DataType, AtRiskType, Filter } from "../Types/DataTypes";
 import { HeaderDisplayField } from "../Types/Fields";
+import { IIdentifiable } from "@vaultic/shared/Types/Fields";
 
 export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
     sortableCollection: SortedCollection<T>, pinnedCollection?: SortedCollection<T>, updateModels?: () => void): SortableHeaderModel[]

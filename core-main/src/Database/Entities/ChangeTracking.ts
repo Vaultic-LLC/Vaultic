@@ -12,10 +12,10 @@ export class ChangeTracking extends VaulticEntity
     @Column("text")
     objectID: string
 
-    @Column("number")
+    @Column("integer")
     objectState: EntityState;
 
-    @Column("number")
+    @Column("integer")
     lastModifiedTime: number;
 
     identifier(): number 

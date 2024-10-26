@@ -361,7 +361,7 @@ export default defineComponent({
             }
 
             loading.value = true;
-            const response = await api.server.user.getChartData(JSON.stringify(requestData));
+            const response = await api.server.user.getChartData(JSON.vaulticStringify(requestData));
             loading.value = false;
 
             if (response.Success)

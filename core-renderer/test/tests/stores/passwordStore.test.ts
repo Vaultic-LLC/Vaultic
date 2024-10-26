@@ -3,7 +3,7 @@ import createReactivePassword from '../../src/core/Objects/Stores/ReactivePasswo
 import { createTestSuite, type TestContext } from '../test';
 import app from "../../src/core/Objects/Stores/AppStore";
 import { Password, defaultPassword, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType, SecurityQuestion } from '../../src/core/Types/DataTypes';
-import { Field } from '../../src/core/Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 let passwordStoreSuite = createTestSuite("Password Store");
 
@@ -138,7 +138,7 @@ passwordStoreSuite.tests.push({
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
-        password.groups.value.push(group.id.value);
+        password.groups.value.set(group.id.value, new Field(group.id.value));
 
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
@@ -147,8 +147,8 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertEquals("Password has group id", retrievedPassword.groups.value.filter(g => g == retrievedGroup.id.value).length, 1);
-        ctx.assertEquals("Group has password id", retrievedGroup.passwords.value.filter(p => p == retrievedPassword.id.value).length, 1);
+        ctx.assertTruthy("Password has group id", retrievedPassword.groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group has password id", retrievedGroup.passwords.value.has(retrievedPassword.id.value));
     }
 });
 
@@ -175,8 +175,8 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertEquals("Password has filter id", retrievedPassword.filters.value.filter(f => f == retrievedFilter.id.value).length, 1);
-        ctx.assertEquals("Filter has password id", retrievedFilter.passwords.value.filter(p => p == retrievedPassword.id.value).length, 1);
+        ctx.assertTruthy("Password has filter id", retrievedPassword.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter has password id", retrievedFilter.passwords.value.has(retrievedPassword.id.value));
     }
 });
 
@@ -378,8 +378,8 @@ passwordStoreSuite.tests.push({
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
-        const addedGroupPassword = JSON.parse(JSON.stringify(password));
-        addedGroupPassword.groups.value.push(group.id.value);
+        const addedGroupPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(password));
+        addedGroupPassword.groups.value.set(group.id.value, new Field(group.id.value));
         await app.currentVault.passwordStore.updatePassword(masterKey, addedGroupPassword, false, [], []);
 
         let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id.value == addedGroupPassword.id.value)[0];
@@ -387,11 +387,11 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Password has group id", retrievedPassword.groups.value.includes(retrievedGroup.id.value));
-        ctx.assertTruthy("Group has password id", retrievedGroup.passwords.value.includes(retrievedPassword.id.value));
+        ctx.assertTruthy("Password has group id", retrievedPassword.groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group has password id", retrievedGroup.passwords.value.has(retrievedPassword.id.value));
 
-        const removedGroupPassword = JSON.parse(JSON.stringify(addedGroupPassword));
-        removedGroupPassword.groups.value = [];
+        const removedGroupPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(addedGroupPassword));
+        removedGroupPassword.groups.value = new Map();
         await app.currentVault.passwordStore.updatePassword(masterKey, removedGroupPassword, false, [], []);
 
         retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id.value == removedGroupPassword.id.value)[0];
@@ -399,8 +399,8 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertEquals("Password doesn't have group id", retrievedPassword.groups.value.filter(g => g == retrievedGroup.id.value).length, 0);
-        ctx.assertEquals("Group doesn't have password id", retrievedGroup.passwords.value.filter(p => p == retrievedPassword.id.value).length, 0);
+        ctx.assertTruthy("Password doesn't have group id", !retrievedPassword.groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group doesn't have password id", !retrievedGroup.passwords.value.has(retrievedPassword.id.value));
     }
 });
 
@@ -431,8 +431,8 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertEquals("Password has filter id", retrievedPassword.filters.value.filter(f => f == retrievedFilter.id.value).length, 1);
-        ctx.assertEquals("Filter has password id", retrievedFilter.passwords.value.filter(p => p == retrievedPassword.id.value).length, 1);
+        ctx.assertTruthy("Password has filter id", retrievedPassword.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter has password id", retrievedFilter.passwords.value.has(retrievedPassword.id.value));
 
         password.login.value = "UpdateWithFilterWorks--NoFilter";
         await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [], []);
@@ -442,8 +442,8 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertEquals("Password doesn't have filter id", retrievedPassword.filters.value.filter(f => f == retrievedFilter.id.value).length, 0);
-        ctx.assertEquals("Filter doesn't have password id", retrievedFilter.passwords.value.filter(p => p == retrievedPassword.id.value).length, 0);
+        ctx.assertTruthy("Password doesn't have filter id", !retrievedPassword.filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter doesn't have password id", !retrievedFilter.passwords.value.has(retrievedPassword.id.value));
     }
 });
 
@@ -553,7 +553,7 @@ passwordStoreSuite.tests.push({
         group.color.value = "#FFFFFF";
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
-        password.groups.value.push(group.id.value);
+        password.groups.value.set(group.id.value, new Field(group.id.value));
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id.value == password.id.value);
@@ -561,8 +561,8 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword[0]);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertEquals("Password has group id", retrievedPassword[0].groups.value.filter(g => g == retrievedGroup.id.value).length, 1);
-        ctx.assertEquals("Group has password id", retrievedGroup.passwords.value.filter(p => p == retrievedPassword[0].id.value).length, 1);
+        ctx.assertTruthy("Password has group id", retrievedPassword[0].groups.value.has(retrievedGroup.id.value));
+        ctx.assertTruthy("Group has password id", retrievedGroup.passwords.value.has(retrievedPassword[0].id.value));
 
         const reactivePassword = createReactivePassword(password);
         await app.currentVault.passwordStore.deletePassword(masterKey, reactivePassword);
@@ -572,7 +572,7 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Group exists", retrievedGroup);
         ctx.assertEquals("Password doesn't exists", retrievedPassword.length, 0);
-        ctx.assertEquals("Group doesn't have password id", retrievedGroup.passwords.value.length, 0);
+        ctx.assertEquals("Group doesn't have password id", retrievedGroup.passwords.value.size, 0);
     }
 });
 
@@ -599,8 +599,8 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertEquals("Password has filter id", retrievedPassword[0].filters.value.filter(f => f == retrievedFilter.id.value).length, 1);
-        ctx.assertEquals("Filter has password id", retrievedFilter.passwords.value.filter(p => p == retrievedPassword[0].id.value).length, 1);
+        ctx.assertTruthy("Password has filter id", retrievedPassword[0].filters.value.has(retrievedFilter.id.value));
+        ctx.assertTruthy("Filter has password id", retrievedFilter.passwords.value.has(retrievedPassword[0].id.value));
 
         const reactivePassword = createReactivePassword(password);
         await app.currentVault.passwordStore.deletePassword(masterKey, reactivePassword);
@@ -610,7 +610,7 @@ passwordStoreSuite.tests.push({
 
         ctx.assertTruthy("Filter exists", retrievedFilter);
         ctx.assertEquals("Password doesn't exists", retrievedPassword.length, 0);
-        ctx.assertEquals("Filter doesn't have password id", retrievedFilter.passwords.value.length, 0);
+        ctx.assertEquals("Filter doesn't have password id", retrievedFilter.passwords.value.size, 0);
     }
 });
 

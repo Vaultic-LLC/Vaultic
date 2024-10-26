@@ -34,7 +34,7 @@ class VaultHelper
             return decryptedVaultKeys;
         }
 
-        const keys: VaultKey = JSON.parse(decryptedVaultKeys.value!);
+        const keys: VaultKey = JSON.vaulticParse(decryptedVaultKeys.value!);
         return await environment.utilities.crypt.ECDecrypt(keys.publicKey, privateKey, keys.vaultKey);
     }
 

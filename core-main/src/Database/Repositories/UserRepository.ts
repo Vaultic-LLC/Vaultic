@@ -171,7 +171,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             userVault.userID = user.userID;
             userVault.user = user;
-            userVault.vaultKey = JSON.stringify({
+            userVault.vaultKey = JSON.vaulticStringify({
                 vaultKey: encryptedVaultKey.value.data,
                 publicKey: encryptedVaultKey.value.publicKey
             });
@@ -363,7 +363,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             }
 
             userData.success = true;
-            return TypedMethodResponse.success(JSON.stringify(userData));
+            return TypedMethodResponse.success(JSON.vaulticStringify(userData));
 
             async function setCurrentVault(id: number, setAsLastUsed: boolean)
             {
@@ -411,7 +411,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const newUser: UserData = JSON.parse(newData);
+            const newUser: UserData = JSON.vaulticParse(newData);
             const transaction = new Transaction();
 
             if (newUser.appStoreState)
@@ -422,8 +422,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update AppStoreState");
                 }
 
-                const currentAppStoreState = JSON.parse(JSON.parse(currentData).appStoreState);
-                environment.repositories.changeTrackings.trackObjectDifferences(masterKey, JSON.parse(newUser.appStoreState), currentAppStoreState, transaction);
+                const currentAppStoreState = JSON.vaulticParse(JSON.vaulticParse(currentData).appStoreState);
+                environment.repositories.changeTrackings.trackObjectDifferences(masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
             }
 
             if (newUser.userPreferencesStoreState)

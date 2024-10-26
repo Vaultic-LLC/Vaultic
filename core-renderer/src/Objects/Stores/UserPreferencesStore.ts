@@ -12,6 +12,7 @@ import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 export interface PinnedDataTypes 
 {
+    [key: string]: any;
     pinnedFilters: Dictionary<any>;
     pinnedGroups: Dictionary<any>;
     pinnedPasswords: Dictionary<any>;
@@ -42,10 +43,10 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     set currentColorPalette(value: ColorPalette) { this.state.currentColorPalette = value; }
     get currentPrimaryColor() { return this.internalCurrentPrimaryColor }
 
-    get pinnedFilters() { return this.state.pinnedDataTypes[app.currentVault.userVaultID].pinnedFilters; }
-    get pinnedGroups() { return this.state.pinnedDataTypes[app.currentVault.userVaultID].pinnedGroups; }
-    get pinnedPasswords() { return this.state.pinnedDataTypes[app.currentVault.userVaultID].pinnedPasswords; }
-    get pinnedValues() { return this.state.pinnedDataTypes[app.currentVault.userVaultID].pinnedValues; }
+    get pinnedFilters() { return this.state.pinnedDataTypes[app.currentVault.userVaultID]?.pinnedFilters ?? {}; }
+    get pinnedGroups() { return this.state.pinnedDataTypes[app.currentVault.userVaultID]?.pinnedGroups ?? {}; }
+    get pinnedPasswords() { return this.state.pinnedDataTypes[app.currentVault.userVaultID]?.pinnedPasswords ?? {}; }
+    get pinnedValues() { return this.state.pinnedDataTypes[app.currentVault.userVaultID]?.pinnedValues ?? {}; }
 
     constructor(appStore: AppStore)
     {
@@ -118,6 +119,20 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             this.setCurrentPrimaryColor(newValue);
         });
 
+        watch(() => appStore.currentVault.userVaultID, (newValue) => 
+        {
+            if (!this.state.pinnedDataTypes[newValue])
+            {
+                this.state.pinnedDataTypes[newValue] =
+                {
+                    pinnedFilters: {},
+                    pinnedGroups: {},
+                    pinnedPasswords: {},
+                    pinnedValues: {}
+                };
+            }
+        });
+
         this.setCurrentPrimaryColor(appStore.activePasswordValuesTable);
     }
 
@@ -134,7 +149,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         const state = await api.repositories.users.getLastUsedUserPreferences();
         if (state)
         {
-            const parsedState: UserPreferencesStoreState = JSON.parse(state);
+            const parsedState: UserPreferencesStoreState = JSON.vaulticParse(state);
             if (parsedState.currentColorPalette)
             {
                 Object.assign(this.state, parsedState);

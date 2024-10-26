@@ -63,6 +63,7 @@ import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Type
 import { api } from "../../API"
 import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
 import { HeaderDisplayField } from '../../Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "ValueView",
@@ -178,17 +179,17 @@ export default defineComponent({
                     id: id,
                     key: g.id.value,
                     values: values,
-                    isActive: ref(valuesState.value.groups.value.includes(g.id.value)),
+                    isActive: ref(valuesState.value.groups.value.has(g.id.value)),
                     selectable: true,
                     onClick: async function ()
                     {
-                        if (valuesState.value.groups.value.includes(g.id.value))
+                        if (valuesState.value.groups.value.has(g.id.value))
                         {
-                            valuesState.value.groups.value = valuesState.value.groups.value.filter(id => id != g.id.value);
+                            valuesState.value.groups.value.delete(g.id.value);
                         }
                         else
                         {
-                            valuesState.value.groups.value.push(g.id.value);
+                            valuesState.value.groups.value.set(g.id.value, new Field(g.id.value));
                         }
                     }
                 }

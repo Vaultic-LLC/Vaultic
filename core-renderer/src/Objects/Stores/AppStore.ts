@@ -1,6 +1,6 @@
 import { Ref, ref, ComputedRef, computed } from "vue";
 import { hideAll } from 'tippy.js';
-import { Store, StoreEvents } from "./Base";
+import { Store, StoreEvents, StoreState } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -14,7 +14,7 @@ import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { FilterStatus, DataType } from "../../Types/DataTypes";
 
-export interface AppSettings 
+export interface AppSettings
 {
     colorPalettes: ColorPalette[];
     autoLockTime: AutoLockTime;
@@ -73,7 +73,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         super("appStoreState");
 
         this.loadedUser = false;
-        this.internalUsersPreferencesStore = new UserPreferencesStore(this);
         this.internalUserDataBreachStore = new UserDataBreachStore();
         this.internalPopupStore = createPopupStore();
 
@@ -81,6 +80,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalSharedVaults = ref([]);
         this.internalArchivedVaults = ref([]);
         this.internalCurrentVault = new ReactiveVaultStore();
+        // done after current vault so we can watch for userVaultID
+        this.internalUsersPreferencesStore = new UserPreferencesStore(this);
 
         this.internalIsOnline = ref(false);
         this.internalActivePasswordValueTable = ref(DataType.Passwords);
@@ -183,7 +184,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const parsedUserData: UserData = JSON.parse(userData.value!);
+        const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
 
         await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
         await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
@@ -227,7 +228,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async updateVault(masterKey: string, displayVault: DisplayVault): Promise<boolean>
     {
-        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID, JSON.stringify(displayVault));
+        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID, JSON.vaulticStringify(displayVault));
         if (!success)
         {
             return false;

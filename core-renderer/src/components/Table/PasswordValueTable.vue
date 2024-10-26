@@ -66,8 +66,9 @@ import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DataType, Filter, FilterStatus, IFilterable, IGroupable, IIdentifiable } from '../../Types/DataTypes';
+import { DataType, Filter, FilterStatus, IFilterable, IGroupable } from '../../Types/DataTypes';
 import { HeaderDisplayField } from '../../Types/Fields';
+import { IIdentifiable } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "PasswordValueTable",
@@ -246,7 +247,7 @@ export default defineComponent({
                 let temp: T[] = [];
                 newValue.forEach(f =>
                 {
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.includes(f.id.value)));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.has(f.id.value)));
                 });
 
                 localVariable.updateValues(temp);
@@ -261,13 +262,13 @@ export default defineComponent({
                     const filtersActivated: Filter[] = newValue.filter(f => !oldValue.includes(f));
                     filtersActivated.forEach(f =>
                     {
-                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.includes(f.id.value)));
+                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.has(f.id.value)));
                     });
                 }
                 else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.includes(f.id.value))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.has(f.id.value))));
                 }
 
                 localVariable.updateValues(temp);
@@ -286,20 +287,20 @@ export default defineComponent({
                         temp = temp.filter(v =>
                         {
                             // keep values that the removed filter doesn't apply to
-                            if (!v.filters.value.includes(f.id.value))
+                            if (!v.filters.value.has(f.id.value))
                             {
                                 return true;
                             }
 
                             // remove value if it doesn't have a current active filter
-                            return newValue.filter(nv => v.filters.value.includes(nv.id.value)).length > 0;
+                            return newValue.filter(nv => v.filters.value.has(nv.id.value)).length > 0;
                         })
                     });
                 }
                 else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.includes(f.id.value))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.has(f.id.value))));
                 }
 
                 localVariable.updateValues(temp);

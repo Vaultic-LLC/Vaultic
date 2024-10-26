@@ -31,6 +31,7 @@ export default async function runAllTests()
     // These should go first since they mess with logging in
     await runTests(serverHelperTestSuite);
     await runTests(appStoreTestSuite);
+
     await runTests(vaultStoreTestSuite);
 
     await runTests(passwordStoreSuite);

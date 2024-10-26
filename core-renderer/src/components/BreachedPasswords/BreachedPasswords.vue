@@ -126,7 +126,7 @@ export default defineComponent({
                 })
             };
 
-            const response = await api.server.user.getUserDataBreaches(JSON.stringify(requestData));
+            const response = await api.server.user.getUserDataBreaches(JSON.vaulticStringify(requestData));
             if (response.Success)
             {
                 app.userDataBreaches.updateUserBreaches(response.DataBreaches!);

@@ -92,11 +92,11 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
 
         // copy the objects so that we don't edit the original one
-        const originalAppSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
-        const appSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
+        const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
 
-        const originalVaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings)));
-        const vaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings)));
+        const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings)));
+        const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings)));
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
@@ -127,7 +127,7 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-            if (JSON.stringify(originalAppSettings.value) != JSON.stringify(appSettings.value))
+            if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
             {
                 const state = app.cloneState();
                 state.settings = appSettings.value;
@@ -135,7 +135,7 @@ export default defineComponent({
                 transaction.updateUserStore(app, state);
             }
 
-            if (JSON.stringify(originalVaultSettings.value) != JSON.stringify(vaultSettings.value))
+            if (JSON.vaulticStringify(originalVaultSettings.value) != JSON.vaulticStringify(vaultSettings.value))
             {
                 const state = app.currentVault.cloneState();
                 state.settings = vaultSettings.value;

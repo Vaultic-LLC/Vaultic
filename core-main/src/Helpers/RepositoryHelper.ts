@@ -32,7 +32,7 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
             return response;
         }
 
-        await environment.repositories.logs.log(undefined, `Exception: ${JSON.stringify(e)}`, method.name);
+        await environment.repositories.logs.log(undefined, `Exception: ${JSON.vaulticStringify(e)}`, method.name);
     }
 
     return TypedMethodResponse.fail();
@@ -160,14 +160,14 @@ export async function backupData(masterKey: string)
         postData.userDataPayload["vaults"] = vaultsToBackup[1];
     }
 
-    console.log(`\nBacking up user: ${JSON.stringify(userToBackup[1])}`);
-    console.log(`\nBacking up userVaults: ${JSON.stringify(userVaultsToBackup[1])}`);
-    console.log(`\nBacking up vaults: ${JSON.stringify(vaultsToBackup[1])}`);
+    console.log(`\nBacking up user: ${JSON.vaulticStringify(userToBackup[1])}`);
+    console.log(`\nBacking up userVaults: ${JSON.vaulticStringify(userVaultsToBackup[1])}`);
+    console.log(`\nBacking up vaults: ${JSON.vaulticStringify(vaultsToBackup[1])}`);
 
     const backupResponse = await vaulticServer.user.backupData(postData);
     if (!backupResponse.Success)
     {
-        console.log(`backup failed: ${JSON.stringify(backupResponse)}`);
+        console.log(`backup failed: ${JSON.vaulticStringify(backupResponse)}`);
         checkMergeMissingData(masterKey, "", postData.userDataPayload, backupResponse.userDataPayload)
 
         return false;
@@ -225,6 +225,7 @@ export async function safeBackupData(masterKey: string): Promise<TypedMethodResp
 // serverUserDataPayload, remove it
 export async function checkMergeMissingData(masterKey: string, email: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
 {
+
     if (!serverUserDataPayload)
     {
         return false;

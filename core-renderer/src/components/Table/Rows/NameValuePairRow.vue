@@ -38,7 +38,7 @@ export default defineComponent({
     setup(props)
     {
         const textColor: string = defaultInputColor;
-        const value: ComputedRef<ReactiveValue> = computed(() => JSON.parse(JSON.stringify(props.value)));
+        const value: ComputedRef<ReactiveValue> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.value)));
         let valueValue: Ref<string> = ref(value.value.value.value);
 
         const showQRCode: ComputedRef<boolean> = computed(() => value.value.valueType?.value === NameValuePairType.MFAKey);

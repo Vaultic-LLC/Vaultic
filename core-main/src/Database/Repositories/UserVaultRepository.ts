@@ -169,7 +169,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             }
 
             const oldUserVault = userVaults[0];
-            const newUserVault: CondensedVaultData = JSON.parse(newData);
+            const newUserVault: CondensedVaultData = JSON.vaulticParse(newData);
 
             const transaction = new Transaction();
             if (newUserVault.vaultPreferencesStoreState)

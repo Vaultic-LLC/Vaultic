@@ -74,6 +74,8 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
     private mergeStoreStates(currentObj: any, newObj: any, changeTrackings: Dictionary<ChangeTracking>)
     {
         // Object or Array
+        // TODO: this doesn't actually work for arrays since the key is just the index and that could have a different value
+        // change all arrays to Maps?
         if (typeof newObj.value == 'object')
         {
             const keys = Object.keys(newObj);
@@ -81,6 +83,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
             for (let i = 0; i < keys.length; i++)
             {
+                // TODO: need to search by ids
                 const currentKeyMatchingIndex = currentKeys.indexOf(keys[i]);
 
                 // not in current keys. Check to see if it was deleted locally or if it was inserted / created on another device
@@ -98,6 +101,14 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                     else
                     {
                         // object was edited on another device after it was deleted on this one, keep it
+                        // TODO: this can cause data integrity issues. If I delete a filter on another device and 
+                        // it was an empty filter, it is no longer in empty filters. This will add the filter back but 
+                        // not add it back to empty filters. Or would it? That filter in emptyFilters would have a changeTracking
+                        // record for deleted. It still would because the Field in emptyFilters doesn't get updated if 
+                        // it doesn't change, i.e. editing the filter wouldn't update the Field<string> of the id in emptyFilters lastModifiedTime
+                        // so this check would fail. If I also updated the lastModifiedTime of the record in emptyFilters, then this would work and
+                        // add it back here. Do I have to worry abou that below as well where I am potentially keeping records that were 
+                        // deleted? Yes, but there I can't confirm times?
                         if (changeTracking.lastModifiedTime < newObj[keys[i]].lastModifiedTime)
                         {
                             currentObj[keys[i]] = newObj[keys[i]];

@@ -32,7 +32,8 @@ import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueID } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DisplayField, Field, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
+import { DisplayField, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "FilterView",

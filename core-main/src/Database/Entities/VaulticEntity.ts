@@ -24,7 +24,7 @@ const VaulticHandler =
         if (typeof newValue != 'object' && !obj.propertiesToSync.includes(prop) && obj.backupableProperties().includes(prop))
         {
             obj.propertiesToSync.push(prop);
-            obj.serializedPropertiesToSync = JSON.stringify(obj.updatedProperties);
+            obj.serializedPropertiesToSync = JSON.vaulticStringify(obj.updatedProperties);
         }
 
         obj[prop] = newValue;
@@ -69,7 +69,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     @AfterLoad()
     afterLoad()
     {
-        this.propertiesToSync = JSON.parse(this.serializedPropertiesToSync);
+        this.propertiesToSync = JSON.vaulticParse(this.serializedPropertiesToSync);
     }
 
     identifier(): number 
@@ -232,7 +232,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return false;
         }
 
-        const seriazliedMakeup = JSON.stringify(signatureMakeup);
+        const seriazliedMakeup = JSON.vaulticStringify(signatureMakeup);
         const hashedEntity = environment.utilities.hash.insecureHash(seriazliedMakeup);
         const secretBytes = new TextEncoder().encode(signatureSecret);
 
@@ -268,7 +268,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_MAKEUP);
         }
 
-        const serializedMakeup = JSON.stringify(signatureMakeup);
+        const serializedMakeup = JSON.vaulticStringify(signatureMakeup);
         const hashedEntity = environment.utilities.hash.insecureHash(serializedMakeup);
         const secretBytes = new TextEncoder().encode(secretResponse.value!);
 
@@ -316,7 +316,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         if (!selfVerification.success)
         {
             selfVerification.addToCallStack(`Verifying ${this.entityName()}`);
-            console.log(JSON.stringify(selfVerification));
+            console.log(JSON.vaulticStringify(selfVerification));
             throw selfVerification;
         }
 
@@ -330,7 +330,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
                 {
                     response.addToCallStack(`Verifying ${nestedVaulticEntites[i]}`);
                     response.addToErrorMessage(`ID: ${this.identifier()}`);
-                    console.log(JSON.stringify(selfVerification));
+                    console.log(JSON.vaulticStringify(selfVerification));
 
                     throw response;
                 }

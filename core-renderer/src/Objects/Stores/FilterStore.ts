@@ -5,9 +5,9 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { Group, Filter, DataType, Password, NameValuePair, IGroupable, FilterConditionType, IFilterable, IIdentifiable, AtRiskType } from "../../Types/DataTypes";
-import { PrimaryDataObjectCollection } from "../../Types/Fields";
+import { Group, Filter, DataType, Password, NameValuePair, IGroupable, FilterConditionType, IFilterable, AtRiskType } from "../../Types/DataTypes";
 import app from "./AppStore";
+import { Field, IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
 {
@@ -216,11 +216,7 @@ export class FilterStore extends SecondaryDataTypeStore<Filter, FilterStoreState
     {
         allFilters.forEach(v =>
         {
-            const primaryObjectIndex = v[primaryDataObjectCollection].value.indexOf(primaryObjectID);
-            if (primaryObjectIndex >= 0)
-            {
-                v[primaryDataObjectCollection].value.splice(primaryObjectIndex, 1);
-            }
+            v[primaryDataObjectCollection].value.delete(primaryObjectID);
 
             this.checkUpdateEmptySecondaryObject(v.id.value, v[primaryDataObjectCollection].value, allEmptyFilters);
             this.checkUpdateDuplicateSecondaryObjects(v, primaryDataObjectCollection, allDuplicateFilters, allFilters);
@@ -232,7 +228,7 @@ export class FilterStore extends SecondaryDataTypeStore<Filter, FilterStoreState
         // if we don't have any conditions, then default to false so 
         // objects don't get included by default
         let allFilterConditionsApply: boolean = filter.conditions.value.length > 0;
-        const groupsForObject: Group[] = groups.filter(g => dataObject.groups.value.includes(g.id.value));
+        const groupsForObject: Group[] = groups.filter(g => dataObject.groups.value.has(g.id.value));
 
         filter.conditions.value.forEach(fc =>
         {
@@ -301,28 +297,18 @@ export class FilterStore extends SecondaryDataTypeStore<Filter, FilterStoreState
             {
                 if (this.filterAppliesToDataObject(f, p, allGroups))
                 {
-                    if (!p.filters.value.includes(f.id.value))
+                    p.filters.value.set(f.id.value, new Field(f.id.value));
+                    if (!f[primaryDataObjectCollection].value.has(p.id.value))
                     {
-                        p.filters.value.push(f.id.value);
-                    }
-
-                    if (!f[primaryDataObjectCollection].value.includes(p.id.value))
-                    {
-                        f[primaryDataObjectCollection].value.push(p.id.value);
+                        f[primaryDataObjectCollection].value.set(p.id.value, new Field(p.id.value));
                     }
                 }
                 else
                 {
-                    const filterIndex: number = p.filters.value.indexOf(f.id.value);
-                    if (filterIndex >= 0)
+                    p.filters.value.delete(f.id.value);
+                    if (f[primaryDataObjectCollection].value.has(p.id.value))
                     {
-                        p.filters.value.splice(filterIndex, 1);
-                    }
-
-                    const objectIndex: number = f[primaryDataObjectCollection].value.indexOf(p.id.value);
-                    if (objectIndex >= 0)
-                    {
-                        f[primaryDataObjectCollection].value.splice(objectIndex, 1);
+                        f[primaryDataObjectCollection].value.delete(p.id.value);
                     }
                 }
             });

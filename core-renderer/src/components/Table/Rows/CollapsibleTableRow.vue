@@ -21,6 +21,7 @@ import TableRow from "./TableRow.vue"
 import { GroupIconModel } from '../../../Types/Models';
 import app from "../../../Objects/Stores/AppStore";
 import { Group } from '../../../Types/DataTypes';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "CollapsibleTableRow",
@@ -42,10 +43,11 @@ export default defineComponent({
         let rejectFunc: () => void;
 
         const primaryColor: ComputedRef<string> = computed(() => props.color);
+        const groups: ComputedRef<Map<string, Field<string>>> = computed(() => props.groups);
 
         let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
         {
-            const allGroups: Group[] = app.currentVault.groupStore.groups.filter(g => props.groups.includes(g.id.value));
+            const allGroups: Group[] = app.currentVault.groupStore.groups.filter(g => groups.value.has(g.id.value));
             if (allGroups.length <= 4)
             {
                 return allGroups.map((g) =>

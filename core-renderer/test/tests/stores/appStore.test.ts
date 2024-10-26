@@ -1,6 +1,7 @@
 import { createTestSuite, type TestContext } from '../test';
 import app from "../../src/core/Objects/Stores/AppStore";
 import { api } from '../../src/core/API';
+import { AutoLockTime } from '../../src/core/Types/Settings';
 
 let appStoreTestSuite = createTestSuite("App Store");
 
@@ -16,6 +17,10 @@ appStoreTestSuite.tests.push({
 
         await app.loadUserData(masterKey, response.value!.UserDataPayload);
         ctx.assertEquals("One UserVault", app.userVaults.value.length, 1);
+
+        const currentState = app.cloneState();
+        currentState.settings.autoLockTime = AutoLockTime.ThirtyMinutes;
+        app.updateState(currentState);
     }
 });
 

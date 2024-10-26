@@ -7,7 +7,8 @@ import { CSVHeaderPropertyMapperModel } from "../Types/Models";
 import { generateUniqueID } from "./generatorHelper";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { IGroupable, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
-import { Field, ImportableDisplayField } from "../Types/Fields";
+import { ImportableDisplayField } from "../Types/Fields";
+import { Field } from "@vaultic/shared/Types/Fields";
 
 export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): Dictionary<ImportableDisplayField[]>
 {
@@ -117,7 +118,7 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         }
 
         let groups: string[] = [];
-        for (let j = 0; j < password.groups.value.length; j++)
+        for (let j = 0; j < password.groups.value.size; j++)
         {
             const group = app.currentVault.groupStore.passwordGroups.filter(g => g.id.value == password.groups.value[j]);
             if (group.length == 1)
@@ -154,7 +155,7 @@ export async function getExportableValues(color: string, masterKey: string): Pro
         }
 
         let groups: string[] = [];
-        for (let j = 0; j < value.groups.value.length; j++)
+        for (let j = 0; j < value.groups.value.size; j++)
         {
             const group = app.currentVault.groupStore.valuesGroups.filter(g => g.id.value == value.groups.value[j]);
             if (group.length == 1)
@@ -301,7 +302,7 @@ class CSVImporter<T extends IGroupable>
 
                                     if (groupId)
                                     {
-                                        value.groups.value.push(groupId);
+                                        value.groups.value.set(groupId, new Field(groupId));
                                     }
                                 }
                             }

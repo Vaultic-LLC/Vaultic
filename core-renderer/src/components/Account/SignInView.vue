@@ -173,7 +173,10 @@ export default defineComponent({
             else
             {
                 defaultHandleFailedResponse(response);
-                defaultHandleFailedResponse(response.value);
+                if (response.value)
+                {
+                    defaultHandleFailedResponse(response.value);
+                }
             }
         }
 

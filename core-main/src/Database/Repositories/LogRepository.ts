@@ -69,7 +69,7 @@ class LogRepository
             data.push([logs[i].time.toString(), logs[i].currentUserEmail, logs[i].errorCode.toString(), logs[i].message, logs[i].callStack]);
         }
 
-        return JSON.stringify(data);;
+        return JSON.vaulticStringify(data);;
     }
 
     async clearOldLogs(email: string): Promise<boolean>

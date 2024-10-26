@@ -1,3 +1,4 @@
+// TODO: switch to Map
 export interface Dictionary<T>
 {
     [Key: string]: T;

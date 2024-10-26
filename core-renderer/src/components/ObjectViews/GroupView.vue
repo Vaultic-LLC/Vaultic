@@ -42,6 +42,7 @@ import { TableTemplateComponent } from '../../Types/Components';
 import { api } from '../../API';
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
 import { HeaderDisplayField } from '../../Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "GroupView",
@@ -210,17 +211,17 @@ export default defineComponent({
                             id: id,
                             key: nvp.id.value,
                             values: values,
-                            isActive: ref(groupState.value.values.value.includes(nvp.id.value)),
+                            isActive: ref(groupState.value.values.value.has(nvp.id.value)),
                             selectable: true,
                             onClick: async function ()
                             {
-                                if (groupState.value.values.value.includes(nvp.id.value))
+                                if (groupState.value.values.value.has(nvp.id.value))
                                 {
-                                    groupState.value.values.value = groupState.value.values.value.filter(id => id != nvp.id.value);
+                                    groupState.value.values.value.delete(nvp.id.value);
                                 }
                                 else
                                 {
-                                    groupState.value.values.value.push(nvp.id.value);
+                                    groupState.value.values.value.set(nvp.id.value, new Field(nvp.id.value));
                                 }
                             }
                         }
@@ -250,17 +251,17 @@ export default defineComponent({
                             id: id,
                             key: p.id.value,
                             values: values,
-                            isActive: ref(groupState.value.passwords.value.includes(p.id.value)),
+                            isActive: ref(groupState.value.passwords.value.has(p.id.value)),
                             selectable: true,
                             onClick: async function ()
                             {
-                                if (groupState.value.passwords.value.includes(p.id.value))
+                                if (groupState.value.passwords.value.has(p.id.value))
                                 {
-                                    groupState.value.passwords.value = groupState.value.passwords.value.filter(id => id != p.id.value);
+                                    groupState.value.passwords.value.delete(p.id.value);                                
                                 }
                                 else
                                 {
-                                    groupState.value.passwords.value.push(p.id.value);
+                                    groupState.value.passwords.value.set(p.id.value, new Field(p.id.value));
                                 }
                             }
                         }

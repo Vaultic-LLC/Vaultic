@@ -296,11 +296,11 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 },
                 {
                     name: "objectState",
-                    type: "number"
+                    type: "integer"
                 },
                 {
                     name: "lastModifiedTime",
-                    type: "number"
+                    type: "integer"
                 }
             ]
         }));

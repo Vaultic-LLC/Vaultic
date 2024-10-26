@@ -57,7 +57,7 @@ export default defineComponent({
         });
 
         // copy password so we don't accidentally edit it
-        const password: ComputedRef<ReactivePassword> = computed(() => JSON.parse(JSON.stringify(props.value)));
+        const password: ComputedRef<ReactivePassword> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.value)));
         let passwordValue: Ref<string> = ref(password.value.password.value);
         let securityQuestions: Ref<SecurityQuestion[]> = ref(password.value.securityQuestions.value);
 

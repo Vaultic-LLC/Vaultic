@@ -4,9 +4,11 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "strictPropertyInitialization": false,
+        "moduleResolution": "node",
         "lib": [
             "dom",
             "es2023"
-        ]
+        ],
+        "target": "ES2023"
     }
 }

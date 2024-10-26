@@ -1,23 +1,13 @@
-import { Field, PrimaryDataObjectCollectionType } from "./Fields";
-
-export interface IIdentifiable
-{
-    id: Field<string>;
-}
-
-export interface IFieldObject
-{
-    [key: string]: Field<any>;
-}
+import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject } from "@vaultic/shared/Types/Fields";
 
 export interface IFilterable
 {
-    filters: Field<string[]>;
+    filters: Field<Map<string, Field<string>>>;
 }
 
 export interface IGroupable
 {
-    groups: Field<string[]>;
+    groups: Field<Map<string, Field<string>>>;
 }
 
 export enum DataType
@@ -34,7 +24,7 @@ export enum FilterStatus
     Or = "Or"
 }
 
-export interface Password extends IFilterable, IIdentifiable, IGroupable
+export interface Password extends IFilterable, IIdentifiable, IGroupable, SecondaryDataObjectCollectionType
 {
     [key: string]: any;
     isVaultic: Field<boolean>;
@@ -75,7 +65,7 @@ export enum NameValuePairType
 
 export const nameValuePairTypesValues = Object.values(NameValuePairType);
 
-export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable
+export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, SecondaryDataObjectCollectionType
 {
     [key: string]: any;
     name: Field<string>;
@@ -177,8 +167,8 @@ export function defaultPassword(): Password
         isWeak: new Field(false),
         isWeakMessage: new Field(''),
         containsLogin: new Field(false),
-        filters: new Field([]),
-        groups: new Field([]),
+        filters: new Field(new Map()),
+        groups: new Field(new Map()),
     }
 }
 
@@ -194,8 +184,8 @@ export function defaultValue(): NameValuePair
         additionalInformation: new Field(''),
         lastModifiedTime: new Field(''),
         isDuplicate: new Field(false),
-        filters: new Field([]),
-        groups: new Field([]),
+        filters: new Field(new Map()),
+        groups: new Field(new Map()),
         isWeak: new Field(false),
         isWeakMessage: new Field(''),
         valueLength: new Field(0)
@@ -207,8 +197,8 @@ export function defaultFilter(type: DataType): Filter
     return {
         id: new Field(""),
         key: new Field(''),
-        passwords: new Field([]),
-        values: new Field([]),
+        passwords: new Field(new Map()),
+        values: new Field(new Map()),
         type: new Field(type),
         isActive: new Field(false),
         name: new Field(''),
@@ -221,8 +211,8 @@ export function defaultGroup(type: DataType): Group
     return {
         id: new Field(""),
         key: new Field(""),
-        passwords: new Field([]),
-        values: new Field([]),
+        passwords: new Field(new Map()),
+        values: new Field(new Map()),
         name: new Field(''),
         type: new Field(type),
         color: new Field('')

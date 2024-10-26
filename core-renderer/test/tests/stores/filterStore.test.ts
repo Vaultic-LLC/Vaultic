@@ -1,8 +1,8 @@
 import { createTestSuite, type TestContext } from '../test';
 import app from "../../src/core/Objects/Stores/AppStore";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
-import { DataType, Filter, defaultFilter, FilterConditionType, IIdentifiable, IFilterable, defaultPassword, defaultValue, FilterCondition } from '../../src/core/Types/DataTypes';
-import { Field } from '../../src/core/Types/Fields';
+import { DataType, Filter, defaultFilter, FilterConditionType, IFilterable, defaultPassword, defaultValue, FilterCondition } from '../../src/core/Types/DataTypes';
+import { Field, IIdentifiable } from '@vaultic/shared/Types/Fields';
 
 let filterStoreSuite = createTestSuite("Filter Store");
 
@@ -59,7 +59,7 @@ filterStoreSuite.tests.push({
             const retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
-            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.value.includes(filter.id.value));
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.value.has(filter.id.value));
         }
 
         const password = defaultPassword();
@@ -246,19 +246,19 @@ filterStoreSuite.tests.push({
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
-            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.value.includes(filter.id.value));
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.value.has(filter.id.value));
 
             filter.conditions.value[0].value = filterValue + "--NoMatches";
             await app.currentVault.filterStore.updateFilter(masterKey, filter);
 
             retrievedPrimaryObject = getPrimaryObject();
-            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.value.includes(filter.id.value));
+            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.value.has(filter.id.value));
 
             filter.conditions.value[0].value = filterValue;
             await app.currentVault.filterStore.updateFilter(masterKey, filter);
 
             retrievedPrimaryObject = getPrimaryObject();
-            ctx.assertTruthy(`${type} has filter after update`, retrievedPrimaryObject.filters.value.includes(filter.id.value));
+            ctx.assertTruthy(`${type} has filter after update`, retrievedPrimaryObject.filters.value.has(filter.id.value));
         }
 
         const password = defaultPassword();
@@ -451,12 +451,12 @@ filterStoreSuite.tests.push({
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
-            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.value.includes(filter.id.value));
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.value.has(filter.id.value));
 
             await app.currentVault.filterStore.deleteFilter(masterKey, filter);
 
             retrievedPrimaryObject = getPrimaryObject();
-            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.value.includes(filter.id.value));
+            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.value.has(filter.id.value));
         }
 
         const password = defaultPassword();

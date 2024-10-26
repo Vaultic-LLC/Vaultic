@@ -38,5 +38,9 @@ export function defaultHandleFailedResponse(response: any, showAlerts: boolean =
         {
             app.popups.showErrorResponseAlert(response);
         }
+        else 
+        {
+            app.popups.showAlert("An Unknown Error has Occured", "An unknown error has occured, please try again. If the issue persisits", true);
+        }
     }
 }

@@ -15,152 +15,152 @@ const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
 
 async function encrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
 {
-	let logID: number | undefined;
-	try
-	{
-		const hashedKey: string = hashUtility.insecureHash(key);
-		const keyBytes = Buffer.from(hashedKey, 'base64')
+    let logID: number | undefined;
+    try
+    {
+        const hashedKey: string = hashUtility.insecureHash(key);
+        const keyBytes = Buffer.from(hashedKey, 'base64')
 
-		const iv = crypto.randomBytes(ivLength);
-		const cipher = crypto.createCipheriv(encryptionMethod, keyBytes, iv,
-			{ 'authTagLength': authTagLength });
+        const iv = crypto.randomBytes(ivLength);
+        const cipher = crypto.createCipheriv(encryptionMethod, keyBytes, iv,
+            { 'authTagLength': authTagLength });
 
-		const encryptedValue = Buffer.concat([cipher.update(Buffer.from(value).toString("base64"), "base64"), cipher.final()]);
-		return TypedMethodResponse.success(Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64"));
-	}
-	catch (e: any)
-	{
-		if (e?.error instanceof Error)
-		{
-			const error: Error = e?.error as Error;
-			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
-			if (response.Success)
-			{
-				logID = response.LogID;
-			}
-		}
+        const encryptedValue = Buffer.concat([cipher.update(Buffer.from(value).toString("base64"), "base64"), cipher.final()]);
+        return TypedMethodResponse.success(Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64"));
+    }
+    catch (e: any)
+    {
+        if (e?.error instanceof Error)
+        {
+            const error: Error = e?.error as Error;
+            const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
+            if (response.Success)
+            {
+                logID = response.LogID;
+            }
+        }
 
-		return TypedMethodResponse.fail(undefined, undefined, `Encryption Error: ${JSON.stringify(e)}`, logID);
-	}
+        return TypedMethodResponse.fail(undefined, undefined, `Encryption Error: ${JSON.vaulticStringify(e)}`, logID);
+    }
 }
 
 async function decrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
 {
-	let errorMessage: string = "";
-	try
-	{
-		const cipher: Buffer = Buffer.from(value, "base64");
-		const iv = Uint8Array.prototype.slice.call(cipher, 0, ivLength);
-		const authTag = Uint8Array.prototype.slice.call(cipher, -authTagLength);
-		const encryptedValue = Uint8Array.prototype.slice.call(cipher, ivLength, -authTagLength);
-		const hashedKey: string = hashUtility.insecureHash(key);
-		const keyBytes = Buffer.from(hashedKey, 'base64')
+    let errorMessage: string = "";
+    try
+    {
+        const cipher: Buffer = Buffer.from(value, "base64");
+        const iv = Uint8Array.prototype.slice.call(cipher, 0, ivLength);
+        const authTag = Uint8Array.prototype.slice.call(cipher, -authTagLength);
+        const encryptedValue = Uint8Array.prototype.slice.call(cipher, ivLength, -authTagLength);
+        const hashedKey: string = hashUtility.insecureHash(key);
+        const keyBytes = Buffer.from(hashedKey, 'base64')
 
-		const decipher = crypto.createDecipheriv(encryptionMethod, keyBytes, iv,
-			{ 'authTagLength': authTagLength });
+        const decipher = crypto.createDecipheriv(encryptionMethod, keyBytes, iv,
+            { 'authTagLength': authTagLength });
 
-		decipher.setAuthTag(authTag);
+        decipher.setAuthTag(authTag);
 
-		let decryptedValue = decipher.update(encryptedValue);
-		decryptedValue = Buffer.concat([decryptedValue, decipher.final()]);
+        let decryptedValue = decipher.update(encryptedValue);
+        decryptedValue = Buffer.concat([decryptedValue, decipher.final()]);
 
-		return TypedMethodResponse.success(Buffer.from(decryptedValue).toString("ascii"));
-	}
-	catch (e: any)
-	{
-		// don't want to log here since everytime a user enters the wrong key an exception is thrown
-		if (e?.error instanceof Error)
-		{
-			const error: Error = e?.error as Error;
-			errorMessage = error.message;
-		}
-	}
+        return TypedMethodResponse.success(Buffer.from(decryptedValue).toString("ascii"));
+    }
+    catch (e: any)
+    {
+        // don't want to log here since everytime a user enters the wrong key an exception is thrown
+        if (e?.error instanceof Error)
+        {
+            const error: Error = e?.error as Error;
+            errorMessage = error.message;
+        }
+    }
 
-	return TypedMethodResponse.fail(undefined, undefined, errorMessage);
+    return TypedMethodResponse.fail(undefined, undefined, errorMessage);
 }
 
 async function hybridEncrypt(value: string): Promise<TypedMethodResponse<EncryptedResponse>>
 {
-	let logID: number | undefined;
+    let logID: number | undefined;
 
-	try
-	{
-		const aesKey = generatorUtility.randomValueOfByteLength(32);
-		const aesResult = await encrypt(aesKey, value);
-		if (!aesResult.success)
-		{
-			return TypedMethodResponse.fail();
-		}
+    try
+    {
+        const aesKey = generatorUtility.randomValueOfByteLength(32);
+        const aesResult = await encrypt(aesKey, value);
+        if (!aesResult.success)
+        {
+            return TypedMethodResponse.fail();
+        }
 
-		const keyBytes = Buffer.from(aesKey);
-		const encryptedKey = crypto.publicEncrypt(vaulticPublicKey, keyBytes).toString("base64");
+        const keyBytes = Buffer.from(aesKey);
+        const encryptedKey = crypto.publicEncrypt(vaulticPublicKey, keyBytes).toString("base64");
 
-		return TypedMethodResponse.success({ Key: encryptedKey, Data: aesResult.value });
-	}
-	catch (e: any)
-	{
-		if (e?.error instanceof Error)
-		{
-			const error: Error = e?.error as Error;
-			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
-			if (response.Success)
-			{
-				logID = response.LogID;
-			}
-		}
-	}
+        return TypedMethodResponse.success({ Key: encryptedKey, Data: aesResult.value });
+    }
+    catch (e: any)
+    {
+        if (e?.error instanceof Error)
+        {
+            const error: Error = e?.error as Error;
+            const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
+            if (response.Success)
+            {
+                logID = response.LogID;
+            }
+        }
+    }
 
-	return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
+    return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
 }
 
 async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<TypedMethodResponse<string>>
 {
-	let logID: number | undefined;
+    let logID: number | undefined;
 
-	try
-	{
-		const encryptedSymmetricKey = Buffer.from(encryptedResponse.Key!, "base64");
-		const symmetricKey = crypto.privateDecrypt({
-			key: privateKey,
-			padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
-		}, encryptedSymmetricKey).toString("ascii");
+    try
+    {
+        const encryptedSymmetricKey = Buffer.from(encryptedResponse.Key!, "base64");
+        const symmetricKey = crypto.privateDecrypt({
+            key: privateKey,
+            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
+        }, encryptedSymmetricKey).toString("ascii");
 
-		const response = await decrypt(symmetricKey, encryptedResponse.Data!);
-		if (!response.success)
-		{
-			const logResponse = await vaulticServer.app.log(response.errorMessage ?? "Error while decrypting",
-				"CryptUtility.HybridDecrypt");
-			if (logResponse.Success)
-			{
-				logID = logResponse.LogID;
-			}
-		}
+        const response = await decrypt(symmetricKey, encryptedResponse.Data!);
+        if (!response.success)
+        {
+            const logResponse = await vaulticServer.app.log(response.errorMessage ?? "Error while decrypting",
+                "CryptUtility.HybridDecrypt");
+            if (logResponse.Success)
+            {
+                logID = logResponse.LogID;
+            }
+        }
 
-		return response;
-	}
-	catch (e: any)
-	{
-		if (e?.error instanceof Error)
-		{
-			const error: Error = e?.error as Error;
-			const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
-			if (response.Success)
-			{
-				logID = response.LogID;
-			}
-		}
-	}
+        return response;
+    }
+    catch (e: any)
+    {
+        if (e?.error instanceof Error)
+        {
+            const error: Error = e?.error as Error;
+            const response = await vaulticServer.app.log(error.message, "CryptUtility.Encrypt");
+            if (response.Success)
+            {
+                logID = response.LogID;
+            }
+        }
+    }
 
-	return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
+    return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
 }
 
 const cryptUtility: CryptUtility =
 {
-	...coreCrypt,
-	encrypt,
-	decrypt,
-	hybridEncrypt,
-	hybridDecrypt,
+    ...coreCrypt,
+    encrypt,
+    decrypt,
+    hybridEncrypt,
+    hybridDecrypt,
 };
 
 export default cryptUtility;

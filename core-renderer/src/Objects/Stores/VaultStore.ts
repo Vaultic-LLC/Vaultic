@@ -70,7 +70,6 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
 {
     protected internalIsLoaded: boolean;
     protected internalName: string;
-    protected internalUserVaultID: number;
 
     get isLoaded() { return this.internalIsLoaded; }
     get name() { return this.internalName; }

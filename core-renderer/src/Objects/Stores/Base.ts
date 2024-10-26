@@ -3,9 +3,17 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { AtRiskType, DataType, IIdentifiable, Filter, Group, ISecondaryDataObject } from "../../Types/DataTypes";
-import { SecondaryDataObjectCollection, SecretProperty, PrimaryDataObjectCollection } from "../../Types/Fields";
-import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject } from "../../Types/DataTypes";
+import { SecretProperty } from "../../Types/Fields";
+import { Field, FieldedObject, FieldMap, IIdentifiable, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+
+// Enforced to ensure the logic to track changes always works
+type StoreStateProperty = Field<Primitive> | FieldMap | Field<NonArrayType<FieldedObject>>;
+
+export interface StoreState 
+{
+    [key: string]: StoreStateProperty;
+}
 
 export interface DataTypeStoreState<T>
 {
@@ -38,14 +46,14 @@ export class Store<T extends {}, U extends string = StoreEvents>
     public getBackupableState(): any
     {
         const state = {};
-        state[this.internalStateName] = JSON.stringify(this.getState());
+        state[this.internalStateName] = JSON.vaulticStringify(this.getState());
 
         return state;
     }
 
     public cloneState(): T
     {
-        const state: T = JSON.parse(JSON.stringify(this.getState()));
+        const state: T = JSON.vaulticParse(JSON.vaulticStringify(this.getState()));
         this.preAssignState(state);
 
         return state;
@@ -80,7 +88,7 @@ export class Store<T extends {}, U extends string = StoreEvents>
     {
         try
         {
-            const state = JSON.parse(jsonString);
+            const state = JSON.vaulticParse(jsonString);
             this.initalizeNewState(state);
 
             return;
@@ -193,18 +201,14 @@ export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends VaultCont
     }
 }
 
-export class PrimaryDataTypeStore<U, T extends DataTypeStoreState<U>> extends DataTypeStore<U, T>
+export class PrimaryDataTypeStore<U extends SecondaryDataObjectCollectionType, T extends DataTypeStoreState<U>> extends DataTypeStore<U, T>
 {
     public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
     {
         const pendingState = this.cloneState();
         Object.values(pendingState.dataTypesByID).forEach(v =>
         {
-            const index = v[secondaryObjectCollection].value.indexOf(secondaryObjectID);
-            if (index >= 0)
-            {
-                v[secondaryObjectCollection].value.splice(index, 1);
-            }
+            v[secondaryObjectCollection].value.delete(secondaryObjectID);
         });
 
         return pendingState;
@@ -328,16 +332,18 @@ export class SecondaryDataTypeStore<U, T extends DataTypeStoreState<U>> extends 
         const secondaryDataObjectsToLookAt = allSecondaryDataObjects.filter(o => o.id.value != secondaryDataObject.id.value);
 
         // we don't have any primary objects so grab others that are also empty
-        if (secondaryDataObject[primaryDataObjectCollection].value.length == 0)
+        if (secondaryDataObject[primaryDataObjectCollection].value.size == 0)
         {
-            return secondaryDataObjectsToLookAt.filter(o => o[primaryDataObjectCollection].value.length == 0).map(o => o.id.value);
+            return secondaryDataObjectsToLookAt.filter(o => o[primaryDataObjectCollection].value.size == 0).map(o => o.id.value);
         }
 
         // only need to check others that have the same length
         let potentiallyDuplicateObjects: T[] = secondaryDataObjectsToLookAt.filter(
-            o => o[primaryDataObjectCollection].value.length == secondaryDataObject[primaryDataObjectCollection].value.length);
+            o => o[primaryDataObjectCollection].value.size == secondaryDataObject[primaryDataObjectCollection].value.size);
 
-        for (let i = 0; i < secondaryDataObject[primaryDataObjectCollection].value.length; i++)
+
+        //@ts-ignore
+        for (let item of secondaryDataObject[primaryDataObjectCollection].value)
         {
             // we've filtered out all secondary objects, aka there aren't any duplicates. We can stop checking
             if (potentiallyDuplicateObjects.length == 0)
@@ -346,8 +352,7 @@ export class SecondaryDataTypeStore<U, T extends DataTypeStoreState<U>> extends 
             }
 
             // only grap the secondary objects with values that match our current one
-            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter(
-                o => o[primaryDataObjectCollection].value.includes(secondaryDataObject[primaryDataObjectCollection].value[i]));
+            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter(o => o[primaryDataObjectCollection].value.has(item[0]));
         }
 
         return potentiallyDuplicateObjects.map(o => o.id.value);
@@ -456,11 +461,11 @@ export class SecondaryDataTypeStore<U, T extends DataTypeStoreState<U>> extends 
     // currentEmptySecondaryObjects: the list of current empty secondary objects
     protected checkUpdateEmptySecondaryObject(
         secondaryObjectID: string,
-        primaryObjectIDsForSecondaryObject: string[],
+        primaryObjectIDsForSecondaryObject: Map<string, Field<string>>,
         currentEmptySecondaryObjects: string[])
     {
         // check to see if this filter has any passwords or values
-        if (primaryObjectIDsForSecondaryObject.length == 0)
+        if (primaryObjectIDsForSecondaryObject.size == 0)
         {
             // if it doesn't, then add it to the list of empty filters
             if (!currentEmptySecondaryObjects.includes(secondaryObjectID))
