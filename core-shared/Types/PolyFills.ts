@@ -26,7 +26,7 @@ Map.prototype.difference = function (this: Map<any, any>, other: Map<any, any>)
     {
         if (!other.has(item[0]))
         {
-            temp[item[0]] = item[1];
+            temp.set(item[0], item[1]);
         }
     }
 
@@ -40,7 +40,6 @@ JSON.vaulticParse = (text: string) =>
         if (MapFields.has(key as any))
         {
             return { ...value, value: new Map(value.value) }
-            value.value = new Map(value.value);
         }
 
         return value;
@@ -53,8 +52,9 @@ JSON.vaulticStringify = (value: any) =>
     {
         if (MapFields.has(key as any))
         {
+            // return a new obj so we don't alter the existing one and cauese issue with 
+            // it being used after serialization
             return { ...value, value: Array.from(value.value.entries()) };
-            value.value = Array.from(value.value.entries());
         }
 
         return value;

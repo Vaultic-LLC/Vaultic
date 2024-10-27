@@ -240,11 +240,11 @@ export class GroupStore extends SecondaryDataTypeStore<Group, GroupStoreState>
         removedGroups: Map<string, Field<string>>,
         currentEmptyGroups: string[],
         currentDuplicateSecondaryObjects: Dictionary<string[]>,
-        allSecondaryObjects: Group[])
+        allSecondaryObjects: Group[]) // TODO: change to map
     {
-        addedGroups.forEach(g =>
+        addedGroups.forEach((value, key, map) =>
         {
-            const groups = allSecondaryObjects.filter(grp => grp.id.value == g.value);
+            const groups = allSecondaryObjects.filter(grp => grp.id.value == key);
             if (groups.length != 1)
             {
                 return;
@@ -259,9 +259,9 @@ export class GroupStore extends SecondaryDataTypeStore<Group, GroupStoreState>
                 currentDuplicateSecondaryObjects, allSecondaryObjects)
         });
 
-        removedGroups.forEach(g =>
+        removedGroups.forEach((value, key, map) =>
         {
-            const groups = allSecondaryObjects.filter(grp => grp.id.value == g.value);
+            const groups = allSecondaryObjects.filter(grp => grp.id.value == key);
             if (groups.length != 1)
             {
                 return;
@@ -283,23 +283,23 @@ export class GroupStore extends SecondaryDataTypeStore<Group, GroupStoreState>
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         addedPrimaryObjects: Map<string, Field<string>>,
         removedPrimaryObjects: Map<string, Field<string>>,
-        allPrimaryObjects: T[],
+        allPrimaryObjects: T[], // TODO: change to map 
         currentEmptyGroups: string[],
         currentDuplicateGroups: Dictionary<string[]>,
         allSecondaryObjects: Group[])
     {
-        addedPrimaryObjects.forEach(o =>
+        addedPrimaryObjects.forEach((_, k) =>
         {
-            const primaryObject = allPrimaryObjects.filter(po => po.id.value == o.value);
+            const primaryObject = allPrimaryObjects.filter(po => po.id.value == k);
             if (primaryObject.length == 1)
             {
                 primaryObject[0].groups.value.set(group.id.value, new Field(group.id.value));
             }
         });
 
-        removedPrimaryObjects.forEach(o =>
+        removedPrimaryObjects.forEach((_, k) =>
         {
-            const primaryObject = allPrimaryObjects.filter(po => po.id.value == o.value);
+            const primaryObject = allPrimaryObjects.filter(po => po.id.value == k);
             if (primaryObject.length == 1)
             {
                 primaryObject[0].groups.value.delete(group.id.value);

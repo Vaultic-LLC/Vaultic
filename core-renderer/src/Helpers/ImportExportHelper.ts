@@ -6,7 +6,7 @@ import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
 import { generateUniqueID } from "./generatorHelper";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { IGroupable, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
+import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
 import { ImportableDisplayField } from "../Types/Fields";
 import { Field } from "@vaultic/shared/Types/Fields";
 
@@ -99,14 +99,14 @@ export async function getExportablePasswords(color: string, masterKey: string): 
 
         for (let j = 0; j < password.securityQuestions.value.length; j++)
         {
-            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].question);
+            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.securityQuestions.value[j].question);
             if (!decryptedSecurityQuestionQuestion.success)
             {
                 showExportError();
                 return "";
             }
 
-            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.securityQuestions[j].answer);
+            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.securityQuestions.value[j].answer);
             if (!decryptedSecurityQuestionAnswer.success)
             {
                 showExportError();
@@ -118,9 +118,10 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         }
 
         let groups: string[] = [];
-        for (let j = 0; j < password.groups.value.size; j++)
+        password.groups.value.forEach((v, k, map) => 
         {
-            const group = app.currentVault.groupStore.passwordGroups.filter(g => g.id.value == password.groups.value[j]);
+            // TODO: switch to using dataTypesByID
+            const group = app.currentVault.groupStore.passwordGroups.filter(g => g.id.value == k);
             if (group.length == 1)
             {
                 groups.push(group[0].name.value);
@@ -129,7 +130,7 @@ export async function getExportablePasswords(color: string, masterKey: string): 
             {
                 console.log(group);
             }
-        }
+        });
 
         data.push([password.login.value, password.domain.value, password.email.value, password.passwordFor.value, decryptedPasswordResponse.value!,
         securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.additionalInformation.value, groups.join(';')]);
@@ -155,14 +156,19 @@ export async function getExportableValues(color: string, masterKey: string): Pro
         }
 
         let groups: string[] = [];
-        for (let j = 0; j < value.groups.value.size; j++)
+        value.groups.value.forEach((v, k, map) => 
         {
-            const group = app.currentVault.groupStore.valuesGroups.filter(g => g.id.value == value.groups.value[j]);
+            // TODO: switch to using dataTypesByID
+            const group = app.currentVault.groupStore.valuesGroups.filter(g => g.id.value == k);
             if (group.length == 1)
             {
                 groups.push(group[0].name.value);
             }
-        }
+            else 
+            {
+                console.log(group);
+            }
+        });
 
         data.push([value.name.value, decryptedValueResponse.value!, value.valueType?.value ?? "", value.additionalInformation.value, groups.join(';')]);
     }
@@ -217,7 +223,7 @@ function showExportError()
     app.popups.hideLoadingIndicator();
 }
 
-class CSVImporter<T extends IGroupable>
+class CSVImporter<T extends IPrimaryDataObject>
 {
     dataType: DataType;
 

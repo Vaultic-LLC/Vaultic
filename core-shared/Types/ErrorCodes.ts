@@ -30,8 +30,13 @@ class ErrorCodes
             errorCode <= this.NESTED_OBJECT_DOES_NOT_EXIST;
     }
 
-    userFailedToSave(errorCode: number): boolean
+    userFailedToSave(errorCode?: number): boolean
     {
+        if (!errorCode)
+        {
+            return false;
+        }
+
         return errorCode == this.FAILED_TO_CREATE_NEW_VAULT ||
             errorCode == this.EC_ENCRYPTION_FAILED ||
             errorCode == this.TRANSACTION_FAILED;

@@ -24,7 +24,12 @@ export enum FilterStatus
     Or = "Or"
 }
 
-export interface Password extends IFilterable, IIdentifiable, IGroupable, SecondaryDataObjectCollectionType
+export interface IPrimaryDataObject extends IFilterable, IIdentifiable, IGroupable, SecondaryDataObjectCollectionType
+{
+    [key: string]: any;
+}
+
+export interface Password extends IPrimaryDataObject
 {
     [key: string]: any;
     isVaultic: Field<boolean>;
@@ -65,7 +70,7 @@ export enum NameValuePairType
 
 export const nameValuePairTypesValues = Object.values(NameValuePairType);
 
-export interface NameValuePair extends IFilterable, IIdentifiable, IGroupable, SecondaryDataObjectCollectionType
+export interface NameValuePair extends IPrimaryDataObject
 {
     [key: string]: any;
     name: Field<string>;

@@ -7,7 +7,7 @@ import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { Group, Filter, DataType, Password, NameValuePair, IGroupable, FilterConditionType, IFilterable, AtRiskType } from "../../Types/DataTypes";
 import app from "./AppStore";
-import { Field, IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
+import { Field, IFieldObject, IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 
 export interface FilterStoreState extends DataTypeStoreState<Filter>
 {
@@ -84,11 +84,11 @@ export class FilterStore extends SecondaryDataTypeStore<Filter, FilterStoreState
         let filter: Filter = pendingState.dataTypesByID[updatedFilter.id.value];
         if (!filter)
         {
-            await api.repositories.logs.log(undefined, `Invalid Filter Length: ${filter.length}`, "FilterStore.Update")
+            await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Update")
             return false;
         }
 
-        pendingState[filter.id.value] = updatedFilter;
+        pendingState.dataTypesByID[filter.id.value] = updatedFilter;
         const filters = Object.values(pendingState.dataTypesByID);
 
         if (updatedFilter.type.value == DataType.Passwords)
@@ -223,7 +223,7 @@ export class FilterStore extends SecondaryDataTypeStore<Filter, FilterStoreState
         });
     }
 
-    private filterAppliesToDataObject<T extends IGroupable>(filter: Filter, dataObject: T, groups: Group[]): boolean
+    private filterAppliesToDataObject<T extends IGroupable & IFieldObject>(filter: Filter, dataObject: T, groups: Group[]): boolean
     {
         // if we don't have any conditions, then default to false so 
         // objects don't get included by default
@@ -282,7 +282,7 @@ export class FilterStore extends SecondaryDataTypeStore<Filter, FilterStoreState
         return allFilterConditionsApply;
     }
 
-    private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable>(
+    private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable & IFieldObject>(
         filtersToSync: Filter[],
         primaryDataObjects: T[],
         primaryDataObjectCollection: PrimaryDataObjectCollection,

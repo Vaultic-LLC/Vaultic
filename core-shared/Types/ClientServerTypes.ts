@@ -44,6 +44,6 @@ export interface UserDataPayload
     user?: DeepPartial<IUser>;
     userVaults?: DeepPartial<IUserVault>[];
     vaults?: DeepPartial<IVault>[];
-    archivedVaults?: DeepPartial<ServerDisplayVault>[];
-    sharedVaults?: DeepPartial<ServerDisplayVault>[];
+    archivedVaults?: ServerDisplayVault[];
+    sharedVaults?: ServerDisplayVault[];
 };

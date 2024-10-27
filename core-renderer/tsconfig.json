@@ -1,14 +1,16 @@
 {
+    "extends": "./node_modules/@tsconfig/node20/tsconfig.json",
     "compilerOptions": {
         "composite": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "strictPropertyInitialization": false,
-        "moduleResolution": "node",
+        "moduleResolution": "Bundler",
         "lib": [
             "dom",
             "es2023"
         ],
-        "target": "ES2023"
+        "target": "ES2023",
+        "module": "ESNext"
     }
 }

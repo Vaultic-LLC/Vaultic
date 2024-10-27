@@ -13,6 +13,7 @@ import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { FilterStatus, DataType } from "../../Types/DataTypes";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 
 export interface AppSettings
 {
@@ -170,7 +171,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }, this.internalAutoLockNumberTime.value);
     }
 
-    public async loadUserData(masterKey: string, payload?: any)
+    public async loadUserData(masterKey: string, payload?: UserDataPayload)
     {
         if (this.loadedUser)
         {
@@ -193,7 +194,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalSharedVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
         this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
 
-        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault);
+        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         this.loadedUser = true;
 
         return true;
@@ -240,7 +241,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.userVaults[index] = displayVault;
+        this.userVaults.value[index] = displayVault;
         this.emit("onVaultUpdated", displayVault);
 
         return true;

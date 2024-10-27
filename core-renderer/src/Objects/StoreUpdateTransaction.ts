@@ -69,8 +69,8 @@ export default class StoreUpdateTransaction
 
     private async saveStoreStates(masterKey: string, entity: Entity, updateStoreStates: Dictionary<StoreUpdateState>)
     {
-        const newStates = {};
-        const currentStates = {};
+        const newStates: { [key: string]: any } = {};
+        const currentStates: { [key: string]: any } = {};
         const stores = Object.values(updateStoreStates);
 
         if (stores.length == 0)

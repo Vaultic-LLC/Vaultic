@@ -5,7 +5,7 @@ import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject } from "../../Types/DataTypes";
 import { SecretProperty } from "../../Types/Fields";
-import { Field, FieldedObject, FieldMap, IIdentifiable, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { Field, FieldedObject, FieldMap, IFieldObject, IIdentifiable, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
 // Enforced to ensure the logic to track changes always works
 type StoreStateProperty = Field<Primitive> | FieldMap | Field<NonArrayType<FieldedObject>>;
@@ -15,6 +15,7 @@ export interface StoreState
     [key: string]: StoreStateProperty;
 }
 
+// TODO: change to map
 export interface DataTypeStoreState<T>
 {
     dataTypesByID: Dictionary<T>;
@@ -45,7 +46,7 @@ export class Store<T extends {}, U extends string = StoreEvents>
 
     public getBackupableState(): any
     {
-        const state = {};
+        const state: { [key: string]: any } = {};
         state[this.internalStateName] = JSON.vaulticStringify(this.getState());
 
         return state;
@@ -214,7 +215,7 @@ export class PrimaryDataTypeStore<U extends SecondaryDataObjectCollectionType, T
         return pendingState;
     }
 
-    protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable>(
+    protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable & IFieldObject>(
         masterKey: string,
         primaryDataObject: T,
         allPrimaryObjects: T[],
