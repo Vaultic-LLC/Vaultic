@@ -3,6 +3,11 @@ import { Field } from "@vaultic/shared/Types/Fields";
 
 export type SecretProperty = "password" | "value";
 
+export type SecretPropertyType<T extends SecretProperty> =
+    {
+        [K in T]: Field<string>;
+    }
+
 export interface DisplayField
 {
     backingProperty: string;

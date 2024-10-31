@@ -4,7 +4,7 @@ import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject } from "../../Types/DataTypes";
-import { SecretProperty } from "../../Types/Fields";
+import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
 import { Field, FieldedObject, FieldMap, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
 // Enforced to ensure the logic to track changes always works
@@ -213,7 +213,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> exten
         return {} as any;
     }
 
-    protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable & IFieldObject>(
+    protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable & IFieldObject & SecretPropertyType<SecretProperty>>(
         masterKey: string,
         primaryDataObject: T,
         allPrimaryObjects: Field<Map<string, Field<T>>>,

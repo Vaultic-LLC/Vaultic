@@ -1,4 +1,5 @@
 import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject } from "@vaultic/shared/Types/Fields";
+import { SecretPropertyType } from "./Fields";
 
 export interface IFilterable
 {
@@ -29,7 +30,7 @@ export interface IPrimaryDataObject extends IFilterable, IIdentifiable, IGroupab
     [key: string]: any;
 }
 
-export interface Password extends IPrimaryDataObject
+export interface Password extends IPrimaryDataObject, SecretPropertyType<"password">
 {
     [key: string]: any;
     isVaultic: Field<boolean>;
@@ -70,7 +71,7 @@ export enum NameValuePairType
 
 export const nameValuePairTypesValues = Object.values(NameValuePairType);
 
-export interface NameValuePair extends IPrimaryDataObject
+export interface NameValuePair extends IPrimaryDataObject, SecretPropertyType<"value">
 {
     [key: string]: any;
     name: Field<string>;

@@ -242,7 +242,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async updateVault(masterKey: string, displayVault: DisplayVault): Promise<boolean>
     {
-        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID, JSON.vaulticStringify(displayVault));
+        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID!, JSON.vaulticStringify(displayVault));
         if (!success)
         {
             return false;
@@ -374,7 +374,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const selected = this.currentVault.userVaultID == userVaultID;
         if (selected)
         {
-            await this.setActiveVault(masterKey, this.internalUserVaults.value[0].userVaultID);
+            await this.setActiveVault(masterKey, this.internalUserVaults.value[0].userVaultID!);
             this.emit('onVaultActive', this.internalUserVaults.value[0].userVaultID);
         }
 
