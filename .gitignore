@@ -14,4 +14,7 @@ core-renderer/package-lock.json
 core-main/node_modules
 core-main/package-lock.json
 
+core-shared/node_modules
+core-shared/package-lock.json
+
 electron-app-test/app
