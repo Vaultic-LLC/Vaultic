@@ -60,7 +60,7 @@ export default defineComponent({
         const lineChart: Ref<any> = ref(null);
 
         const color: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ?
-            app.userPreferences.currentColorPalette.passwordsColor.primaryColor : app.userPreferences.currentColorPalette.valuesColor.primaryColor);
+            app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value : app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
 
         let lableArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswords.current]);
         let chartOneArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswords.safe]);
@@ -233,7 +233,7 @@ export default defineComponent({
                 {
                     label: 'Secure ' + table.value,
                     data: [],
-                    backgroundColor: function (context)
+                    backgroundColor: function (context: any)
                     {
                         const chart = context.chart;
                         return getGradient(chart, color.value);
@@ -340,7 +340,7 @@ export default defineComponent({
                 }
 
                 requestData.Values = app.currentVault.passwordStore.currentAndSafePasswords;
-                newColor = app.userPreferences.currentColorPalette.passwordsColor.primaryColor;
+                newColor = app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
                 table.value = "Passwords";
             }
             else if (app.activePasswordValuesTable == DataType.NameValuePairs)
@@ -356,7 +356,7 @@ export default defineComponent({
                 }
 
                 requestData.Values = app.currentVault.valueStore.currentAndSafeValues;
-                newColor = app.userPreferences.currentColorPalette.valuesColor.primaryColor;
+                newColor = app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value;
                 table.value = "Values";
             }
 
@@ -415,13 +415,13 @@ export default defineComponent({
         {
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                updateColors(newValue.passwordsColor.primaryColor, oldValue.passwordsColor.primaryColor, 0);
-                color.value = newValue.passwordsColor.primaryColor;
+                updateColors(newValue.passwordsColor.value.primaryColor.value, oldValue.passwordsColor.value.primaryColor.value, 0);
+                color.value = newValue.passwordsColor.value.primaryColor.value;
             }
             else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
-                updateColors(newValue.valuesColor.primaryColor, oldValue.valuesColor.primaryColor, 0);
-                color.value = newValue.valuesColor.primaryColor;
+                updateColors(newValue.valuesColor.value.primaryColor.value, oldValue.valuesColor.value.primaryColor.value, 0);
+                color.value = newValue.valuesColor.value.primaryColor.value;
             }
         });
 

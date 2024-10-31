@@ -44,7 +44,7 @@ export default defineComponent({
     },
     setup()
     {
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const scanning: Ref<boolean> = ref(false);
 
         const metricModel: ComputedRef<SmallMetricGaugeModel> = computed(() =>
@@ -116,12 +116,13 @@ export default defineComponent({
 
         async function getUserBreaches(notifyFailed: boolean): Promise<boolean>
         {
-            const requestData = {
+            const requestData = 
+            {
                 LimitedPasswords: app.currentVault.passwordStore.passwords.map(p =>
                 {
                     return {
-                        id: p.id,
-                        domain: p.domain
+                        id: p.value.id.value,
+                        domain: p.value.domain.value
                     }
                 })
             };

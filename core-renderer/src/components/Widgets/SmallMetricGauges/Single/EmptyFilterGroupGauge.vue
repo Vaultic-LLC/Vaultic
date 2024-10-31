@@ -34,7 +34,7 @@ export default defineComponent({
                                 title: 'Empty',
                                 filledAmount: app.currentVault.groupStore.emptyValueGroups.length,
                                 totalAmount: app.currentVault.groupStore.valuesGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                color: app.userPreferences.currentColorPalette.groupsColor.value,
                                 active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
@@ -48,7 +48,7 @@ export default defineComponent({
                                 title: 'Empty',
                                 filledAmount: app.currentVault.filterStore.emptyValueFilters.length,
                                 totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                color: app.userPreferences.currentColorPalette.filtersColor.value,
                                 active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
@@ -66,7 +66,7 @@ export default defineComponent({
                                 title: 'Empty',
                                 filledAmount: app.currentVault.groupStore.emptyPasswordGroups.length,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                color: app.userPreferences.currentColorPalette.groupsColor.value,
                                 active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
@@ -80,7 +80,7 @@ export default defineComponent({
                                 title: 'Empty',
                                 filledAmount: app.currentVault.filterStore.emptyPasswordFilters.length,
                                 totalAmount: app.currentVault.filterStore.passwordFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                color: app.userPreferences.currentColorPalette.filtersColor.value,
                                 active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Empty,
                                 onClick: function ()
                                 {

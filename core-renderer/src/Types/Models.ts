@@ -3,6 +3,8 @@ import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "@vaultic/shared/Types/Device";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ImportableDisplayField } from "./Fields";
+import { Field } from "@vaultic/shared/Types/Fields";
+import { IPrimaryDataObject } from "./DataTypes";
 
 export interface SmallMetricGaugeModel
 {
@@ -19,7 +21,7 @@ export interface SmallMetricGaugeModel
 
 export interface CollapsibleTableRowModel extends TableRowData
 {
-    data: any;
+    data: Field<IPrimaryDataObject>;
 }
 
 export interface SingleSelectorItemModel

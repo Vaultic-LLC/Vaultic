@@ -23,7 +23,7 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
         const lastModifiedTime = Date.parse(nameValuePairState.lastModifiedTime.value);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
-        return differenceInDays >= app.settings.oldPasswordDays;
+        return differenceInDays >= app.settings.value.oldPasswordDays.value;
     });
 
     const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !nameValuePairState.isDuplicate && !nameValuePairState.isWeak)

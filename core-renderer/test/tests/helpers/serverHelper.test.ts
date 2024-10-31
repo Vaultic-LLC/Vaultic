@@ -1,6 +1,7 @@
 import app from "../../src/core/Objects/Stores/AppStore";
 import { api } from "../../src/core/API";
 import { createTestSuite, TestContext } from "../test";
+import { AutoLockTime } from "../../src/core/Types/Settings";
 
 let serverHelperTestSuite = createTestSuite("Server Helper");
 
@@ -31,6 +32,11 @@ serverHelperTestSuite.tests.push({
 
         app.isOnline = true;
         await app.loadUserData(masterKey, response.value!.UserDataPayload);
+
+        const settings = app.cloneState();
+        settings.settings.autoLockTime = AutoLockTime.ThirtyMinutes;
+        app.updateState(settings);
+
         await app.lock();
     }
 });

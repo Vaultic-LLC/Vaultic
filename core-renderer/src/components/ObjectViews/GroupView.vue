@@ -63,7 +63,7 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const mounted: Ref<boolean> = ref(false);
         const groupState: Ref<Group> = ref(props.model);
-        const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor);
+        const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor.value);
 
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
@@ -194,13 +194,13 @@ export default defineComponent({
                         const values: TextTableRowValue[] = [
                             {
                                 component: "TableRowTextValue",
-                                value: nvp.name.value,
+                                value: nvp.value.name.value,
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             },
                             {
                                 component: 'TableRowTextValue',
-                                value: nvp.valueType?.value ?? '',
+                                value: nvp.value.valueType?.value ?? '',
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             }
@@ -209,19 +209,19 @@ export default defineComponent({
                         const id = await api.utilities.generator.uniqueId();
                         return {
                             id: id,
-                            key: nvp.id.value,
+                            key: nvp.value.id.value,
                             values: values,
-                            isActive: ref(groupState.value.values.value.has(nvp.id.value)),
+                            isActive: ref(groupState.value.values.value.has(nvp.value.id.value)),
                             selectable: true,
                             onClick: async function ()
                             {
-                                if (groupState.value.values.value.has(nvp.id.value))
+                                if (groupState.value.values.value.has(nvp.value.id.value))
                                 {
-                                    groupState.value.values.value.delete(nvp.id.value);
+                                    groupState.value.values.value.delete(nvp.value.id.value);
                                 }
                                 else
                                 {
-                                    groupState.value.values.value.set(nvp.id.value, new Field(nvp.id.value));
+                                    groupState.value.values.value.set(nvp.value.id.value, new Field(nvp.value.id.value));
                                 }
                             }
                         }
@@ -234,13 +234,13 @@ export default defineComponent({
                         const values: TextTableRowValue[] = [
                             {
                                 component: "TableRowTextValue",
-                                value: p.passwordFor.value,
+                                value: p.value.passwordFor.value,
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             },
                             {
                                 component: "TableRowTextValue",
-                                value: p.login.value,
+                                value: p.value.login.value,
                                 copiable: false,
                                 width: 'clamp(100px, 7vw, 200px)'
                             }
@@ -249,19 +249,19 @@ export default defineComponent({
                         const id = await api.utilities.generator.uniqueId();
                         const model: SelectableTableRowData = {
                             id: id,
-                            key: p.id.value,
+                            key: p.value.id.value,
                             values: values,
-                            isActive: ref(groupState.value.passwords.value.has(p.id.value)),
+                            isActive: ref(groupState.value.passwords.value.has(p.value.id.value)),
                             selectable: true,
                             onClick: async function ()
                             {
-                                if (groupState.value.passwords.value.has(p.id.value))
+                                if (groupState.value.passwords.value.has(p.value.id.value))
                                 {
-                                    groupState.value.passwords.value.delete(p.id.value);                                
+                                    groupState.value.passwords.value.delete(p.value.id.value);                                
                                 }
                                 else
                                 {
-                                    groupState.value.passwords.value.set(p.id.value, new Field(p.id.value));
+                                    groupState.value.passwords.value.set(p.value.id.value, new Field(p.value.id.value));
                                 }
                             }
                         }

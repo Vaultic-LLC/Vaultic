@@ -33,6 +33,7 @@ import { defaultInputColor } from '../../../Types/Colors';
 import { ReactivePassword } from '../../../Objects/Stores/ReactivePassword';
 import cryptHelper from '../../../Helpers/cryptHelper';
 import { SecurityQuestion } from '../../../Types/DataTypes';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "PasswordRow",
@@ -57,9 +58,9 @@ export default defineComponent({
         });
 
         // copy password so we don't accidentally edit it
-        const password: ComputedRef<ReactivePassword> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.value)));
-        let passwordValue: Ref<string> = ref(password.value.password.value);
-        let securityQuestions: Ref<SecurityQuestion[]> = ref(password.value.securityQuestions.value);
+        const password: ComputedRef<Field<ReactivePassword>> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.value)));
+        let passwordValue: Ref<string> = ref(password.value.value.password.value);
+        let securityQuestions: Ref<SecurityQuestion[]> = ref(password.value.value.securityQuestions.value);
 
         const emptyMessage: Ref<string> = ref('This Password does not have any Security Questions. Click the Edit Icon to add some');
 
@@ -119,8 +120,8 @@ export default defineComponent({
         {
             if (!newValue)
             {
-                passwordValue.value = password.value.password.value;
-                securityQuestions.value = password.value.securityQuestions.value;
+                passwordValue.value = password.value.value.password.value;
+                securityQuestions.value = password.value.value.securityQuestions.value;
             }
         });
 

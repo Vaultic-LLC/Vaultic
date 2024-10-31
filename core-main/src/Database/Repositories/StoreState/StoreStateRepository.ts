@@ -76,10 +76,11 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         // Object or Array
         // TODO: this doesn't actually work for arrays since the key is just the index and that could have a different value
         // change all arrays to Maps?
+        // TODO: might have to do something specific for getting, setting, updating, and deleting if the obj is a map
         if (typeof newObj.value == 'object')
         {
-            const keys = Object.keys(newObj);
-            const currentKeys = Object.keys(currentObj);
+            const keys = Object.keys(newObj.value);
+            const currentKeys = Object.keys(currentObj.value);
 
             for (let i = 0; i < keys.length; i++)
             {
@@ -89,12 +90,12 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 // not in current keys. Check to see if it was deleted locally or if it was inserted / created on another device
                 if (currentKeyMatchingIndex < 0)
                 {
-                    const changeTracking = changeTrackings[newObj[keys[i]].id];
+                    const changeTracking = changeTrackings[newObj.value[keys[i]].id];
 
                     // wasn't altered locally, was added on another device
                     if (!changeTracking)
                     {
-                        currentObj[keys[i]] = newObj[keys[i]];
+                        currentObj.value[keys[i]] = newObj.value[keys[i]];
                     }
                     // was deleted locally, check to make sure that it was deleted before any updates to the 
                     // object on another device were
@@ -109,16 +110,16 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         // so this check would fail. If I also updated the lastModifiedTime of the record in emptyFilters, then this would work and
                         // add it back here. Do I have to worry abou that below as well where I am potentially keeping records that were 
                         // deleted? Yes, but there I can't confirm times?
-                        if (changeTracking.lastModifiedTime < newObj[keys[i]].lastModifiedTime)
+                        if (changeTracking.lastModifiedTime < newObj.value[keys[i]].lastModifiedTime)
                         {
-                            currentObj[keys[i]] = newObj[keys[i]];
+                            currentObj.value[keys[i]] = newObj.value[keys[i]];
                         }
                     }
                 }
                 else
                 {
                     // both objects exist, check them
-                    this.mergeStoreStates(currentObj[currentKeys[currentKeyMatchingIndex]], newObj[keys[i]], changeTrackings);
+                    this.mergeStoreStates(currentObj.value[currentKeys[currentKeyMatchingIndex]], newObj.value[keys[i]], changeTrackings);
                     currentKeys.splice(currentKeyMatchingIndex, 1);
                 }
             }
@@ -126,7 +127,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             // all the keys that are in the current obj, but not the newObj.
             for (let i = 0; i < currentKeys.length; i++)
             {
-                const changeTracking = changeTrackings[currentObj[currentKeys[i]].id];
+                const changeTracking = changeTrackings[currentObj.value[currentKeys[i]].id];
 
                 // wasn't modified locally and not in newObj, it was deleted on another device.
                 // If state is Inserted, we want to keep it. 
@@ -134,10 +135,11 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 // If state is Deleted, it wouldn't be in currentKeys
                 if (!changeTracking)
                 {
-                    delete currentObj[currentKeys[i]];
+                    delete currentObj.value[currentKeys[i]];
                 }
             }
         }
+        // Only values have their last modified time set, objects do not. This isn't an issue
         else 
         {
             if (currentObj.value != newObj.value && currentObj.lastModifiedTime < newObj.lastModifiedTime)

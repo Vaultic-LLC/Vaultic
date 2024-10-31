@@ -14,7 +14,7 @@
             <template #body>
                 <CollapsibleTableRow :shadow="true" v-slot="props"
                     v-for="(model, index) in collapsibleTableRowModels.visualValues" :key="model.id"
-                    :groups="model.data.groups.value" :model="model" :rowNumber="index" :color="color">
+                    :groups="model.data.value.groups.value" :model="model" :rowNumber="index" :color="color">
                     <SlideInRow :isShowing="props.isShowing" :colspan="headerModels.length + 1"
                         :defaultHeight="'clamp(100px, 22vh, 300px)'">
                         <component :is="rowComponent" :value="model.data"
@@ -68,7 +68,7 @@ import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
 import { DataType, Filter, FilterStatus, IFilterable, IGroupable } from '../../Types/DataTypes';
 import { HeaderDisplayField } from '../../Types/Fields';
-import { IIdentifiable } from '@vaultic/shared/Types/Fields';
+import { Field, IIdentifiable } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "PasswordValueTable",
@@ -92,7 +92,7 @@ export default defineComponent({
         const activeTable: Ref<number> = ref(app.activePasswordValuesTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
         const color: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
-            app.userPreferences.currentColorPalette.passwordsColor.primaryColor : app.userPreferences.currentColorPalette.valuesColor.primaryColor);
+            app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value : app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
 
         const passwords: IGroupableSortedCollection<ReactivePassword> = new IGroupableSortedCollection(
             DataType.Passwords, [], "passwordFor");
@@ -153,13 +153,13 @@ export default defineComponent({
             {
                 name: 'Passwords',
                 active: computed(() => app.activePasswordValuesTable == DataType.Passwords),
-                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor),
+                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
                 onClick: () => { app.activePasswordValuesTable = DataType.Passwords; }
             },
             {
                 name: 'Values',
                 active: computed(() => app.activePasswordValuesTable == DataType.NameValuePairs),
-                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.primaryColor),
+                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value),
                 onClick: () => { app.activePasswordValuesTable = DataType.NameValuePairs; }
             }
         ];
@@ -233,8 +233,8 @@ export default defineComponent({
             }
         })
 
-        function filter<T extends IFilterable & IIdentifiable & IGroupable & { [key: string]: string }>(newValue: Filter[], oldValue: Filter[],
-            localVariable: IGroupableSortedCollection<T>, originalVariable: T[])
+        function filter<T extends IFilterable & IIdentifiable & IGroupable & { [key: string]: string }>(
+            newValue: Field<Filter>[], oldValue: Field<Filter>[], localVariable: IGroupableSortedCollection<T>, originalVariable: Field<T>[])
         {
             // no active filters
             if (newValue.length == 0)
@@ -244,10 +244,10 @@ export default defineComponent({
             // adding first filter
             else if (oldValue.length == 0)
             {
-                let temp: T[] = [];
+                let temp: Field<T>[] = [];
                 newValue.forEach(f =>
                 {
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.has(f.id.value)));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.value.filters.value.has(f.value.id.value)));
                 });
 
                 localVariable.updateValues(temp);
@@ -255,20 +255,20 @@ export default defineComponent({
             // Activated filter
             else if (newValue.length > oldValue.length)
             {
-                let temp: T[] = [...localVariable.values];
+                let temp: Field<T>[] = [...localVariable.values];
 
-                if (app.settings.multipleFilterBehavior == FilterStatus.Or)
+                if (app.settings.value.multipleFilterBehavior.value == FilterStatus.Or)
                 {
-                    const filtersActivated: Filter[] = newValue.filter(f => !oldValue.includes(f));
+                    const filtersActivated: Field<Filter>[] = newValue.filter(f => !oldValue.includes(f));
                     filtersActivated.forEach(f =>
                     {
-                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.value.has(f.id.value)));
+                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.value.filters.value.has(f.value.id.value)));
                     });
                 }
-                else if (app.settings.multipleFilterBehavior == FilterStatus.And)
+                else if (app.settings.value.multipleFilterBehavior.value == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.has(f.id.value))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
                 }
 
                 localVariable.updateValues(temp);
@@ -276,31 +276,31 @@ export default defineComponent({
             // removed filter
             else if (newValue.length < oldValue.length)
             {
-                let temp: T[] = [...localVariable.values];
+                let temp: Field<T>[] = [...localVariable.values];
 
-                if (app.settings.multipleFilterBehavior == FilterStatus.Or)
+                if (app.settings.value.multipleFilterBehavior.value == FilterStatus.Or)
                 {
-                    const filtersRemoved: Filter[] = oldValue.filter(f => !newValue.includes(f));
+                    const filtersRemoved: Field<Filter>[] = oldValue.filter(f => !newValue.includes(f));
 
                     filtersRemoved.forEach(f =>
                     {
                         temp = temp.filter(v =>
                         {
                             // keep values that the removed filter doesn't apply to
-                            if (!v.filters.value.has(f.id.value))
+                            if (!v.value.filters.value.has(f.value.id.value))
                             {
                                 return true;
                             }
 
                             // remove value if it doesn't have a current active filter
-                            return newValue.filter(nv => v.filters.value.has(nv.id.value)).length > 0;
+                            return newValue.filter(nv => v.value.filters.value.has(nv.value.id.value)).length > 0;
                         })
                     });
                 }
-                else if (app.settings.multipleFilterBehavior == FilterStatus.And)
+                else if (app.settings.value.multipleFilterBehavior.value == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.value.has(f.id.value))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
                 }
 
                 localVariable.updateValues(temp);
@@ -540,7 +540,7 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
-        watch(() => app.settings.multipleFilterBehavior, () =>
+        watch(() => app.settings.value.multipleFilterBehavior.value, () =>
         {
             init();
         });

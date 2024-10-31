@@ -82,12 +82,12 @@ export async function getExportablePasswords(color: string, masterKey: string): 
     for (let i = 0; i < app.currentVault.passwordStore.passwords.length; i++)
     {
         let password = app.currentVault.passwordStore.passwords[i];
-        if (password.isVaultic)
+        if (password.value.isVaultic.value)
         {
             continue;
         }
 
-        let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.password.value);
+        let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.value.password.value);
         if (!decryptedPasswordResponse.success)
         {
             showExportError();
@@ -97,16 +97,16 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         let securityQuestionQuestions: string[] = [];
         let securityQuestionAnswers: string[] = [];
 
-        for (let j = 0; j < password.securityQuestions.value.length; j++)
+        for (let j = 0; j < password.value.securityQuestions.value.length; j++)
         {
-            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.securityQuestions.value[j].question);
+            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.value.securityQuestions.value[j].question);
             if (!decryptedSecurityQuestionQuestion.success)
             {
                 showExportError();
                 return "";
             }
 
-            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.securityQuestions.value[j].answer);
+            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.value.securityQuestions.value[j].answer);
             if (!decryptedSecurityQuestionAnswer.success)
             {
                 showExportError();
@@ -118,22 +118,21 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         }
 
         let groups: string[] = [];
-        password.groups.value.forEach((v, k, map) => 
+        password.value.groups.value.forEach((v, k, map) => 
         {
-            // TODO: switch to using dataTypesByID
-            const group = app.currentVault.groupStore.passwordGroups.filter(g => g.id.value == k);
-            if (group.length == 1)
+            const group = app.currentVault.groupStore.getState().passwordGroupsByID.value.get(k);
+            if (group)
             {
-                groups.push(group[0].name.value);
+                groups.push(group.value.name.value);
             }
             else 
             {
-                console.log(group);
+                console.log(`No group found in export passwords`);
             }
         });
 
-        data.push([password.login.value, password.domain.value, password.email.value, password.passwordFor.value, decryptedPasswordResponse.value!,
-        securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.additionalInformation.value, groups.join(';')]);
+        data.push([password.value.login.value, password.value.domain.value, password.value.email.value, password.value.passwordFor.value, decryptedPasswordResponse.value!,
+        securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.value.additionalInformation.value, groups.join(';')]);
     }
 
     return await exportData(data);
@@ -146,9 +145,9 @@ export async function getExportableValues(color: string, masterKey: string): Pro
 
     for (let i = 0; i < app.currentVault.valueStore.nameValuePairs.length; i++)
     {
-        let value = app.currentVault.valueStore.nameValuePairs[i];
+        let nameValuePair = app.currentVault.valueStore.nameValuePairs[i];
 
-        let decryptedValueResponse = await cryptHelper.decrypt(masterKey, value.value.value);
+        let decryptedValueResponse = await cryptHelper.decrypt(masterKey, nameValuePair.value.value.value);
         if (!decryptedValueResponse.success)
         {
             showExportError();
@@ -156,21 +155,21 @@ export async function getExportableValues(color: string, masterKey: string): Pro
         }
 
         let groups: string[] = [];
-        value.groups.value.forEach((v, k, map) => 
+        nameValuePair.value.groups.value.forEach((v, k, map) => 
         {
-            // TODO: switch to using dataTypesByID
-            const group = app.currentVault.groupStore.valuesGroups.filter(g => g.id.value == k);
-            if (group.length == 1)
+            const group = app.currentVault.groupStore.getState().valueGroupsByID.value.get(k);
+            if (group)
             {
-                groups.push(group[0].name.value);
+                groups.push(group.value.name.value);
             }
             else 
             {
-                console.log(group);
+                console.log("no group for value when exporting");
             }
         });
 
-        data.push([value.name.value, decryptedValueResponse.value!, value.valueType?.value ?? "", value.additionalInformation.value, groups.join(';')]);
+        data.push([nameValuePair.value.name.value, decryptedValueResponse.value!, nameValuePair.value.valueType?.value ?? "",
+        nameValuePair.value.additionalInformation.value, groups.join(';')]);
     }
 
     return await exportData(data);
@@ -296,7 +295,7 @@ class CSVImporter<T extends IPrimaryDataObject>
                                         const group = defaultGroup(this.dataType);
                                         group.name.value = groups[l];
 
-                                        await app.currentVault.groupStore.addGroup(masterKey, group, true);
+                                        await app.currentVault.groupStore.addGroup(masterKey, group, false);
 
                                         groupId = group.id.value;
                                         groupsAdded[group.name.value] = group.id.value;

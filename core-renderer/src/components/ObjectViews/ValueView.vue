@@ -87,7 +87,7 @@ export default defineComponent({
         const mounted: Ref<boolean> = ref(false);
         const refreshKey: Ref<string> = ref("");
         const valuesState: Ref<NameValuePair> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
         // @ts-ignore
@@ -160,13 +160,13 @@ export default defineComponent({
                     [
                         {
                             component: "TableRowTextValue",
-                            value: g.name,
+                            value: g.value.name.value,
                             copiable: false,
                             width: 'clamp(80px, 6vw, 150px)'
                         },
                         {
                             component: "TableRowColorValue",
-                            color: g.color,
+                            color: g.value.color.value,
                             copiable: true,
                             width: 'clamp(50px, 4vw, 100px)',
                             margin: false
@@ -177,19 +177,19 @@ export default defineComponent({
                 const model: SelectableTableRowData =
                 {
                     id: id,
-                    key: g.id.value,
+                    key: g.value.id.value,
                     values: values,
-                    isActive: ref(valuesState.value.groups.value.has(g.id.value)),
+                    isActive: ref(valuesState.value.groups.value.has(g.value.id.value)),
                     selectable: true,
                     onClick: async function ()
                     {
-                        if (valuesState.value.groups.value.has(g.id.value))
+                        if (valuesState.value.groups.value.has(g.value.id.value))
                         {
-                            valuesState.value.groups.value.delete(g.id.value);
+                            valuesState.value.groups.value.delete(g.value.id.value);
                         }
                         else
                         {
-                            valuesState.value.groups.value.set(g.id.value, new Field(g.id.value));
+                            valuesState.value.groups.value.set(g.value.id.value, new Field(g.value.id.value));
                         }
                     }
                 }

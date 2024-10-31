@@ -22,7 +22,7 @@ export default function createReactivePassword(password: Password): ReactivePass
         const lastModifiedTime = Date.parse(passwordState.lastModifiedTime.value);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
-        return differenceInDays >= app.settings.oldPasswordDays;
+        return differenceInDays >= app.settings.value.oldPasswordDays.value;
     });
 
     const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !passwordState.isWeak && !passwordState.containsLogin && !passwordState.isDuplicate);

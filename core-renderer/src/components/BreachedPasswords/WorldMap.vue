@@ -23,7 +23,7 @@ export default defineComponent({
     {
         const canvasElement: Ref<HTMLCanvasElement | null> = ref(null);
         const refreshKey: Ref<string> = ref('');
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const width: Ref<number> = ref(500);
         const height: Ref<number> = ref(300);
         const resizeObserver: ResizeObserver = new ResizeObserver(() => init());
@@ -109,7 +109,7 @@ export default defineComponent({
             // 	startPulsing();
             // })
 
-            function animate(time)
+            function animate(time: number)
             {
                 if (!startColorTransitionTime)
                 {
@@ -166,7 +166,7 @@ export default defineComponent({
 
                     }).easing(TWEEN.Easing.Cubic.Out).start()
 
-                    function animatePulse(time)
+                    function animatePulse(time: number)
                     {
                         if (!startPulsingTime)
                         {

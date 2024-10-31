@@ -31,20 +31,20 @@ export default defineComponent({
         const attributes = computed(() =>
         {
             let attr: any[] = [];
-            Object.keys(app.currentVault.loginHistory).forEach(day =>
+            app.currentVault.loginHistory.value.forEach((v, k, map) =>
             {
-                attr.push(...app.currentVault.loginHistory[day].map((l) =>
+                v.value.daysLogin.value.forEach((dv, dk, dmap) => 
                 {
-                    return {
-                        key: l,
-                        dates: [l],
+                    attr.push({
+                        key: dk,
+                        dates: [dk],
                         dot: true,
                         popover: {
-                            label: new Date(l).toLocaleTimeString(),
+                            label: new Date(dk).toLocaleTimeString(),
                             visibility: "hover"
-                        },
-                    }
-                }));
+                        }
+                    })
+                });
             });
 
             return attr;

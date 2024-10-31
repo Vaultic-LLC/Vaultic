@@ -51,7 +51,7 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const filterState: Ref<Filter> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
         const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 

@@ -20,7 +20,7 @@ import TableRow from "./TableRow.vue"
 
 import { GroupIconModel } from '../../../Types/Models';
 import app from "../../../Objects/Stores/AppStore";
-import { Group } from '../../../Types/DataTypes';
+import { DataType, Group } from '../../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
@@ -47,16 +47,17 @@ export default defineComponent({
 
         let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
         {
-            const allGroups: Group[] = app.currentVault.groupStore.groups.filter(g => groups.value.has(g.id.value));
+            const groupsToUse = app.activePasswordValuesTable == DataType.Passwords ? app.currentVault.groupStore.passwordGroups : app.currentVault.groupStore.valuesGroups;
+            const allGroups: Field<Group>[] = groupsToUse.filter(g => groups.value.has(g.value.id.value));
             if (allGroups.length <= 4)
             {
                 return allGroups.map((g) =>
                 {
                     const groupIconModel: GroupIconModel =
                     {
-                        iconDisplayText: g.name.value[0],
-                        toolTipText: g.name.value,
-                        color: g.color.value
+                        iconDisplayText: g.value.name.value[0],
+                        toolTipText: g.value.name.value,
+                        color: g.value.color.value
                     }
 
                     return groupIconModel;
@@ -67,9 +68,9 @@ export default defineComponent({
             {
                 const groupIconModel: GroupIconModel =
                 {
-                    iconDisplayText: g.name.value[0],
-                    toolTipText: g.name.value,
-                    color: g.color.value
+                    iconDisplayText: g.value.name.value[0],
+                    toolTipText: g.value.name.value,
+                    color: g.value.color.value
                 }
 
                 return groupIconModel;
@@ -84,7 +85,7 @@ export default defineComponent({
 
             for (let i = 3; i < allGroups.length; i++)
             {
-                lastGroupModel.toolTipText += `${allGroups[i].name.value}`;
+                lastGroupModel.toolTipText += `${allGroups[i].value.name.value}`;
                 if (i != allGroups.length - 1)
                 {
                     lastGroupModel.toolTipText += ", ";

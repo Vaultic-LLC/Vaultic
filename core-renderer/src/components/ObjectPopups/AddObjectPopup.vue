@@ -63,10 +63,10 @@ export default defineComponent({
             switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    return app.userPreferences.currentColorPalette.valuesColor.primaryColor;
+                    return app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value;
                 case DataType.Passwords:
                 default:
-                    return app.userPreferences.currentColorPalette.passwordsColor.primaryColor;
+                    return app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
             }
         });
 
@@ -74,7 +74,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Passwords"),
-                color: ref(currentColorPalette.value.passwordsColor.primaryColor),
+                color: ref(currentColorPalette.value.passwordsColor.value.primaryColor.value),
                 isActive: computed(() => app.activePasswordValuesTable == DataType.Passwords),
                 onClick: () => { updatePasswordsValuesTable(DataType.Passwords); }
             }
@@ -84,7 +84,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Values"),
-                color: ref(currentColorPalette.value.valuesColor.primaryColor),
+                color: ref(currentColorPalette.value.valuesColor.value.primaryColor.value),
                 isActive: computed(() => app.activePasswordValuesTable == DataType.NameValuePairs),
                 onClick: () => { updatePasswordsValuesTable(DataType.NameValuePairs); }
             }
@@ -94,7 +94,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Add Filter"),
-                color: ref(currentColorPalette.value.filtersColor),
+                color: ref(currentColorPalette.value.filtersColor.value),
                 isActive: computed(() => activeContent.value == DataType.Filters),
                 onClick: () => { filtersGroupsClicked(DataType.Filters); }
             }
@@ -104,7 +104,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Add Group"),
-                color: ref(currentColorPalette.value.groupsColor),
+                color: ref(currentColorPalette.value.groupsColor.value),
                 isActive: computed(() => activeContent.value == DataType.Groups),
                 onClick: () => { filtersGroupsClicked(DataType.Groups); }
             }

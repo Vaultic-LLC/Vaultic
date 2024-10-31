@@ -1,29 +1,23 @@
-import { ComputedRef, Reactive, Ref, computed, reactive, ref } from "vue";
+import { Reactive, Ref, reactive, ref } from "vue";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject } from "../../Types/DataTypes";
 import { SecretProperty } from "../../Types/Fields";
-import { Field, FieldedObject, FieldMap, IFieldObject, IIdentifiable, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { Field, FieldedObject, FieldMap, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
 // Enforced to ensure the logic to track changes always works
-type StoreStateProperty = Field<Primitive> | FieldMap | Field<NonArrayType<FieldedObject>>;
+type StoreStateProperty = Field<NonArrayType<Primitive>> | FieldMap | Field<NonArrayType<FieldedObject>>;
 
-export interface StoreState 
+export interface StoreState
 {
     [key: string]: StoreStateProperty;
 }
 
-// TODO: change to map
-export interface DataTypeStoreState<T>
-{
-    dataTypesByID: Dictionary<T>;
-}
-
 export type StoreEvents = "onChanged";
 
-export class Store<T extends {}, U extends string = StoreEvents>
+export class Store<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents>
 {
     events: Dictionary<{ (...params: any[]): void }[]>;
 
@@ -81,6 +75,11 @@ export class Store<T extends {}, U extends string = StoreEvents>
 
     public initalizeNewState(state: T): void
     {
+        if (Object.keys(state).length == 0)
+        {
+            state = this.defaultState();
+        }
+
         this.preAssignState(state);
         this.updateState(state);
     }
@@ -137,7 +136,7 @@ export class Store<T extends {}, U extends string = StoreEvents>
     }
 }
 
-export class VaultContrainedStore<T extends {}, U extends string = StoreEvents> extends Store<T, U>
+export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents> extends Store<T, U>
 {
     protected vault: VaultStoreParameter;
 
@@ -148,17 +147,11 @@ export class VaultContrainedStore<T extends {}, U extends string = StoreEvents> 
     }
 }
 
-export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends VaultContrainedStore<T>
+export class DataTypeStore<T extends KnownMappedFields<StoreState>> extends VaultContrainedStore<T>
 {
-    protected internalDataTypes: ComputedRef<U[]>;
-
-    get dataTypes() { return this.internalDataTypes.value; }
-
     constructor(vault: VaultStoreParameter, stateName: string)
     {
         super(vault, stateName);
-
-        this.internalDataTypes = computed(() => Object.values(this.state.dataTypesByID));
     }
 
     public resetToDefault()
@@ -202,23 +195,28 @@ export class DataTypeStore<U, T extends DataTypeStoreState<U>> extends VaultCont
     }
 }
 
-export class PrimaryDataTypeStore<U extends SecondaryDataObjectCollectionType, T extends DataTypeStoreState<U>> extends DataTypeStore<U, T>
+export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> extends DataTypeStore<T>
 {
     public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
     {
         const pendingState = this.cloneState();
-        Object.values(pendingState.dataTypesByID).forEach(v =>
+        this.getPrimaryDataTypesByID(pendingState).value.forEach((v, k, map) =>
         {
-            v[secondaryObjectCollection].value.delete(secondaryObjectID);
+            v.value[secondaryObjectCollection].value.delete(secondaryObjectID);
         });
 
         return pendingState;
     }
 
+    protected getPrimaryDataTypesByID(state: T): Field<Map<string, Field<SecondaryDataObjectCollectionType & FieldedObject>>>
+    {
+        return {} as any;
+    }
+
     protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable & IFieldObject>(
         masterKey: string,
         primaryDataObject: T,
-        allPrimaryObjects: T[],
+        allPrimaryObjects: Field<Map<string, Field<T>>>,
         secretProperty: SecretProperty,
         allDuplicates: Dictionary<string[]>): Promise<void>
     {
@@ -228,17 +226,24 @@ export class PrimaryDataTypeStore<U extends SecondaryDataObjectCollectionType, T
             allDuplicates[primaryDataObject.id.value] = [];
         }
 
-        for (let i = 0; i < allPrimaryObjects.length; i++)
+        for (const [key, value] of allPrimaryObjects.value.entries())
         {
-            let tempPrimaryObject: T = allPrimaryObjects[i];
+            let tempPrimaryObject: Field<T> = value;
+            const currentId: string = key;
 
-            // make sure we have a valid list before doing any checking
-            if (!allDuplicates[tempPrimaryObject.id.value])
+            // don't count our own as a duplicate
+            if (currentId == primaryDataObject.id.value)
             {
-                allDuplicates[tempPrimaryObject.id.value] = [];
+                continue;
             }
 
-            const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject[secretProperty].value);
+            // make sure we have a valid list before doing any checking
+            if (!allDuplicates[currentId])
+            {
+                allDuplicates[currentId] = [];
+            }
+
+            const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject.value[secretProperty].value);
             if (!response.success)
             {
                 continue;
@@ -248,37 +253,37 @@ export class PrimaryDataTypeStore<U extends SecondaryDataObjectCollectionType, T
             if (response.value == primaryDataObject[secretProperty].value)
             {
                 // updating the list for the current primaryObject to include the duplicate primaryObjects id
-                if (!allDuplicates[primaryDataObject.id.value]?.includes(tempPrimaryObject.id.value))
+                if (!allDuplicates[primaryDataObject.id.value]?.includes(currentId))
                 {
-                    allDuplicates[primaryDataObject.id.value]?.push(tempPrimaryObject.id.value);
+                    allDuplicates[primaryDataObject.id.value]?.push(currentId);
                 }
 
                 // updating the duplciate primaryObjects list to include the current primaryObjects id
-                if (!allDuplicates[tempPrimaryObject.id.value]?.includes(primaryDataObject.id.value))
+                if (!allDuplicates[currentId]?.includes(primaryDataObject.id.value))
                 {
-                    allDuplicates[tempPrimaryObject.id.value]?.push(primaryDataObject.id.value);
+                    allDuplicates[currentId]?.push(primaryDataObject.id.value);
                 }
             }
             else
             {
-                const tempPrimaryObjectIndex = allDuplicates[primaryDataObject.id.value]?.indexOf(tempPrimaryObject.id.value) ?? -1;
+                const tempPrimaryObjectIndex = allDuplicates[primaryDataObject.id.value]?.indexOf(currentId) ?? -1;
                 if (tempPrimaryObjectIndex >= 0)
                 {
                     // remove old duplicate id from current primary objects list since it is no longer a duplicate
                     allDuplicates[primaryDataObject.id.value]?.splice(tempPrimaryObjectIndex, 1);
                 }
 
-                const currentPrimaryObjectIndex = allDuplicates[tempPrimaryObject.id.value]?.indexOf(primaryDataObject.id.value) ?? -1;
+                const currentPrimaryObjectIndex = allDuplicates[currentId]?.indexOf(primaryDataObject.id.value) ?? -1;
                 if (currentPrimaryObjectIndex >= 0)
                 {
                     // remove current primary object from temp primary objects list since it is no loner a duplicate
-                    allDuplicates[tempPrimaryObject.id.value]?.splice(currentPrimaryObjectIndex, 1);
+                    allDuplicates[currentId]?.splice(currentPrimaryObjectIndex, 1);
                 }
 
                 // remove  temp primary objects list since it no longer has any duplicates
-                if (allDuplicates[tempPrimaryObject.id.value] && allDuplicates[tempPrimaryObject.id.value].length == 0)
+                if (allDuplicates[currentId] && allDuplicates[currentId].length == 0)
                 {
-                    delete allDuplicates[tempPrimaryObject.id.value];
+                    delete allDuplicates[currentId];
                 }
             }
         }
@@ -322,41 +327,40 @@ export class PrimaryDataTypeStore<U extends SecondaryDataObjectCollectionType, T
     }
 }
 
-export class SecondaryDataTypeStore<U, T extends DataTypeStoreState<U>> extends DataTypeStore<U, T>
+export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> extends DataTypeStore<T>
 {
     private getSecondaryDataObjectDuplicates<T extends ISecondaryDataObject>(
         secondaryDataObject: T,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        allSecondaryDataObjects: T[]): string[]
+        allSecondaryDataObjects: Field<Map<string, Field<T>>>): string[]
     {
         // make sure we aren't considering our current object as a duplicate to itself
-        const secondaryDataObjectsToLookAt = allSecondaryDataObjects.filter(o => o.id.value != secondaryDataObject.id.value);
+        const secondaryDataObjectsToLookAt = allSecondaryDataObjects.value.filter((k, v) => k != secondaryDataObject.id.value);
 
         // we don't have any primary objects so grab others that are also empty
         if (secondaryDataObject[primaryDataObjectCollection].value.size == 0)
         {
-            return secondaryDataObjectsToLookAt.filter(o => o[primaryDataObjectCollection].value.size == 0).map(o => o.id.value);
+            return secondaryDataObjectsToLookAt.mapWhere((k, v) => v.value[primaryDataObjectCollection].value.size == 0, (k, v) => v.value.id.value);
         }
 
         // only need to check others that have the same length
-        let potentiallyDuplicateObjects: T[] = secondaryDataObjectsToLookAt.filter(
-            o => o[primaryDataObjectCollection].value.size == secondaryDataObject[primaryDataObjectCollection].value.size);
-
+        let potentiallyDuplicateObjects: Map<string, Field<T>> = secondaryDataObjectsToLookAt.filter(
+            (k, v) => v.value[primaryDataObjectCollection].value.size == secondaryDataObject[primaryDataObjectCollection].value.size);
 
         //@ts-ignore
         for (let item of secondaryDataObject[primaryDataObjectCollection].value)
         {
             // we've filtered out all secondary objects, aka there aren't any duplicates. We can stop checking
-            if (potentiallyDuplicateObjects.length == 0)
+            if (potentiallyDuplicateObjects.size == 0)
             {
                 return [];
             }
 
             // only grap the secondary objects with values that match our current one
-            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter(o => o[primaryDataObjectCollection].value.has(item[0]));
+            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter((k, v) => v.value[primaryDataObjectCollection].value.has(item[0]));
         }
 
-        return potentiallyDuplicateObjects.map(o => o.id.value);
+        return potentiallyDuplicateObjects.map((k, v) => v.value.id.value);
     }
 
     // checks / handles duplicates for a single filter
@@ -367,7 +371,7 @@ export class SecondaryDataTypeStore<U, T extends DataTypeStoreState<U>> extends 
         secondaryDataObject: T,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         currentDuplicateSecondaryObjects: Dictionary<string[]>,
-        allSecondaryDataObjects: T[])
+        allSecondaryDataObjects: Field<Map<string, Field<T>>>)
     {
         // setup so that we don't get any exceptions
         if (!currentDuplicateSecondaryObjects[secondaryDataObject.id.value])

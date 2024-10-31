@@ -3,6 +3,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { VaulticEntity } from "./VaulticEntity";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
+// TODO: this needs to be scoped per user otherwise differnt users changes will get co mingled
 @Entity({ name: "changeTrackings" })
 export class ChangeTracking extends VaulticEntity
 {

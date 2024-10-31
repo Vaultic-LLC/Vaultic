@@ -17,10 +17,11 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         // TODO: does this work with Sets? No. 
         // This also doesn't work for arrays either. Could just turn all arrays and Sets in Maps keyed by field.id or 
         // whatever the application for it is
+        // TODO: might have to do something specific for getting, setting, updating, and deleting if the obj is a map
         if (typeof newObj.value == 'object')
         {
-            const keys = Object.keys(newObj);
-            const oldKeys = Object.keys(oldObj);
+            const keys = Object.keys(newObj.value);
+            const oldKeys = Object.keys(oldObj.value);
 
             for (let i = 0; i < keys.length; i++)
             {
@@ -35,7 +36,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 }
                 else
                 {
-                    this.trackObjectDifferences(masterKey, newObj[keys[i]], oldObj[oldKeys[oldKeyMatchingIndex]], transaction);
+                    this.trackObjectDifferences(masterKey, newObj.value[keys[i]], oldObj.value[oldKeys[oldKeyMatchingIndex]], transaction);
                     oldKeys.splice(oldKeyMatchingIndex, 1);
                 }
             }
@@ -43,11 +44,12 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             // all the keys that are in the old obj but not in new obj, they were deleted
             for (let i = 0; i < oldKeys.length; i++)
             {
-                transaction.insertEntity(ChangeTracking.deleted(oldObj[oldKeys[i]].id, Date.now()), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.deleted(oldObj.value[oldKeys[i]].id, Date.now()), masterKey, () => this);
             }
         }
         else 
         {
+            // Only values have their last modified time set, objects do not. This isn't an issue
             if (newObj.value != oldObj.value)
             {
                 // TODO: make sure this actually works. Otherwise I will need to return newObj. Same with id above

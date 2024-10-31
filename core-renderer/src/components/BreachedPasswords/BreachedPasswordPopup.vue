@@ -54,6 +54,7 @@ import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { popups } from '../../Objects/Stores/PopupStore';
 import { UserDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "DeviceView",
@@ -112,10 +113,10 @@ export default defineComponent({
                 dateString.value = `${dateBreached.getUTCMonth() + 1}/${dateBreached.getUTCDay() + 1}/${dateBreached.getUTCFullYear()}`;
             }
 
-            const passwords: ReactivePassword[] = app.currentVault.passwordStore.passwords.filter(p => p.id == props.passwordID);
-            if (passwords.length == 1)
+            const foundPassword: Field<ReactivePassword> | undefined = app.currentVault.passwordStore.getState().passwordsByID.value.get(props.passwordID);
+            if (foundPassword)
             {
-                password.value = passwords[0];
+                password.value = foundPassword.value;
             }
         });
 

@@ -98,7 +98,7 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const passwordState: Ref<Password> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
         // @ts-ignore
@@ -208,13 +208,13 @@ export default defineComponent({
                     [
                         {
                             component: "TableRowTextValue",
-                            value: g.name,
+                            value: g.value.name.value,
                             copiable: false,
                             width: 'clamp(80px, 6vw, 150px)'
                         },
                         {
                             component: "TableRowColorValue",
-                            color: g.color,
+                            color: g.value.color.value,
                             copiable: true,
                             width: 'clamp(50px, 4vw, 100px)',
                             margin: false
@@ -224,19 +224,19 @@ export default defineComponent({
                 const id = await api.utilities.generator.uniqueId();
                 const model: SelectableTableRowData = {
                     id: id,
-                    key: g.id.value,
+                    key: g.value.id.value,
                     values: values,
-                    isActive: ref(passwordState.value.groups.value.has(g.id.value)),
+                    isActive: ref(passwordState.value.groups.value.has(g.value.id.value)),
                     selectable: true,
                     onClick: async function ()
                     {
-                        if (passwordState.value.groups.value.has(g.id.value))
+                        if (passwordState.value.groups.value.has(g.value.id.value))
                         {
-                            passwordState.value.groups.value.delete(g.id.value);
+                            passwordState.value.groups.value.delete(g.value.id.value);
                         }
                         else
                         {
-                            passwordState.value.groups.value.set(g.id.value, new Field(g.id.value));
+                            passwordState.value.groups.value.set(g.value.id.value, new Field(g.value.id.value));
                         }
                     }
                 }

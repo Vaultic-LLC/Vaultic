@@ -32,58 +32,58 @@ importExportHelperTestSuite.tests.push({
         const importer = new PasswordCSVImporter();
         await importer.import('', masterKey, records, csvHeaderPropertiesDict);
 
-        const googleGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.name.value == "google");
+        const googleGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.value.name.value == "google");
         ctx.assertEquals("Imported Google Group exists", googleGroup.length, 1);
-        ctx.assertEquals("Groogle Group has 2 passwords", googleGroup[0].passwords.value.size, 2);
+        ctx.assertEquals("Groogle Group has 2 passwords", googleGroup[0].value.passwords.value.size, 2);
 
-        const facebookGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.name.value == "facebook");
+        const facebookGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.value.name.value == "facebook");
         ctx.assertEquals("Imported Facebook Group exists", facebookGroup.length, 1);
-        ctx.assertEquals("Facebook Group has 2 passwords", facebookGroup[0].passwords.value.size, 2);
+        ctx.assertEquals("Facebook Group has 2 passwords", facebookGroup[0].value.passwords.value.size, 2);
 
-        const passwordOne = app.currentVault.passwordStore.passwords.filter(p => p.login.value == "johnp");
-        const decryptedPassword = await cryptHelper.decrypt(masterKey, passwordOne[0].password.value);
+        const passwordOne = app.currentVault.passwordStore.passwords.filter(p => p.value.login.value == "johnp");
+        const decryptedPassword = await cryptHelper.decrypt(masterKey, passwordOne[0].value.password.value);
 
         ctx.assertEquals("First password exists", passwordOne.length, 1);
-        ctx.assertEquals("First password duplicate csv header set correctly", passwordOne[0].additionalInformation.value, passwordOne[0].email.value);
-        ctx.assertTruthy("First password has google group", passwordOne[0].groups.value.has(googleGroup[0].id.value));
+        ctx.assertEquals("First password duplicate csv header set correctly", passwordOne[0].value.additionalInformation.value, passwordOne[0].value.email.value);
+        ctx.assertTruthy("First password has google group", passwordOne[0].value.groups.value.has(googleGroup[0].value.id.value));
         ctx.assertEquals("First password password set properly", decryptedPassword.value!, "password1");
-        ctx.assertEquals("First password domain set properly", passwordOne[0].domain.value, "google.com");
-        ctx.assertEquals("First password email set properly", passwordOne[0].email.value, "john@gmail.com");
-        ctx.assertEquals("First password no security questions", passwordOne[0].securityQuestions.value.length, 0);
+        ctx.assertEquals("First password domain set properly", passwordOne[0].value.domain.value, "google.com");
+        ctx.assertEquals("First password email set properly", passwordOne[0].value.email.value, "john@gmail.com");
+        ctx.assertEquals("First password no security questions", passwordOne[0].value.securityQuestions.value.length, 0);
 
-        const passwordTwo = app.currentVault.passwordStore.passwords.filter(p => p.login.value == "johnpeterson");
-        const decryptedPasswordTwo = await cryptHelper.decrypt(masterKey, passwordTwo[0].password.value);
+        const passwordTwo = app.currentVault.passwordStore.passwords.filter(p => p.value.login.value == "johnpeterson");
+        const decryptedPasswordTwo = await cryptHelper.decrypt(masterKey, passwordTwo[0].value.password.value);
 
         ctx.assertEquals("Second password exists", passwordTwo.length, 1);
-        ctx.assertEquals("Second password duplicate csv header set correctly", passwordTwo[0].additionalInformation.value, passwordTwo[0].email.value);
-        ctx.assertTruthy("Second password has facebook group", passwordTwo[0].groups.value.has(facebookGroup[0].id.value));
+        ctx.assertEquals("Second password duplicate csv header set correctly", passwordTwo[0].value.additionalInformation.value, passwordTwo[0].value.email.value);
+        ctx.assertTruthy("Second password has facebook group", passwordTwo[0].value.groups.value.has(facebookGroup[0].value.id.value));
         ctx.assertEquals("Second password password set properly", decryptedPasswordTwo.value!, "AnotherPassword");
-        ctx.assertEquals("Second password domain set properly", passwordTwo[0].domain.value, "facebook.com");
-        ctx.assertEquals("Second password email set properly", passwordTwo[0].email.value, "john@gmail.com");
+        ctx.assertEquals("Second password domain set properly", passwordTwo[0].value.domain.value, "facebook.com");
+        ctx.assertEquals("Second password email set properly", passwordTwo[0].value.email.value, "john@gmail.com");
 
-        const decryptedPasswordTwoQuestion = await cryptHelper.decrypt(masterKey, passwordTwo[0].securityQuestions.value[0].question);
-        const decryptedPasswordTwoAnswer = await cryptHelper.decrypt(masterKey, passwordTwo[0].securityQuestions.value[0].answer);
+        const decryptedPasswordTwoQuestion = await cryptHelper.decrypt(masterKey, passwordTwo[0].value.securityQuestions.value[0].question);
+        const decryptedPasswordTwoAnswer = await cryptHelper.decrypt(masterKey, passwordTwo[0].value.securityQuestions.value[0].answer);
         ctx.assertEquals("Second password security question question", decryptedPasswordTwoQuestion.value, "Who Am I");
         ctx.assertEquals("Second password security question answer", decryptedPasswordTwoAnswer.value, "Me");
 
-        const passwordThree = app.currentVault.passwordStore.passwords.filter(p => p.login.value == "johnJPeter");
-        const decryptedPasswordThree = await cryptHelper.decrypt(masterKey, passwordThree[0].password.value);
+        const passwordThree = app.currentVault.passwordStore.passwords.filter(p => p.value.login.value == "johnJPeter");
+        const decryptedPasswordThree = await cryptHelper.decrypt(masterKey, passwordThree[0].value.password.value);
 
         ctx.assertEquals("Third password exists", passwordThree.length, 1);
-        ctx.assertEquals("Third password duplicate csv header set correctly", passwordThree[0].additionalInformation.value, passwordThree[0].email.value);
-        ctx.assertTruthy("Third password has google group", passwordThree[0].groups.value.has(googleGroup[0].id.value));
-        ctx.assertTruthy("Third password has facebook group", passwordThree[0].groups.value.has(facebookGroup[0].id.value));
+        ctx.assertEquals("Third password duplicate csv header set correctly", passwordThree[0].value.additionalInformation.value, passwordThree[0].value.email.value);
+        ctx.assertTruthy("Third password has google group", passwordThree[0].value.groups.value.has(googleGroup[0].value.id.value));
+        ctx.assertTruthy("Third password has facebook group", passwordThree[0].value.groups.value.has(facebookGroup[0].value.id.value));
         ctx.assertEquals("Third password password set properly", decryptedPasswordThree.value!, "PasswordAnother");
-        ctx.assertEquals("Third password domain set properly", passwordThree[0].domain.value, "google.com");
-        ctx.assertEquals("Third password email set properly", passwordThree[0].email.value, "johnJ@outlook.com");
+        ctx.assertEquals("Third password domain set properly", passwordThree[0].value.domain.value, "google.com");
+        ctx.assertEquals("Third password email set properly", passwordThree[0].value.email.value, "johnJ@outlook.com");
 
-        const decryptedPasswordThreeQuestionOne = await cryptHelper.decrypt(masterKey, passwordThree[0].securityQuestions.value[0].question);
-        const decryptedPasswordThreeAnswerOne = await cryptHelper.decrypt(masterKey, passwordThree[0].securityQuestions.value[0].answer);
+        const decryptedPasswordThreeQuestionOne = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[0].question);
+        const decryptedPasswordThreeAnswerOne = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[0].answer);
         ctx.assertEquals("Third password security question question one", decryptedPasswordThreeQuestionOne.value, "Color");
         ctx.assertEquals("Third password security question answer one", decryptedPasswordThreeAnswerOne.value, "Green");
 
-        const decryptedPasswordThreeQuestionTwo = await cryptHelper.decrypt(masterKey, passwordThree[0].securityQuestions.value[1].question);
-        const decryptedPasswordThreeAnswerTwo = await cryptHelper.decrypt(masterKey, passwordThree[0].securityQuestions.value[1].answer);
+        const decryptedPasswordThreeQuestionTwo = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[1].question);
+        const decryptedPasswordThreeAnswerTwo = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[1].answer);
         ctx.assertEquals("Third password security question question two", decryptedPasswordThreeQuestionTwo.value, "Food");
         ctx.assertEquals("Third password security question answer two", decryptedPasswordThreeAnswerTwo.value, "Milk");
     }
@@ -109,33 +109,33 @@ importExportHelperTestSuite.tests.push({
         const importer = new ValueCSVImporter();
         await importer.import('', masterKey, records, csvHeaderPropertiesDict);
 
-        const mfaGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.name.value == "MFA Codes");
+        const mfaGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.value.name.value == "MFA Codes");
         ctx.assertEquals("Imported MFA Codes Group exists", mfaGroup.length, 1);
-        ctx.assertEquals("MFA Codes Group has 1 value", mfaGroup[0].values.value.size, 1);
+        ctx.assertEquals("MFA Codes Group has 1 value", mfaGroup[0].value.values.value.size, 1);
 
-        const valueOne = app.currentVault.valueStore.nameValuePairs.filter(v => v.name.value == "phone code");
-        const decryptedValueOne = await cryptHelper.decrypt(masterKey, valueOne[0].value.value);
+        const valueOne = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.name.value == "phone code");
+        const decryptedValueOne = await cryptHelper.decrypt(masterKey, valueOne[0].value.value.value);
 
         ctx.assertEquals("First value exists", valueOne.length, 1);
         ctx.assertEquals("First value value set properly", decryptedValueOne.value!, "1234");
-        ctx.assertEquals("First value type", valueOne[0].valueType?.value, NameValuePairType.Passcode);
+        ctx.assertEquals("First value type", valueOne[0].value.valueType?.value, NameValuePairType.Passcode);
 
-        const valueTwo = app.currentVault.valueStore.nameValuePairs.filter(v => v.name.value == "mfa code");
-        const decryptedValueTwo = await cryptHelper.decrypt(masterKey, valueTwo[0].value.value);
+        const valueTwo = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.name.value == "mfa code");
+        const decryptedValueTwo = await cryptHelper.decrypt(masterKey, valueTwo[0].value.value.value);
 
         ctx.assertEquals("Second value exists", valueTwo.length, 1);
         ctx.assertEquals("Second value value set properly", decryptedValueTwo.value!, "FVewogldnion2g2hyp9jgdsoighoeoh");
-        ctx.assertEquals("Second value additional information is correct", valueTwo[0].additionalInformation.value, "Code for Mfa");
-        ctx.assertTruthy("Second value has mfa group", valueTwo[0].groups.value.has(mfaGroup[0].id.value));
-        ctx.assertEquals("Second value type", valueTwo[0].valueType?.value, NameValuePairType.MFAKey);
+        ctx.assertEquals("Second value additional information is correct", valueTwo[0].value.additionalInformation.value, "Code for Mfa");
+        ctx.assertTruthy("Second value has mfa group", valueTwo[0].value.groups.value.has(mfaGroup[0].value.id.value));
+        ctx.assertEquals("Second value type", valueTwo[0].value.valueType?.value, NameValuePairType.MFAKey);
 
-        const valueThree = app.currentVault.valueStore.nameValuePairs.filter(v => v.name.value == "bank verbal code");
-        const decryptedValueThree = await cryptHelper.decrypt(masterKey, valueThree[0].value.value);
+        const valueThree = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.name.value == "bank verbal code");
+        const decryptedValueThree = await cryptHelper.decrypt(masterKey, valueThree[0].value.value.value);
 
         ctx.assertEquals("Third value exists", valueOne.length, 1);
         ctx.assertEquals("Third value value set properly", decryptedValueThree.value!, "i like sheep");
-        ctx.assertEquals("Third value additional information is correct", valueThree[0].additionalInformation.value, "for me bank");
-        ctx.assertEquals("Third value type", valueThree[0].valueType?.value, NameValuePairType.Other);
+        ctx.assertEquals("Third value additional information is correct", valueThree[0].value.additionalInformation.value, "for me bank");
+        ctx.assertEquals("Third value type", valueThree[0].value.valueType?.value, NameValuePairType.Other);
     }
 });
 
@@ -160,10 +160,17 @@ importExportHelperTestSuite.tests.push({
         const rows = formattedPasswords.split('\n');
         const headers = rows[0].replace(/"|\\"/g, '').split(',');
 
+        let exportedCount = 0;
         for (let i = 1; i < rows.length; i++)
         {
             const rowValues = rows[i].replace(/"|\\"/g, '').split(',');
-            let password: Password = app.currentVault.passwordStore.passwords.filter(p => p.login.value == rowValues[0])[0];
+            if (rowValues.every(v => v == ""))
+            {
+                continue;
+            }
+
+            exportedCount += 1;
+            let password = app.currentVault.passwordStore.passwords.filter(p => p.value.login.value == rowValues[0])[0].value;
 
             for (let j = 1; j < rowValues.length; j++)
             {
@@ -234,8 +241,8 @@ importExportHelperTestSuite.tests.push({
 
                     for (let k = 0; k < groups.length; k++)
                     {
-                        const group = app.currentVault.groupStore.passwordGroups.filter(g => g.name.value == groups[k]);
-                        ctx.assertTruthy(`Group has password`, group[0].passwords.value.has(password.id.value));
+                        const group = app.currentVault.groupStore.passwordGroups.filter(g => g.value.name.value == groups[k]);
+                        ctx.assertTruthy(`Group has password`, group[0].value.passwords.value.has(password.id.value));
                     }
                 }
                 else if (headers[j] == "Additional Info")
@@ -248,10 +255,12 @@ importExportHelperTestSuite.tests.push({
                 }
                 else 
                 {
-                    ctx.assertEquals(`Row ${i} ${headers[j]} equals passwords ${headers[j]}`, rowValues[j], password[headers[j].toLowerCase()]);
+                    ctx.assertEquals(`Row ${i} ${headers[j]} equals passwords ${headers[j]}`, rowValues[j], password[headers[j].toLowerCase()].value);
                 }
             }
         }
+
+        ctx.assertEquals("Exported all passwords", app.currentVault.passwordStore.passwords.length, exportedCount);
 
         async function createPassword(login: string, domain: string, email: string, password: string, passwordFor: string, additionalInfo: string,
             secrutiyQuestionQuestions: string[], securityQuestionAnswers: string[], groups: Map<string, Field<string>>)
@@ -301,10 +310,17 @@ importExportHelperTestSuite.tests.push({
         const rows = formattedValues.split('\n');
         const headers = rows[0].replace(/"|\\"/g, '').split(',');
 
+        let exportedCount = 0;
         for (let i = 1; i < rows.length; i++)
         {
             const rowValues = rows[i].replace(/"|\\"/g, '').split(',');
-            let value: NameValuePair = app.currentVault.valueStore.nameValuePairs.filter(v => v.name.value == rowValues[0])[0];
+            if (rowValues.every(v => v == ""))
+            {
+                continue;
+            }
+
+            exportedCount += 1;
+            let value: NameValuePair = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.name.value == rowValues[0])[0].value;
 
             for (let j = 1; j < rowValues.length; j++)
             {
@@ -331,8 +347,8 @@ importExportHelperTestSuite.tests.push({
 
                     for (let k = 0; k < groups.length; k++)
                     {
-                        const group = app.currentVault.groupStore.valuesGroups.filter(g => g.name.value == groups[k]);
-                        ctx.assertTruthy("Group has value", group[0].values.value.has(value.id.value));
+                        const group = app.currentVault.groupStore.valuesGroups.filter(g => g.value.name.value == groups[k]);
+                        ctx.assertTruthy("Group has value", group[0].value.values.value.has(value.id.value));
                     }
                 }
                 else if (headers[j] == "Additional Info")
@@ -345,11 +361,12 @@ importExportHelperTestSuite.tests.push({
                 }
                 else 
                 {
-                    ctx.assertEquals(`Row ${i} ${headers[j]} equals values ${headers[j]}`, rowValues[j], value[headers[j].toLowerCase()]);
+                    ctx.assertEquals(`Row ${i} ${headers[j]} equals values ${headers[j]}`, rowValues[j], value[headers[j].toLowerCase()].value);
                 }
             }
         }
 
+        ctx.assertEquals("Exported all values", app.currentVault.valueStore.nameValuePairs.length, exportedCount);
         app.popups.hideLoadingIndicator();
 
         async function createValue(name: string, value: string, valueType: NameValuePairType, additionalInfo: string, groups: Map<string, Field<string>>)

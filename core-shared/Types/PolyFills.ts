@@ -9,7 +9,11 @@ declare global
 
     interface Map<K, V>
     {
-        difference: (other: Map<K, V>) => Map<K, V>;
+        difference(other: Map<K, V>): Map<K, V>;
+        valueArray(): V[];
+        filter(predicate: (k: K, v: V) => boolean): Map<K, V>;
+        map<T>(select: (k: K, v: V) => T): T[];
+        mapWhere<T>(prediate: (k: K, v: V) => boolean, select: (k: K, v: V) => T): T[];
     }
 
     interface JSON 
@@ -29,6 +33,50 @@ Map.prototype.difference = function (this: Map<any, any>, other: Map<any, any>)
             temp.set(item[0], item[1]);
         }
     }
+
+    return temp;
+}
+
+Map.prototype.valueArray = function (this: Map<any, any>)
+{
+    return Array.from(this.values());
+}
+
+Map.prototype.filter = function (this: Map<any, any>, predicate: (k: any, v: any) => boolean): Map<any, any>
+{
+    const temp = new Map();
+    this.forEach((v, k, map) => 
+    {
+        if (predicate(k, v))
+        {
+            temp.set(k, v);
+        }
+    });
+
+    return temp;
+}
+
+Map.prototype.map = function <T>(this: Map<any, any>, select: (k: any, v: any) => T): T[]
+{
+    const temp: T[] = [];
+    this.forEach((v, k, map) => 
+    {
+        temp.push(select(k, v));
+    });
+
+    return temp;
+}
+
+Map.prototype.mapWhere = function <T>(this: Map<any, any>, predicate: (k: any, v: any) => boolean, select: (k: any, v: any) => T): T[]
+{
+    const temp: T[] = [];
+    this.forEach((v, k, map) => 
+    {
+        if (predicate(k, v))
+        {
+            temp.push(select(k, v));
+        }
+    });
 
     return temp;
 }

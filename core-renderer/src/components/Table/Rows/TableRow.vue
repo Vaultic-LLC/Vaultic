@@ -54,7 +54,6 @@ export default defineComponent({
         'clickable', 'hideAtRisk', 'zIndexing', 'animateDelete', 'height'],
     setup(props)
     {
-        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
         const tableRowData: ComputedRef<TableRowData> = computed(() => props.model);
         const isPinned: Ref<boolean> = ref(tableRowData.value.isPinned ?? false);
         const primaryColor: ComputedRef<string> = computed(() => props.color);
@@ -118,7 +117,6 @@ export default defineComponent({
         }
 
         return {
-            currentColorPalette,
             tableRowData,
             isPinned,
             primaryColor,

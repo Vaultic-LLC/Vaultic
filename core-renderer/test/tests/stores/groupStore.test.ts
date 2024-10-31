@@ -11,18 +11,18 @@ const masterKey = "test";
 groupStoreSuite.tests.push({
     name: "GroupStore Add Works", func: async (ctx: TestContext) =>
     {
-        async function testGroupAdd(type: DataType, getGroups: () => Group[])
+        async function testGroupAdd(type: DataType, getGroups: () => Field<Group>[])
         {
             const group: Group = defaultGroup(type);
             group.name.value = "GroupStore Add Works";
             group.color.value = "#FFFFFF";
 
             await app.currentVault.groupStore.addGroup(masterKey, group);
-            const retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
+            const retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value)[0];
 
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
-            ctx.assertEquals(`Name for ${type}`, retrievedGroup.name.value, "GroupStore Add Works");
-            ctx.assertEquals(`Color for ${type}`, retrievedGroup.color.value, "#FFFFFF");
+            ctx.assertEquals(`Name for ${type}`, retrievedGroup.value.name.value, "GroupStore Add Works");
+            ctx.assertEquals(`Color for ${type}`, retrievedGroup.value.color.value, "#FFFFFF");
         }
 
         await testGroupAdd(DataType.Passwords, () => app.currentVault.groupStore.passwordGroups);
@@ -37,8 +37,8 @@ groupStoreSuite.tests.push({
             type: DataType,
             property: PrimaryDataObjectCollection,
             primaryObject: T,
-            getGroups: () => Group[],
-            getPrimaryObject: () => T)
+            getGroups: () => Field<Group>[],
+            getPrimaryObject: () => Field<T>)
         {
             const group: Group = defaultGroup(type);
             group[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
@@ -47,11 +47,11 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.addGroup(masterKey, group);
 
-            const retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
+            const retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value)[0];
             const retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
-            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.has(group.id.value));
+            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.value.groups.value.has(group.id.value));
         }
 
         const password = defaultPassword();
@@ -63,10 +63,10 @@ groupStoreSuite.tests.push({
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password,
-            () => app.currentVault.groupStore.passwordGroups, () => app.currentVault.passwordStore.passwords.filter(p => p.id.value == password.id.value)[0]);
+            () => app.currentVault.groupStore.passwordGroups, () => app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0]);
 
         await testGroupAdd(DataType.NameValuePairs, "values", value,
-            () => app.currentVault.groupStore.valuesGroups, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.id.value == value.id.value)[0]);
+            () => app.currentVault.groupStore.valuesGroups, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0]);
     }
 });
 
@@ -77,7 +77,7 @@ groupStoreSuite.tests.push({
             type: DataType,
             property: PrimaryDataObjectCollection,
             primaryObject: T,
-            getGroups: () => Group[],
+            getGroups: () => Field<Group>[],
             getEmptyGroups: () => string[],
             getDuplicateGroups: () => Dictionary<string[]>)
         {
@@ -86,7 +86,7 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.addGroup(masterKey, emptyGroup);
 
-            const retrievedGroup = getGroups().filter(g => g.id.value == emptyGroup.id.value)[0];
+            const retrievedGroup = getGroups().filter(g => g.value.id.value == emptyGroup.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
 
             let retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value)[0];
@@ -103,7 +103,7 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
 
-            const retrievedDuplicateGroupOne = getGroups().filter(g => g.id.value == duplicateGroupOne.id.value)[0];
+            const retrievedDuplicateGroupOne = getGroups().filter(g => g.value.id.value == duplicateGroupOne.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedDuplicateGroupOne);
 
             let retrievedDuplicateGroupOneTwo = getDuplicateGroups()[duplicateGroupOne.id.value];
@@ -140,7 +140,7 @@ groupStoreSuite.tests.push({
 groupStoreSuite.tests.push({
     name: "GroupStore Update Group Works", func: async (ctx: TestContext) =>
     {
-        async function testUpdateGroup(type: DataType, getGroups: () => Group[])
+        async function testUpdateGroup(type: DataType, getGroups: () => Field<Group>[])
         {
             const originalName = `GroupStoreUpdateWorksType${type}`;
             const originalColor = "#FFFFFF";
@@ -159,13 +159,13 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.updateGroup(masterKey, group);
 
-            const originalGroup = getGroups().filter(g => g.name.value == originalName);
+            const originalGroup = getGroups().filter(g => g.value.name.value == originalName);
             ctx.assertEquals(`Original group doesn't exists for ${type}`, originalGroup.length, 0);
 
-            const retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
+            const retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value)[0];
             ctx.assertTruthy(`Group exists for ${type}`, retrievedGroup);
-            ctx.assertEquals(`Name was updated for ${type}`, retrievedGroup.name.value, newName);
-            ctx.assertEquals(`Color was updated for ${type}`, retrievedGroup.color.value, newColor);
+            ctx.assertEquals(`Name was updated for ${type}`, retrievedGroup.value.name.value, newName);
+            ctx.assertEquals(`Color was updated for ${type}`, retrievedGroup.value.color.value, newColor);
         }
 
         await testUpdateGroup(DataType.Passwords, () => app.currentVault.groupStore.passwordGroups);
@@ -180,8 +180,8 @@ groupStoreSuite.tests.push({
             type: DataType,
             property: PrimaryDataObjectCollection,
             primaryObject: T,
-            getGroups: () => Group[],
-            getPrimaryObject: () => T)
+            getGroups: () => Field<Group>[],
+            getPrimaryObject: () => Field<T>)
         {
             const group: Group = defaultGroup(type);
             group[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
@@ -190,33 +190,33 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.addGroup(masterKey, group);
 
-            let retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
+            let retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value)[0];
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
-            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.has(group.id.value));
+            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.value.groups.value.has(group.id.value));
 
             const groupWithoutPrimaryObject: Group = JSON.vaulticParse(JSON.vaulticStringify(group));
             groupWithoutPrimaryObject[property].value = new Map();
 
             await app.currentVault.groupStore.updateGroup(masterKey, groupWithoutPrimaryObject);
 
-            retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
+            retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value)[0];
             retrievedPrimaryObject = getPrimaryObject();
 
-            ctx.assertTruthy(`Group doesn't have ${type} id`, !retrievedGroup[property].value.has(retrievedPrimaryObject.id.value));
-            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.groups.value.has(group.id.value));
+            ctx.assertTruthy(`Group doesn't have ${type} id`, !retrievedGroup.value[property].value.has(retrievedPrimaryObject.value.id.value));
+            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.value.groups.value.has(group.id.value));
 
             const groupWithPrimaryObject: Group = JSON.vaulticParse(JSON.vaulticStringify(groupWithoutPrimaryObject));
             groupWithPrimaryObject[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
             await app.currentVault.groupStore.updateGroup(masterKey, groupWithPrimaryObject);
 
-            retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
+            retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value)[0];
             retrievedPrimaryObject = getPrimaryObject();
 
-            ctx.assertTruthy(`Group has ${type} id after update`, retrievedGroup[property].value.has(retrievedPrimaryObject.id.value));
-            ctx.assertTruthy(`${type} has group id after update`, retrievedPrimaryObject.groups.value.has(group.id.value));
+            ctx.assertTruthy(`Group has ${type} id after update`, retrievedGroup.value[property].value.has(retrievedPrimaryObject.value.id.value));
+            ctx.assertTruthy(`${type} has group id after update`, retrievedPrimaryObject.value.groups.value.has(group.id.value));
         }
 
         const password = defaultPassword();
@@ -228,10 +228,10 @@ groupStoreSuite.tests.push({
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password,
-            () => app.currentVault.groupStore.passwordGroups, () => app.currentVault.passwordStore.passwords.filter(p => p.id.value == password.id.value)[0]);
+            () => app.currentVault.groupStore.passwordGroups, () => app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0]);
 
         await testGroupAdd(DataType.NameValuePairs, "values", value,
-            () => app.currentVault.groupStore.valuesGroups, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.id.value == value.id.value)[0]);
+            () => app.currentVault.groupStore.valuesGroups, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0]);
     }
 });
 
@@ -242,7 +242,7 @@ groupStoreSuite.tests.push({
             type: DataType,
             property: PrimaryDataObjectCollection,
             primaryObject: T,
-            getGroups: () => Group[],
+            getGroups: () => Field<Group>[],
             getEmptyGroups: () => string[],
             getDuplicateGroups: () => Dictionary<string[]>)
         {
@@ -251,7 +251,7 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.addGroup(masterKey, emptyGroup);
 
-            const retrievedGroup = getGroups().filter(g => g.id.value == emptyGroup.id.value)[0];
+            const retrievedGroup = getGroups().filter(g => g.value.id.value == emptyGroup.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
 
             let retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
@@ -328,19 +328,19 @@ groupStoreSuite.tests.push({
 groupStoreSuite.tests.push({
     name: "GroupStore Delete Works", func: async (ctx: TestContext) =>
     {
-        async function testGroupDelete(type: DataType, getGroups: () => Group[])
+        async function testGroupDelete(type: DataType, getGroups: () => Field<Group>[])
         {
             const group: Group = defaultGroup(type);
             group.name.value = `GroupStore Delete Works Type ${type}`;
 
             await app.currentVault.groupStore.addGroup(masterKey, group);
 
-            const retrievedGroup = getGroups().filter(g => g.id.value == group.id.value)[0];
+            const retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value)[0];
             ctx.assertTruthy(`Group exists for ${type}`, retrievedGroup);
 
             await app.currentVault.groupStore.deleteGroup(masterKey, group);
 
-            const deletedGroup = getGroups().filter(g => g.id.value == group.id.value);
+            const deletedGroup = getGroups().filter(g => g.value.id.value == group.id.value);
             ctx.assertEquals(`Group doens't exist for ${type}`, deletedGroup.length, 0);
         }
 
@@ -356,8 +356,8 @@ groupStoreSuite.tests.push({
             type: DataType,
             property: PrimaryDataObjectCollection,
             primaryObject: T,
-            getGroups: () => Group[],
-            getPrimaryObject: () => T)
+            getGroups: () => Field<Group>[],
+            getPrimaryObject: () => Field<T>)
         {
             const group: Group = defaultGroup(type);
             group[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
@@ -366,16 +366,16 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.addGroup(masterKey, group);
 
-            let retrievedGroup = getGroups().filter(g => g.id.value == group.id.value);
+            let retrievedGroup = getGroups().filter(g => g.value.id.value == group.id.value);
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup[0]);
-            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.groups.value.has(group.id.value));
+            ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.value.groups.value.has(group.id.value));
 
             await app.currentVault.groupStore.deleteGroup(masterKey, group);
             retrievedPrimaryObject = getPrimaryObject();
 
-            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.groups.value.has(group.id.value));
+            ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.value.groups.value.has(group.id.value));
         }
 
         const password = defaultPassword();
@@ -387,10 +387,10 @@ groupStoreSuite.tests.push({
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testGroupAdd(DataType.Passwords, "passwords", password,
-            () => app.currentVault.groupStore.passwordGroups, () => app.currentVault.passwordStore.passwords.filter(p => p.id.value == password.id.value)[0]);
+            () => app.currentVault.groupStore.passwordGroups, () => app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0]);
 
         await testGroupAdd(DataType.NameValuePairs, "values", value,
-            () => app.currentVault.groupStore.valuesGroups, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.id.value == value.id.value)[0]);
+            () => app.currentVault.groupStore.valuesGroups, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0]);
     }
 });
 
@@ -401,7 +401,7 @@ groupStoreSuite.tests.push({
             type: DataType,
             property: PrimaryDataObjectCollection,
             primaryObject: T,
-            getGroups: () => Group[],
+            getGroups: () => Field<Group>[],
             getEmptyGroups: () => string[],
             getDuplicateGroups: () => Dictionary<string[]>)
         {
@@ -410,7 +410,7 @@ groupStoreSuite.tests.push({
 
             await app.currentVault.groupStore.addGroup(masterKey, emptyGroup);
 
-            const retrievedGroup = getGroups().filter(g => g.id.value == emptyGroup.id.value)[0];
+            const retrievedGroup = getGroups().filter(g => g.value.id.value == emptyGroup.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
 
             let retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);

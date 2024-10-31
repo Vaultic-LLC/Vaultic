@@ -1,4 +1,5 @@
 import { VaultContrainedStore } from "./Base";
+import { VaultStoreParameter } from "./VaultStore";
 
 export interface VaultPreferencesState
 {
@@ -8,7 +9,7 @@ export interface VaultPreferencesState
 // need to re use it for something
 export class VaultPreferencesStore extends VaultContrainedStore<VaultPreferencesState>
 {
-    constructor(vault)
+    constructor(vault: VaultStoreParameter)
     {
         super(vault, "vaultPreferencesStoreState");
     }

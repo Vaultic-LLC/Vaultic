@@ -44,7 +44,7 @@ export default defineComponent({
                 return false;
             }
 
-            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.percentMetricForPulse);
+            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.value.percentMetricForPulse.value);
         });
 
         const totalAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 1 : props.model.totalAmount);
@@ -94,7 +94,7 @@ export default defineComponent({
                     {
                         data: [props.model.filledAmount, totalAmount.value - props.model.filledAmount],
                         //backgroundColor: [primaryColor.value, '#191919'],
-                        backgroundColor: function (context)
+                        backgroundColor: function (context: any)
                         {
                             const chart = context.chart;
                             const { ctx, chartArea } = chart;

@@ -30,7 +30,7 @@ export default defineComponent({
         const selectorItemModel: SingleSelectorItemModel = {
             isActive: ref(true),
             title: ref("Edit Password"),
-            color: ref(app.userPreferences.currentColorPalette.passwordsColor.primaryColor),
+            color: ref(app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
             onClick: () => { }
         }
 

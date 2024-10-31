@@ -133,10 +133,10 @@ export default defineComponent({
             switch (app.activeFilterGroupsTable)
             {
                 case DataType.Groups:
-                    return app.userPreferences.currentColorPalette.groupsColor;
+                    return app.userPreferences.currentColorPalette.groupsColor.value;
                 case DataType.Filters:
                 default:
-                    return app.userPreferences.currentColorPalette.filtersColor;
+                    return app.userPreferences.currentColorPalette.filtersColor.value;
             }
         });
 
@@ -144,13 +144,13 @@ export default defineComponent({
             {
                 name: 'Filters',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Filters),
-                color: computed(() => app.userPreferences.currentColorPalette.filtersColor),
+                color: computed(() => app.userPreferences.currentColorPalette.filtersColor.value),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Filters; }
             },
             {
                 name: 'Groups',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Groups),
-                color: computed(() => app.userPreferences.currentColorPalette.groupsColor),
+                color: computed(() => app.userPreferences.currentColorPalette.groupsColor.value),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Groups; }
             }
         ];

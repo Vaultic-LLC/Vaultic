@@ -63,7 +63,7 @@ export default defineComponent({
         const isOnEditScreen: ComputedRef<boolean> = computed(() => props.isEditing === true);
 
         const enableMarkdown: Ref<boolean> = computed(() => props.enableMarkdown != undefined ? props.enableMarkdown : true);
-        const markdownFormat: Ref<boolean> = ref(isOnEditScreen.value && app.settings.defaultMarkdownInEditScreens);
+        const markdownFormat: Ref<boolean> = ref(isOnEditScreen.value && app.settings.value.defaultMarkdownInEditScreens.value);
         const markdownHTML: ComputedRef<string> = computed(() => DOMPurify.sanitize(marked.parse(props.modelValue)));
         const toggleRadioButtonModel: Ref<ToggleRadioButtonModel> = ref({
             buttonOne: {

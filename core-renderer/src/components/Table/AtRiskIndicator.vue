@@ -21,7 +21,6 @@ export default defineComponent({
     setup(props)
     {
         const atRiskIcon: Ref<HTMLElement | null> = ref(null);
-        const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
 
         onMounted(() =>
         {
@@ -37,7 +36,6 @@ export default defineComponent({
         })
 
         return {
-            currentColorPalette,
             atRiskIcon
         };
     }

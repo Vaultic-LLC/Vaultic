@@ -6,9 +6,10 @@
         <div class="cloneFromHeader">Clone From</div>
         <div class="existingColorPalettes">
             <div class="colorPalette" :class="{ hovering: hoveringColorPalette == index }"
-                v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp)"
+                v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp.value)"
                 @mouseenter="hoveringColorPalette = index" @mouseleave="hoveringColorPalette = -1">
-                <ColorPalettePill :leftColor="cp.passwordsColor.primaryColor" :rightColor="cp.valuesColor.primaryColor"
+                <ColorPalettePill :leftColor="cp.value.passwordsColor.value.primaryColor.value" 
+                :rightColor="cp.value.valuesColor.value.primaryColor.value"
                     :hovering="hoveringColorPalette == index" />
             </div>
         </div>
@@ -25,6 +26,7 @@ import ColorPalettePill from "../../ColorPalette/ColorPalettePill.vue"
 
 import { ColorPalette } from '../../../Types/Colors';
 import app from "../../../Objects/Stores/AppStore";
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "EditColorPalettePopup",
@@ -39,7 +41,7 @@ export default defineComponent({
         const hoveringColorPalette: Ref<number> = ref(-1);
         // copy the object so that we don't edit the original one
         const colorPaletteModel: Ref<ColorPalette> = ref(JSON.vaulticParse(JSON.vaulticStringify(props.model)));
-        const currentColorPalettes: ComputedRef<ColorPalette[]> = computed(() => app.settings.colorPalettes.filter(cp => cp.isCreated));
+        const currentColorPalettes: ComputedRef<Field<ColorPalette>[]> = computed(() => app.colorPalettes.filter(cp => cp.value.isCreated.value));
 
         function cloneColorPalette(colorPalette: ColorPalette)
         {

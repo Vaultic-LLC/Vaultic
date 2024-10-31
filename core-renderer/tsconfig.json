@@ -1,6 +1,6 @@
 {
-    "extends": "./node_modules/@tsconfig/node20/tsconfig.json",
     "compilerOptions": {
+        "strict": true,
         "composite": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
