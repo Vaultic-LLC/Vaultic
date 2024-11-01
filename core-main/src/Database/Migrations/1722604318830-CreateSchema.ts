@@ -291,6 +291,10 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "integer",
                 },
                 {
+                    name: "userID",
+                    type: "integer"
+                },
+                {
                     name: "objectID",
                     type: "text"
                 },

@@ -3,15 +3,17 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { VaulticEntity } from "./VaulticEntity";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
-// TODO: this needs to be scoped per user otherwise differnt users changes will get co mingled
 @Entity({ name: "changeTrackings" })
 export class ChangeTracking extends VaulticEntity
 {
     @PrimaryGeneratedColumn("increment")
-    changeTrackingID: number
+    changeTrackingID: number;
+
+    @Column("integer")
+    userID: number;
 
     @Column("text")
-    objectID: string
+    objectID: string;
 
     @Column("integer")
     objectState: EntityState;
@@ -36,12 +38,20 @@ export class ChangeTracking extends VaulticEntity
 
     protected internalGetSignableProperties(): string[]
     {
-        return [nameof<ChangeTracking>("objectID"), nameof<ChangeTracking>("objectState")];
+        return [
+            nameof<ChangeTracking>("objectID"),
+            nameof<ChangeTracking>("objectState"),
+            nameof<ChangeTracking>("userID")
+        ];
     }
 
     public getEncryptableProperties(): string[]
     {
-        return [nameof<ChangeTracking>("objectID"), nameof<ChangeTracking>("objectState")];
+        return [
+            nameof<ChangeTracking>("objectID"),
+            nameof<ChangeTracking>("objectState"),
+            nameof<ChangeTracking>("userID")
+        ];
     }
 
     public static inserted(id: string, lastModifiedTime: number): ChangeTracking

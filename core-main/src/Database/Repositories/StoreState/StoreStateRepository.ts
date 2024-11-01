@@ -5,6 +5,7 @@ import { VaulticRepository } from "../VaulticRepository";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { environment } from "../../../Environment";
 import { ChangeTracking } from "../../Entities/ChangeTracking";
+import { MapPropertyManager, ObjectPropertyManager } from "../../../Types/Properties";
 
 export class StoreStateRepository<T extends StoreState> extends VaulticRepository<T>
 {
@@ -73,29 +74,26 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
     private mergeStoreStates(currentObj: any, newObj: any, changeTrackings: Dictionary<ChangeTracking>)
     {
-        // Object or Array
-        // TODO: this doesn't actually work for arrays since the key is just the index and that could have a different value
-        // change all arrays to Maps?
-        // TODO: might have to do something specific for getting, setting, updating, and deleting if the obj is a map
         if (typeof newObj.value == 'object')
         {
-            const keys = Object.keys(newObj.value);
-            const currentKeys = Object.keys(currentObj.value);
+            const manager: ObjectPropertyManager<any> = newObj.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
+
+            const keys = manager.keys(newObj.value);
+            const currentKeys = manager.keys(currentObj.value);
 
             for (let i = 0; i < keys.length; i++)
             {
-                // TODO: need to search by ids
                 const currentKeyMatchingIndex = currentKeys.indexOf(keys[i]);
 
                 // not in current keys. Check to see if it was deleted locally or if it was inserted / created on another device
                 if (currentKeyMatchingIndex < 0)
                 {
-                    const changeTracking = changeTrackings[newObj.value[keys[i]].id];
+                    const changeTracking = changeTrackings[manager.get(keys[i], newObj.value).id];
 
                     // wasn't altered locally, was added on another device
                     if (!changeTracking)
                     {
-                        currentObj.value[keys[i]] = newObj.value[keys[i]];
+                        manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj);
                     }
                     // was deleted locally, check to make sure that it was deleted before any updates to the 
                     // object on another device were
@@ -110,16 +108,16 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         // so this check would fail. If I also updated the lastModifiedTime of the record in emptyFilters, then this would work and
                         // add it back here. Do I have to worry abou that below as well where I am potentially keeping records that were 
                         // deleted? Yes, but there I can't confirm times?
-                        if (changeTracking.lastModifiedTime < newObj.value[keys[i]].lastModifiedTime)
+                        if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj.value).lastModifiedTime)
                         {
-                            currentObj.value[keys[i]] = newObj.value[keys[i]];
+                            manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);
                         }
                     }
                 }
                 else
                 {
                     // both objects exist, check them
-                    this.mergeStoreStates(currentObj.value[currentKeys[currentKeyMatchingIndex]], newObj.value[keys[i]], changeTrackings);
+                    this.mergeStoreStates(manager.get(currentKeys[currentKeyMatchingIndex], currentObj.value), manager.get(keys[i], newObj.value), changeTrackings);
                     currentKeys.splice(currentKeyMatchingIndex, 1);
                 }
             }
@@ -127,7 +125,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             // all the keys that are in the current obj, but not the newObj.
             for (let i = 0; i < currentKeys.length; i++)
             {
-                const changeTracking = changeTrackings[currentObj.value[currentKeys[i]].id];
+                const changeTracking = changeTrackings[manager.get(currentKeys[i], currentObj.value).id];
 
                 // wasn't modified locally and not in newObj, it was deleted on another device.
                 // If state is Inserted, we want to keep it. 
@@ -135,7 +133,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 // If state is Deleted, it wouldn't be in currentKeys
                 if (!changeTracking)
                 {
-                    delete currentObj.value[currentKeys[i]];
+                    manager.delete(currentKeys[i], currentObj.value);
                 }
             }
         }

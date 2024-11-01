@@ -4,6 +4,9 @@ import { VaulticRepository } from "./VaulticRepository";
 import { environment } from "../../Environment";
 import Transaction from "../Transaction";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { StoreState } from "../Entities/States/StoreState";
+import { Field } from "@vaultic/shared/Types/Fields";
+import { MapPropertyManager, ObjectPropertyManager } from "../../Types/Properties";
 
 class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 {
@@ -12,16 +15,20 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         return environment.databaseDataSouce.getRepository(ChangeTracking);
     }
 
+    public trackStateDifferences(masterKey: string, newState: StoreState, oldState: StoreState, transaction: Transaction): string
+    {
+        const updatedState = this.trackObjectDifferences(masterKey, new Field(newState), new Field(oldState), transaction);
+        return JSON.vaulticStringify(updatedState);
+    }
+
     public trackObjectDifferences(masterKey: string, newObj: any, oldObj: any, transaction: Transaction)
     {
-        // TODO: does this work with Sets? No. 
-        // This also doesn't work for arrays either. Could just turn all arrays and Sets in Maps keyed by field.id or 
-        // whatever the application for it is
-        // TODO: might have to do something specific for getting, setting, updating, and deleting if the obj is a map
         if (typeof newObj.value == 'object')
         {
-            const keys = Object.keys(newObj.value);
-            const oldKeys = Object.keys(oldObj.value);
+            let manager: ObjectPropertyManager<any> = newObj.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
+
+            const keys = manager.keys(newObj.value);
+            const oldKeys = manager.keys(oldObj.value);
 
             for (let i = 0; i < keys.length; i++)
             {
@@ -36,7 +43,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 }
                 else
                 {
-                    this.trackObjectDifferences(masterKey, newObj.value[keys[i]], oldObj.value[oldKeys[oldKeyMatchingIndex]], transaction);
+                    this.trackObjectDifferences(masterKey, manager.get(keys[i], newObj.value), manager.get(oldKeys[oldKeyMatchingIndex], oldObj.value), transaction);
                     oldKeys.splice(oldKeyMatchingIndex, 1);
                 }
             }
@@ -44,7 +51,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             // all the keys that are in the old obj but not in new obj, they were deleted
             for (let i = 0; i < oldKeys.length; i++)
             {
-                transaction.insertEntity(ChangeTracking.deleted(oldObj.value[oldKeys[i]].id, Date.now()), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.deleted(manager.get(oldKeys[i], oldObj.value).id, Date.now()), masterKey, () => this);
             }
         }
         else 
@@ -57,12 +64,27 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 transaction.insertEntity(ChangeTracking.updated(newObj.id, newObj.lastModifiedTime), masterKey, () => this);
             }
         }
+
+        return newObj;
     }
 
     public async getChangeTrackingsByID(masterKey: string): Promise<Dictionary<ChangeTracking>>
     {
         const changeTrackingByID: Dictionary<ChangeTracking> = {};
-        let changeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find());
+
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+        if (!currentUser)
+        {
+            return changeTrackingByID;
+        }
+
+        let changeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find(
+            {
+                where: {
+                    userID: currentUser.userID
+                }
+            }));
+
         if (!changeTrackings)
         {
             return changeTrackingByID;
@@ -75,6 +97,11 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         }
 
         return changeTrackingByID;
+    }
+
+    public async clearChangeTrackings()
+    {
+
     }
 }
 

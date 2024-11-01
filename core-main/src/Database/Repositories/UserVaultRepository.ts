@@ -13,6 +13,8 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserVaultRepository } from "../../Types/Repositories";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { ChangeTracking } from "../Entities/ChangeTracking";
 
 class UserVaultRepository extends VaulticRepository<UserVault> implements IUserVaultRepository
 {
@@ -174,8 +176,12 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const transaction = new Transaction();
             if (newUserVault.vaultPreferencesStoreState)
             {
+                const currentVaultPreferences = JSON.vaulticParse((JSON.vaulticParse(currentData) as CondensedVaultData).vaultPreferencesStoreState);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newUserVault.vaultPreferencesStoreState),
+                    currentVaultPreferences, transaction);
+
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
-                    oldUserVault.userVaultID, "", newUserVault.vaultPreferencesStoreState, transaction)))
+                    oldUserVault.userVaultID, "", state, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "VaultPreferencesStoreState Update Failed");
                 }
@@ -292,7 +298,8 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return true;
     }
 
-    public async updateFromServer(currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>, transaction: Transaction)
+    public async updateFromServer(currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>,
+        changeTrackings: Dictionary<ChangeTracking>, transaction: Transaction)
     {
         if (!newUserVault.userVaultID)
         {
@@ -325,11 +332,20 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             transaction.overrideEntity(newUserVault.userVaultID, partialUserVault, () => this);
         }
 
+        let needsToRePushData = false;
+
+        // Shouldn't ever happen since we don't use the vault preferences anymore atm
         if (newUserVault.vaultPreferencesStoreState && newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID)
         {
             if (currentUserVault.vaultPreferencesStoreState?.entityState == EntityState.Updated)
             {
-                // TODO: merge changes between states
+                if (!await (environment.repositories.vaultPreferencesStoreStates.mergeStates("", currentUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
+                    newUserVault.vaultPreferencesStoreState, changeTrackings, transaction, false)))
+                {
+                    return;
+                }
+
+                needsToRePushData = true;
             }
             else 
             {
@@ -340,6 +356,8 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                     partialVaultPreferencesStoreState, () => environment.repositories.vaultPreferencesStoreStates);
             }
         }
+
+        return needsToRePushData;
     }
 
     public async deleteFromServerAndVault(vaultID: number)

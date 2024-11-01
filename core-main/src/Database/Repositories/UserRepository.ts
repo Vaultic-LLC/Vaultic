@@ -414,22 +414,31 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const newUser: UserData = JSON.vaulticParse(newData);
             const transaction = new Transaction();
 
+            const parsedCurrentData: UserData | undefined = undefined;
+            if (newUser.appStoreState || newUser.userPreferencesStoreState)
+            {
+                currentData = JSON.vaulticParse(currentData);
+            }
+
             if (newUser.appStoreState)
             {
+                const currentAppStoreState = JSON.vaulticParse(parsedCurrentData.appStoreState);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
+
                 if (!await (environment.repositories.appStoreStates.updateState(
-                    user.appStoreState.appStoreStateID, masterKey, newUser.appStoreState, transaction)))
+                    user.appStoreState.appStoreStateID, masterKey, state, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update AppStoreState");
                 }
-
-                const currentAppStoreState = JSON.vaulticParse(JSON.vaulticParse(currentData).appStoreState);
-                environment.repositories.changeTrackings.trackObjectDifferences(masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
             }
 
             if (newUser.userPreferencesStoreState)
             {
+                const currentUserPreferences = JSON.vaulticParse(parsedCurrentData.userPreferencesStoreState);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
+
                 if (!await (environment.repositories.userPreferencesStoreStates.updateState(
-                    user.userPreferencesStoreState.userPreferencesStoreStateID, "", newUser.userPreferencesStoreState, transaction)))
+                    user.userPreferencesStoreState.userPreferencesStoreStateID, "", state, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update UserPreferencesStoreState");
                 }

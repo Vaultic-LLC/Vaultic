@@ -5,7 +5,6 @@ import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { EntityState } from "@vaultic/shared/Types/Entities";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>): Promise<TypedMethodResponse<T | undefined>>
 {
@@ -275,7 +274,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
 
             if (vaultIndex >= 0)
             {
-                await environment.repositories.vaults.updateFromServer(clientUserDataPayload.vaults![vaultIndex], serverVault, transaction);
+                await environment.repositories.vaults.updateFromServer(masterKey, clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction);
             }
             else 
             {
@@ -297,7 +296,10 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
 
             if (userVaultIndex >= 0)
             {
-                await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, transaction);
+                if (await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, changeTrackings, transaction))
+                {
+                    needsToRePushData = true;
+                }
             }
             else 
             {
@@ -324,6 +326,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
     }
 
     // we've handled all trackedChanges. Clear them
+    // TODO: should only clear for current user
     transaction.raw('DELETE FROM changeTrackings');
 
     if (!(await transaction.commit()))
