@@ -1,4 +1,4 @@
-import { ref, Ref } from "vue";
+import { computed, ComputedRef, ref, Ref } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { Store, StoreState } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
@@ -33,7 +33,7 @@ export class BaseVaultStore<V extends PasswordStore,
 {
     protected internalName: string;
 
-    protected internalUserVaultID: Ref<number | undefined>;
+    protected internalUserVaultID: number;
     protected internalPasswordStore: V;
     protected internalValueStore: W;
     protected internalFilterStore: X;
@@ -41,7 +41,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalVaultPreferencesStore: VaultPreferencesStore;
 
     get name() { return this.internalName; }
-    get userVaultID() { return this.internalUserVaultID.value; }
+    get userVaultID() { return this.internalUserVaultID; }
     get settings() { return this.state.settings; }
 
     get passwordStore() { return this.internalPasswordStore; }
@@ -53,13 +53,12 @@ export class BaseVaultStore<V extends PasswordStore,
     constructor() 
     {
         super("vaultStoreState");
-        this.internalUserVaultID = ref(undefined);
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
 
     protected async setBaseVaultStoreData(data: CondensedVaultData)
     {
-        this.internalUserVaultID.value = data.userVaultID;
+        this.internalUserVaultID = data.userVaultID;
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
     }
@@ -94,7 +93,7 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
 
         this.internalIsLoaded = false;
         this.internalName = displayVault.name;
-        this.internalUserVaultID.value = displayVault.userVaultID;
+        this.internalUserVaultID = displayVault.userVaultID;
     }
 
     public async setBasicVaultStoreData(data: CondensedVaultData)
@@ -112,14 +111,17 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
 export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     ReactiveValueStore, ReactiveFilterStore, ReactiveGroupStore>
 {
+    protected internalReactiveUserVaultID: ComputedRef<number>;
     protected internalIsReadOnly: Ref<boolean>;
 
+    get reactiveUserVaultID() { return this.internalReactiveUserVaultID.value; }
     get isReadOnly() { return this.internalIsReadOnly; }
     get loginHistory() { return this.state.loginHistory; }
 
     constructor()
     {
         super();
+        this.internalReactiveUserVaultID = computed(() => this.userVaultID);
         this.internalIsReadOnly = ref(false);
         this.internalPasswordStore = new ReactivePasswordStore(this);
         this.internalValueStore = new ReactiveValueStore(this);
@@ -144,7 +146,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     public async setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)
     {
         this.internalIsReadOnly.value = readOnly;
-        this.internalUserVaultID.value = basicVault.userVaultID;
+        this.internalUserVaultID = basicVault.userVaultID;
         this.initalizeNewState(basicVault.getState());
         this.internalVaultPreferencesStore.initalizeNewState(basicVault.vaultPreferencesStore.getState());
 

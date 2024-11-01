@@ -12,7 +12,7 @@ const masterKey = "test";
 function getSafeValues()
 {
     return app.currentVault.valueStore.nameValuePairs.filter(v => !v.value.isWeak &&
-        !app.currentVault.valueStore.duplicateNameValuePairs.value.includes(v.value.id.value) && !v.value.isOld);
+        !app.currentVault.valueStore.duplicateNameValuePairs.value.has(v.value.id.value) && !v.value.isOld);
 }
 
 valueStoreSuite.tests.push({
@@ -69,11 +69,8 @@ valueStoreSuite.tests.push({
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, duplicateValue);
 
-        const retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(v => v == duplicateValue.id.value);
-        const retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(v => v == weakPhraseValue.id.value);
-
-        ctx.assertEquals("Duplicate value one exists", retrievedDuplicateValueOne.length, 1);
-        ctx.assertEquals("Duplicate value two exists", retrievedDuplicateValueTwo.length, 1);
+        ctx.assertTruthy("Duplicate value one exists", app.currentVault.valueStore.duplicateNameValuePairs.value.has(duplicateValue.id.value));
+        ctx.assertTruthy("Duplicate value two exists", app.currentVault.valueStore.duplicateNameValuePairs.value.has(weakPhraseValue.id.value));
     }
 });
 
@@ -91,21 +88,21 @@ valueStoreSuite.tests.push({
         await app.currentVault.valueStore.addNameValuePair(masterKey, safeValue);
 
         ctx.assertEquals("Safe value correct current",
-            app.currentVault.valueStore.currentAndSafeValues.current[app.currentVault.valueStore.currentAndSafeValues.current.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
             app.currentVault.valueStore.nameValuePairs.length);
 
         ctx.assertEquals("Safe value correct safe",
-            app.currentVault.valueStore.currentAndSafeValues.safe[app.currentVault.valueStore.currentAndSafeValues.safe.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, unsafeValue);
 
         ctx.assertEquals("Unsafe value correct current",
-            app.currentVault.valueStore.currentAndSafeValues.current[app.currentVault.valueStore.currentAndSafeValues.current.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
             app.currentVault.valueStore.nameValuePairs.length);
 
         ctx.assertEquals("Unsafe value correct safe",
-            app.currentVault.valueStore.currentAndSafeValues.safe[app.currentVault.valueStore.currentAndSafeValues.safe.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
     }
 });
@@ -274,17 +271,17 @@ valueStoreSuite.tests.push({
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, duplicateValue);
 
-        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == duplicateValue.id.value);
-        ctx.assertEquals("Duplicate value doesn't exists", retrievedDuplicateValueOne.length, 0);
+        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
+        ctx.assertTruthy("Duplicate value doesn't exists", retrievedDuplicateValueOne == undefined);
 
         duplicateValue.value.value = notWeakValue;
         await app.currentVault.valueStore.updateNameValuePair(masterKey, duplicateValue, true);
 
-        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == duplicateValue.id.value);
-        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == weakPhraseValue.id.value);
+        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
+        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPhraseValue.id.value);
 
-        ctx.assertEquals("Duplicate value one exists", retrievedDuplicateValueOne.length, 1);
-        ctx.assertEquals("Duplicate value two exists", retrievedDuplicateValueTwo.length, 1);
+        ctx.assertTruthy("Duplicate value one exists", retrievedDuplicateValueOne?.value.duplicateDataTypesByID.value.has(weakPhraseValue.id.value));
+        ctx.assertTruthy("Duplicate value two exists", retrievedDuplicateValueTwo?.value.duplicateDataTypesByID.value.has(duplicateValue.id.value));
 
         duplicateValue.value.value = "notDuplicate";
         weakPasscodeValue.value.value = "alsoNotDuplicate";
@@ -292,11 +289,11 @@ valueStoreSuite.tests.push({
         await app.currentVault.valueStore.updateNameValuePair(masterKey, duplicateValue, true);
         await app.currentVault.valueStore.updateNameValuePair(masterKey, weakPasscodeValue, true);
 
-        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == duplicateValue.id.value);
-        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == weakPhraseValue.id.value);
+        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
+        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPhraseValue.id.value);
 
-        ctx.assertEquals("Duplicate value one doesn't exists", retrievedDuplicateValueOne.length, 0);
-        ctx.assertEquals("Duplicate value two doesn't exists", retrievedDuplicateValueTwo.length, 0);
+        ctx.assertEquals("Duplicate value one doesn't exists", retrievedDuplicateValueOne, undefined);
+        ctx.assertEquals("Duplicate value two doesn't exists", retrievedDuplicateValueTwo, undefined);
     }
 });
 
@@ -317,11 +314,11 @@ valueStoreSuite.tests.push({
         await app.currentVault.valueStore.updateNameValuePair(masterKey, safeValue, true);
 
         ctx.assertEquals("Safe value correct current",
-            app.currentVault.valueStore.currentAndSafeValues.current[app.currentVault.valueStore.currentAndSafeValues.current.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
             app.currentVault.valueStore.nameValuePairs.length);
 
         ctx.assertEquals("Safe value correct safe",
-            app.currentVault.valueStore.currentAndSafeValues.safe[app.currentVault.valueStore.currentAndSafeValues.safe.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, unsafeValue);
@@ -330,11 +327,11 @@ valueStoreSuite.tests.push({
         await app.currentVault.valueStore.updateNameValuePair(masterKey, unsafeValue, true);
 
         ctx.assertEquals("Unsafe value correct current",
-            app.currentVault.valueStore.currentAndSafeValues.current[app.currentVault.valueStore.currentAndSafeValues.current.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
             app.currentVault.valueStore.nameValuePairs.length);
 
         ctx.assertEquals("Unsafe value correct safe",
-            app.currentVault.valueStore.currentAndSafeValues.safe[app.currentVault.valueStore.currentAndSafeValues.safe.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
     }
 });
@@ -480,19 +477,24 @@ valueStoreSuite.tests.push({
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, duplicateValue);
 
-        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == duplicateValue.id.value);
-        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == weakPasscodeValue.id.value);
+        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
+        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPasscodeValue.id.value);
 
-        ctx.assertEquals("Duplicate value one exists", retrievedDuplicateValueOne.length, 1);
-        ctx.assertEquals("Duplicate value two exists", retrievedDuplicateValueTwo.length, 1);
+        ctx.assertTruthy("Duplicate value one exists", retrievedDuplicateValueOne?.value.duplicateDataTypesByID.value.has(weakPasscodeValue.id.value));
+        ctx.assertTruthy("Duplicate value two exists", retrievedDuplicateValueTwo?.value.duplicateDataTypesByID.value.has(duplicateValue.id.value));
 
         const reactiveDuplicateValue = createReactiveValue(duplicateValue);
         await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveDuplicateValue);
 
-        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == duplicateValue.id.value);
-        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.filter(p => p == weakPasscodeValue.id.value);
+        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
+        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPasscodeValue.id.value);
 
-        ctx.assertEquals("Duplicate value one doesn't exists", retrievedDuplicateValueOne.length, 0);
+        // deleted so it shouldn't exist at all
+        ctx.assertEquals("Duplicate value one doesn't exists", retrievedDuplicateValueOne, undefined);
+
+        // still has other duplicates so just make sure the deleted value isn't in there
+        ctx.assertTruthy("Duplicate value two doesn't have previous duplicate value one",
+            !retrievedDuplicateValueTwo?.value.duplicateDataTypesByID.value.has(duplicateValue.id.value));
 
         const reactivepassCodeValue = createReactiveValue(weakPasscodeValue);
         await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactivepassCodeValue);
@@ -524,11 +526,11 @@ valueStoreSuite.tests.push({
         await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveSafeValue);
 
         ctx.assertEquals("Safe value correct current",
-            app.currentVault.valueStore.currentAndSafeValues.current[app.currentVault.valueStore.currentAndSafeValues.current.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
             app.currentVault.valueStore.nameValuePairs.length);
 
         ctx.assertEquals("Safe value correct safe",
-            app.currentVault.valueStore.currentAndSafeValues.safe[app.currentVault.valueStore.currentAndSafeValues.safe.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, unsafeValue);
@@ -540,11 +542,11 @@ valueStoreSuite.tests.push({
         await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveUnsafeValue);
 
         ctx.assertEquals("Unsafe value correct current",
-            app.currentVault.valueStore.currentAndSafeValues.current[app.currentVault.valueStore.currentAndSafeValues.current.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
             app.currentVault.valueStore.nameValuePairs.length);
 
         ctx.assertEquals("Unsafe value correct safe",
-            app.currentVault.valueStore.currentAndSafeValues.safe[app.currentVault.valueStore.currentAndSafeValues.safe.length - 1],
+            app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
     }
 });

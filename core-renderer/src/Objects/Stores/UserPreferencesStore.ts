@@ -136,7 +136,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             this.setCurrentPrimaryColor(newValue);
         });
 
-        watch(() => appStore.currentVault.userVaultID, (newValue) => 
+        watch(() => appStore.currentVault.reactiveUserVaultID, (newValue) => 
         {
             if (!newValue)
             {

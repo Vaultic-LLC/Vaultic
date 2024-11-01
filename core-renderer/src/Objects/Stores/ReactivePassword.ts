@@ -25,6 +25,8 @@ export default function createReactivePassword(password: Password): ReactivePass
         return differenceInDays >= app.settings.value.oldPasswordDays.value;
     });
 
+    // TODO: this doesn't work with duplicates since I don't actually set isDuplicate anywhere
+    // same with ReactiveValue
     const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !passwordState.isWeak && !passwordState.containsLogin && !passwordState.isDuplicate);
 
     return {

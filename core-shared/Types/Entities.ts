@@ -119,7 +119,7 @@ export interface IGroupStoreState extends IStoreState
 export interface DisplayVault 
 {
     name: string;
-    userVaultID?: number;
+    userVaultID: number;
     lastUsed?: boolean;
 }
 

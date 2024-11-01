@@ -1,8 +1,8 @@
 import { createTestSuite, type TestContext } from '../test';
 import app from "../../src/core/Objects/Stores/AppStore";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
-import { DataType, defaultGroup, IGroupable, defaultPassword, defaultValue, Group } from '../../src/core/Types/DataTypes';
-import { Field, IIdentifiable, PrimaryDataObjectCollection } from '@vaultic/shared/Types/Fields';
+import { DataType, defaultGroup, IGroupable, defaultPassword, defaultValue, Group, DuplicateDataTypes } from '../../src/core/Types/DataTypes';
+import { Field, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from '@vaultic/shared/Types/Fields';
 
 let groupStoreSuite = createTestSuite("Group Store");
 
@@ -78,8 +78,8 @@ groupStoreSuite.tests.push({
             property: PrimaryDataObjectCollection,
             primaryObject: T,
             getGroups: () => Field<Group>[],
-            getEmptyGroups: () => string[],
-            getDuplicateGroups: () => Dictionary<string[]>)
+            getEmptyGroups: () => Field<Map<string, Field<string>>>,
+            getDuplicateGroups: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
             const emptyGroup: Group = defaultGroup(type);
             emptyGroup.name.value = `GroupStore Add Metrics Work Empty Type ${type}`;
@@ -89,8 +89,8 @@ groupStoreSuite.tests.push({
             const retrievedGroup = getGroups().filter(g => g.value.id.value == emptyGroup.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
 
-            let retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value)[0];
-            ctx.assertTruthy(`Empty Group Exists for type ${type}`, retrievedEmptyGroup);
+            let hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
+            ctx.assertTruthy(`Empty Group Exists for type ${type}`, hasEmptyGroup);
 
             const duplicateGroupOne = defaultGroup(type);
             duplicateGroupOne.name.value = `GroupStore Add Metrics Work Dup One Type ${type}`;
@@ -106,19 +106,22 @@ groupStoreSuite.tests.push({
             const retrievedDuplicateGroupOne = getGroups().filter(g => g.value.id.value == duplicateGroupOne.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedDuplicateGroupOne);
 
-            let retrievedDuplicateGroupOneTwo = getDuplicateGroups()[duplicateGroupOne.id.value];
+            let retrievedDuplicateGroupOneTwo = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
             ctx.assertEquals(`Duplicate Group Doens't exist for type ${type}`, retrievedDuplicateGroupOneTwo, undefined);
 
-            retrievedEmptyGroup = getEmptyGroups().filter(g => g == duplicateGroupOne.id.value)[0];
-            ctx.assertEquals(`Non empty group doesn't exist for type ${type}`, retrievedEmptyGroup, undefined);
+            hasEmptyGroup = getEmptyGroups().value.has(duplicateGroupOne.id.value);
+            ctx.assertTruthy(`Non empty group doesn't exist for type ${type}`, !hasEmptyGroup);
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupTwo);
 
-            retrievedDuplicateGroupOneTwo = getDuplicateGroups()[duplicateGroupOne.id.value];
-            const retrievedDuplicateGroupTwo = getDuplicateGroups()[duplicateGroupTwo.id.value];
+            retrievedDuplicateGroupOneTwo = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
+            const retrievedDuplicateGroupTwo = getDuplicateGroups().value.get(duplicateGroupTwo.id.value);
 
-            ctx.assertEquals(`Duplicate group one is duplicate for ${type}`, retrievedDuplicateGroupOneTwo.length, 1);
-            ctx.assertEquals(`Duplicate group two is duplicate for ${type}`, retrievedDuplicateGroupTwo.length, 1);
+            ctx.assertTruthy(`Duplicate group one is duplicate for ${type}`,
+                retrievedDuplicateGroupOneTwo?.value.duplicateDataTypesByID.value.has(duplicateGroupTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate group two is duplicate for ${type}`,
+                retrievedDuplicateGroupTwo?.value.duplicateDataTypesByID.value.has(duplicateGroupOne.id.value));
         }
 
         const password = defaultPassword();
@@ -243,8 +246,8 @@ groupStoreSuite.tests.push({
             property: PrimaryDataObjectCollection,
             primaryObject: T,
             getGroups: () => Field<Group>[],
-            getEmptyGroups: () => string[],
-            getDuplicateGroups: () => Dictionary<string[]>)
+            getEmptyGroups: () => Field<Map<string, Field<string>>>,
+            getDuplicateGroups: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
             const emptyGroup: Group = defaultGroup(type);
             emptyGroup.name.value = `GroupStore Update Metrics Work Empty Type ${type}`;
@@ -254,20 +257,20 @@ groupStoreSuite.tests.push({
             const retrievedGroup = getGroups().filter(g => g.value.id.value == emptyGroup.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
 
-            let retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
-            ctx.assertEquals(`Empty Group Exist for type ${type}`, retrievedEmptyGroup.length, 1);
+            let hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
+            ctx.assertTruthy(`Empty Group Exist for type ${type}`, hasEmptyGroup);
 
             emptyGroup[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
             await app.currentVault.groupStore.updateGroup(masterKey, emptyGroup);
 
-            retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
-            ctx.assertEquals(`Empty Group Doesn't Exist for type ${type}`, retrievedEmptyGroup.length, 0);
+            hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
+            ctx.assertTruthy(`Empty Group Doesn't Exist for type ${type}`, !hasEmptyGroup);
 
             emptyGroup[property].value = new Map();
             await app.currentVault.groupStore.updateGroup(masterKey, emptyGroup);
 
-            retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
-            ctx.assertEquals(`Empty Group Exist for type ${type} after update`, retrievedEmptyGroup.length, 1);
+            hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
+            ctx.assertTruthy(`Empty Group Exist for type ${type} after update`, hasEmptyGroup);
 
             const duplicateGroupOne = defaultGroup(type);
             duplicateGroupOne.name.value = `GroupStore Update Metrics Work Dup One Type ${type}`;
@@ -281,32 +284,40 @@ groupStoreSuite.tests.push({
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupTwo);
 
-            let retrievedDuplicateGroupOne = getDuplicateGroups()[duplicateGroupOne.id.value];
-            let retrievedDuplicateGroupTwo = getDuplicateGroups()[duplicateGroupTwo.id.value];
+            let retrievedDuplicateGroupOne = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
+            let retrievedDuplicateGroupTwo = getDuplicateGroups().value.get(duplicateGroupTwo.id.value);
 
-            ctx.assertEquals(`Duplicate Group one Exists for type ${type}`, retrievedDuplicateGroupOne.length, 1);
-            ctx.assertEquals(`Duplicate Group two Exists for type ${type}`, retrievedDuplicateGroupTwo.length, 1);
+            ctx.assertTruthy(`Duplicate Group one Exists for type ${type}`,
+                retrievedDuplicateGroupOne?.value.duplicateDataTypesByID.value.has(duplicateGroupTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate Group two Exists for type ${type}`,
+                retrievedDuplicateGroupTwo?.value.duplicateDataTypesByID.value.has(duplicateGroupOne.id.value));
 
             duplicateGroupOne[property].value = new Map();
 
             await app.currentVault.groupStore.updateGroup(masterKey, duplicateGroupOne);
 
-            retrievedDuplicateGroupOne = getDuplicateGroups()[duplicateGroupOne.id.value];
-            retrievedDuplicateGroupTwo = getDuplicateGroups()[duplicateGroupTwo.id.value];
+            retrievedDuplicateGroupOne = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
+            retrievedDuplicateGroupTwo = getDuplicateGroups().value.get(duplicateGroupTwo.id.value);
 
             // duplicate group one will be a duplicate due to groups added by other tests and / or the empty group added above
-            ctx.assertTruthy(`Duplicate group one doesn't have group two ${type}`, !retrievedDuplicateGroupOne.includes(duplicateGroupTwo.id.value));
+            ctx.assertTruthy(`Duplicate group one doesn't have group two ${type}`,
+                !retrievedDuplicateGroupOne?.value.duplicateDataTypesByID.value.has(duplicateGroupTwo.id.value));
+
             ctx.assertEquals(`Duplicate group two isn't a duplicate ${type}`, retrievedDuplicateGroupTwo, undefined);
 
             duplicateGroupOne[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
             await app.currentVault.groupStore.updateGroup(masterKey, duplicateGroupOne);
 
-            retrievedDuplicateGroupOne = getDuplicateGroups()[duplicateGroupOne.id.value];
-            retrievedDuplicateGroupTwo = getDuplicateGroups()[duplicateGroupTwo.id.value];
+            retrievedDuplicateGroupOne = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
+            retrievedDuplicateGroupTwo = getDuplicateGroups().value.get(duplicateGroupTwo.id.value);
 
-            ctx.assertEquals(`Duplicate group one exists for type ${type} after update`, retrievedDuplicateGroupOne.length, 1);
-            ctx.assertEquals(`Duplicate group two exists for type ${type} after update`, retrievedDuplicateGroupTwo.length, 1);
+            ctx.assertTruthy(`Duplicate group one exists for type ${type} after update`,
+                retrievedDuplicateGroupOne?.value.duplicateDataTypesByID.value.has(duplicateGroupTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate group two exists for type ${type} after update`,
+                retrievedDuplicateGroupTwo?.value.duplicateDataTypesByID.value.has(duplicateGroupOne.id.value));
         }
 
         const password = defaultPassword();
@@ -402,8 +413,8 @@ groupStoreSuite.tests.push({
             property: PrimaryDataObjectCollection,
             primaryObject: T,
             getGroups: () => Field<Group>[],
-            getEmptyGroups: () => string[],
-            getDuplicateGroups: () => Dictionary<string[]>)
+            getEmptyGroups: () => Field<Map<string, Field<string>>>,
+            getDuplicateGroups: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
             const emptyGroup: Group = defaultGroup(type);
             emptyGroup.name.value = `GroupStore Delete Metrics Work Empty Type ${type}`;
@@ -413,13 +424,13 @@ groupStoreSuite.tests.push({
             const retrievedGroup = getGroups().filter(g => g.value.id.value == emptyGroup.id.value)[0];
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
 
-            let retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
-            ctx.assertEquals(`Empty Group Exist for type ${type}`, retrievedEmptyGroup.length, 1);
+            let hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
+            ctx.assertTruthy(`Empty Group Exist for type ${type}`, hasEmptyGroup);
 
             await app.currentVault.groupStore.deleteGroup(masterKey, emptyGroup);
 
-            retrievedEmptyGroup = getEmptyGroups().filter(g => g == emptyGroup.id.value);
-            ctx.assertEquals(`Empty Group Doesn't Exist for type ${type}`, retrievedEmptyGroup.length, 0);
+            hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
+            ctx.assertTruthy(`Empty Group Doesn't Exist for type ${type}`, !hasEmptyGroup);
 
             const duplicateGroupOne = defaultGroup(type);
             duplicateGroupOne.name.value = `GroupStore Delete Metrics Work Dup One Type ${type}`;
@@ -433,16 +444,22 @@ groupStoreSuite.tests.push({
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupTwo);
 
-            let retrievedDuplicateGroupOne = getDuplicateGroups()[duplicateGroupOne.id.value];
-            let retrievedDuplicateGroupTwo = getDuplicateGroups()[duplicateGroupTwo.id.value];
+            let retrievedDuplicateGroupOne = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
+            let retrievedDuplicateGroupTwo = getDuplicateGroups().value.get(duplicateGroupTwo.id.value);
 
-            ctx.assertEquals(`Duplicate Group one Exists for type ${type}`, retrievedDuplicateGroupOne.length, 1);
-            ctx.assertEquals(`Duplicate Group two Exists for type ${type}`, retrievedDuplicateGroupOne.length, 1);
+            ctx.assertTruthy(`Duplicate Group one Exists for type ${type}`, retrievedDuplicateGroupOne != undefined);
+            ctx.assertTruthy(`Duplicate Group two Exists for type ${type}`, retrievedDuplicateGroupTwo != undefined);
+
+            ctx.assertTruthy(`Duplicate Group one has duplicate group two for type ${type}`,
+                retrievedDuplicateGroupOne?.value.duplicateDataTypesByID.value.has(duplicateGroupTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate Group two has duplicate group one for type ${type}`,
+                retrievedDuplicateGroupTwo?.value.duplicateDataTypesByID.value.has(duplicateGroupOne.id.value));
 
             await app.currentVault.groupStore.deleteGroup(masterKey, duplicateGroupOne);
 
-            retrievedDuplicateGroupOne = getDuplicateGroups()[duplicateGroupOne.id.value];
-            retrievedDuplicateGroupTwo = getDuplicateGroups()[duplicateGroupTwo.id.value];
+            retrievedDuplicateGroupOne = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
+            retrievedDuplicateGroupTwo = getDuplicateGroups().value.get(duplicateGroupTwo.id.value);
 
             ctx.assertEquals(`Duplicate group one doesn't Exists for type ${type}`, retrievedDuplicateGroupOne, undefined);
             ctx.assertEquals(`Duplicate group two doesn't Exists for type ${type}`, retrievedDuplicateGroupOne, undefined);

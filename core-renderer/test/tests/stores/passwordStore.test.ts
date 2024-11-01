@@ -11,7 +11,9 @@ const masterKey = "test";
 
 function getSafePasswords()
 {
-    return app.currentVault.passwordStore.passwords.filter(p => !p.value.isWeak && !app.currentVault.passwordStore.duplicatePasswords.value.includes(p.value.id.value) && !p.value.containsLogin && !p.value.isOld);
+    return app.currentVault.passwordStore.passwords.filter(p => !p.value.isWeak &&
+        !app.currentVault.passwordStore.duplicatePasswords.value.has(p.value.id.value) &&
+        !p.value.containsLogin && !p.value.isOld);
 }
 
 passwordStoreSuite.tests.push({
@@ -81,10 +83,11 @@ passwordStoreSuite.tests.push({
 
         await app.currentVault.passwordStore.addPassword(masterKey, duplicatePassword);
 
-        const retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == duplicatePassword.id.value);
-        const retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == weakPassword.id.value);
-        ctx.assertEquals("Duplicate password one exists", retrievedDuplicatePasswordOne.length, 1);
-        ctx.assertEquals("Duplicate password two exists", retrievedDuplicatePasswordTwo.length, 1);
+        const duplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
+        const duplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+
+        ctx.assertTruthy("Duplicate password one exists", duplicatePasswordOne?.value.duplicateDataTypesByID.value.has(weakPassword.id.value));
+        ctx.assertTruthy("Duplicate password two exists", duplicatePasswordTwo?.value.duplicateDataTypesByID.value.has(duplicatePassword.id.value));
 
         await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
 
@@ -107,21 +110,21 @@ passwordStoreSuite.tests.push({
         await app.currentVault.passwordStore.addPassword(masterKey, safePassword);
 
         ctx.assertEquals("Safe password correct current",
-            app.currentVault.passwordStore.currentAndSafePasswords.current[app.currentVault.passwordStore.currentAndSafePasswords.current.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
             app.currentVault.passwordStore.passwords.length);
 
         ctx.assertEquals("Safe password correct safe",
-            app.currentVault.passwordStore.currentAndSafePasswords.safe[app.currentVault.passwordStore.currentAndSafePasswords.safe.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1],
             getSafePasswords().length);
 
         await app.currentVault.passwordStore.addPassword(masterKey, unsafePassword);
 
         ctx.assertEquals("Unsafe password correct current",
-            app.currentVault.passwordStore.currentAndSafePasswords.current[app.currentVault.passwordStore.currentAndSafePasswords.current.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
             app.currentVault.passwordStore.passwords.length);
 
         ctx.assertEquals("Unsafe password correct safe",
-            app.currentVault.passwordStore.currentAndSafePasswords.safe[app.currentVault.passwordStore.currentAndSafePasswords.safe.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1],
             getSafePasswords().length);
     }
 });
@@ -306,19 +309,21 @@ passwordStoreSuite.tests.push({
 
         await app.currentVault.passwordStore.addPassword(masterKey, duplicatePassword);
 
-        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == duplicatePassword.id.value);
-        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == weakPassword.id.value);
-        ctx.assertEquals("Duplicate password one exists", retrievedDuplicatePasswordOne.length, 1);
-        ctx.assertEquals("Duplicate password two exists", retrievedDuplicatePasswordTwo.length, 1);
+        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
+        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+
+        ctx.assertTruthy("Duplicate password one exists", retrievedDuplicatePasswordOne?.value.duplicateDataTypesByID.value.has(weakPassword.id.value));
+        ctx.assertTruthy("Duplicate password two exists", retrievedDuplicatePasswordTwo?.value.duplicateDataTypesByID.value.has(duplicatePassword.id.value));
 
         duplicatePassword.password.value = "VNlowehnglwhgaljksgio;ajsoitjw;ojtoj9285u29utjioijl";
 
         await app.currentVault.passwordStore.updatePassword(masterKey, duplicatePassword, true, [], []);
 
-        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == duplicatePassword.id.value);
-        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == weakPassword.id.value);
-        ctx.assertEquals("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne.length, 0);
-        ctx.assertEquals("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo.length, 0);
+        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
+        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+
+        ctx.assertEquals("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne, undefined);
+        ctx.assertEquals("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo, undefined);
 
         await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
 
@@ -345,22 +350,22 @@ passwordStoreSuite.tests.push({
         await app.currentVault.passwordStore.updatePassword(masterKey, password, true, [], []);
 
         ctx.assertEquals("Unsafe password correct current",
-            app.currentVault.passwordStore.currentAndSafePasswords.current[app.currentVault.passwordStore.currentAndSafePasswords.current.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
             app.currentVault.passwordStore.passwords.length);
 
         ctx.assertEquals("Unsafe password correct safe",
-            app.currentVault.passwordStore.currentAndSafePasswords.safe[app.currentVault.passwordStore.currentAndSafePasswords.safe.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1],
             getSafePasswords().length);
 
         password.password.value = "sdvlaioashvlSDLhbislhi2h892upt9jslinp[k2pop3tk2pyj";
         await app.currentVault.passwordStore.updatePassword(masterKey, password, true, [], []);
 
         ctx.assertEquals("Safe password correct current",
-            app.currentVault.passwordStore.currentAndSafePasswords.current[app.currentVault.passwordStore.currentAndSafePasswords.current.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
             app.currentVault.passwordStore.passwords.length);
 
         ctx.assertEquals("Safe password correct safe",
-            app.currentVault.passwordStore.currentAndSafePasswords.safe[app.currentVault.passwordStore.currentAndSafePasswords.safe.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1],
             getSafePasswords().length);
     }
 });
@@ -488,10 +493,11 @@ passwordStoreSuite.tests.push({
 
         await app.currentVault.passwordStore.addPassword(masterKey, duplicatePassword);
 
-        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == duplicatePassword.id.value);
-        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == weakPassword.id.value);
-        ctx.assertEquals("Duplicate password one exists", retrievedDuplicatePasswordOne.length, 1);
-        ctx.assertEquals("Duplicate password two exists", retrievedDuplicatePasswordTwo.length, 1);
+        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
+        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+
+        ctx.assertTruthy("Duplicate password one exists", retrievedDuplicatePasswordOne?.value.duplicateDataTypesByID.value.has(weakPassword.id.value));
+        ctx.assertTruthy("Duplicate password two exists", retrievedDuplicatePasswordTwo?.value.duplicateDataTypesByID.value.has(duplicatePassword.id.value));
 
         const reactiveWeakPassword = createReactivePassword(weakPassword);
         await app.currentVault.passwordStore.deletePassword(masterKey, reactiveWeakPassword);
@@ -502,10 +508,11 @@ passwordStoreSuite.tests.push({
         retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id.value);
         ctx.assertEquals("Weak password doesn't exists", retrievedWeakPassword.length, 0);
 
-        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == duplicatePassword.id.value);
-        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.filter(p => p == weakPassword.id.value);
-        ctx.assertEquals("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne.length, 0);
-        ctx.assertEquals("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo.length, 0);
+        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
+        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+
+        ctx.assertEquals("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne, undefined);
+        ctx.assertEquals("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo, undefined);
 
         await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
 
@@ -533,11 +540,11 @@ passwordStoreSuite.tests.push({
         await app.currentVault.passwordStore.deletePassword(masterKey, reactivePassword);
 
         ctx.assertEquals("Correct current",
-            app.currentVault.passwordStore.currentAndSafePasswords.current[app.currentVault.passwordStore.currentAndSafePasswords.current.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
             app.currentVault.passwordStore.passwords.length);
 
         ctx.assertEquals("Correct safe",
-            app.currentVault.passwordStore.currentAndSafePasswords.safe[app.currentVault.passwordStore.currentAndSafePasswords.safe.length - 1],
+            app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1],
             getSafePasswords().length);
     }
 });

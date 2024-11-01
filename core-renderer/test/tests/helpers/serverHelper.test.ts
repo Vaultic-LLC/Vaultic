@@ -34,7 +34,7 @@ serverHelperTestSuite.tests.push({
         await app.loadUserData(masterKey, response.value!.UserDataPayload);
 
         const settings = app.cloneState();
-        settings.settings.autoLockTime = AutoLockTime.ThirtyMinutes;
+        settings.settings.value.autoLockTime.value = AutoLockTime.ThirtyMinutes;
         app.updateState(settings);
 
         await app.lock();

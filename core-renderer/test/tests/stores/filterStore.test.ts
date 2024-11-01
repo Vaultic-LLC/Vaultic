@@ -1,8 +1,8 @@
 import { createTestSuite, type TestContext } from '../test';
 import app from "../../src/core/Objects/Stores/AppStore";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
-import { DataType, Filter, defaultFilter, FilterConditionType, IFilterable, defaultPassword, defaultValue, FilterCondition } from '../../src/core/Types/DataTypes';
-import { Field, IIdentifiable } from '@vaultic/shared/Types/Fields';
+import { DataType, Filter, defaultFilter, FilterConditionType, IFilterable, defaultPassword, defaultValue, FilterCondition, DuplicateDataTypes } from '../../src/core/Types/DataTypes';
+import { Field, IIdentifiable, KnownMappedFields } from '@vaultic/shared/Types/Fields';
 
 let filterStoreSuite = createTestSuite("Filter Store");
 
@@ -85,8 +85,8 @@ filterStoreSuite.tests.push({
             type: DataType,
             conditionProperty: string,
             getFilters: () => Field<Filter>[],
-            getEmptyFilters: () => string[],
-            getDuplicateFilters: () => Dictionary<string[]>)
+            getEmptyFilters: () => Field<Map<string, Field<string>>>,
+            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
             const emptyFilter = defaultFilter(type);
             await app.currentVault.filterStore.addFilter(masterKey, emptyFilter);
@@ -94,8 +94,8 @@ filterStoreSuite.tests.push({
             const retrievedEmptyFilter = getFilters().filter(f => f.value.id.value == emptyFilter.id.value)[0];
             ctx.assertTruthy(`Empty Filter Exists for ${type}`, retrievedEmptyFilter);
 
-            const retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id.value)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            const hasEmptyFilter = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, hasEmptyFilter);
 
             const duplicateFilterOne: Filter = defaultFilter(type);
             duplicateFilterOne.conditions.value.push({
@@ -122,11 +122,14 @@ filterStoreSuite.tests.push({
             ctx.assertTruthy(`Duplicate Filter one exists for type ${type}`, retrievedDuplicateFilterOne);
             ctx.assertTruthy(`Duplicate Filter two exists for type ${type}`, retrievedDuplicateFilterTwo);
 
-            const duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id.value];
-            const duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id.value];
+            const duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            const duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id.value));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id.value));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
         }
 
         const password = defaultPassword();
@@ -286,8 +289,8 @@ filterStoreSuite.tests.push({
             type: DataType,
             conditionProperty: string,
             getFilters: () => Field<Filter>[],
-            getEmptyFilters: () => string[],
-            getDuplicateFilters: () => Dictionary<string[]>)
+            getEmptyFilters: () => Field<Map<string, Field<string>>>,
+            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
             const condition: FilterCondition = {
                 id: new Field("Hi"),
@@ -302,20 +305,20 @@ filterStoreSuite.tests.push({
             const retrievedEmptyFilter = getFilters().filter(f => f.value.id.value == emptyFilter.id.value)[0];
             ctx.assertTruthy(`Empty Filter Exists for type ${type}`, retrievedEmptyFilter);
 
-            let retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id.value)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            let isInEmptyFilters = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, isInEmptyFilters);
 
             emptyFilter.conditions.value.push(condition);
             await app.currentVault.filterStore.updateFilter(masterKey, emptyFilter);
 
-            let nonExistsEmptyFilter = getEmptyFilters().filter(f => f == emptyFilter.id.value);
-            ctx.assertEquals(`Empty Filter is not included in empty filters for ${type}`, nonExistsEmptyFilter.length, 0);
+            let doesNotExistInEmptyFilters = !getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is not included in empty filters for ${type}`, doesNotExistInEmptyFilters);
 
             emptyFilter.conditions.value = [];
             await app.currentVault.filterStore.updateFilter(masterKey, emptyFilter);
 
-            retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id.value)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters after update for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            isInEmptyFilters = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters after update for ${type}`, isInEmptyFilters);
 
             const duplicateFilterOne: Filter = defaultFilter(type);
             duplicateFilterOne.conditions.value.push(condition);
@@ -332,29 +335,37 @@ filterStoreSuite.tests.push({
             ctx.assertTruthy(`Duplicate Filter one exists for type ${type}`, retrievedDuplicateFilterOne);
             ctx.assertTruthy(`Duplicate Filter two exists for type ${type}`, retrievedDuplicateFilterTwo);
 
-            let duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id.value];
-            let duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id.value];
+            let duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            let duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id.value));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id.value));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
 
             duplicateFilterOne.conditions.value = [];
             await app.currentVault.filterStore.updateFilter(masterKey, duplicateFilterOne);
 
-            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id.value];
-            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id.value];
+            duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one doesn't has duplicate filter two as a duplicate for ${type}`, !duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id.value));
+            ctx.assertTruthy(`Duplicate filter one doesn't has duplicate filter two as a duplicate for ${type}`,
+                !duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
             ctx.assertEquals(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates, undefined);
 
             duplicateFilterOne.conditions.value.push(condition);
             await app.currentVault.filterStore.updateFilter(masterKey, duplicateFilterOne);
 
-            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id.value];
-            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id.value];
+            duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id.value));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id.value));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
         }
 
         const password = defaultPassword();
@@ -483,8 +494,8 @@ filterStoreSuite.tests.push({
             type: DataType,
             conditionProperty: string,
             getFilters: () => Field<Filter>[],
-            getEmptyFilters: () => string[],
-            getDuplicateFilters: () => Dictionary<string[]>)
+            getEmptyFilters: () => Field<Map<string, Field<string>>>,
+            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
             const condition: FilterCondition = {
                 id: new Field("Hi"),
@@ -499,13 +510,13 @@ filterStoreSuite.tests.push({
             const retrievedEmptyFilter = getFilters().filter(f => f.value.id.value == emptyFilter.id.value)[0];
             ctx.assertTruthy(`Empty Filter Exists for type ${type}`, retrievedEmptyFilter);
 
-            let retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id.value)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            let hasEmptyFilter = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, hasEmptyFilter);
 
             await app.currentVault.filterStore.deleteFilter(masterKey, emptyFilter);
 
-            let nonExistsEmptyFilter = getEmptyFilters().filter(f => f == emptyFilter.id.value);
-            ctx.assertEquals(`Empty Filter is not included in empty filters for ${type}`, nonExistsEmptyFilter.length, 0);
+            let doesNotHaveEmptyFilter = !getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is not included in empty filters for ${type}`, doesNotHaveEmptyFilter);
 
             const duplicateFilterOne: Filter = defaultFilter(type);
             duplicateFilterOne.conditions.value.push(condition);
@@ -522,16 +533,19 @@ filterStoreSuite.tests.push({
             ctx.assertTruthy(`Duplicate Filter one exists for ${type}`, retrievedDuplicateFilterOne);
             ctx.assertTruthy(`Duplicate Filter two exists for ${type}`, retrievedDuplicateFilterTwo);
 
-            let duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id.value];
-            let duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id.value];
+            let duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            let duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id.value));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id.value));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
 
             await app.currentVault.filterStore.deleteFilter(masterKey, duplicateFilterOne);
 
-            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id.value];
-            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id.value];
+            duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
             ctx.assertEquals(`Duplicate filter one doesn't exist in duplicates for ${type}`, duplicateFilterOneFromDuplicates, undefined);
             ctx.assertEquals(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates, undefined);
