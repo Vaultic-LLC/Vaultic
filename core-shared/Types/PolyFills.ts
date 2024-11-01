@@ -10,6 +10,7 @@ declare global
     interface Map<K, V>
     {
         difference(other: Map<K, V>): Map<K, V>;
+        keyArray(): K[];
         valueArray(): V[];
         filter(predicate: (k: K, v: V) => boolean): Map<K, V>;
         map<T>(select: (k: K, v: V) => T): T[];
@@ -35,6 +36,11 @@ Map.prototype.difference = function (this: Map<any, any>, other: Map<any, any>)
     }
 
     return temp;
+}
+
+Map.prototype.keyArray = function (this: Map<any, any>)
+{
+    return Array.from(this.keys());
 }
 
 Map.prototype.valueArray = function (this: Map<any, any>)

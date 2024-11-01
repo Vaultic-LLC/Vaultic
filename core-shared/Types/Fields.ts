@@ -10,7 +10,18 @@ export interface IFieldObject
     [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
 }
 
-export type FieldedObject = IIdentifiable & IFieldObject;
+export type IFieldedObject = IIdentifiable & IFieldObject;
+
+export class FieldedObject implements IFieldedObject
+{
+    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
+    id: Field<string>;
+
+    constructor() 
+    {
+        this.id = new Field("");
+    }
+};
 
 export type KnownMappedFields<T> = {
     [P in keyof T]:
@@ -24,14 +35,14 @@ export type KnownMappedFields<T> = {
     : P extends KnownMappedFieldsType // U isn't an object, is our current map a KnownMappedField?
     ? T[P] // It is, so we are ok
     : never // it isn't, so we fail
-    : T[P] extends FieldedObject // we aren't a map, check if we are an object
+    : T[P] extends IFieldedObject // we aren't a map, check if we are an object
     ? KnownMappedFields<T[P]> // we are an object, return nested call
     : T[P]; // just return our self
 }
 
 export type NonArrayType<T> = T extends any[] ? never : T;
 
-export type FieldMap = Field<Map<any, Field<NonArrayType<Primitive | KnownMappedFields<FieldedObject> | FieldMap>>>>;
+export type FieldMap = Field<Map<any, Field<NonArrayType<Primitive | KnownMappedFields<IFieldedObject> | FieldMap>>>>;
 
 export type PrimaryDataObjectCollection = "passwords" | "values";
 export type SecondaryDataObjectCollection = "filters" | "groups";
@@ -51,12 +62,16 @@ export type SecondaryDataObjectCollectionType =
 // We use this to know what fields need to be specially handled when serializing / parsing objects into JSON
 export type KnownMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataObjectCollection | "passwordsByID" | "valuesByID" |
     "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "colorPalettes" | "pinnedDataTypes" |
-    "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin";
+    "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
+    "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
+    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups";
 
 
 export const MapFields: Set<KnownMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
     "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "colorPalettes", "pinnedDataTypes", "pinnedFilters",
-    "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin"
+    "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
+    "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
+    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups"
 ]);
 
 export class Field<T>

@@ -4,8 +4,7 @@ import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType } from "../../Types/DataTypes";
+import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType, DuplicateDataTypes } from "../../Types/DataTypes";
 import app from "./AppStore";
 import { Field, IFieldObject, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { ReactivePassword } from "./ReactivePassword";
@@ -15,10 +14,10 @@ interface IFilterStoreState extends StoreState
 {
     passwordFiltersByID: Field<Map<string, Field<Filter>>>;
     valueFiltersByID: Field<Map<string, Field<Filter>>>;
-    emptyPasswordFilters: string[];
-    emptyValueFilters: string[];
-    duplicatePasswordFilters: Dictionary<string[]>;
-    duplicateValueFilters: Dictionary<string[]>;
+    emptyPasswordFilters: Field<Map<string, Field<string>>>;
+    emptyValueFilters: Field<Map<string, Field<string>>>;
+    duplicatePasswordFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
+    duplicateValueFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
 }
 
 export type FilterStoreState = KnownMappedFields<IFilterStoreState>;
@@ -35,10 +34,10 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         return {
             passwordFiltersByID: new Field(new Map<string, Field<Filter>>()),
             valueFiltersByID: new Field(new Map<string, Field<Filter>>()),
-            emptyPasswordFilters: [],
-            emptyValueFilters: [],
-            duplicatePasswordFilters: {},
-            duplicateValueFilters: {},
+            emptyPasswordFilters: new Field(new Map<string, Field<string>>()),
+            emptyValueFilters: new Field(new Map<string, Field<string>>()),
+            duplicatePasswordFilters: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
+            duplicateValueFilters: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
         }
     }
 
@@ -209,8 +208,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     removePasswordFromFilters(passwordID: string)
     {
         const pendingState = this.cloneState();
-        this.removePrimaryObjectFromValues(passwordID, "passwords", pendingState.emptyPasswordFilters,
-            pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID);
+        this.removePrimaryObjectFromValues(passwordID, "passwords", pendingState.emptyPasswordFilters, pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID);
 
         return pendingState;
     }
@@ -227,8 +225,8 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     private removePrimaryObjectFromValues(
         primaryObjectID: string,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        allEmptyFilters: string[],
-        allDuplicateFilters: Dictionary<string[]>,
+        allEmptyFilters: Field<Map<string, Field<string>>>,
+        allDuplicateFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allFilters: Field<Map<string, Field<Filter>>>)
     {
         allFilters.value.forEach((v, k, map) =>
@@ -303,8 +301,8 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         filtersToSync: Map<string, Field<Filter>>,
         primaryDataObjects: Map<string, Field<T>>,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        currentEmptyFilters: string[],
-        currentDuplicateFilters: Dictionary<string[]>,
+        currentEmptyFilters: Field<Map<string, Field<string>>>,
+        currentDuplicateFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allFilters: Field<Map<string, Field<Filter>>>,
         allGroups: Field<Map<string, Field<Group>>>)
     {
@@ -344,9 +342,6 @@ export class ReactiveFilterStore extends FilterStore
     private internalNameValuePairFilters: ComputedRef<Field<Filter>[]>;
     private internalActiveNameValuePairFilters: ComputedRef<Field<Filter>[]>;
 
-    private internalDuplicatePasswordFiltersLength: ComputedRef<number>;
-    private internalDuplicateValueFiltersLength: ComputedRef<number>;
-
     private internalActiveAtRiskPasswordFilterType: Ref<AtRiskType>;
     private internalActiveAtRiskValueFilterType: Ref<AtRiskType>;
 
@@ -357,19 +352,25 @@ export class ReactiveFilterStore extends FilterStore
     private internalUnpinnedValueFilters: ComputedRef<Field<Filter>[]>;
 
     get passwordFilters() { return this.internalPasswordFilters.value; }
+    get passwordFiltersByID() { return this.state.passwordFiltersByID; }
     get activePasswordFilters() { return this.internalActivePasswordFilters.value; }
+
     get nameValuePairFilters() { return this.internalNameValuePairFilters.value; }
+    get nameValuePairFiltersByID() { return this.state.valueFiltersByID; }
     get activeNameValuePairFilters() { return this.internalActiveNameValuePairFilters.value; }
+
     get activeAtRiskPasswordFilterType() { return this.internalActiveAtRiskPasswordFilterType.value; }
     get activeAtRiskValueFilterType() { return this.internalActiveAtRiskValueFilterType.value; }
+
     get emptyPasswordFilters() { return this.state.emptyPasswordFilters; }
     get emptyValueFilters() { return this.state.emptyValueFilters; }
+
     get duplicatePasswordFilters() { return this.state.duplicatePasswordFilters; }
-    get duplicatePasswordFiltersLength() { return this.internalDuplicatePasswordFiltersLength.value; }
     get duplicateValueFilters() { return this.state.duplicateValueFilters; }
-    get duplicateValueFiltersLength() { return this.internalDuplicateValueFiltersLength.value; }
+
     get pinnedPasswordFilters() { return this.internalPinnedPasswordFilters.value; }
     get unpinnedPasswordFilters() { return this.internalUnpinnedPasswordFilters.value; }
+
     get pinnedValueFilters() { return this.internalPinnedValueFilters.value; }
     get unpinnedValueFitlers() { return this.internalUnpinnedValueFilters.value; }
 
@@ -382,9 +383,6 @@ export class ReactiveFilterStore extends FilterStore
 
         this.internalNameValuePairFilters = computed(() => this.state.valueFiltersByID.value.map((k, v) => v));
         this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.value.isActive) ?? []);
-
-        this.internalDuplicatePasswordFiltersLength = computed(() => Object.keys(this.state.duplicatePasswordFilters).length);
-        this.internalDuplicateValueFiltersLength = computed(() => Object.keys(this.state.duplicateValueFilters).length);
 
         this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);

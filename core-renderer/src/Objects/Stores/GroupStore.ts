@@ -4,18 +4,17 @@ import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { api } from "../../API";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { DataType, IGroupable, AtRiskType, Group } from "../../Types/DataTypes";
+import { DataType, IGroupable, AtRiskType, Group, DuplicateDataTypes } from "../../Types/DataTypes";
 import { Field, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 
 export interface IGroupStoreState extends StoreState
 {
     passwordGroupsByID: Field<Map<string, Field<Group>>>;
     valueGroupsByID: Field<Map<string, Field<Group>>>
-    emptyPasswordGroups: string[];
-    emptyValueGroups: string[];
-    duplicatePasswordGroups: Dictionary<string[]>;
-    duplicateValueGroups: Dictionary<string[]>;
+    emptyPasswordGroups: Field<Map<string, Field<string>>>;
+    emptyValueGroups: Field<Map<string, Field<string>>>;
+    duplicatePasswordGroups: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
+    duplicateValueGroups: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
 }
 
 export type GroupStoreState = KnownMappedFields<IGroupStoreState>;
@@ -41,10 +40,10 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         return {
             passwordGroupsByID: new Field(new Map<string, Field<Group>>()),
             valueGroupsByID: new Field(new Map<string, Field<Group>>()),
-            emptyPasswordGroups: [],
-            emptyValueGroups: [],
-            duplicatePasswordGroups: {},
-            duplicateValueGroups: {},
+            emptyPasswordGroups: new Field(new Map<string, Field<string>>()),
+            emptyValueGroups: new Field(new Map<string, Field<string>>()),
+            duplicatePasswordGroups: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
+            duplicateValueGroups: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
         }
     }
 
@@ -64,7 +63,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
             if (group.passwords.value.size == 0)
             {
-                pendingState.emptyPasswordGroups.push(group.id.value);
+                pendingState.emptyPasswordGroups.value.set(group.id.value, new Field(group.id.value));
             }
             else
             {
@@ -89,7 +88,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
             if (group.values.value.size == 0)
             {
-                pendingState.emptyValueGroups.push(group.id.value);
+                pendingState.emptyValueGroups.value.set(group.id.value, new Field(group.id.value));
             }
             else
             {
@@ -232,8 +231,8 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         addedGroups: Map<string, Field<string>>,
         removedGroups: Map<string, Field<string>>,
-        currentEmptyGroups: string[],
-        currentDuplicateSecondaryObjects: Dictionary<string[]>,
+        currentEmptyGroups: Field<Map<string, Field<string>>>,
+        currentDuplicateSecondaryObjects: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allSecondaryObjects: Field<Map<string, Field<Group>>>) // TODO: change to map
     {
         addedGroups.forEach((value, key, map) =>
@@ -278,8 +277,8 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         addedPrimaryObjects: Map<string, Field<string>>,
         removedPrimaryObjects: Map<string, Field<string>>,
         allPrimaryObjects: Field<Map<string, Field<T>>>,
-        currentEmptyGroups: string[],
-        currentDuplicateGroups: Dictionary<string[]>,
+        currentEmptyGroups: Field<Map<string, Field<string>>>,
+        currentDuplicateGroups: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allSecondaryObjects: Field<Map<string, Field<Group>>>)
     {
         addedPrimaryObjects.forEach((_, k) =>
@@ -310,9 +309,6 @@ export class ReactiveGroupStore extends GroupStore
     private internalSortedPasswordsGroups: ComputedRef<Field<Group>[]>;
     private internalSortedValuesGroups: ComputedRef<Field<Group>[]>;
 
-    private internalDuplicatePasswordGroupsLength: ComputedRef<number>;
-    private internalDuplicateValuesGroupsLength: ComputedRef<number>;
-
     private internalActiveAtRiskPasswordGroupType: Ref<AtRiskType>;
     private internalActiveAtRiskValueGroupType: Ref<AtRiskType>;
 
@@ -322,18 +318,24 @@ export class ReactiveGroupStore extends GroupStore
     private internalPinnedValueGroups: ComputedRef<Field<Group>[]>;
     private internalUnpinnedValueGroups: ComputedRef<Field<Group>[]>;
 
+    get passwordGroupsByID() { return this.state.passwordGroupsByID; }
+    get valueGroupsByID() { return this.state.valueGroupsByID; }
+
     get activeAtRiskPasswordGroupType() { return this.internalActiveAtRiskPasswordGroupType.value; }
     get activeAtRiskValueGroupType() { return this.internalActiveAtRiskValueGroupType.value; }
+
     get emptyPasswordGroups() { return this.state.emptyPasswordGroups; }
     get duplicatePasswordGroups() { return this.state.duplicatePasswordGroups; }
-    get duplicatePasswordGroupLength() { return this.internalDuplicatePasswordGroupsLength.value; }
+
     get emptyValueGroups() { return this.state.emptyValueGroups; }
     get duplicateValueGroups() { return this.state.duplicateValueGroups; }
-    get duplicateValueGroupLength() { return this.internalDuplicateValuesGroupsLength.value; }
+
     get sortedPasswordsGroups() { return this.internalSortedPasswordsGroups.value; }
     get sortedValuesGroups() { return this.internalSortedValuesGroups.value }
+
     get pinnedPasswordGroups() { return this.internalPinnedPasswordGroups.value; }
     get unpinnedPasswordGroups() { return this.internalUnpinnedPasswordGroups.value; }
+
     get pinnedValueGroups() { return this.internalPinnedValueGroups.value; }
     get unpinnedValueGroups() { return this.internalUnpinnedValueGroups.value; }
 
@@ -343,9 +345,6 @@ export class ReactiveGroupStore extends GroupStore
 
         this.internalSortedPasswordsGroups = computed(() => this.internalPasswordGroups.value.sort((a, b) => a.value.name.value >= b.value.name.value ? 1 : -1));
         this.internalSortedValuesGroups = computed(() => this.internalValueGroups.value.sort((a, b) => a.value.name.value >= b.value.name.value ? 1 : -1));
-
-        this.internalDuplicatePasswordGroupsLength = computed(() => Object.keys(this.state.duplicatePasswordGroups).length);
-        this.internalDuplicateValuesGroupsLength = computed(() => Object.keys(this.state.duplicateValueGroups).length);
 
         this.internalActiveAtRiskPasswordGroupType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueGroupType = ref(AtRiskType.None);

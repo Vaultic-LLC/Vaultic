@@ -14,9 +14,9 @@ import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { FilterStatus, DataType } from "../../Types/DataTypes";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
-import { Field, FieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 
-export interface AppSettings extends FieldedObject
+export interface AppSettings extends IFieldedObject
 {
     colorPalettes: Field<Map<string, Field<ColorPalette>>>;
     autoLockTime: Field<AutoLockTime>;

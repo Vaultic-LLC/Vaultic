@@ -7,15 +7,15 @@ import { PasswordStore, ReactivePasswordStore } from "./PasswordStore";
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
-import { Field, FieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 
-export interface VaultSettings extends FieldedObject
+export interface VaultSettings extends IFieldedObject
 {
     loginRecordsToStorePerDay: Field<number>;
     numberOfDaysToStoreLoginRecords: Field<number>;
 }
 
-interface DaysLogins extends FieldedObject
+interface DaysLogins extends IFieldedObject
 {
     daysLogin: Field<Map<number, Field<number>>>;
 }

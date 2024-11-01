@@ -1,5 +1,16 @@
-import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject } from "@vaultic/shared/Types/Fields";
-import { SecretPropertyType } from "./Fields";
+import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, IFieldedObject, FieldedObject } from "@vaultic/shared/Types/Fields";
+import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
+
+export class DuplicateDataTypes extends FieldedObject
+{
+    duplicateDataTypesByID: Field<Map<string, Field<string>>>;
+
+    constructor()
+    {
+        super();
+        this.duplicateDataTypesByID = new Field(new Map<string, Field<string>>());
+    }
+}
 
 export interface IFilterable
 {
@@ -30,14 +41,13 @@ export interface IPrimaryDataObject extends IFilterable, IIdentifiable, IGroupab
     [key: string]: any;
 }
 
-export interface Password extends IPrimaryDataObject, SecretPropertyType<"password">
+export interface Password extends IPrimaryDataObject, PasswordSecretProperty
 {
     [key: string]: any;
     isVaultic: Field<boolean>;
     login: Field<string>;
     domain: Field<string>;
     email: Field<string>;
-    password: Field<string>;
     passwordFor: Field<string>;
     securityQuestions: Field<SecurityQuestion[]>;
     additionalInformation: Field<string>;
@@ -71,11 +81,10 @@ export enum NameValuePairType
 
 export const nameValuePairTypesValues = Object.values(NameValuePairType);
 
-export interface NameValuePair extends IPrimaryDataObject, SecretPropertyType<"value">
+export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
 {
     [key: string]: any;
     name: Field<string>;
-    value: Field<string>;
     valueType: Field<NameValuePairType | undefined>;
     notifyIfWeak: Field<boolean>;
     additionalInformation: Field<string>;
@@ -88,10 +97,19 @@ export interface NameValuePair extends IPrimaryDataObject, SecretPropertyType<"v
     valueLength: Field<number>;
 }
 
-export interface CurrentAndSafeStructure
+export class CurrentAndSafeStructure extends FieldedObject
 {
-    current: number[];
-    safe: number[];
+    current: Field<Map<string, Field<number>>>;
+    safe: Field<Map<string, Field<number>>>;
+
+    constructor()
+    {
+        super();
+
+        this.id = new Field("");
+        this.current = new Field(new Map<string, Field<number>>());
+        this.safe = new Field(new Map<string, Field<number>>());
+    }
 }
 
 export enum AtRiskType
@@ -177,6 +195,9 @@ export function defaultPassword(): Password
         groups: new Field(new Map()),
     }
 }
+
+const t = defaultPassword();
+t["password"].value;
 
 export function defaultValue(): NameValuePair
 {

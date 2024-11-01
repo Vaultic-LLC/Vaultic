@@ -1,4 +1,4 @@
-import { Field, FieldedObject } from "@vaultic/shared/Types/Fields";
+import { Field, IFieldedObject } from "@vaultic/shared/Types/Fields";
 
 export const defaultInputColor = "#9e9e9e";
 export const defaultInputTextColor: string = "#e8e8e8"
@@ -11,14 +11,14 @@ export interface RGBColor
     alpha: number;
 }
 
-export interface TableColorScheme extends FieldedObject
+export interface TableColorScheme extends IFieldedObject
 {
     primaryColor: Field<string>;
     secondaryColorOne: Field<string>;
     secondaryColorTwo: Field<string>;
 }
 
-export interface ColorPalette extends FieldedObject
+export interface ColorPalette extends IFieldedObject
 {
     id: Field<string>;
     active: Field<boolean>;

@@ -62,12 +62,12 @@ export default defineComponent({
         const color: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ?
             app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value : app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
 
-        let lableArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswords.current]);
-        let chartOneArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswords.safe]);
+        let lableArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswordsCurrent]);
+        let chartOneArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswordsSafe]);
 
         let table: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values")
-        let target: Ref<(number | undefined)[]> = ref(app.currentVault.passwordStore.currentAndSafePasswords.current.map(_ => app.currentVault.passwordStore.passwords.length));
-        let max: Ref<number> = ref(Math.max(...app.currentVault.passwordStore.currentAndSafePasswords.safe));
+        let target: Ref<(number | undefined)[]> = ref(app.currentVault.passwordStore.currentAndSafePasswordsCurrent.map(_ => app.currentVault.passwordStore.passwords.length));
+        let max: Ref<number> = ref(Math.max(...app.currentVault.passwordStore.currentAndSafePasswordsSafe));
 
         const resizeObserver: ResizeObserver = new ResizeObserver(refreshChart);
 
@@ -326,11 +326,11 @@ export default defineComponent({
             }
 
             let newColor: string = "";
-            let requestData: any = {};
+            let requestData: { Values: { current: number[], safe: number[]} } = { Values: { current: [], safe: [] } };
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
                 // no need to send the request since we don't have enough data anyways
-                if (app.currentVault.passwordStore.currentAndSafePasswords.current.length < 2)
+                if (app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length < 2)
                 {
                     // make sure there isn't any old data in the way of the message
                     chartOneArray.value = [];
@@ -339,14 +339,19 @@ export default defineComponent({
                     return;
                 }
 
-                requestData.Values = app.currentVault.passwordStore.currentAndSafePasswords;
+                requestData.Values = 
+                {
+                    current: app.currentVault.passwordStore.currentAndSafePasswordsCurrent,
+                    safe: app.currentVault.passwordStore.currentAndSafePasswordsSafe
+                };
+
                 newColor = app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
                 table.value = "Passwords";
             }
             else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
                 // no need to send the request since we don't have enough data anyways
-                if (app.currentVault.valueStore.currentAndSafeValues.current.length < 2)
+                if (app.currentVault.valueStore.currentAndSafeValuesCurrent.length < 2)
                 {
                     // make sure there isn't any old data in the way of the message
                     chartOneArray.value = [];
@@ -355,7 +360,12 @@ export default defineComponent({
                     return;
                 }
 
-                requestData.Values = app.currentVault.valueStore.currentAndSafeValues;
+                requestData.Values = 
+                { 
+                    current: app.currentVault.valueStore.currentAndSafeValuesCurrent,
+                    safe: app.currentVault.valueStore.currentAndSafeValuesSafe
+                };
+                
                 newColor = app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value;
                 table.value = "Values";
             }

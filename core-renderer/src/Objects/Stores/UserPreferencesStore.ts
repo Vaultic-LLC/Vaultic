@@ -8,9 +8,9 @@ import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { Field, FieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 
-export interface PinnedDataTypes extends FieldedObject
+export interface PinnedDataTypes extends IFieldedObject
 {
     pinnedFilters: Field<Map<string, Field<string>>>;
     pinnedGroups: Field<Map<string, Field<string>>>;

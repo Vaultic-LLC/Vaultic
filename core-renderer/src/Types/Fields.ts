@@ -8,6 +8,9 @@ export type SecretPropertyType<T extends SecretProperty> =
         [K in T]: Field<string>;
     }
 
+export interface PasswordSecretProperty extends SecretPropertyType<"password"> { };
+export interface ValueSecretProperty extends SecretPropertyType<"value"> { }
+
 export interface DisplayField
 {
     backingProperty: string;

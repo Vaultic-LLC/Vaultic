@@ -30,9 +30,9 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `vgempty${app.currentVault.groupStore.emptyValueGroups.length}${app.currentVault.groupStore.valuesGroups.length}`,
+                                key: `vgempty${app.currentVault.groupStore.emptyValueGroups.value.size}${app.currentVault.groupStore.valuesGroups.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.groupStore.emptyValueGroups.length,
+                                filledAmount: app.currentVault.groupStore.emptyValueGroups.value.size,
                                 totalAmount: app.currentVault.groupStore.valuesGroups.length,
                                 color: app.userPreferences.currentColorPalette.groupsColor.value,
                                 active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Empty,
@@ -44,9 +44,9 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `vfempty${app.currentVault.filterStore.emptyValueFilters.length}${app.currentVault.filterStore.nameValuePairFilters.length}`,
+                                key: `vfempty${app.currentVault.filterStore.emptyValueFilters.value.size}${app.currentVault.filterStore.nameValuePairFilters.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.filterStore.emptyValueFilters.length,
+                                filledAmount: app.currentVault.filterStore.emptyValueFilters.value.size,
                                 totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
                                 color: app.userPreferences.currentColorPalette.filtersColor.value,
                                 active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Empty,
@@ -62,9 +62,9 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `pgempty${app.currentVault.groupStore.emptyPasswordGroups.length}${app.currentVault.groupStore.passwordGroups.length}`,
+                                key: `pgempty${app.currentVault.groupStore.emptyPasswordGroups.value.size}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.groupStore.emptyPasswordGroups.length,
+                                filledAmount: app.currentVault.groupStore.emptyPasswordGroups.value.size,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
                                 color: app.userPreferences.currentColorPalette.groupsColor.value,
                                 active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Empty,
@@ -76,9 +76,9 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `pfempty${app.currentVault.filterStore.emptyPasswordFilters.length}${app.currentVault.filterStore.passwordFilters.length}`,
+                                key: `pfempty${app.currentVault.filterStore.emptyPasswordFilters.value.size}${app.currentVault.filterStore.passwordFilters.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.filterStore.emptyPasswordFilters.length,
+                                filledAmount: app.currentVault.filterStore.emptyPasswordFilters.value.size,
                                 totalAmount: app.currentVault.filterStore.passwordFilters.length,
                                 color: app.userPreferences.currentColorPalette.filtersColor.value,
                                 active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Empty,

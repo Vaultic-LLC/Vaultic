@@ -78,15 +78,15 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             switch (app.currentVault.groupStore.activeAtRiskPasswordGroupType)
             {
                 case AtRiskType.Empty:
-                    app.currentVault.groupStore.emptyPasswordGroups.forEach(g =>
+                    app.currentVault.groupStore.emptyPasswordGroups.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroups.filter(gr => gr.value.id.value == g)[0]);
+                        addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
                     });
                     break;
                 case AtRiskType.Duplicate:
-                    Object.keys(app.currentVault.groupStore.duplicatePasswordGroups).forEach(g =>
+                    app.currentVault.groupStore.duplicatePasswordGroups.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroups.filter(gr => gr.value.id.value == g)[0]);
+                        addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
                     });
                     break;
             }
@@ -96,15 +96,15 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             switch (app.currentVault.groupStore.activeAtRiskValueGroupType)
             {
                 case AtRiskType.Empty:
-                    app.currentVault.groupStore.emptyValueGroups.forEach(g =>
+                    app.currentVault.groupStore.emptyValueGroups.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valuesGroups.filter(gr => gr.value.id.value == g)[0]);
+                        addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
                     });
                     break;
                 case AtRiskType.Duplicate:
-                    Object.keys(app.currentVault.groupStore.duplicateValueGroups).forEach(g =>
+                    app.currentVault.groupStore.duplicateValueGroups.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valuesGroups.filter(gr => gr.value.id.value == g)[0]);
+                        addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
                     });
                     break;
             }
@@ -117,15 +117,15 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             switch (app.currentVault.filterStore.activeAtRiskPasswordFilterType)
             {
                 case AtRiskType.Empty:
-                    app.currentVault.filterStore.emptyPasswordFilters.forEach(v =>
+                    app.currentVault.filterStore.emptyPasswordFilters.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFilters.filter(f => f.value.id.value == v)[0]);
+                        addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
                     });
                     break;
                 case AtRiskType.Duplicate:
-                    Object.keys(app.currentVault.filterStore.duplicatePasswordFilters).forEach(v =>
+                    app.currentVault.filterStore.duplicatePasswordFilters.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFilters.filter(f => f.value.id.value == v)[0]);
+                        addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
                     });
             }
         }
@@ -134,15 +134,15 @@ export function createPinnableSelectableTableRowModels<T extends { [key: string]
             switch (app.currentVault.filterStore.activeAtRiskValueFilterType)
             {
                 case AtRiskType.Empty:
-                    app.currentVault.filterStore.emptyValueFilters.forEach(v =>
+                    app.currentVault.filterStore.emptyValueFilters.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == v)[0]);
+                        addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
                     });
                     break;
                 case AtRiskType.Duplicate:
-                    Object.keys(app.currentVault.filterStore.duplicateValueFilters).forEach(v =>
+                    app.currentVault.filterStore.duplicateValueFilters.value.forEach((v, k, map) =>
                     {
-                        addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == v)[0]);
+                        addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
                     });
             }
         }
@@ -309,9 +309,9 @@ export async function createCollapsibleTableRowModels<T extends IPrimaryDataObje
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.passwordStore.duplicatePasswords.value.forEach(p =>
+                app.currentVault.passwordStore.duplicatePasswords.value.forEach((v, k, map) =>
                 {
-                    addAtRiskValues("This Password is used more than once", app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
+                    addAtRiskValues("This Password is used more than once", app.currentVault.passwordStore.passwordsByID.value.get(k)!);
                 });
                 break;
             case AtRiskType.Weak:
@@ -352,9 +352,9 @@ export async function createCollapsibleTableRowModels<T extends IPrimaryDataObje
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.valueStore.duplicateNameValuePairs.value.forEach(v =>
+                app.currentVault.valueStore.duplicateNameValuePairs.value.forEach((v, k, map) =>
                 {
-                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
+                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairsByID.value.get(k)!);
                 });
                 break;
             case AtRiskType.WeakPhrase:
