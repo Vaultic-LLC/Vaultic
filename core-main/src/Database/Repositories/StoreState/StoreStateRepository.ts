@@ -64,14 +64,17 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             newStateToUse = decyptedNewState.value;
         }
 
-        this.mergeStoreStates(currentStateToUse, newStateToUse, changeTrackings);
-        currentState.state = currentStateToUse;
+        currentStateToUse = this.mergeStoreStates(JSON.vaulticParse(currentStateToUse), JSON.vaulticParse(newStateToUse), changeTrackings);
+        currentState.state = JSON.vaulticStringify(currentStateToUse);
         currentState.previousSignature = newState.previousSignature;
 
         transaction.updateEntity(currentState, key, this.getVaulticRepository);
         return true;
     }
 
+    // merges store states. 
+    // Warning: In order for data to not become corrupted, proxy fields need to have their lastModifiedTime updated whenever updated.
+    // Ex: Updating an EmptyFiler that stays Empty. The Field<string> in filterStore.emptyFilters needs to have its lastModifiedTime updated
     private mergeStoreStates(currentObj: any, newObj: any, changeTrackings: Dictionary<ChangeTracking>)
     {
         if (typeof newObj.value == 'object')
@@ -147,5 +150,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 currentObj = newObj;
             }
         }
+
+        return currentObj;
     }
 }

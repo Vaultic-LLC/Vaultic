@@ -1,4 +1,5 @@
 electron-app/node_modules
+electron-app/package-lock.json
 electron-app/dist
 electron-app/out
 electron-app/*.log*
@@ -6,10 +7,11 @@ electron-app/src/renderer/src/core
 electron-app/src/main/Core
 
 core-renderer/node_modules
+core-renderer/package-lock.json
 
 core-renderer/test/src/core
 core-renderer/test/node_modules
-core-renderer/package-lock.json
+core-renderer/test/package-lock.json
 
 core-main/node_modules
 core-main/package-lock.json
