@@ -18,7 +18,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
     public trackStateDifferences(userID: number, masterKey: string, newState: StoreState, oldState: StoreState, transaction: Transaction): string
     {
         const updatedState = this.trackObjectDifferences(userID, masterKey, new Field(newState), new Field(oldState), transaction);
-        return JSON.vaulticStringify(updatedState);
+        return JSON.vaulticStringify(updatedState.value);
     }
 
     public trackObjectDifferences(userID: number, masterKey: string, newObj: any, oldObj: any, transaction: Transaction)
