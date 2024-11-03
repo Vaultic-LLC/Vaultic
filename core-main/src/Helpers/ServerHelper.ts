@@ -119,6 +119,7 @@ async function logUserIn(masterKey: string, email: string,
                 }
                 else 
                 {
+                    console.log(`Merging Data: ${JSON.stringify(result.value.userDataPayload)}`);
                     await checkMergeMissingData(masterKey, email, currentSignatures, result.value.userDataPayload);
                 }
 
@@ -136,6 +137,7 @@ async function logUserIn(masterKey: string, email: string,
             }
         }
 
+        console.log('Login Success');
         return TypedMethodResponse.success(finishResponse);
     }
 }

@@ -567,7 +567,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return true;
     }
 
-    public async updateFromServer(masterKey: string, currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>, changeTrackings: Dictionary<ChangeTracking>, transaction: Transaction)
+    public async updateFromServer(masterKey: string, currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>, changeTrackings: Dictionary<ChangeTracking>,
+        transaction: Transaction)
     {
         if (!newVault.vaultID)
         {
@@ -696,6 +697,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 transaction.overrideEntity(newVault.groupStoreState.groupStoreStateID, partialGroupStoreState, () => environment.repositories.groupStoreStates);
             }
         }
+
+        return needsToRePushData;
     }
 
     public async deleteFromServer(vault: Partial<Vault>)

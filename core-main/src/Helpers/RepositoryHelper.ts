@@ -168,7 +168,7 @@ export async function backupData(masterKey: string)
     if (!backupResponse.Success)
     {
         console.log(`backup failed: ${JSON.vaulticStringify(backupResponse)}`);
-        checkMergeMissingData(masterKey, "", postData.userDataPayload, backupResponse.userDataPayload)
+        await checkMergeMissingData(masterKey, "", postData.userDataPayload, backupResponse.userDataPayload)
 
         return false;
     }
@@ -247,6 +247,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
                     return false;
                 }
 
+                console.log('\nCreating User');
                 return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.publicKey!, serverUserDataPayload.user.privateKey!, transaction)).success;
             }
 
@@ -265,19 +266,26 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
     }
 
     // Needs to be done before userVaults for when adding a new vault + userVault. Vault has to be saved before userVault.
+    console.log(`\nMerging Vaults: ${JSON.stringify(serverUserDataPayload.vaults)}`);
     if (serverUserDataPayload.vaults)
     {
         for (let i = 0; i < serverUserDataPayload.vaults.length; i++)
         {
+            console.log(`\nChecking vault: ${i}`);
             const serverVault = serverUserDataPayload.vaults[i];
             const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
 
             if (vaultIndex >= 0)
             {
-                await environment.repositories.vaults.updateFromServer(masterKey, clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction);
+                console.log(`\nUpdating Vault: ${JSON.stringify(clientUserDataPayload.vaults![vaultIndex])}`)
+                if (await environment.repositories.vaults.updateFromServer(masterKey, clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction))
+                {
+                    needsToRePushData = true;
+                }
             }
             else 
             {
+                console.log(`\nAdding Vault: ${JSON.stringify(clientUserDataPayload.vaults![vaultIndex])}`)
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
                 {
@@ -328,13 +336,13 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
     }
 
     const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-    if (!currentUser)
-    {
-        return false;
-    }
 
-    // we've handled all trackedChanges. Clear them
-    transaction.deleteEntity<ChangeTracking>({ userID: currentUser.userID }, () => environment.repositories.changeTrackings);
+    // user will be undefined if we are adding it from the server. no change trackings to clear then obviously
+    if (currentUser)
+    {
+        // we've handled all trackedChanges. Clear them
+        transaction.deleteEntity<ChangeTracking>({ userID: currentUser.userID }, () => environment.repositories.changeTrackings);
+    }
 
     if (!(await transaction.commit()))
     {
@@ -343,6 +351,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
 
     if (needsToRePushData)
     {
+        console.log('\nNeeds to re backup data!');
         return await backupData(masterKey);
     }
 
