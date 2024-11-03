@@ -233,7 +233,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         removedGroups: Map<string, Field<string>>,
         currentEmptyGroups: Field<Map<string, Field<string>>>,
         currentDuplicateSecondaryObjects: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
-        allSecondaryObjects: Field<Map<string, Field<Group>>>) // TODO: change to map
+        allSecondaryObjects: Field<Map<string, Field<Group>>>)
     {
         addedGroups.forEach((value, key, map) =>
         {

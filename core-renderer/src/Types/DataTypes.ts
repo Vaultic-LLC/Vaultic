@@ -1,4 +1,4 @@
-import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, IFieldedObject, FieldedObject } from "@vaultic/shared/Types/Fields";
+import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
 
 export class DuplicateDataTypes extends FieldedObject
@@ -49,24 +49,21 @@ export interface Password extends IPrimaryDataObject, PasswordSecretProperty
     domain: Field<string>;
     email: Field<string>;
     passwordFor: Field<string>;
-    securityQuestions: Field<SecurityQuestion[]>;
+    securityQuestions: Field<Map<string, Field<SecurityQuestion>>>;
     additionalInformation: Field<string>;
     lastModifiedTime: Field<string>;
     isWeak: Field<boolean>;
     isWeakMessage: Field<string>;
     containsLogin: Field<boolean>;
     passwordLength: Field<number>;
-
-    // TODO: remove? Doesn't look to be used anywhere. Also on reactivePassword then
-    isDuplicate: Field<boolean>;
 }
 
-export interface SecurityQuestion extends IIdentifiable
+export interface SecurityQuestion extends IIdentifiable, IFieldObject
 {
-    question: string,
-    questionLength: number,
-    answer: string
-    answerLength: number
+    question: Field<string>,
+    questionLength: Field<number>,
+    answer: Field<string>
+    answerLength: Field<number>
 }
 
 export enum NameValuePairType
@@ -89,9 +86,6 @@ export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
     notifyIfWeak: Field<boolean>;
     additionalInformation: Field<string>;
     lastModifiedTime: Field<string>;
-
-    // TODO: remove? Doesn't look to be used anywhere. Also on reactiveValue then
-    isDuplicate: Field<boolean>;
     isWeak: Field<boolean>;
     isWeakMessage: Field<string>;
     valueLength: Field<number>;
@@ -143,14 +137,14 @@ export interface Filter extends ISecondaryDataObject
 {
     name: Field<string>;
     isActive: Field<boolean>;
-    conditions: Field<FilterCondition[]>;
+    conditions: Field<Map<string, Field<FilterCondition>>>;
 }
 
-export interface FilterCondition extends IIdentifiable
+export interface FilterCondition extends IIdentifiable, IFieldObject
 {
-    property: string;
-    filterType?: FilterConditionType;
-    value: string;
+    property: Field<string>;
+    filterType: Field<FilterConditionType | undefined>;
+    value: Field<string>;
 }
 
 export enum EqualFilterConditionType
@@ -184,10 +178,9 @@ export function defaultPassword(): Password
         email: new Field(''),
         password: new Field(''),
         passwordLength: new Field(0),
-        securityQuestions: new Field([]),
+        securityQuestions: new Field(new Map<string, Field<SecurityQuestion>>()),
         additionalInformation: new Field(''),
         lastModifiedTime: new Field(''),
-        isDuplicate: new Field(false),
         isWeak: new Field(false),
         isWeakMessage: new Field(''),
         containsLogin: new Field(false),
@@ -195,9 +188,6 @@ export function defaultPassword(): Password
         groups: new Field(new Map()),
     }
 }
-
-const t = defaultPassword();
-t["password"].value;
 
 export function defaultValue(): NameValuePair
 {
@@ -210,7 +200,6 @@ export function defaultValue(): NameValuePair
         notifyIfWeak: new Field(true),
         additionalInformation: new Field(''),
         lastModifiedTime: new Field(''),
-        isDuplicate: new Field(false),
         filters: new Field(new Map()),
         groups: new Field(new Map()),
         isWeak: new Field(false),
@@ -229,7 +218,7 @@ export function defaultFilter(type: DataType): Filter
         type: new Field(type),
         isActive: new Field(false),
         name: new Field(''),
-        conditions: new Field([])
+        conditions: new Field(new Map<string, Field<FilterCondition>>())
     }
 }
 

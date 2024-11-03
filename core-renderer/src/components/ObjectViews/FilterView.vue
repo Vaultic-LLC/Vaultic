@@ -5,13 +5,13 @@
             :width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
         <TableTemplate ref="tableRef" id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color"
             :row-gap="0" :border="true" :emptyMessage="emptyMessage"
-            :showEmptyMessage="filterState.conditions.value.length == 0" :headerTabs="headerTabs">
+            :showEmptyMessage="filterState.conditions.value.size == 0" :headerTabs="headerTabs">
             <template #headerControls>
                 <AddButton :color="color" @click="onAdd" />
             </template>
             <template #body>
-                <FilterConditionRow v-for="( fc, index ) in  filterState.conditions.value" :key="fc.id.value" :rowNumber="index"
-                    :color="color" :model="fc" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc.id.value)" />
+                <FilterConditionRow v-for="(fc, index) in  filterState.conditions.value" :key="fc[0]" :rowNumber="index"
+                    :color="color" :model="fc[1].value" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc[0])" />
             </template>
         </TableTemplate>
     </ObjectView>
@@ -30,7 +30,7 @@ import { DataType, defaultFilter, Filter } from '../../Types/DataTypes';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueID } from '../../Helpers/generatorHelper';
+import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
 import { DisplayField, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
@@ -142,25 +142,27 @@ export default defineComponent({
 
         async function onAdd()
         {
-            filterState.value.conditions.value.push(
-                {
-                    id: new Field(await generateUniqueID(filterState.value.conditions.value)),
-                    property: '',
-                    value: ''
-                });
+            const id = await generateUniqueIDForMap(filterState.value.conditions.value);
+            filterState.value.conditions.value.set(id,
+                new Field({
+                    id: new Field(id),
+                    property: new Field(''),
+                    value: new Field(''),
+                    filterType: new Field(undefined)
+                }));
 
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         function onDelete(id: string)
         {
-            filterState.value.conditions.value = filterState.value.conditions.value.filter(f => f.id.value != id);
+            filterState.value.conditions.value.delete(id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         onMounted(() =>
         {
-            if (filterState.value.conditions.value.length == 0)
+            if (filterState.value.conditions.value.size == 0)
             {
                 onAdd();
             }

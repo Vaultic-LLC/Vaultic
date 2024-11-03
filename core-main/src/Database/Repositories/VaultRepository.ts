@@ -243,6 +243,12 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const newVaultData: CondensedVaultData = JSON.vaulticParse(newData);
             const currentVaultData: CondensedVaultData | undefined = currentData ? JSON.vaulticParse(currentData) : undefined;
 
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVault");
+            }
+
             const transaction = new Transaction();
 
             if (newVaultData.name)
@@ -254,7 +260,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.vaultStoreState)
             {
                 const currentVaultState = JSON.vaulticParse(currentVaultData.vaultStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newVaultData.vaultStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.vaultStoreState),
                     currentVaultState, transaction);
 
                 if (!await (environment.repositories.vaultStoreStates.updateState(
@@ -267,7 +273,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.passwordStoreState)
             {
                 const currentPasswordState = JSON.vaulticParse(currentVaultData.passwordStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newVaultData.passwordStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.passwordStoreState),
                     currentPasswordState, transaction);
 
                 if (!await (environment.repositories.passwordStoreStates.updateState(
@@ -280,7 +286,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.valueStoreState)
             {
                 const currentValueState = JSON.vaulticParse(currentVaultData.valueStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newVaultData.valueStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.valueStoreState),
                     currentValueState, transaction);
 
                 if (!await (environment.repositories.valueStoreStates.updateState(
@@ -293,7 +299,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.filterStoreState)
             {
                 const currentFilterState = JSON.vaulticParse(currentVaultData.filterStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newVaultData.filterStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.filterStoreState),
                     currentFilterState, transaction);
 
                 if (!await (environment.repositories.filterStoreStates.updateState(
@@ -306,7 +312,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.groupStoreState)
             {
                 const currentGroupState = JSON.vaulticParse(currentVaultData.groupStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newVaultData.groupStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.groupStoreState),
                     currentGroupState, transaction);
 
                 if (!await (environment.repositories.groupStoreStates.updateState(

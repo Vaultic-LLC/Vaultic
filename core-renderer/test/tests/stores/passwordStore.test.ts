@@ -11,9 +11,9 @@ const masterKey = "test";
 
 function getSafePasswords()
 {
-    return app.currentVault.passwordStore.passwords.filter(p => !p.value.isWeak &&
+    return app.currentVault.passwordStore.passwords.filter(p => !p.value.isWeak.value &&
         !app.currentVault.passwordStore.duplicatePasswords.value.has(p.value.id.value) &&
-        !p.value.containsLogin && !p.value.isOld);
+        !p.value.containsLogin.value && !p.value.isOld());
 }
 
 passwordStoreSuite.tests.push({
@@ -30,20 +30,20 @@ passwordStoreSuite.tests.push({
         const sequrityQuestion: SecurityQuestion =
         {
             id: new Field("SecurityQuestion"),
-            question: "Question",
-            questionLength: 0,
-            answer: "Answer",
-            answerLength: 0
+            question: new Field("Question"),
+            questionLength: new Field(0),
+            answer: new Field("Answer"),
+            answerLength: new Field(0)
         };
 
-        password.securityQuestions.value.push(sequrityQuestion);
+        password.securityQuestions.value.set("SecurityQuestion", new Field(sequrityQuestion));
 
         await app.currentVault.passwordStore.addPassword(masterKey, password);
         const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0];
 
         const decryptedPassword = await cryptHelper.decrypt(masterKey, retrievedPassword.value.password.value);
-        const decryptedSecurityQuesitonQuestion = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value[0].question);
-        const decryptedSecurityQuesitonAnswer = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value[0].answer);
+        const decryptedSecurityQuesitonQuestion = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.question.value);
+        const decryptedSecurityQuesitonAnswer = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.answer.value);
 
         ctx.assertEquals("Login is correct", retrievedPassword.value.login.value, "PasswordStore Add Works");
         ctx.assertEquals("Email is correct", retrievedPassword.value.email.value, "Email@Email");
@@ -53,11 +53,11 @@ passwordStoreSuite.tests.push({
         ctx.assertEquals("PasswordLength is correct", retrievedPassword.value.passwordLength.value, 8);
         ctx.assertEquals("AdditionalInformation is correct", retrievedPassword.value.additionalInformation.value, "AdditionalInformation");
 
-        ctx.assertEquals("One Security Question", retrievedPassword.value.securityQuestions.value.length, 1);
+        ctx.assertEquals("One Security Question", retrievedPassword.value.securityQuestions.value.size, 1);
         ctx.assertEquals("Decrypted security question question", decryptedSecurityQuesitonQuestion.value, "Question");
         ctx.assertEquals("Decrypted security question answer", decryptedSecurityQuesitonAnswer.value, "Answer");
-        ctx.assertEquals("Answer Length", retrievedPassword.value.securityQuestions.value[0].answerLength, 6);
-        ctx.assertEquals("Question Length", retrievedPassword.value.securityQuestions.value[0].questionLength, 8);
+        ctx.assertEquals("Answer Length", retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.answerLength.value, 6);
+        ctx.assertEquals("Question Length", retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.questionLength.value, 8);
     }
 });
 
@@ -163,12 +163,12 @@ passwordStoreSuite.tests.push({
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Add With Filter Works";
-        filter.conditions.value.push({
+        filter.conditions.value.set("PasswordStore Add With Filter Works", new Field({
             id: new Field("PasswordStore Add With Filter Works"),
-            property: "login",
-            filterType: FilterConditionType.EqualTo,
-            value: "PasswordStore Add With Filter Works"
-        });
+            property: new Field("login"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("PasswordStore Add With Filter Works")
+        }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
         await app.currentVault.passwordStore.addPassword(masterKey, password);
@@ -247,30 +247,32 @@ passwordStoreSuite.tests.push({
         const securityQuestion: SecurityQuestion =
         {
             id: new Field("SecurityQuestion"),
-            question: "Question",
-            questionLength: 0,
-            answer: "Answer",
-            answerLength: 0
+            question: new Field("Question"),
+            questionLength: new Field(0),
+            answer: new Field("Answer"),
+            answerLength: new Field(0)
         };
 
-        password.securityQuestions.value.push(securityQuestion);
+        password.securityQuestions.value.set("SecurityQuestion", new Field(securityQuestion));
 
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         const newQuesiton = "UpdatedQuesiton";
         const newAnswer = "UpdatedAnswer";
 
-        password.securityQuestions.value[0].question = newQuesiton;
-        password.securityQuestions.value[0].answer = newAnswer;
+        password.securityQuestions.value.get("SecurityQuestion")!.value.question.value = newQuesiton;
+        password.securityQuestions.value.get("SecurityQuestion")!.value.answer.value = newAnswer;
 
         await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [securityQuestion.id.value], [securityQuestion.id.value]);
         const updatedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
 
-        const decryptedAnswer = await cryptHelper.decrypt(masterKey, updatedPassword[0].value.securityQuestions.value[0].answer);
+        const decryptedQuestion = await cryptHelper.decrypt(masterKey, updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.question.value);
+        const decryptedAnswer = await cryptHelper.decrypt(masterKey, updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.answer.value);
 
-        ctx.assertEquals("New Answer", decryptedAnswer.value, newAnswer);
-        ctx.assertEquals("Answer Length", updatedPassword[0].value.securityQuestions.value[0].answerLength, newAnswer.length);
-        ctx.assertEquals("Question Length", updatedPassword[0].value.securityQuestions.value[0].questionLength, newQuesiton.length);
+        ctx.assertEquals("New Question is correct", decryptedQuestion.value, newQuesiton);
+        ctx.assertEquals("New Answer is correct", decryptedAnswer.value, newAnswer);
+        ctx.assertEquals("new Answer Length is correct", updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.answerLength.value, newAnswer.length);
+        ctx.assertEquals("New Question Length is correct", updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.questionLength.value, newQuesiton.length);
     }
 });
 
@@ -322,8 +324,8 @@ passwordStoreSuite.tests.push({
         retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
         retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
 
-        ctx.assertEquals("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne, undefined);
-        ctx.assertEquals("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo, undefined);
+        ctx.assertUndefined("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne);
+        ctx.assertUndefined("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo);
 
         await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
 
@@ -419,12 +421,12 @@ passwordStoreSuite.tests.push({
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Update With Filter Works";
-        filter.conditions.value.push({
+        filter.conditions.value.set("Id", new Field({
             id: new Field("Id"),
-            property: "login",
-            filterType: FilterConditionType.EqualTo,
-            value: "UpdateWithFilterWorks--Filter"
-        });
+            property: new Field("login"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("UpdateWithFilterWorks--Filter")
+        }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
 
@@ -511,8 +513,8 @@ passwordStoreSuite.tests.push({
         retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
         retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
 
-        ctx.assertEquals("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne, undefined);
-        ctx.assertEquals("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo, undefined);
+        ctx.assertUndefined("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne);
+        ctx.assertUndefined("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo);
 
         await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
 
@@ -591,12 +593,12 @@ passwordStoreSuite.tests.push({
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Update With Filter Works";
-        filter.conditions.value.push({
+        filter.conditions.value.set("DeleteWithFilterWorks--Condition", new Field({
             id: new Field("DeleteWithFilterWorks--Condition"),
-            property: "login",
-            filterType: FilterConditionType.EqualTo,
-            value: "DeleteWithFilterWorks"
-        });
+            property: new Field("login"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("DeleteWithFilterWorks")
+        }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
         await app.currentVault.passwordStore.addPassword(masterKey, password);

@@ -15,13 +15,13 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         return environment.databaseDataSouce.getRepository(ChangeTracking);
     }
 
-    public trackStateDifferences(masterKey: string, newState: StoreState, oldState: StoreState, transaction: Transaction): string
+    public trackStateDifferences(userID: number, masterKey: string, newState: StoreState, oldState: StoreState, transaction: Transaction): string
     {
-        const updatedState = this.trackObjectDifferences(masterKey, new Field(newState), new Field(oldState), transaction);
+        const updatedState = this.trackObjectDifferences(userID, masterKey, new Field(newState), new Field(oldState), transaction);
         return JSON.vaulticStringify(updatedState);
     }
 
-    public trackObjectDifferences(masterKey: string, newObj: any, oldObj: any, transaction: Transaction)
+    public trackObjectDifferences(userID: number, masterKey: string, newObj: any, oldObj: any, transaction: Transaction)
     {
         if (typeof newObj.value == 'object')
         {
@@ -39,11 +39,11 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 {
                     newObj.id = environment.utilities.generator.uniqueId();
                     newObj.lastModifiedTime = Date.now();
-                    transaction.insertEntity(ChangeTracking.inserted(newObj.id, newObj.lastModifiedTime), masterKey, () => this);
+                    transaction.insertEntity(ChangeTracking.inserted(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
                 }
                 else
                 {
-                    this.trackObjectDifferences(masterKey, manager.get(keys[i], newObj.value), manager.get(oldKeys[oldKeyMatchingIndex], oldObj.value), transaction);
+                    this.trackObjectDifferences(userID, masterKey, manager.get(keys[i], newObj.value), manager.get(oldKeys[oldKeyMatchingIndex], oldObj.value), transaction);
                     oldKeys.splice(oldKeyMatchingIndex, 1);
                 }
             }
@@ -51,7 +51,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             // all the keys that are in the old obj but not in new obj, they were deleted
             for (let i = 0; i < oldKeys.length; i++)
             {
-                transaction.insertEntity(ChangeTracking.deleted(manager.get(oldKeys[i], oldObj.value).id, Date.now()), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.deleted(userID, manager.get(oldKeys[i], oldObj.value).id, Date.now()), masterKey, () => this);
             }
         }
         else 
@@ -61,7 +61,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             {
                 // TODO: make sure this actually works. Otherwise I will need to return newObj. Same with id above
                 newObj.lastModifiedTime = Date.now();
-                transaction.insertEntity(ChangeTracking.updated(newObj.id, newObj.lastModifiedTime), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
             }
         }
 
@@ -97,11 +97,6 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         }
 
         return changeTrackingByID;
-    }
-
-    public async clearChangeTrackings()
-    {
-
     }
 }
 

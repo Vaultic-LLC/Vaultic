@@ -35,10 +35,10 @@
             </template>
             <template #body>
                 <SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions.value"
-                    :key="sq.id.value" :rowNumber="index" :colorModel="colorModel" :model="sq" :disabled="false"
-                    :hideInitialRow="true" :moveButtonsToBottomRatio="1" @onQuesitonDirty="onQuestionDirty(sq.id.value)"
-                    @onAnswerDirty="onAnswerDirty(sq.id.value)" @onDelete="onDeleteSecurityQuestion(sq.id.value)"
-                    :isInitiallyEncrypted="sq.question != ''" />
+                    :key="sq[0]" :rowNumber="index" :colorModel="colorModel" :model="sq[1].value" :disabled="false"
+                    :hideInitialRow="true" :moveButtonsToBottomRatio="1" @onQuesitonDirty="onQuestionDirty(sq[0])"
+                    @onAnswerDirty="onAnswerDirty(sq[0])" @onDelete="onDeleteSecurityQuestion(sq[0])"
+                    :isInitiallyEncrypted="sq[1].value.question.value != ''" />
                 <SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
                     :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="color" />
             </template>
@@ -67,7 +67,7 @@ import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTa
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueID } from '../../Helpers/generatorHelper';
+import { generateUniqueID, generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { api } from "../../API"
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Constants/Keys';
@@ -130,7 +130,7 @@ export default defineComponent({
         let saveFailed: (value: boolean) => void;
 
         const showEmptyMessage: ComputedRef<boolean> = computed(() =>
-            (activeTab.value == 0 && passwordState.value.securityQuestions.value.length == 0) ||
+            (activeTab.value == 0 && passwordState.value.securityQuestions.value.size == 0) ||
             (activeTab.value == 1 && groupModels.value.visualValues.length == 0));
 
         const emptyMessage: ComputedRef<string> = computed(() =>
@@ -323,13 +323,14 @@ export default defineComponent({
 
         async function onAddSecurityQuestion()
         {
-            passwordState.value.securityQuestions.value.push({
-                id: new Field(await generateUniqueID(passwordState.value.securityQuestions.value)),
-                question: '',
-                questionLength: 0,
-                answer: '',
-                answerLength: 0
-            });
+            const id = await generateUniqueIDForMap(passwordState.value.securityQuestions.value);
+            passwordState.value.securityQuestions.value.set(id, new Field({
+                id: new Field(id),
+                question: new Field(''),
+                questionLength: new Field(0),
+                answer: new Field(''),
+                answerLength: new Field(0)
+            }));
 
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
@@ -352,8 +353,7 @@ export default defineComponent({
 
         function onDeleteSecurityQuestion(id: string)
         {
-            passwordState.value.securityQuestions.value = passwordState.value.securityQuestions.value.filter(sq => sq.id.value != id);
-
+            passwordState.value.securityQuestions.value.delete(id);
             if (dirtySecurityQuestionQuestions.value.includes(id))
             {
                 dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(id), 1);

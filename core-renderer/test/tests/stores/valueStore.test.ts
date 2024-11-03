@@ -11,8 +11,8 @@ const masterKey = "test";
 
 function getSafeValues()
 {
-    return app.currentVault.valueStore.nameValuePairs.filter(v => !v.value.isWeak &&
-        !app.currentVault.valueStore.duplicateNameValuePairs.value.has(v.value.id.value) && !v.value.isOld);
+    return app.currentVault.valueStore.nameValuePairs.filter(v => !v.value.isWeak.value &&
+        !app.currentVault.valueStore.duplicateNameValuePairs.value.has(v.value.id.value) && !v.value.isOld());
 }
 
 valueStoreSuite.tests.push({
@@ -142,12 +142,12 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "ValueStore Add With Filter Works";
 
-        filter.conditions.value.push({
+        filter.conditions.value.set("ValueStore Add With Filter Works", new Field({
             id: new Field("ValueStore Add With Filter Works"),
-            property: "name",
-            filterType: FilterConditionType.EqualTo,
-            value: "ValueStore Add With Filter Works"
-        });
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("ValueStore Add With Filter Works")
+        }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
@@ -292,8 +292,8 @@ valueStoreSuite.tests.push({
         retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
         retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPhraseValue.id.value);
 
-        ctx.assertEquals("Duplicate value one doesn't exists", retrievedDuplicateValueOne, undefined);
-        ctx.assertEquals("Duplicate value two doesn't exists", retrievedDuplicateValueTwo, undefined);
+        ctx.assertUndefined("Duplicate value one doesn't exists", retrievedDuplicateValueOne);
+        ctx.assertUndefined("Duplicate value two doesn't exists", retrievedDuplicateValueTwo);
     }
 });
 
@@ -385,12 +385,12 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "ValueStore Update With Filter Works";
 
-        filter.conditions.value.push({
+        filter.conditions.value.set("ValueStore Update With Filter Works", new Field({
             id: new Field("ValueStore Update With Filter Works"),
-            property: "name",
-            filterType: FilterConditionType.EqualTo,
-            value: "ValueStore Update With Filter Works"
-        });
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("ValueStore Update With Filter Works")
+        }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
@@ -490,7 +490,7 @@ valueStoreSuite.tests.push({
         retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPasscodeValue.id.value);
 
         // deleted so it shouldn't exist at all
-        ctx.assertEquals("Duplicate value one doesn't exists", retrievedDuplicateValueOne, undefined);
+        ctx.assertUndefined("Duplicate value one doesn't exists", retrievedDuplicateValueOne);
 
         // still has other duplicates so just make sure the deleted value isn't in there
         ctx.assertTruthy("Duplicate value two doesn't have previous duplicate value one",
@@ -592,12 +592,12 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = name;
 
-        filter.conditions.value.push({
+        filter.conditions.value.set(name, new Field({
             id: new Field(name),
-            property: "name",
-            filterType: FilterConditionType.EqualTo,
-            value: name
-        });
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field(name)
+        }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);

@@ -13,12 +13,12 @@ transactionTestSuite.tests.push({
         const test = "Transaction rollbacks store states on fail";
 
         const filter = defaultFilter(DataType.Passwords);
-        filter.conditions.value.push({
+        filter.conditions.value.set(test, new Field({
             id: new Field(test),
-            property: "login",
-            filterType: FilterConditionType.EqualTo,
-            value: test
-        });
+            property: new Field("login"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field(test)
+        }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
 

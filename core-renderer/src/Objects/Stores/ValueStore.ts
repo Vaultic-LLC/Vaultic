@@ -200,8 +200,13 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         const id = await generateUniqueIDForMap(pendingState.currentAndSafeValues.value.current.value);
         pendingState.currentAndSafeValues.value.current.value.set(id, new Field(values.value.size));
 
-        const safePasswords = values.value.filter((k, v) => v.value.isSafe());
+        const safePasswords = values.value.filter((k, v) => this.valueIsSafe(pendingState, v.value));
         pendingState.currentAndSafeValues.value.safe.value.set(id, new Field(safePasswords.size));
+    }
+
+    private valueIsSafe(state: ValueStoreState, value: ReactiveValue)
+    {
+        return !value.isOld() && !value.isWeak.value && !state.duplicateValues.value.has(value.id.value);
     }
 }
 

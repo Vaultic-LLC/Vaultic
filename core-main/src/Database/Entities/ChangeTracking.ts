@@ -54,9 +54,10 @@ export class ChangeTracking extends VaulticEntity
         ];
     }
 
-    public static inserted(id: string, lastModifiedTime: number): ChangeTracking
+    public static inserted(userID: number, id: string, lastModifiedTime: number): ChangeTracking
     {
         const tracking = new ChangeTracking();
+        tracking.userID = userID;
         tracking.objectID = id;
         tracking.objectState = EntityState.Inserted;
         tracking.lastModifiedTime = lastModifiedTime;
@@ -64,9 +65,10 @@ export class ChangeTracking extends VaulticEntity
         return tracking;
     }
 
-    public static updated(id: string, lastModifiedTime: number): ChangeTracking
+    public static updated(userID: number, id: string, lastModifiedTime: number): ChangeTracking
     {
         const tracking = new ChangeTracking();
+        tracking.userID = userID;
         tracking.objectID = id;
         tracking.objectState = EntityState.Updated;
         tracking.lastModifiedTime = lastModifiedTime;
@@ -74,9 +76,10 @@ export class ChangeTracking extends VaulticEntity
         return tracking;
     }
 
-    public static deleted(id: string, lastModifiedTime: number): ChangeTracking
+    public static deleted(userID: number, id: string, lastModifiedTime: number): ChangeTracking
     {
         const tracking = new ChangeTracking();
+        tracking.userID = userID;
         tracking.objectID = id;
         tracking.objectState = EntityState.Deleted;
         tracking.lastModifiedTime = lastModifiedTime;

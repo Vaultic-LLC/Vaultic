@@ -423,7 +423,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             if (newUser.appStoreState)
             {
                 const currentAppStoreState = JSON.vaulticParse(parsedCurrentData.appStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
 
                 if (!await (environment.repositories.appStoreStates.updateState(
                     user.appStoreState.appStoreStateID, masterKey, state, transaction)))
@@ -435,7 +435,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             if (newUser.userPreferencesStoreState)
             {
                 const currentUserPreferences = JSON.vaulticParse(parsedCurrentData.userPreferencesStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, masterKey, JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
 
                 if (!await (environment.repositories.userPreferencesStoreStates.updateState(
                     user.userPreferencesStoreState.userPreferencesStoreStateID, "", state, transaction)))

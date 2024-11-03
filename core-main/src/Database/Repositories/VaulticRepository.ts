@@ -1,4 +1,4 @@
-import { EntityManager, Repository } from "typeorm";
+import { EntityManager, FindOptionsWhere, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
 import { StoreState } from "../Entities/States/StoreState";
 import { EntityState } from "@vaultic/shared/Types/Entities";
@@ -173,12 +173,12 @@ export class VaulticRepository<T extends VaulticEntity>
         return false;
     }
 
-    public async override(manager: EntityManager, id: number, entity: DeepPartial<T>): Promise<boolean>
+    public async override(manager: EntityManager, findBy: number | FindOptionsWhere<T>, entity: DeepPartial<T>): Promise<boolean>
     {
         try 
         {
             const repo = manager.withRepository(this.repository);
-            await repo.update(id, entity as any);
+            await repo.update(findBy, entity as any);
         }
         catch (e)
         {
@@ -223,18 +223,18 @@ export class VaulticRepository<T extends VaulticEntity>
         return false;
     }
 
-    public async delete(manager: EntityManager, entityID: number): Promise<boolean>
+    public async delete(manager: EntityManager, findBy: number | FindOptionsWhere<T>): Promise<boolean>
     {
         const repo = manager.withRepository(this.repository);
 
         try
         {
-            const removedEntity = await repo.delete(entityID);
+            const removedEntity = await repo.delete(findBy);
             return removedEntity.affected == 1;
         }
         catch (e)
         {
-            console.log(`Filed to delete entity: ${JSON.vaulticStringify(entityID)}`)
+            console.log(`Filed to delete entity: ${JSON.vaulticStringify(findBy)}`)
             console.log(e);
         }
 

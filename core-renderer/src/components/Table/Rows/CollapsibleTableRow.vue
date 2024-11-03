@@ -98,6 +98,8 @@ export default defineComponent({
 
         function toggleCollapseContent()
         {
+            // Disabling this for now until I can make this component more useful
+            return;
             if (showCollapseRow.value)
             {
                 showCollapseRow.value = false

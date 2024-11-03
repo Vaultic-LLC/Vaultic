@@ -103,11 +103,13 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         // TODO: this can cause data integrity issues. If I delete a filter on another device and 
                         // it was an empty filter, it is no longer in empty filters. This will add the filter back but 
                         // not add it back to empty filters. Or would it? That filter in emptyFilters would have a changeTracking
-                        // record for deleted. It still would because the Field in emptyFilters doesn't get updated if 
+                        // record for deleted. It still wouldn't because the Field in emptyFilters doesn't get updated if 
                         // it doesn't change, i.e. editing the filter wouldn't update the Field<string> of the id in emptyFilters lastModifiedTime
                         // so this check would fail. If I also updated the lastModifiedTime of the record in emptyFilters, then this would work and
                         // add it back here. Do I have to worry abou that below as well where I am potentially keeping records that were 
                         // deleted? Yes, but there I can't confirm times?
+                        // TODO: test this. Duplicate and empty values should now be updated whenever their backing data type is updated, making them
+                        // also stay if this condition is met
                         if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj.value).lastModifiedTime)
                         {
                             manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);

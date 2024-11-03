@@ -7,7 +7,7 @@ export interface IIdentifiable
 
 export interface IFieldObject
 {
-    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
+    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject> | undefined> | FieldMap;
 }
 
 export type IFieldedObject = IIdentifiable & IFieldObject;
@@ -42,6 +42,7 @@ export type KnownMappedFields<T> = {
 
 export type NonArrayType<T> = T extends any[] ? never : T;
 
+// @ts-ignore
 export type FieldMap = Field<Map<any, Field<NonArrayType<Primitive | KnownMappedFields<IFieldedObject> | FieldMap>>>>;
 
 export type PrimaryDataObjectCollection = "passwords" | "values";
@@ -64,14 +65,14 @@ export type KnownMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataO
     "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "colorPalettes" | "pinnedDataTypes" |
     "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
     "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups";
+    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions";
 
 
 export const MapFields: Set<KnownMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
     "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "colorPalettes", "pinnedDataTypes", "pinnedFilters",
     "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
     "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
-    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups"
+    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions"
 ]);
 
 export class Field<T>

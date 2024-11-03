@@ -1,12 +1,10 @@
 import { Password } from "../../Types/DataTypes";
 import { ComputedRef, computed, reactive } from "vue";
 import app from "./AppStore";
-import { Field } from "@vaultic/shared/Types/Fields";
 
 export interface ReactivePassword extends Password
 {
     isOld: () => boolean;
-    isSafe: () => boolean;
 }
 
 // Used to prevent modifing a password directly and to and some computed methods
@@ -25,10 +23,6 @@ export default function createReactivePassword(password: Password): ReactivePass
         return differenceInDays >= app.settings.value.oldPasswordDays.value;
     });
 
-    // TODO: this doesn't work with duplicates since I don't actually set isDuplicate anywhere
-    // same with ReactiveValue
-    const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !passwordState.isWeak && !passwordState.containsLogin && !passwordState.isDuplicate);
-
     return {
         get id() { return passwordState.id; },
         get login() { return passwordState.login; },
@@ -44,11 +38,8 @@ export default function createReactivePassword(password: Password): ReactivePass
         get isWeak() { return passwordState.isWeak; },
         get isWeakMessage() { return passwordState.isWeakMessage; },
         get containsLogin() { return passwordState.containsLogin; },
-        get isDuplicate() { return passwordState.isDuplicate; },
-        set isDuplicate(value: Field<boolean>) { passwordState.isDuplicate = value; },
         get passwordLength() { return passwordState.passwordLength; },
         get isVaultic() { return passwordState.isVaultic; },
         isOld() { return isOld.value },
-        isSafe() { return isSafe.value }
     }
 }

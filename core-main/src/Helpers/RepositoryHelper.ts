@@ -5,6 +5,7 @@ import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { EntityState } from "@vaultic/shared/Types/Entities";
+import { ChangeTracking } from "../Database/Entities/ChangeTracking";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>): Promise<TypedMethodResponse<T | undefined>>
 {
@@ -224,7 +225,6 @@ export async function safeBackupData(masterKey: string): Promise<TypedMethodResp
 // serverUserDataPayload, remove it
 export async function checkMergeMissingData(masterKey: string, email: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
 {
-
     if (!serverUserDataPayload)
     {
         return false;
@@ -313,6 +313,8 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
     }
 
     // TODO: is this how deleted vaults on another device should be handled? Waht about in updateFromServer?
+    // Is this even necessary? I think what I intended with this is deleting vaults that were deleted on another device or
+    // something similar to the change tracking where anything left in the array isn't on this device or something
     if (clientUserDataPayload.vaults)
     {
         for (let i = 0; i < clientUserDataPayload.vaults.length; i++)
@@ -325,9 +327,14 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
         }
     }
 
+    const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+    if (!currentUser)
+    {
+        return false;
+    }
+
     // we've handled all trackedChanges. Clear them
-    // TODO: should only clear for current user
-    transaction.raw('DELETE FROM changeTrackings');
+    transaction.deleteEntity<ChangeTracking>({ userID: currentUser.userID }, () => environment.repositories.changeTrackings);
 
     if (!(await transaction.commit()))
     {

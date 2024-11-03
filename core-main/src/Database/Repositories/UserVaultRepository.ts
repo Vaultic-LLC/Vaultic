@@ -176,8 +176,14 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const transaction = new Transaction();
             if (newUserVault.vaultPreferencesStoreState)
             {
+                const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+                if (!currentUser)
+                {
+                    return TypedMethodResponse.fail(errorCodes.NO_USER, "saveUserVault");
+                }
+
                 const currentVaultPreferences = JSON.vaulticParse((JSON.vaulticParse(currentData) as CondensedVaultData).vaultPreferencesStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(masterKey, JSON.vaulticParse(newUserVault.vaultPreferencesStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newUserVault.vaultPreferencesStoreState),
                     currentVaultPreferences, transaction);
 
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(

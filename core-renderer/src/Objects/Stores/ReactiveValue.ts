@@ -6,7 +6,6 @@ import { Field } from "@vaultic/shared/Types/Fields";
 export interface ReactiveValue extends NameValuePair
 {
     isOld: () => boolean;
-    isSafe: () => boolean;
 }
 
 // Used to prevent modifing a value directly and to and some computed methods
@@ -26,7 +25,6 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
         return differenceInDays >= app.settings.value.oldPasswordDays.value;
     });
 
-    const isSafe: ComputedRef<boolean> = computed(() => !isOld.value && !nameValuePairState.isDuplicate && !nameValuePairState.isWeak)
 
     return {
         get id() { return nameValuePairState.id; },
@@ -39,13 +37,10 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
         get lastModifiedTime() { return nameValuePairState.lastModifiedTime; },
         get filters() { return nameValuePairState.filters; },
         get groups() { return nameValuePairState.groups; },
-        get isDuplicate() { return nameValuePairState.isDuplicate; },
-        set isDuplicate(value: Field<boolean>) { nameValuePairState.isDuplicate = value; },
         get isWeak() { return nameValuePairState.isWeak; },
         get isWeakMessage() { return nameValuePairState.isWeakMessage; },
         get valueLength() { return nameValuePairState.valueLength; },
         get key() { return nameValuePairState.key; },
         isOld() { return isOld.value; },
-        isSafe() { return isSafe.value },
     };
 }

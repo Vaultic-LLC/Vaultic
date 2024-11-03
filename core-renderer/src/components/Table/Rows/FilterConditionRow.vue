@@ -3,21 +3,21 @@
         :animateDelete="true" :hideAtRisk="true">
         <td class="filterConditionCell">
             <div class="filterConditionCell__content">
-                <PropertySelectorInputField :label="'Property'" :color="color" v-model="filterCondition.property"
-                    :model="filterCondition.property" :displayFieldOptions="displayFieldOptions" :isOnWidget="true"
+                <PropertySelectorInputField :label="'Property'" :color="color" v-model="filterCondition.property.value"
+                    :displayFieldOptions="displayFieldOptions" :isOnWidget="true"
                     :fadeIn="true" @propertyTypeChanged="onPropertyTypeChanged" :width="'8vw'" :height="'4vh'"
                     :minHeight="'35px'" :maxHeight="'50px'" :minWidth="'100px'" />
-                <EnumInputField :label="'Condition'" :color="color" v-model="filterCondition.filterType"
+                <EnumInputField :label="'Condition'" :color="color" v-model="filterCondition.filterType.value"
                     :optionsEnum="filterConditionType" fadeIn="true" :isOnWidget="true" :width="'8vw'" :height="'4vh'"
                     :minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
                 <!-- the EnumInputField is like 1.3px wider than the TextInputField at the same width, causing the other inputs to
 				 shift slightly when changing. Wrap them in a div with fixed width and set their width to 100% to fix this -->
                 <div class="filterConditionCell__valueInput">
                     <TextInputField v-if="inputType == 0" :label="'Value'" :color="color"
-                        v-model="filterCondition.value" :fadeIn="true" :isOnWidget="true" :width="'100%'"
+                        v-model="filterCondition.value.value" :fadeIn="true" :isOnWidget="true" :width="'100%'"
                         :height="'3.8vh'" :minHeight="'33px'" :minWidth="'100px'" :maxHeight="'49px'" />
                     <EnumInputField v-if="inputType == 1" :label="'Value'" :color="color"
-                        v-model="filterCondition.value" :optionsEnum="inputEnumType" fadeIn="true" :isOnWidget="true"
+                        v-model="filterCondition.value.value" :optionsEnum="inputEnumType" fadeIn="true" :isOnWidget="true"
                         :width="'100%'" :height="'4vh'" :minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
                 </div>
             </div>
@@ -62,18 +62,18 @@ export default defineComponent({
             switch (type)
             {
                 case PropertyType.String:
-                    filterCondition.value.value = "";
+                    filterCondition.value.value.value = "";
                     inputType.value = PropertyType.String;
                     filterConditionType.value = FilterConditionType;
                     inputEnumType.value = undefined;
                     break;
                 case PropertyType.Enum:
-                    filterCondition.value.value = "";
+                    filterCondition.value.value.value = "";
                     inputType.value = PropertyType.Enum;
                     filterConditionType.value = EqualFilterConditionType;
-                    if (filterCondition.value.filterType != "Equal To")
+                    if (filterCondition.value.filterType.value != "Equal To")
                     {
-                        filterCondition.value.filterType = undefined;
+                        filterCondition.value.filterType.value = undefined;
                     }
 
                     inputEnumType.value = typeEnum;

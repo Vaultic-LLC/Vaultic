@@ -107,7 +107,7 @@ groupStoreSuite.tests.push({
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedDuplicateGroupOne);
 
             let retrievedDuplicateGroupOneTwo = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
-            ctx.assertEquals(`Duplicate Group Doens't exist for type ${type}`, retrievedDuplicateGroupOneTwo, undefined);
+            ctx.assertUndefined(`Duplicate Group Doens't exist for type ${type}`, retrievedDuplicateGroupOneTwo);
 
             hasEmptyGroup = getEmptyGroups().value.has(duplicateGroupOne.id.value);
             ctx.assertTruthy(`Non empty group doesn't exist for type ${type}`, !hasEmptyGroup);
@@ -304,7 +304,7 @@ groupStoreSuite.tests.push({
             ctx.assertTruthy(`Duplicate group one doesn't have group two ${type}`,
                 !retrievedDuplicateGroupOne?.value.duplicateDataTypesByID.value.has(duplicateGroupTwo.id.value));
 
-            ctx.assertEquals(`Duplicate group two isn't a duplicate ${type}`, retrievedDuplicateGroupTwo, undefined);
+            ctx.assertUndefined(`Duplicate group two isn't a duplicate ${type}`, retrievedDuplicateGroupTwo);
 
             duplicateGroupOne[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
@@ -461,8 +461,8 @@ groupStoreSuite.tests.push({
             retrievedDuplicateGroupOne = getDuplicateGroups().value.get(duplicateGroupOne.id.value);
             retrievedDuplicateGroupTwo = getDuplicateGroups().value.get(duplicateGroupTwo.id.value);
 
-            ctx.assertEquals(`Duplicate group one doesn't Exists for type ${type}`, retrievedDuplicateGroupOne, undefined);
-            ctx.assertEquals(`Duplicate group two doesn't Exists for type ${type}`, retrievedDuplicateGroupOne, undefined);
+            ctx.assertUndefined(`Duplicate group one doesn't Exists for type ${type}`, retrievedDuplicateGroupOne);
+            ctx.assertUndefined(`Duplicate group two doesn't Exists for type ${type}`, retrievedDuplicateGroupOne);
         }
 
         const password = defaultPassword();

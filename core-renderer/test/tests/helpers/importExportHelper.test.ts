@@ -49,7 +49,7 @@ importExportHelperTestSuite.tests.push({
         ctx.assertEquals("First password password set properly", decryptedPassword.value!, "password1");
         ctx.assertEquals("First password domain set properly", passwordOne[0].value.domain.value, "google.com");
         ctx.assertEquals("First password email set properly", passwordOne[0].value.email.value, "john@gmail.com");
-        ctx.assertEquals("First password no security questions", passwordOne[0].value.securityQuestions.value.length, 0);
+        ctx.assertEquals("First password no security questions", passwordOne[0].value.securityQuestions.value.size, 0);
 
         const passwordTwo = app.currentVault.passwordStore.passwords.filter(p => p.value.login.value == "johnpeterson");
         const decryptedPasswordTwo = await cryptHelper.decrypt(masterKey, passwordTwo[0].value.password.value);
@@ -61,8 +61,9 @@ importExportHelperTestSuite.tests.push({
         ctx.assertEquals("Second password domain set properly", passwordTwo[0].value.domain.value, "facebook.com");
         ctx.assertEquals("Second password email set properly", passwordTwo[0].value.email.value, "john@gmail.com");
 
-        const decryptedPasswordTwoQuestion = await cryptHelper.decrypt(masterKey, passwordTwo[0].value.securityQuestions.value[0].question);
-        const decryptedPasswordTwoAnswer = await cryptHelper.decrypt(masterKey, passwordTwo[0].value.securityQuestions.value[0].answer);
+        const passwordTwoSecurityQuestion = passwordTwo[0].value.securityQuestions.value.valueArray()[0].value;
+        const decryptedPasswordTwoQuestion = await cryptHelper.decrypt(masterKey, passwordTwoSecurityQuestion.question.value);
+        const decryptedPasswordTwoAnswer = await cryptHelper.decrypt(masterKey, passwordTwoSecurityQuestion.answer.value);
         ctx.assertEquals("Second password security question question", decryptedPasswordTwoQuestion.value, "Who Am I");
         ctx.assertEquals("Second password security question answer", decryptedPasswordTwoAnswer.value, "Me");
 
@@ -77,13 +78,15 @@ importExportHelperTestSuite.tests.push({
         ctx.assertEquals("Third password domain set properly", passwordThree[0].value.domain.value, "google.com");
         ctx.assertEquals("Third password email set properly", passwordThree[0].value.email.value, "johnJ@outlook.com");
 
-        const decryptedPasswordThreeQuestionOne = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[0].question);
-        const decryptedPasswordThreeAnswerOne = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[0].answer);
+        const passwordThreeSecurityQuestionOne = passwordThree[0].value.securityQuestions.value.valueArray()[0].value;
+        const decryptedPasswordThreeQuestionOne = await cryptHelper.decrypt(masterKey, passwordThreeSecurityQuestionOne.question.value);
+        const decryptedPasswordThreeAnswerOne = await cryptHelper.decrypt(masterKey, passwordThreeSecurityQuestionOne.answer.value);
         ctx.assertEquals("Third password security question question one", decryptedPasswordThreeQuestionOne.value, "Color");
         ctx.assertEquals("Third password security question answer one", decryptedPasswordThreeAnswerOne.value, "Green");
 
-        const decryptedPasswordThreeQuestionTwo = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[1].question);
-        const decryptedPasswordThreeAnswerTwo = await cryptHelper.decrypt(masterKey, passwordThree[0].value.securityQuestions.value[1].answer);
+        const passwordThreeSecurityQuestionTwo = passwordThree[0].value.securityQuestions.value.valueArray()[1].value;
+        const decryptedPasswordThreeQuestionTwo = await cryptHelper.decrypt(masterKey, passwordThreeSecurityQuestionTwo.question.value);
+        const decryptedPasswordThreeAnswerTwo = await cryptHelper.decrypt(masterKey, passwordThreeSecurityQuestionTwo.answer.value);
         ctx.assertEquals("Third password security question question two", decryptedPasswordThreeQuestionTwo.value, "Food");
         ctx.assertEquals("Third password security question answer two", decryptedPasswordThreeAnswerTwo.value, "Milk");
     }
@@ -188,16 +191,16 @@ importExportHelperTestSuite.tests.push({
                 {
                     if (!rowValues[j])
                     {
-                        ctx.assertEquals("No security question answers", password.securityQuestions.value.length, 0);
+                        ctx.assertEquals("No security question answers", password.securityQuestions.value.size, 0);
                         continue;
                     }
 
                     const securityQuestionQuestions = rowValues[j].split(';');
-                    ctx.assertEquals(`Same amount of security question questions`, securityQuestionQuestions.length, password.securityQuestions.value.length);
+                    ctx.assertEquals(`Same amount of security question questions`, securityQuestionQuestions.length, password.securityQuestions.value.size);
 
-                    for (let k = 0; k < password.securityQuestions.value.length; k++)
+                    for (const [key, value] of password.securityQuestions.value.entries())
                     {
-                        const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.securityQuestions.value[k].question);
+                        const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, value.value.question.value);
                         if (!decryptedSecurityQuestionQuestion.success)
                         {
                             throw "Failed to decrypted security question quesiton";
@@ -210,16 +213,16 @@ importExportHelperTestSuite.tests.push({
                 {
                     if (!rowValues[j])
                     {
-                        ctx.assertEquals("No security question questions", password.securityQuestions.value.length, 0);
+                        ctx.assertEquals("No security question questions", password.securityQuestions.value.size, 0);
                         continue;
                     }
 
                     const securityQuestionAnswer = rowValues[j].split(';');
-                    ctx.assertEquals(`Same amount of security question answers`, securityQuestionAnswer.length, password.securityQuestions.value.length);
+                    ctx.assertEquals(`Same amount of security question answers`, securityQuestionAnswer.length, password.securityQuestions.value.size);
 
-                    for (let k = 0; k < password.securityQuestions.value.length; k++)
+                    for (const [key, value] of password.securityQuestions.value.entries())
                     {
-                        const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.securityQuestions.value[k].answer);
+                        const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, value.value.answer.value);
                         if (!decryptedSecurityQuestionAnswer.success)
                         {
                             throw "Failed to decrypted security question answer";
@@ -276,13 +279,13 @@ importExportHelperTestSuite.tests.push({
 
             for (let i = 0; i < secrutiyQuestionQuestions.length; i++)
             {
-                testPassword.securityQuestions.value.push({
+                testPassword.securityQuestions.value.set(i.toString(), new Field({
                     id: new Field(i.toString()),
-                    question: secrutiyQuestionQuestions[i],
-                    questionLength: 0,
-                    answer: securityQuestionAnswers[i],
-                    answerLength: 0
-                });
+                    question: new Field(secrutiyQuestionQuestions[i]),
+                    questionLength: new Field(0),
+                    answer: new Field(securityQuestionAnswers[i]),
+                    answerLength: new Field(0)
+                }));
             }
 
             return app.currentVault.passwordStore.addPassword(masterKey, testPassword);

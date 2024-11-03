@@ -4,7 +4,7 @@ import { stringify } from 'csv-stringify/browser/esm';
 import cryptHelper from "./cryptHelper";
 import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
-import { generateUniqueID } from "./generatorHelper";
+import { generateUniqueIDForMap } from "./generatorHelper";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
 import { ImportableDisplayField } from "../Types/Fields";
@@ -97,16 +97,16 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         let securityQuestionQuestions: string[] = [];
         let securityQuestionAnswers: string[] = [];
 
-        for (let j = 0; j < password.value.securityQuestions.value.length; j++)
+        for (const [key, value] of password.value.securityQuestions.value.entries())
         {
-            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, password.value.securityQuestions.value[j].question);
+            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, value.value.question.value);
             if (!decryptedSecurityQuestionQuestion.success)
             {
                 showExportError();
                 return "";
             }
 
-            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, password.value.securityQuestions.value[j].answer);
+            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, value.value.answer.value);
             if (!decryptedSecurityQuestionAnswer.success)
             {
                 showExportError();
@@ -337,12 +337,12 @@ class CSVImporter<T extends IPrimaryDataObject>
 
 export class PasswordCSVImporter extends CSVImporter<Password>
 {
-    temporarySecurityQuestions: SecurityQuestion[];
+    temporarySecurityQuestions: Map<string, Field<SecurityQuestion>>;
 
     constructor()
     {
         super(DataType.Passwords);
-        this.temporarySecurityQuestions = [];
+        this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
     }
 
     protected createValue(): Password 
@@ -362,31 +362,34 @@ export class PasswordCSVImporter extends CSVImporter<Password>
             const questions: string[] = property.delimiter ? cellValue.split(property.delimiter) : [cellValue];
 
             // reading in questions first
-            if (this.temporarySecurityQuestions.length == 0)
+            if (this.temporarySecurityQuestions.size == 0)
             {
                 for (let i = 0; i < questions.length; i++)
                 {
-                    const id = await generateUniqueID(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.push({
+                    const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
+                    this.temporarySecurityQuestions.set(id, new Field({
                         id: new Field(id),
-                        question: questions[i],
-                        questionLength: questions[i].length,
-                        answer: '',
-                        answerLength: 0
-                    });
+                        question: new Field(questions[i]),
+                        questionLength: new Field(questions[i].length),
+                        answer: new Field(''),
+                        answerLength: new Field(0)
+                    }));
                 }
             }
             // reading in questions after answers
-            else 
+            else
             {
-                for (let i = 0; i < questions.length; i++)
+                let count = 0;
+                for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
-                    this.temporarySecurityQuestions[i].question = questions[i];
-                    this.temporarySecurityQuestions[i].questionLength = questions[i].length;
+                    value.value.question.value = questions[count];
+                    value.value.questionLength.value = questions[count].length;
+
+                    count += 1;
                 }
 
                 value.securityQuestions.value = this.temporarySecurityQuestions;
-                this.temporarySecurityQuestions = [];
+                this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
             }
 
             return true;
@@ -396,31 +399,34 @@ export class PasswordCSVImporter extends CSVImporter<Password>
             const answers: string[] = property.delimiter ? cellValue.split(property.delimiter) : [cellValue];
 
             // reading in answers first
-            if (this.temporarySecurityQuestions.length == 0)
+            if (this.temporarySecurityQuestions.size == 0)
             {
                 for (let i = 0; i < answers.length; i++)
                 {
-                    const id = await generateUniqueID(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.push({
+                    const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
+                    this.temporarySecurityQuestions.set(id, new Field({
                         id: new Field(id),
-                        question: '',
-                        questionLength: 0,
-                        answer: answers[i],
-                        answerLength: answers[i].length
-                    });
+                        question: new Field(''),
+                        questionLength: new Field(0),
+                        answer: new Field(answers[i]),
+                        answerLength: new Field(answers[i].length)
+                    }));
                 }
             }
             // reading in answers after questions
             else 
             {
-                for (let i = 0; i < answers.length; i++)
+                let count = 0;
+                for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
-                    this.temporarySecurityQuestions[i].answer = answers[i];
-                    this.temporarySecurityQuestions[i].answerLength = answers[i].length;
+                    value.value.answer.value = answers[count];
+                    value.value.answerLength.value = answers[count].length;
+
+                    count += 1;
                 }
 
                 value.securityQuestions.value = this.temporarySecurityQuestions;
-                this.temporarySecurityQuestions = [];
+                this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
             }
 
             return true;

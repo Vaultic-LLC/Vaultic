@@ -2,7 +2,7 @@ import { User } from "../Database/Entities/User";
 import { Vault } from "../Database/Entities/Vault";
 import { VaulticEntity } from "../Database/Entities/VaulticEntity";
 import { UserVault } from "../Database/Entities/UserVault";
-import { EntityManager } from "typeorm";
+import { EntityManager, FindOptionsWhere } from "typeorm";
 import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
@@ -13,9 +13,9 @@ export interface VaulticRepository<T extends VaulticEntity>
     signAndInsert: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
     insertExisting(manager: EntityManager, entity: DeepPartial<T>): Promise<boolean>;
     signAndUpdate: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
-    override(manager: EntityManager, id: number, entity: DeepPartial<T>): Promise<boolean>;
+    override(manager: EntityManager, findBy: number | FindOptionsWhere<T>, entity: DeepPartial<T>): Promise<boolean>;
     resetTracking: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
-    delete: (manager: EntityManager, entityID: number) => Promise<boolean>;
+    delete: (manager: EntityManager, findBy: number | FindOptionsWhere<T>) => Promise<boolean>;
     getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>;
     getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>;
 }

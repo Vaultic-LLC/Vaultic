@@ -2,6 +2,7 @@ import { environment } from "../Environment";
 import { VaulticEntity } from "./Entities/VaulticEntity";
 import { VaulticRepository } from "../Types/Repositories";
 import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { FindOptionsWhere } from "typeorm";
 
 enum Operation
 {
@@ -19,7 +20,7 @@ interface PendingEntity<T extends VaulticEntity>
     operation: Operation;
     entity?: VaulticEntity | DeepPartial<T>;
     signingKey?: string;
-    id?: number;
+    findBy?: number | FindOptionsWhere<T>;
     sql?: string;
     repository?: () => VaulticRepository<T>;
 }
@@ -63,11 +64,11 @@ export default class Transaction
         });
     }
 
-    overrideEntity<T extends VaulticEntity>(entityID: number, entity: DeepPartial<T>, repository: () => VaulticRepository<T>)
+    overrideEntity<T extends VaulticEntity>(findBy: number, entity: DeepPartial<T>, repository: () => VaulticRepository<T>)
     {
         this.pendingEntities.push({
             operation: Operation.Override,
-            id: entityID,
+            findBy,
             entity,
             repository
         });
@@ -83,11 +84,11 @@ export default class Transaction
         });
     }
 
-    deleteEntity<T extends VaulticEntity>(entityID: number, repository: () => VaulticRepository<T>)
+    deleteEntity<T extends VaulticEntity>(findBy: number | FindOptionsWhere<T>, repository: () => VaulticRepository<T>)
     {
         this.pendingEntities.push({
             operation: Operation.Delete,
-            id: entityID,
+            findBy,
             repository
         });
     }
@@ -146,7 +147,7 @@ export default class Transaction
                         }
                         else if (pendingEntity.operation == Operation.Override)
                         {
-                            if (!(await pendingEntity.repository!().override(manager, pendingEntity.id!, pendingEntity.entity as VaulticEntity)))
+                            if (!(await pendingEntity.repository!().override(manager, pendingEntity.findBy!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
                                 break;
@@ -162,7 +163,7 @@ export default class Transaction
                         }
                         else if (pendingEntity.operation == Operation.Delete)
                         {
-                            if (!(await pendingEntity.repository!().delete(manager, pendingEntity.id!)))
+                            if (!(await pendingEntity.repository!().delete(manager, pendingEntity.findBy!)))
                             {
                                 succeeded = false;
                                 break;

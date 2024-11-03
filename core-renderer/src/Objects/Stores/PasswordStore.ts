@@ -7,7 +7,7 @@ import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
-import { AtRiskType, CurrentAndSafeStructure, DuplicateDataTypes, Password } from "../../Types/DataTypes";
+import { AtRiskType, CurrentAndSafeStructure, DuplicateDataTypes, Password, SecurityQuestion } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
 interface IPasswordStoreState extends StoreState
@@ -185,8 +185,13 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
         const id = await generateUniqueIDForMap(pendingState.currentAndSafePasswords.value.current.value);
         pendingState.currentAndSafePasswords.value.current.value.set(id, new Field(passwords.value.size));
 
-        const safePasswords = passwords.value.filter((k, v) => v.value.isSafe());
+        const safePasswords = passwords.value.filter((k, v) => this.passwordIsSafe(pendingState, v.value));
         pendingState.currentAndSafePasswords.value.safe.value.set(id, new Field(safePasswords.size));
+    }
+
+    private passwordIsSafe(state: PasswordStoreState, password: ReactivePassword)
+    {
+        return !password.isOld() && !password.containsLogin.value && !password.isWeak.value && !state.duplicatePasswords.value.has(password.id.value);
     }
 
     private async setPasswordProperties(masterKey: string, password: Password): Promise<boolean>
@@ -223,47 +228,47 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
     {
         if (updateAllSecurityQuestions)
         {
-            for (let i = 0; i < password.securityQuestions.value.length; i++)
+            for (const [key, value] of password.securityQuestions.value.entries())
             {
-                await updateSecurityQuestionQuestion(masterKey, password, i);
-                await updateSecurityQuestionnAnswer(masterKey, password, i);
+                await updateSecurityQuestionQuestion(masterKey, value);
+                await updateSecurityQuestionnAnswer(masterKey, value);
             }
         }
         else
         {
             for (let i = 0; i < updatedSecurityQuestionQuestions.length; i++)
             {
-                let sq = password.securityQuestions.value.filter(q => q.id.value == updatedSecurityQuestionQuestions[i]);
-                if (sq.length != 1)
+                let sq = password.securityQuestions.value.get(updatedSecurityQuestionQuestions[i]);
+                if (!sq)
                 {
                     continue;
                 }
 
-                await updateSecurityQuestionQuestion(masterKey, password, i);
+                await updateSecurityQuestionQuestion(masterKey, sq);
             }
 
             for (let i = 0; i < updatedSecurityQuestionAnswers.length; i++)
             {
-                let sq = password.securityQuestions.value.filter(q => q.id.value == updatedSecurityQuestionAnswers[i]);
-                if (sq.length != 1)
+                let sq = password.securityQuestions.value.get(updatedSecurityQuestionQuestions[i]);
+                if (!sq)
                 {
                     continue;
                 }
 
-                await updateSecurityQuestionnAnswer(masterKey, password, i);
+                await updateSecurityQuestionnAnswer(masterKey, sq);
             }
         }
 
-        async function updateSecurityQuestionQuestion(masterKey: string, password: Password, index: number)
+        async function updateSecurityQuestionQuestion(masterKey: string, securityQuestion: Field<SecurityQuestion>)
         {
-            password.securityQuestions.value[index].questionLength = password.securityQuestions.value[index].question.length;
-            password.securityQuestions.value[index].question = (await cryptHelper.encrypt(masterKey, password.securityQuestions.value[index].question)).value ?? "";
+            securityQuestion.value.questionLength.value = securityQuestion.value.question.value.length;
+            securityQuestion.value.question.value = (await cryptHelper.encrypt(masterKey, securityQuestion.value.question.value)).value ?? "";
         }
 
-        async function updateSecurityQuestionnAnswer(masterKey: string, password: Password, index: number)
+        async function updateSecurityQuestionnAnswer(masterKey: string, securityQuestion: Field<SecurityQuestion>)
         {
-            password.securityQuestions.value[index].answerLength = password.securityQuestions.value[index].answer.length;
-            password.securityQuestions.value[index].answer = ((await cryptHelper.encrypt(masterKey, password.securityQuestions.value[index].answer)).value ?? "");
+            securityQuestion.value.answerLength.value = securityQuestion.value.answer.value.length;
+            securityQuestion.value.answer.value = ((await cryptHelper.encrypt(masterKey, securityQuestion.value.answer.value)).value ?? "");
         }
     }
 }

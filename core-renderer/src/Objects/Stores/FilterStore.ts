@@ -242,7 +242,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     {
         // if we don't have any conditions, then default to false so 
         // objects don't get included by default
-        let allFilterConditionsApply: boolean = filter.value.conditions.value.length > 0;
+        let allFilterConditionsApply: boolean = filter.value.conditions.value.size > 0;
         const groupsForObject: Group[] = groups.value.mapWhere((k, v) => dataObject.value.groups.value.has(k), (k, v) => v.value);
 
         filter.value.conditions.value.forEach(fc =>
@@ -252,21 +252,21 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
                 return;
             }
 
-            if (fc.property === "groups")
+            if (fc.value.property.value === "groups")
             {
-                switch (fc.filterType)
+                switch (fc.value.filterType.value)
                 {
                     case FilterConditionType.StartsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().startsWith(fc.value.toLowerCase()));
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().startsWith(fc.value.value.value.toLowerCase()));
                         break;
                     case FilterConditionType.EndsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().endsWith(fc.value.toLowerCase()));
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().endsWith(fc.value.value.value.toLowerCase()));
                         break;
                     case FilterConditionType.Contains:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().includes(fc.value.toLowerCase()));
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().includes(fc.value.value.value.toLowerCase()));
                         break;
                     case FilterConditionType.EqualTo:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase() == fc.value.toLowerCase());
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase() == fc.value.value.value.toLowerCase());
                         break;
                     default:
                         allFilterConditionsApply = false;
@@ -274,19 +274,19 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
             }
             else
             {
-                switch (fc.filterType)
+                switch (fc.value.filterType.value)
                 {
                     case FilterConditionType.StartsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.property].value.toString().toLowerCase().startsWith(fc.value.toLowerCase());
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value].value?.toString().toLowerCase().startsWith(fc.value.value.value.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.EndsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.property].value.toString().toLowerCase().endsWith(fc.value.toLowerCase());
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value].value?.toString().toLowerCase().endsWith(fc.value.value.value.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.Contains:
-                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.property].value.toString().toLowerCase().includes(fc.value.toLowerCase());
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value].value?.toString().toLowerCase().includes(fc.value.value.value.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.EqualTo:
-                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.property].value.toString().toLowerCase() == fc.value.toLowerCase();
+                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.value.property.value].value?.toString().toLowerCase() == fc.value.value.value.toLowerCase();
                         break;
                     default:
                         allFilterConditionsApply = false;
