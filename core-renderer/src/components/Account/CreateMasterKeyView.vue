@@ -152,6 +152,7 @@ export default defineComponent({
                     // to begin with
                     response.VaulticPassword.groups = new Map();
                     response.VaulticPassword.filters = new Map();
+                    response.VaulticPassword.securityQuestions = new Map();
 
                     const vaulticPassword = fieldifyObject(response.VaulticPassword);
 
