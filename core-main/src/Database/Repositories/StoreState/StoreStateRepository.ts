@@ -6,6 +6,7 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { environment } from "../../../Environment";
 import { ChangeTracking } from "../../Entities/ChangeTracking";
 import { MapPropertyManager, ObjectPropertyManager } from "../../../Types/Properties";
+import { Field } from "@vaultic/shared/Types/Fields";
 
 export class StoreStateRepository<T extends StoreState> extends VaulticRepository<T>
 {
@@ -64,8 +65,8 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             newStateToUse = decyptedNewState.value;
         }
 
-        currentStateToUse = this.mergeStoreStates(JSON.vaulticParse(currentStateToUse), JSON.vaulticParse(newStateToUse), changeTrackings);
-        currentState.state = JSON.vaulticStringify(currentStateToUse);
+        const updatedState = this.mergeStoreStates(new Field(JSON.vaulticParse(currentStateToUse)), new Field(JSON.vaulticParse(newStateToUse)), changeTrackings);
+        currentState.state = JSON.vaulticStringify(updatedState.value);
         currentState.previousSignature = newState.previousSignature;
 
         transaction.updateEntity(currentState, key, this.getVaulticRepository);

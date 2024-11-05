@@ -225,9 +225,20 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalVerifyUserMasterKey(this: UserRepository): Promise<TypedMethodResponse<boolean>>
         {
-            // this is ok to not verify since the masterKey hash and salt aren't included in the 
-            // signature anyways
-            let user: User | null = await this.getCurrentUser();
+            let user: User | null = null;
+            if (email)
+            {
+                // don't verify since that will cause an exception if the master key is wrong, which makes it impossible
+                // to tell if the user doesn't exist or if they just didn't type the master key correctly
+                user = await this.repository.findOneBy({ email: email });
+            }
+            else 
+            {
+                // this is ok to not verify since the masterKey hash and salt aren't included in the 
+                // signature anyways, so verifying won't actually do anything if they were tampered with
+                user = await this.getCurrentUser();
+            }
+
             if (!user)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
@@ -256,6 +267,14 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalSetCurrentUser(this: UserRepository): Promise<TypedMethodResponse<boolean>>
         {
+            // don't allow setting a current user while one is already set. This would cause issues
+            // for the first user
+            if (environment.cache.currentUserID != undefined)
+            {
+                console.log(`Current UserID: ${environment.cache.currentUserID}`);
+                return TypedMethodResponse.fail(undefined, "setCurrentUser", "Current User already set");
+            }
+
             const user = await this.findByEmail(masterKey, email);
             if (!user)
             {
@@ -414,10 +433,10 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const newUser: UserData = JSON.vaulticParse(newData);
             const transaction = new Transaction();
 
-            const parsedCurrentData: UserData | undefined = undefined;
+            let parsedCurrentData: UserData | undefined = undefined;
             if (newUser.appStoreState || newUser.userPreferencesStoreState)
             {
-                currentData = JSON.vaulticParse(currentData);
+                parsedCurrentData = JSON.vaulticParse(currentData);
             }
 
             if (newUser.appStoreState)
@@ -435,7 +454,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             if (newUser.userPreferencesStoreState)
             {
                 const currentUserPreferences = JSON.vaulticParse(parsedCurrentData.userPreferencesStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, masterKey, JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, "", JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
 
                 if (!await (environment.repositories.userPreferencesStoreStates.updateState(
                     user.userPreferencesStoreState.userPreferencesStoreStateID, "", state, transaction)))

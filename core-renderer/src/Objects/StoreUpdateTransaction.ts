@@ -3,6 +3,7 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { api } from "../API";
 import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
 import { Store, StoreEvents } from "./Stores/Base";
+import app from "./Stores/AppStore";
 
 export enum Entity
 {
@@ -139,7 +140,7 @@ export default class StoreUpdateTransaction
         this.commitStoreStates(this.vaultStoreUpdateStates);
 
         // masterKey will be "" when updating userPreferences or vaultPreferences
-        if (masterKey && backup)
+        if (masterKey && backup && app.isOnline)
         {
             const response = await api.helpers.repositories.backupData(masterKey);
             if (!response.success)

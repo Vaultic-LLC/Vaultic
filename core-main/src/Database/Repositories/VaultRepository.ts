@@ -624,8 +624,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         if (newVault.passwordStoreState && newVault.passwordStoreState.passwordStoreStateID)
         {
-            if (currentVault.passwordStoreState?.entityState == EntityState.Updated)
+            console.log(`\nChecking Merging Password store state. Current Sig: ${currentVault.passwordStoreState.signatureSecret}, New Sig: ${newVault.passwordStoreState.signatureSecret}`)
+            if (currentVault.passwordStoreState?.signatureSecret != newVault.passwordStoreState.signatureSecret)
             {
+                console.log('\nmerging password store states')
                 if (!await (environment.repositories.passwordStoreStates.mergeStates(masterKey, currentVault.passwordStoreState.passwordStoreStateID,
                     newVault.passwordStoreState, changeTrackings, transaction)))
                 {

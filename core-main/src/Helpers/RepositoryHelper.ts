@@ -285,7 +285,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
             }
             else 
             {
-                console.log(`\nAdding Vault: ${JSON.stringify(clientUserDataPayload.vaults![vaultIndex])}`)
+                console.log(`\nAdding Vault: ${JSON.stringify(serverVault)}`)
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
                 {

@@ -14,8 +14,15 @@
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
                                 :height="'4vh'" :minHeight="'35px'" />
                         </div>
+                        <div class="signInContainer__offlineMode">
+                            <CheckboxInputField :label="'Online Mode'"
+                                :color="color" v-model="onlineMode" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
+                                :minHeight="'10px'" />
+                            <ToolTip :message="'Restore last backup from the server. Will override all local data'"
+                                :size="'20px'" :color="color" />
+                        </div>
                         <div v-if="reloadAllDataIsToggled" class="signInContainer__restoreLastBackup">
-                            <CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Restore Last Backup'"
+                            <CheckboxInputField :label="'Restore Last Backup'"
                                 :color="color" v-model="reloadAllData" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
                                 :minHeight="'10px'" />
                             <ToolTip :message="'Restore last backup from the server. Will override all local data'"
@@ -102,6 +109,7 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref('');
         const container: Ref<HTMLElement | null> = ref(null);
         const resizeHandler: ResizeObserver = new ResizeObserver(checkWidthHeightRatio);
+        const onlineMode: Ref<boolean> = ref(true);
         const reloadAllData: Ref<boolean> = ref(props.reloadAllDataIsToggled != undefined ? props.reloadAllDataIsToggled : false);
 
         const masterKeyField: Ref<EncryptedInputFieldComponent | null> = ref(null);
@@ -136,17 +144,53 @@ export default defineComponent({
             masterKeyField.value?.toggleHidden(true);
             app.popups.showLoadingIndicator(props.color, "Signing In");
 
-            const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value);
-            if (response.success && response.value!.Success)
+            if (onlineMode.value)
             {
-                app.isOnline = true;
-                await app.loadUserData(masterKey.value, response.value!.userDataPayload);
-
-                ctx.emit('onKeySuccess');
+                const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value);
+                if (response.success && response.value!.Success)
+                {
+                    app.isOnline = true;
+                    await app.loadUserData(masterKey.value, response.value!.userDataPayload);
+        
+                    ctx.emit('onKeySuccess');
+                }
+                else
+                {
+                    handleFailedResponse(response);
+                }
             }
-            else
+            else 
             {
-                handleFailedResponse(response);
+                const response = await api.repositories.users.verifyUserMasterKey(masterKey.value, email.value);
+
+                // check if the method call succeeded
+                if (response.success)
+                {
+                    // check if key is correct
+                    if (response.value)
+                    {
+                        const setUserResponse = await api.repositories.users.setCurrentUser(masterKey.value, email.value);
+                        if (setUserResponse.success)
+                        {
+                            await app.loadUserData(masterKey.value);
+                            ctx.emit('onKeySuccess');
+                        }
+                        else 
+                        {
+                            handleFailedResponse(setUserResponse);
+                        }
+                    }
+                    else 
+                    {
+                        handleFailedResponse(response);
+                    }
+                }
+                else 
+                {
+                    app.popups.showAlert("Unable to verify master key", "We were unable to verify your master key, please make sure it was entered correctly. If the issue persists, try signing into online mode instead.", false);
+                }
+
+                app.popups.hideLoadingIndicator();
             }
         }
 
@@ -258,6 +302,7 @@ export default defineComponent({
         return {
             refreshKey,
             container,
+            onlineMode,
             reloadAllData,
             masterKeyField,
             masterKey,
@@ -402,6 +447,7 @@ export default defineComponent({
     box-shadow: 0 0 10px v-bind(color);
 }
 
+.signInContainer__offlineMode,
 .signInContainer__restoreLastBackup {
     display: flex;
     justify-content: center;
