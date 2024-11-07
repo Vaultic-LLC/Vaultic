@@ -82,6 +82,8 @@ class AxiosWrapper
             if (requestData.success)
             {
                 const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
+                console.log(response.status)
+                console.log(response.statusText)
                 const responseResult = await this.handleResponse<T>(response.data);
 
                 if (responseResult.success)

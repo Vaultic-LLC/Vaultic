@@ -89,5 +89,7 @@ export function deleteDatabase(isTest: boolean)
 		{
 			resolve(!err);
 		});
-	})
+	});
 }
+
+export default database;

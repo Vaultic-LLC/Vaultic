@@ -13,6 +13,8 @@ import importExportHelperTestSuite from "./helpers/importExportHelper.test";
 
 import cryptUtilityTestSuite from "./utilities/cryptUtility.test";
 
+import backupTestSuite from "./base/backup.test";
+
 const results: TestResult = new TestResult();
 
 async function runTests(suite: TestSuite)
@@ -30,8 +32,8 @@ export default async function runAllTests()
 
     // These should go first since they mess with logging in
     await runTests(serverHelperTestSuite);
+    await runTests(backupTestSuite);
     await runTests(appStoreTestSuite);
-
     await runTests(vaultStoreTestSuite);
 
     await runTests(passwordStoreSuite);

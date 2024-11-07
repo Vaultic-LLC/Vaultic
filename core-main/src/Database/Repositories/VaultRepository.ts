@@ -22,6 +22,7 @@ import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IVaultRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
+import { VaultsAndKeys } from "../../Types/Responses";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -73,6 +74,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             return false;
         }
 
+        console.log(`Create Vault Response: ${JSON.stringify(response)}`);
         const vaultKey = environment.utilities.generator.randomValue(60);
 
         const userVault = new UserVault().makeReactive();
@@ -122,7 +124,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalCreateNewVaultForUser(this: VaultRepository): Promise<TypedMethodResponse<CondensedVaultData>>
         {
-            console.log('creating vault');
             const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
@@ -176,7 +177,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 const backupResponse = await backupData(masterKey);
                 if (!backupResponse)
                 {
-                    console.log('backup failed')
+                    console.log(`backup failed. Response: ${JSON.stringify(backupResponse)}`);
                     return TypedMethodResponse.backupFail();
                 }
 
@@ -364,12 +365,12 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<Vault>[] | null]> 
+    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<VaultsAndKeys | undefined>>
     {
         const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
-            return [false, null];
+            TypedMethodResponse.fail();
         }
 
         let userVaultsWithVaultsToBackup = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey,
@@ -377,10 +378,11 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         if (userVaultsWithVaultsToBackup[0].length == 0)
         {
-            return [true, null];
+            return TypedMethodResponse.success(new VaultsAndKeys())
         }
 
         const partialVaultsToBackup: Partial<Vault>[] = [];
+        const vaultKeys: string[] = [];
 
         for (let i = 0; i < userVaultsWithVaultsToBackup[0].length; i++)
         {
@@ -421,10 +423,11 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 vaultBackup["groupStoreState"] = vault.groupStoreState.getBackup();
             }
 
+            vaultKeys.push(userVaultsWithVaultsToBackup[1][i]);
             partialVaultsToBackup.push(vaultBackup);
         }
 
-        return [true, partialVaultsToBackup];
+        return TypedMethodResponse.success(new VaultsAndKeys(vaultKeys, partialVaultsToBackup));
 
         function vaultQuery(repository: Repository<UserVault>): Promise<UserVault[]>
         {
@@ -451,7 +454,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async postBackupEntitiesUpdates(key: string, entities: Partial<Vault>[], transaction: Transaction): Promise<boolean> 
+    public async postBackupEntitiesUpdates(key: string, entities: DeepPartial<Vault>[], transaction: Transaction): Promise<boolean> 
     {
         const currentUser = await environment.repositories.users.getVerifiedCurrentUser(key);
         if (!currentUser)
@@ -461,8 +464,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         let succeeded = true;
 
-        const deletedVaults: Partial<Vault>[] = [];
-        const otherVaults: Partial<Vault>[] = [];
+        const deletedVaults: DeepPartial<Vault>[] = [];
+        const otherVaults: DeepPartial<Vault>[] = [];
 
         for (let i = 0; i < entities.length; i++)
         {
@@ -567,7 +570,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return true;
     }
 
-    public async updateFromServer(masterKey: string, currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>, changeTrackings: Dictionary<ChangeTracking>,
+    public async updateFromServer(key: string, currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>, changeTrackings: Dictionary<ChangeTracking>,
         transaction: Transaction)
     {
         if (!newVault.vaultID)
@@ -607,7 +610,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         {
             if (currentVault.vaultStoreState?.entityState == EntityState.Updated)
             {
-                if (!await (environment.repositories.vaultStoreStates.mergeStates(masterKey, currentVault.vaultStoreState.vaultStoreStateID,
+                if (!await (environment.repositories.vaultStoreStates.mergeStates(key, currentVault.vaultStoreState.vaultStoreStateID,
                     newVault.vaultStoreState, changeTrackings, transaction)))
                 {
                     return;
@@ -622,13 +625,14 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
         }
 
+        //console.log(`\nchecking password store state. id: ${newVault?.passwordStoreState?.passwordStoreStateID}`);
         if (newVault.passwordStoreState && newVault.passwordStoreState.passwordStoreStateID)
         {
-            console.log(`\nChecking Merging Password store state. Current Sig: ${currentVault.passwordStoreState.signatureSecret}, New Sig: ${newVault.passwordStoreState.signatureSecret}`)
-            if (currentVault.passwordStoreState?.signatureSecret != newVault.passwordStoreState.signatureSecret)
+            //console.log(`\nchecking updated passwords. Entity State: ${currentVault?.passwordStoreState?.entityState}`);
+            if (currentVault.passwordStoreState?.entityState == EntityState.Updated)
             {
-                console.log('\nmerging password store states')
-                if (!await (environment.repositories.passwordStoreStates.mergeStates(masterKey, currentVault.passwordStoreState.passwordStoreStateID,
+                //console.log('\nmerging password store states');
+                if (!await (environment.repositories.passwordStoreStates.mergeStates(key, currentVault.passwordStoreState.passwordStoreStateID,
                     newVault.passwordStoreState, changeTrackings, transaction)))
                 {
                     return;
@@ -647,7 +651,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         {
             if (currentVault.valueStoreState?.entityState == EntityState.Updated)
             {
-                if (!await (environment.repositories.valueStoreStates.mergeStates(masterKey, currentVault.valueStoreState.valueStoreStateID,
+                if (!await (environment.repositories.valueStoreStates.mergeStates(key, currentVault.valueStoreState.valueStoreStateID,
                     newVault.valueStoreState, changeTrackings, transaction)))
                 {
                     return;
@@ -662,11 +666,14 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
         }
 
+        //console.log(`checking filter store state`);
         if (newVault.filterStoreState && newVault.filterStoreState.filterStoreStateID)
         {
+            //console.log(`checking if updated`);
             if (currentVault.filterStoreState?.entityState == EntityState.Updated)
             {
-                if (!await (environment.repositories.filterStoreStates.mergeStates(masterKey, currentVault.filterStoreState.filterStoreStateID,
+                //console.log(`merging filter store state`);
+                if (!await (environment.repositories.filterStoreStates.mergeStates(key, currentVault.filterStoreState.filterStoreStateID,
                     newVault.filterStoreState, changeTrackings, transaction)))
                 {
                     return;
@@ -676,6 +683,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
             else 
             {
+                console.log('override filter store state');
                 const partialFilterStoreState: DeepPartial<FilterStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.filterStoreState);
                 transaction.overrideEntity(newVault.filterStoreState.filterStoreStateID, partialFilterStoreState, () => environment.repositories.filterStoreStates);
             }
@@ -685,7 +693,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         {
             if (currentVault.groupStoreState?.entityState == EntityState.Updated)
             {
-                if (!await (environment.repositories.groupStoreStates.mergeStates(masterKey, currentVault.groupStoreState.groupStoreStateID,
+                if (!await (environment.repositories.groupStoreStates.mergeStates(key, currentVault.groupStoreState.groupStoreStateID,
                     newVault.groupStoreState, changeTrackings, transaction)))
                 {
                     return;

@@ -17,8 +17,16 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 
     public trackStateDifferences(userID: number, masterKey: string, newState: StoreState, oldState: StoreState, transaction: Transaction): string
     {
-        const updatedState = this.trackObjectDifferences(userID, masterKey, new Field(newState), new Field(oldState), transaction);
-        return JSON.vaulticStringify(updatedState.value);
+        try 
+        {
+            const updatedState = this.trackObjectDifferences(userID, masterKey, new Field(newState), new Field(oldState), transaction);
+            return JSON.vaulticStringify(updatedState.value);
+        }
+        catch (e)
+        {
+            console.log(e);
+            throw e;
+        }
     }
 
     public trackObjectDifferences(userID: number, masterKey: string, newObj: any, oldObj: any, transaction: Transaction)
@@ -37,10 +45,9 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 // not in old keys, it was inserted
                 if (oldKeyMatchingIndex < 0)
                 {
-                    newObj.id = environment.utilities.generator.uniqueId();
-                    newObj.lastModifiedTime = Date.now();
-                    transaction.insertEntity(ChangeTracking.inserted(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
+                    this.insertObject(userID, masterKey, manager.get(keys[i], newObj.value), transaction);
                 }
+                // field is in both, check value differences
                 else
                 {
                     this.trackObjectDifferences(userID, masterKey, manager.get(keys[i], newObj.value), manager.get(oldKeys[oldKeyMatchingIndex], oldObj.value), transaction);
@@ -68,12 +75,34 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         return newObj;
     }
 
-    public async getChangeTrackingsByID(masterKey: string): Promise<Dictionary<ChangeTracking>>
+    private insertObject(userID: number, masterKey: string, field: any, transaction: Transaction)
+    {
+        field.id = environment.utilities.generator.uniqueId();
+        field.lastModifiedTime = Date.now();
+
+        transaction.insertEntity(ChangeTracking.inserted(userID, field.id, field.lastModifiedTime), masterKey, () => this);
+
+        // all nested objects were also inserted, update their IDs and LastModifiedTime as well
+        if (typeof field.value == "object")
+        {
+            let innerManager: ObjectPropertyManager<any> = field.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
+            const keys = innerManager.keys(field.value);
+
+            for (let i = 0; i < keys.length; i++)
+            {
+                const nestedField = innerManager.get(keys[i], field.value);
+                this.insertObject(userID, masterKey, nestedField, transaction);
+            }
+        }
+    }
+
+    public async getChangeTrackingsByID(masterKey: string, email: string): Promise<Dictionary<ChangeTracking>>
     {
         const changeTrackingByID: Dictionary<ChangeTracking> = {};
 
-        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-        if (!currentUser)
+        // do findByEmail instead of current since we can't set our currentUser until after merging is done in serverHelper.logIn.
+        const user = await environment.repositories.users.findByEmail(masterKey, email);
+        if (!user)
         {
             return changeTrackingByID;
         }
@@ -81,7 +110,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         let changeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find(
             {
                 where: {
-                    userID: currentUser.userID
+                    userID: user.userID
                 }
             }));
 

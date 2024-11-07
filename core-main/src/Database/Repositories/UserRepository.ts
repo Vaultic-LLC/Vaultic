@@ -473,23 +473,23 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
     }
 
-    public async getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<User> | null]>
+    public async getEntityThatNeedsToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<User> | undefined>>
     {
         const currentUser = await this.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
-            return [false, null];
+            return TypedMethodResponse.fail();
         }
 
         const response = await this.retrieveAndVerify(masterKey, getUsers);
         if (!response[0])
         {
-            return [false, null];
+            return TypedMethodResponse.fail();
         }
 
         if (!response[1])
         {
-            return [true, null];
+            return TypedMethodResponse.success();
         }
 
         const user = response[1];
@@ -515,7 +515,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             userDataToBackup.userPreferencesStoreState = user.userPreferencesStoreState.getBackup() as UserPreferencesStoreState;
         }
 
-        return [true, userDataToBackup];
+        return TypedMethodResponse.success(userDataToBackup);
 
         function getUsers(repository: Repository<User>): Promise<User | null>
         {
@@ -534,7 +534,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
     }
 
-    public async postBackupEntityUpdates(key: string, entity: Partial<User>, transaction: Transaction)
+    public async postBackupEntityUpdates(key: string, entity: DeepPartial<User>, transaction: Transaction)
     {
         const currentUser = await this.getVerifiedCurrentUser(key);
         if (!currentUser || !entity.userID || entity.userID != currentUser.userID)

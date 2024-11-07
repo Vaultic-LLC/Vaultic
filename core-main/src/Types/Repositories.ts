@@ -7,6 +7,7 @@ import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { VaultsAndKeys } from "./Responses";
 
 export interface VaulticRepository<T extends VaulticEntity>
 {
@@ -16,8 +17,6 @@ export interface VaulticRepository<T extends VaulticEntity>
     override(manager: EntityManager, findBy: number | FindOptionsWhere<T>, entity: DeepPartial<T>): Promise<boolean>;
     resetTracking: (manager: EntityManager, key: string, entity: T) => Promise<boolean>;
     delete: (manager: EntityManager, findBy: number | FindOptionsWhere<T>) => Promise<boolean>;
-    getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>;
-    getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>;
 }
 
 export interface IUserRepository extends ClientUserRepository, VaulticRepository<User>
@@ -25,15 +24,18 @@ export interface IUserRepository extends ClientUserRepository, VaulticRepository
     getCurrentUser: () => Promise<User | undefined>;
     findByEmail: (masterKey: string, email: string) => Promise<User | null>;
     setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    getEntityThatNeedsToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<User> | undefined>>;
 }
 
 export interface IUserVaultRepository extends ClientUserVaultRepository, VaulticRepository<UserVault>
 {
     getVerifiedUserVaults: (masterKey: string, userVaultIDs?: number[]) => Promise<[UserVault[], string[]]>;
     getVerifiedAndDecryt: (masterKey: string, propertiesToDecrypt?: string[], userVaultIDs?: number[]) => Promise<CondensedVaultData[] | null>;
+    getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<UserVault>[] | undefined>>;
 }
 
 export interface IVaultRepository extends ClientVaultRepository, VaulticRepository<Vault>
 {
     createNewVault: (name: string) => Promise<boolean | [UserVault, Vault, string]>;
+    getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<VaultsAndKeys | undefined>>;
 }

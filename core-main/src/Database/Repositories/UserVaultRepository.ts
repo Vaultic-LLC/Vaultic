@@ -203,24 +203,24 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         }
     }
 
-    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<UserVault>[] | null]> 
+    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<UserVault>[] | undefined>> 
     {
         const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
-            return [false, null];
+            return TypedMethodResponse.fail();
         }
 
         let userVaultsToBackup = await this.retrieveAndVerifyAll(masterKey, getUserVaults);
         if (!userVaultsToBackup)
         {
-            return [false, null];
+            return TypedMethodResponse.fail();
         }
 
         userVaultsToBackup = userVaultsToBackup as UserVault[];
         if (userVaultsToBackup.length == 0)
         {
-            return [true, null];
+            return TypedMethodResponse.success();
         }
 
         const partialUserVaultsToBackup: Partial<UserVault>[] = [];
@@ -247,7 +247,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             partialUserVaultsToBackup.push(userVaultBackup);
         }
 
-        return [true, partialUserVaultsToBackup];
+        return TypedMethodResponse.success(partialUserVaultsToBackup);
 
         function getUserVaults(repository: Repository<UserVault>): Promise<UserVault[]>
         {
@@ -264,7 +264,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         }
     }
 
-    public async postBackupEntitiesUpdates(key: string, entities: Partial<UserVault>[], transaction: Transaction): Promise<boolean> 
+    public async postBackupEntitiesUpdates(key: string, entities: DeepPartial<UserVault>[], transaction: Transaction): Promise<boolean> 
     {
         const currentUser = await environment.repositories.users.getVerifiedCurrentUser(key);
         if (!currentUser)

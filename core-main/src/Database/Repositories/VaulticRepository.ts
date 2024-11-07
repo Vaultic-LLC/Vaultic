@@ -229,8 +229,8 @@ export class VaulticRepository<T extends VaulticEntity>
 
         try
         {
-            const removedEntity = await repo.delete(findBy);
-            return removedEntity.affected == 1;
+            await repo.delete(findBy);
+            return true;
         }
         catch (e)
         {
@@ -271,15 +271,5 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         return entities;
-    }
-
-    public async getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>
-    {
-        return [false, null];
-    }
-
-    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>
-    {
-        return [false, null];
     }
 }

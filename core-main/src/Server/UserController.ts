@@ -40,8 +40,8 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     async function backupData(postData: { userDataPayload: UserDataPayload }): Promise<BackupResponse>
     {
-        console.log(`Data to backup: ${JSON.vaulticStringify(postData)}`);
-        console.log('\n')
+        //console.log(`Data to backup: ${JSON.vaulticStringify(postData)}`);
+        //console.log('\n')
         const e2eEncryptedData = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, postData);
         if (!e2eEncryptedData.success)
         {

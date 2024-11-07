@@ -6,8 +6,9 @@ import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { EntityState } from "@vaultic/shared/Types/Entities";
 import { ChangeTracking } from "../Database/Entities/ChangeTracking";
+import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 
-export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>): Promise<TypedMethodResponse<T | undefined>>
+export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>
 {
     try
     {
@@ -16,6 +17,7 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
         {
             response.addToCallStack(method.name);
             await environment.repositories.logs.logMethodResponse(response);
+            await onFail?.();
         }
 
         return response;
@@ -28,23 +30,27 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
 
             response.addToCallStack(method.name);
             await environment.repositories.logs.logMethodResponse(response);
+            await onFail?.();
 
             return response;
         }
 
-        await environment.repositories.logs.log(undefined, `Exception: ${JSON.vaulticStringify(e)}`, method.name);
+        const callStack = `${method.name}\n${Error().stack}`;
+        await environment.repositories.logs.log(undefined, `Exception: ${JSON.vaulticStringify(e)}`, callStack);
     }
 
+    await onFail?.();
     return TypedMethodResponse.fail();
 }
 
-export async function getUserDataSignatures(masterKey: string, email: string): Promise<UserDataPayload>
+export async function getUserDataSignatures(masterKey: string, email: string): Promise<CurrentSignaturesVaultKeys>
 {
     let userData = {}
     const user = await environment.repositories.users.findByEmail(masterKey, email);
     if (!user)
     {
-        return userData;
+        console.log('no user');
+        return { signatures: userData, keys: [] };
     }
 
     userData["user"] =
@@ -55,11 +61,13 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
         {
             appStoreStateID: user.appStoreState.appStoreStateID,
             currentSignature: user.appStoreState.currentSignature,
+            entityState: user.appStoreState.entityState
         },
         userPreferencesStoreState:
         {
             userPreferencesStoreStateID: user.userPreferencesStoreState.userPreferencesStoreStateID,
-            currentSignature: user.userPreferencesStoreState.currentSignature
+            currentSignature: user.userPreferencesStoreState.currentSignature,
+            entityState: user.userPreferencesStoreState.entityState
         }
     };
 
@@ -80,7 +88,8 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
                 vaultPreferencesStoreState:
                 {
                     vaultPreferencesStoreStateID: userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
-                    currentSignature: userVault.vaultPreferencesStoreState.currentSignature
+                    currentSignature: userVault.vaultPreferencesStoreState.currentSignature,
+                    entityState: userVault.vaultPreferencesStoreState.entityState
                 }
             });
 
@@ -91,103 +100,108 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
                 vaultStoreState:
                 {
                     vaultStoreStateID: userVault.vault.vaultStoreState.vaultStoreStateID,
-                    currentSignature: userVault.vault.vaultStoreState.currentSignature
+                    currentSignature: userVault.vault.vaultStoreState.currentSignature,
+                    entityState: userVault.vault.vaultStoreState.entityState
                 },
                 passwordStoreState:
                 {
                     passwordStoreStateID: userVault.vault.passwordStoreState.passwordStoreStateID,
-                    currentSignature: userVault.vault.passwordStoreState.currentSignature
+                    currentSignature: userVault.vault.passwordStoreState.currentSignature,
+                    entityState: userVault.vault.passwordStoreState.entityState
                 },
                 valueStoreState:
                 {
                     valueStoreStateID: userVault.vault.valueStoreState.valueStoreStateID,
-                    currentSignature: userVault.vault.valueStoreState.currentSignature
+                    currentSignature: userVault.vault.valueStoreState.currentSignature,
+                    entityState: userVault.vault.valueStoreState.entityState
                 },
                 filterStoreState:
                 {
                     filterStoreStateID: userVault.vault.filterStoreState.filterStoreStateID,
-                    currentSignature: userVault.vault.filterStoreState.currentSignature
+                    currentSignature: userVault.vault.filterStoreState.currentSignature,
+                    entityState: userVault.vault.filterStoreState.entityState
                 },
                 groupStoreState:
                 {
                     groupStoreStateID: userVault.vault.groupStoreState.groupStoreStateID,
-                    currentSignature: userVault.vault.groupStoreState.currentSignature
+                    currentSignature: userVault.vault.groupStoreState.currentSignature,
+                    entityState: userVault.vault.groupStoreState.entityState
                 }
             });
         }
     }
 
-    return userData;
+    console.log('signature data');
+    return { signatures: userData, keys: userVaults[1] };
 }
 
 // Only call within a method wrapped in safetifyMethod
 export async function backupData(masterKey: string)
 {
-    const userToBackup = await environment.repositories.users.getEntityThatNeedToBeBackedUp(masterKey);
-    if (!userToBackup[0])
+    const userToBackup = await environment.repositories.users.getEntityThatNeedsToBeBackedUp(masterKey);
+    if (!userToBackup.success)
     {
         console.log('no user to backup');
         return false;
     }
 
     const userVaultsToBackup = await environment.repositories.userVaults.getEntitiesThatNeedToBeBackedUp(masterKey);
-    if (!userVaultsToBackup[0])
+    if (!userVaultsToBackup.success)
     {
         console.log('no user vaults to backup');
         return false;
     }
 
     const vaultsToBackup = await environment.repositories.vaults.getEntitiesThatNeedToBeBackedUp(masterKey);
-    if (!vaultsToBackup[0])
+    if (!vaultsToBackup.success)
     {
         console.log('no vaults to backup');
         return false;
     }
 
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: {} };
-    if (userToBackup[1])
+    if (userToBackup.value)
     {
-        postData.userDataPayload["user"] = userToBackup[1];
+        postData.userDataPayload["user"] = userToBackup.value;
     }
 
-    if (userVaultsToBackup[1] && userVaultsToBackup[1].length > 0)
+    if (userVaultsToBackup.value && userVaultsToBackup.value.length > 0)
     {
-        postData.userDataPayload["userVaults"] = userVaultsToBackup[1];
+        postData.userDataPayload["userVaults"] = userVaultsToBackup.value;
     }
 
-    if (vaultsToBackup[1] && vaultsToBackup[1].length > 0)
+    if (vaultsToBackup.value?.vaults && vaultsToBackup.value.vaults.length > 0)
     {
-        postData.userDataPayload["vaults"] = vaultsToBackup[1];
+        postData.userDataPayload["vaults"] = vaultsToBackup.value.vaults;
     }
 
-    console.log(`\nBacking up user: ${JSON.vaulticStringify(userToBackup[1])}`);
-    console.log(`\nBacking up userVaults: ${JSON.vaulticStringify(userVaultsToBackup[1])}`);
-    console.log(`\nBacking up vaults: ${JSON.vaulticStringify(vaultsToBackup[1])}`);
+    //console.log(`\nBacking up user: ${JSON.vaulticStringify(userToBackup.value)}`);
+    //console.log(`\nBacking up userVaults: ${JSON.vaulticStringify(userVaultsToBackup.value)}`);
+    //console.log(`\nBacking up vaults: ${JSON.vaulticStringify(vaultsToBackup.value.vaults)}`);
 
     const backupResponse = await vaulticServer.user.backupData(postData);
     if (!backupResponse.Success)
     {
         console.log(`backup failed: ${JSON.vaulticStringify(backupResponse)}`);
-        await checkMergeMissingData(masterKey, "", postData.userDataPayload, backupResponse.userDataPayload)
-
-        return false;
+        //console.log('\nbackup failed');
+        return await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload)
     }
     else
     {
         const transaction = new Transaction();
-        if (userToBackup[1])
+        if (userToBackup.value)
         {
-            await environment.repositories.users.postBackupEntityUpdates(masterKey, userToBackup[1], transaction);
+            await environment.repositories.users.postBackupEntityUpdates(masterKey, userToBackup.value, transaction);
         }
 
-        if (userVaultsToBackup[1] && userVaultsToBackup[1].length > 0) 
+        if (userVaultsToBackup.value && userVaultsToBackup.value.length > 0) 
         {
-            await environment.repositories.userVaults.postBackupEntitiesUpdates(masterKey, userVaultsToBackup[1], transaction);
+            await environment.repositories.userVaults.postBackupEntitiesUpdates(masterKey, userVaultsToBackup.value, transaction);
         }
 
-        if (vaultsToBackup[1] && vaultsToBackup[1].length > 0)
+        if (vaultsToBackup.value?.vaults && vaultsToBackup.value?.vaults?.length > 0)
         {
-            await environment.repositories.vaults.postBackupEntitiesUpdates(masterKey, vaultsToBackup[1], transaction);
+            await environment.repositories.vaults.postBackupEntitiesUpdates(masterKey, vaultsToBackup.value.vaults, transaction);
         }
 
         if (!await transaction.commit())
@@ -223,7 +237,7 @@ export async function safeBackupData(masterKey: string): Promise<TypedMethodResp
 
 // for each data in clientUserDataPayload with an entityState of Deleted and that isn't in
 // serverUserDataPayload, remove it
-export async function checkMergeMissingData(masterKey: string, email: string, clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
+export async function checkMergeMissingData(masterKey: string, email: string, vaultKeys: string[], clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
 {
     if (!serverUserDataPayload)
     {
@@ -232,7 +246,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
 
     transaction = transaction ?? new Transaction();
     let needsToRePushData = false;
-    const changeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsByID(masterKey);
+    const changeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsByID(masterKey, email);
 
     if (serverUserDataPayload.user)
     {
@@ -266,26 +280,27 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
     }
 
     // Needs to be done before userVaults for when adding a new vault + userVault. Vault has to be saved before userVault.
-    console.log(`\nMerging Vaults: ${JSON.stringify(serverUserDataPayload.vaults)}`);
+    //console.log(`\nMerging Vaults: ${JSON.stringify(serverUserDataPayload.vaults)}`);
     if (serverUserDataPayload.vaults)
     {
         for (let i = 0; i < serverUserDataPayload.vaults.length; i++)
         {
-            console.log(`\nChecking vault: ${i}`);
+            //console.log(`\nChecking vault: ${i}`);
             const serverVault = serverUserDataPayload.vaults[i];
             const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
 
             if (vaultIndex >= 0)
             {
-                console.log(`\nUpdating Vault: ${JSON.stringify(clientUserDataPayload.vaults![vaultIndex])}`)
-                if (await environment.repositories.vaults.updateFromServer(masterKey, clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction))
+                //console.log(`\nUpdating Vault: ${JSON.stringify(clientUserDataPayload.vaults![vaultIndex])}`);
+                //console.log(`\nserver vault: ${JSON.vaulticStringify(serverVault)}`);
+                if (await environment.repositories.vaults.updateFromServer(vaultKeys[vaultIndex], clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction))
                 {
                     needsToRePushData = true;
                 }
             }
             else 
             {
-                console.log(`\nAdding Vault: ${JSON.stringify(serverVault)}`)
+                //console.log(`\nAdding Vault: ${JSON.stringify(serverVault)}`)
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
                 {
@@ -344,17 +359,20 @@ export async function checkMergeMissingData(masterKey: string, email: string, cl
         transaction.deleteEntity<ChangeTracking>({ userID: currentUser.userID }, () => environment.repositories.changeTrackings);
     }
 
+    console.log('\n committing new states')
     if (!(await transaction.commit()))
     {
         return false;
     }
 
+    console.log('\nchecking to re pushd data');
     if (needsToRePushData)
     {
         console.log('\nNeeds to re backup data!');
         return await backupData(masterKey);
     }
 
+    console.log('\nfinised merging');
     return true;
 }
 
@@ -367,5 +385,5 @@ export async function reloadAllUserData(masterKey: string, email: string, userDa
     transaction.raw("DELETE FROM userVaults");
     transaction.raw("DELETE FROM changeTrackings");
 
-    return await checkMergeMissingData(masterKey, email, {}, userDataPayload, transaction);
+    return await checkMergeMissingData(masterKey, email, [], {}, userDataPayload, transaction);
 }

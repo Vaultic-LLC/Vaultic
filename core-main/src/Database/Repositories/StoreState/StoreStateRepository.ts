@@ -25,7 +25,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         const entity = await this.getByID(id);
         if (!entity)
         {
-            console.log('no entity');
             return false;
         }
 
@@ -38,12 +37,14 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
     public async mergeStates(key: string, currentStateID: number, newState: DeepPartial<StoreState>, changeTrackings: Dictionary<ChangeTracking>,
         transaction: Transaction, decrypt: boolean = true)
     {
+        console.log(`\nmerging state for ${JSON.vaulticStringify(newState)}`);
         let currentState = await this.getByID(currentStateID);
         if (!currentState || (key && !(await currentState.verify(key))))
         {
             return false;
         }
 
+        console.log('verify succeeded');
         let newStateToUse = newState.state;
         let currentStateToUse = currentState.state;
 
@@ -65,11 +66,24 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             newStateToUse = decyptedNewState.value;
         }
 
-        const updatedState = this.mergeStoreStates(new Field(JSON.vaulticParse(currentStateToUse)), new Field(JSON.vaulticParse(newStateToUse)), changeTrackings);
-        currentState.state = JSON.vaulticStringify(updatedState.value);
-        currentState.previousSignature = newState.previousSignature;
+        console.log(`\nupdating state: ${currentStateToUse}`);
+        console.log(`\nchange trackings: ${JSON.vaulticStringify(changeTrackings)}`);
+        try 
+        {
+            const updatedState = this.mergeStoreStates(new Field(JSON.vaulticParse(currentStateToUse)), new Field(JSON.vaulticParse(newStateToUse)), changeTrackings);
+            currentState.state = JSON.vaulticStringify(updatedState.value);
+            console.log(`\nnew state: ${currentState.state}`);
+            currentState.previousSignature = newState.previousSignature;
 
-        transaction.updateEntity(currentState, key, this.getVaulticRepository);
+            transaction.updateEntity(currentState, key, this.getVaulticRepository);
+        }
+        catch (e)
+        {
+            console.log(e);
+            throw e;
+        }
+
+        console.log('updated succeessfully');
         return true;
     }
 
@@ -92,12 +106,15 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 // not in current keys. Check to see if it was deleted locally or if it was inserted / created on another device
                 if (currentKeyMatchingIndex < 0)
                 {
-                    const changeTracking = changeTrackings[manager.get(keys[i], newObj.value).id];
+                    const id = manager.get(keys[i], newObj.value).id;
+                    const changeTracking = changeTrackings[id];
+                    console.log(`\nChange tracking for key: ${keys[i]}, id: ${id}, change tracking: ${changeTracking?.objectState}`);
 
                     // wasn't altered locally, was added on another device
                     if (!changeTracking)
                     {
-                        manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj);
+                        console.log(`\nadded on another device ${keys[i]}, value: ${JSON.vaulticStringify(manager.get(keys[i], newObj.value))}`);
+                        manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);
                     }
                     // was deleted locally, check to make sure that it was deleted before any updates to the 
                     // object on another device were
@@ -116,6 +133,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         // also stay if this condition is met
                         if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj.value).lastModifiedTime)
                         {
+                            console.log(`\nkeeping ${keys[i]}, value: ${JSON.vaulticStringify(manager.get(keys[i], newObj.value))}`);
                             manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);
                         }
                     }
@@ -131,14 +149,16 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             // all the keys that are in the current obj, but not the newObj.
             for (let i = 0; i < currentKeys.length; i++)
             {
-                const changeTracking = changeTrackings[manager.get(currentKeys[i], currentObj.value).id];
-
+                const id = manager.get(currentKeys[i], currentObj.value).id;
+                const changeTracking = changeTrackings[id];
+                console.log(`\nChange tracking for key: ${currentKeys[i]}, id: ${id}, change tracking: ${changeTracking?.objectState}`);
                 // wasn't modified locally and not in newObj, it was deleted on another device.
                 // If state is Inserted, we want to keep it. 
                 // If state is Updated, we want to keep it since we can't check when it was deleted on another device
                 // If state is Deleted, it wouldn't be in currentKeys
                 if (!changeTracking)
                 {
+                    console.log(`\ndeleting: ${currentKeys[i]} from ${JSON.vaulticStringify(currentObj.value)}`)
                     manager.delete(currentKeys[i], currentObj.value);
                 }
             }
