@@ -385,6 +385,7 @@ passwordStoreSuite.tests.push({
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
+        // clone or else it won't be detected as new since it would be the same object reference
         const addedGroupPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(password));
         addedGroupPassword.groups.value.set(group.id.value, new Field(group.id.value));
         await app.currentVault.passwordStore.updatePassword(masterKey, addedGroupPassword, false, [], []);

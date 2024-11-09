@@ -101,6 +101,7 @@ groupStoreSuite.tests.push({
             duplicateGroupOne[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
             duplicateGroupTwo[property].value.set(primaryObject.id.value, new Field(primaryObject.id.value));
 
+
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
 
             const retrievedDuplicateGroupOne = getGroups().filter(g => g.value.id.value == duplicateGroupOne.id.value)[0];
@@ -122,6 +123,18 @@ groupStoreSuite.tests.push({
 
             ctx.assertTruthy(`Duplicate group two is duplicate for ${type}`,
                 retrievedDuplicateGroupTwo?.value.duplicateDataTypesByID.value.has(duplicateGroupOne.id.value));
+
+            const duplicateGroupThree = defaultGroup(type);
+            duplicateGroupThree.name.value = `GroupStore Add Metrics Work Empty Dup three Type ${type}`;
+
+            const duplicateGroupFour = defaultGroup(type);
+            duplicateGroupFour.name.value = `GroupStore Add Metrics Work Empty Dup four Type ${type}`;
+
+            await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupThree);
+            await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupFour);
+
+            ctx.assertTruthy(`Empty duplicate group three exists for type ${type}`, getDuplicateGroups().value.get(duplicateGroupThree.id.value));
+            ctx.assertTruthy(`Empty duplicate group four exists for type ${type}`, getDuplicateGroups().value.get(duplicateGroupFour.id.value));
         }
 
         const password = defaultPassword();

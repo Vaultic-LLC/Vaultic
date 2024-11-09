@@ -14,6 +14,7 @@ import importExportHelperTestSuite from "./helpers/importExportHelper.test";
 import cryptUtilityTestSuite from "./utilities/cryptUtility.test";
 
 import backupTestSuite from "./base/backup.test";
+import mergingDataTestSuite from "./base/mergingData.test";
 
 const results: TestResult = new TestResult();
 
@@ -32,7 +33,8 @@ export default async function runAllTests()
 
     // These should go first since they mess with logging in
     await runTests(serverHelperTestSuite);
-    await runTests(backupTestSuite);
+    //await runTests(backupTestSuite);
+    await runTests(mergingDataTestSuite);
     await runTests(appStoreTestSuite);
     await runTests(vaultStoreTestSuite);
 
@@ -58,6 +60,7 @@ export async function runAllValueTests()
 export async function runAllGroupTests()
 {
     console.time();
+    await runTests(serverHelperTestSuite);
     await runTests(groupStoreSuite);
 
     results.printStatus();
@@ -99,6 +102,26 @@ export async function runCryptUtilityTests()
 {
     console.time();
     await runTests(cryptUtilityTestSuite);
+
+    results.printStatus();
+}
+
+export async function runAllBackupTests()
+{
+    console.time();
+
+    await runTests(serverHelperTestSuite);
+    await runTests(backupTestSuite);
+
+    results.printStatus();
+}
+
+export async function runAllMergingDataTests()
+{
+    console.time();
+
+    await runTests(serverHelperTestSuite);
+    await runTests(mergingDataTestSuite);
 
     results.printStatus();
 }

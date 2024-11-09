@@ -23,7 +23,6 @@ export interface IUserRepository extends ClientUserRepository, VaulticRepository
 {
     getCurrentUser: () => Promise<User | undefined>;
     findByEmail: (masterKey: string, email: string) => Promise<User | null>;
-    setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     getEntityThatNeedsToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<User> | undefined>>;
 }
 

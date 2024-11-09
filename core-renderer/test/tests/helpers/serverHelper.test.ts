@@ -2,6 +2,7 @@ import app from "../../src/core/Objects/Stores/AppStore";
 import { api } from "../../src/core/API";
 import { createTestSuite, TestContext } from "../test";
 import { AutoLockTime } from "../../src/core/Types/Settings";
+import StoreUpdateTransaction from "../../src/core/Objects/StoreUpdateTransaction";
 
 let serverHelperTestSuite = createTestSuite("Server Helper");
 
@@ -33,9 +34,13 @@ serverHelperTestSuite.tests.push({
         app.isOnline = true;
         await app.loadUserData(masterKey, response.value!.UserDataPayload);
 
-        const settings = app.cloneState();
-        settings.settings.value.autoLockTime.value = AutoLockTime.ThirtyMinutes;
-        app.updateState(settings);
+        const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+
+        const state = app.cloneState();
+        state.settings.value.autoLockTime.value = AutoLockTime.ThirtyMinutes;
+
+        transaction.updateUserStore(app, state);
+        await transaction.commit(masterKey);
 
         await app.lock();
     }

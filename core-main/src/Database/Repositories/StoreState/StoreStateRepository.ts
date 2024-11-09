@@ -67,6 +67,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         }
 
         console.log(`\nupdating state: ${currentStateToUse}`);
+        console.log(`\nnew state: ${newStateToUse}`)
         console.log(`\nchange trackings: ${JSON.vaulticStringify(changeTrackings)}`);
         try 
         {
@@ -163,9 +164,9 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 }
             }
         }
-        // Only values have their last modified time set, objects do not. This isn't an issue
         else 
         {
+            console.log(`Current Obj: ${JSON.stringify(currentObj)}, New Obj: ${JSON.stringify(currentObj)}`)
             if (currentObj.value != newObj.value && currentObj.lastModifiedTime < newObj.lastModifiedTime)
             {
                 currentObj = newObj;

@@ -261,11 +261,11 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
     }
 
-    public async setCurrentUser(masterKey: string, email: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async setCurrentUser(masterKey: string, email: string): Promise<TypedMethodResponse<undefined>>
     {
         return await safetifyMethod(this, internalSetCurrentUser);
 
-        async function internalSetCurrentUser(this: UserRepository): Promise<TypedMethodResponse<boolean>>
+        async function internalSetCurrentUser(this: UserRepository): Promise<TypedMethodResponse<undefined>>
         {
             // don't allow setting a current user while one is already set. This would cause issues
             // for the first user

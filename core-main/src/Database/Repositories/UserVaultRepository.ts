@@ -58,12 +58,14 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
+                console.log('no user when getting user vaults')
                 return [[], []];
             }
 
             user = currentUser;
         }
 
+        console.log(`getting user vaults for user: ${user.userID}`);
         let userVaults: UserVault[] | null = [];
         if (query)
         {
@@ -74,12 +76,14 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             userVaults = await this.getUserVaults(user, userVaultIDs);
         }
 
+        console.log(`user vaults found: ${userVaults.length}`);
         if (!userVaults || userVaults.length == 0)
         {
             console.log('no user vaults')
             return [[], []];
         }
 
+        console.log(`decrypting private key`);
         const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, user.privateKey);
         if (!decryptedPrivateKey.success)
         {
@@ -93,24 +97,28 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const userVaultResponse = await userVaults[i].verify(masterKey);
             if (!userVaultResponse)
             {
+                console.log(`failed to verify user vault: ${userVaults[i].userVaultID}`)
                 return [[], []];
             }
 
             const decryptedVaultKey = await vaultHelper.decryptVaultKey(masterKey, decryptedPrivateKey.value!, false, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
+                console.log(`failed to decyrpt vault key: ${userVaults[i].userVaultID}`)
                 return [[], []];
             }
 
             const vaultResponse = await userVaults[i].vault.verify(decryptedVaultKey.value!);
             if (!vaultResponse)
             {
+                console.log(`failed to verify vault: ${userVaults[i].vault.vaultID}`)
                 return [[], []];
             }
 
             vaultKeys.push(decryptedVaultKey.value!);
         }
 
+        console.log(`succesffully got user vaults`);
         return [userVaults, vaultKeys];
     }
 

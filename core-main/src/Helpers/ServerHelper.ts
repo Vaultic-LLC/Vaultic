@@ -124,6 +124,7 @@ async function logUserIn(masterKey: string, email: string,
                     }
                     else 
                     {
+                        console.log(`Merging server data: ${JSON.vaulticStringify(result.value.userDataPayload)}`);
                         await checkMergeMissingData(masterKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
                     }
 

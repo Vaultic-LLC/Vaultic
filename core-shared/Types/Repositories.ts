@@ -6,7 +6,7 @@ export interface ClientUserRepository
     getLastUsedUserEmail: () => Promise<string | null>;
     getLastUsedUserPreferences: () => Promise<string | null>;
     createUser: (masterKey: string, email: string, publicKey: string, privateKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;
-    setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<undefined>>;
     getCurrentUserData: (masterKey: string) => Promise<TypedMethodResponse<string | undefined>>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     saveUser: (masterKey: string, newData: string, currentData: string) => Promise<TypedMethodResponse<boolean | undefined>>;

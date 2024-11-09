@@ -187,6 +187,7 @@ async function createNewDatabase(renameCurrentTo: string)
         {
             if (err)
             {
+                console.log(`Create Error: ${err}`);
                 resolve(err);
                 return;
             }
@@ -207,12 +208,23 @@ async function setDatabaseAsCurrent(name: string)
         {
             if (err)
             {
+                console.log(`current copy error: ${err}`)
                 resolve(err);
                 return;
             }
 
-            await environment.setupDatabase();
-            resolve(true);
+            fs.unlink(`${directory}\\${name}.db`, async (err) =>
+            {
+                if (err)
+                {
+                    console.log(`current delete error: ${err}`)
+                    resolve(err);
+                    return;
+                }
+
+                await environment.setupDatabase();
+                resolve(true);
+            });
         });
     });
 }

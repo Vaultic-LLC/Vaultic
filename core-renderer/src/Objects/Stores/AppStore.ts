@@ -180,6 +180,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         clearTimeout(this.autoLockTimeoutID);
         this.autoLockTimeoutID = setTimeout(() =>
         {
+            console.log('auto lock app');
             this.lock();
         }, this.internalAutoLockNumberTime.value);
     }

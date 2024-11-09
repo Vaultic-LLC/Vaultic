@@ -232,6 +232,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalSaveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
+            console.log(`Getting user vaults. MasterKey: ${masterKey}, UserVaultID: ${userVaultID}`)
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
             if (userVaults[0].length == 0)
             {

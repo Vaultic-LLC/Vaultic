@@ -64,6 +64,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             if (group.passwords.value.size == 0)
             {
                 pendingState.emptyPasswordGroups.value.set(group.id.value, new Field(group.id.value));
+                this.checkUpdateDuplicateSecondaryObjects(group, "passwords", pendingState.duplicatePasswordGroups, pendingState.passwordGroupsByID)
             }
             else
             {
@@ -89,6 +90,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             if (group.values.value.size == 0)
             {
                 pendingState.emptyValueGroups.value.set(group.id.value, new Field(group.id.value));
+                this.checkUpdateDuplicateSecondaryObjects(group, "values", pendingState.duplicateValueGroups, pendingState.valueGroupsByID)
             }
             else
             {
