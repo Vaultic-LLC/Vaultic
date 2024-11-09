@@ -671,6 +671,39 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         return needsToRePushData;
     }
+
+    public async getStoreStates(masterKey: string, storeStatesToRetrieve: UserData): Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>
+    {
+        return await safetifyMethod(this, internalGetStoreStates);
+
+        async function internalGetStoreStates(this: UserRepository): Promise<TypedMethodResponse<DeepPartial<UserData>>>
+        {
+            const currentUser = await this.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
+
+            const userData: DeepPartial<UserData> = {};
+            if (storeStatesToRetrieve.appStoreState)
+            {
+                const decryptedAppStoreState = await environment.utilities.crypt.decrypt(masterKey, currentUser.appStoreState.state);
+                if (!decryptedAppStoreState)
+                {
+                    return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "AppStoreState");
+                }
+
+                userData.appStoreState = decryptedAppStoreState.value;
+            }
+
+            if (storeStatesToRetrieve.userPreferencesStoreState)
+            {
+                userData.userPreferencesStoreState = currentUser.userPreferencesStoreState.state;
+            }
+
+            return TypedMethodResponse.success(userData);
+        }
+    }
 }
 
 const userRepository: UserRepository = new UserRepository();

@@ -66,7 +66,6 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             // Only values have their last modified time set, objects do not. This isn't an issue
             if (newObj.value != oldObj.value)
             {
-                // TODO: make sure this actually works. Otherwise I will need to return newObj. Same with id above
                 newObj.lastModifiedTime = Date.now();
                 transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
             }

@@ -684,14 +684,19 @@ mergingDataTestSuite.tests.push({
         ctx.assertTruthy("Dup password 3 exists", app.currentVault.passwordStore.duplicatePasswords.value.has(dupPasswordThree.id.value));
         ctx.assertTruthy("Dup password 4 exists", app.currentVault.passwordStore.duplicatePasswords.value.has(dupPasswordFour.id.value));
 
+        const addedDomainTime = app.currentVault.passwordStore.passwordsByID.value.get(dupPasswordOne.id.value)?.value.domain.lastModifiedTime;
+
         await logIntoOfflineMode(mergingPasswordUpdatesTest, ctx);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(dupPasswordOne.id.value)!;
+        let passwordState = app.currentVault.passwordStore.cloneState();
+        let retrievedPassword = passwordState.passwordsByID.value.get(dupPasswordOne.id.value)!;
         retrievedPassword.value.domain.value = "first";
         retrievedPassword.value.email.value = "test@test.com";
         retrievedPassword.value.password.value = "updated";
 
         let updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, true, [], []);
+        const updatedDomainTime = app.currentVault.passwordStore.passwordsByID.value.get(dupPasswordOne.id.value)?.value.domain.lastModifiedTime;
+
         ctx.assertTruthy("Update Offline Password succeeded", updatePasswordSucceeded);
 
         ctx.assertTruthy("Duplicate password one doesn't exist", !app.currentVault.passwordStore.duplicatePasswords.value.has(dupPasswordOne.id.value));
@@ -699,7 +704,8 @@ mergingDataTestSuite.tests.push({
 
         await copyDatabaseAndLogIntoOnlineMode(mergingPasswordUpdatesTest, ctx);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(dupPasswordOne.id.value)!;
+        passwordState = app.currentVault.passwordStore.cloneState();
+        retrievedPassword = passwordState.passwordsByID.value.get(dupPasswordOne.id.value)!;
         ctx.assertEquals("retrieved password domain is empty", retrievedPassword.value.domain.value, "");
         ctx.assertEquals("retrieved password email is empty", retrievedPassword.value.domain.value, "");
 
@@ -712,9 +718,12 @@ mergingDataTestSuite.tests.push({
         retrievedPassword.value.additionalInformation.value = "info";
 
         updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
+        const updatedDomainTimeTwo = app.currentVault.passwordStore.passwordsByID.value.get(dupPasswordOne.id.value)?.value.domain.lastModifiedTime;
+
         ctx.assertTruthy("Update online Password succeeded", addPasswordSucceeded);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(dupPasswordThree.id.value)!;
+        passwordState = app.currentVault.passwordStore.cloneState();
+        retrievedPassword = passwordState.passwordsByID.value.get(dupPasswordThree.id.value)!;
         retrievedPassword.value.password.value = "test 2";
 
         updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, true, [], []);

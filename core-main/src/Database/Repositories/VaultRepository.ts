@@ -727,6 +727,74 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const deleteUserVaultsPromise = environment.repositories.userVaults.deleteFromServerAndVault(vault.vaultID);
         return Promise.all([deleteVaultPromise, deleteUserVaultsPromise]);
     }
+
+    public async getStoreStates(masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>
+    {
+        return await safetifyMethod(this, internalGetStoreStates);
+
+        async function internalGetStoreStates(this: VaultRepository): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData>>>
+        {
+            const statesToDecrypt = [];
+            if (storeStatesToRetrieve.vaultStoreState)
+            {
+                statesToDecrypt.push(nameof<Vault>("vaultStoreState"));
+            }
+
+            if (storeStatesToRetrieve.passwordStoreState)
+            {
+                statesToDecrypt.push(nameof<Vault>("passwordStoreState"));
+            }
+
+            if (storeStatesToRetrieve.valueStoreState)
+            {
+                statesToDecrypt.push(nameof<Vault>("valueStoreState"));
+            }
+
+            if (storeStatesToRetrieve.filterStoreState)
+            {
+                statesToDecrypt.push(nameof<Vault>("filterStoreState"));
+            }
+
+            if (storeStatesToRetrieve.groupStoreState)
+            {
+                statesToDecrypt.push(nameof<Vault>("groupStoreState"));
+            }
+
+            const condensedVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, statesToDecrypt, [userVaultID]);
+            if (!condensedVaults || condensedVaults.length != 1)
+            {
+                return TypedMethodResponse.fail(undefined, "", "No user vaults");
+            }
+
+            const returnStates: DeepPartial<CondensedVaultData> = {};
+            if (storeStatesToRetrieve.vaultStoreState)
+            {
+                returnStates[nameof<Vault>("vaultStoreState")] = condensedVaults[0].vaultStoreState;
+            }
+
+            if (storeStatesToRetrieve.passwordStoreState)
+            {
+                returnStates[nameof<Vault>("passwordStoreState")] = condensedVaults[0].passwordStoreState;
+            }
+
+            if (storeStatesToRetrieve.valueStoreState)
+            {
+                returnStates[nameof<Vault>("valueStoreState")] = condensedVaults[0].valueStoreState;
+            }
+
+            if (storeStatesToRetrieve.filterStoreState)
+            {
+                returnStates[nameof<Vault>("filterStoreState")] = condensedVaults[0].filterStoreState;
+            }
+
+            if (storeStatesToRetrieve.groupStoreState)
+            {
+                returnStates[nameof<Vault>("groupStoreState")] = condensedVaults[0].groupStoreState;
+            }
+
+            return TypedMethodResponse.success(returnStates);
+        }
+    }
 }
 
 const vaultRepository: VaultRepository = new VaultRepository();

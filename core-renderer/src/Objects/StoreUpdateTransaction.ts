@@ -4,6 +4,7 @@ import { api } from "../API";
 import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
 import { Store, StoreEvents } from "./Stores/Base";
 import app from "./Stores/AppStore";
+import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 
 export enum Entity
 {
@@ -108,14 +109,50 @@ export default class StoreUpdateTransaction
         return true;
     }
 
-    private async commitStoreStates(storeUpdateStates: Dictionary<StoreUpdateState>)
+    private async commitStoreStates(masterKey: string, entity: Entity, storeUpdateStates: Dictionary<StoreUpdateState>)
     {
         const stores = Object.values(storeUpdateStates);
+        if (stores.length == 0)
+        {
+            return true;
+        }
+
+        const storesToRetrieve: { [key: string]: any } = {};
         for (let i = 0; i < stores.length; i++)
         {
-            stores[i].store.updateState(stores[i].pendingState);
-            stores[i].postSave?.();
+            storesToRetrieve[stores[i].store.stateName] = {};
         }
+
+        let response: TypedMethodResponse<any>;
+
+        // we need to re get the store state since it could have been updated from change tracking or when merging data after backing up
+        switch (entity)
+        {
+            case Entity.User:
+                response = await api.repositories.users.getStoreStates(masterKey, storesToRetrieve as UserData);
+                break;
+            case Entity.UserVault:
+                response = await api.repositories.userVaults.getStoreStates(masterKey, this.userVaultID!, storesToRetrieve as CondensedVaultData);
+                break;
+            case Entity.Vault:
+                response = await api.repositories.vaults.getStoreStates(masterKey, this.userVaultID!, storesToRetrieve as CondensedVaultData);
+                break;
+        }
+
+        if (!response.success)
+        {
+            defaultHandleFailedResponse(response);
+            return false;
+        }
+
+        const storeKeys = Object.keys(response.value);
+        for (let i = 0; i < storeKeys.length; i++)
+        {
+            storeUpdateStates[storeKeys[i]].store.initalizeNewState(JSON.vaulticParse(response.value[storeKeys[i]]));
+            storeUpdateStates[storeKeys[i]].postSave?.();
+        }
+
+        return true;
     }
 
     async commit(masterKey: string, backup: boolean = true)
@@ -135,10 +172,6 @@ export default class StoreUpdateTransaction
             return false;
         }
 
-        this.commitStoreStates(this.userStoreUpdateStates);
-        this.commitStoreStates(this.userVaultStoreUpdateStates);
-        this.commitStoreStates(this.vaultStoreUpdateStates);
-
         // masterKey will be "" when updating userPreferences or vaultPreferences
         if (masterKey && backup && app.isOnline)
         {
@@ -148,6 +181,22 @@ export default class StoreUpdateTransaction
                 defaultHandleFailedResponse(response);
                 return false;
             }
+        }
+
+        // do these after checking to backup since backing up can change the state
+        if (!await this.commitStoreStates(masterKey, Entity.User, this.userStoreUpdateStates))
+        {
+            return false;
+        }
+
+        if (!await this.commitStoreStates(masterKey, Entity.UserVault, this.userVaultStoreUpdateStates))
+        {
+            return false;
+        }
+
+        if (!await this.commitStoreStates(masterKey, Entity.Vault, this.vaultStoreUpdateStates))
+        {
+            return false;
         }
 
         return true;

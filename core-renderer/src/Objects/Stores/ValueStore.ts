@@ -263,8 +263,6 @@ export class ReactiveValueStore extends ValueStore
 
     protected preAssignState(state: ValueStoreState): void 
     {
-        super.preAssignState(state);
-
         for (const [key, value] of state.valuesByID.value.entries())
         {
             value.value = createReactiveValue(value.value);

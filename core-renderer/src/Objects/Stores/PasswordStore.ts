@@ -328,8 +328,6 @@ export class ReactivePasswordStore extends PasswordStore
 
     protected preAssignState(state: PasswordStoreState): void 
     {
-        super.preAssignState(state);
-
         for (const [key, value] of state.passwordsByID.value.entries())
         {
             value.value = createReactivePassword(value.value);
