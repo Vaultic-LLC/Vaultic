@@ -115,6 +115,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
         }
         else if (!updatingPassword.isVaultic.value)
         {
+            this.checkUpdateDuplicatePrimaryObjectsModifiedTime(updatingPassword.id.value, pendingState.duplicatePasswords);
+
             // need to check to see if the password contains their potentially updated username
             const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.password.value);
             if (!decryptResponse.success)

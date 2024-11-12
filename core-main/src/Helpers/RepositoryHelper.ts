@@ -204,6 +204,9 @@ export async function backupData(masterKey: string)
             await environment.repositories.vaults.postBackupEntitiesUpdates(masterKey, vaultsToBackup.value.vaults, transaction);
         }
 
+        // all data succesfully backed up, no need for change trackings anymore
+        await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
+
         if (!await transaction.commit())
         {
             console.log('backup transaction failed');
@@ -350,14 +353,8 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
         }
     }
 
-    const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-
-    // user will be undefined if we are adding it from the server. no change trackings to clear then obviously
-    if (currentUser)
-    {
-        // we've handled all trackedChanges. Clear them
-        transaction.deleteEntity<ChangeTracking>({ userID: currentUser.userID }, () => environment.repositories.changeTrackings);
-    }
+    // we've handled all trackedChanges. Clear them
+    await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
 
     console.log('\n committing new states')
     if (!(await transaction.commit()))

@@ -277,16 +277,16 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
                 switch (fc.value.filterType.value)
                 {
                     case FilterConditionType.StartsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value].value?.toString().toLowerCase().startsWith(fc.value.value.value.toLowerCase()) ?? false);
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase().startsWith(fc.value.value.value.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.EndsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value].value?.toString().toLowerCase().endsWith(fc.value.value.value.toLowerCase()) ?? false);
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase().endsWith(fc.value.value.value.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.Contains:
-                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value].value?.toString().toLowerCase().includes(fc.value.value.value.toLowerCase()) ?? false);
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase().includes(fc.value.value.value.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.EqualTo:
-                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.value.property.value].value?.toString().toLowerCase() == fc.value.value.value.toLowerCase();
+                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase() == fc.value.value.value.toLowerCase();
                         break;
                     default:
                         allFilterConditionsApply = false;

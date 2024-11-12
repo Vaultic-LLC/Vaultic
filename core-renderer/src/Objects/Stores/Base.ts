@@ -305,6 +305,30 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> exten
         }
     }
 
+    // used when updating a password / value that didn't have its secret property updated (password / value). 
+    // usually checkUpdateDuplicatePrimaryObjects handles this but we don't call that if the secret property wasn't updated since 
+    // we know duplicate values can't change. We still want to update their modified times though for change tracking so that if the backing 
+    // password / value was deleted on another device before it was updated, they are retrained and so are the duplicates
+    protected checkUpdateDuplicatePrimaryObjectsModifiedTime(primaryDataObjectID: string, allDuplicates: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
+    {
+        if (!allDuplicates.value.has(primaryDataObjectID))
+        {
+            return;
+        }
+
+        allDuplicates.value.get(primaryDataObjectID)!.lastModifiedTime = Date.now();
+
+        // updates all the fields in the other duplicate data objects collections for change tracking
+        allDuplicates.value.get(primaryDataObjectID)?.value.duplicateDataTypesByID.value.forEach((v, k, map) => 
+        {
+            if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.duplicateDataTypesByID.value.has(primaryDataObjectID))
+            {
+                allDuplicates.value.get(k)!.lastModifiedTime = Date.now();
+                allDuplicates.value.get(k)!.value.duplicateDataTypesByID.value.get(primaryDataObjectID)!.lastModifiedTime = Date.now();
+            }
+        });
+    }
+
     protected checkRemoveFromDuplicate<T extends IIdentifiable>(
         primaryDataObject: T,
         allDuplicates: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
@@ -431,6 +455,7 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
         // updates all the fields in the other duplicate data objects collections for change tracking
         currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.forEach((v, k, map) => 
         {
+            currentDuplicateSecondaryObjects.value.get(k)!.lastModifiedTime = Date.now();
             currentDuplicateSecondaryObjects.value.get(k)!.value.duplicateDataTypesByID.value.get(secondaryDataObject.id.value)!.lastModifiedTime = Date.now();
         });
 

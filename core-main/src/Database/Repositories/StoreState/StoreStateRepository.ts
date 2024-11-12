@@ -65,8 +65,8 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             newStateToUse = decyptedNewState.value;
         }
 
-        //console.log(`\nupdating state: ${currentStateToUse}`);
-        //console.log(`\nnew state: ${newStateToUse}`)
+        console.log(`\nupdating state: ${currentStateToUse}`);
+        console.log(`\nnew state: ${newStateToUse}`)
         //console.log(`\nchange trackings: ${JSON.vaulticStringify(changeTrackings)}`);
         try 
         {
@@ -129,9 +129,14 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         // deleted? Yes, but there I can't confirm times?
                         // TODO: test this. Duplicate and empty values should now be updated whenever their backing data type is updated, making them
                         // also stay if this condition is met
+                        console.log(`Not in local. New: ${JSON.vaulticStringify(newObj)}, Current: ${JSON.vaulticStringify(currentObj)}, Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
                         if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj.value).lastModifiedTime)
                         {
                             manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);
+                        }
+                        else 
+                        {
+                            console.log(`Didn't add. New: ${JSON.vaulticStringify(newObj)}, Current: ${JSON.vaulticStringify(currentObj)}, Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
                         }
                     }
                 }
@@ -154,8 +159,12 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 // If state is Deleted, it wouldn't be in currentKeys
                 if (!changeTracking)
                 {
-                    console.log(`\ndeleting: ${currentKeys[i]} from ${JSON.vaulticStringify(currentObj.value)}`)
+                    console.log(`\ndeleting: ${currentKeys[i]} from ${JSON.vaulticStringify(currentObj)}`)
                     manager.delete(currentKeys[i], currentObj.value);
+                }
+                else 
+                {
+                    console.log(`\nkeeping ${JSON.vaulticStringify(currentObj)}. Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
                 }
             }
         }

@@ -98,6 +98,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         }
         else
         {
+            this.checkUpdateDuplicatePrimaryObjectsModifiedTime(updatedValue.id.value, pendingState.duplicateValues);
+
             const response = await cryptHelper.decrypt(masterKey, updatedValue.value.value);
             if (!response.success)
             {

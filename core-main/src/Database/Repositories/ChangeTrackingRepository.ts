@@ -19,8 +19,11 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
     {
         try 
         {
-            const updatedState = this.trackObjectDifferences(userID, masterKey, new Field(newState), new Field(oldState), transaction);
-            return JSON.vaulticStringify(updatedState.value);
+            console.log(`\nNew state: ${JSON.vaulticStringify(newState)}`);
+            console.log(`\nOld State: ${JSON.vaulticStringify(oldState)}`);
+
+            this.trackObjectDifferences(userID, masterKey, new Field(newState), new Field(oldState), transaction);
+            return JSON.vaulticStringify(newState);
         }
         catch (e)
         {
@@ -29,8 +32,11 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         }
     }
 
-    public trackObjectDifferences(userID: number, masterKey: string, newObj: any, oldObj: any, transaction: Transaction)
+    public trackObjectDifferences(userID: number, masterKey: string, newObj: any, oldObj: any, transaction: Transaction): boolean
     {
+        // used to propagate changes up to the parent object
+        let updatedValue = false;
+
         if (typeof newObj.value == 'object')
         {
             let manager: ObjectPropertyManager<any> = newObj.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
@@ -50,7 +56,11 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 // field is in both, check value differences
                 else
                 {
-                    this.trackObjectDifferences(userID, masterKey, manager.get(keys[i], newObj.value), manager.get(oldKeys[oldKeyMatchingIndex], oldObj.value), transaction);
+                    if (this.trackObjectDifferences(userID, masterKey, manager.get(keys[i], newObj.value), manager.get(oldKeys[oldKeyMatchingIndex], oldObj.value), transaction))
+                    {
+                        updatedValue = true;
+                    }
+
                     oldKeys.splice(oldKeyMatchingIndex, 1);
                 }
             }
@@ -58,7 +68,16 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             // all the keys that are in the old obj but not in new obj, they were deleted
             for (let i = 0; i < oldKeys.length; i++)
             {
+                updatedValue = true;
+                console.log(`Inserted: ${oldKeys[i]} in ${JSON.vaulticStringify(oldObj)}`);
                 transaction.insertEntity(ChangeTracking.deleted(userID, manager.get(oldKeys[i], oldObj.value).id, Date.now()), masterKey, () => this);
+            }
+
+            // propagated the updated properties up to this object so that we can better merge deleted objects. i.e. if a property is deleted on one device after
+            // the object was deleted on another, we still want to keep it
+            if (updatedValue)
+            {
+                newObj.lastModifiedTime = Date.now();
             }
         }
         else 
@@ -66,12 +85,13 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             // Only values have their last modified time set, objects do not. This isn't an issue
             if (newObj.value != oldObj.value)
             {
+                updatedValue = true;
                 newObj.lastModifiedTime = Date.now();
                 transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
             }
         }
 
-        return newObj;
+        return updatedValue;
     }
 
     private insertObject(userID: number, masterKey: string, field: any, transaction: Transaction)
@@ -125,6 +145,17 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         }
 
         return changeTrackingByID;
+    }
+
+    public async clearChangeTrackings(masterKey: string, transaction: Transaction)
+    {
+        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+
+        // user will be undefined if we are adding it from the server. no change trackings to clear then obviously
+        if (currentUser)
+        {
+            transaction.deleteEntity<ChangeTracking>({ userID: currentUser.userID }, () => environment.repositories.changeTrackings);
+        }
     }
 }
 
