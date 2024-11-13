@@ -255,24 +255,41 @@ passwordStoreSuite.tests.push({
 
         password.securityQuestions.value.set("SecurityQuestion", new Field(securityQuestion));
 
+        const password2: Password = defaultPassword();
+        password2.login.value = "MVOmewpobwjbiophniones";
+        const securityQuestion2: SecurityQuestion =
+        {
+            id: new Field("SecurityQuestion2"),
+            question: new Field("Question2"),
+            questionLength: new Field(0),
+            answer: new Field("Answer2"),
+            answerLength: new Field(0)
+        };
+
+        password2.securityQuestions.value.set("SecurityQuestion2", new Field(securityQuestion2));
+
         await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await app.currentVault.passwordStore.addPassword(masterKey, password2);
 
         const newQuesiton = "UpdatedQuesiton";
         const newAnswer = "UpdatedAnswer";
 
         password.securityQuestions.value.get("SecurityQuestion")!.value.question.value = newQuesiton;
-        password.securityQuestions.value.get("SecurityQuestion")!.value.answer.value = newAnswer;
+        password2.securityQuestions.value.get("SecurityQuestion2")!.value.answer.value = newAnswer;
 
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [securityQuestion.id.value], [securityQuestion.id.value]);
-        const updatedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
+        await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [securityQuestion.id.value], []);
+        await app.currentVault.passwordStore.updatePassword(masterKey, password2, false, [], [securityQuestion2.id.value]);
 
-        const decryptedQuestion = await cryptHelper.decrypt(masterKey, updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.question.value);
-        const decryptedAnswer = await cryptHelper.decrypt(masterKey, updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.answer.value);
+        const updatedPassword1 = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+        const updatedPassword2 = app.currentVault.passwordStore.passwordsByID.value.get(password2.id.value);
+
+        const decryptedQuestion = await cryptHelper.decrypt(masterKey, updatedPassword1!.value.securityQuestions.value.get("SecurityQuestion")!.value.question.value);
+        const decryptedAnswer = await cryptHelper.decrypt(masterKey, updatedPassword2!.value.securityQuestions.value.get("SecurityQuestion2")!.value.answer.value);
 
         ctx.assertEquals("New Question is correct", decryptedQuestion.value, newQuesiton);
         ctx.assertEquals("New Answer is correct", decryptedAnswer.value, newAnswer);
-        ctx.assertEquals("new Answer Length is correct", updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.answerLength.value, newAnswer.length);
-        ctx.assertEquals("New Question Length is correct", updatedPassword[0].value.securityQuestions.value.get("SecurityQuestion")!.value.questionLength.value, newQuesiton.length);
+        ctx.assertEquals("New Question Length is correct", updatedPassword1!.value.securityQuestions.value.get("SecurityQuestion")!.value.questionLength.value, newQuesiton.length);
+        ctx.assertEquals("new Answer Length is correct", updatedPassword2!.value.securityQuestions.value.get("SecurityQuestion2")!.value.answerLength.value, newAnswer.length);
     }
 });
 

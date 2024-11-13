@@ -80,11 +80,13 @@ export class Field<T>
     id: string;
     value: T;
     lastModifiedTime: number;
+    forceUpdate: boolean;
 
     constructor(value: T)
     {
         this.id = "";
         this.value = value;
         this.lastModifiedTime = Date.now();
+        this.forceUpdate = false;
     }
 }

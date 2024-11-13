@@ -22,7 +22,7 @@ export default defineComponent({
 	props: ['model'],
 	setup(props)
 	{
-		// copy the object so that we don't edit the original one
+        // copy the object so that we don't edit the original one. Also needed for change tracking
 		const valueModel: ComputedRef<NameValuePair> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.model)));
 
 		return {

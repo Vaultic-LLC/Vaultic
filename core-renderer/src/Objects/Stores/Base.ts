@@ -3,7 +3,7 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { AtRiskType, DataType, DuplicateDataTypes, Filter, Group, ISecondaryDataObject } from "../../Types/DataTypes";
+import { AtRiskType, DataType, DuplicateDataTypes, Filter, Group, ISecondaryDataObject, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
 import { Field, IFieldedObject, FieldMap, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
@@ -191,6 +191,39 @@ export class DataTypeStore<T extends KnownMappedFields<StoreState>> extends Vaul
             this.doToggleAtRiskType(this.getValueAtRiskType(), atRiskType);
         }
     }
+
+    protected getRelatedDataTypeChanges(currentRelated: Map<string, Field<string>>, newRelated: Map<string, Field<string>>): RelatedDataTypeChanges
+    {
+        const added: Map<string, Field<string>> = new Map();
+        const removed: Map<string, Field<string>> = new Map();
+        const unchanged: Map<string, Field<string>> = new Map();
+
+        const currentKeys = currentRelated.keyArray();
+        const newKeys = newRelated.keyArray();
+
+        for (let i = 0; i < currentKeys.length; i++)
+        {
+            // in both, it was unchagned
+            if (newRelated.has(currentKeys[i]))
+            {
+                unchanged.set(currentKeys[i], currentRelated.get(currentKeys[i])!);
+                newKeys.splice(newKeys.indexOf(currentKeys[i]), 1);
+            }
+            // not in new, it was removed
+            else 
+            {
+                removed.set(currentKeys[i], currentRelated.get(currentKeys[i])!);
+            }
+        }
+
+        // not in current, were added
+        for (let i = 0; i < newKeys.length; i++)
+        {
+            added.set(newKeys[i], newRelated.get(currentKeys[i])!);
+        }
+
+        return new RelatedDataTypeChanges(added, removed, unchanged);
+    }
 }
 
 export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> extends DataTypeStore<T>
@@ -226,7 +259,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> exten
         else 
         {
             // for change tracking
-            allDuplicates.value.get(primaryDataObject.id.value)!.lastModifiedTime = Date.now();
+            allDuplicates.value.get(primaryDataObject.id.value)!.forceUpdate = true;
         }
 
         for (const [key, value] of allPrimaryObjects.value.entries())
@@ -294,7 +327,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> exten
         {
             if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.duplicateDataTypesByID.value.has(primaryDataObject.id.value))
             {
-                allDuplicates.value.get(k)!.value.duplicateDataTypesByID.value.get(primaryDataObject.id.value)!.lastModifiedTime = Date.now();
+                allDuplicates.value.get(k)!.value.duplicateDataTypesByID.value.get(primaryDataObject.id.value)!.forceUpdate = true;
             }
         });
 
@@ -316,15 +349,15 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> exten
             return;
         }
 
-        allDuplicates.value.get(primaryDataObjectID)!.lastModifiedTime = Date.now();
+        allDuplicates.value.get(primaryDataObjectID)!.forceUpdate = true;
 
         // updates all the fields in the other duplicate data objects collections for change tracking
         allDuplicates.value.get(primaryDataObjectID)?.value.duplicateDataTypesByID.value.forEach((v, k, map) => 
         {
             if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.duplicateDataTypesByID.value.has(primaryDataObjectID))
             {
-                allDuplicates.value.get(k)!.lastModifiedTime = Date.now();
-                allDuplicates.value.get(k)!.value.duplicateDataTypesByID.value.get(primaryDataObjectID)!.lastModifiedTime = Date.now();
+                //allDuplicates.value.get(k)!.lastModifiedTime = Date.now();
+                allDuplicates.value.get(k)!.value.duplicateDataTypesByID.value.get(primaryDataObjectID)!.forceUpdate = true;
             }
         });
     }
@@ -410,7 +443,7 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
         else 
         {
             // for change tracking
-            currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)!.lastModifiedTime = Date.now();
+            currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)!.forceUpdate = true;
         }
 
         const potentiallyNewDuplicateSecondaryObject: string[] =
@@ -455,8 +488,8 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
         // updates all the fields in the other duplicate data objects collections for change tracking
         currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.forEach((v, k, map) => 
         {
-            currentDuplicateSecondaryObjects.value.get(k)!.lastModifiedTime = Date.now();
-            currentDuplicateSecondaryObjects.value.get(k)!.value.duplicateDataTypesByID.value.get(secondaryDataObject.id.value)!.lastModifiedTime = Date.now();
+            //currentDuplicateSecondaryObjects.value.get(k)!.lastModifiedTime = Date.now();
+            currentDuplicateSecondaryObjects.value.get(k)!.value.duplicateDataTypesByID.value.get(secondaryDataObject.id.value)!.forceUpdate = true;
         });
 
         addedDuplicateSeconaryObjects.forEach(o =>
@@ -513,7 +546,7 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
             else 
             {
                 // for change tracking
-                currentEmptySecondaryObjects.value.get(secondaryObjectID)!.lastModifiedTime = Date.now();
+                currentEmptySecondaryObjects.value.get(secondaryObjectID)!.forceUpdate = true;
             }
         }
         else

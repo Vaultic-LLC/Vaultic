@@ -39,7 +39,7 @@ export default defineComponent({
     setup(props)
     {
         const hoveringColorPalette: Ref<number> = ref(-1);
-        // copy the object so that we don't edit the original one
+        // copy the object so that we don't edit the original one. Also needed for change tracking
         const colorPaletteModel: Ref<ColorPalette> = ref(JSON.vaulticParse(JSON.vaulticStringify(props.model)));
         const currentColorPalettes: ComputedRef<Field<ColorPalette>[]> = computed(() => app.colorPalettes.filter(cp => cp.value.isCreated.value));
 

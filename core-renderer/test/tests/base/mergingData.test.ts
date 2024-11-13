@@ -341,11 +341,10 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("Offline group doesn't exist for Value", retrievedValue?.value.groups.value.size, 0);
         ctx.assertEquals("Group doesn't have Value", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)?.value.values.value.size, 0);
 
-        retrievedValue!.value.value.value = "Merging Added Filters / Groups for Value";
+        retrievedValue!.value.name.value = "Merging Added Filters / Groups for Value";
+        const updateOnline = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
 
-        const addOnline = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
-
-        ctx.assertTruthy("Update Value worked", addOnline);
+        ctx.assertTruthy("Update Value worked", updateOnline);
         ctx.assertTruthy("Value has filter", app.currentVault.valueStore.nameValuePairsByID.value.get(value.id.value)?.value.filters.value.has(filter.id.value));
         ctx.assertTruthy("Filer has Value", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)?.value.values.value.has(value.id.value));
 
@@ -368,6 +367,10 @@ const mergingValueAddTest = "Merging Added Values Works";
 mergingDataTestSuite.tests.push({
     name: mergingValueAddTest, func: async (ctx: TestContext) =>
     {
+        const beforeCurrentSize = app.currentVault.valueStore.currentAndSafeValuesCurrent.length;
+        const beforeSafeSize = app.currentVault.valueStore.currentAndSafeValuesSafe.length;
+        const beforeSafeValues = app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1];
+
         await logIntoOfflineMode(mergingValueAddTest, ctx);
 
         const offlineDupValueOne = defaultValue();
@@ -394,7 +397,7 @@ mergingDataTestSuite.tests.push({
 
         ctx.assertTruthy("Offline dup Value one exists in duplicates", app.currentVault.valueStore.duplicateNameValuePairs.value.get(offlineDupValueOne.id.value));
         ctx.assertTruthy("Offline dup Value two exists in duplicates", app.currentVault.valueStore.duplicateNameValuePairs.value.get(offlineDupValueTwo.id.value));
-        ctx.assertEquals("Offline safe Value one exists", app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1], 1);
+        ctx.assertEquals("Offline safe Value incremented exists", app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1], beforeSafeValues + 1);
 
         await copyDatabaseAndLogIntoOnlineMode(mergingValueAddTest, ctx);
 
@@ -403,7 +406,7 @@ mergingDataTestSuite.tests.push({
         ctx.assertUndefined("Merged Offline Safe Value one does not exist", app.currentVault.valueStore.nameValuePairsByID.value.get(offlineSafeValueOne.id.value));
 
         ctx.assertEquals("No duplicate values", app.currentVault.valueStore.duplicateNameValuePairs.value.size, 0);
-        ctx.assertEquals("No safe values", app.currentVault.valueStore.currentAndSafeValuesSafe.length, 0);
+        ctx.assertEquals("No new safe values", app.currentVault.valueStore.currentAndSafeValuesSafe.length, beforeSafeSize);
 
         const onlineDupValueOne = defaultValue();
         onlineDupValueOne.name.value = "Merging online Dup Value 1";
@@ -429,7 +432,7 @@ mergingDataTestSuite.tests.push({
 
         ctx.assertTruthy("Online dup Value one exists in duplicates", app.currentVault.valueStore.duplicateNameValuePairs.value.get(onlineDupValueOne.id.value));
         ctx.assertTruthy("Online dup Value two exists in duplicates", app.currentVault.valueStore.duplicateNameValuePairs.value.get(onlineDupValueTwo.id.value));
-        ctx.assertEquals("Online safe Value one exists", app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1], 1);
+        ctx.assertEquals("Online safe Value incremented exists", app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1], beforeSafeValues + 1);
 
         await swapToSecondDatabaseAndLogIn(mergingValueAddTest, ctx);
 
@@ -448,8 +451,8 @@ mergingDataTestSuite.tests.push({
         ctx.assertTruthy("Merged online duplicate value one exists in duplicates after merge", app.currentVault.valueStore.duplicateNameValuePairs.value.get(onlineDupValueOne.id.value));
         ctx.assertTruthy("Merged online duplicate value two exists in duplicates after merge", app.currentVault.valueStore.duplicateNameValuePairs.value.get(onlineDupValueTwo.id.value));
 
-        ctx.assertEquals("Safe values has 6 values", app.currentVault.valueStore.currentAndSafeValuesSafe.length, 6);
-        ctx.assertEquals("Current values has 6 values", app.currentVault.valueStore.currentAndSafeValuesCurrent.length, 6);
+        ctx.assertEquals("Safe values has 6 more values", app.currentVault.valueStore.currentAndSafeValuesSafe.length, beforeSafeSize + 6);
+        ctx.assertEquals("Current values has 6 more values", app.currentVault.valueStore.currentAndSafeValuesCurrent.length, beforeCurrentSize + 6);
     }
 });
 
@@ -458,6 +461,7 @@ mergingDataTestSuite.tests.push({
     name: mergingFilterAddTest, func: async (ctx: TestContext) =>
     {
         const beforeEmptyPasswordFilters = app.currentVault.filterStore.emptyPasswordFilters.value.size;
+        const beforeEmptyValueFilters = app.currentVault.filterStore.emptyValueFilters.value.size;
 
         await logIntoOfflineMode(mergingFilterAddTest, ctx);
 
@@ -507,7 +511,7 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("No offline duplicate value filters", app.currentVault.filterStore.duplicateValueFilters.value.size, 0);
 
         ctx.assertEquals("No new offline empty password filters", app.currentVault.filterStore.emptyPasswordFilters.value.size, beforeEmptyPasswordFilters);
-        ctx.assertEquals("No offline empty value filters", app.currentVault.filterStore.emptyValueFilters.value.size, 0);
+        ctx.assertEquals("No new offline empty value filters", app.currentVault.filterStore.emptyValueFilters.value.size, beforeEmptyValueFilters);
 
         const onlineDupEmptypasswordFilterOne = defaultFilter(DataType.Passwords);
         onlineDupEmptypasswordFilterOne.name.value = "Merging Online Dup Empty Password Filter 1";
@@ -630,7 +634,9 @@ const mergingGroupAddTest = "Merging Added Groups Works";
 mergingDataTestSuite.tests.push({
     name: mergingGroupAddTest, func: async (ctx: TestContext) =>
     {
-        const beforeEmptyGroupsCount = app.currentVault.groupStore.emptyPasswordGroups.value.size;
+        const beforeEmptyPasswordGroupsCount = app.currentVault.groupStore.emptyPasswordGroups.value.size;
+        const beforeDuplicatePasswordGroupsCount = app.currentVault.groupStore.duplicatePasswordGroups.value.size;
+        const beforeDuplicteValueGroupsCount = app.currentVault.groupStore.duplicateValueGroups.value.size;
 
         await logIntoOfflineMode(mergingGroupAddTest, ctx);
 
@@ -676,10 +682,10 @@ mergingDataTestSuite.tests.push({
         ctx.assertUndefined("Offline dup empty value Group one does not exist", app.currentVault.groupStore.valueGroupsByID.value.get(offlineDupEmptyValueGroupOne.id.value));
         ctx.assertUndefined("Offline dup empty value Group two does not exist", app.currentVault.groupStore.valueGroupsByID.value.get(offlineDupEmptyValueGroupTwo.id.value));
 
-        ctx.assertEquals("No offline duplicate password Group", app.currentVault.groupStore.duplicatePasswordGroups.value.size, 0);
-        ctx.assertEquals("No offline duplicate value Group", app.currentVault.groupStore.duplicateValueGroups.value.size, 0);
+        ctx.assertEquals("No new offline duplicate password Group", app.currentVault.groupStore.duplicatePasswordGroups.value.size, beforeDuplicatePasswordGroupsCount);
+        ctx.assertEquals("No new offline duplicate value Group", app.currentVault.groupStore.duplicateValueGroups.value.size, beforeDuplicteValueGroupsCount);
 
-        ctx.assertEquals("No added offline empty password Group", app.currentVault.groupStore.emptyPasswordGroups.value.size, beforeEmptyGroupsCount);
+        ctx.assertEquals("No added offline empty password Group", app.currentVault.groupStore.emptyPasswordGroups.value.size, beforeEmptyPasswordGroupsCount);
         ctx.assertEquals("No offline empty value Group", app.currentVault.groupStore.emptyValueGroups.value.size, 0);
 
         const onlineDupEmptypasswordGroupOne = defaultGroup(DataType.Passwords);
@@ -1291,7 +1297,7 @@ mergingDataTestSuite.tests.push({
 
 const mergingPasswordDeleteTest = "Merging Deleted Passwords Works";
 mergingDataTestSuite.tests.push({
-    name: mergingPasswordAddTest, func: async (ctx: TestContext) =>
+    name: mergingPasswordDeleteTest, func: async (ctx: TestContext) =>
     {
         const dupPasswordOne = defaultPassword();
         dupPasswordOne.login.value = "MMerging Delete Duplidate Password 1";
@@ -1482,6 +1488,7 @@ mergingDataTestSuite.tests.push({
         retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)!;
 
         ctx.assertTruthy("Merged Security Question one doesn't exist", !retrievedPassword.value.securityQuestions.value.has("1"));
+        ctx.assertTruthy("Merged Security Question two does exist", retrievedPassword.value.securityQuestions.value.has("2"));
         ctx.assertTruthy("Merged Security Question three doesn't exist", !retrievedPassword.value.securityQuestions.value.has("3"));
 
         const securityQuestion = retrievedPassword.value.securityQuestions.value.get("2");
@@ -1497,6 +1504,11 @@ mergingDataTestSuite.tests.push({
     {
         const password = defaultPassword();
         password.domain.value = "Merging Deleted Filters / Groups for password Works";
+        password.password.value = "Merging Deleted Filters / Groups for password Works";
+        password.email.value = "Merging Deleted Filters / Groups for password Works";
+        password.passwordFor.value = "Merging Deleted Filters / Groups for password Works";
+        password.additionalInformation.value = "Merging Deleted Filters / Groups for password Works";
+        password.login.value = "Merging Deleted Filters / Groups for password Works";
 
         const filter = defaultFilter(DataType.Passwords);
         filter.name.value = "Merging Deleted Filters / Groups for password Works";
@@ -1535,16 +1547,16 @@ mergingDataTestSuite.tests.push({
         }));
 
         const group = defaultGroup(DataType.Passwords);
-        group.name.value = "Merging Added Group For Password";
+        group.name.value = "Merging Deleted Filters / Groups for password Works";
 
         const group2 = defaultGroup(DataType.Passwords);
-        group.name.value = "Merging Added Group For Password";
+        group.name.value = "Merging Deleted Filters / Groups for password Works";
 
         const group3 = defaultGroup(DataType.Passwords);
-        group.name.value = "Merging Added Group For Password";
+        group.name.value = "Merging Deleted Filters / Groups for password Works";
 
         const group4 = defaultGroup(DataType.Passwords);
-        group.name.value = "Merging Added Group For Password";
+        group.name.value = "Merging Deleted Filters / Groups for password Works";
 
         let addedFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter);
         ctx.assertTruthy("Add Filter 1 succeeded", addedFilterSucceeded);
@@ -1582,74 +1594,120 @@ mergingDataTestSuite.tests.push({
 
         let retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
         ctx.assertTruthy("Retrieved Password exists", retrievedPassword);
-        ctx.assertEquals("offline password has 4 groups", retrievedPassword?.value.groups.value.size, 4);
-        ctx.assertEquals("offline password has 4 filters", retrievedPassword?.value.filters.value.size, 4);
+        ctx.assertTruthy("offline password has filter 1", retrievedPassword?.value.filters.value.has(filter.id.value));
+        ctx.assertTruthy("offline password has filter 2", retrievedPassword?.value.filters.value.has(filter2.id.value));
+        ctx.assertTruthy("offline password has filter 3", retrievedPassword?.value.filters.value.has(filter3.id.value));
+        ctx.assertTruthy("offline password has filter 4", retrievedPassword?.value.filters.value.has(filter4.id.value));
 
-        let retrievedFilter = app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value);
+        ctx.assertTruthy("offline password has group 1", retrievedPassword?.value.groups.value.has(group.id.value));
+        ctx.assertTruthy("offline password has group 2", retrievedPassword?.value.groups.value.has(group2.id.value));
+        ctx.assertTruthy("offline password has group 3", retrievedPassword?.value.groups.value.has(group3.id.value));
+        ctx.assertTruthy("offline password has group 4", retrievedPassword?.value.groups.value.has(group4.id.value));
+
+        let filterState = app.currentVault.filterStore.cloneState();
+        let retrievedFilter = filterState.passwordFiltersByID.value.get(filter.id.value);
         let deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
         ctx.assertTruthy("Delete filter 1 succeeded", deltedSucceeded);
 
-        retrievedFilter = app.currentVault.filterStore.passwordFiltersByID.value.get(filter2.id.value);
+        retrievedFilter = filterState.passwordFiltersByID.value.get(filter2.id.value);
         retrievedFilter!.value.name.value = "Updated";
         let updateSucceeded = await app.currentVault.filterStore.updateFilter(masterKey, retrievedFilter!.value);
         ctx.assertTruthy("Update filter 2 offline succeeded", updateSucceeded);
 
-        retrievedFilter = app.currentVault.filterStore.passwordFiltersByID.value.get(filter3.id.value);
+        retrievedFilter = filterState.passwordFiltersByID.value.get(filter3.id.value);
         deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
         ctx.assertTruthy("Delete filter 3 offline succeeded", updateSucceeded);
 
-        let retrievedGroup = app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value);
+        let groupState = app.currentVault.groupStore.cloneState();
+        let retrievedGroup = groupState.passwordGroupsByID.value.get(group.id.value);
         deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
         ctx.assertTruthy("Delete group 1 succeeded", deltedSucceeded);
 
-        retrievedGroup = app.currentVault.groupStore.passwordGroupsByID.value.get(group2.id.value);
+        retrievedGroup = groupState.passwordGroupsByID.value.get(group2.id.value);
         retrievedGroup!.value.name.value = "Updated";
         updateSucceeded = await app.currentVault.groupStore.updateGroup(masterKey, retrievedGroup!.value);
         ctx.assertTruthy("Update group 2 offline succeeded", updateSucceeded);
 
-        retrievedGroup = app.currentVault.groupStore.passwordGroupsByID.value.get(group3.id.value);
+        retrievedGroup = groupState.passwordGroupsByID.value.get(group3.id.value);
         deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
         ctx.assertTruthy("Delete group 3 offline succeeded", updateSucceeded);
 
         retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
-        ctx.assertEquals("Password only has 2 filters", retrievedPassword?.value.filters.value.size, 2);
-        ctx.assertEquals("Password only has 2 groups", retrievedPassword?.value.groups.value.size, 2);
+
+        ctx.assertTruthy("offline password doesn't have filter 1", !retrievedPassword?.value.filters.value.has(filter.id.value));
+        ctx.assertTruthy("offline password has filter 2", retrievedPassword?.value.filters.value.has(filter2.id.value));
+        ctx.assertTruthy("offline password doesn't have filter 3", !retrievedPassword?.value.filters.value.has(filter3.id.value));
+        ctx.assertTruthy("offline password has filter 4", retrievedPassword?.value.filters.value.has(filter4.id.value));
+
+        ctx.assertTruthy("offline password doesn't have group 1", !retrievedPassword?.value.groups.value.has(group.id.value));
+        ctx.assertTruthy("offline password has group 2", retrievedPassword?.value.groups.value.has(group2.id.value));
+        ctx.assertTruthy("offline password doesn't have group 3", !retrievedPassword?.value.groups.value.has(group3.id.value));
+        ctx.assertTruthy("offline password has group 4", retrievedPassword?.value.groups.value.has(group4.id.value));
 
         await copyDatabaseAndLogIntoOnlineMode(mergingFilterGroupDeleteForPasswordTest, ctx);
 
         retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
-        ctx.assertEquals("online password has 4 groups", retrievedPassword?.value.groups.value.size, 4);
-        ctx.assertEquals("onlilne password has 4 filters", retrievedPassword?.value.filters.value.size, 4);
+        ctx.assertTruthy("online password has filter 1", retrievedPassword?.value.filters.value.has(filter.id.value));
+        ctx.assertTruthy("online password has filter 2", retrievedPassword?.value.filters.value.has(filter2.id.value));
+        ctx.assertTruthy("online password has filter 3", retrievedPassword?.value.filters.value.has(filter3.id.value));
+        ctx.assertTruthy("online password has filter 4", retrievedPassword?.value.filters.value.has(filter4.id.value));
 
-        retrievedFilter = app.currentVault.filterStore.passwordFiltersByID.value.get(filter2.id.value);
+        ctx.assertTruthy("online password has group 1", retrievedPassword?.value.groups.value.has(group.id.value));
+        ctx.assertTruthy("online password has group 2", retrievedPassword?.value.groups.value.has(group2.id.value));
+        ctx.assertTruthy("online password has group 3", retrievedPassword?.value.groups.value.has(group3.id.value));
+        ctx.assertTruthy("online password has group 4", retrievedPassword?.value.groups.value.has(group4.id.value));
+
+        filterState = app.currentVault.filterStore.cloneState();
+
+        retrievedFilter = filterState.passwordFiltersByID.value.get(filter2.id.value);
         deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
         ctx.assertTruthy("Delete filter 2 online succeeded", deltedSucceeded);
 
-        retrievedFilter = app.currentVault.filterStore.passwordFiltersByID.value.get(filter3.id.value);
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+
+        retrievedFilter = filterState.passwordFiltersByID.value.get(filter3.id.value);
         retrievedFilter!.value.name.value = "Updated";
         updateSucceeded = await app.currentVault.filterStore.updateFilter(masterKey, retrievedFilter!.value);
         ctx.assertTruthy("Update filter 3 online succeeded", updateSucceeded);
 
-        retrievedFilter = app.currentVault.filterStore.passwordFiltersByID.value.get(filter4.id.value);
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+
+        retrievedFilter = filterState.passwordFiltersByID.value.get(filter4.id.value);
         deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
         ctx.assertTruthy("Delete filter 4 online succeeded", updateSucceeded);
 
-        retrievedGroup = app.currentVault.groupStore.passwordGroupsByID.value.get(group2.id.value);
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+
+        groupState = app.currentVault.groupStore.cloneState();
+
+        retrievedGroup = groupState.passwordGroupsByID.value.get(group2.id.value);
         deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
         ctx.assertTruthy("Delete group 1 online succeeded", deltedSucceeded);
 
-        retrievedGroup = app.currentVault.groupStore.passwordGroupsByID.value.get(group3.id.value);
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+
+        retrievedGroup = groupState.passwordGroupsByID.value.get(group3.id.value);
         retrievedGroup!.value.name.value = "Updated";
         updateSucceeded = await app.currentVault.groupStore.updateGroup(masterKey, retrievedGroup!.value);
         ctx.assertTruthy("Update group 3 online succeeded", updateSucceeded);
 
-        retrievedGroup = app.currentVault.groupStore.passwordGroupsByID.value.get(group4.id.value);
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+
+        retrievedGroup = groupState.passwordGroupsByID.value.get(group4.id.value);
         deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
         ctx.assertTruthy("Delete group 4 online succeeded", updateSucceeded);
 
         retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
-        ctx.assertEquals("Password only has 2 filters", retrievedPassword?.value.filters.value.size, 2);
-        ctx.assertEquals("Password only has 2 groups", retrievedPassword?.value.groups.value.size, 2);
+
+        ctx.assertTruthy("online password has filter 1", retrievedPassword?.value.filters.value.has(filter.id.value));
+        ctx.assertTruthy("online password doesn't have filter 2", !retrievedPassword?.value.filters.value.has(filter2.id.value));
+        ctx.assertTruthy("online password has filter 3", retrievedPassword?.value.filters.value.has(filter3.id.value));
+        ctx.assertTruthy("online password doesn't have filter 4", !retrievedPassword?.value.filters.value.has(filter4.id.value));
+
+        ctx.assertTruthy("online password has group 1", retrievedPassword?.value.groups.value.has(group.id.value));
+        ctx.assertTruthy("online password doesn't have group 2", !retrievedPassword?.value.groups.value.has(group2.id.value));
+        ctx.assertTruthy("online password has group 3", retrievedPassword?.value.groups.value.has(group3.id.value));
+        ctx.assertTruthy("online password doesn't have group 4", !retrievedPassword?.value.groups.value.has(group4.id.value));
 
         await swapToSecondDatabaseAndLogIn(mergingFilterGroupDeleteForPasswordTest, ctx);
 
@@ -1664,21 +1722,214 @@ mergingDataTestSuite.tests.push({
         ctx.assertTruthy("Group 4 doesn't exist", !app.currentVault.groupStore.passwordGroupsByID.value.has(group4.id.value));
 
         retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
-        ctx.assertTruthy("Password doesn't has filter 1", !retrievedPassword?.value.filters.value.has(filter.id.value));
+        ctx.assertTruthy("Password doesn't have filter 1", !retrievedPassword?.value.filters.value.has(filter.id.value));
         ctx.assertTruthy("Password does has filter 2", retrievedPassword?.value.filters.value.has(filter2.id.value));
         ctx.assertTruthy("Password does has filter 3", retrievedPassword?.value.filters.value.has(filter3.id.value));
-        ctx.assertTruthy("Password doesn't has filter 4", !retrievedPassword?.value.filters.value.has(filter4.id.value));
+        ctx.assertTruthy("Password doesn't have filter 4", !retrievedPassword?.value.filters.value.has(filter4.id.value));
 
-        ctx.assertTruthy("Password doesn't has group 1", !retrievedPassword?.value.groups.value.has(group.id.value));
+        ctx.assertTruthy("Password doesn't have group 1", !retrievedPassword?.value.groups.value.has(group.id.value));
         ctx.assertTruthy("Password does has group 2", retrievedPassword?.value.groups.value.has(group2.id.value));
         ctx.assertTruthy("Password does has group 3", retrievedPassword?.value.groups.value.has(group3.id.value));
-        ctx.assertTruthy("Password doesn't has group 4", !retrievedPassword?.value.groups.value.has(group4.id.value));
+        ctx.assertTruthy("Password doesn't have group 4", !retrievedPassword?.value.groups.value.has(group4.id.value));
+    }
+});
+
+const mergingFilterGroupDeleteForValueTest = "Merging Deleted Filters / Groups for value Works";
+mergingDataTestSuite.tests.push({
+    name: mergingFilterGroupDeleteForValueTest, func: async (ctx: TestContext) =>
+    {
+        const Value = defaultValue();
+        Value.name.value = "Merging Deleted Filters / Groups for Value Works";
+
+        const filter = defaultFilter(DataType.NameValuePairs);
+        filter.name.value = "Merging Deleted Filters / Groups for Value Works";
+        filter.conditions.value.set("1", new Field({
+            id: new Field("1"),
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("Merging Deleted Filters / Groups for Value Works")
+        }));
+
+        const filter2 = defaultFilter(DataType.NameValuePairs);
+        filter2.name.value = "Merging Deleted Filters / Groups for Value Works";
+        filter2.conditions.value.set("2", new Field({
+            id: new Field("2"),
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("Merging Deleted Filters / Groups for Value Works")
+        }));
+
+        const filter3 = defaultFilter(DataType.NameValuePairs);
+        filter3.name.value = "Merging Deleted Filters / Groups for Value Works";
+        filter3.conditions.value.set("3", new Field({
+            id: new Field("3"),
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("Merging Deleted Filters / Groups for Value Works")
+        }));
+
+        const filter4 = defaultFilter(DataType.NameValuePairs);
+        filter4.name.value = "Merging Deleted Filters / Groups for Value Works";
+        filter4.conditions.value.set("4", new Field({
+            id: new Field("4"),
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("Merging Deleted Filters / Groups for Value Works")
+        }));
+
+        const group = defaultGroup(DataType.NameValuePairs);
+        group.name.value = "Merging Added Group For Value";
+
+        const group2 = defaultGroup(DataType.NameValuePairs);
+        group.name.value = "Merging Added Group For Value";
+
+        const group3 = defaultGroup(DataType.NameValuePairs);
+        group.name.value = "Merging Added Group For Value";
+
+        const group4 = defaultGroup(DataType.NameValuePairs);
+        group.name.value = "Merging Added Group For Value";
+
+        let addedFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter);
+        ctx.assertTruthy("Add Filter 1 succeeded", addedFilterSucceeded);
+
+        addedFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter2);
+        ctx.assertTruthy("Add Filter 2 succeeded", addedFilterSucceeded);
+
+        addedFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter3);
+        ctx.assertTruthy("Add Filter 3 succeeded", addedFilterSucceeded);
+
+        addedFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter4);
+        ctx.assertTruthy("Add Filter 4 succeeded", addedFilterSucceeded);
+
+        let addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group);
+        ctx.assertTruthy("Add Group 1 succeeded", addedGroupSucceeded);
+
+        addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group2);
+        ctx.assertTruthy("Add Group 2 succeeded", addedGroupSucceeded);
+
+        addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group3);
+        ctx.assertTruthy("Add Group 3 succeeded", addedGroupSucceeded);
+
+        addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group4);
+        ctx.assertTruthy("Add Group 4 succeeded", addedGroupSucceeded);
+
+        Value.groups.value.set(group.id.value, new Field(group.id.value));
+        Value.groups.value.set(group2.id.value, new Field(group2.id.value));
+        Value.groups.value.set(group3.id.value, new Field(group3.id.value));
+        Value.groups.value.set(group4.id.value, new Field(group4.id.value));
+
+        let addValueSucceeded = await app.currentVault.valueStore.addNameValuePair(masterKey, Value);
+        ctx.assertTruthy("Add Value succeeded", addValueSucceeded);
+
+        await logIntoOfflineMode(mergingFilterGroupDeleteForValueTest, ctx);
+
+        let retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(Value.id.value);
+        ctx.assertTruthy("Retrieved Value exists", retrievedValue);
+        ctx.assertEquals("offline Value has 4 groups", retrievedValue?.value.groups.value.size, 4);
+        ctx.assertEquals("offline Value has 4 filters", retrievedValue?.value.filters.value.size, 4);
+
+        let filterState = app.currentVault.filterStore.cloneState();
+
+        let retrievedFilter = filterState.valueFiltersByID.value.get(filter.id.value);
+        let deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
+        ctx.assertTruthy("Delete filter 1 succeeded", deltedSucceeded);
+
+        retrievedFilter = filterState.valueFiltersByID.value.get(filter2.id.value);
+        retrievedFilter!.value.name.value = "Updated";
+        let updateSucceeded = await app.currentVault.filterStore.updateFilter(masterKey, retrievedFilter!.value);
+        ctx.assertTruthy("Update filter 2 offline succeeded", updateSucceeded);
+
+        retrievedFilter = filterState.valueFiltersByID.value.get(filter3.id.value);
+        deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
+        ctx.assertTruthy("Delete filter 3 offline succeeded", updateSucceeded);
+
+        let groupState = app.currentVault.groupStore.cloneState();
+
+        let retrievedGroup = groupState.valueGroupsByID.value.get(group.id.value);
+        deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
+        ctx.assertTruthy("Delete group 1 succeeded", deltedSucceeded);
+
+        retrievedGroup = groupState.valueGroupsByID.value.get(group2.id.value);
+        retrievedGroup!.value.name.value = "Updated";
+        updateSucceeded = await app.currentVault.groupStore.updateGroup(masterKey, retrievedGroup!.value);
+        ctx.assertTruthy("Update group 2 offline succeeded", updateSucceeded);
+
+        retrievedGroup = groupState.valueGroupsByID.value.get(group3.id.value);
+        deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
+        ctx.assertTruthy("Delete group 3 offline succeeded", updateSucceeded);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(Value.id.value);
+        ctx.assertEquals("Value only has 2 filters", retrievedValue?.value.filters.value.size, 2);
+        ctx.assertEquals("Value only has 2 groups", retrievedValue?.value.groups.value.size, 2);
+
+        await copyDatabaseAndLogIntoOnlineMode(mergingFilterGroupDeleteForValueTest, ctx);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(Value.id.value);
+        ctx.assertEquals("online Value has 4 groups", retrievedValue?.value.groups.value.size, 4);
+        ctx.assertEquals("onlilne Value has 4 filters", retrievedValue?.value.filters.value.size, 4);
+
+        filterState = app.currentVault.filterStore.cloneState();
+
+        retrievedFilter = filterState.valueFiltersByID.value.get(filter2.id.value);
+        deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
+        ctx.assertTruthy("Delete filter 2 online succeeded", deltedSucceeded);
+
+        retrievedFilter = filterState.valueFiltersByID.value.get(filter3.id.value);
+        retrievedFilter!.value.name.value = "Updated";
+        updateSucceeded = await app.currentVault.filterStore.updateFilter(masterKey, retrievedFilter!.value);
+        ctx.assertTruthy("Update filter 3 online succeeded", updateSucceeded);
+
+        retrievedFilter = filterState.valueFiltersByID.value.get(filter4.id.value);
+        deltedSucceeded = await app.currentVault.filterStore.deleteFilter(masterKey, retrievedFilter!.value);
+        ctx.assertTruthy("Delete filter 4 online succeeded", updateSucceeded);
+
+        groupState = app.currentVault.groupStore.cloneState();
+
+        retrievedGroup = groupState.valueGroupsByID.value.get(group2.id.value);
+        deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
+        ctx.assertTruthy("Delete group 1 online succeeded", deltedSucceeded);
+
+        retrievedGroup = groupState.valueGroupsByID.value.get(group3.id.value);
+        retrievedGroup!.value.name.value = "Updated";
+        updateSucceeded = await app.currentVault.groupStore.updateGroup(masterKey, retrievedGroup!.value);
+        ctx.assertTruthy("Update group 3 online succeeded", updateSucceeded);
+
+        retrievedGroup = groupState.valueGroupsByID.value.get(group4.id.value);
+        deltedSucceeded = await app.currentVault.groupStore.deleteGroup(masterKey, retrievedGroup!.value);
+        ctx.assertTruthy("Delete group 4 online succeeded", updateSucceeded);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(Value.id.value);
+        ctx.assertEquals("Value only has 2 filters", retrievedValue?.value.filters.value.size, 2);
+        ctx.assertEquals("Value only has 2 groups", retrievedValue?.value.groups.value.size, 2);
+
+        await swapToSecondDatabaseAndLogIn(mergingFilterGroupDeleteForValueTest, ctx);
+
+        ctx.assertTruthy("Filter 1 doesn't exist", !app.currentVault.filterStore.nameValuePairFiltersByID.value.has(filter.id.value));
+        ctx.assertTruthy("Filter 2 does exist", app.currentVault.filterStore.nameValuePairFiltersByID.value.has(filter2.id.value));
+        ctx.assertTruthy("Filter 3 does exist", app.currentVault.filterStore.nameValuePairFiltersByID.value.has(filter3.id.value));
+        ctx.assertTruthy("Filter 4 doesn't exist", !app.currentVault.filterStore.nameValuePairFiltersByID.value.has(filter4.id.value));
+
+        ctx.assertTruthy("Group 1 doesn't exist", !app.currentVault.groupStore.valueGroupsByID.value.has(group.id.value));
+        ctx.assertTruthy("Group 2 does exist", app.currentVault.groupStore.valueGroupsByID.value.has(group2.id.value));
+        ctx.assertTruthy("Group 3 does exist", app.currentVault.groupStore.valueGroupsByID.value.has(group3.id.value));
+        ctx.assertTruthy("Group 4 doesn't exist", !app.currentVault.groupStore.valueGroupsByID.value.has(group4.id.value));
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(Value.id.value);
+        ctx.assertTruthy("Value doesn't has filter 1", !retrievedValue?.value.filters.value.has(filter.id.value));
+        ctx.assertTruthy("Value does has filter 2", retrievedValue?.value.filters.value.has(filter2.id.value));
+        ctx.assertTruthy("Value does has filter 3", retrievedValue?.value.filters.value.has(filter3.id.value));
+        ctx.assertTruthy("Value doesn't has filter 4", !retrievedValue?.value.filters.value.has(filter4.id.value));
+
+        ctx.assertTruthy("Value doesn't has group 1", !retrievedValue?.value.groups.value.has(group.id.value));
+        ctx.assertTruthy("Value does has group 2", retrievedValue?.value.groups.value.has(group2.id.value));
+        ctx.assertTruthy("Value does has group 3", retrievedValue?.value.groups.value.has(group3.id.value));
+        ctx.assertTruthy("Value doesn't has group 4", !retrievedValue?.value.groups.value.has(group4.id.value));
     }
 });
 
 const mergingValueDeleteTest = "Merging Deleted Values Works";
 mergingDataTestSuite.tests.push({
-    name: mergingPasswordAddTest, func: async (ctx: TestContext) =>
+    name: mergingValueDeleteTest, func: async (ctx: TestContext) =>
     {
         const dupValueOne = defaultValue();
         dupValueOne.name.value = "MMerging Delete Duplidate Value 1";
@@ -1741,7 +1992,7 @@ mergingDataTestSuite.tests.push({
         ctx.assertTruthy("Duplicate Value two doesn't exist", !app.currentVault.valueStore.duplicateNameValuePairs.value.has(dupValueTwo.id.value));
 
         retrievedValue = valueState.valuesByID.value.get(dupValueTwo.id.value)!;
-        retrievedValue.value.domain.value = "updated";
+        retrievedValue.value.name.value = "updated";
 
         let updatedValueSucceeded = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
         ctx.assertTruthy("Update online Value 2 succeeded", updatedValueSucceeded);
@@ -1779,7 +2030,7 @@ mergingDataTestSuite.tests.push({
 
         valueState = app.currentVault.valueStore.cloneState();
         retrievedValue = valueState.valuesByID.value.get(dupValueFive.id.value)!;
-        retrievedValue.value.domain.value = "test 2";
+        retrievedValue.value.name.value = "test 2";
 
         updatedValueSucceeded = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
         ctx.assertTruthy("Update online Value succeeded", updatedValueSucceeded);
@@ -1811,7 +2062,7 @@ mergingDataTestSuite.tests.push({
 
 const mergingFilterDeleteTest = "Merging Deleted Filters Works";
 mergingDataTestSuite.tests.push({
-    name: mergingFilterUpdatesTest, func: async (ctx: TestContext) =>
+    name: mergingFilterDeleteTest, func: async (ctx: TestContext) =>
     {
         const filterOne = defaultFilter(DataType.Passwords);
         filterOne.name.value = "MMerging Updated Filter 1";
@@ -1896,7 +2147,7 @@ mergingDataTestSuite.tests.push({
 
         ctx.assertTruthy("merged Filter one doesn't exist", !app.currentVault.filterStore.passwordFiltersByID.value.has(filterOne.id.value));
         ctx.assertTruthy("merged Filter two does exist", app.currentVault.filterStore.passwordFiltersByID.value.has(filterTwo.id.value));
-        ctx.assertTruthy("merged Filter three does exist", !app.currentVault.filterStore.passwordFiltersByID.value.has(filterThree.id.value));
+        ctx.assertTruthy("merged Filter three does exist", app.currentVault.filterStore.passwordFiltersByID.value.has(filterThree.id.value));
         ctx.assertTruthy("merged Filter four doesn't exist", !app.currentVault.filterStore.passwordFiltersByID.value.has(filterFour.id.value));
     }
 });
@@ -2062,27 +2313,220 @@ mergingDataTestSuite.tests.push({
 
         ctx.assertTruthy("merged Group one doesn't exist", !app.currentVault.groupStore.passwordGroupsByID.value.has(groupOne.id.value));
         ctx.assertTruthy("merged Group two does exist", app.currentVault.groupStore.passwordGroupsByID.value.has(groupTwo.id.value));
-        ctx.assertTruthy("merged Group three does exist", !app.currentVault.groupStore.passwordGroupsByID.value.has(groupThree.id.value));
+        ctx.assertTruthy("merged Group three does exist", app.currentVault.groupStore.passwordGroupsByID.value.has(groupThree.id.value));
         ctx.assertTruthy("merged Group four doesn't exist", !app.currentVault.groupStore.passwordGroupsByID.value.has(groupFour.id.value));
     }
 });
 
-const mergingPasswordValueDeletesForGroupFilterTest = "Merging Deleted Password for Filters / Groups Works";
+const mergingPasswordDeletesForGroupFilterTest = "Merging Deleted Password for Filters / Groups Works";
 mergingDataTestSuite.tests.push({
-    name: mergingPasswordValueDeletesForGroupFilterTest, func: async (ctx: TestContext) =>
+    name: mergingPasswordDeletesForGroupFilterTest, func: async (ctx: TestContext) =>
     {
         const group = defaultGroup(DataType.Passwords);
         group.name.value = "Merging Deleted Password for Filters / Groups Works";
 
         const filter = defaultFilter(DataType.Passwords);
-        filter.conditions.value.set("4", new Field({
-            id: new Field("4"),
-            property: new Field("0"),
-            filterType: new Field(FilterConditionType.Contains),
-            value: new Field("0")
+        filter.conditions.value.set("1", new Field({
+            id: new Field("1"),
+            property: new Field("domain"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("Merging Deleted Password for Filters / Groups Works")
         }));
 
+        let addSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group);
+        ctx.assertTruthy("Add Group succeeded", addSucceeded);
 
+        addSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter);
+        ctx.assertTruthy("Add Filter succeeded", addSucceeded);
+
+        const password1 = defaultPassword();
+        password1.domain.value = "Merging Deleted Password for Filters / Groups Works";
+        password1.groups.value.set(group.id.value, new Field(group.id.value));
+
+        const password2 = defaultPassword();
+        password2.domain.value = "Merging Deleted Password for Filters / Groups Works";
+        password2.groups.value.set(group.id.value, new Field(group.id.value));
+
+        const password3 = defaultPassword();
+        password3.domain.value = "Merging Deleted Password for Filters / Groups Works";
+        password3.groups.value.set(group.id.value, new Field(group.id.value));
+
+        const password4 = defaultPassword();
+        password4.domain.value = "Merging Deleted Password for Filters / Groups Works";
+        password4.groups.value.set(group.id.value, new Field(group.id.value));
+
+        addSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password1);
+        ctx.assertTruthy("Add Password 1 succeeded", addSucceeded);
+
+        addSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password2);
+        ctx.assertTruthy("Add Password 2 succeeded", addSucceeded);
+
+        addSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password3);
+        ctx.assertTruthy("Add Password 3 succeeded", addSucceeded);
+
+        addSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password4);
+        ctx.assertTruthy("Add Password 4 succeeded", addSucceeded);
+
+        ctx.assertEquals("Group has 4 passwords", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)!.value.passwords.value.size, 4);
+        ctx.assertEquals("Filter has 4 passwords", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)!.value.passwords.value.size, 4);
+
+        await logIntoOfflineMode(mergingPasswordDeletesForGroupFilterTest, ctx);
+
+        let retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password1.id.value);
+        let deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
+        ctx.assertTruthy("Delete password 1 succeeded", deleteSucceeded);
+
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password2.id.value);
+        retrievedPassword!.value.domain.value = "updated";
+
+        let updatedSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
+        ctx.assertTruthy("Updated password 2 succeeded", updatedSucceeded);
+
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password3.id.value);
+        deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
+        ctx.assertTruthy("Delete password 3 succeeded", deleteSucceeded);
+
+        await copyDatabaseAndLogIntoOnlineMode(mergingPasswordDeletesForGroupFilterTest, ctx);
+
+        ctx.assertEquals("Group has 4 passwords", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)!.value.passwords.value.size, 4);
+        ctx.assertEquals("Filter has 4 passwords", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)!.value.passwords.value.size, 4);
+
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password2.id.value);
+        deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
+        ctx.assertTruthy("deleted password 2 succeeded", updatedSucceeded);
+
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password3.id.value);
+        retrievedPassword!.value.domain.value = "updated";
+
+        updatedSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
+        ctx.assertTruthy("Updated password 3 succeeded", updatedSucceeded);
+
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password4.id.value);
+        deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
+        ctx.assertTruthy("deleted password 4 succeeded", updatedSucceeded);
+
+        await swapToSecondDatabaseAndLogIn(mergingPasswordDeletesForGroupFilterTest, ctx);
+
+        ctx.assertTruthy("Password 1 doesn't exist", !app.currentVault.passwordStore.passwordsByID.value.has(password1.id.value));
+        ctx.assertTruthy("Password 2 does exist", app.currentVault.passwordStore.passwordsByID.value.has(password2.id.value));
+        ctx.assertTruthy("Password 3 does exist", app.currentVault.passwordStore.passwordsByID.value.has(password3.id.value));
+        ctx.assertTruthy("Password 4 doesn't exist", !app.currentVault.passwordStore.passwordsByID.value.has(password4.id.value));
+
+        ctx.assertTruthy("Group doesn't have password 1", !app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)!.value.passwords.value.has(password1.id.value));
+        ctx.assertTruthy("Group has password 2", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)!.value.passwords.value.has(password2.id.value));
+        ctx.assertTruthy("Group has password 3", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)!.value.passwords.value.has(password3.id.value));
+        ctx.assertTruthy("Group doesn't have password 4", !app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)!.value.passwords.value.has(password4.id.value));
+
+        ctx.assertTruthy("Filter doesn't have password 1", !app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)!.value.passwords.value.has(password1.id.value));
+        ctx.assertTruthy("Filter has password 2", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)!.value.passwords.value.has(password2.id.value));
+        ctx.assertTruthy("Filter has password 3", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)!.value.passwords.value.has(password3.id.value));
+        ctx.assertTruthy("Filter doesn't have password 4", !app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)!.value.passwords.value.has(password4.id.value));
+    }
+});
+
+const mergingValueDeletesForGroupFilterTest = "Merging Deleted Values for Filters / Groups Works";
+mergingDataTestSuite.tests.push({
+    name: mergingValueDeletesForGroupFilterTest, func: async (ctx: TestContext) =>
+    {
+        const group = defaultGroup(DataType.NameValuePairs);
+        group.name.value = "Merging Deleted Values for Filters / Groups Works";
+
+        const filter = defaultFilter(DataType.NameValuePairs);
+        filter.conditions.value.set("1", new Field({
+            id: new Field("1"),
+            property: new Field("name"),
+            filterType: new Field(FilterConditionType.EqualTo),
+            value: new Field("Merging Deleted Values for Filters / Groups Works")
+        }));
+
+        let addSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group);
+        ctx.assertTruthy("Add Group succeeded", addSucceeded);
+
+        addSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter);
+        ctx.assertTruthy("Add Filter succeeded", addSucceeded);
+
+        const value1 = defaultValue();
+        value1.name.value = "Merging Deleted Values for Filters / Groups Works";
+        value1.groups.value.set(group.id.value, new Field(group.id.value));
+
+        const value2 = defaultValue();
+        value2.name.value = "Merging Deleted Values for Filters / Groups Works";
+        value2.groups.value.set(group.id.value, new Field(group.id.value));
+
+        const value3 = defaultValue();
+        value3.name.value = "Merging Deleted Values for Filters / Groups Works";
+        value3.groups.value.set(group.id.value, new Field(group.id.value));
+
+        const value4 = defaultValue();
+        value4.name.value = "Merging Deleted Values for Filters / Groups Works";
+        value4.groups.value.set(group.id.value, new Field(group.id.value));
+
+        addSucceeded = await app.currentVault.valueStore.addNameValuePair(masterKey, value1);
+        ctx.assertTruthy("Add Value 1 succeeded", addSucceeded);
+
+        addSucceeded = await app.currentVault.valueStore.addNameValuePair(masterKey, value2);
+        ctx.assertTruthy("Add Value 2 succeeded", addSucceeded);
+
+        addSucceeded = await app.currentVault.valueStore.addNameValuePair(masterKey, value3);
+        ctx.assertTruthy("Add Value 3 succeeded", addSucceeded);
+
+        addSucceeded = await app.currentVault.valueStore.addNameValuePair(masterKey, value4);
+        ctx.assertTruthy("Add Value 4 succeeded", addSucceeded);
+
+        ctx.assertEquals("Group has 4 values", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)!.value.values.value.size, 4);
+        ctx.assertEquals("Filter has 4 values", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.size, 4);
+
+        await logIntoOfflineMode(mergingValueDeletesForGroupFilterTest, ctx);
+
+        let retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value1.id.value);
+        let deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
+        ctx.assertTruthy("Delete Value 1 succeeded", deleteSucceeded);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value2.id.value);
+        retrievedValue!.value.valueType.value = NameValuePairType.Passcode;
+
+        let updatedSucceeded = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
+        ctx.assertTruthy("Updated Value 2 succeeded", updatedSucceeded);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value3.id.value);
+        deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
+        ctx.assertTruthy("Delete Value 3 succeeded", deleteSucceeded);
+
+        await copyDatabaseAndLogIntoOnlineMode(mergingValueDeletesForGroupFilterTest, ctx);
+
+        ctx.assertEquals("Group has 4 values", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)!.value.values.value.size, 4);
+        ctx.assertEquals("Filter has 4 values", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.size, 4);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value2.id.value);
+        deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
+        ctx.assertTruthy("deleted Value 2 succeeded", updatedSucceeded);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value3.id.value);
+        retrievedValue!.value.valueType.value = NameValuePairType.Information;
+
+        updatedSucceeded = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
+        ctx.assertTruthy("Updated Value 3 succeeded", updatedSucceeded);
+
+        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value4.id.value);
+        deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
+        ctx.assertTruthy("deleted Value 4 succeeded", updatedSucceeded);
+
+        await swapToSecondDatabaseAndLogIn(mergingValueDeletesForGroupFilterTest, ctx);
+
+        ctx.assertTruthy("Value 1 doesn't exist", !app.currentVault.valueStore.nameValuePairsByID.value.has(value1.id.value));
+        ctx.assertTruthy("Value 2 does exist", app.currentVault.valueStore.nameValuePairsByID.value.has(value2.id.value));
+        ctx.assertTruthy("Value 3 does exist", app.currentVault.valueStore.nameValuePairsByID.value.has(value3.id.value));
+        ctx.assertTruthy("Value 4 doesn't exist", !app.currentVault.valueStore.nameValuePairsByID.value.has(value4.id.value));
+
+        ctx.assertTruthy("Group doesn't have Value 1", !app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)!.value.values.value.has(value1.id.value));
+        ctx.assertTruthy("Group has Value 2", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)!.value.values.value.has(value2.id.value));
+        ctx.assertTruthy("Group has Value 3", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)!.value.values.value.has(value3.id.value));
+        ctx.assertTruthy("Group doesn't have Value 4", !app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)!.value.values.value.has(value4.id.value));
+
+        ctx.assertTruthy("Filter doesn't have Value 1", !app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.has(value1.id.value));
+        ctx.assertTruthy("Filter has Value 2", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.has(value2.id.value));
+        ctx.assertTruthy("Filter has Value 3", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.has(value3.id.value));
+        ctx.assertTruthy("Filter doesn't have Value 4", !app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.has(value4.id.value));
     }
 });
 

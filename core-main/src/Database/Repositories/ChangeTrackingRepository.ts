@@ -69,24 +69,30 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             for (let i = 0; i < oldKeys.length; i++)
             {
                 updatedValue = true;
-                console.log(`Inserted: ${oldKeys[i]} in ${JSON.vaulticStringify(oldObj)}`);
-                transaction.insertEntity(ChangeTracking.deleted(userID, manager.get(oldKeys[i], oldObj.value).id, Date.now()), masterKey, () => this);
+                const deletedTime = Date.now();
+                console.log(`\nDeleted: ${oldKeys[i]} in ${JSON.vaulticStringify(oldObj)} at ${deletedTime}`);
+                transaction.insertEntity(ChangeTracking.deleted(userID, manager.get(oldKeys[i], oldObj.value).id, deletedTime), masterKey, () => this);
             }
 
             // propagated the updated properties up to this object so that we can better merge deleted objects. i.e. if a property is deleted on one device after
             // the object was deleted on another, we still want to keep it
             if (updatedValue)
             {
+                console.log(`\nUpdatedValue: ${JSON.vaulticStringify(newObj)}`);
                 newObj.lastModifiedTime = Date.now();
+                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
             }
         }
         else 
         {
             // Only values have their last modified time set, objects do not. This isn't an issue
-            if (newObj.value != oldObj.value)
+            if (newObj.forceUpdate === true || newObj.value != oldObj.value)
             {
+                console.log(`\nUpdated obj. New: ${JSON.vaulticStringify(newObj)}, Old: ${JSON.vaulticStringify(oldObj)}`);
                 updatedValue = true;
                 newObj.lastModifiedTime = Date.now();
+                newObj.forceUpdate = false;
+
                 transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
             }
         }

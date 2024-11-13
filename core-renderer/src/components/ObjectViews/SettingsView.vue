@@ -91,7 +91,7 @@ export default defineComponent({
     {
         const refreshKey: Ref<string> = ref("");
 
-        // copy the objects so that we don't edit the original one
+        // copy the objects so that we don't edit the original one. Also needed for change tracking
         const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
         const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
 

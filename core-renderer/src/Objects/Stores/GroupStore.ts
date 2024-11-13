@@ -4,7 +4,7 @@ import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { api } from "../../API";
-import { DataType, IGroupable, AtRiskType, Group, DuplicateDataTypes } from "../../Types/DataTypes";
+import { DataType, IGroupable, AtRiskType, Group, DuplicateDataTypes, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { Field, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 
 export interface IGroupStoreState extends StoreState
@@ -70,7 +70,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             {
                 const pendingPasswordState = this.vault.passwordStore.cloneState();
 
-                this.syncPrimaryDataObjectsForGroup(group, "passwords", group.passwords.value, new Map(),
+                this.syncPrimaryDataObjectsForGroup(group, "passwords", new RelatedDataTypeChanges(group.passwords.value),
                     pendingPasswordState.passwordsByID, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
                     pendingState.passwordGroupsByID);
 
@@ -96,7 +96,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             {
                 const pendingValueState = this.vault.valueStore.cloneState();
 
-                this.syncPrimaryDataObjectsForGroup(group, "values", group.values.value, new Map(), pendingValueState.valuesByID,
+                this.syncPrimaryDataObjectsForGroup(group, "values", new RelatedDataTypeChanges(group.values.value), pendingValueState.valuesByID,
                     pendingState.emptyValueGroups, pendingState.duplicateValueGroups, pendingState.valueGroupsByID);
 
                 const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.valuesByID.value, pendingState.valueGroupsByID);
@@ -122,17 +122,16 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             return false;
         }
 
-        // need to get added and removed groups before updating the old group with the new one
         const primaryObjectCollection = updatedGroup.type.value == DataType.Passwords ? "passwords" : "values";
 
-        const addedPrimaryObjects = updatedGroup[primaryObjectCollection].value.difference(currentGroup.value[primaryObjectCollection].value);
-        const removedPrimaryObjects = currentGroup.value[primaryObjectCollection].value.difference(updatedGroup[primaryObjectCollection].value);
+        // need to get added and removed groups before updating the old group with the new one
+        const primaryObjectChanges = this.getRelatedDataTypeChanges(currentGroup.value[primaryObjectCollection].value, updatedGroup[primaryObjectCollection].value);
 
         if (updatedGroup.type.value == DataType.Passwords)
         {
             const pendingPasswordState = this.vault.passwordStore.cloneState();
 
-            this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
+            this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, primaryObjectChanges,
                 pendingPasswordState.passwordsByID, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
                 pendingState.passwordGroupsByID);
 
@@ -145,7 +144,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         {
             const pendingValueState = this.vault.valueStore.cloneState();
 
-            this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, addedPrimaryObjects, removedPrimaryObjects,
+            this.syncPrimaryDataObjectsForGroup(updatedGroup, primaryObjectCollection, primaryObjectChanges,
                 pendingValueState.valuesByID, pendingState.emptyValueGroups, pendingState.duplicateValueGroups,
                 pendingState.valueGroupsByID);
 
@@ -245,7 +244,10 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
                 return;
             }
 
-            group.value[primaryDataObjectCollection].value.set(primaryObjectID, new Field(primaryObjectID));
+            if (!group.value[primaryDataObjectCollection].value.has(primaryObjectID))
+            {
+                group.value[primaryDataObjectCollection].value.set(primaryObjectID, new Field(primaryObjectID));
+            }
 
             this.checkUpdateEmptySecondaryObject(
                 group.value.id.value, group.value[primaryDataObjectCollection].value, currentEmptyGroups);
@@ -262,7 +264,10 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
                 return;
             }
 
-            group.value[primaryDataObjectCollection].value.delete(primaryObjectID);
+            if (group.value[primaryDataObjectCollection].value.has(primaryObjectID))
+            {
+                group.value[primaryDataObjectCollection].value.delete(primaryObjectID);
+            }
 
             this.checkUpdateEmptySecondaryObject(
                 group.value.id.value, group.value[primaryDataObjectCollection].value, currentEmptyGroups);
@@ -276,14 +281,13 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
     private syncPrimaryDataObjectsForGroup<T extends IIdentifiable & IGroupable>(
         group: Group,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        addedPrimaryObjects: Map<string, Field<string>>,
-        removedPrimaryObjects: Map<string, Field<string>>,
+        primaryObjectChanges: RelatedDataTypeChanges,
         allPrimaryObjects: Field<Map<string, Field<T>>>,
         currentEmptyGroups: Field<Map<string, Field<string>>>,
         currentDuplicateGroups: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allSecondaryObjects: Field<Map<string, Field<Group>>>)
     {
-        addedPrimaryObjects.forEach((_, k) =>
+        primaryObjectChanges.added.forEach((_, k) =>
         {
             const primaryObject: Field<T> | undefined = allPrimaryObjects.value.get(k);
             if (primaryObject)
@@ -292,12 +296,21 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             }
         });
 
-        removedPrimaryObjects.forEach((_, k) =>
+        primaryObjectChanges.removed.forEach((_, k) =>
         {
             const primaryObject: Field<T> | undefined = allPrimaryObjects.value.get(k);
             if (primaryObject)
             {
                 primaryObject.value.groups.value.delete(group.id.value);
+            }
+        });
+
+        primaryObjectChanges.unchanged.forEach((_, k) =>
+        {
+            const primaryObject: Field<T> | undefined = allPrimaryObjects.value.get(k);
+            if (primaryObject)
+            {
+                primaryObject.value.groups.value.get(group.id.value)!.forceUpdate = true;
             }
         });
 

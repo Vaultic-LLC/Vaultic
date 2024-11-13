@@ -166,7 +166,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         const pendingPasswordState = this.vault.passwordStore.cloneState();
 
         this.syncFiltersForPrimaryDataObject(filtersToSync, pendingPasswordState.passwordsByID.value, "passwords", pendingState.emptyPasswordFilters,
-            pendingState.duplicatePasswordFilters, passwordFilters, allGroups);
+            pendingState.duplicatePasswordFilters, passwordFilters, allGroups, true);
 
         return pendingPasswordState;
     }
@@ -178,7 +178,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         const pendingValueState = this.vault.valueStore.cloneState();
 
         this.syncFiltersForPrimaryDataObject(filtersToSync, pendingValueState.valuesByID.value, "values", pendingState.emptyValueFilters,
-            pendingState.duplicateValueFilters, valueFilters, allGroups);
+            pendingState.duplicateValueFilters, valueFilters, allGroups, true);
 
         return pendingValueState;
     }
@@ -189,7 +189,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         const pendingState = this.cloneState();
 
         this.syncFiltersForPrimaryDataObject(pendingState.passwordFiltersByID.value, passwords, "passwords", pendingState.emptyPasswordFilters,
-            pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID, allGroups);
+            pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID, allGroups, false);
 
         return pendingState;
     }
@@ -200,7 +200,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         const pendingState = this.cloneState();
 
         this.syncFiltersForPrimaryDataObject(pendingState.valueFiltersByID.value, values, "values",
-            pendingState.emptyValueFilters, pendingState.duplicateValueFilters, pendingState.valueFiltersByID, allGroups);
+            pendingState.emptyValueFilters, pendingState.duplicateValueFilters, pendingState.valueFiltersByID, allGroups, false);
 
         return pendingState;
     }
@@ -304,7 +304,8 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         currentEmptyFilters: Field<Map<string, Field<string>>>,
         currentDuplicateFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allFilters: Field<Map<string, Field<Filter>>>,
-        allGroups: Field<Map<string, Field<Group>>>)
+        allGroups: Field<Map<string, Field<Group>>>,
+        updatingFilter: boolean)
     {
         filtersToSync.forEach((f, k, map) =>
         {
@@ -312,15 +313,33 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
             {
                 if (this.filterAppliesToDataObject(f, v, allGroups))
                 {
-                    v.value.filters.value.set(f.value.id.value, new Field(f.value.id.value));
+                    if (!v.value.filters.value.has(f.value.id.value))
+                    {
+                        v.value.filters.value.set(f.value.id.value, new Field(f.value.id.value));
+                    }
+                    else if (updatingFilter)
+                    {
+                        // for change tracking. make sure value is updated in case it is deleted on another device
+                        v.value.filters.value.get(f.value.id.value)!.forceUpdate = true;
+                    }
+
                     if (!f.value[primaryDataObjectCollection].value.has(v.value.id.value))
                     {
                         f.value[primaryDataObjectCollection].value.set(v.value.id.value, new Field(v.value.id.value));
                     }
+                    else if (updatingFilter)
+                    {
+                        // for change tracking. make sure value is updated in case it is deleted on another device
+                        f.value[primaryDataObjectCollection].value.get(v.value.id.value)!.forceUpdate = true;
+                    }
                 }
                 else
                 {
-                    v.value.filters.value.delete(f.value.id.value);
+                    if (v.value.filters.value.has(f.value.id.value))
+                    {
+                        v.value.filters.value.delete(f.value.id.value);
+                    }
+
                     if (f.value[primaryDataObjectCollection].value.has(v.value.id.value))
                     {
                         f.value[primaryDataObjectCollection].value.delete(v.value.id.value);

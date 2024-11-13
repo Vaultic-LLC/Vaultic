@@ -166,6 +166,20 @@ export interface Group extends ISecondaryDataObject
     color: Field<string>; // hex value
 }
 
+export class RelatedDataTypeChanges 
+{
+    added: Map<string, Field<string>>;
+    removed: Map<string, Field<string>>;
+    unchanged: Map<string, Field<string>>;
+
+    constructor(added?: Map<string, Field<string>>, removed?: Map<string, Field<string>>, unchanged?: Map<string, Field<string>>) 
+    {
+        this.added = added ?? new Map();
+        this.removed = removed ?? new Map();
+        this.unchanged = unchanged ?? new Map();
+    }
+}
+
 export function defaultPassword(): Password
 {
     return {

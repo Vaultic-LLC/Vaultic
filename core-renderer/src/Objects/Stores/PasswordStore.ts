@@ -251,7 +251,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
 
             for (let i = 0; i < updatedSecurityQuestionAnswers.length; i++)
             {
-                let sq = password.securityQuestions.value.get(updatedSecurityQuestionQuestions[i]);
+                let sq = password.securityQuestions.value.get(updatedSecurityQuestionAnswers[i]);
                 if (!sq)
                 {
                     continue;

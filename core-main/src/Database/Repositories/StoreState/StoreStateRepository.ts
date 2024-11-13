@@ -65,9 +65,13 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             newStateToUse = decyptedNewState.value;
         }
 
-        console.log(`\nupdating state: ${currentStateToUse}`);
-        console.log(`\nnew state: ${newStateToUse}`)
-        //console.log(`\nchange trackings: ${JSON.vaulticStringify(changeTrackings)}`);
+        if (currentStateToUse.includes('passwordsByID') || currentStateToUse.includes("passwordFiltersByID"))
+        {
+            console.log(`\nupdating state: ${currentStateToUse}`);
+            console.log(`\nnew state: ${newStateToUse}`)
+            console.log(`\nchange trackings: ${JSON.vaulticStringify(changeTrackings)}`);
+        }
+
         try 
         {
             const updatedState = this.mergeStoreStates(new Field(JSON.vaulticParse(currentStateToUse)), new Field(JSON.vaulticParse(newStateToUse)), changeTrackings);
@@ -129,7 +133,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         // deleted? Yes, but there I can't confirm times?
                         // TODO: test this. Duplicate and empty values should now be updated whenever their backing data type is updated, making them
                         // also stay if this condition is met
-                        console.log(`Not in local. New: ${JSON.vaulticStringify(newObj)}, Current: ${JSON.vaulticStringify(currentObj)}, Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
+                        console.log(`Not in local. Key: ${keys[i]} New: ${JSON.vaulticStringify(newObj)}, Current: ${JSON.vaulticStringify(currentObj)}, Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
                         if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj.value).lastModifiedTime)
                         {
                             manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);

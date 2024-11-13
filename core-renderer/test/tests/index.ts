@@ -49,6 +49,15 @@ export default async function runAllTests()
     results.printStatus();
 }
 
+export async function runAllPasswordTests()
+{
+    console.time();
+    await runTests(serverHelperTestSuite);
+    await runTests(passwordStoreSuite);
+
+    results.printStatus();
+}
+
 export async function runAllValueTests()
 {
     console.time();
