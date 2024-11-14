@@ -59,7 +59,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         this.initalized = ref(false)
         this.setCurrentPrimaryColor(DataType.Passwords);
 
-        this.init(appStore)
+        //this.init(appStore)
     }
 
     public updateState(state: UserPreferencesStoreState): void 

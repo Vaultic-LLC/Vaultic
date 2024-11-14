@@ -69,7 +69,7 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import ScrollView from './ScrollView.vue';
 
-import { AutoLockTime } from '../../Types/Settings';
+import { AutoLockTime } from '../../Types/App';
 import { GridDefinition } from '../../Types/Models';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import { VaultSettings } from "../../Objects/Stores/VaultStore";

@@ -5,23 +5,31 @@
         <div class="center">
             <ColorPaletteContainer />
             <Transition name="fade">
-                <BreachedPasswords v-if="isOnline" />
+                <BreachedPasswords v-if="isOnline && isVaultView" />
             </Transition>
-            <div id="tables">
-                <FilterGroupTable />
-                <PasswordValueTable />
-            </div>
+            <Transition name="fade">
+                <div id="tables" v-if="isVaultView">
+                    <FilterGroupTable />
+                    <PasswordValueTable />
+                </div>
+            </Transition>
         </div>
-        <PasswordValueGauges />
-        <FilterGroupGauges />
         <Transition name="fade">
-            <div v-if="isOnline" class="tempWidget secureProgressChartWidget">
+            <PasswordValueGauges v-if="isVaultView" />
+        </Transition>
+        <Transition name="fade">
+            <FilterGroupGauges v-if="isVaultView" />
+        </Transition>
+        <Transition name="fade">
+            <div v-if="isOnline && isVaultView" class="tempWidget secureProgressChartWidget">
                 <PasswordStrengthProgressChart />
             </div>
         </Transition>
-        <div class="tempWidget loginHistoryCalendarWidget">
-            <LoginHistoryCalendar />
-        </div>
+        <Transition  name="fade">
+            <div class="tempWidget loginHistoryCalendarWidget" v-if="isVaultView">
+                <LoginHistoryCalendar />
+            </div>
+        </Transition>
         <MenuWidget />
     </div>
 </template>
@@ -51,6 +59,7 @@ import { ColorPalette } from './Types/Colors';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import app from "./Objects/Stores/AppStore";
 import * as PolyFills from "@vaultic/shared/Types/PolyFills";
+import { AppView } from './Types/App';
 PolyFills.a;
 
 export default defineComponent({
@@ -76,6 +85,7 @@ export default defineComponent({
     },
     setup()
     {
+        const isVaultView: ComputedRef<boolean> = computed(() => app.isVaultView);
         const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
         const finishedMounting: Ref<boolean> = ref(false);
 
@@ -107,6 +117,8 @@ export default defineComponent({
 
         let clr = "#0f111d";
         return {
+            isVaultView,
+            AppView,
             backgroundColor,
             currentColorPalette,
             clr,
