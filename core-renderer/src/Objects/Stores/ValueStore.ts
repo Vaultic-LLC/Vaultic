@@ -7,7 +7,7 @@ import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import app from "./AppStore";
-import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, DuplicateDataTypes } from "../../Types/DataTypes";
+import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, DuplicateDataTypes, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
 interface IValueStoreState extends StoreState
@@ -63,8 +63,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         await this.incrementCurrentAndSafeValues(pendingState, pendingState.valuesByID);
 
         // update groups before filters
-        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, value.groups.value, new Map());
-        const pendingFilterState = this.vault.filterStore.syncFiltersForValues(new Map([[reactiveValue.value.id.value, reactiveValue]]), pendingGroupState.valueGroupsByID);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, new RelatedDataTypeChanges(value.groups.value));
+        const pendingFilterState = this.vault.filterStore.syncFiltersForValues(new Map([[reactiveValue.value.id.value, reactiveValue]]), pendingGroupState.valueGroupsByID, true);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -85,8 +85,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
             return false;
         }
 
-        const addedGroups = updatedValue.groups.value.difference(currentValue.value.groups.value);
-        const removedGroups = currentValue.value.groups.value.difference(updatedValue.groups.value);
+        // retrieve these before updating
+        const channgedGroups = this.getRelatedDataTypeChanges(currentValue.value.groups.value, updatedValue.groups.value);
 
         if (valueWasUpdated)
         {
@@ -115,8 +115,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         const newReactiveValue = createReactiveValue(updatedValue);
         currentValue.value = newReactiveValue;
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(updatedValue.id.value, addedGroups, removedGroups);
-        const pendingFilterState = this.vault.filterStore.syncFiltersForValues(new Map([[currentValue.value.id.value, currentValue]]), pendingGroupState.valueGroupsByID);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(updatedValue.id.value, channgedGroups);
+        const pendingFilterState = this.vault.filterStore.syncFiltersForValues(new Map([[currentValue.value.id.value, currentValue]]), pendingGroupState.valueGroupsByID, true);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -142,7 +142,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
 
         await this.incrementCurrentAndSafeValues(pendingState, pendingState.valuesByID);
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, new Map(), value.groups.value);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForValues(value.id.value, new RelatedDataTypeChanges(undefined, value.groups.value));
         const pendingFilterState = this.vault.filterStore.removeValuesFromFilters(value.id.value);
 
         transaction.updateVaultStore(this, pendingState);

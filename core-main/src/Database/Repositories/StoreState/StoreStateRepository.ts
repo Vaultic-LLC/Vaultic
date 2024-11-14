@@ -37,7 +37,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
     public async mergeStates(key: string, currentStateID: number, newState: DeepPartial<StoreState>, changeTrackings: Dictionary<ChangeTracking>,
         transaction: Transaction, decrypt: boolean = true)
     {
-        //console.log(`\nmerging state for ${JSON.vaulticStringify(newState)}`);
         let currentState = await this.getByID(currentStateID);
         if (!currentState || (key && !(await currentState.verify(key))))
         {
@@ -65,18 +64,10 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             newStateToUse = decyptedNewState.value;
         }
 
-        if (currentStateToUse.includes('passwordsByID') || currentStateToUse.includes("passwordFiltersByID"))
-        {
-            console.log(`\nupdating state: ${currentStateToUse}`);
-            console.log(`\nnew state: ${newStateToUse}`)
-            console.log(`\nchange trackings: ${JSON.vaulticStringify(changeTrackings)}`);
-        }
-
         try 
         {
             const updatedState = this.mergeStoreStates(new Field(JSON.vaulticParse(currentStateToUse)), new Field(JSON.vaulticParse(newStateToUse)), changeTrackings);
             currentState.state = JSON.vaulticStringify(updatedState.value);
-            //console.log(`\nnew state: ${currentState.state}`);
             currentState.previousSignature = newState.previousSignature;
 
             transaction.updateEntity(currentState, key, this.getVaulticRepository);
@@ -87,7 +78,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             throw e;
         }
 
-        console.log('updated succeessfully');
         return true;
     }
 
@@ -123,24 +113,9 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                     else
                     {
                         // object was edited on another device after it was deleted on this one, keep it
-                        // TODO: this can cause data integrity issues. If I delete a filter on another device and 
-                        // it was an empty filter, it is no longer in empty filters. This will add the filter back but 
-                        // not add it back to empty filters. Or would it? That filter in emptyFilters would have a changeTracking
-                        // record for deleted. It still wouldn't because the Field in emptyFilters doesn't get updated if 
-                        // it doesn't change, i.e. editing the filter wouldn't update the Field<string> of the id in emptyFilters lastModifiedTime
-                        // so this check would fail. If I also updated the lastModifiedTime of the record in emptyFilters, then this would work and
-                        // add it back here. Do I have to worry abou that below as well where I am potentially keeping records that were 
-                        // deleted? Yes, but there I can't confirm times?
-                        // TODO: test this. Duplicate and empty values should now be updated whenever their backing data type is updated, making them
-                        // also stay if this condition is met
-                        console.log(`Not in local. Key: ${keys[i]} New: ${JSON.vaulticStringify(newObj)}, Current: ${JSON.vaulticStringify(currentObj)}, Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
                         if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj.value).lastModifiedTime)
                         {
                             manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);
-                        }
-                        else 
-                        {
-                            console.log(`Didn't add. New: ${JSON.vaulticStringify(newObj)}, Current: ${JSON.vaulticStringify(currentObj)}, Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
                         }
                     }
                 }
@@ -157,18 +132,14 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             {
                 const id = manager.get(currentKeys[i], currentObj.value).id;
                 const changeTracking = changeTrackings[id];
+
                 // wasn't modified locally and not in newObj, it was deleted on another device.
                 // If state is Inserted, we want to keep it. 
                 // If state is Updated, we want to keep it since we can't check when it was deleted on another device
                 // If state is Deleted, it wouldn't be in currentKeys
                 if (!changeTracking)
                 {
-                    console.log(`\ndeleting: ${currentKeys[i]} from ${JSON.vaulticStringify(currentObj)}`)
                     manager.delete(currentKeys[i], currentObj.value);
-                }
-                else 
-                {
-                    console.log(`\nkeeping ${JSON.vaulticStringify(currentObj)}. Change Tracking: ${JSON.vaulticStringify(changeTracking)}`);
                 }
             }
         }

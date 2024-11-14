@@ -74,7 +74,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
                     pendingPasswordState.passwordsByID, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
                     pendingState.passwordGroupsByID);
 
-                const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.passwordsByID.value, pendingState.passwordGroupsByID);
+                const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.passwordsByID.value, pendingState.passwordGroupsByID, false);
 
                 transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
                 transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
@@ -99,7 +99,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
                 this.syncPrimaryDataObjectsForGroup(group, "values", new RelatedDataTypeChanges(group.values.value), pendingValueState.valuesByID,
                     pendingState.emptyValueGroups, pendingState.duplicateValueGroups, pendingState.valueGroupsByID);
 
-                const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.valuesByID.value, pendingState.valueGroupsByID);
+                const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.valuesByID.value, pendingState.valueGroupsByID, false);
 
                 transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
                 transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
@@ -135,7 +135,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
                 pendingPasswordState.passwordsByID, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups,
                 pendingState.passwordGroupsByID);
 
-            const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.passwordsByID.value, pendingState.passwordGroupsByID);
+            const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.passwordsByID.value, pendingState.passwordGroupsByID, false);
 
             transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
             transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
@@ -148,7 +148,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
                 pendingValueState.valuesByID, pendingState.emptyValueGroups, pendingState.duplicateValueGroups,
                 pendingState.valueGroupsByID);
 
-            const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.valuesByID.value, pendingState.valueGroupsByID);
+            const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.valuesByID.value, pendingState.valueGroupsByID, false);
 
             transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
             transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
@@ -177,7 +177,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(group.id.value, "groups");
 
             // do this here since it can update passwords
-            const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.passwordsByID.value, pendingState.passwordGroupsByID);
+            const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(pendingPasswordState.passwordsByID.value, pendingState.passwordGroupsByID, false);
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(group.id.value, pendingState.emptyPasswordGroups);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id.value, pendingState.duplicatePasswordGroups);
@@ -191,7 +191,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(group.id.value, "groups");
 
             // do this here since it can update values
-            const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.valuesByID.value, pendingState.valueGroupsByID);
+            const pendingFilterState = this.vault.filterStore.syncFiltersForValues(pendingValueState.valuesByID.value, pendingState.valueGroupsByID, false);
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(group.id.value, pendingState.emptyValueGroups);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(group.id.value, pendingState.duplicateValueGroups);
@@ -204,24 +204,19 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         return await transaction.commit(masterKey);
     }
 
-    syncGroupsForPasswords(
-        passwordID: string,
-        addedGroups: Map<string, Field<string>>,
-        removedGroups: Map<string, Field<string>>)
+    syncGroupsForPasswords(passwordID: string, changedGroups: RelatedDataTypeChanges)
     {
         const pendingState = this.cloneState();
-        this.syncGroupsForPrimaryObject(passwordID, "passwords", addedGroups, removedGroups, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups, pendingState.passwordGroupsByID);
+        this.syncGroupsForPrimaryObject(passwordID, "passwords", changedGroups, pendingState.emptyPasswordGroups, pendingState.duplicatePasswordGroups, pendingState.passwordGroupsByID);
 
         return pendingState;
     }
 
     syncGroupsForValues(
-        valueID: string,
-        addedGroups: Map<string, Field<string>>,
-        removedGroups: Map<string, Field<string>>)
+        valueID: string, changedGroups: RelatedDataTypeChanges)
     {
         const pendingState = this.cloneState();
-        this.syncGroupsForPrimaryObject(valueID, "values", addedGroups, removedGroups, pendingState.emptyValueGroups, pendingState.duplicateValueGroups, pendingState.valueGroupsByID);
+        this.syncGroupsForPrimaryObject(valueID, "values", changedGroups, pendingState.emptyValueGroups, pendingState.duplicateValueGroups, pendingState.valueGroupsByID);
 
         return pendingState;
     }
@@ -230,13 +225,12 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
     private syncGroupsForPrimaryObject(
         primaryObjectID: string,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        addedGroups: Map<string, Field<string>>,
-        removedGroups: Map<string, Field<string>>,
+        changedGroups: RelatedDataTypeChanges,
         currentEmptyGroups: Field<Map<string, Field<string>>>,
         currentDuplicateSecondaryObjects: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allSecondaryObjects: Field<Map<string, Field<Group>>>)
     {
-        addedGroups.forEach((value, key, map) =>
+        changedGroups.added.forEach((value, key, map) =>
         {
             const group = allSecondaryObjects.value.get(key);
             if (!group)
@@ -256,7 +250,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
                 currentDuplicateSecondaryObjects, allSecondaryObjects)
         });
 
-        removedGroups.forEach((value, key, map) =>
+        changedGroups.removed.forEach((value, key, map) =>
         {
             const group = allSecondaryObjects.value.get(key);
             if (!group)
@@ -274,6 +268,20 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
             this.checkUpdateDuplicateSecondaryObjects(group.value, primaryDataObjectCollection,
                 currentDuplicateSecondaryObjects, allSecondaryObjects)
+        });
+
+        changedGroups.unchanged.forEach((value, key, map) =>
+        {
+            const group = allSecondaryObjects.value.get(key);
+            if (!group)
+            {
+                return;
+            }
+
+            if (group.value[primaryDataObjectCollection].value.has(primaryObjectID))
+            {
+                group.value[primaryDataObjectCollection].value.get(primaryObjectID)!.forceUpdate = true;
+            }
         });
     }
 

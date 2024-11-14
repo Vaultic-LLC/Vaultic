@@ -102,6 +102,7 @@ export async function runServerHelperTests()
 export async function runImportExportHelperTests()
 {
     console.time();
+    await runTests(serverHelperTestSuite);
     await runTests(importExportHelperTestSuite);
 
     results.printStatus();
@@ -110,6 +111,7 @@ export async function runImportExportHelperTests()
 export async function runCryptUtilityTests()
 {
     console.time();
+    await runTests(serverHelperTestSuite);
     await runTests(cryptUtilityTestSuite);
 
     results.printStatus();

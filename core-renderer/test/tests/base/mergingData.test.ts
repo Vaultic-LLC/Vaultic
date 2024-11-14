@@ -73,6 +73,25 @@ mergingDataTestSuite.tests.push({
         let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineDupPasswordOne);
         ctx.assertTruthy("Add Offline Dup Password 1 succeeded", addPasswordSucceeded);
 
+        let retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(offlineDupPasswordOne.id.value);
+        ctx.assertTruthy("Password id is set", retrievedPassword?.id != undefined);
+        ctx.assertTruthy("Password additional info id is set", retrievedPassword?.value.additionalInformation.id != undefined);
+        ctx.assertTruthy("Password containsLogin id is set", retrievedPassword?.value.containsLogin.id != undefined);
+        ctx.assertTruthy("Password domain id is set", retrievedPassword?.value.domain.id != undefined);
+        ctx.assertTruthy("Password email id is set", retrievedPassword?.value.email.id != undefined);
+        ctx.assertTruthy("Password filters id is set", retrievedPassword?.value.filters.id != undefined);
+        ctx.assertTruthy("Password groups id is set", retrievedPassword?.value.groups.id != undefined);
+        ctx.assertTruthy("Password id id is set", retrievedPassword?.value.id.id != undefined);
+        ctx.assertTruthy("Password isVaultic id is set", retrievedPassword?.value.isVaultic.id != undefined);
+        ctx.assertTruthy("Password isWeak id is set", retrievedPassword?.value.isWeak.id != undefined);
+        ctx.assertTruthy("Password isWeakMessage id is set", retrievedPassword?.value.isWeakMessage.id != undefined);
+        ctx.assertTruthy("Password lastModifiedTime id is set", retrievedPassword?.value.lastModifiedTime.id != undefined);
+        ctx.assertTruthy("Password login id is set", retrievedPassword?.value.login.id != undefined);
+        ctx.assertTruthy("Password password id is set", retrievedPassword?.value.password.id != undefined);
+        ctx.assertTruthy("Password passwordFor id is set", retrievedPassword?.value.passwordFor.id != undefined);
+        ctx.assertTruthy("Password passwordLength id is set", retrievedPassword?.value.passwordLength.id != undefined);
+        ctx.assertTruthy("Password securityQuestions id is set", retrievedPassword?.value.securityQuestions.id != undefined);
+
         addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineDupPasswordTwo);
         ctx.assertTruthy("Add Offline Dup Password 2 succeeded", addPasswordSucceeded);
 
@@ -144,7 +163,7 @@ mergingDataTestSuite.tests.push({
     name: mergingSecurityQuestionsAddTest, func: async (ctx: TestContext) =>
     {
         const password = defaultPassword();
-        password.login.value = "Merging Security Questions";
+        password.login.value = "Merging Added Security Questions Works";
 
         let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password);
         ctx.assertTruthy("Add Password 1 succeeded", addPasswordSucceeded);
@@ -195,7 +214,7 @@ mergingDataTestSuite.tests.push({
     name: mergingFilterGroupsAddForPasswordTest, func: async (ctx: TestContext) =>
     {
         const password = defaultPassword();
-        password.login.value = "Merging Added Filters / Groups for Password";
+        password.login.value = "Merging Added Filters / Groups for password Works";
 
         const filter = defaultFilter(DataType.Passwords);
         filter.name.value = "Merging Added Filter For Password";
@@ -817,9 +836,29 @@ mergingDataTestSuite.tests.push({
         retrievedPassword.value.email.value = "test@test.com";
         retrievedPassword.value.password.value = "updated";
 
-        let updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, true, [], []);
+        const beforePasswordsByIDUpdateTime = passwordState.passwordsByID.lastModifiedTime;
+        const beforePasswordUpateTime = retrievedPassword.lastModifiedTime;
+        const beforeDomainUpdateTime = retrievedPassword.value.domain.lastModifiedTime;
+        const beforeEmailUpdateTime = retrievedPassword.value.email.lastModifiedTime;
+        const beforePasswordUPdateTime = retrievedPassword.value.password.lastModifiedTime;
 
+        let updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, true, [], []);
         ctx.assertTruthy("Update Offline Password succeeded", updatePasswordSucceeded);
+
+        passwordState = app.currentVault.passwordStore.cloneState();
+        retrievedPassword = passwordState.passwordsByID.value.get(dupPasswordOne.id.value)!;
+
+        const afterPasswordsByIDUpdateTime = passwordState.passwordsByID.lastModifiedTime;
+        const afterPasswordUpateTime = retrievedPassword.lastModifiedTime;
+        const afterDomainUpdateTime = retrievedPassword.value.domain.lastModifiedTime;
+        const afterEmailUpdateTime = retrievedPassword.value.email.lastModifiedTime;
+        const afterPasswordUPdateTime = retrievedPassword.value.password.lastModifiedTime;
+
+        ctx.assertTruthy("PasswordsByID lastModifiedTime was updated after password update", afterPasswordsByIDUpdateTime > beforePasswordsByIDUpdateTime);
+        ctx.assertTruthy("Password lastModifiedTime was updated after update", afterPasswordUpateTime > beforePasswordUpateTime);
+        ctx.assertTruthy("Domain lastModifiedTime was updated after update", afterDomainUpdateTime > beforeDomainUpdateTime);
+        ctx.assertTruthy("Email lastModifiedTime was updated after update", afterEmailUpdateTime > beforeEmailUpdateTime);
+        ctx.assertTruthy("Password Password lastModifiedTime was updated after update", afterPasswordUPdateTime > beforePasswordUPdateTime);
 
         ctx.assertTruthy("Duplicate password one doesn't exist", !app.currentVault.passwordStore.duplicatePasswords.value.has(dupPasswordOne.id.value));
         ctx.assertTruthy("Duplicate password two doesn't exist", !app.currentVault.passwordStore.duplicatePasswords.value.has(dupPasswordTwo.id.value));
@@ -911,7 +950,7 @@ mergingDataTestSuite.tests.push({
     name: mergingSecurityQuestionsUpdateTest, func: async (ctx: TestContext) =>
     {
         const password = defaultPassword();
-        password.login.value = "Merging Security Questions";
+        password.login.value = "Merging Updated Security Questions Works";
         password.securityQuestions.value.set("1", new Field({
             id: new Field("1"),
             question: new Field("zero"),
@@ -922,6 +961,14 @@ mergingDataTestSuite.tests.push({
 
         let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password);
         ctx.assertTruthy("Add Password 1 succeeded", addPasswordSucceeded);
+
+        const savedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+        ctx.assertTruthy("Password security question 1 id is set", savedPassword!.value.securityQuestions.value.get("1")!.id != undefined);
+        ctx.assertTruthy("Password security question 1 id id is set", savedPassword!.value.securityQuestions.value.get("1")!.value.id.id != undefined);
+        ctx.assertTruthy("Password security question 1 question id is set", savedPassword!.value.securityQuestions.value.get("1")!.value.question.id != undefined);
+        ctx.assertTruthy("Password security question 1 questionLength id is set", savedPassword!.value.securityQuestions.value.get("1")!.value.questionLength.id != undefined);
+        ctx.assertTruthy("Password security question 1 answer id is set", savedPassword!.value.securityQuestions.value.get("1")!.value.answer.id != undefined);
+        ctx.assertTruthy("Password security question 1 answerLength id is set", savedPassword!.value.securityQuestions.value.get("1")!.value.answerLength.id != undefined);
 
         await logIntoOfflineMode(mergingSecurityQuestionsUpdateTest, ctx);
 
@@ -1433,7 +1480,7 @@ mergingDataTestSuite.tests.push({
     name: mergingSecurityQuestionsDeleteTest, func: async (ctx: TestContext) =>
     {
         const password = defaultPassword();
-        password.login.value = "Merging Deleted Security Questions";
+        password.login.value = "Merging Deleted Security Questions Works";
         password.securityQuestions.value.set("1", new Field({
             id: new Field("1"),
             question: new Field("zero"),
@@ -2372,17 +2419,19 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingPasswordDeletesForGroupFilterTest, ctx);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password1.id.value);
+        let passwordState = app.currentVault.passwordStore.cloneState();
+
+        let retrievedPassword = passwordState.passwordsByID.value.get(password1.id.value);
         let deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
         ctx.assertTruthy("Delete password 1 succeeded", deleteSucceeded);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password2.id.value);
-        retrievedPassword!.value.domain.value = "updated";
+        retrievedPassword = passwordState.passwordsByID.value.get(password2.id.value);
+        retrievedPassword!.value.login.value = "Updated Merging Deleted Password for Filters / Groups Works 2";
 
         let updatedSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
         ctx.assertTruthy("Updated password 2 succeeded", updatedSucceeded);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password3.id.value);
+        retrievedPassword = passwordState.passwordsByID.value.get(password3.id.value);
         deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
         ctx.assertTruthy("Delete password 3 succeeded", deleteSucceeded);
 
@@ -2391,17 +2440,19 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("Group has 4 passwords", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)!.value.passwords.value.size, 4);
         ctx.assertEquals("Filter has 4 passwords", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)!.value.passwords.value.size, 4);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password2.id.value);
+        passwordState = app.currentVault.passwordStore.cloneState();
+
+        retrievedPassword = passwordState.passwordsByID.value.get(password2.id.value);
         deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
         ctx.assertTruthy("deleted password 2 succeeded", updatedSucceeded);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password3.id.value);
-        retrievedPassword!.value.domain.value = "updated";
+        retrievedPassword = passwordState.passwordsByID.value.get(password3.id.value);
+        retrievedPassword!.value.login.value = "Updated Merging Deleted Password for Filters / Groups Works 3";
 
         updatedSucceeded = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
         ctx.assertTruthy("Updated password 3 succeeded", updatedSucceeded);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password4.id.value);
+        retrievedPassword = passwordState.passwordsByID.value.get(password4.id.value);
         deleteSucceeded = await app.currentVault.passwordStore.deletePassword(masterKey, retrievedPassword!.value);
         ctx.assertTruthy("deleted password 4 succeeded", updatedSucceeded);
 
@@ -2478,17 +2529,19 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingValueDeletesForGroupFilterTest, ctx);
 
-        let retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value1.id.value);
+        let valueState = app.currentVault.valueStore.cloneState();
+
+        let retrievedValue = valueState.valuesByID.value.get(value1.id.value);
         let deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
         ctx.assertTruthy("Delete Value 1 succeeded", deleteSucceeded);
 
-        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value2.id.value);
+        retrievedValue = valueState.valuesByID.value.get(value2.id.value);
         retrievedValue!.value.valueType.value = NameValuePairType.Passcode;
 
         let updatedSucceeded = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
         ctx.assertTruthy("Updated Value 2 succeeded", updatedSucceeded);
 
-        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value3.id.value);
+        retrievedValue = valueState.valuesByID.value.get(value3.id.value);
         deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
         ctx.assertTruthy("Delete Value 3 succeeded", deleteSucceeded);
 
@@ -2497,17 +2550,19 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("Group has 4 values", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)!.value.values.value.size, 4);
         ctx.assertEquals("Filter has 4 values", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.size, 4);
 
-        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value2.id.value);
+        valueState = app.currentVault.valueStore.cloneState();
+
+        retrievedValue = valueState.valuesByID.value.get(value2.id.value);
         deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
         ctx.assertTruthy("deleted Value 2 succeeded", updatedSucceeded);
 
-        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value3.id.value);
+        retrievedValue = valueState.valuesByID.value.get(value3.id.value);
         retrievedValue!.value.valueType.value = NameValuePairType.Information;
 
         updatedSucceeded = await app.currentVault.valueStore.updateNameValuePair(masterKey, retrievedValue!.value, false);
         ctx.assertTruthy("Updated Value 3 succeeded", updatedSucceeded);
 
-        retrievedValue = app.currentVault.valueStore.nameValuePairsByID.value.get(value4.id.value);
+        retrievedValue = valueState.valuesByID.value.get(value4.id.value);
         deleteSucceeded = await app.currentVault.valueStore.deleteNameValuePair(masterKey, retrievedValue!.value);
         ctx.assertTruthy("deleted Value 4 succeeded", updatedSucceeded);
 

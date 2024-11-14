@@ -102,53 +102,44 @@ async function logUserIn(masterKey: string, email: string,
             currentSignatures = await getUserDataSignatures(masterKey, email);
         }
 
-        console.log(`current signatures: ${JSON.stringify(currentSignatures)}`);
-        try 
+        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
+        if (finishResponse.Success)
         {
-            let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
-            if (finishResponse.Success)
+            await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
+
+            if (!firstLogin)
             {
-                await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
-
-                if (!firstLogin)
+                const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
+                if (!result.success)
                 {
-                    const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
-                    if (!result.success)
-                    {
-                        return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
-                    }
+                    return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
+                }
 
-                    if (reloadAllData)
-                    {
-                        await reloadAllUserData(masterKey, email, result.value.userDataPayload);
-                    }
-                    else 
-                    {
-                        await checkMergeMissingData(masterKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
-                    }
+                if (reloadAllData)
+                {
+                    await reloadAllUserData(masterKey, email, result.value.userDataPayload);
+                }
+                else 
+                {
+                    await checkMergeMissingData(masterKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
+                }
 
-                    // This has to go after merging in the event that the user isn't in the local data yet
-                    await environment.repositories.users.setCurrentUser(masterKey, email);
+                // This has to go after merging in the event that the user isn't in the local data yet
+                await environment.repositories.users.setCurrentUser(masterKey, email);
 
-                    const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
-                    if (!payload)
-                    {
-                        return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
-                    }
-                    else 
-                    {
-                        finishResponse.userDataPayload = payload as UserDataPayload;
-                    }
+                const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
+                if (!payload)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
+                }
+                else 
+                {
+                    finishResponse.userDataPayload = payload as UserDataPayload;
                 }
             }
+        }
 
-            console.log('Login Success');
-            return TypedMethodResponse.success(finishResponse);
-        }
-        catch (e)
-        {
-            console.log(e);
-        }
+        return TypedMethodResponse.success(finishResponse);
     }
 }
 

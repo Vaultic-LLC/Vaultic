@@ -82,8 +82,6 @@ class AxiosWrapper
             if (requestData.success)
             {
                 const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
-                console.log(response.status)
-                console.log(response.statusText)
                 const responseResult = await this.handleResponse<T>(response.data);
 
                 if (responseResult.success)
@@ -335,7 +333,6 @@ class APIAxiosWrapper extends AxiosWrapper
                 const response = await environment.utilities.crypt.decrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
-                    console.log(`Failed to Decrypt: ${fieldTree.properties[i]}, Data: ${JSON.vaulticStringify(data)}]}`)
                     return response;
                 }
 

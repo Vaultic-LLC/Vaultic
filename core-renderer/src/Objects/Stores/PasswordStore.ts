@@ -7,7 +7,7 @@ import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
-import { AtRiskType, CurrentAndSafeStructure, DuplicateDataTypes, Password, SecurityQuestion } from "../../Types/DataTypes";
+import { AtRiskType, CurrentAndSafeStructure, DuplicateDataTypes, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
 interface IPasswordStoreState extends StoreState
@@ -65,8 +65,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
         await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
 
         // update groups before filters
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.value.id.value, reactivePassword.value.groups.value, new Map());
-        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[reactivePassword.value.id.value, reactivePassword]]), pendingGroupState.passwordGroupsByID);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.value.id.value, new RelatedDataTypeChanges(reactivePassword.value.groups.value));
+        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[reactivePassword.value.id.value, reactivePassword]]), pendingGroupState.passwordGroupsByID, true);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -95,8 +95,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
         }
 
         // retrieve these before updating
-        const addedGroups = updatingPassword.groups.value.difference(currentPassword.value.groups.value);
-        const removedGroups = currentPassword.value.groups.value.difference(updatingPassword.groups.value);
+        const changedGroups = this.getRelatedDataTypeChanges(currentPassword.value.groups.value, updatingPassword.groups.value);
 
         if (passwordWasUpdated)
         {
@@ -137,8 +136,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
 
         await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id.value, addedGroups, removedGroups);
-        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[currentPassword.value.id.value, currentPassword]]), pendingGroupState.passwordGroupsByID);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id.value, changedGroups);
+        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[currentPassword.value.id.value, currentPassword]]), pendingGroupState.passwordGroupsByID, true);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -172,7 +171,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
 
         await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id.value, new Map(), password.groups.value);
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id.value, new RelatedDataTypeChanges(undefined, password.groups.value, undefined));
         const pendingFilterState = this.vault.filterStore.removePasswordFromFilters(password.id.value);
 
         transaction.updateVaultStore(this, pendingState);

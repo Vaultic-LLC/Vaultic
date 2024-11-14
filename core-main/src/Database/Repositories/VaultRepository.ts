@@ -74,7 +74,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             return false;
         }
 
-        console.log(`Create Vault Response: ${JSON.stringify(response)}`);
         const vaultKey = environment.utilities.generator.randomValue(60);
 
         const userVault = new UserVault().makeReactive();
@@ -177,11 +176,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 const backupResponse = await backupData(masterKey);
                 if (!backupResponse)
                 {
-                    console.log(`backup failed. Response: ${JSON.stringify(backupResponse)}`);
                     return TypedMethodResponse.backupFail();
                 }
-
-                console.log('backup succeeded');
             }
 
             if (setAsActive)
@@ -232,7 +228,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalSaveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
-            console.log(`Getting user vaults. MasterKey: ${masterKey}, UserVaultID: ${userVaultID}`)
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
             if (userVaults[0].length == 0)
             {
@@ -626,13 +621,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
         }
 
-        //console.log(`\nchecking password store state. id: ${newVault?.passwordStoreState?.passwordStoreStateID}`);
         if (newVault.passwordStoreState && newVault.passwordStoreState.passwordStoreStateID)
         {
-            //console.log(`\nchecking updated passwords. Entity State: ${currentVault?.passwordStoreState?.entityState}`);
             if (currentVault.passwordStoreState?.entityState == EntityState.Updated)
             {
-                //console.log('\nmerging password store states');
                 if (!await (environment.repositories.passwordStoreStates.mergeStates(key, currentVault.passwordStoreState.passwordStoreStateID,
                     newVault.passwordStoreState, changeTrackings, transaction)))
                 {
@@ -667,13 +659,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
         }
 
-        //console.log(`checking filter store state`);
         if (newVault.filterStoreState && newVault.filterStoreState.filterStoreStateID)
         {
-            //console.log(`checking if updated`);
             if (currentVault.filterStoreState?.entityState == EntityState.Updated)
             {
-                //console.log(`merging filter store state`);
                 if (!await (environment.repositories.filterStoreStates.mergeStates(key, currentVault.filterStoreState.filterStoreStateID,
                     newVault.filterStoreState, changeTrackings, transaction)))
                 {

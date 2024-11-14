@@ -271,7 +271,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             // for the first user
             if (environment.cache.currentUserID != undefined)
             {
-                console.log(`Current UserID: ${environment.cache.currentUserID}`);
                 return TypedMethodResponse.fail(undefined, "setCurrentUser", "Current User already set");
             }
 

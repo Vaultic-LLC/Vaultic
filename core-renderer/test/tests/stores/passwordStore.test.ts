@@ -243,7 +243,7 @@ passwordStoreSuite.tests.push({
     name: 'Update security question works', func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "MVOmewpobwjbiophniones";
+        password.login.value = "Update security question works 1";
         const securityQuestion: SecurityQuestion =
         {
             id: new Field("SecurityQuestion"),
@@ -256,7 +256,7 @@ passwordStoreSuite.tests.push({
         password.securityQuestions.value.set("SecurityQuestion", new Field(securityQuestion));
 
         const password2: Password = defaultPassword();
-        password2.login.value = "MVOmewpobwjbiophniones";
+        password2.login.value = "Update security question works 2";
         const securityQuestion2: SecurityQuestion =
         {
             id: new Field("SecurityQuestion2"),

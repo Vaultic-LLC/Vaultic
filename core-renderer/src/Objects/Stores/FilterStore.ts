@@ -184,23 +184,23 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     }
 
     // called externally when adding / updating passwords 
-    syncFiltersForPasswords(passwords: Map<string, Field<ReactivePassword>>, allGroups: Field<Map<string, Field<Group>>>)
+    syncFiltersForPasswords(passwords: Map<string, Field<ReactivePassword>>, allGroups: Field<Map<string, Field<Group>>>, updatingPassword: boolean)
     {
         const pendingState = this.cloneState();
 
         this.syncFiltersForPrimaryDataObject(pendingState.passwordFiltersByID.value, passwords, "passwords", pendingState.emptyPasswordFilters,
-            pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID, allGroups, false);
+            pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID, allGroups, updatingPassword);
 
         return pendingState;
     }
 
     // called externally when adding / updating passwords 
-    syncFiltersForValues(values: Map<string, Field<ReactiveValue>>, allGroups: Field<Map<string, Field<Group>>>)
+    syncFiltersForValues(values: Map<string, Field<ReactiveValue>>, allGroups: Field<Map<string, Field<Group>>>, updatingValue: boolean)
     {
         const pendingState = this.cloneState();
 
         this.syncFiltersForPrimaryDataObject(pendingState.valueFiltersByID.value, values, "values",
-            pendingState.emptyValueFilters, pendingState.duplicateValueFilters, pendingState.valueFiltersByID, allGroups, false);
+            pendingState.emptyValueFilters, pendingState.duplicateValueFilters, pendingState.valueFiltersByID, allGroups, updatingValue);
 
         return pendingState;
     }
@@ -305,7 +305,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         currentDuplicateFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
         allFilters: Field<Map<string, Field<Filter>>>,
         allGroups: Field<Map<string, Field<Group>>>,
-        updatingFilter: boolean)
+        updatingFilterOrPrimaryDataObject: boolean)
     {
         filtersToSync.forEach((f, k, map) =>
         {
@@ -317,7 +317,9 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
                     {
                         v.value.filters.value.set(f.value.id.value, new Field(f.value.id.value));
                     }
-                    else if (updatingFilter)
+                    // only want to forceUpdate when updating a filter, password, or value since updating a group
+                    // also calls this method, but in that case we don't want the filter to be considered updated
+                    else if (updatingFilterOrPrimaryDataObject)
                     {
                         // for change tracking. make sure value is updated in case it is deleted on another device
                         v.value.filters.value.get(f.value.id.value)!.forceUpdate = true;
@@ -327,7 +329,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
                     {
                         f.value[primaryDataObjectCollection].value.set(v.value.id.value, new Field(v.value.id.value));
                     }
-                    else if (updatingFilter)
+                    else if (updatingFilterOrPrimaryDataObject)
                     {
                         // for change tracking. make sure value is updated in case it is deleted on another device
                         f.value[primaryDataObjectCollection].value.get(v.value.id.value)!.forceUpdate = true;

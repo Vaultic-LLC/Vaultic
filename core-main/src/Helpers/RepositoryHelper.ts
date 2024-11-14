@@ -49,7 +49,6 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
     const user = await environment.repositories.users.findByEmail(masterKey, email);
     if (!user)
     {
-        console.log('no user');
         return { signatures: userData, keys: [] };
     }
 
@@ -131,7 +130,6 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
         }
     }
 
-    console.log('signature data');
     return { signatures: userData, keys: userVaults[1] };
 }
 
@@ -175,15 +173,9 @@ export async function backupData(masterKey: string)
         postData.userDataPayload["vaults"] = vaultsToBackup.value.vaults;
     }
 
-    //console.log(`\nBacking up user: ${JSON.vaulticStringify(userToBackup.value)}`);
-    //console.log(`\nBacking up userVaults: ${JSON.vaulticStringify(userVaultsToBackup.value)}`);
-    //console.log(`\nBacking up vaults: ${JSON.vaulticStringify(vaultsToBackup.value.vaults)}`);
-
     const backupResponse = await vaulticServer.user.backupData(postData);
     if (!backupResponse.Success)
     {
-        console.log(`backup failed: ${JSON.vaulticStringify(backupResponse)}`);
-        //console.log('\nbackup failed');
         return await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload)
     }
     else
@@ -209,12 +201,10 @@ export async function backupData(masterKey: string)
 
         if (!await transaction.commit())
         {
-            console.log('backup transaction failed');
             return false;
         }
     }
 
-    console.log('Backup succeeded');
     return true;
 }
 
@@ -264,7 +254,6 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                     return false;
                 }
 
-                console.log('\nCreating User');
                 return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.publicKey!, serverUserDataPayload.user.privateKey!, transaction)).success;
             }
 
@@ -283,19 +272,15 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
     }
 
     // Needs to be done before userVaults for when adding a new vault + userVault. Vault has to be saved before userVault.
-    //console.log(`\nMerging Vaults: ${JSON.stringify(serverUserDataPayload.vaults)}`);
     if (serverUserDataPayload.vaults)
     {
         for (let i = 0; i < serverUserDataPayload.vaults.length; i++)
         {
-            //console.log(`\nChecking vault: ${i}`);
             const serverVault = serverUserDataPayload.vaults[i];
             const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
 
             if (vaultIndex >= 0)
             {
-                //console.log(`\nUpdating Vault: ${JSON.stringify(clientUserDataPayload.vaults![vaultIndex])}`);
-                //console.log(`\nserver vault: ${JSON.vaulticStringify(serverVault)}`);
                 if (await environment.repositories.vaults.updateFromServer(vaultKeys[vaultIndex], clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction))
                 {
                     needsToRePushData = true;
@@ -303,7 +288,6 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
             }
             else 
             {
-                //console.log(`\nAdding Vault: ${JSON.stringify(serverVault)}`)
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
                 {
@@ -356,20 +340,16 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
     // we've handled all trackedChanges. Clear them
     await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
 
-    console.log('\n committing new states')
     if (!(await transaction.commit()))
     {
         return false;
     }
 
-    console.log('\nchecking to re pushd data');
     if (needsToRePushData)
     {
-        console.log('\nNeeds to re backup data!');
         return await backupData(masterKey);
     }
 
-    console.log('\nfinised merging');
     return true;
 }
 

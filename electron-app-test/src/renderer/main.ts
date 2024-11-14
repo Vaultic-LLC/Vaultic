@@ -44,6 +44,5 @@ async function initApp()
     app.use(setupCalendar, {});
     app.mount("#app");
 
-    //runAllTests();
-    runAllMergingDataTests();
+    runAllTests();
 }
