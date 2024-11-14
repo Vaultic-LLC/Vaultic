@@ -188,3 +188,5 @@ export interface GetUserIDResponse extends BaseResponse
 }
 
 export interface GetVaultDataResponse extends BaseResponse, UserDataPayloadResponse { }
+
+export interface BackupResponse extends BaseResponse, UserDataPayloadResponse { }

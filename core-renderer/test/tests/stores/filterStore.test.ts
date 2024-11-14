@@ -1,8 +1,7 @@
-import { IFilterable, IIdentifiable, defaultFilter, defaultPassword, defaultValue } from '../../src/core/Types/EncryptedData';
 import { createTestSuite, type TestContext } from '../test';
-import { DataType, FilterConditionType, type Filter, type FilterCondition } from "../../src/core/Types/Table";
 import app from "../../src/core/Objects/Stores/AppStore";
-import { Dictionary } from '@vaultic/shared/Types/DataStructures';
+import { DataType, Filter, defaultFilter, FilterConditionType, IFilterable, defaultPassword, defaultValue, FilterCondition, DuplicateDataTypes } from '../../src/core/Types/DataTypes';
+import { Field, IIdentifiable, KnownMappedFields } from '@vaultic/shared/Types/Fields';
 
 let filterStoreSuite = createTestSuite("Filter Store");
 
@@ -12,23 +11,23 @@ filterStoreSuite.tests.push({
     name: "FilterStore Add Works", func: async (ctx: TestContext) =>
     {
         const name = "FilterStore Add Works";
-        async function testFilterAdd(type: DataType, property: string, getFilters: () => Filter[])
+        async function testFilterAdd(type: DataType, property: string, getFilters: () => Field<Filter>[])
         {
             const filter: Filter = defaultFilter(type);
-            filter.name = name;
-            filter.conditions.push({
-                id: name,
-                property: property,
-                filterType: FilterConditionType.EqualTo,
-                value: name
-            });
+            filter.name.value = name;
+            filter.conditions.value.set(name, new Field({
+                id: new Field(name),
+                property: new Field(property),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field(name)
+            }));
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
-            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            const retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
 
             ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
-            ctx.assertEquals(`Name for ${type}`, retrievedFilter.name, name);
-            ctx.assertEquals(`Condition for ${type}`, retrievedFilter.conditions[0].value, name);
+            ctx.assertEquals(`Name for ${type}`, retrievedFilter.value.name.value, name);
+            ctx.assertEquals(`Condition for ${type}`, retrievedFilter.value.conditions.value.get(name)?.value.value.value, name);
         }
 
         await testFilterAdd(DataType.Passwords, "login", () => app.currentVault.filterStore.passwordFilters);
@@ -42,39 +41,39 @@ filterStoreSuite.tests.push({
         async function testFilterAdd<T extends IIdentifiable & IFilterable>(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Filter[],
-            getPrimaryObject: () => T)
+            getFilters: () => Field<Filter>[],
+            getPrimaryObject: () => Field<T>)
         {
             const filter: Filter = defaultFilter(type);
-            filter.conditions.push({
-                id: "Hi",
-                property: conditionProperty,
-                filterType: FilterConditionType.EqualTo,
-                value: "FilterStore Add With Current Primary Objects Works"
-            });
+            filter.conditions.value.set("Hi", new Field({
+                id: new Field("Hi"),
+                property: new Field(conditionProperty),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field("FilterStore Add With Current Primary Objects Works")
+            }));
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
-            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            const retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
             const retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
-            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.includes(filter.id));
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.value.filters.value.has(filter.id.value));
         }
 
         const password = defaultPassword();
-        password.login = "FilterStore Add With Current Primary Objects Works";
+        password.login.value = "FilterStore Add With Current Primary Objects Works";
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
-        value.name = "FilterStore Add With Current Primary Objects Works";
+        value.name.value = "FilterStore Add With Current Primary Objects Works";
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testFilterAdd(DataType.Passwords, "login",
-            () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0]);
+            () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0]);
 
         await testFilterAdd(DataType.NameValuePairs, "name",
-            () => app.currentVault.filterStore.nameValuePairFilters, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0]);
+            () => app.currentVault.filterStore.nameValuePairFilters, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0]);
     }
 });
 
@@ -84,57 +83,60 @@ filterStoreSuite.tests.push({
         async function testFilterAdd(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Filter[],
-            getEmptyFilters: () => string[],
-            getDuplicateFilters: () => Dictionary<string[]>)
+            getFilters: () => Field<Filter>[],
+            getEmptyFilters: () => Field<Map<string, Field<string>>>,
+            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
             const emptyFilter = defaultFilter(type);
             await app.currentVault.filterStore.addFilter(masterKey, emptyFilter);
 
-            const retrievedEmptyFilter = getFilters().filter(f => f.id == emptyFilter.id)[0];
+            const retrievedEmptyFilter = getFilters().filter(f => f.value.id.value == emptyFilter.id.value)[0];
             ctx.assertTruthy(`Empty Filter Exists for ${type}`, retrievedEmptyFilter);
 
-            const retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            const hasEmptyFilter = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, hasEmptyFilter);
 
             const duplicateFilterOne: Filter = defaultFilter(type);
-            duplicateFilterOne.conditions.push({
-                id: "Hi",
-                property: conditionProperty,
-                filterType: FilterConditionType.EqualTo,
-                value: "FilterStore Add With Current Primary Objects Works"
-            });
+            duplicateFilterOne.conditions.value.set("Hi", new Field({
+                id: new Field("Hi"),
+                property: new Field(conditionProperty),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field("FilterStore Add With Current Primary Objects Works")
+            }));
 
             const duplicateFilterTwo: Filter = defaultFilter(type);
-            duplicateFilterTwo.conditions.push({
-                id: "Hi",
-                property: conditionProperty,
-                filterType: FilterConditionType.EqualTo,
-                value: "FilterStore Add With Current Primary Objects Works"
-            });
+            duplicateFilterTwo.conditions.value.set("Hii", new Field({
+                id: new Field("Hii"),
+                property: new Field(conditionProperty),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field("FilterStore Add With Current Primary Objects Works")
+            }));
 
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterOne);
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterTwo);
 
-            const retrievedDuplicateFilterOne = getFilters().filter(f => f.id == duplicateFilterOne.id)[0];
-            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.id == duplicateFilterTwo.id)[0];
+            const retrievedDuplicateFilterOne = getFilters().filter(f => f.value.id.value == duplicateFilterOne.id.value)[0];
+            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.value.id.value == duplicateFilterTwo.id.value)[0];
 
             ctx.assertTruthy(`Duplicate Filter one exists for type ${type}`, retrievedDuplicateFilterOne);
             ctx.assertTruthy(`Duplicate Filter two exists for type ${type}`, retrievedDuplicateFilterTwo);
 
-            const duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
-            const duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+            const duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            const duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
         }
 
         const password = defaultPassword();
-        password.login = "FilterStore Add With Current Primary Objects Works";
+        password.login.value = "FilterStore Add With Current Primary Objects Works";
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
-        value.name = "FilterStore Add With Current Primary Objects Works";
+        value.name.value = "FilterStore Add With Current Primary Objects Works";
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testFilterAdd(DataType.Passwords, "login", () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.filterStore.emptyPasswordFilters,
@@ -148,30 +150,30 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Update Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterUpdate(type: DataType, getFilters: () => Filter[])
+        async function testFilterUpdate(type: DataType, getFilters: () => Field<Filter>[])
         {
             const originalName = "FilterStoreUpdateWorks";
             const filter: Filter = defaultFilter(type);
-            filter.name = originalName;
-            filter.isActive = false;
+            filter.name.value = originalName;
+            filter.isActive.value = false;
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
             const newName = "New Name";
             const newIsActive = true;
 
-            filter.name = newName;
-            filter.isActive = newIsActive;
+            filter.name.value = newName;
+            filter.isActive.value = newIsActive;
 
             await app.currentVault.filterStore.updateFilter(masterKey, filter);
 
-            const originalFilter = getFilters().filter(f => f.name == originalName);
+            const originalFilter = getFilters().filter(f => f.value.name.value == originalName);
             ctx.assertEquals(`Original Filter doesn't exist for ${type}`, originalFilter.length, 0);
 
-            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            const retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
             ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
-            ctx.assertEquals(`Name was updated for ${type}`, retrievedFilter.name, newName);
-            ctx.assertEquals(`Active was updated for ${type}`, retrievedFilter.isActive, newIsActive);
+            ctx.assertEquals(`Name was updated for ${type}`, retrievedFilter.value.name.value, newName);
+            ctx.assertEquals(`Active was updated for ${type}`, retrievedFilter.value.isActive.value, newIsActive);
         }
 
         await testFilterUpdate(DataType.Passwords, () => app.currentVault.filterStore.passwordFilters);
@@ -182,38 +184,40 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Update Condition Works", func: async (ctx: TestContext) =>
     {
-        async function testUpdateFilterCondition(type: DataType, getFilters: () => Filter[], originalProperty: string, newProperty: string)
+        async function testUpdateFilterCondition(type: DataType, getFilters: () => Field<Filter>[], originalProperty: string, newProperty: string)
         {
             const originalFilterValue = "UpdateFilterConditionWorks"
             const filter: Filter = defaultFilter(type);
             let filterCondition: FilterCondition =
             {
-                id: "Condition",
-                filterType: FilterConditionType.EqualTo,
-                property: originalProperty,
-                value: originalFilterValue
+                id: new Field("Condition"),
+                filterType: new Field(FilterConditionType.EqualTo),
+                property: new Field(originalProperty),
+                value: new Field(originalFilterValue)
             };
 
-            filter.conditions.push(filterCondition);
+            filter.conditions.value.set("Condition", new Field(filterCondition));
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
             const updatedValue = "Updated Value";
 
-            filter.conditions[0].filterType = FilterConditionType.StartsWith;
-            filter.conditions[0].property = newProperty;
-            filter.conditions[0].value = updatedValue;
+            filter.conditions.value.get("Condition")!.value.filterType.value = FilterConditionType.StartsWith;
+            filter.conditions.value.get("Condition")!.value.property.value = newProperty;
+            filter.conditions.value.get("Condition")!.value.value.value = updatedValue;
 
             await app.currentVault.filterStore.updateFilter(masterKey, filter);
 
-            const originalFilter = getFilters().filter(f => f.conditions[0] ? f.conditions[0].value == originalFilterValue : false);
+            const originalFilter = getFilters().filter(f => f.value.conditions.value ? f.value.conditions.value.filter((k, v) => v.value.value.value == originalFilterValue).size > 0 : false);
             ctx.assertEquals(`Original filter condition doens't exist for ${type}`, originalFilter.length, 0);
 
-            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            const retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
             ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
-            ctx.assertEquals(`Filter condition type was updated for ${type}`, retrievedFilter.conditions[0].filterType, FilterConditionType.StartsWith);
-            ctx.assertEquals(`Filter condition property was updated for ${type}`, retrievedFilter.conditions[0].property, newProperty);
-            ctx.assertEquals(`Filter condition value was updated for ${type}`, retrievedFilter.conditions[0].value, updatedValue);
+
+            const condition = retrievedFilter.value.conditions.value.get("Condition");
+            ctx.assertEquals(`Filter condition type was updated for ${type}`, condition?.value.filterType.value, FilterConditionType.StartsWith);
+            ctx.assertEquals(`Filter condition property was updated for ${type}`, condition?.value.property.value, newProperty);
+            ctx.assertEquals(`Filter condition value was updated for ${type}`, condition?.value.value.value, updatedValue);
         }
 
         await testUpdateFilterCondition(DataType.Passwords, () => app.currentVault.filterStore.passwordFilters, "login", "email");
@@ -229,51 +233,51 @@ filterStoreSuite.tests.push({
         async function testFilterAdd<T extends IIdentifiable & IFilterable>(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Filter[],
-            getPrimaryObject: () => T)
+            getFilters: () => Field<Filter>[],
+            getPrimaryObject: () => Field<T>)
         {
             const filter: Filter = defaultFilter(type);
-            filter.conditions.push({
-                id: "Hi",
-                property: conditionProperty,
-                filterType: FilterConditionType.EqualTo,
-                value: filterValue
-            });
+            filter.conditions.value.set("Hi", new Field({
+                id: new Field("Hi"),
+                property: new Field(conditionProperty),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field(filterValue)
+            }));
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
-            let retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            let retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
-            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.includes(filter.id));
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.value.filters.value.has(filter.id.value));
 
-            filter.conditions[0].value = filterValue + "--NoMatches";
+            filter.conditions.value.get("Hi")!.value.value.value = filterValue + "--NoMatches";
             await app.currentVault.filterStore.updateFilter(masterKey, filter);
 
             retrievedPrimaryObject = getPrimaryObject();
-            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.includes(filter.id));
+            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.value.filters.value.has(filter.id.value));
 
-            filter.conditions[0].value = filterValue;
+            filter.conditions.value.get("Hi")!.value.value.value = filterValue;
             await app.currentVault.filterStore.updateFilter(masterKey, filter);
 
             retrievedPrimaryObject = getPrimaryObject();
-            ctx.assertTruthy(`${type} has filter after update`, retrievedPrimaryObject.filters.includes(filter.id));
+            ctx.assertTruthy(`${type} has filter after update`, retrievedPrimaryObject.value.filters.value.has(filter.id.value));
         }
 
         const password = defaultPassword();
-        password.login = filterValue;
+        password.login.value = filterValue;
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
-        value.name = filterValue;
+        value.name.value = filterValue;
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testFilterAdd(DataType.Passwords, "login",
-            () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0]);
+            () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0]);
 
         await testFilterAdd(DataType.NameValuePairs, "name",
-            () => app.currentVault.filterStore.nameValuePairFilters, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0]);
+            () => app.currentVault.filterStore.nameValuePairFilters, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0]);
     }
 });
 
@@ -285,84 +289,92 @@ filterStoreSuite.tests.push({
         async function testFilterAdd(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Filter[],
-            getEmptyFilters: () => string[],
-            getDuplicateFilters: () => Dictionary<string[]>)
+            getFilters: () => Field<Filter>[],
+            getEmptyFilters: () => Field<Map<string, Field<string>>>,
+            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
-            const condition = {
-                id: "Hi",
-                property: conditionProperty,
-                filterType: FilterConditionType.EqualTo,
-                value: filterValue
-            };
+            const condition: Field<FilterCondition> = new Field({
+                id: new Field("Hi"),
+                property: new Field(conditionProperty),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field(filterValue)
+            });
 
             const emptyFilter = defaultFilter(type);
             await app.currentVault.filterStore.addFilter(masterKey, emptyFilter);
 
-            const retrievedEmptyFilter = getFilters().filter(f => f.id == emptyFilter.id)[0];
+            const retrievedEmptyFilter = getFilters().filter(f => f.value.id.value == emptyFilter.id.value)[0];
             ctx.assertTruthy(`Empty Filter Exists for type ${type}`, retrievedEmptyFilter);
 
-            let retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            let isInEmptyFilters = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, isInEmptyFilters);
 
-            emptyFilter.conditions.push(condition);
+            emptyFilter.conditions.value.set("Hi", condition);
             await app.currentVault.filterStore.updateFilter(masterKey, emptyFilter);
 
-            let nonExistsEmptyFilter = getEmptyFilters().filter(f => f == emptyFilter.id);
-            ctx.assertEquals(`Empty Filter is not included in empty filters for ${type}`, nonExistsEmptyFilter.length, 0);
+            let doesNotExistInEmptyFilters = !getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is not included in empty filters for ${type}`, doesNotExistInEmptyFilters);
 
-            emptyFilter.conditions = [];
+            emptyFilter.conditions.value.delete("Hi");
             await app.currentVault.filterStore.updateFilter(masterKey, emptyFilter);
 
-            retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters after update for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            isInEmptyFilters = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters after update for ${type}`, isInEmptyFilters);
 
             const duplicateFilterOne: Filter = defaultFilter(type);
-            duplicateFilterOne.conditions.push(condition);
+            duplicateFilterOne.conditions.value.set("Hi", condition);
 
             const duplicateFilterTwo: Filter = defaultFilter(type);
-            duplicateFilterTwo.conditions.push(condition);
+            duplicateFilterTwo.conditions.value.set("Hi", condition);
 
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterOne);
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterTwo);
 
-            const retrievedDuplicateFilterOne = getFilters().filter(f => f.id == duplicateFilterOne.id)[0];
-            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.id == duplicateFilterTwo.id)[0];
+            const retrievedDuplicateFilterOne = getFilters().filter(f => f.value.id.value == duplicateFilterOne.id.value)[0];
+            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.value.id.value == duplicateFilterTwo.id.value)[0];
 
             ctx.assertTruthy(`Duplicate Filter one exists for type ${type}`, retrievedDuplicateFilterOne);
             ctx.assertTruthy(`Duplicate Filter two exists for type ${type}`, retrievedDuplicateFilterTwo);
 
-            let duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
-            let duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+            let duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            let duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
 
-            duplicateFilterOne.conditions = [];
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
+
+            duplicateFilterOne.conditions.value.delete("Hi");
             await app.currentVault.filterStore.updateFilter(masterKey, duplicateFilterOne);
 
-            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
-            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+            duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one doesn't has duplicate filter two as a duplicate for ${type}`, !duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
-            ctx.assertEquals(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates, undefined);
+            ctx.assertTruthy(`Duplicate filter one doesn't has duplicate filter two as a duplicate for ${type}`,
+                !duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
 
-            duplicateFilterOne.conditions.push(condition);
+            ctx.assertUndefined(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates);
+
+            duplicateFilterOne.conditions.value.set("Hi", condition);
             await app.currentVault.filterStore.updateFilter(masterKey, duplicateFilterOne);
 
-            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
-            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+            duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
         }
 
         const password = defaultPassword();
-        password.login = filterValue;
+        password.login.value = filterValue;
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
-        value.name = filterValue;
+        value.name.value = filterValue;
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testFilterAdd(DataType.Passwords, "login", () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.filterStore.emptyPasswordFilters,
@@ -376,16 +388,16 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Delete Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterDelete(type: DataType, getFilters: () => Filter[])
+        async function testFilterDelete(type: DataType, getFilters: () => Field<Filter>[])
         {
             const filter: Filter = defaultFilter(type);
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
-            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            const retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
             ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
 
             await app.currentVault.filterStore.deleteFilter(masterKey, filter);
-            const deletedFilter = getFilters().filter(f => f.id == filter.id);
+            const deletedFilter = getFilters().filter(f => f.value.id.value == filter.id.value);
             ctx.assertEquals(`Filter was deleted for ${type}`, deletedFilter.length, 0);
         }
 
@@ -397,28 +409,28 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Delete Condition Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterConditionDelete(type: DataType, getFilters: () => Filter[], property: string)
+        async function testFilterConditionDelete(type: DataType, getFilters: () => Field<Filter>[], property: string)
         {
             const filter: Filter = defaultFilter(type);
-            let filterCondition: FilterCondition =
-            {
-                id: "Condition",
-                filterType: FilterConditionType.EqualTo,
-                property: property,
-                value: "Value"
-            };
+            let filterCondition: Field<FilterCondition> = new Field(
+                {
+                    id: new Field("Condition"),
+                    filterType: new Field(FilterConditionType.EqualTo),
+                    property: new Field(property),
+                    value: new Field("Value")
+                });
 
-            filter.conditions.push(filterCondition);
+            filter.conditions.value.set("Condition", filterCondition);
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
-            filter.conditions.splice(0, 1);
+            filter.conditions.value.delete("Condition");
 
             await app.currentVault.filterStore.updateFilter(masterKey, filter);
 
-            const retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            const retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
             ctx.assertTruthy(`Filter Exists for ${type}`, retrievedFilter);
-            ctx.assertEquals(`Filter condition was deleted for ${type}`, retrievedFilter.conditions.length, 0);
+            ctx.assertEquals(`Filter condition was deleted for ${type}`, retrievedFilter.value.conditions.value.size, 0);
         }
 
         await testFilterConditionDelete(DataType.Passwords, () => app.currentVault.filterStore.passwordFilters, "login");
@@ -434,44 +446,44 @@ filterStoreSuite.tests.push({
         async function testFilterAdd<T extends IIdentifiable & IFilterable>(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Filter[],
-            getPrimaryObject: () => T)
+            getFilters: () => Field<Filter>[],
+            getPrimaryObject: () => Field<T>)
         {
             const filter: Filter = defaultFilter(type);
-            filter.conditions.push({
-                id: "Hi",
-                property: conditionProperty,
-                filterType: FilterConditionType.EqualTo,
-                value: filterValue
-            });
+            filter.conditions.value.set("Hi", new Field({
+                id: new Field("Hi"),
+                property: new Field(conditionProperty),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field(filterValue)
+            }));
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
-            let retrievedFilter = getFilters().filter(f => f.id == filter.id)[0];
+            let retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
             let retrievedPrimaryObject = getPrimaryObject();
 
             ctx.assertTruthy(`Filter Exists for type ${type}`, retrievedFilter);
-            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.filters.includes(filter.id));
+            ctx.assertTruthy(`${type} has filter`, retrievedPrimaryObject.value.filters.value.has(filter.id.value));
 
             await app.currentVault.filterStore.deleteFilter(masterKey, filter);
 
             retrievedPrimaryObject = getPrimaryObject();
-            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.filters.includes(filter.id));
+            ctx.assertTruthy(`${type} doesn't has filter`, !retrievedPrimaryObject.value.filters.value.has(filter.id.value));
         }
 
         const password = defaultPassword();
-        password.login = filterValue;
+        password.login.value = filterValue;
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
-        value.name = filterValue;
+        value.name.value = filterValue;
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testFilterAdd(DataType.Passwords, "login",
-            () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0]);
+            () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0]);
 
         await testFilterAdd(DataType.NameValuePairs, "name",
-            () => app.currentVault.filterStore.nameValuePairFilters, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0]);
+            () => app.currentVault.filterStore.nameValuePairFilters, () => app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0]);
     }
 });
 
@@ -482,67 +494,70 @@ filterStoreSuite.tests.push({
         async function testFilterAdd(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Filter[],
-            getEmptyFilters: () => string[],
-            getDuplicateFilters: () => Dictionary<string[]>)
+            getFilters: () => Field<Filter>[],
+            getEmptyFilters: () => Field<Map<string, Field<string>>>,
+            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
         {
-            const condition = {
-                id: "Hi",
-                property: conditionProperty,
-                filterType: FilterConditionType.EqualTo,
-                value: filterValue
-            };
+            const condition: Field<FilterCondition> = new Field({
+                id: new Field("Hi"),
+                property: new Field(conditionProperty),
+                filterType: new Field(FilterConditionType.EqualTo),
+                value: new Field(filterValue)
+            });
 
             const emptyFilter = defaultFilter(type);
             await app.currentVault.filterStore.addFilter(masterKey, emptyFilter);
 
-            const retrievedEmptyFilter = getFilters().filter(f => f.id == emptyFilter.id)[0];
+            const retrievedEmptyFilter = getFilters().filter(f => f.value.id.value == emptyFilter.id.value)[0];
             ctx.assertTruthy(`Empty Filter Exists for type ${type}`, retrievedEmptyFilter);
 
-            let retrievedEmptyFilterFromEmptyFilters = getEmptyFilters().filter(f => f == emptyFilter.id)[0];
-            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, retrievedEmptyFilterFromEmptyFilters);
+            let hasEmptyFilter = getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, hasEmptyFilter);
 
             await app.currentVault.filterStore.deleteFilter(masterKey, emptyFilter);
 
-            let nonExistsEmptyFilter = getEmptyFilters().filter(f => f == emptyFilter.id);
-            ctx.assertEquals(`Empty Filter is not included in empty filters for ${type}`, nonExistsEmptyFilter.length, 0);
+            let doesNotHaveEmptyFilter = !getEmptyFilters().value.has(emptyFilter.id.value);
+            ctx.assertTruthy(`Empty Filter is not included in empty filters for ${type}`, doesNotHaveEmptyFilter);
 
             const duplicateFilterOne: Filter = defaultFilter(type);
-            duplicateFilterOne.conditions.push(condition);
+            duplicateFilterOne.conditions.value.set("Hi", condition);
 
             const duplicateFilterTwo: Filter = defaultFilter(type);
-            duplicateFilterTwo.conditions.push(condition);
+            duplicateFilterTwo.conditions.value.set("Hi", condition);
 
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterOne);
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterTwo);
 
-            const retrievedDuplicateFilterOne = getFilters().filter(f => f.id == duplicateFilterOne.id)[0];
-            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.id == duplicateFilterTwo.id)[0];
+            const retrievedDuplicateFilterOne = getFilters().filter(f => f.value.id.value == duplicateFilterOne.id.value)[0];
+            const retrievedDuplicateFilterTwo = getFilters().filter(f => f.value.id.value == duplicateFilterTwo.id.value)[0];
 
             ctx.assertTruthy(`Duplicate Filter one exists for ${type}`, retrievedDuplicateFilterOne);
             ctx.assertTruthy(`Duplicate Filter two exists for ${type}`, retrievedDuplicateFilterTwo);
 
-            let duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
-            let duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+            let duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            let duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`, duplicateFilterOneFromDuplicates.includes(duplicateFilterTwo.id));
-            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`, duplicateFilterTwoFromDuplicates.includes(duplicateFilterOne.id));
+            ctx.assertTruthy(`Duplicate filter one has duplicate filter two as a duplicate for ${type}`,
+                duplicateFilterOneFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterTwo.id.value));
+
+            ctx.assertTruthy(`Duplicate filter two has duplicate filter one as a duplicate for ${type}`,
+                duplicateFilterTwoFromDuplicates?.value.duplicateDataTypesByID.value.has(duplicateFilterOne.id.value));
 
             await app.currentVault.filterStore.deleteFilter(masterKey, duplicateFilterOne);
 
-            duplicateFilterOneFromDuplicates = getDuplicateFilters()[duplicateFilterOne.id];
-            duplicateFilterTwoFromDuplicates = getDuplicateFilters()[duplicateFilterTwo.id];
+            duplicateFilterOneFromDuplicates = getDuplicateFilters().value.get(duplicateFilterOne.id.value);
+            duplicateFilterTwoFromDuplicates = getDuplicateFilters().value.get(duplicateFilterTwo.id.value);
 
-            ctx.assertEquals(`Duplicate filter one doesn't exist in duplicates for ${type}`, duplicateFilterOneFromDuplicates, undefined);
-            ctx.assertEquals(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates, undefined);
+            ctx.assertUndefined(`Duplicate filter one doesn't exist in duplicates for ${type}`, duplicateFilterOneFromDuplicates);
+            ctx.assertUndefined(`Duplicate filter two doesn't exist in duplicates for ${type}`, duplicateFilterTwoFromDuplicates);
         }
 
         const password = defaultPassword();
-        password.login = filterValue;
+        password.login.value = filterValue;
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         const value = defaultValue();
-        value.name = filterValue;
+        value.name.value = filterValue;
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         await testFilterAdd(DataType.Passwords, "login", () => app.currentVault.filterStore.passwordFilters, () => app.currentVault.filterStore.emptyPasswordFilters,

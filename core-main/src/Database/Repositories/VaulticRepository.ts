@@ -1,4 +1,4 @@
-import { EntityManager, Repository } from "typeorm";
+import { EntityManager, FindOptionsWhere, Repository } from "typeorm";
 import { VaulticEntity } from "../Entities/VaulticEntity";
 import { StoreState } from "../Entities/States/StoreState";
 import { EntityState } from "@vaultic/shared/Types/Entities";
@@ -96,7 +96,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to insert entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
             return false;
         }
@@ -116,7 +116,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert existing entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to insert existing entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
             return false;
         }
@@ -166,23 +166,23 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
         }
 
         return false;
     }
 
-    public async override(manager: EntityManager, id: number, entity: DeepPartial<T>): Promise<boolean>
+    public async override(manager: EntityManager, findBy: number | FindOptionsWhere<T>, entity: DeepPartial<T>): Promise<boolean>
     {
         try 
         {
             const repo = manager.withRepository(this.repository);
-            await repo.update(id, entity as any);
+            await repo.update(findBy, entity as any);
         }
         catch (e)
         {
-            console.log(`Filed to override entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to override entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
             return false;
         }
@@ -216,25 +216,25 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
+            console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
         }
 
         return false;
     }
 
-    public async delete(manager: EntityManager, entityID: number): Promise<boolean>
+    public async delete(manager: EntityManager, findBy: number | FindOptionsWhere<T>): Promise<boolean>
     {
         const repo = manager.withRepository(this.repository);
 
         try
         {
-            const removedEntity = await repo.delete(entityID);
-            return removedEntity.affected == 1;
+            await repo.delete(findBy);
+            return true;
         }
         catch (e)
         {
-            console.log(`Filed to delete entity: ${JSON.stringify(entityID)}`)
+            console.log(`Filed to delete entity: ${JSON.vaulticStringify(findBy)}`)
             console.log(e);
         }
 
@@ -271,15 +271,5 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         return entities;
-    }
-
-    public async getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T> | null]>
-    {
-        return [false, null];
-    }
-
-    public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<T>[] | null]>
-    {
-        return [false, null];
     }
 }

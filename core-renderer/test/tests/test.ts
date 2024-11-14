@@ -14,6 +14,7 @@ export interface TestContext
 {
     assertEquals<T>(description: string, actual: T, expected: T): void;
     assertTruthy<T>(description: string, value: T): void;
+    assertUndefined(description: string, value: any): void;
 }
 
 export function createTestSuite(name: string): TestSuite
@@ -42,7 +43,8 @@ export class Test
     {
         return this.func({
             assertEquals: this.assertEquals.bind(this),
-            assertTruthy: this.assertTruthy.bind(this)
+            assertTruthy: this.assertTruthy.bind(this),
+            assertUndefined: this.assertUndefined.bind(this)
         });
     }
 
@@ -56,9 +58,22 @@ export class Test
         this.results.failedTests[this.name].push(message);
     }
 
+    assertUndefined(description: string, actual: any)
+    {
+        if (actual != undefined)
+        {
+            this.addFailed(`${description} - Expected: undefined, Actual: ${actual}`);
+        }
+    }
+
     assertEquals<T>(description: string, actual: T, expected: T)
     {
-        if (actual != expected)
+        //  make sure that we're not getting equal undefind because of an error, resulting in a false positive
+        if (actual == undefined || expected == undefined)
+        {
+            this.addFailed(`${description} - Undefined Not allowed - Expected: ${expected}, Actual: ${actual}`);
+        }
+        else if (actual != expected)
         {
             this.addFailed(`${description} - Expected: ${expected}, Actual: ${actual}`);
         }

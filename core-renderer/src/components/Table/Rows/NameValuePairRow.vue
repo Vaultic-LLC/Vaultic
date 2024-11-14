@@ -24,8 +24,9 @@ import { defaultInputColor } from '../../../Types/Colors';
 import { InputColorModel } from '../../../Types/Models';
 import { ReactiveValue } from '../../../Objects/Stores/ReactiveValue';
 import cryptHelper from '../../../Helpers/cryptHelper';
-import { NameValuePairType } from '../../../Types/EncryptedData';
 import { generateMFAQRCode } from '../../../Helpers/generatorHelper';
+import { NameValuePairType } from '../../../Types/DataTypes';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "NameValuePairRow",
@@ -38,10 +39,10 @@ export default defineComponent({
     setup(props)
     {
         const textColor: string = defaultInputColor;
-        const value: ComputedRef<ReactiveValue> = computed(() => JSON.parse(JSON.stringify(props.value)));
-        let valueValue: Ref<string> = ref(value.value.value);
+        const value: ComputedRef<Field<ReactiveValue>> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.value)));
+        let valueValue: Ref<string> = ref(value.value.value.value.value);
 
-        const showQRCode: ComputedRef<boolean> = computed(() => value.value.valueType === NameValuePairType.MFAKey);
+        const showQRCode: ComputedRef<boolean> = computed(() => value.value.value.valueType?.value === NameValuePairType.MFAKey);
         const qrCodeUrl: Ref<string> = ref('');
 
         const colorModel: Ref<InputColorModel> = ref({
@@ -66,7 +67,7 @@ export default defineComponent({
                     valueValue.value = result.value ?? "";
                     if (showQRCode.value && result.value)
                     {
-                        generateMFAQRCode(value.value.name, result.value).then((url) =>
+                        generateMFAQRCode(value.value.value.name.value, result.value).then((url) =>
                         {
                             qrCodeUrl.value = url;
                         }).catch(() => { });
@@ -82,7 +83,7 @@ export default defineComponent({
         {
             if (!newValue)
             {
-                valueValue.value = value.value.value;
+                valueValue.value = value.value.value.value.value;
             }
         });
 

@@ -1,15 +1,17 @@
-import { app, shell, BrowserWindow, session } from 'electron'
+import { app, shell, BrowserWindow, session, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import setupIPC from './ipcSetup';
+import { electronAPI } from "@electron-toolkit/preload";
 
 import { environment } from "./Core/Environment"
 import cryptUtility from './Utilities/CryptUtility';
 import hashUtility from './Utilities/HashUtility';
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
-import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
+import database, { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
+import fs from "fs";
 
 async function createWindow(): Promise<void>
 {
@@ -132,6 +134,10 @@ app.on('web-contents-created', (event, contents) =>
 
 async function setupEnvironment(isTest: boolean)
 {
+    // for testing only
+    ipcMain.handle('environment:createNewDatabase', (e, renameCurrentTo: string) => createNewDatabase(renameCurrentTo));
+    ipcMain.handle('environment:setDatabaseAsCurrent', (e, name: string) => setDatabaseAsCurrent(name));
+
     await environment.init({
         isTest,
         sessionHandler: {
@@ -168,4 +174,57 @@ async function getSession(): Promise<string>
     }
 
     return cookies[0].value ?? "";
+}
+
+let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
+directory += "\\Vaultic\\VTest";
+
+async function createNewDatabase(renameCurrentTo: string)
+{
+    return new Promise((resolve) => 
+    {
+        fs.copyFile(`${directory}\\vaultic.db`, `${directory}\\${renameCurrentTo}.db`, async function (err)
+        {
+            if (err)
+            {
+                console.log(`Create Error: ${err}`);
+                resolve(err);
+                return;
+            }
+
+            await deleteDatabase();
+            await environment.setupDatabase();
+            resolve(true);
+        });
+    });
+}
+
+async function setDatabaseAsCurrent(name: string)
+{
+    await deleteDatabase();
+    return new Promise<any>((resolve) =>
+    {
+        fs.copyFile(`${directory}\\${name}.db`, `${directory}\\vaultic.db`, async function (err)
+        {
+            if (err)
+            {
+                console.log(`current copy error: ${err}`)
+                resolve(err);
+                return;
+            }
+
+            fs.unlink(`${directory}\\${name}.db`, async (err) =>
+            {
+                if (err)
+                {
+                    console.log(`current delete error: ${err}`)
+                    resolve(err);
+                    return;
+                }
+
+                await environment.setupDatabase();
+                resolve(true);
+            });
+        });
+    });
 }

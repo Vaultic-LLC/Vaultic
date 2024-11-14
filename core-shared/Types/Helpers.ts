@@ -28,3 +28,8 @@ export interface ClientVaultHelper
     loadArchivedVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<boolean | CondensedVaultData | null | undefined>>;
     unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => Promise<TypedMethodResponse<boolean | CondensedVaultData | undefined>>;
 };
+
+export interface RepositoryHelper 
+{
+    backupData: (masterKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+}

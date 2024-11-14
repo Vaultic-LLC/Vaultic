@@ -49,14 +49,14 @@ import EditFilterPopup from '../ObjectPopups/EditPopups/EditFilterPopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
 import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 
-import { DataType, Filter, Group } from '../../Types/Table';
 import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { HeaderDisplayField } from '../../Types/EncryptedData';
 import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
+import { Filter, DataType, Group } from '../../Types/DataTypes';
+import { HeaderDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
     name: 'FilterGroupTable',
@@ -133,10 +133,10 @@ export default defineComponent({
             switch (app.activeFilterGroupsTable)
             {
                 case DataType.Groups:
-                    return app.userPreferences.currentColorPalette.groupsColor;
+                    return app.userPreferences.currentColorPalette.groupsColor.value;
                 case DataType.Filters:
                 default:
-                    return app.userPreferences.currentColorPalette.filtersColor;
+                    return app.userPreferences.currentColorPalette.filtersColor.value;
             }
         });
 
@@ -144,13 +144,13 @@ export default defineComponent({
             {
                 name: 'Filters',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Filters),
-                color: computed(() => app.userPreferences.currentColorPalette.filtersColor),
+                color: computed(() => app.userPreferences.currentColorPalette.filtersColor.value),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Filters; }
             },
             {
                 name: 'Groups',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Groups),
-                color: computed(() => app.userPreferences.currentColorPalette.groupsColor),
+                color: computed(() => app.userPreferences.currentColorPalette.groupsColor.value),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Groups; }
             }
         ];
@@ -235,8 +235,8 @@ export default defineComponent({
                     createPinnableSelectableTableRowModels<Group>(DataType.Groups, app.activePasswordValuesTable, tableRowDatas,
                         currentGroups.value, currentPinnedGroups.value, (g: Group) =>
                     {
-                        return [{ component: 'TableRowTextValue', value: g.name, copiable: false, width: 'calc(clamp(60px, 4.3vw, 112px) - clamp(5px, 0.5vw, 12px))', margin: true },
-                        { component: "TableRowColorValue", color: g.color, copiable: true, width: 'clamp(60px, 4.3vw, 100px)', margin: false }]
+                        return [{ component: 'TableRowTextValue', value: g.name.value, copiable: false, width: 'calc(clamp(60px, 4.3vw, 112px) - clamp(5px, 0.5vw, 12px))', margin: true },
+                        { component: "TableRowColorValue", color: g.color.value, copiable: true, width: 'clamp(60px, 4.3vw, 100px)', margin: false }]
                     },
                         false, "", false, undefined, onEditGroup,
                         onGroupDeleteInitiated);
@@ -245,8 +245,8 @@ export default defineComponent({
                 default:
                     createPinnableSelectableTableRowModels<Filter>(DataType.Filters, app.activePasswordValuesTable,
                         tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
-                    { return [{ component: 'TableRowTextValue', value: f.name, copiable: false, width: 'clamp(60px, 4.3vw, 100px)' }] },
-                        true, "isActive", true, (f: Filter) => app.currentVault.filterStore.toggleFilter(f.id), onEditFilter, onFilterDeleteInitiated);
+                    { return [{ component: 'TableRowTextValue', value: f.name.value, copiable: false, width: 'clamp(60px, 4.3vw, 100px)' }] },
+                        true, "isActive", true, async (f: Filter) => await app.currentVault.filterStore.toggleFilter(f.id.value), onEditFilter, onFilterDeleteInitiated);
             }
 
             if (tableRef.value)

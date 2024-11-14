@@ -15,9 +15,16 @@ import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 
 async function createWindow(): Promise<void>
 {
-	//@ts-ignore
-	const isTest = import.meta.env.VITE_ISTEST === "true";
-	await setupEnvironment(isTest);
+	if (app.isPackaged)
+	{
+		await setupEnvironment(false);
+	}
+	else
+	{
+		//@ts-ignore
+		const isTest = import.meta.env.VITE_ISTEST === "true";
+		await setupEnvironment(isTest);
+	}
 
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({

@@ -32,11 +32,11 @@ export default defineComponent({
         DevicesView,
         AccountInfoView
     },
-    setup(props)
+    setup()
     {
         const activeSection: Ref<number> = ref(0);
 
-        // copy the object so that we don't edit the original one
+        // copy the object so that we don't edit the original one. Also needed for change tracking
         const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const settingsView: ComputedRef<SingleSelectorItemModel> = computed(() =>

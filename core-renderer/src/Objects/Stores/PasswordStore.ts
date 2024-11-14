@@ -1,37 +1,42 @@
-import { Password, CurrentAndSafeStructure, AtRiskType } from "../../Types/EncryptedData";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
-import { PrimaryDataObjectStore, DataTypeStoreState } from "./Base";
-import { generateUniqueID } from "../../Helpers/generatorHelper";
+import { PrimaryDataTypeStore, StoreState } from "./Base";
+import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { DataType } from "../../Types/Table";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { AtRiskType, CurrentAndSafeStructure, DuplicateDataTypes, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
+import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
-export interface PasswordStoreState extends DataTypeStoreState<ReactivePassword>
+interface IPasswordStoreState extends StoreState
 {
-    duplicatePasswords: Dictionary<string[]>;
-    currentAndSafePasswords: CurrentAndSafeStructure;
-}
+    passwordsByID: Field<Map<string, Field<ReactivePassword>>>;
+    duplicatePasswords: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
+    currentAndSafePasswords: Field<KnownMappedFields<CurrentAndSafeStructure>>;
+};
 
-export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, PasswordStoreState>
+export type PasswordStoreState = KnownMappedFields<IPasswordStoreState>;
+
+export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState>
 {
     constructor(vault: VaultStoreParameter)
     {
         super(vault, "passwordStoreState");
     }
 
+    protected getPrimaryDataTypesByID(state: KnownMappedFields<IPasswordStoreState>): Field<Map<string, Field<SecondaryDataObjectCollectionType & IFieldedObject>>>
+    {
+        return state.passwordsByID;
+    }
+
     protected defaultState()
     {
         return {
-            hash: "",
-            hashSalt: "",
-            values: [],
-            duplicatePasswords: {},
-            currentAndSafePasswords: { current: [], safe: [] },
+            passwordsByID: new Field(new Map<string, Field<ReactivePassword>>()),
+            duplicatePasswords: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
+            currentAndSafePasswords: new Field(new CurrentAndSafeStructure()),
         }
     }
 
@@ -42,10 +47,10 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState: PasswordStoreState = this.cloneState();
 
-        password.id = await generateUniqueID(pendingState.values);
+        password.id.value = await generateUniqueIDForMap(pendingState.passwordsByID.value);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingState.values, "password", pendingState.duplicatePasswords);
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingState.passwordsByID, "password", pendingState.duplicatePasswords);
 
         if (!(await this.setPasswordProperties(masterKey, password)))
         {
@@ -54,14 +59,14 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
 
         await this.updateSecurityQuestions(masterKey, password, true, [], []);
 
-        const reactivePassword = createReactivePassword(password);
-        pendingState.values.push(reactivePassword);
-        this.incrementCurrentAndSafePasswords(pendingState);
+        const reactivePassword = new Field(createReactivePassword(password));
+        pendingState.passwordsByID.value.set(password.id.value, reactivePassword);
+
+        await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
 
         // update groups before filters
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.id, reactivePassword.groups, []);
-        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords([reactivePassword],
-            pendingGroupState.values.filter(g => g.type == DataType.Passwords));
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.value.id.value, new RelatedDataTypeChanges(reactivePassword.value.groups.value));
+        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[reactivePassword.value.id.value, reactivePassword]]), pendingGroupState.passwordGroupsByID, true);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -76,67 +81,63 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        const passwordIndex = pendingState.values.findIndex(p => p.id == updatingPassword.id);
-        if (passwordIndex < 0)
+        const currentPassword = pendingState.passwordsByID.value.get(updatingPassword.id.value);
+        if (!currentPassword)
         {
             await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Update")
             return false;
         }
 
         // TODO: Check update email on sever if isVaultic
-        if (updatingPassword.isVaultic && !app.isOnline)
+        if (updatingPassword.isVaultic.value && !app.isOnline)
         {
             return false;
         }
 
-        const currentPassword = pendingState.values[passwordIndex];
-
         // retrieve these before updating
-        const addedGroups = updatingPassword.groups.filter(g => !currentPassword.groups.includes(g));
-        const removedGroups = currentPassword.groups.filter(g => !updatingPassword.groups.includes(g));
+        const changedGroups = this.getRelatedDataTypeChanges(currentPassword.value.groups.value, updatingPassword.groups.value);
 
         if (passwordWasUpdated)
         {
-            if (updatingPassword.isVaultic)
+            // Don't support updating the master key at this time, set our 'new' password to our old one
+            if (updatingPassword.isVaultic.value)
             {
-                // we don't allow storing their master key
-                updatingPassword.password = "";
+                updatingPassword.password.value = currentPassword.value.password.value;
             }
 
             // do this before re encrypting the password
-            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword,
-                pendingState.values.filter(p => p.id != updatingPassword.id), "password", pendingState.duplicatePasswords);
-
+            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, pendingState.passwordsByID, "password", pendingState.duplicatePasswords);
             if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
             {
                 return false;
             }
         }
-        else if (!updatingPassword.isVaultic)
+        else if (!updatingPassword.isVaultic.value)
         {
+            this.checkUpdateDuplicatePrimaryObjectsModifiedTime(updatingPassword.id.value, pendingState.duplicatePasswords);
+
             // need to check to see if the password contains their potentially updated username
-            const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.password);
+            const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.password.value);
             if (!decryptResponse.success)
             {
                 return false;
             }
 
-            if (decryptResponse.value?.includes(updatingPassword.login))
+            if (decryptResponse.value?.includes(updatingPassword.login.value))
             {
-                updatingPassword.containsLogin = true;
+                updatingPassword.containsLogin.value = true;
             }
         }
 
         await this.updateSecurityQuestions(masterKey, updatingPassword, false, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers);
 
         const newPassword = createReactivePassword(updatingPassword);
-        pendingState.values[passwordIndex] = newPassword;
+        currentPassword.value = newPassword;
 
-        this.incrementCurrentAndSafePasswords(pendingState);
+        await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id, addedGroups, removedGroups);
-        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords([updatingPassword],
-            pendingGroupState.values.filter(g => g.type == DataType.Passwords));
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id.value, changedGroups);
+        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[currentPassword.value.id.value, currentPassword]]), pendingGroupState.passwordGroupsByID, true);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -152,25 +153,26 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
 
         // TODO: should just hide the delete button for the vaultic password? Is this even needed anymore? 
         // Can users update their email another way, like via stripe and then I have a webhook for that?
-        if (password.isVaultic)
+        if (password.isVaultic.value)
         {
             app.popups.showAlert("Error", "Can't delete the username / password used for signing into Vaultic Services", false);
             return false;
         }
 
-        const passwordIndex = pendingState.values.findIndex(p => p.id == password.id);
-        if (passwordIndex < 0)
+        const currentPassword = pendingState.passwordsByID.value.get(password.id.value);
+        if (!currentPassword)
         {
             await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Delete")
             return false;
         }
 
         this.checkRemoveFromDuplicate(password, pendingState.duplicatePasswords);
-        pendingState.values.splice(passwordIndex, 1);
-        this.incrementCurrentAndSafePasswords(pendingState);
+        pendingState.passwordsByID.value.delete(currentPassword.value.id.value);
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id, [], password.groups);
-        const pendingFilterState = this.vault.filterStore.removePasswordFromFilters(password.id);
+        await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
+
+        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id.value, new RelatedDataTypeChanges(undefined, password.groups.value, undefined));
+        const pendingFilterState = this.vault.filterStore.removePasswordFromFilters(password.id.value);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -179,38 +181,42 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
         return await transaction.commit(masterKey);
     }
 
-    private incrementCurrentAndSafePasswords(pendingState: PasswordStoreState)
+    private async incrementCurrentAndSafePasswords(pendingState: PasswordStoreState, passwords: Field<Map<string, Field<ReactivePassword>>>)
     {
-        pendingState.currentAndSafePasswords.current.push(pendingState.values.length);
+        const id = await generateUniqueIDForMap(pendingState.currentAndSafePasswords.value.current.value);
+        pendingState.currentAndSafePasswords.value.current.value.set(id, new Field(passwords.value.size));
 
-        const safePasswords = pendingState.values.filter(
-            p => !p.isWeak && !pendingState.duplicatePasswords[p.id] && !p.containsLogin && !p.isOld);
+        const safePasswords = passwords.value.filter((k, v) => this.passwordIsSafe(pendingState, v.value));
+        pendingState.currentAndSafePasswords.value.safe.value.set(id, new Field(safePasswords.size));
+    }
 
-        pendingState.currentAndSafePasswords.safe.push(safePasswords.length);
+    private passwordIsSafe(state: PasswordStoreState, password: ReactivePassword)
+    {
+        return !password.isOld() && !password.containsLogin.value && !password.isWeak.value && !state.duplicatePasswords.value.has(password.id.value);
     }
 
     private async setPasswordProperties(masterKey: string, password: Password): Promise<boolean>
     {
-        if (!password.isVaultic)
+        if (!password.isVaultic.value)
         {
-            password.lastModifiedTime = new Date().getTime().toString();
+            password.lastModifiedTime.value = new Date().getTime().toString();
 
-            const [isWeak, isWeakMessage] = await api.helpers.validation.isWeak(password.password, "Password");
-            password.isWeak = isWeak;
-            password.isWeakMessage = isWeakMessage;
+            const [isWeak, isWeakMessage] = await api.helpers.validation.isWeak(password.password.value, "Password");
+            password.isWeak.value = isWeak;
+            password.isWeakMessage.value = isWeakMessage;
 
-            password.containsLogin = password.password.includes(password.login);
+            password.containsLogin.value = password.password.value.includes(password.login.value);
         }
 
-        password.passwordLength = password.password.length;
+        password.passwordLength.value = password.password.value.length;
 
-        const response = await cryptHelper.encrypt(masterKey, password.password);
+        const response = await cryptHelper.encrypt(masterKey, password.password.value);
         if (!response)
         {
             return false;
         }
 
-        password.password = response.value!;
+        password.password.value = response.value!;
         return true;
     }
 
@@ -223,107 +229,109 @@ export class PasswordStore extends PrimaryDataObjectStore<ReactivePassword, Pass
     {
         if (updateAllSecurityQuestions)
         {
-            for (let i = 0; i < password.securityQuestions.length; i++)
+            for (const [key, value] of password.securityQuestions.value.entries())
             {
-                await updateSecurityQuestionQuestion(masterKey, password, i);
-                await updateSecurityQuestionnAnswer(masterKey, password, i);
+                await updateSecurityQuestionQuestion(masterKey, value);
+                await updateSecurityQuestionnAnswer(masterKey, value);
             }
         }
         else
         {
             for (let i = 0; i < updatedSecurityQuestionQuestions.length; i++)
             {
-                let sq = password.securityQuestions.filter(q => q.id == updatedSecurityQuestionQuestions[i]);
-                if (sq.length != 1)
+                let sq = password.securityQuestions.value.get(updatedSecurityQuestionQuestions[i]);
+                if (!sq)
                 {
                     continue;
                 }
 
-                await updateSecurityQuestionQuestion(masterKey, password, i);
+                await updateSecurityQuestionQuestion(masterKey, sq);
             }
 
             for (let i = 0; i < updatedSecurityQuestionAnswers.length; i++)
             {
-                let sq = password.securityQuestions.filter(q => q.id == updatedSecurityQuestionAnswers[i]);
-                if (sq.length != 1)
+                let sq = password.securityQuestions.value.get(updatedSecurityQuestionAnswers[i]);
+                if (!sq)
                 {
                     continue;
                 }
 
-                await updateSecurityQuestionnAnswer(masterKey, password, i);
+                await updateSecurityQuestionnAnswer(masterKey, sq);
             }
         }
 
-        async function updateSecurityQuestionQuestion(masterKey: string, password: Password, index: number)
+        async function updateSecurityQuestionQuestion(masterKey: string, securityQuestion: Field<SecurityQuestion>)
         {
-            password.securityQuestions[index].questionLength = password.securityQuestions[index].question.length;
-            password.securityQuestions[index].question = (await cryptHelper.encrypt(masterKey, password.securityQuestions[index].question)).value ?? "";
+            securityQuestion.value.questionLength.value = securityQuestion.value.question.value.length;
+            securityQuestion.value.question.value = (await cryptHelper.encrypt(masterKey, securityQuestion.value.question.value)).value ?? "";
         }
 
-        async function updateSecurityQuestionnAnswer(masterKey: string, password: Password, index: number)
+        async function updateSecurityQuestionnAnswer(masterKey: string, securityQuestion: Field<SecurityQuestion>)
         {
-            password.securityQuestions[index].answerLength = password.securityQuestions[index].answer.length;
-            password.securityQuestions[index].answer = ((await cryptHelper.encrypt(masterKey, password.securityQuestions[index].answer)).value ?? "");
+            securityQuestion.value.answerLength.value = securityQuestion.value.answer.value.length;
+            securityQuestion.value.answer.value = ((await cryptHelper.encrypt(masterKey, securityQuestion.value.answer.value)).value ?? "");
         }
     }
 }
 
 export class ReactivePasswordStore extends PasswordStore
 {
+    private internalPasswords: ComputedRef<Field<ReactivePassword>[]>;
+
     private internalOldPasswords: ComputedRef<string[]>;
     private internalWeakPasswords: ComputedRef<string[]>;
-
     private internalContainsLoginPasswords: ComputedRef<string[]>;
-    private internalDuplicatePasswords: ComputedRef<string[]>;
 
-    private internalDuplicatePasswordsLength: ComputedRef<number>;
-    private internalPinnedPasswords: ComputedRef<ReactivePassword[]>;
-    private internalUnpinnedPasswords: ComputedRef<ReactivePassword[]>;
+    private internalPinnedPasswords: ComputedRef<Field<ReactivePassword>[]>;
+    private internalUnpinnedPasswords: ComputedRef<Field<ReactivePassword>[]>;
+
+    private internalCurrentAndSafePasswordsCurrent: ComputedRef<number[]>;
+    private internalCurrentAndSafePasswordsSafe: ComputedRef<number[]>;
 
     private internalActiveAtRiskPasswordType: Ref<AtRiskType>;
-    private internalHasVaulticPassword: ComputedRef<boolean>;
 
     private internalBreachedPasswords: ComputedRef<string[]>;
 
-    get passwords() { return this.state.values; }
+    get passwords() { return this.internalPasswords.value; }
+    get passwordsByID() { return this.state.passwordsByID; }
     get pinnedPasswords() { return this.internalPinnedPasswords.value; }
     get unpinnedPasswords() { return this.internalUnpinnedPasswords.value; }
     get oldPasswords() { return this.internalOldPasswords }
     get weakPasswords() { return this.internalWeakPasswords }
     get containsLoginPasswords() { return this.internalContainsLoginPasswords }
-    get duplicatePasswords() { return this.internalDuplicatePasswords }
-    get duplicatePasswordsLength() { return this.internalDuplicatePasswordsLength.value; }
-    get currentAndSafePasswords() { return this.state.currentAndSafePasswords; }
+    get duplicatePasswords() { return this.state.duplicatePasswords; }
+    get currentAndSafePasswordsCurrent() { return this.internalCurrentAndSafePasswordsCurrent.value; }
+    get currentAndSafePasswordsSafe() { return this.internalCurrentAndSafePasswordsSafe.value; }
     get activeAtRiskPasswordType() { return this.internalActiveAtRiskPasswordType.value; }
-    get hasVaulticPassword() { return this.internalHasVaulticPassword.value; }
     get breachedPasswords() { return this.internalBreachedPasswords.value; }
 
     constructor(vault: any)
     {
         super(vault);
 
-        this.internalOldPasswords = computed(() => this.state.values.filter(p => p.isOld).map(p => p.id));
-        this.internalWeakPasswords = computed(() => this.state.values.filter(p => p.isWeak).map(p => p.id));
+        this.internalPasswords = computed(() => this.state.passwordsByID.value.valueArray());
 
-        this.internalContainsLoginPasswords = computed(() => this.state.values.filter(p => p.containsLogin).map(p => p.id));
-        this.internalDuplicatePasswords = computed(() => Object.keys(this.state.duplicatePasswords));
+        this.internalOldPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.isOld(), (k, v) => v.value.id.value));
+        this.internalWeakPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.isWeak.value, (k, v) => v.value.id.value));
+        this.internalContainsLoginPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.containsLogin.value, (k, v) => v.value.id.value));
 
-        this.internalDuplicatePasswordsLength = computed(() => Object.keys(this.state.duplicatePasswords).length);
-        this.internalPinnedPasswords = computed(() => this.state.values.filter(p => this.vault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(p.id)));
-        this.internalUnpinnedPasswords = computed(() => this.state.values.filter(p => !this.vault.vaultPreferencesStore.pinnedPasswords.hasOwnProperty(p.id)));
+        this.internalPinnedPasswords = computed(() => this.passwords.filter(p => app.userPreferences.pinnedPasswords.value.has(p.value.id.value)));
+        this.internalUnpinnedPasswords = computed(() => this.passwords.filter(p => !app.userPreferences.pinnedPasswords.value.has(p.value.id.value)));
+
+        this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.currentAndSafePasswords.value.current.value.map((k, v) => v.value));
+        this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.currentAndSafePasswords.value.safe.value.map((k, v) => v.value));
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
-        this.internalHasVaulticPassword = computed(() => this.state.values.filter(p => p.isVaultic).length > 0);
 
         this.internalBreachedPasswords = computed(() => !app.userDataBreaches.userDataBreaches ? [] :
-            this.state.values.filter(p => app.userDataBreaches.userDataBreaches.filter(b => b.PasswordID == p.id).length > 0).map(p => p.id));
+            this.passwords.filter(p => app.userDataBreaches.userDataBreaches.filter(b => b.PasswordID == p.value.id.value).length > 0).map(p => p.value.id.value));
     }
 
-    protected postAssignState(state: PasswordStoreState): void 
+    protected preAssignState(state: PasswordStoreState): void 
     {
-        for (let i = 0; i < state.values.length; i++)
+        for (const [key, value] of state.passwordsByID.value.entries())
         {
-            state.values[i] = createReactivePassword(state.values[i]);
+            value.value = createReactivePassword(value.value);
         }
     }
 

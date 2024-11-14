@@ -23,7 +23,7 @@
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
-import { DataType } from '../../Types/Table';
+import { DataType } from '../../Types/DataTypes';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
@@ -80,22 +80,22 @@ export default defineComponent({
 
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                currentPrimaryColor = app.userPreferences.currentColorPalette.passwordsColor.primaryColor;
-                currentSecondaryColorOne = app.userPreferences.currentColorPalette.passwordsColor.secondaryColorOne;
-                currentSecondaryColorTwo = app.userPreferences.currentColorPalette.passwordsColor.secondaryColorTwo;
+                currentPrimaryColor = app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
+                currentSecondaryColorOne = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
+                currentSecondaryColorTwo = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
             }
             else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
-                currentPrimaryColor = app.userPreferences.currentColorPalette.valuesColor.primaryColor;
-                currentSecondaryColorOne = app.userPreferences.currentColorPalette.valuesColor.secondaryColorOne;
-                currentSecondaryColorTwo = app.userPreferences.currentColorPalette.valuesColor.secondaryColorTwo;
+                currentPrimaryColor = app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value;
+                currentSecondaryColorOne = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;
+                currentSecondaryColorTwo = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorTwo.value;
             }
 
             let primaryColorTween = getColorTween(previousPrimaryColor.value, currentPrimaryColor, primaryColor)
             let secondaryColorOneTween = getColorTween(previousSecondaryColorOne.value, currentSecondaryColorOne, secondaryColorOne);
             let secondaryColorTwoTween = getColorTween(previousSecondaryColorTwo.value, currentSecondaryColorTwo, secondaryColorTwo);
 
-            function animate(time)
+            function animate(time: number)
             {
                 if (!startColorTransitionTime)
                 {
@@ -193,19 +193,19 @@ export default defineComponent({
 
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.secondaryColorOne;
-                secondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.secondaryColorOne;
+                previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
+                secondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
 
-                previousSecondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.secondaryColorTwo;
-                secondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.secondaryColorTwo;
+                previousSecondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
+                secondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
             }
             else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
-                previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.secondaryColorOne;
-                secondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.secondaryColorOne;
+                previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;
+                secondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;
 
-                previousSecondaryColorTwo.value = app.userPreferences.currentColorPalette.valuesColor.secondaryColorTwo;
-                secondaryColorTwo.value = app.userPreferences.currentColorPalette.valuesColor.secondaryColorTwo;
+                previousSecondaryColorTwo.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorTwo.value;
+                secondaryColorTwo.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorTwo.value;
             }
 
             transitionColors();

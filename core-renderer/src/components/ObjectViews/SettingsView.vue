@@ -5,21 +5,21 @@
             <div class="settingsView__sectionTitle settingsView__appSettings">App Settings</div>
             <div class="settingsView__inputSection">
                 <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
-                    v-model="appSettings.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
+                    v-model="appSettings.autoLockTime.value" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
                     :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
                 <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
-                    :color="color" v-model="appSettings.multipleFilterBehavior" :optionsEnum="FilterStatus"
+                    :color="color" v-model="appSettings.multipleFilterBehavior.value" :optionsEnum="FilterStatus"
                     fadeIn="true" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                     :disabled="readOnly" />
             </div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
-                    :label="'Max Login Records Per Day'" v-model="vaultSettings.loginRecordsToStorePerDay"
+                    :label="'Max Login Records Per Day'" v-model="vaultSettings.loginRecordsToStorePerDay.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceLoginRecordsPerDay" />
                 <TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
-                    :label="'Days to Store Login Records'" v-model="vaultSettings.numberOfDaysToStoreLoginRecords"
+                    :label="'Days to Store Login Records'" v-model="vaultSettings.numberOfDaysToStoreLoginRecords.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
@@ -28,28 +28,28 @@
                 <CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
                     :minHeight="'12.5px'" :disabled="readOnly"
                     :label="'Default Additional Information to Markdown on Edit Screens'"
-                    v-model="appSettings.defaultMarkdownInEditScreens" />
+                    v-model="appSettings.defaultMarkdownInEditScreens.value" />
             </div>
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__randomPasswordLength" :color="color"
-                    :label="'Random Password Length'" v-model.number="appSettings.randomValueLength"
+                    :label="'Random Password Length'" v-model.number="appSettings.randomValueLength.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceMinRandomPasswordLength" />
                 <TextInputField class="settingsView__randomPassphraseLength" :color="color"
-                    :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength"
+                    :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceMinRandomPassphraseLength" />
             </div>
             <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
-                    v-model.number="appSettings.oldPasswordDays" :inputType="'number'" :width="'10vw'"
+                    v-model.number="appSettings.oldPasswordDays.value" :inputType="'number'" :width="'10vw'"
                     :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceOldPasswordDays" />
                 <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
-                    :label="'% Filled Metric for Pulse'" v-model.number="appSettings.percentMetricForPulse"
+                    :label="'% Filled Metric for Pulse'" v-model.number="appSettings.percentMetricForPulse.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
@@ -71,10 +71,10 @@ import ScrollView from './ScrollView.vue';
 
 import { AutoLockTime } from '../../Types/Settings';
 import { GridDefinition } from '../../Types/Models';
-import { FilterStatus } from '../../Types/Table';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import { VaultSettings } from "../../Objects/Stores/VaultStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
+import { FilterStatus } from '../../Types/DataTypes';
 
 export default defineComponent({
     name: "ValueView",
@@ -91,12 +91,12 @@ export default defineComponent({
     {
         const refreshKey: Ref<string> = ref("");
 
-        // copy the objects so that we don't edit the original one
-        const originalAppSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
-        const appSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
+        // copy the objects so that we don't edit the original one. Also needed for change tracking
+        const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
+        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
 
-        const originalVaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings)));
-        const vaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings)));
+        const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
+        const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
@@ -127,18 +127,18 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-            if (JSON.stringify(originalAppSettings.value) != JSON.stringify(appSettings.value))
+            if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
             {
                 const state = app.cloneState();
-                state.settings = appSettings.value;
+                state.settings.value = appSettings.value;
 
                 transaction.updateUserStore(app, state);
             }
 
-            if (JSON.stringify(originalVaultSettings.value) != JSON.stringify(vaultSettings.value))
+            if (JSON.vaulticStringify(originalVaultSettings.value) != JSON.vaulticStringify(vaultSettings.value))
             {
                 const state = app.currentVault.cloneState();
-                state.settings = vaultSettings.value;
+                state.settings.value = vaultSettings.value;
 
                 transaction.updateVaultStore(app.currentVault, state);
             }

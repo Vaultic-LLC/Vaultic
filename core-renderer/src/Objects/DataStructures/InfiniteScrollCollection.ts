@@ -1,4 +1,4 @@
-import app from "../../Objects/Stores/AppStore";
+import { rowChunkAmount } from "../../Constants/Misc";
 
 export default class InfiniteScrollCollection<T>
 {
@@ -8,7 +8,7 @@ export default class InfiniteScrollCollection<T>
 
     constructor()
     {
-        this.chunkSize = app.settings.rowChunkAmount;
+        this.chunkSize = rowChunkAmount;
         this.allValues = [];
         this.visualValues = [];
     }

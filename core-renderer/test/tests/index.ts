@@ -13,6 +13,9 @@ import importExportHelperTestSuite from "./helpers/importExportHelper.test";
 
 import cryptUtilityTestSuite from "./utilities/cryptUtility.test";
 
+import backupTestSuite from "./base/backup.test";
+import mergingDataTestSuite from "./base/mergingData.test";
+
 const results: TestResult = new TestResult();
 
 async function runTests(suite: TestSuite)
@@ -30,6 +33,8 @@ export default async function runAllTests()
 
     // These should go first since they mess with logging in
     await runTests(serverHelperTestSuite);
+    //await runTests(backupTestSuite);
+    await runTests(mergingDataTestSuite);
     await runTests(appStoreTestSuite);
     await runTests(vaultStoreTestSuite);
 
@@ -40,6 +45,15 @@ export default async function runAllTests()
     await runTests(transactionTestSuite);
     await runTests(importExportHelperTestSuite);
     await runTests(cryptUtilityTestSuite);
+
+    results.printStatus();
+}
+
+export async function runAllPasswordTests()
+{
+    console.time();
+    await runTests(serverHelperTestSuite);
+    await runTests(passwordStoreSuite);
 
     results.printStatus();
 }
@@ -55,6 +69,7 @@ export async function runAllValueTests()
 export async function runAllGroupTests()
 {
     console.time();
+    await runTests(serverHelperTestSuite);
     await runTests(groupStoreSuite);
 
     results.printStatus();
@@ -87,6 +102,7 @@ export async function runServerHelperTests()
 export async function runImportExportHelperTests()
 {
     console.time();
+    await runTests(serverHelperTestSuite);
     await runTests(importExportHelperTestSuite);
 
     results.printStatus();
@@ -95,7 +111,28 @@ export async function runImportExportHelperTests()
 export async function runCryptUtilityTests()
 {
     console.time();
+    await runTests(serverHelperTestSuite);
     await runTests(cryptUtilityTestSuite);
+
+    results.printStatus();
+}
+
+export async function runAllBackupTests()
+{
+    console.time();
+
+    await runTests(serverHelperTestSuite);
+    await runTests(backupTestSuite);
+
+    results.printStatus();
+}
+
+export async function runAllMergingDataTests()
+{
+    console.time();
+
+    await runTests(serverHelperTestSuite);
+    await runTests(mergingDataTestSuite);
 
     results.printStatus();
 }

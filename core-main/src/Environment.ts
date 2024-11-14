@@ -5,6 +5,8 @@ import { VaulticCache } from "./Cache";
 import { DeviceInfo } from "@vaultic/shared/Types/Device";
 import { HashUtility } from "@vaultic/shared/Types/Utilities";
 import { CryptUtility, GeneratorUtility } from "./Types/Utilities";
+import * as PolyFills from "@vaultic/shared/Types/PolyFills";
+PolyFills.a;
 
 export interface SessionHandler
 {

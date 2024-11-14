@@ -15,8 +15,11 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { EntityState, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { IUserRepository } from "../../Types/Repositories";
+import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { ChangeTracking } from "../Entities/ChangeTracking";
 
-class UserRepository extends VaulticRepository<User>
+class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
     protected getRepository(): Repository<User> | undefined
     {
@@ -168,7 +171,7 @@ class UserRepository extends VaulticRepository<User>
 
             userVault.userID = user.userID;
             userVault.user = user;
-            userVault.vaultKey = JSON.stringify({
+            userVault.vaultKey = JSON.vaulticStringify({
                 vaultKey: encryptedVaultKey.value.data,
                 publicKey: encryptedVaultKey.value.publicKey
             });
@@ -222,9 +225,20 @@ class UserRepository extends VaulticRepository<User>
 
         async function internalVerifyUserMasterKey(this: UserRepository): Promise<TypedMethodResponse<boolean>>
         {
-            // this is ok to not verify since the masterKey hash and salt aren't included in the 
-            // signature anyways
-            let user: User | null = await this.getCurrentUser();
+            let user: User | null = null;
+            if (email)
+            {
+                // don't verify since that will cause an exception if the master key is wrong, which makes it impossible
+                // to tell if the user doesn't exist or if they just didn't type the master key correctly
+                user = await this.repository.findOneBy({ email: email });
+            }
+            else 
+            {
+                // this is ok to not verify since the masterKey hash and salt aren't included in the 
+                // signature anyways, so verifying won't actually do anything if they were tampered with
+                user = await this.getCurrentUser();
+            }
+
             if (!user)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
@@ -247,12 +261,19 @@ class UserRepository extends VaulticRepository<User>
         }
     }
 
-    public async setCurrentUser(masterKey: string, email: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async setCurrentUser(masterKey: string, email: string): Promise<TypedMethodResponse<undefined>>
     {
         return await safetifyMethod(this, internalSetCurrentUser);
 
-        async function internalSetCurrentUser(this: UserRepository): Promise<TypedMethodResponse<boolean>>
+        async function internalSetCurrentUser(this: UserRepository): Promise<TypedMethodResponse<undefined>>
         {
+            // don't allow setting a current user while one is already set. This would cause issues
+            // for the first user
+            if (environment.cache.currentUserID != undefined)
+            {
+                return TypedMethodResponse.fail(undefined, "setCurrentUser", "Current User already set");
+            }
+
             const user = await this.findByEmail(masterKey, email);
             if (!user)
             {
@@ -360,7 +381,7 @@ class UserRepository extends VaulticRepository<User>
             }
 
             userData.success = true;
-            return TypedMethodResponse.success(JSON.stringify(userData));
+            return TypedMethodResponse.success(JSON.vaulticStringify(userData));
 
             async function setCurrentVault(id: number, setAsLastUsed: boolean)
             {
@@ -384,7 +405,7 @@ class UserRepository extends VaulticRepository<User>
         }
     }
 
-    public async saveUser(masterKey: string, data: string, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveUser(masterKey: string, newData: string, currentData: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveUser);
 
@@ -408,13 +429,22 @@ class UserRepository extends VaulticRepository<User>
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const newUser: UserData = JSON.parse(data);
+            const newUser: UserData = JSON.vaulticParse(newData);
             const transaction = new Transaction();
+
+            let parsedCurrentData: UserData | undefined = undefined;
+            if (newUser.appStoreState || newUser.userPreferencesStoreState)
+            {
+                parsedCurrentData = JSON.vaulticParse(currentData);
+            }
 
             if (newUser.appStoreState)
             {
+                const currentAppStoreState = JSON.vaulticParse(parsedCurrentData.appStoreState);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
+
                 if (!await (environment.repositories.appStoreStates.updateState(
-                    user.appStoreState.appStoreStateID, masterKey, newUser.appStoreState, transaction)))
+                    user.appStoreState.appStoreStateID, masterKey, state, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update AppStoreState");
                 }
@@ -422,8 +452,11 @@ class UserRepository extends VaulticRepository<User>
 
             if (newUser.userPreferencesStoreState)
             {
+                const currentUserPreferences = JSON.vaulticParse(parsedCurrentData.userPreferencesStoreState);
+                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, "", JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
+
                 if (!await (environment.repositories.userPreferencesStoreStates.updateState(
-                    user.userPreferencesStoreState.userPreferencesStoreStateID, "", newUser.userPreferencesStoreState, transaction, false)))
+                    user.userPreferencesStoreState.userPreferencesStoreStateID, "", state, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Update UserPreferencesStoreState");
                 }
@@ -435,32 +468,27 @@ class UserRepository extends VaulticRepository<User>
                 return TypedMethodResponse.transactionFail();
             }
 
-            if (masterKey && backup && !(await backupData(masterKey)))
-            {
-                return TypedMethodResponse.backupFail();
-            }
-
             return TypedMethodResponse.success(true);
         }
     }
 
-    public async getEntityThatNeedToBeBackedUp(masterKey: string): Promise<[boolean, Partial<User> | null]>
+    public async getEntityThatNeedsToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<User> | undefined>>
     {
         const currentUser = await this.getVerifiedCurrentUser(masterKey);
         if (!currentUser)
         {
-            return [false, null];
+            return TypedMethodResponse.fail();
         }
 
         const response = await this.retrieveAndVerify(masterKey, getUsers);
         if (!response[0])
         {
-            return [false, null];
+            return TypedMethodResponse.fail();
         }
 
         if (!response[1])
         {
-            return [true, null];
+            return TypedMethodResponse.success();
         }
 
         const user = response[1];
@@ -486,7 +514,7 @@ class UserRepository extends VaulticRepository<User>
             userDataToBackup.userPreferencesStoreState = user.userPreferencesStoreState.getBackup() as UserPreferencesStoreState;
         }
 
-        return [true, userDataToBackup];
+        return TypedMethodResponse.success(userDataToBackup);
 
         function getUsers(repository: Repository<User>): Promise<User | null>
         {
@@ -505,7 +533,7 @@ class UserRepository extends VaulticRepository<User>
         }
     }
 
-    public async postBackupEntityUpdates(key: string, entity: Partial<User>, transaction: Transaction)
+    public async postBackupEntityUpdates(key: string, entity: DeepPartial<User>, transaction: Transaction)
     {
         const currentUser = await this.getVerifiedCurrentUser(key);
         if (!currentUser || !entity.userID || entity.userID != currentUser.userID)
@@ -552,7 +580,7 @@ class UserRepository extends VaulticRepository<User>
         return true;
     }
 
-    public async updateFromServer(currentUser: DeepPartial<User>, newUser: DeepPartial<User>, transaction: Transaction)
+    public async updateFromServer(masterKey: string, currentUser: DeepPartial<User>, newUser: DeepPartial<User>, changeTrackings: Dictionary<ChangeTracking>, transaction: Transaction)
     {
         if (!newUser.userID)
         {
@@ -561,6 +589,7 @@ class UserRepository extends VaulticRepository<User>
 
         const partialUser: DeepPartial<User> = {};
         let updatedUser = false;
+        let needsToRePushData = false;
 
         if (newUser.email)
         {
@@ -601,7 +630,13 @@ class UserRepository extends VaulticRepository<User>
         {
             if (currentUser?.appStoreState?.entityState == EntityState.Updated)
             {
-                // TODO: merge changes between states
+                if (!await (environment.repositories.appStoreStates.mergeStates(masterKey, currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
+                    changeTrackings, transaction)))
+                {
+                    return;
+                }
+
+                needsToRePushData = true;
             }
             else 
             {
@@ -614,7 +649,13 @@ class UserRepository extends VaulticRepository<User>
         {
             if (currentUser?.userPreferencesStoreState?.entityState == EntityState.Updated)
             {
-                // TODO: merge changes between states
+                if (!await (environment.repositories.appStoreStates.mergeStates("", currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
+                    changeTrackings, transaction, false)))
+                {
+                    return;
+                }
+
+                needsToRePushData = true;
             }
             else 
             {
@@ -625,6 +666,41 @@ class UserRepository extends VaulticRepository<User>
                     partialUserPreferencesStoreState,
                     () => environment.repositories.userPreferencesStoreStates);
             }
+        }
+
+        return needsToRePushData;
+    }
+
+    public async getStoreStates(masterKey: string, storeStatesToRetrieve: UserData): Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>
+    {
+        return await safetifyMethod(this, internalGetStoreStates);
+
+        async function internalGetStoreStates(this: UserRepository): Promise<TypedMethodResponse<DeepPartial<UserData>>>
+        {
+            const currentUser = await this.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
+
+            const userData: DeepPartial<UserData> = {};
+            if (storeStatesToRetrieve.appStoreState)
+            {
+                const decryptedAppStoreState = await environment.utilities.crypt.decrypt(masterKey, currentUser.appStoreState.state);
+                if (!decryptedAppStoreState)
+                {
+                    return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "AppStoreState");
+                }
+
+                userData.appStoreState = decryptedAppStoreState.value;
+            }
+
+            if (storeStatesToRetrieve.userPreferencesStoreState)
+            {
+                userData.userPreferencesStoreState = currentUser.userPreferencesStoreState.state;
+            }
+
+            return TypedMethodResponse.success(userData);
         }
     }
 }

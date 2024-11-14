@@ -11,7 +11,7 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 
 import FilterView from "../../ObjectViews/FilterView.vue";
 
-import { Filter } from '../../../Types/Table';
+import { Filter } from '../../../Types/DataTypes';
 
 export default defineComponent({
 	name: "EditGroupPopup",
@@ -22,8 +22,8 @@ export default defineComponent({
 	props: ['model'],
 	setup(props)
 	{
-		// copy the object so that we don't edit the original one
-		const filterModel: ComputedRef<Filter> = computed(() => JSON.parse(JSON.stringify(props.model)));
+        // copy the object so that we don't edit the original one. Also needed for change tracking
+		const filterModel: ComputedRef<Filter> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.model)));
 
 		return {
 			filterModel,

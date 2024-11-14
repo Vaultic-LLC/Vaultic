@@ -13,7 +13,7 @@ vaultStoreTestSuite.tests.push({
         const dateObj = new Date(Date.now());
         const todayKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
 
-        const logInRecords = app.currentVault.loginHistory[todayKey];
+        const logInRecords = app.currentVault.loginHistory.value.get(todayKey);
         await app.lock();
 
         const response = await api.helpers.server.logUserIn(masterKey, email, false, false);
@@ -22,12 +22,17 @@ vaultStoreTestSuite.tests.push({
         app.isOnline = true;
         await app.loadUserData(masterKey, response.value!.UserDataPayload);
 
-        const newLogInRecords = app.currentVault.loginHistory[todayKey];
-        const addedLogin = newLogInRecords.filter(n => !logInRecords.includes(n));
-        ctx.assertEquals("New log in record", addedLogin.length, 1);
+        const newLogInRecords = app.currentVault.loginHistory.value.get(todayKey);
+
+        const addedLogin = newLogInRecords?.value.daysLogin.value.difference(logInRecords!.value.daysLogin.value);
+        ctx.assertEquals("New log in record", addedLogin?.size, 1);
 
         const oneMinutesAgo = Date.now() - (1000 * 60);
-        ctx.assertTruthy("New log in happened less than a minute ago", addedLogin[0] > oneMinutesAgo);
+
+        for (const [key, value] of addedLogin!.entries())
+        {
+            ctx.assertTruthy("New log in happened less than a minute ago", key > oneMinutesAgo);
+        }
     }
 });
 

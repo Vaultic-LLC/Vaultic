@@ -145,7 +145,7 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(primaryColor.value, "Exporting Logs");
 
-            const data = JSON.parse(await api.repositories.logs.getExportableLogData());
+            const data = JSON.vaulticParse(await api.repositories.logs.getExportableLogData());
             const formattedData = await exportData(data);
 
             const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);

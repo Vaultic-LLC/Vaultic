@@ -144,7 +144,7 @@ class AxiosWrapper
         }
 
         // we failed, log it
-        await environment.repositories.logs.log(undefined, JSON.stringify({ result: returnResponse, endpoint: serverPath }), "AxiosHelper");
+        await environment.repositories.logs.log(undefined, JSON.vaulticStringify({ result: returnResponse, endpoint: serverPath }), "AxiosHelper");
         return returnResponse as BaseResponse;
     }
 
@@ -157,7 +157,7 @@ class AxiosWrapper
         {
             if (typeof data === 'string')
             {
-                newData = JSON.parse(data);
+                newData = JSON.vaulticParse(data);
             }
         }
         catch (e: any)
@@ -204,7 +204,7 @@ class STSAxiosWrapper extends AxiosWrapper
     {
         // we don't have our session key yet, use hybrid encryption to encrypt the post data
         data.ResponsePublicKey = responseKeys.public;
-        return await environment.utilities.crypt.hybridEncrypt(JSON.stringify(data));
+        return await environment.utilities.crypt.hybridEncrypt(JSON.vaulticStringify(data));
     }
 
     protected async handleResponse<T>(response?: any): Promise<TypedMethodResponse<T>> 
@@ -226,7 +226,7 @@ class STSAxiosWrapper extends AxiosWrapper
                 return TypedMethodResponse.propagateFail(decryptedResponse, "handleResponse");
             }
 
-            responseData = JSON.parse(decryptedResponse.value!) as T;
+            responseData = JSON.vaulticParse(decryptedResponse.value!) as T;
             return TypedMethodResponse.success(responseData);
         }
         catch (e)
@@ -333,7 +333,6 @@ class APIAxiosWrapper extends AxiosWrapper
                 const response = await environment.utilities.crypt.decrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
-                    console.log(`Failed to Decrypt: ${fieldTree.properties[i]}, Data: ${JSON.stringify(data)}]}`)
                     return response;
                 }
 
@@ -405,13 +404,13 @@ class APIAxiosWrapper extends AxiosWrapper
             return TypedMethodResponse.fail(undefined, undefined, undefined, undefined, true);
         }
 
-        const requestData = await environment.utilities.crypt.encrypt(environment.cache.sessionKey!, JSON.stringify(data));
+        const requestData = await environment.utilities.crypt.encrypt(environment.cache.sessionKey!, JSON.vaulticStringify(data));
         if (!requestData.success)
         {
             return TypedMethodResponse.fail(undefined, undefined, requestData.errorMessage, requestData.logID);
         }
 
-        return await environment.utilities.crypt.hybridEncrypt(JSON.stringify({
+        return await environment.utilities.crypt.hybridEncrypt(JSON.vaulticStringify({
             SessionTokenHash: sessionHash,
             Data: requestData.value
         }));
@@ -434,7 +433,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 return TypedMethodResponse.propagateFail(decryptedResponse, "handleResponse");
             }
 
-            responseData = JSON.parse(decryptedResponse.value!) as T;
+            responseData = JSON.vaulticParse(decryptedResponse.value!) as T;
             return TypedMethodResponse.success(responseData);
         }
         catch (e)

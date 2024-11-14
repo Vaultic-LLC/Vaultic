@@ -1,6 +1,7 @@
 import { createTestSuite, type TestContext } from '../test';
 import app from "../../src/core/Objects/Stores/AppStore";
 import { api } from '../../src/core/API';
+import { AutoLockTime } from '../../src/core/Types/Settings';
 
 let appStoreTestSuite = createTestSuite("App Store");
 
@@ -16,6 +17,10 @@ appStoreTestSuite.tests.push({
 
         await app.loadUserData(masterKey, response.value!.UserDataPayload);
         ctx.assertEquals("One UserVault", app.userVaults.value.length, 1);
+
+        const currentState = app.cloneState();
+        currentState.settings.value.autoLockTime.value = AutoLockTime.ThirtyMinutes;
+        app.updateState(currentState);
     }
 });
 
@@ -64,7 +69,7 @@ appStoreTestSuite.tests.push({
         ctx.assertTruthy("Create New Vault Succeeded", response);
 
         const userVault = app.userVaults.value.filter(v => v.name == "ArchiveVaultWorksTest");
-        const archiveSucceeded = await app.archiveVault(masterKey, userVault[0].userVaultID);
+        const archiveSucceeded = await app.archiveVault(masterKey, userVault[0].userVaultID!);
 
         ctx.assertTruthy("Archive Vault Succeeded", archiveSucceeded);
 
@@ -82,9 +87,9 @@ appStoreTestSuite.tests.push({
         ctx.assertTruthy("Create New Vault Succeeded", response);
 
         const archivedUserVault = app.userVaults.value.filter(v => v.name == "LoadArchiveVaultWorksTest");
-        await app.archiveVault(masterKey, archivedUserVault[0].userVaultID);
+        await app.archiveVault(masterKey, archivedUserVault[0].userVaultID!);
 
-        const loadArchiveSucceeded = await app.loadArchivedVault(masterKey, archivedUserVault[0].userVaultID);
+        const loadArchiveSucceeded = await app.loadArchivedVault(masterKey, archivedUserVault[0].userVaultID!);
         ctx.assertTruthy("Load archive Succeeded", loadArchiveSucceeded);
         ctx.assertEquals("Current Vault is Archived Vault", app.currentVault.userVaultID, archivedUserVault[0].userVaultID);
     }
@@ -97,11 +102,11 @@ appStoreTestSuite.tests.push({
         ctx.assertTruthy("Create New Vault Succeeded", response);
 
         const archivedUserVault = app.userVaults.value.filter(v => v.name == "UnArchiveVaultWorksTest");
-        const archiveSucceeded = await app.archiveVault(masterKey, archivedUserVault[0].userVaultID);
+        const archiveSucceeded = await app.archiveVault(masterKey, archivedUserVault[0].userVaultID!);
 
         ctx.assertTruthy("Archive Vault Succeeded", archiveSucceeded);
 
-        const unarchiveVaultSucceeded = await app.unarchiveVault(masterKey, archivedUserVault[0].userVaultID);
+        const unarchiveVaultSucceeded = await app.unarchiveVault(masterKey, archivedUserVault[0].userVaultID!);
         ctx.assertTruthy("Un Archive Vault Succeeded", unarchiveVaultSucceeded);
 
         const userVault = app.userVaults.value.filter(v => v.name == "UnArchiveVaultWorksTest");
@@ -117,10 +122,10 @@ appStoreTestSuite.tests.push({
         ctx.assertTruthy("Create New Vault Succeeded", response);
 
         const archivedUserVault = app.userVaults.value.filter(v => v.name == "PermanentlyDeleteVaultWorksTest");
-        const archiveSucceeded = await app.archiveVault(masterKey, archivedUserVault[0].userVaultID);
+        const archiveSucceeded = await app.archiveVault(masterKey, archivedUserVault[0].userVaultID!);
         ctx.assertTruthy("Archive Vault Succeeded", archiveSucceeded);
 
-        const deleteSucceeded = await app.permanentlyDeleteVault(masterKey, archivedUserVault[0].userVaultID);
+        const deleteSucceeded = await app.permanentlyDeleteVault(masterKey, archivedUserVault[0].userVaultID!);
         ctx.assertTruthy("Permanently Delete Vault Works", deleteSucceeded);
         ctx.assertEquals("ArchivedVault does not exist", app.archivedVaults.value.filter(v => v.name == "PermanentlyDeleteVaultWorksTest").length, 0);
         ctx.assertEquals("Current Vault is first UserVault", app.currentVault.userVaultID, app.userVaults.value[0].userVaultID);
@@ -136,7 +141,7 @@ appStoreTestSuite.tests.push({
         const userVault = app.userVaults.value.filter(v => v.name == "SetActiveVaultWorksTest")[0];
         ctx.assertTruthy("Not currently active", app.currentVault.userVaultID != userVault.userVaultID);
 
-        const setActiveSucceed = await app.setActiveVault(masterKey, userVault.userVaultID);
+        const setActiveSucceed = await app.setActiveVault(masterKey, userVault.userVaultID!);
         ctx.assertTruthy("Set Active Succeeded", setActiveSucceed);
         ctx.assertEquals("Active User Vault UserVaultID", app.currentVault.userVaultID, userVault.userVaultID);
     }

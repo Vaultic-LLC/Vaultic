@@ -1,7 +1,6 @@
-import { Ref, ref, ComputedRef, computed } from "vue";
-import { DataType, FilterStatus } from "../../Types/Table"
+import { Ref, ref, ComputedRef, computed, watch } from "vue";
 import { hideAll } from 'tippy.js';
-import { Store, StoreEvents } from "./Base";
+import { Store, StoreEvents, StoreState } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -13,24 +12,28 @@ import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Types/Entities";
+import { FilterStatus, DataType } from "../../Types/DataTypes";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 
-export interface AppSettings 
+export interface AppSettings extends IFieldedObject
 {
-    readonly rowChunkAmount: number;
-    colorPalettes: ColorPalette[];
-    autoLockTime: AutoLockTime;
-    randomValueLength: number;
-    randomPhraseLength: number;
-    multipleFilterBehavior: FilterStatus;
-    oldPasswordDays: number;
-    percentMetricForPulse: number;
-    defaultMarkdownInEditScreens: boolean;
+    colorPalettes: Field<Map<string, Field<ColorPalette>>>;
+    autoLockTime: Field<AutoLockTime>;
+    randomValueLength: Field<number>;
+    randomPhraseLength: Field<number>;
+    multipleFilterBehavior: Field<FilterStatus>;
+    oldPasswordDays: Field<number>;
+    percentMetricForPulse: Field<number>;
+    defaultMarkdownInEditScreens: Field<boolean>;
 }
 
-export interface AppStoreState
+export interface IAppStoreState extends StoreState
 {
-    settings: AppSettings;
+    settings: Field<AppSettings>;
 }
+
+export type AppStoreState = KnownMappedFields<IAppStoreState>;
 
 export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
@@ -45,6 +48,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalAutoLockNumberTime: ComputedRef<number>;
 
     private internalIsOnline: Ref<boolean>;
+
+    private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
 
     private internalUserVaults: Ref<DisplayVault[]>;
     private internalSharedVaults: Ref<BasicVaultStore[]>;
@@ -62,6 +67,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     set activePasswordValuesTable(value: DataType) { this.internalActivePasswordValueTable.value = value; }
     get activeFilterGroupsTable() { return this.internalActiveFilterGroupTable.value; }
     set activeFilterGroupsTable(value: DataType) { this.internalActiveFilterGroupTable.value = value; }
+    get colorPalettes() { return this.internalColorPalettes.value; }
     get userVaults() { return this.internalUserVaults; }
     get archivedVaults() { return this.internalArchivedVaults; }
     get currentVault() { return this.internalCurrentVault; }
@@ -74,42 +80,45 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         super("appStoreState");
 
         this.loadedUser = false;
-        this.internalUsersPreferencesStore = new UserPreferencesStore(this);
         this.internalUserDataBreachStore = new UserDataBreachStore();
         this.internalPopupStore = createPopupStore();
+
+        this.internalColorPalettes = computed(() => this.state.settings.value.colorPalettes.value.valueArray())
 
         this.internalUserVaults = ref([]);
         this.internalSharedVaults = ref([]);
         this.internalArchivedVaults = ref([]);
         this.internalCurrentVault = new ReactiveVaultStore();
+        // done after current vault so we can watch for userVaultID
+        this.internalUsersPreferencesStore = new UserPreferencesStore(this);
 
         this.internalIsOnline = ref(false);
         this.internalActivePasswordValueTable = ref(DataType.Passwords);
         this.internalActiveFilterGroupTable = ref(DataType.Filters);
 
-        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.autoLockTime));
+        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.value.autoLockTime.value));
+
+        watch(() => this.internalAutoLockNumberTime.value, (newValue) => 
+        {
+            this.resetSessionTime();
+        });
     }
 
     protected defaultState()
     {
         return {
-            masterKeyHash: '',
-            masterKeySalt: '',
-            privateKey: '',
-            isOnline: false,
-            userDataVersion: 0,
-            loginHistory: {},
-            settings: {
-                rowChunkAmount: 10,
-                colorPalettes: colorPalettes,
-                autoLockTime: AutoLockTime.OneMinute,
-                randomValueLength: 25,
-                randomPhraseLength: 7,
-                multipleFilterBehavior: FilterStatus.Or,
-                oldPasswordDays: 365,
-                percentMetricForPulse: 1,
-                defaultMarkdownInEditScreens: true
-            }
+            id: new Field(""),
+            settings: new Field({
+                id: new Field(""),
+                colorPalettes: new Field(colorPalettes),
+                autoLockTime: new Field(AutoLockTime.OneMinute),
+                randomValueLength: new Field(25),
+                randomPhraseLength: new Field(7),
+                multipleFilterBehavior: new Field(FilterStatus.Or),
+                oldPasswordDays: new Field(365),
+                percentMetricForPulse: new Field(1),
+                defaultMarkdownInEditScreens: new Field(true)
+            })
         };
     }
 
@@ -171,11 +180,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         clearTimeout(this.autoLockTimeoutID);
         this.autoLockTimeoutID = setTimeout(() =>
         {
+            console.log('auto lock app');
             this.lock();
         }, this.internalAutoLockNumberTime.value);
     }
 
-    public async loadUserData(masterKey: string, payload?: any)
+    public async loadUserData(masterKey: string, payload?: UserDataPayload)
     {
         if (this.loadedUser)
         {
@@ -189,16 +199,16 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const parsedUserData: UserData = JSON.parse(userData.value!);
+        const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
 
-        await this.updateStateFromJSON(parsedUserData.appStoreState);
-        await this.internalUsersPreferencesStore.updateStateFromJSON(parsedUserData.userPreferencesStoreState);
+        await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
+        await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
 
         this.internalUserVaults.value = parsedUserData.displayVaults!;
         this.internalSharedVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
         this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
 
-        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault);
+        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         this.loadedUser = true;
 
         return true;
@@ -233,7 +243,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async updateVault(masterKey: string, displayVault: DisplayVault): Promise<boolean>
     {
-        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID, JSON.stringify(displayVault), this.isOnline);
+        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID!, JSON.vaulticStringify(displayVault));
         if (!success)
         {
             return false;
@@ -245,7 +255,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.userVaults[index] = displayVault;
+        this.userVaults.value[index] = displayVault;
         this.emit("onVaultUpdated", displayVault);
 
         return true;
@@ -365,7 +375,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const selected = this.currentVault.userVaultID == userVaultID;
         if (selected)
         {
-            await this.setActiveVault(masterKey, this.internalUserVaults.value[0].userVaultID);
+            await this.setActiveVault(masterKey, this.internalUserVaults.value[0].userVaultID!);
             this.emit('onVaultActive', this.internalUserVaults.value[0].userVaultID);
         }
 
@@ -395,16 +405,16 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
 
-        const oldColorPalette: ColorPalette[] = pendingState.settings.colorPalettes.filter(cp => cp.id == colorPalette.id);
-        if (oldColorPalette.length != 1)
+        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.colorPalettes.value.get(colorPalette.id.value);
+        if (!oldColorPalette)
         {
             return Promise.resolve();
         }
 
-        Object.assign(oldColorPalette[0], colorPalette);
-        if (this.internalUsersPreferencesStore.currentColorPalette.id == oldColorPalette[0].id)
+        oldColorPalette.value = colorPalette;
+        if (this.internalUsersPreferencesStore.currentColorPalette.id.value == oldColorPalette.value.id.value)
         {
-            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette[0]);
+            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette.value);
         }
 
         transaction.updateUserStore(this, pendingState);

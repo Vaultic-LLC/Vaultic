@@ -2,22 +2,22 @@
     <ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-            v-model="passwordState.passwordFor" :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
-        <TextInputField class="passwordView__domain" :color="color" :label="'Domain'" v-model="passwordState.domain"
+            v-model="passwordState.passwordFor.value" :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
+        <TextInputField class="passwordView__domain" :color="color" :label="'Domain'" v-model="passwordState.domain.value"
             :showToolTip="true"
             :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
             :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
-        <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email"
+        <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :isEmailField="true" />
-        <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login"
+        <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
         <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
-            :label="'Password'" v-model="passwordState.password" :initialLength="initalLength"
+            :label="'Password'" v-model="passwordState.password.value" :initialLength="initalLength"
             :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true" :required="true"
             showCopy="true" :width="'11vw'" :maxWidth="'285px'" :height="'4vh'" :minHeight="'30px'"
             @onDirty="passwordIsDirty = true" />
         <TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
-            :label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'19vw'"
+            :label="'Additional Information'" v-model="passwordState.additionalInformation.value" :width="'19vw'"
             :height="'15vh'" :minWidth="'216px'" :minHeight="'91px'" :maxHeight="'203px'" :isEditing="!creating" />
         <TableTemplate ref="tableRef" :color="color" id="passwordView__table" class="scrollbar" :scrollbar-size="1"
             :headerModels="groupHeaderModels" :border="true" :row-gap="0" :emptyMessage="emptyMessage"
@@ -34,11 +34,11 @@
                 </Transition>
             </template>
             <template #body>
-                <SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions"
-                    :key="sq.id" :rowNumber="index" :colorModel="colorModel" :model="sq" :disabled="false"
-                    :hideInitialRow="true" :moveButtonsToBottomRatio="1" @onQuesitonDirty="onQuestionDirty(sq.id)"
-                    @onAnswerDirty="onAnswerDirty(sq.id)" @onDelete="onDeleteSecurityQuestion(sq.id)"
-                    :isInitiallyEncrypted="sq.question != ''" />
+                <SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions.value"
+                    :key="sq[0]" :rowNumber="index" :colorModel="colorModel" :model="sq[1].value" :disabled="false"
+                    :hideInitialRow="true" :moveButtonsToBottomRatio="1" @onQuesitonDirty="onQuestionDirty(sq[0])"
+                    @onAnswerDirty="onAnswerDirty(sq[0])" @onDelete="onDeleteSecurityQuestion(sq[0])"
+                    :isInitiallyEncrypted="sq[1].value.question.value != ''" />
                 <SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
                     :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="color" />
             </template>
@@ -61,17 +61,18 @@ import UnlockButton from "../UnlockButton.vue"
 import ToolTip from '../ToolTip.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 
-import { HeaderDisplayField, Password, defaultPassword } from '../../Types/EncryptedData';
+import { Password, Group, defaultPassword } from '../../Types/DataTypes';
 import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
 import { createSortableHeaderModels, getEmptyTableMessage, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { Group } from '../../Types/Table';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueID } from '../../Helpers/generatorHelper';
+import { generateUniqueID, generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { api } from "../../API"
 import { DirtySecurityQuestionQuestionsKey, DirtySecurityQuestionAnswersKey } from '../../Constants/Keys';
+import { HeaderDisplayField } from '../../Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "PasswordView",
@@ -97,14 +98,14 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const passwordState: Ref<Password> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
         // @ts-ignore
         const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(app.currentVault.groupStore.passwordGroups, "name"));
         // @ts-ignore
         const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
-        const initalLength: Ref<number> = ref(passwordState.value.passwordLength ?? 0);
+        const initalLength: Ref<number> = ref(passwordState.value.passwordLength.value ?? 0);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
 
         const passwordIsDirty: Ref<boolean> = ref(false);
@@ -129,7 +130,7 @@ export default defineComponent({
         let saveFailed: (value: boolean) => void;
 
         const showEmptyMessage: ComputedRef<boolean> = computed(() =>
-            (activeTab.value == 0 && passwordState.value.securityQuestions.length == 0) ||
+            (activeTab.value == 0 && passwordState.value.securityQuestions.value.size == 0) ||
             (activeTab.value == 1 && groupModels.value.visualValues.length == 0));
 
         const emptyMessage: ComputedRef<string> = computed(() =>
@@ -207,13 +208,13 @@ export default defineComponent({
                     [
                         {
                             component: "TableRowTextValue",
-                            value: g.name,
+                            value: g.value.name.value,
                             copiable: false,
                             width: 'clamp(80px, 6vw, 150px)'
                         },
                         {
                             component: "TableRowColorValue",
-                            color: g.color,
+                            color: g.value.color.value,
                             copiable: true,
                             width: 'clamp(50px, 4vw, 100px)',
                             margin: false
@@ -223,19 +224,19 @@ export default defineComponent({
                 const id = await api.utilities.generator.uniqueId();
                 const model: SelectableTableRowData = {
                     id: id,
-                    key: g.id,
+                    key: g.value.id.value,
                     values: values,
-                    isActive: ref(passwordState.value.groups.includes(g.id)),
+                    isActive: ref(passwordState.value.groups.value.has(g.value.id.value)),
                     selectable: true,
-                    onClick: function ()
+                    onClick: async function ()
                     {
-                        if (passwordState.value.groups.includes(g.id))
+                        if (passwordState.value.groups.value.has(g.value.id.value))
                         {
-                            passwordState.value.groups = passwordState.value.groups.filter(id => id != g.id);
+                            passwordState.value.groups.value.delete(g.value.id.value);
                         }
                         else
                         {
-                            passwordState.value.groups.push(g.id);
+                            passwordState.value.groups.value.set(g.value.id.value, new Field(g.value.id.value));
                         }
                     }
                 }
@@ -322,13 +323,14 @@ export default defineComponent({
 
         async function onAddSecurityQuestion()
         {
-            passwordState.value.securityQuestions.push({
-                id: await generateUniqueID(passwordState.value.securityQuestions),
-                question: '',
-                questionLength: 0,
-                answer: '',
-                answerLength: 0
-            });
+            const id = await generateUniqueIDForMap(passwordState.value.securityQuestions.value);
+            passwordState.value.securityQuestions.value.set(id, new Field({
+                id: new Field(id),
+                question: new Field(''),
+                questionLength: new Field(0),
+                answer: new Field(''),
+                answerLength: new Field(0)
+            }));
 
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
@@ -351,8 +353,7 @@ export default defineComponent({
 
         function onDeleteSecurityQuestion(id: string)
         {
-            passwordState.value.securityQuestions = passwordState.value.securityQuestions.filter(sq => sq.id != id);
-
+            passwordState.value.securityQuestions.value.delete(id);
             if (dirtySecurityQuestionQuestions.value.includes(id))
             {
                 dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(id), 1);

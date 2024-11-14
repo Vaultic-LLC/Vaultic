@@ -21,7 +21,7 @@ export class TypedMethodResponse<T>
         this.value = value;
     }
 
-    addToCallStack(call: string)
+    addToCallStack(call: string | undefined)
     {
         this.callStack += `\n${call}`;
     }
@@ -38,18 +38,19 @@ export class TypedMethodResponse<T>
 
     static fail<T>(errorCode?: number, callStack?: string, errorMessage?: string, logID?: number, invalidSession?: boolean, value?: T)
     {
-        return new TypedMethodResponse<T>(false, errorCode, callStack, errorMessage, logID, invalidSession, value);
+        const stack = Error().stack;
+        return new TypedMethodResponse<T>(false, errorCode, stack, errorMessage, logID, invalidSession, value);
     }
 
     static propagateFail<T>(response: TypedMethodResponse<any>, callStack?: string)
     {
-        response.addToCallStack(callStack);
+        response.addToCallStack(Error().stack);
         return TypedMethodResponse.fail<T>(response.errorCode, response.callStack, response.errorMessage, response.logID, response.invalidSession);
     }
 
     static failWithValue<T>(value?: T)
     {
-        return new TypedMethodResponse<T>(false, undefined, undefined, undefined, undefined, undefined, value);
+        return TypedMethodResponse.fail<T>(undefined, undefined, undefined, undefined, undefined, value);
     }
 
     static transactionFail<T>()

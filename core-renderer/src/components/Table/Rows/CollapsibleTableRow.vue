@@ -18,9 +18,10 @@ import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
 import GroupIcon from '../GroupIcon.vue';
 import TableRow from "./TableRow.vue"
 
-import { Group } from '../../../Types/Table';
 import { GroupIconModel } from '../../../Types/Models';
 import app from "../../../Objects/Stores/AppStore";
+import { DataType, Group } from '../../../Types/DataTypes';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "CollapsibleTableRow",
@@ -42,19 +43,21 @@ export default defineComponent({
         let rejectFunc: () => void;
 
         const primaryColor: ComputedRef<string> = computed(() => props.color);
+        const groups: ComputedRef<Map<string, Field<string>>> = computed(() => props.groups);
 
         let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
         {
-            const allGroups: Group[] = app.currentVault.groupStore.groups.filter(g => props.groups.includes(g.id));
+            const groupsToUse = app.activePasswordValuesTable == DataType.Passwords ? app.currentVault.groupStore.passwordGroups : app.currentVault.groupStore.valuesGroups;
+            const allGroups: Field<Group>[] = groupsToUse.filter(g => groups.value.has(g.value.id.value));
             if (allGroups.length <= 4)
             {
                 return allGroups.map((g) =>
                 {
                     const groupIconModel: GroupIconModel =
                     {
-                        iconDisplayText: g.name[0],
-                        toolTipText: g.name,
-                        color: g.color
+                        iconDisplayText: g.value.name.value[0],
+                        toolTipText: g.value.name.value,
+                        color: g.value.color.value
                     }
 
                     return groupIconModel;
@@ -65,9 +68,9 @@ export default defineComponent({
             {
                 const groupIconModel: GroupIconModel =
                 {
-                    iconDisplayText: g.name[0],
-                    toolTipText: g.name,
-                    color: g.color
+                    iconDisplayText: g.value.name.value[0],
+                    toolTipText: g.value.name.value,
+                    color: g.value.color.value
                 }
 
                 return groupIconModel;
@@ -82,7 +85,7 @@ export default defineComponent({
 
             for (let i = 3; i < allGroups.length; i++)
             {
-                lastGroupModel.toolTipText += `${allGroups[i].name}`;
+                lastGroupModel.toolTipText += `${allGroups[i].value.name.value}`;
                 if (i != allGroups.length - 1)
                 {
                     lastGroupModel.toolTipText += ", ";
@@ -95,6 +98,8 @@ export default defineComponent({
 
         function toggleCollapseContent()
         {
+            // Disabling this for now until I can make this component more useful
+            return;
             if (showCollapseRow.value)
             {
                 showCollapseRow.value = false

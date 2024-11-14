@@ -10,6 +10,7 @@
         "tests/**/__tests__/*"
     ],
     "compilerOptions": {
+        "strict": true,
         "composite": true,
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
         "baseUrl": ".",

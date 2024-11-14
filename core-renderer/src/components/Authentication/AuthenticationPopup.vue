@@ -118,7 +118,10 @@ export default defineComponent({
                     return;
                 }
 
-                defaultHandleFailedResponse(response);
+                jiggleContainer();
+                app.popups.hideLoadingIndicator();
+                disabled.value = false;
+                defaultHandleFailedResponse(response, false);
             });
         }
 

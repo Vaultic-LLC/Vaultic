@@ -1,3 +1,4 @@
+import changeTrackingRepository, { ChangeTrackingRepositoryType } from "./ChangeTrackingRepository";
 import logRepository, { LogRepositoryType } from "./LogRepository";
 import appStoreStateRepository, { AppStoreStateRepositoryType } from "./StoreState/AppStoreStateRepository";
 import filterStoreStateRepository, { FilterStoreStateRepositoryType } from "./StoreState/FilterStoreStateRepository";
@@ -25,6 +26,7 @@ export interface VaulticRepositories
     valueStoreStates: ValueStoreStateRepositoryType;
     filterStoreStates: FilterStoreStateRepositoryType;
     groupStoreStates: GroupStoreStateRepositoryType;
+    changeTrackings: ChangeTrackingRepositoryType;
 }
 
 export function initRepositories(): VaulticRepositories
@@ -45,6 +47,8 @@ export function initRepositories(): VaulticRepositories
     filterStoreStateRepository.init();
     groupStoreStateRepository.init();
 
+    changeTrackingRepository.init();
+
     const repositories: VaulticRepositories =
     {
         logs: logRepository,
@@ -58,7 +62,8 @@ export function initRepositories(): VaulticRepositories
         passwordStoreStates: passwordStoreStateRepository,
         valueStoreStates: valueStoreStateRepository,
         filterStoreStates: filterStoreStateRepository,
-        groupStoreStates: groupStoreStateRepository
+        groupStoreStates: groupStoreStateRepository,
+        changeTrackings: changeTrackingRepository
     };
 
     return repositories;

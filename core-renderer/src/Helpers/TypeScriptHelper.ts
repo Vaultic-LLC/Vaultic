@@ -1,12 +1,24 @@
+import { Field } from "@vaultic/shared/Types/Fields";
+
 // tests whether an object `tester` is the same type as another `actual`.
 // Actual must be a concrete type, i.e. any nested objects must have all properties that it can have. Otherwise this will give 
 // false negatives when comparing those nested objects
 // can do additional property validation via propertyTest
-export function validateObject(tester: any, actual: any, propertyTest?: (propName: string, propValue: any) => boolean,
-    anonymousObjectTest?: (propName: string, propValue: any) => boolean)
+export function validateObject(tester: Field<any>, actual: Field<any>, propertyTest?: (propName: string, propValue: any) => boolean,
+    mapTest?: (objName: string, propname: string, propValue: any) => boolean)
 {
-    const actualKeys = Object.keys(tester);
-    const expectedKeys = Object.keys(actual);
+    if (actual.value instanceof Map)
+    {
+        if (!checkMap("", tester, actual, propertyTest, mapTest))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    const actualKeys = Object.keys(tester.value);
+    const expectedKeys = Object.keys(actual.value);
 
     if (actualKeys.length != expectedKeys.length)
     {
@@ -28,36 +40,26 @@ export function validateObject(tester: any, actual: any, propertyTest?: (propNam
             return false;
         }
 
-        if (typeof tester[expectedKeys[i]] != typeof actual[expectedKeys[i]])
+        if (typeof tester.value[expectedKeys[i]].value != typeof actual.value[expectedKeys[i]].value)
         {
             return false;
         }
 
-        if (typeof tester[expectedKeys[i]] == 'object')
+        if (typeof tester.value[expectedKeys[i]].value == 'object')
         {
-            const nestedKeyLength = Object.keys(actual[expectedKeys[i]]);
-
-            // anonymous object, like a dictionary
-            if (nestedKeyLength.length == 0)
+            if (actual.value[expectedKeys[i]].value instanceof Map)
             {
-                if (anonymousObjectTest)
+                if (!checkMap(expectedKeys[i], tester.value[expectedKeys[i]], actual.value[expectedKeys[i]], propertyTest, mapTest))
                 {
-                    const anonymousObjectKeys = Object.keys(tester[expectedKeys[i]]);
-                    for (let i = 0; i < anonymousObjectKeys.length; i++)
-                    {
-                        if (!anonymousObjectTest(anonymousObjectKeys[i], tester[expectedKeys[i]][anonymousObjectKeys[i]]))
-                        {
-                            return false;
-                        }
-                    }
+                    return false;
                 }
             }
-            else if (!validateObject(tester[expectedKeys[i]], actual[expectedKeys[i]], propertyTest, anonymousObjectTest))
+            else if (!validateObject(tester.value[expectedKeys[i]], actual.value[expectedKeys[i]], propertyTest, mapTest))
             {
                 return false;
             }
         }
-        else if (typeof tester[expectedKeys[i]] != 'function' && propertyTest && !propertyTest(expectedKeys[i], tester[expectedKeys[i]]))
+        else if (typeof tester.value[expectedKeys[i]].value != 'function' && propertyTest && !propertyTest(expectedKeys[i], tester.value[expectedKeys[i]].value))
         {
             return false;
         }
@@ -66,4 +68,21 @@ export function validateObject(tester: any, actual: any, propertyTest?: (propNam
     }
 
     return actualKeys.length == 0;
+}
+
+function checkMap(objName: string, tester: Field<any>, actual: Field<any>, propertyTest?: (propName: string, propValue: any) => boolean,
+    mapTest?: (objName: string, propname: string, propValue: any) => boolean)
+{
+    if (mapTest)
+    {
+        for (const [key, value] of tester.value.entries())
+        {
+            if (!mapTest(objName, key, value))
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }

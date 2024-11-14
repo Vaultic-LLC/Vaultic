@@ -9,10 +9,9 @@ import { ComputedRef, computed, defineComponent } from 'vue';
 
 import SmallMetricGauge from "../../../Dashboard/SmallMetricGauge.vue"
 
-import { AtRiskType } from '../../../../Types/EncryptedData';
-import { DataType } from '../../../../Types/Table';
 import { SmallMetricGaugeModel } from "../../../../Types/Models"
 import app from "../../../../Objects/Stores/AppStore";
+import { DataType, AtRiskType } from '../../../../Types/DataTypes';
 
 export default defineComponent({
     name: "DuplicateFilterGroupGauge",
@@ -31,11 +30,11 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `vgdup${app.currentVault.groupStore.duplicateValueGroupLength}${app.currentVault.groupStore.valuesGroups.length}`,
+                                key: `vgdup${app.currentVault.groupStore.duplicateValueGroups.value.size}${app.currentVault.groupStore.valuesGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.groupStore.duplicateValueGroupLength,
+                                filledAmount: app.currentVault.groupStore.duplicateValueGroups.value.size,
                                 totalAmount: app.currentVault.groupStore.valuesGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                color: app.userPreferences.currentColorPalette.groupsColor.value,
                                 active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -45,11 +44,11 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `vfdup${app.currentVault.filterStore.duplicateValueFiltersLength}${app.currentVault.filterStore.nameValuePairFilters.length}`,
+                                key: `vfdup${app.currentVault.filterStore.duplicateValueFilters.value.size}${app.currentVault.filterStore.nameValuePairFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.filterStore.duplicateValueFiltersLength,
+                                filledAmount: app.currentVault.filterStore.duplicateValueFilters.value.size,
                                 totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                color: app.userPreferences.currentColorPalette.filtersColor.value,
                                 active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -63,11 +62,11 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `pgdup${app.currentVault.groupStore.duplicatePasswordGroupLength}${app.currentVault.groupStore.passwordGroups.length}`,
+                                key: `pgdup${app.currentVault.groupStore.duplicatePasswordGroups.value.size}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.groupStore.duplicatePasswordGroupLength,
+                                filledAmount: app.currentVault.groupStore.duplicatePasswordGroups.value.size,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                color: app.userPreferences.currentColorPalette.groupsColor.value,
                                 active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -77,11 +76,11 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `pfdup${app.currentVault.filterStore.duplicatePasswordFiltersLength}${app.currentVault.filterStore.passwordFilters.length}`,
+                                key: `pfdup${app.currentVault.filterStore.duplicatePasswordFilters.value.size}${app.currentVault.filterStore.passwordFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.filterStore.duplicatePasswordFiltersLength,
+                                filledAmount: app.currentVault.filterStore.duplicatePasswordFilters.value.size,
                                 totalAmount: app.currentVault.filterStore.passwordFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                color: app.userPreferences.currentColorPalette.filtersColor.value,
                                 active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {

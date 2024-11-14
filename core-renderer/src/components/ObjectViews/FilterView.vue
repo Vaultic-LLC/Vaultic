@@ -1,17 +1,17 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name"
+        <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
         <TableTemplate ref="tableRef" id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color"
             :row-gap="0" :border="true" :emptyMessage="emptyMessage"
-            :showEmptyMessage="filterState.conditions.length == 0" :headerTabs="headerTabs">
+            :showEmptyMessage="filterState.conditions.value.size == 0" :headerTabs="headerTabs">
             <template #headerControls>
                 <AddButton :color="color" @click="onAdd" />
             </template>
             <template #body>
-                <FilterConditionRow v-for="( fc, index ) in  filterState.conditions" :key="fc.id" :rowNumber="index"
-                    :color="color" :model="fc" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc.id)" />
+                <FilterConditionRow v-for="(fc, index) in  filterState.conditions.value" :key="fc[0]" :rowNumber="index"
+                    :color="color" :model="fc[1].value" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc[0])" />
             </template>
         </TableTemplate>
     </ObjectView>
@@ -26,13 +26,14 @@ import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import FilterConditionRow from '../Table/Rows/FilterConditionRow.vue';
 
-import { DataType, Filter } from '../../Types/Table';
-import { DisplayField, FilterablePasswordProperties, FilterableValueProperties, defaultFilter } from '../../Types/EncryptedData';
+import { DataType, defaultFilter, Filter } from '../../Types/DataTypes';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueID } from '../../Helpers/generatorHelper';
+import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
+import { DisplayField, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "FilterView",
@@ -50,7 +51,7 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const filterState: Ref<Filter> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
         const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
@@ -93,7 +94,7 @@ export default defineComponent({
             {
                 if (await app.currentVault.filterStore.addFilter(key, filterState.value))
                 {
-                    filterState.value = await defaultFilter(filterState.value.type);
+                    filterState.value = await defaultFilter(filterState.value.type.value);
                     await onAdd();
                     refreshKey.value = Date.now().toString();
 
@@ -141,25 +142,27 @@ export default defineComponent({
 
         async function onAdd()
         {
-            filterState.value.conditions.push(
-                {
-                    id: await generateUniqueID(filterState.value.conditions),
-                    property: '',
-                    value: ''
-                });
+            const id = await generateUniqueIDForMap(filterState.value.conditions.value);
+            filterState.value.conditions.value.set(id,
+                new Field({
+                    id: new Field(id),
+                    property: new Field(''),
+                    value: new Field(''),
+                    filterType: new Field(undefined)
+                }));
 
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         function onDelete(id: string)
         {
-            filterState.value.conditions = filterState.value.conditions.filter(f => f.id != id);
+            filterState.value.conditions.value.delete(id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         onMounted(() =>
         {
-            if (filterState.value.conditions.length == 0)
+            if (filterState.value.conditions.value.size == 0)
             {
                 onAdd();
             }

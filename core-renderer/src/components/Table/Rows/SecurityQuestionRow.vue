@@ -2,8 +2,8 @@
 	<TableRow :rowNumber="rowNumber" :model="tableRowData" :color="colorModel.color" :allowDelete="!disabled"
 		:hideAtRisk="true" :animateDelete="true">
 		<td class="securityQuestionRow__firstCell">
-			<EncryptedInputField :colorModel="colorModel" :label="'Question'" v-model="securityQuestion.question"
-				:initialLength="securityQuestion.questionLength" :isInitiallyEncrypted="isInitiallyEncrypted"
+			<EncryptedInputField :colorModel="colorModel" :label="'Question'" v-model="securityQuestion.question.value"
+				:initialLength="securityQuestion.questionLength.value" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="false"
 				:isOnWidget="true" :required="true" @onDirty="$emit('onQuesitonDirty')" :width="'10vw'"
 				:maxWidth="'250px'" :height="'4vh'" :minHeight="'30px'" :showButtonsUnderneath="moveButtonsToBottom" />
@@ -11,8 +11,8 @@
 		<td class="securityQuestionRow__cellGap">
 		</td>
 		<td>
-			<EncryptedInputField :colorModel="colorModel" :label="'Answer'" v-model="securityQuestion.answer"
-				:initialLength="securityQuestion.answerLength" :isInitiallyEncrypted="isInitiallyEncrypted"
+			<EncryptedInputField :colorModel="colorModel" :label="'Answer'" v-model="securityQuestion.answer.value"
+				:initialLength="securityQuestion.answerLength.value" :isInitiallyEncrypted="isInitiallyEncrypted"
 				:disabled="disabled" :fadeIn="false" :showRandom="false" :showUnlock="false" :showCopy="true"
 				:isOnWidget="true" :required="true" @onDirty="$emit('onAnswerDirty')" :width="'10vw'"
 				:maxWidth="'250px'" :height="'4vh'" :minHeight="'30px'" :showButtonsUnderneath="moveButtonsToBottom" />
@@ -28,9 +28,9 @@ import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue
 import TableRow from './TableRow.vue';
 import EncryptedInputField from '../../../components/InputFields/EncryptedInputField.vue';
 
-import { SecurityQuestion } from '../../../Types/EncryptedData';
 import { TableRowData } from '../../../Types/Models';
 import { screenWidthIsAtRatioOfMax } from "../../../Helpers/screenSizeHelepr";
+import { SecurityQuestion } from '../../../Types/DataTypes';
 
 export default defineComponent({
 	name: 'SecurityQuestionRow',
@@ -59,7 +59,7 @@ export default defineComponent({
 				values: [],
 				onDelete: function ()
 				{
-					ctx.emit("onDelete", securityQuestion.value.id);
+					ctx.emit("onDelete", securityQuestion.value.id.value);
 				}
 			}
 		);

@@ -153,7 +153,7 @@ export default defineComponent({
             if (props.randomValueType == 0)
             {
                 app.popups.showLoadingIndicator(colorModel.value.color, "Generating Phrase");
-                const response = await api.server.value.generateRandomPhrase(app.settings.randomPhraseLength);
+                const response = await api.server.value.generateRandomPhrase(app.settings.value.randomPhraseLength.value);
                 app.popups.hideLoadingIndicator();
 
                 if (response.Success)
@@ -168,7 +168,7 @@ export default defineComponent({
                 return;
             }
 
-            onInput(await api.utilities.generator.randomPassword(app.settings.randomValueLength));
+            onInput(await api.utilities.generator.randomPassword(app.settings.value.randomValueLength.value));
         }
 
         function copyValue()
