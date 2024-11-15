@@ -7,10 +7,14 @@
             <Transition name="fade">
                 <BreachedPasswords v-if="isOnline && isVaultView" />
             </Transition>
-            <Transition name="fade">
+            <Transition name="fade" mode="out-in">
                 <div id="tables" v-if="isVaultView">
                     <FilterGroupTable />
                     <PasswordValueTable />
+                </div>
+                <div id="tables" v-else>
+                    <OrganizationsTable />
+                    <DevicesTable />
                 </div>
             </Transition>
         </div>
@@ -53,6 +57,8 @@ import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import SideDrawer from "./components/SideDrawer.vue"
+import DevicesTable from './components/Table/DevicesTable.vue';
+import OrganizationsTable from './components/Table/OrganizationsTable.vue';
 
 import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
@@ -81,7 +87,9 @@ export default defineComponent({
         AboutIconCard,
         LayoutIconCard,
         MenuWidget,
-        SideDrawer
+        SideDrawer,
+        DevicesTable,
+        OrganizationsTable
     },
     setup()
     {

@@ -15,6 +15,8 @@ import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Type
 import { FilterStatus, DataType } from "../../Types/DataTypes";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { DeviceStore } from "./DeviceStore";
+import { OrganizationStore } from "./OrganizationStore";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -61,6 +63,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalUsersPreferencesStore: UserPreferencesStore;
     private internalUserDataBreachStore: UserDataBreachStore;
+    private internalDeviceStore: DeviceStore;
+    private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
 
     get settings() { return this.state.settings; }
@@ -79,6 +83,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get currentVault() { return this.internalCurrentVault; }
     get userPreferences() { return this.internalUsersPreferencesStore; }
     get userDataBreaches() { return this.internalUserDataBreachStore; }
+    get devices() { return this.internalDeviceStore; }
+    get organizations() { return this.internalOrganizationStore; }
     get popups() { return this.internalPopupStore; }
 
     constructor()
@@ -87,6 +93,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         this.loadedUser = false;
         this.internalUserDataBreachStore = new UserDataBreachStore();
+        this.internalDeviceStore = new DeviceStore();
+        this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
         this.internalColorPalettes = computed(() => this.state.settings.value.colorPalettes.value.valueArray())
@@ -169,6 +177,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.currentVault.groupStore.resetToDefault();
         this.currentVault.vaultPreferencesStore.resetToDefault();
         this.internalUserDataBreachStore.resetToDefault();
+        this.internalDeviceStore.resetToDefault();
+        this.internalOrganizationStore.resetToDefault();
 
         this.internalUserVaults.value = [];
         this.internalArchivedVaults.value = [];
@@ -217,6 +227,10 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         this.loadedUser = true;
         this.internalActiveAppView.value = AppView.Vault;
+
+        // don't bother waiting for this, just trigger it so they are there if we need them
+        app.devices.getDevices();
+        app.organizations.getOrganizations();
 
         return true;
     }

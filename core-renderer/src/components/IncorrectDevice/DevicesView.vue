@@ -200,7 +200,7 @@ export default defineComponent({
             {
                 const response = await api.server.user.getDevices();
                 if (response.Success)
-                {
+                {   
                     responseObj.value = response;
 
                     const d: Device[] = [...setDeviceType(responseObj.value.DesktopDevices!, true),
@@ -288,7 +288,7 @@ export default defineComponent({
     font-size: clamp(11px, 0.8vw, 25px);
 }
 
-#devicesTable {
+/* #devicesTable {
     height: 60%;
     width: 70%;
     min-width: 410px;
@@ -296,5 +296,5 @@ export default defineComponent({
     top: 20%;
     left: 50%;
     transform: translateX(-50%);
-}
+} */
 </style>

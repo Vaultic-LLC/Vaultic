@@ -65,14 +65,14 @@ export type KnownMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataO
     "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "colorPalettes" | "pinnedDataTypes" |
     "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
     "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions";
+    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices";
 
 
 export const MapFields: Set<KnownMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
     "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "colorPalettes", "pinnedDataTypes", "pinnedFilters",
     "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
     "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
-    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions"
+    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices"
 ]);
 
 export class Field<T>

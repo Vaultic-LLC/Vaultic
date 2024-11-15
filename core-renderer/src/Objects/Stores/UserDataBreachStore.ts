@@ -26,17 +26,6 @@ export class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBre
         };
     }
 
-    // this store isn't written to a file, we request the data on each new load
-    public writeState(_: string): Promise<boolean>
-    {
-        return Promise.resolve(true)
-    }
-
-    public async readState(_: string): Promise<boolean>
-    {
-        return Promise.resolve(true);
-    }
-
     public addEvent(event: DataBreachStoreEvent, callback: () => void)
     {
         super.addEvent(event, callback);

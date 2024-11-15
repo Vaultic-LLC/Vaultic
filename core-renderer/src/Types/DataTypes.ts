@@ -180,6 +180,20 @@ export class RelatedDataTypeChanges
     }
 }
 
+export interface Member extends IFieldObject
+{
+    name: Field<string>;
+    email: Field<string>;
+    icon: Field<string>;
+}
+
+export interface Organization extends IFieldObject, IIdentifiable
+{
+    organizationID: Field<number>;
+    name: Field<string>;
+    members: Field<Map<string, Field<Member>>>;
+}
+
 export function defaultPassword(): Password
 {
     return {

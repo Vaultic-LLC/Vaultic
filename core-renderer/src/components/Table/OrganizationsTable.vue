@@ -1,11 +1,11 @@
 <template>
-    <div class="devicesTableContainer">
-        <TableTemplate  id="devicesTable" ref="tableRef" :rowGap="0"
-            class="shadow scrollbar" :color="color" :headerModels="deviceHeaders" :scrollbar-size="1"
+    <div class="organizationsTableContainer">
+        <TableTemplate  id="organizationsTable" ref="tableRef" :rowGap="0"
+            class="shadow scrollbar" :color="color" :headerModels="organizationHeaders" :scrollbar-size="1"
             :emptyMessage="emptyTableMessage" :showEmptyMessage="tableRowModels.visualValues.length == 0"
             :headerTabs="headerTabs" @scrolledToBottom="tableRowModels.loadNextChunk()">
             <template #headerControls>
-                <SearchBar v-model="deviceSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
+                <SearchBar v-model="organizationSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
                     :width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" :minHeight="'27px'" />
                 <Transition name="fade" mode="out-in">
                 </Transition>
@@ -26,17 +26,17 @@ import SearchBar from './Controls/SearchBar.vue';
 import TableRow from './Rows/TableRow.vue';
 
 import { HeaderTabModel, SortableHeaderModel, TableRowData, TextTableRowValue, emptyHeader } from '../../Types/Models';
-import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
+import { createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
 import { HeaderDisplayField } from '../../Types/Fields';
-import { ClientDevice } from '@vaultic/shared/Types/Device';
 import { api } from '../../API';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
+import { Organization } from '../../Types/DataTypes';
 
 export default defineComponent({
-    name: "DevicesTable",
+    name: "OrganizationsTable",
     components:
     {
         TableTemplate,
@@ -47,77 +47,56 @@ export default defineComponent({
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const activeTable: Ref<number> = ref(app.activePasswordValuesTable);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
 
-        const devices: SortedCollection<ClientDevice> = new SortedCollection([], "Name");
-        const pinnedDevices: SortedCollection<ClientDevice> = new SortedCollection(app.devices.pinnedDevices, "Name");
+        const organizations: SortedCollection<Organization> = new SortedCollection([], "name");
+        const pinnedOrganizations: SortedCollection<Organization> = new SortedCollection(app.organizations.pinnedOrganizations, "name");
 
         let tableRowModels: Ref<InfiniteScrollCollection<TableRowData>> = ref(new InfiniteScrollCollection<TableRowData>());
 
-        const deviceSearchText: Ref<string> = ref('');
+        const organizationSearchText: Ref<string> = ref('');
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
-            if (app.devices.failedToGetDevices)
+            if (app.organizations.failedToRetrieveOrganizations)
             {
-                return "Unable to retrieve devices at this moment. Please try again or contact support if the issue persists";
+                return "Unable to retrieve organizations at this moment. Please try again or contact support if the issue persists";
             }
 
-            return "You currently don't have any registered devices. Click '+' to register this device";
+            return getEmptyTableMessage("Organizations");
         });
 
         const headerTabs: HeaderTabModel[] = [
             {
-                name: 'Devices',
+                name: 'Organizations',
                 active: computed(() => true),
-                color: computed(() => app.userPreferences.currentPrimaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.filtersColor.value),
                 onClick: () => { }
             }
         ];
 
-        const deviceActiveHeader: Ref<number> = ref(0);
-        const deviceHeaderDisplayFields: HeaderDisplayField[] = [
+        const organizationActiveHeader: Ref<number> = ref(0);
+        const organizationHeaderDisplayFields: HeaderDisplayField[] = [
             {
                 displayName: "Name",
-                backingProperty: "Name",
+                backingProperty: "name",
                 width: 'clamp(75px, 5vw, 150px)',
                 clickable: true,
                 padding: 'clamp(5px, 0.5vw, 12px)',
-            },
-            {
-                displayName: "Type",
-                backingProperty: "Type",
-                width: 'clamp(75px, 5vw, 150px)',
-                clickable: true,
-            },
-            {
-                displayName: "Model",
-                backingProperty: "Model",
-                width: 'clamp(75px, 5vw, 150px)',
-                clickable: true
-            },
-            {
-                displayName: "Version",
-                backingProperty: "Version",
-                width: 'clamp(75px, 5vw, 150px)',
-                clickable: true
             }
         ];
 
-        const deviceHeaders: SortableHeaderModel[] = createSortableHeaderModels<ClientDevice>(deviceActiveHeader, deviceHeaderDisplayFields,
-            devices, pinnedDevices, setTableRows);
+        const organizationHeaders: SortableHeaderModel[] = createSortableHeaderModels<Organization>(organizationActiveHeader, organizationHeaderDisplayFields,
+            organizations, pinnedOrganizations, setTableRows);
 
-        deviceHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
+        organizationHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
 
         async function setTableRows()
         {
-            const pendingRows = devices.calculatedValues.map(async (d) =>
+            const pendingRows = organizations.calculatedValues.map(async (o) =>
             {
-                d.id = await api.utilities.generator.uniqueId();
+                o.id = await api.utilities.generator.uniqueId();
                 const values: TextTableRowValue[] = [
-                    { component: "TableRowTextValue", value: d.value.Name, copiable: false, width: 'clamp(75px, 8vw, 180px)', margin: true },
-                    { component: "TableRowTextValue", value: d.value.Type, copiable: false, width: 'clamp(75px, 8vw, 180px)' },
-                    { component: "TableRowTextValue", value: d.value.Model, copiable: false, width: 'clamp(75px, 8vw, 180px)' },
-                    { component: "TableRowTextValue", value: d.value.Version, copiable: false, width: 'clamp(75px, 8vw, 180px)' }
+                    { component: "TableRowTextValue", value: o.value.name.value, copiable: false, width: 'clamp(75px, 8vw, 180px)', margin: true },
                 ]
 
                 const id = await api.utilities.generator.uniqueId();
@@ -129,7 +108,7 @@ export default defineComponent({
                     {
                         app.popups.showRequestAuthentication(color.value, (key: string) =>
                         {
-                            app.devices.deleteDevice(key, d.value.id.value);
+                            app.organizations.deleteOrganization(key, o.value.organizationID.value);
                         }, () => { });
                     }
                 }
@@ -150,9 +129,9 @@ export default defineComponent({
             });
         }
 
-        watch(() => deviceSearchText.value, (newValue) =>
+        watch(() => organizationSearchText.value, (newValue) =>
         {
-            devices.search(newValue);
+            organizations.search(newValue);
             setTableRows();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
@@ -161,9 +140,9 @@ export default defineComponent({
             tableRef,
             activeTable,
             color,
-            deviceHeaders,
+            organizationHeaders,
             tableRowModels,
-            deviceSearchText,
+            organizationSearchText,
             headerTabs,
             emptyTableMessage,
         }
@@ -172,17 +151,17 @@ export default defineComponent({
 </script>
 
 <style>
-#devicesTable {
-    height: 55%;
-    width: 43%;
-    min-width: 547px;
-    left: 38%;
+#organizationsTable {
+    height: 43%;
+    width: 24%;
+    min-width: 285px;
+    left: 11%;
     top: max(252px, 42%);
 }
 
 @media (max-width: 1300px) {
-    #devicesTable {
-        left: max(324px, 28.5%);
+    #organizationsTable {
+        left: max(11px, 1%);
     }
 }
 </style>
