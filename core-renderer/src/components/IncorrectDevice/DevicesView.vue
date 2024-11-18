@@ -48,6 +48,7 @@ import { IncorrectDeviceResponse } from '@vaultic/shared/Types/Responses';
 import { Device } from '@vaultic/shared/Types/Device';
 import { HeaderDisplayField } from '../../Types/Fields';
 
+// TODO: this can be deleted
 export default defineComponent({
     name: "DevicesView",
     components:

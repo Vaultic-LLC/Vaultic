@@ -170,6 +170,7 @@ export interface LogUserInResponse extends StartLoginResponse, FinishLoginRespon
 
 export interface CreateVaultResponse extends BaseResponse
 {
+    UserOrganizationID?: number;
     UserVaultID?: number;
     VaultPreferencesStoreStateID?: number;
     VaultID?: number;

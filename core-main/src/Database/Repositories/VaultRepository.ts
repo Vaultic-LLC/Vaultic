@@ -92,6 +92,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         vault.userVaults = [userVault];
 
         userVault.userVaultID = response.UserVaultID!;
+        userVault.userOrganizationID = response.UserOrganizationID!;
         userVault.vaultID = response.VaultID!;
         userVault.vaultPreferencesStoreState.userVaultID = response.UserVaultID!;
         userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = response.VaultPreferencesStoreStateID!;
@@ -389,10 +390,13 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             {
                 Object.assign(vaultBackup, vault.getBackup());
             }
-            else 
+            else
             {
                 vaultBackup["vaultID"] = vault.vaultID;
             }
+
+            // Kind of sucks to manually set this instead of it being set from getBackup() but oh well
+            vaultBackup[nameof<UserVault>("userOrganizationID")] = userVaultsWithVaultsToBackup[0][i].userOrganizationID;
 
             if (vault.vaultStoreState.propertiesToSync.length > 0)
             {

@@ -80,6 +80,10 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "integer",
                 },
                 {
+                    name: "userOrganizationID",
+                    type: "integer",
+                },
+                {
                     name: "userID",
                     type: "integer"
                 },

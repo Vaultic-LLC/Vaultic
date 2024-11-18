@@ -1,10 +1,6 @@
 import { Store, StoreState } from "./Base";
-import { ClientDevice, Device } from "@vaultic/shared/Types/Device";
 import { Field } from "@vaultic/shared/Types/Fields";
-import { api } from "../../API";
-import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { ComputedRef, computed } from "vue";
-import app from "./AppStore";
 import { Organization } from "../../Types/DataTypes";
 
 export interface OrganizationStoreState extends StoreState
