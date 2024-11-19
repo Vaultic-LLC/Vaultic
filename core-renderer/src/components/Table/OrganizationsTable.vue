@@ -7,8 +7,7 @@
             <template #headerControls>
                 <SearchBar v-model="organizationSearchText" :color="color" :labelBackground="'rgb(44 44 51 / 16%)'"
                     :width="'10vw'" :maxWidth="'250px'" :minWidth="'130px'" :minHeight="'27px'" />
-                <Transition name="fade" mode="out-in">
-                </Transition>
+                <AddButton :color="color" @click="onAdd" />
             </template>
             <template #body>
                 <TableRow v-for="(trd, index) in tableRowModels.visualValues" class="hover" :key="trd.id"
@@ -24,6 +23,7 @@ import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 import TableTemplate from './TableTemplate.vue';
 import SearchBar from './Controls/SearchBar.vue';
 import TableRow from './Rows/TableRow.vue';
+import AddButton from './Controls/AddButton.vue';
 
 import { HeaderTabModel, SortableHeaderModel, TableRowData, TextTableRowValue, emptyHeader } from '../../Types/Models';
 import { createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
@@ -41,7 +41,8 @@ export default defineComponent({
     {
         TableTemplate,
         SearchBar,
-        TableRow
+        TableRow,
+        AddButton
     },
     setup()
     {
@@ -104,6 +105,10 @@ export default defineComponent({
                 {
                     id: id,
                     values: values,
+                    onEdit: function ()
+                    {
+                        app.popups.showOrganizationPopup(() => {}, o.value)
+                    },
                     onDelete: function ()
                     {
                         app.popups.showRequestAuthentication(color.value, (key: string) =>
@@ -129,6 +134,11 @@ export default defineComponent({
             });
         }
 
+        function onAdd()
+        {
+            app.popups.showOrganizationPopup(() => {});
+        }
+
         watch(() => organizationSearchText.value, (newValue) =>
         {
             organizations.search(newValue);
@@ -145,6 +155,7 @@ export default defineComponent({
             organizationSearchText,
             headerTabs,
             emptyTableMessage,
+            onAdd
         }
     }
 })

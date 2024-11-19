@@ -1,5 +1,6 @@
 import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
+import { Permissions } from "@vaultic/shared/Types/ClientServerTypes";
 
 export class DuplicateDataTypes extends FieldedObject
 {
@@ -180,18 +181,21 @@ export class RelatedDataTypeChanges
     }
 }
 
-export interface Member extends IFieldObject
+export interface Member extends IFieldObject, IIdentifiable
 {
-    name: Field<string>;
+    userID: Field<number>;
+    firstName: Field<string>;
+    lastName: Field<string>;
     email: Field<string>;
-    icon: Field<string>;
+    permission: Field<Permissions>
+    icon: Field<string | undefined>;
 }
 
 export interface Organization extends IFieldObject, IIdentifiable
 {
     organizationID: Field<number>;
     name: Field<string>;
-    members: Field<Map<string, Field<Member>>>;
+    members: Field<Map<number, Field<Member>>>;
 }
 
 export function defaultPassword(): Password
@@ -260,5 +264,15 @@ export function defaultGroup(type: DataType): Group
         name: new Field(''),
         type: new Field(type),
         color: new Field('')
+    }
+}
+
+export function defaultOrganization(): Organization
+{
+    return {
+        id: new Field(''),
+        organizationID: new Field(-1),
+        name: new Field(''),
+        members: new Field(new Map())
     }
 }

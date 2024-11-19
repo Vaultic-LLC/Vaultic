@@ -2,7 +2,6 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <TextInputField :label="'Name'" v-model="vaultState.name" class="vaultView__nameInput" :color="color" />
-        <CheckboxInputField :label="'Share'" v-model=""
     </ObjectView>
 </template>
 <script lang="ts">

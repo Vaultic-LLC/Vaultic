@@ -1,5 +1,5 @@
 import { Device } from "./Device";
-import { ChartData, LicenseStatus, Session, UserDataBreach, UserDataPayload } from "./ClientServerTypes";
+import { ChartData, LicenseStatus, OrganizationAndUsers, Session, UserDataBreach, UserDataPayload } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -191,3 +191,9 @@ export interface GetUserIDResponse extends BaseResponse
 export interface GetVaultDataResponse extends BaseResponse, UserDataPayloadResponse { }
 
 export interface BackupResponse extends BaseResponse, UserDataPayloadResponse { }
+
+export interface GetOrganizationsResponse extends BaseResponse
+{
+    OrganizationsAndUsers?: OrganizationAndUsers[];
+}
+

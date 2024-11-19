@@ -1,4 +1,5 @@
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, LogResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { UserIDAndPermission } from "./ClientServerTypes";
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetUserDataBreachesResponse, LogResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -31,4 +32,12 @@ export interface ValueController
 export interface ClientVaultController 
 {
     deleteVault: (userVaultID: number) => Promise<BaseResponse>;
+}
+
+export interface OrganizationController
+{
+    getOrganizations: () => Promise<GetOrganizationsResponse>;
+    createOrganization: (name: string, userIDsAndPermissions: UserIDAndPermission[]) => Promise<BaseResponse>;
+    updateOrganization: (organizationID: number, name?: string, addedUserIDsAndPermissions?: UserIDAndPermission[], removedUserIDsAndPermissions?: UserIDAndPermission[]) => Promise<BaseResponse>
+    deleteOrganization: (organizationID: number) => Promise<BaseResponse>
 }
