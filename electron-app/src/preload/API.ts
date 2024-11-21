@@ -9,7 +9,7 @@ import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, C
 import { IAPI } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
-import { UserIDAndPermission } from "@vaultic/shared/Types/ClientServerTypes";
+import { AllowSharingFrom, UserIDAndPermission } from "@vaultic/shared/Types/ClientServerTypes";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
 {
@@ -37,6 +37,8 @@ const userController: ClientUserController =
 	deactivateUserSubscription: (email: string, deactivationKey: string) => ipcRenderer.invoke('userController:deactivateUserSubscription', email, deactivationKey),
 	getDevices: () => ipcRenderer.invoke('userController:getDevices'),
 	reportBug: () => ipcRenderer.invoke('userController:reportBug'),
+	getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
+	updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom)
 };
 
 const valueController: ValueController =

@@ -75,3 +75,9 @@ export interface OrganizationAndUsers
     Name: string;
     UserDemographics: UserOrgInfo[];
 }
+
+export enum AllowSharingFrom
+{
+    Everyone,
+    SpecificUsers
+}

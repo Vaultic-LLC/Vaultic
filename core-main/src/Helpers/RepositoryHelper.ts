@@ -173,13 +173,16 @@ export async function backupData(masterKey: string)
         postData.userDataPayload["vaults"] = vaultsToBackup.value.vaults;
     }
 
+    console.log(`Backing up data: ${JSON.stringify(postData)}`);
     const backupResponse = await vaulticServer.user.backupData(postData);
     if (!backupResponse.Success)
     {
+        console.log(`Backup Failed: ${JSON.stringify(backupResponse)}`);
         return await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload)
     }
     else
     {
+        console.log('backup succeeded');
         const transaction = new Transaction();
         if (userToBackup.value)
         {
@@ -316,7 +319,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.userVaults.addFromServer(serverUserVault, transaction))
                 {
-                    await environment.repositories.logs.log(undefined, `Failed to add userVault from server. UserVaultID: ${serverUserVault?.userVaultID}`);
+                    await environment.repositories.logs.log(undefined, `Failed to add userVault from server. UserVaultID: ${JSON.stringify(serverUserVault)}`);
                 }
             }
         }

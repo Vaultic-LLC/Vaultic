@@ -121,6 +121,7 @@ export class UserVault extends VaulticEntity implements IUserVault
             !!userVault.currentSignature &&
             !!userVault.userID &&
             !!userVault.userVaultID &&
+            !!userVault.userOrganizationID &&
             !!userVault.vaultID &&
             !!userVault.vaultKey &&
             !!userVault.vaultPreferencesStoreState &&

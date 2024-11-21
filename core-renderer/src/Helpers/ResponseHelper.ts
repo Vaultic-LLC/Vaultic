@@ -2,7 +2,7 @@ import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import app from "../Objects/Stores/AppStore";
 import { AccountSetupView } from "../Types/Models";
 
-export function defaultHandleFailedResponse(response: any, showAlerts: boolean = true)
+export function defaultHandleFailedResponse(response: any, showAlerts: boolean = true, fallbackTitle?: string, fallbackMessage?: string)
 {
     if (response?.errorCode && errorCodes.verificationFailed(response.errorCode))
     {
@@ -40,7 +40,14 @@ export function defaultHandleFailedResponse(response: any, showAlerts: boolean =
         }
         else 
         {
-            app.popups.showAlert("An Unknown Error has Occured", "An unknown error has occured, please try again. If the issue persisits", true);
+            if (fallbackMessage && fallbackTitle)
+            {
+                app.popups.showAlert(fallbackTitle, fallbackMessage, true);
+            }
+            else 
+            {
+                app.popups.showAlert("An Unknown Error has Occured", "An unknown error has occured, please try again. If the issue persisits", true);
+            }
         }
     }
 }

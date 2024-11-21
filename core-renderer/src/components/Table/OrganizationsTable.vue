@@ -98,7 +98,7 @@ export default defineComponent({
                 o.id = await api.utilities.generator.uniqueId();
                 const values: TextTableRowValue[] = [
                     { component: "TableRowTextValue", value: o.value.name.value, copiable: false, width: 'clamp(75px, 8vw, 180px)', margin: true },
-                ]
+                ];
 
                 const id = await api.utilities.generator.uniqueId();
                 let tableRow: TableRowData =
@@ -116,7 +116,7 @@ export default defineComponent({
                             app.organizations.deleteOrganization(key, o.value.organizationID.value);
                         }, () => { });
                     }
-                }
+                };
 
                 return tableRow;
             });

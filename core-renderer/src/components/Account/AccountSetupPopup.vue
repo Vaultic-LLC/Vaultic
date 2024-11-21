@@ -82,6 +82,11 @@ export default defineComponent({
 
         function moveToCreateAccount()
         {
+            account.value.firstName = '';
+            account.value.lastName = '';
+            account.value.email = '';
+            account.value.masterKey = '';
+            
             navigationStack.value.push(AccountSetupView.SignIn);
             accountSetupModel.value.currentView = AccountSetupView.CreateAccount;
         }

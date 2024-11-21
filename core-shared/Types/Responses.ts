@@ -1,5 +1,5 @@
 import { Device } from "./Device";
-import { ChartData, LicenseStatus, OrganizationAndUsers, Session, UserDataBreach, UserDataPayload } from "./ClientServerTypes";
+import { AllowSharingFrom, ChartData, LicenseStatus, OrganizationAndUsers, Session, UserDataBreach, UserDataPayload } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -197,3 +197,14 @@ export interface GetOrganizationsResponse extends BaseResponse
     OrganizationsAndUsers?: OrganizationAndUsers[];
 }
 
+export interface GetSharingSettings extends BaseResponse 
+{
+    Username?: string;
+    AllowSharedVaultsFromOthers?: boolean;
+    AllowSharingFrom?: AllowSharingFrom;
+}
+
+export interface UpdateSharingSettingsResponse extends BaseResponse
+{
+    UsernameIsTaken?: boolean;
+}

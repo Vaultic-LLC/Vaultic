@@ -2,7 +2,7 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <TextInputField :label="'Name'" v-model="orgState.name.value" class="organizationView__nameInput" :color="color" />
-        <TableTemplate ref="tableRef" class="scrollbar border" :scrollbar-size="1"
+        <TableTemplate ref="tableRef" id="organizationView__table" class="scrollbar border" :scrollbar-size="1"
             :color="color" :border="true" :headerModels="tableHeaderModels" :emptyMessage="''"
             :showEmptyMessage="false" :headerTabs="userHeaderTab"
             @scrolledToBottom="tableRowDatas.loadNextChunk()">
@@ -65,9 +65,9 @@ export default defineComponent({
 
         const gridDefinition: GridDefinition =
         {
-            rows: 12,
+            rows: 13,
             rowHeight: 'clamp(10px, 2vw, 50px)',
-            columns: 14,
+            columns: 15,
             columnWidth: 'clamp(20px, 4vw, 100px)'
         };
 
@@ -83,17 +83,23 @@ export default defineComponent({
         const activeUserHeader: Ref<number> = ref(1);
         const userHeaderDisplayFields: HeaderDisplayField[] = [
             {
-                backingProperty: "firstName",
-                displayName: "First Name",
-                width: 'clamp(100px, 7vw, 200px)',
-                clickable: true
+                backingProperty: "",
+                displayName: "  ",
+                width: 'clamp(50px, 4vw, 100px)',
+                clickable: false
             },
-            {
-                backingProperty: "lastName",
-                displayName: "Last Name",
-                width: 'clamp(100px, 7vw, 200px)',
-                clickable: true
-            },
+            // {
+            //     backingProperty: "firstName",
+            //     displayName: "First Name",
+            //     width: 'clamp(100px, 7vw, 200px)',
+            //     clickable: true
+            // },
+            // {
+            //     backingProperty: "lastName",
+            //     displayName: "Last Name",
+            //     width: 'clamp(100px, 7vw, 200px)',
+            //     clickable: true
+            // },
             {
                 backingProperty: "email",
                 displayName: "Email",
@@ -103,7 +109,7 @@ export default defineComponent({
             {
                 backingProperty: "permission",
                 displayName: "Permissions",
-                width: 'clamp(100px, 7vw, 200px)',
+                width: 'clamp(20px, 3vw, 40px)',
                 clickable: true
             },
         ];
@@ -120,18 +126,18 @@ export default defineComponent({
             pendingRows = userSortedCollection.calculatedValues.map(async p =>
             {
                 const values: TextTableRowValue[] = [
-                    {
-                        component: "TableRowTextValue",
-                        value: p.value.firstName.value,
-                        copiable: false,
-                        width: 'clamp(100px, 7vw, 200px)'
-                    },
-                    {
-                        component: "TableRowTextValue",
-                        value: p.value.lastName.value,
-                        copiable: false,
-                        width: 'clamp(100px, 7vw, 200px)'
-                    },
+                    // {
+                    //     component: "TableRowTextValue",
+                    //     value: p.value.firstName.value,
+                    //     copiable: false,
+                    //     width: 'clamp(100px, 7vw, 200px)'
+                    // },
+                    // {
+                    //     component: "TableRowTextValue",
+                    //     value: p.value.lastName.value,
+                    //     copiable: false,
+                    //     width: 'clamp(100px, 7vw, 200px)'
+                    // },
                     {
                         component: "TableRowTextValue",
                         value: p.value.email.value,
@@ -142,7 +148,7 @@ export default defineComponent({
                         component: "TableRowTextValue",
                         value: p.value.permission.value.toString(),
                         copiable: false,
-                        width: 'clamp(100px, 7vw, 200px)'
+                        width: 'clamp(20px, 3vw, 40px)'
                     }
                 ];
 
@@ -240,7 +246,7 @@ export default defineComponent({
 
         watch(() => searchText.value.value, (newValue) =>
         {
-            // TODO: get users
+            
         });
 
         return {
@@ -261,6 +267,14 @@ export default defineComponent({
 <style>
 .organizationView__nameInput {
     grid-row: 1 / span 2;
-    grid-column: 1 / span 4;
+    grid-column: 4 / span 2;
+}
+
+#organizationView__table {
+    position: relative;
+    grid-row: 5 / span 8;
+    grid-column: 4 / span 9;
+    min-width: 410px;
+    min-height: 182px;
 }
 </style>

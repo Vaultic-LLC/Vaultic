@@ -57,11 +57,32 @@
                     :toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
             </div>
             <div></div>
+            <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
+            <div v-if="isOnline" class="settingsView__inputSection">
+                // TODO: shold warn users that unchecking this will un share all vaults from them and to them
+                <CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
+                    :minHeight="'12.5px'" :disabled="readOnly || failedToLoadSharedData"
+                    :label="'Allow Shared Vaults From Others'"
+                    v-model="allowSharedVaultsFromOthers" />
+            </div>
+            <div v-if="isOnline" class="settingsView__inputSection">
+                <TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
+                    :label="'Username'" v-model="username"
+                    :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+                    :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || failedToLoadSharedData"
+                    :additionalValidationFunction="enforceLoginRecordsPerDay" />
+                // Should warn user that changing this from everyone -> users will remove all vaults that aren't from 
+                // the people they pick
+                <EnumInputField class="settingsView__autoLockTime" :label="'Allow Sharing From'" :color="color"
+                    v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'"
+                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || failedToLoadSharedData" />
+                // TODO: show user multiselect if allowSharingFrom == users
+            </div>
         </ScrollView>
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, Ref, ref } from 'vue';
+import { ComputedRef, defineComponent, computed, Ref, ref, onMounted } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -75,6 +96,9 @@ import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import { VaultSettings } from "../../Objects/Stores/VaultStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
 import { FilterStatus } from '../../Types/DataTypes';
+import { AllowSharingFrom } from '@vaultic/shared/Types/ClientServerTypes';
+import { api } from '../../API';
+import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 
 export default defineComponent({
     name: "ValueView",
@@ -90,6 +114,7 @@ export default defineComponent({
     setup(props)
     {
         const refreshKey: Ref<string> = ref("");
+        const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
 
         // copy the objects so that we don't edit the original one. Also needed for change tracking
         const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
@@ -101,6 +126,11 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
+
+        const failedToLoadSharedData: Ref<boolean> = ref(false);
+        const allowSharedVaultsFromOthers: Ref<boolean> = ref(false);
+        const username: Ref<string> = ref('');
+        const allowSharingFrom: Ref<AllowSharingFrom> = ref(AllowSharingFrom.Everyone);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -125,6 +155,8 @@ export default defineComponent({
         async function onAuthenticationSuccessful(masterKey: string)
         {
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
+
+            // TODO: check / save shared settinsg first in case username is already taken
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
             if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
@@ -232,7 +264,27 @@ export default defineComponent({
             return [true, ""];
         }
 
+        onMounted(async () => 
+        {
+            if (isOnline.value)
+            {
+                const response = await api.server.user.getSharingSettings();
+                if (!response.Success)
+                {
+                    failedToLoadSharedData.value = true;
+                    defaultHandleFailedResponse(response, true, "Unable to retrieve Sharing Settings", "We are unable to retrieve your sharing settings at the moment. Please try again later. If the issue persists");
+                    return;
+                }
+
+                allowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
+                username.value = response.Username!;
+                allowSharingFrom.value = response.AllowSharingFrom!;
+                
+            }
+        })
+
         return {
+            isOnline,
             readOnly,
             color,
             appSettings,
@@ -242,6 +294,11 @@ export default defineComponent({
             AutoLockTime,
             FilterStatus,
             currentView,
+            allowSharedVaultsFromOthers,
+            username,
+            allowSharingFrom,
+            AllowSharingFrom,
+            failedToLoadSharedData,
             onSave,
             onAuthenticationSuccessful,
             enforceLoginRecordsPerDay,

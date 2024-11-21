@@ -397,6 +397,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             // Kind of sucks to manually set this instead of it being set from getBackup() but oh well
             vaultBackup[nameof<UserVault>("userOrganizationID")] = userVaultsWithVaultsToBackup[0][i].userOrganizationID;
+            vaultBackup[nameof<UserVault>("userVaultID")] = userVaultsWithVaultsToBackup[0][i].userVaultID;
 
             if (vault.vaultStoreState.propertiesToSync.length > 0)
             {
