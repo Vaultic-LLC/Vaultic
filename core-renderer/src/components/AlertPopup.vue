@@ -14,6 +14,7 @@
                     <div v-if="statusCode">
                         Staus Code: {{ statusCode }}
                     </div>
+                    // TODO: remove this and statusCode now that we have logging. Users don't need to see this
                     <div v-if="axiosCode">
                         Network Code: {{ axiosCode }}
                     </div>

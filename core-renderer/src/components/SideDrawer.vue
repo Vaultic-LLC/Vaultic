@@ -15,6 +15,9 @@
             </div>
             <div class="sideDrawer__currentUserName">Tyler Wanta</div>
         </div>
+        <div class="sideDrawer__currentView">
+            <ToggleRadioButton :model="toggleButtonModel" :height="'45px'" @onButtonClicked="onAppViewChange" />
+        </div>
         <div class="sideDrawer__vaultList">
             <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
         </div>
@@ -26,18 +29,21 @@ import { computed, ComputedRef, defineComponent, Ref, ref, watch, onMounted, onU
 
 import TreeList from "./Tree/TreeList.vue";
 import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
+import ToggleRadioButton from './InputFields/ToggleRadioButton.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
-import { TreeNodeButton } from "../Types/Models";
+import { ToggleRadioButtonModel, TreeNodeButton } from "../Types/Models";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
 import { DisplayVault, VaultType } from '@vaultic/shared/Types/Entities';
+import { AppView } from '../Types/App';
 
 export default defineComponent({
     name: "SideDrawer",
     components: {
         TreeList,
-        PersonOutlineIcon
+        PersonOutlineIcon,
+        ToggleRadioButton
     },
     setup()
     {
@@ -46,6 +52,17 @@ export default defineComponent({
         const online: Ref<boolean> = ref(app.isOnline);
         const text: Ref<string> = ref(online.value ? "Online" : "Offline");
         let refreshKey: Ref<string> = ref('');
+
+        const toggleButtonModel: Ref<ToggleRadioButtonModel> = ref({
+            buttonOne: {
+                text: "Vault",
+                active: true
+            },
+            buttonTwo: {
+                text: "User",
+                active: false
+            }
+        });
 
         const manager = new TreeNodeListManager();
 
@@ -219,6 +236,18 @@ export default defineComponent({
             allNodes.value = manager.buildList();
         }
 
+        function onAppViewChange(index: number)
+        {
+            if (index == 0)
+            {
+                app.activeAppView = AppView.Vault;
+            }
+            else 
+            {
+                app.activeAppView = AppView.User;
+            }
+        }
+
         watch(() => app.userVaults.value, (newValue, oldValue) => 
         {
             // Add Archive button as we now have 2 vaults
@@ -276,8 +305,10 @@ export default defineComponent({
             refreshKey,
             online,
             text,
+            toggleButtonModel,
             openCreateVaultPopup,
-            onLeafClicked
+            onLeafClicked,
+            onAppViewChange
         };
     }
 })
@@ -344,6 +375,17 @@ export default defineComponent({
 .sideDrawer__currentUserIcon {
     margin-left: 10px;
     font-size: 30px;
+}
+
+.sideDrawer__currentView {
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    height: 60px;
+    position: absolute;
+    bottom: 25px;
 }
 
 .sideDrawer__vaultList {

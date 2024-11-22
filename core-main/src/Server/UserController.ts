@@ -1,8 +1,8 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetUserDataBreachesResponse, GetUserIDResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetSharingSettings, GetUserDataBreachesResponse, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { AllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 
 export interface UserController extends ClientUserController
 {
@@ -87,6 +87,27 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
+    function getSharingSettings(): Promise<GetSharingSettings>
+    {
+        return axiosHelper.api.post('User/GetSharingSettings');
+    }
+
+    function updateSharingSettings(username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom): Promise<UpdateSharingSettingsResponse>
+    {
+        return axiosHelper.api.post('User/UpdateSharingSettings', {
+            Username: username,
+            AllowSharedVaultsFromOthers: allowSharedVaultsFromOthers,
+            AllowSharingFrom: allowSharingFrom
+        });
+    }
+
+    function searchForUsers(username: string): Promise<SearchForUsersResponse>
+    {
+        return axiosHelper.api.post('User/SearchForUsers', {
+            Username: username,
+        });
+    }
+
     return {
         validateEmail,
         getUserIDs,
@@ -99,5 +120,8 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         dismissUserDataBreach,
         deactivateUserSubscription,
         reportBug,
+        getSharingSettings,
+        updateSharingSettings,
+        searchForUsers
     }
 }

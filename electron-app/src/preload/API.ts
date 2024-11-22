@@ -1,7 +1,7 @@
 import { ipcRenderer } from "electron";
 
 import { DeviceInfo } from "@vaultic/shared/Types/Device";
-import { AppController, ClientUserController, ClientVaultController, SessionController, ValueController } from "@vaultic/shared/Types/Controllers";
+import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController, ValueController } from "@vaultic/shared/Types/Controllers";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
 import { ClientVaultHelper, RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
@@ -9,6 +9,7 @@ import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, C
 import { IAPI } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
+import { AllowSharingFrom, UserIDAndPermission } from "@vaultic/shared/Types/ClientServerTypes";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
 {
@@ -36,6 +37,10 @@ const userController: ClientUserController =
 	deactivateUserSubscription: (email: string, deactivationKey: string) => ipcRenderer.invoke('userController:deactivateUserSubscription', email, deactivationKey),
 	getDevices: () => ipcRenderer.invoke('userController:getDevices'),
 	reportBug: () => ipcRenderer.invoke('userController:reportBug'),
+	getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
+	updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom),
+	searchForUsers: (username: string) => ipcRenderer.invoke('userController:searchForUsers', username)
+
 };
 
 const valueController: ValueController =
@@ -46,6 +51,14 @@ const valueController: ValueController =
 const vaultController: ClientVaultController =
 {
 	deleteVault: (userVaultID: number) => ipcRenderer.invoke('vaultController:deleteVault', userVaultID)
+}
+
+const organizationController: OrganizationController =
+{
+	getOrganizations: () => ipcRenderer.invoke('organizationController:getOrganizations'),
+	createOrganization: (name: string, userIDsAndPermissions: UserIDAndPermission[]) => ipcRenderer.invoke('organizationController:getOrganizations', name, userIDsAndPermissions),
+	updateOrganization: (organizationID: number, name?: string, addedUserIDsAndPermissions?: UserIDAndPermission[], removedUserIDsAndPermissions?: UserIDAndPermission[]) => ipcRenderer.invoke('organizationController:updateOrganizations', organizationID, name, addedUserIDsAndPermissions, removedUserIDsAndPermissions),
+	deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganizations', organizationID)
 }
 
 const cryptUtility: ClientCryptUtility =
@@ -158,7 +171,8 @@ const api: IAPI =
 		session: sessionController,
 		user: userController,
 		value: valueController,
-		vault: vaultController
+		vault: vaultController,
+		organization: organizationController
 	},
 	utilities: {
 		crypt: cryptUtility,

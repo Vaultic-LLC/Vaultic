@@ -13,6 +13,7 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import { GridDefinition } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { DisplayVault } from '@vaultic/shared/Types/Entities';
+import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 
 export default defineComponent({
     name: "VaultView",
@@ -26,6 +27,8 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
         const vaultState: Ref<DisplayVault> = ref(props.model ?? { name: '' });
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        
+        const shareVault: Ref<boolean> = ref(false);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;

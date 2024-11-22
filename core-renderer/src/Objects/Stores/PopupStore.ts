@@ -5,6 +5,7 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { DisplayVault } from "@vaultic/shared/Types/Entities";
 import { IncorrectDeviceResponse, BaseResponse } from "@vaultic/shared/Types/Responses";
 import { ImportableDisplayField } from "../../Types/Fields";
+import { Organization } from "../../Types/DataTypes";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -96,6 +97,10 @@ export function createPopupStore()
     const vaultPopupIsShowing: Ref<boolean> = ref(false);
     const onVaultPopupClose: Ref<(saved: boolean) => void> = ref((_) => { });
     const vaultModel: Ref<DisplayVault | undefined> = ref(undefined);
+
+    const organizationPopupIsShowing: Ref<boolean> = ref(false);
+    const onOrganizationPopupClose: Ref<(saved: boolean) => void> = ref((_) => { });
+    const organizationModel: Ref<Organization | undefined> = ref(undefined);
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -327,6 +332,18 @@ export function createPopupStore()
         vaultPopupIsShowing.value = true;
     }
 
+    function showOrganizationPopup(onClose: (saved: boolean) => void, model?: Organization)
+    {
+        organizationModel.value = model;
+        onOrganizationPopupClose.value = (saved: boolean) => 
+        {
+            organizationPopupIsShowing.value = false;
+            onClose(saved);
+        };
+
+        organizationPopupIsShowing.value = true;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -365,6 +382,9 @@ export function createPopupStore()
         get vaultPopupIsShowing() { return vaultPopupIsShowing.value; },
         get vaultModel() { return vaultModel.value },
         get onVaultPopupClose() { return onVaultPopupClose.value; },
+        get organizationPopupIsShowing() { return organizationPopupIsShowing.value; },
+        get organizationModel() { return organizationModel.value },
+        get onOrganizationPopupClose() { return onOrganizationPopupClose.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -390,6 +410,7 @@ export function createPopupStore()
         hideBreachedPasswordPopup,
         showImportPopup,
         hideImportPopup,
-        showVaultPopup
+        showVaultPopup,
+        showOrganizationPopup
     }
 }

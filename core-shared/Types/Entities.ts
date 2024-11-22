@@ -34,6 +34,7 @@ export interface IUserVault extends IVaulticEntity
 {
     userVaultID: number
     userID: number
+    userOrganizationID: number
     user: IUser
     vaultID: number
     vault: IVault;

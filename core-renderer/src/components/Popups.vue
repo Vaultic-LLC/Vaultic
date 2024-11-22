@@ -61,6 +61,14 @@
                 </ObjectPopup>
             </Transition>
         </Teleport>
+        <Teleport to="#body">
+            <Transition name="fade">
+                <ObjectPopup v-if="popupStore.organizationPopupIsShowing" :closePopup="popupStore.onOrganizationPopupClose"
+                    :minWidth="'800px'" :minHeight="'480px'">
+                    <OrganizationView :creating="popupStore.organizationModel == undefined" :model="popupStore.organizationModel" />
+                </ObjectPopup>
+            </Transition>
+        </Teleport>
     </div>
 </template>
 
@@ -76,9 +84,9 @@ import RequestedAuthenticationPopup from './Authentication/RequestedAuthenticati
 import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue"
 import ToastPopup from './ToastPopup.vue';
 import ImportSelectionPopup from "./Workflow/ImportSelectionPopup.vue"
-
 import ObjectPopup from "./ObjectPopups/ObjectPopup.vue";
 import VaultView from "./ObjectViews/VaultView.vue";
+import OrganizationView from './ObjectViews/OrganizationView.vue';
 
 import app from "../Objects/Stores/AppStore";
 
@@ -96,7 +104,8 @@ export default defineComponent({
         ToastPopup,
         ImportSelectionPopup,
         ObjectPopup,
-        VaultView
+        VaultView,
+        OrganizationView
     },
     setup()
     {

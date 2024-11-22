@@ -25,14 +25,15 @@ const emptyDataTypes: Field<PinnedDataTypes> = new Field(
         pinnedFilters: new Field(new Map<string, Field<string>>()),
         pinnedGroups: new Field(new Map<string, Field<string>>()),
         pinnedPasswords: new Field(new Map<string, Field<string>>()),
-        pinnedValues: new Field(new Map<string, Field<string>>())
+        pinnedValues: new Field(new Map<string, Field<string>>()),
     });
 
 interface IUserPreferencesStoreState extends StoreState
 {
     currentColorPalette: Field<ColorPalette>;
-    // keyed by userVaultID
-    pinnedDataTypes: Field<Map<number, Field<KnownMappedFields<PinnedDataTypes>>>>;
+    pinnedDataTypes: Field<Map<number, Field<KnownMappedFields<PinnedDataTypes>>>>; // keyed by userVaultID
+    pinnedDesktopDevices: Field<Map<number, Field<number>>>;
+    pinnedMobileDevices: Field<Map<number, Field<number>>>;
 }
 
 export type UserPreferencesStoreState = KnownMappedFields<IUserPreferencesStoreState>;
@@ -50,6 +51,8 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     get pinnedGroups() { return this.getPinnedDataTypes(DataType.Groups) ?? new Field(new Map()); }
     get pinnedPasswords() { return this.getPinnedDataTypes(DataType.Passwords) ?? new Field(new Map()); }
     get pinnedValues() { return this.getPinnedDataTypes(DataType.NameValuePairs) ?? new Field(new Map()); }
+    get pinnedDesktopDevices() { return this.state.pinnedDesktopDevices; }
+    get pinnedMobileDevices() { return this.state.pinnedMobileDevices; }
 
     constructor(appStore: AppStore)
     {
@@ -59,7 +62,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         this.initalized = ref(false)
         this.setCurrentPrimaryColor(DataType.Passwords);
 
-        this.init(appStore)
+        //this.init(appStore)
     }
 
     public updateState(state: UserPreferencesStoreState): void 
@@ -163,7 +166,9 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
         return {
             currentColorPalette: colorPalettes.entries().next().value![1],
-            pinnedDataTypes: defaultPinnedDataTypes
+            pinnedDataTypes: defaultPinnedDataTypes,
+            pinnedDesktopDevices: new Field(new Map()),
+            pinnedMobileDevices: new Field(new Map())
         };
     }
 
@@ -174,7 +179,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             pinnedFilters: new Field(new Map()),
             pinnedGroups: new Field(new Map()),
             pinnedPasswords: new Field(new Map()),
-            pinnedValues: new Field(new Map())
+            pinnedValues: new Field(new Map()),
         }));
     }
 
@@ -300,6 +305,34 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     public async removePinnedValues(id: string)
     {
         this.getPinnedDataTypes(DataType.NameValuePairs)?.value.delete(id);
+        await this.update();
+    }
+
+    public async addPinnedDevice(id: number, desktop: boolean)
+    {
+        if (desktop)
+        {
+            this.state.pinnedDesktopDevices.value.set(id, new Field(id));
+        }
+        else 
+        {
+            this.state.pinnedMobileDevices.value.set(id, new Field(id));
+        }
+
+        await this.update();
+    }
+
+    public async removePinnedDevice(id: number, desktop: boolean)
+    {
+        if (desktop)
+        {
+            this.state.pinnedDesktopDevices.value.delete(id);
+        }
+        else 
+        {
+            this.state.pinnedMobileDevices.value.delete(id);
+        }
+
         await this.update();
     }
 }

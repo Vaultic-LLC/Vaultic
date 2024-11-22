@@ -1,5 +1,5 @@
 import { Promisify } from "../Helpers/TypeScriptHelper";
-import { AppController, ClientUserController, ClientVaultController, SessionController, ValueController } from "./Controllers";
+import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController, ValueController } from "./Controllers";
 import { DeviceInfo } from "./Device";
 import { ClientEnvironment, ClientVaulticCache } from "./Environment";
 import { ClientVaultHelper, RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "./Helpers";
@@ -29,6 +29,7 @@ export interface VaulticServer
     user: ClientUserController;
     value: ValueController;
     vault: ClientVaultController;
+    organization: OrganizationController;
 }
 
 export interface Repositories

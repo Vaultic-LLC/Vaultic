@@ -47,3 +47,45 @@ export interface UserDataPayload
     archivedVaults?: ServerDisplayVault[];
     sharedVaults?: ServerDisplayVault[];
 };
+
+export enum Permissions
+{
+    Read,
+    Write
+}
+
+export interface UserIDAndPermission
+{
+    UserID: number;
+    Permission: Permissions;
+}
+
+export interface UserOrgInfo
+{
+    UserID: number;
+    FirstName: string;
+    LastName: string;
+    Username: string;
+    Permissions: Permissions;
+}
+
+export interface OrganizationAndUsers
+{
+    OrganizationID: number;
+    Name: string;
+    UserDemographics: UserOrgInfo[];
+}
+
+export enum AllowSharingFrom
+{
+    Everyone,
+    SpecificUsers
+}
+
+export interface UserDemographics
+{
+    UserID: number;
+    FirstName: string;
+    LastName: string;
+    Username: string;
+}

@@ -677,14 +677,26 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalGetStoreStates(this: UserRepository): Promise<TypedMethodResponse<DeepPartial<UserData>>>
         {
-            const currentUser = await this.getVerifiedCurrentUser(masterKey);
+            let currentUser: User | null;
+
+            // the masterKey is "" when updating userPreferences. This isn't a concern since its the only thing that is updated
+            // when this happens.
+            if (masterKey)
+            {
+                currentUser = await this.getVerifiedCurrentUser(masterKey);
+            }
+            else 
+            {
+                currentUser = await this.getCurrentUser();
+            }
+
             if (!currentUser)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
             const userData: DeepPartial<UserData> = {};
-            if (storeStatesToRetrieve.appStoreState)
+            if (masterKey && storeStatesToRetrieve.appStoreState)
             {
                 const decryptedAppStoreState = await environment.utilities.crypt.decrypt(masterKey, currentUser.appStoreState.state);
                 if (!decryptedAppStoreState)

@@ -23,6 +23,10 @@ export class UserVault extends VaulticEntity implements IUserVault
 
     // Matches Server
     @Column("integer")
+    userOrganizationID: number
+
+    // Matches Server
+    @Column("integer")
     vaultID: number
 
     @ManyToOne(() => Vault, (vault: Vault) => vault.userVaults, { eager: true })
@@ -57,6 +61,7 @@ export class UserVault extends VaulticEntity implements IUserVault
     {
         return [
             nameof<UserVault>("userVaultID"),
+            nameof<UserVault>("userOrganizationID"),
             nameof<UserVault>("userID"),
             nameof<UserVault>("vaultID"),
             nameof<UserVault>("vaultKey")
@@ -66,7 +71,8 @@ export class UserVault extends VaulticEntity implements IUserVault
     protected neededBackupProperties(): string[]
     {
         return [
-            nameof<UserVault>("userVaultID")
+            nameof<UserVault>("userVaultID"),
+            nameof<UserVault>("userOrganizationID")
         ]
     }
 
@@ -74,6 +80,7 @@ export class UserVault extends VaulticEntity implements IUserVault
     {
         const properties = super.backupableProperties();
         properties.push("userVaultID");
+        properties.push("userOrganizationID");
         properties.push("userID");
         properties.push("vaultID");
         properties.push("vaultKey");
@@ -114,6 +121,7 @@ export class UserVault extends VaulticEntity implements IUserVault
             !!userVault.currentSignature &&
             !!userVault.userID &&
             !!userVault.userVaultID &&
+            !!userVault.userOrganizationID &&
             !!userVault.vaultID &&
             !!userVault.vaultKey &&
             !!userVault.vaultPreferencesStoreState &&

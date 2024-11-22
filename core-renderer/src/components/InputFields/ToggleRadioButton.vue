@@ -14,11 +14,13 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 
-import { getLinearGradientFromColor } from '../../Helpers/ColorHelper';
+import { getLinearGradientFromColor, hexToRgb } from '../../Helpers/ColorHelper';
 import app from "../../Objects/Stores/AppStore";
 import { ToggleRadioButtonModel } from '../../Types/Models';
+import { RGBColor } from '../../Types/Colors';
+import { tween } from '../../Helpers/TweenHelper';
 
 export default defineComponent({
     name: 'ToggleRadioButton',
@@ -27,7 +29,7 @@ export default defineComponent({
     setup(props, ctx)
     {
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
-        const linearGradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(primaryColor.value));
+        const linearGradient: Ref<string> = ref(getLinearGradientFromColor(primaryColor.value));
 
         const model: ComputedRef<ToggleRadioButtonModel> = computed(() => props.model);
 
@@ -50,6 +52,18 @@ export default defineComponent({
             onButtonClick(0);
         }
 
+        watch(() => app.userPreferences.currentPrimaryColor.value, (newValue, oldValue) => 
+        {
+            const previousColor: RGBColor | null = hexToRgb(oldValue);
+            const newColor: RGBColor | null = hexToRgb(newValue);
+
+            tween(previousColor!, newColor!, 300, (object) => 
+            {
+                const rgb: string = `rgba(${Math.round(object.r)}, ${Math.round(object.g)}, ${Math.round(object.b)}, ${object.alpha})`;
+                linearGradient.value = getLinearGradientFromColor(rgb);
+            });
+        });
+
         return {
             model,
             checkedIndex,
@@ -70,6 +84,7 @@ export default defineComponent({
     background: var(--app-color);
     grid-auto-columns: 1fr;
     position: relative;
+    transition: 0.3s;
     border: 1.5px solid v-bind(primaryColor);
     border-radius: clamp(5px, 0.4vw, 0.425rem);
     /* padding: clamp(2px, 0.2vw, 10px) */
@@ -154,8 +169,9 @@ export default defineComponent({
     border-bottom-right-radius: 0;
     place-items: center;
     color: hsl(0 0% 100% / calc(0.5 + var(--highlight, 0)));
-    transition: background, color;
-    transition-duration: 0.25s;
+    transition: 0.3s;
+    /* transition: background, color;
+    transition-duration: 0.25s; */
     transition-timing-function: var(--ease, ease);
 }
 
@@ -199,6 +215,7 @@ export default defineComponent({
 }
 
 .toggleRadioButtonContainer__tabs:has(:focus-visible)::after {
+    transition: 0.3s;
     box-shadow: 0 0 10px v-bind(primaryColor);
 }
 </style>

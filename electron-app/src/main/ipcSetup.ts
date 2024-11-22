@@ -11,6 +11,7 @@ import serverHelper from "./Core/Helpers/ServerHelper";
 import vaultHelper from "./Core/Helpers/VaultHelper";
 import { safeBackupData } from "./Core/Helpers/RepositoryHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
+import { AllowSharingFrom, UserIDAndPermission } from "@vaultic/shared/Types/ClientServerTypes";
 
 export default function setupIPC()
 {
@@ -29,10 +30,18 @@ export default function setupIPC()
 	ipcMain.handle('userController:deactivateUserSubscription', (e, email: string, deactivationKey: string) => validateSender(e, () => vaulticServer.user.deactivateUserSubscription(email, deactivationKey)));
 	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));
 	ipcMain.handle('userController:reportBug', (e, descrption: string) => validateSender(e, () => vaulticServer.user.reportBug(descrption)));
+	ipcMain.handle('userController:getSharingSettings', (e) => validateSender(e, () => vaulticServer.user.getSharingSettings()));
+	ipcMain.handle('userController:updateSharingSettings', (e, username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => validateSender(e, () => vaulticServer.user.updateSharingSettings(username, allowSharedVaultsFromOthers, allowSharingFrom)));
+	ipcMain.handle('userController:searchForUsers', (e, username: string) => validateSender(e, () => vaulticServer.user.searchForUsers(username)));
 
 	ipcMain.handle('valueController:generateRandomPhrase', (e, length: number) => validateSender(e, () => vaulticServer.value.generateRandomPhrase(length)));
 
 	ipcMain.handle('vaultController:deleteVault', (e, userVaultID: number) => validateSender(e, () => vaulticServer.vault.deleteVault(userVaultID)));
+
+	ipcMain.handle('organizationController:getOrganizations', (e) => validateSender(e, () => vaulticServer.organization.getOrganizations()));
+	ipcMain.handle('organizationController:createOrganizations', (e, name: string, userIDsAndPermissions: UserIDAndPermission[]) => validateSender(e, () => vaulticServer.organization.createOrganization(name, userIDsAndPermissions)));
+	ipcMain.handle('organizationController:updateOrganizations', (e, organizationID: number, name?: string, addedUserIDsAndPermissions?: UserIDAndPermission[], removedUserIDsAndPermissions?: UserIDAndPermission[]) => validateSender(e, () => vaulticServer.organization.updateOrganization(organizationID, name, addedUserIDsAndPermissions, removedUserIDsAndPermissions)));
+	ipcMain.handle('organizationController:deleteOrganizations', (e, organizationID: number) => validateSender(e, () => vaulticServer.organization.deleteOrganization(organizationID)));
 
 	ipcMain.handle('cryptUtility:encrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.encrypt(key, value)));
 	ipcMain.handle('cryptUtility:decrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.decrypt(key, value)));

@@ -27,7 +27,7 @@ class LogRepository
         log.time = new Date();
         log.errorCode = errorCode ?? -1;
         log.message = message ?? "";
-        log.callStack = callStack ?? "";
+        log.callStack = Error().stack + '\n' + callStack;
 
         try 
         {

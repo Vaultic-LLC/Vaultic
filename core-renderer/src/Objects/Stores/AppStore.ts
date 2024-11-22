@@ -5,7 +5,7 @@ import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { ColorPalette, colorPalettes } from "../../Types/Colors";
-import { AutoLockTime } from "../../Types/Settings";
+import { AppView, AutoLockTime } from "../../Types/App";
 import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
 import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
@@ -15,6 +15,8 @@ import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Type
 import { FilterStatus, DataType } from "../../Types/DataTypes";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { DeviceStore } from "./DeviceStore";
+import { OrganizationStore } from "./OrganizationStore";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -42,6 +44,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private loadedUser: boolean;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
 
+    private internalActiveAppView: Ref<AppView> = ref(AppView.Vault);
+    private internalIsVaultView: ComputedRef<boolean> = computed(() => this.internalActiveAppView.value == AppView.Vault);
+
     private internalActivePasswordValueTable: Ref<DataType> = ref(DataType.Passwords);
     private internalActiveFilterGroupTable: Ref<DataType> = ref(DataType.Filters);
 
@@ -58,11 +63,16 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalUsersPreferencesStore: UserPreferencesStore;
     private internalUserDataBreachStore: UserDataBreachStore;
+    private internalDeviceStore: DeviceStore;
+    private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
 
     get settings() { return this.state.settings; }
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
+    get activeAppView() { return this.internalActiveAppView.value; }
+    set activeAppView(value: AppView) { this.internalActiveAppView.value = value; }
+    get isVaultView() { return this.internalIsVaultView.value; }
     get activePasswordValuesTable() { return this.internalActivePasswordValueTable.value; }
     set activePasswordValuesTable(value: DataType) { this.internalActivePasswordValueTable.value = value; }
     get activeFilterGroupsTable() { return this.internalActiveFilterGroupTable.value; }
@@ -73,6 +83,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get currentVault() { return this.internalCurrentVault; }
     get userPreferences() { return this.internalUsersPreferencesStore; }
     get userDataBreaches() { return this.internalUserDataBreachStore; }
+    get devices() { return this.internalDeviceStore; }
+    get organizations() { return this.internalOrganizationStore; }
     get popups() { return this.internalPopupStore; }
 
     constructor()
@@ -81,6 +93,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         this.loadedUser = false;
         this.internalUserDataBreachStore = new UserDataBreachStore();
+        this.internalDeviceStore = new DeviceStore();
+        this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
         this.internalColorPalettes = computed(() => this.state.settings.value.colorPalettes.value.valueArray())
@@ -163,6 +177,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.currentVault.groupStore.resetToDefault();
         this.currentVault.vaultPreferencesStore.resetToDefault();
         this.internalUserDataBreachStore.resetToDefault();
+        this.internalDeviceStore.resetToDefault();
+        this.internalOrganizationStore.resetToDefault();
 
         this.internalUserVaults.value = [];
         this.internalArchivedVaults.value = [];
@@ -210,6 +226,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         this.loadedUser = true;
+        this.internalActiveAppView.value = AppView.Vault;
+
+        // don't bother waiting for this, just trigger it so they are there if we need them
+        app.devices.getDevices();
+        app.organizations.getOrganizations();
 
         return true;
     }
@@ -227,6 +248,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         if (setAsActive)
         {
             await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData);
+            this.internalActiveAppView.value = AppView.Vault;
         }
 
         // force trigger reactivity
@@ -310,6 +332,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         await this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false, true);
+        this.internalActiveAppView.value = AppView.Vault;
+
         return true;
     }
 
@@ -348,6 +372,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         if (selected)
         {
             await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData)
+            this.internalActiveAppView.value = AppView.Vault;
         }
 
         return true;
@@ -392,6 +417,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, response.value!);
+        this.internalActiveAppView.value = AppView.Vault;
+
         return true;
     }
 
@@ -423,4 +450,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 }
 
 const app = new AppStore();
+app.userPreferences.init(app);
+
 export default app;
