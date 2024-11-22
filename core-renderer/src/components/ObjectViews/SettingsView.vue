@@ -66,7 +66,7 @@
                     v-model="allowSharedVaultsFromOthers" />
             </div>
             <div v-if="isOnline" class="settingsView__inputSection">
-                <TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
+                <TextInputField ref="usernameField" class="settingsView__maxLoginRecordsPerDay" :color="color"
                     :label="'Username'" v-model="username"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || failedToLoadSharedData"
@@ -99,6 +99,7 @@ import { FilterStatus } from '../../Types/DataTypes';
 import { AllowSharingFrom } from '@vaultic/shared/Types/ClientServerTypes';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
+import { InputComponent } from '../../Types/Components';
 
 export default defineComponent({
     name: "ValueView",
@@ -116,6 +117,8 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
         const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
 
+        const usernameField: Ref<InputComponent | null> = ref(null);
+
         // copy the objects so that we don't edit the original one. Also needed for change tracking
         const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
         const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
@@ -127,6 +130,10 @@ export default defineComponent({
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
+        const originalAllowSharedVaultsFromOthers: Ref<boolean> = ref(false);
+        const originalUsername: Ref<string> = ref('');
+        const originalAllowSharingFrom: Ref<AllowSharingFrom> = ref(AllowSharingFrom.Everyone);
+        
         const failedToLoadSharedData: Ref<boolean> = ref(false);
         const allowSharedVaultsFromOthers: Ref<boolean> = ref(false);
         const username: Ref<string> = ref('');
@@ -155,8 +162,12 @@ export default defineComponent({
         async function onAuthenticationSuccessful(masterKey: string)
         {
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
-
-            // TODO: check / save shared settinsg first in case username is already taken
+            
+            //check / save shared settinsg first in case username is already taken
+            if (!await checkUpdateSettings())
+            {
+                return false;
+            }
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
             if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
@@ -179,6 +190,51 @@ export default defineComponent({
             app.popups.hideLoadingIndicator();
             saveSucceeded(succeeded);
         }
+
+        async function checkUpdateSettings(): Promise<boolean>
+        {
+            let updateSettings: boolean = false;
+
+            let updatedAllowSharedVaultsFromOthers: boolean | undefined = undefined;
+            let updatedUsername: string | undefined = undefined;
+            let updatedAllowSharingFrom: AllowSharingFrom | undefined = undefined;
+
+            if (originalAllowSharedVaultsFromOthers.value != allowSharedVaultsFromOthers.value)
+            {
+                updatedAllowSharedVaultsFromOthers = allowSharedVaultsFromOthers.value
+                updateSettings = true;
+            } 
+            
+            if (originalUsername.value != username.value)
+            {
+                updatedUsername = username.value
+                updateSettings = true;
+            }
+
+            if (originalAllowSharingFrom.value != allowSharingFrom.value)
+            {
+                updatedAllowSharingFrom = allowSharingFrom.value;
+                updateSettings = true;
+            }
+
+            if (updateSettings)
+            {
+                const response = await api.server.user.updateSharingSettings(updatedUsername, updatedAllowSharedVaultsFromOthers, updatedAllowSharingFrom);
+                if (!response.Success)
+                {
+                    if (response.UsernameIsTaken)
+                    {
+                        usernameField.value?.invalidate("Username is already taken. Please choose a different one");
+                        return false;
+                    }
+
+                    defaultHandleFailedResponse(response);
+                    return false;
+                }
+            }
+
+            return true;
+        } 
 
         function onAuthenticationCanceled()
         {
@@ -276,6 +332,10 @@ export default defineComponent({
                     return;
                 }
 
+                originalAllowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
+                originalUsername.value = response.Username!;
+                originalAllowSharingFrom.value = response.AllowSharingFrom!;
+
                 allowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
                 username.value = response.Username!;
                 allowSharingFrom.value = response.AllowSharingFrom!;
@@ -287,6 +347,7 @@ export default defineComponent({
             isOnline,
             readOnly,
             color,
+            usernameField,
             appSettings,
             vaultSettings,
             refreshKey,

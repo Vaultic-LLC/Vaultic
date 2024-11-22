@@ -65,7 +65,7 @@ export interface UserOrgInfo
     UserID: number;
     FirstName: string;
     LastName: string;
-    Email: string;
+    Username: string;
     Permissions: Permissions;
 }
 
@@ -80,4 +80,12 @@ export enum AllowSharingFrom
 {
     Everyone,
     SpecificUsers
+}
+
+export interface UserDemographics
+{
+    UserID: number;
+    FirstName: string;
+    LastName: string;
+    Username: string;
 }

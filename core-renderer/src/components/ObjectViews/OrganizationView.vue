@@ -35,6 +35,7 @@ import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { HeaderDisplayField } from '../../Types/Fields';
 import { TableTemplateComponent } from '../../Types/Components';
 import { api } from '../../API';
+import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 
 export default defineComponent({
     name: "OrganizationView",
@@ -101,8 +102,8 @@ export default defineComponent({
             //     clickable: true
             // },
             {
-                backingProperty: "email",
-                displayName: "Email",
+                backingProperty: "username",
+                displayName: "Username",
                 width: 'clamp(100px, 7vw, 200px)',
                 clickable: true
             },
@@ -140,7 +141,7 @@ export default defineComponent({
                     // },
                     {
                         component: "TableRowTextValue",
-                        value: p.value.email.value,
+                        value: p.value.username.value,
                         copiable: false,
                         width: 'clamp(100px, 7vw, 200px)'
                     },
@@ -244,9 +245,21 @@ export default defineComponent({
             userSortedCollection.updateValues(orgState.value.members.value.valueArray());
         });
 
-        watch(() => searchText.value.value, (newValue) =>
+        let lastSearchTime = 0;
+        watch(() => searchText.value.value, async (newValue) =>
         {
-            
+            if (Date.now() - lastSearchTime >= 200)
+            {
+                lastSearchTime = Date.now();
+                const response = await api.server.user.searchForUsers(newValue);
+                if (!response.Success)
+                {
+                    defaultHandleFailedResponse(response);
+                    return;
+                }
+
+                
+            }
         });
 
         return {

@@ -1,4 +1,4 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetSharingSettings, GetUserDataBreachesResponse, GetUserIDResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetSharingSettings, GetUserDataBreachesResponse, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
@@ -101,6 +101,13 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
+    function searchForUsers(username: string): Promise<SearchForUsersResponse>
+    {
+        return axiosHelper.api.post('User/SearchForUsers', {
+            Username: username,
+        });
+    }
+
     return {
         validateEmail,
         getUserIDs,
@@ -114,6 +121,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         deactivateUserSubscription,
         reportBug,
         getSharingSettings,
-        updateSharingSettings
+        updateSharingSettings,
+        searchForUsers
     }
 }

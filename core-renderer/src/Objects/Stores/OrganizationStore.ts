@@ -65,7 +65,7 @@ export class OrganizationStore extends Store<OrganizationStoreState>
                     userID: new Field(u.UserID),
                     firstName: new Field(u.FirstName),
                     lastName: new Field(u.LastName),
-                    email: new Field(u.Email),
+                    username: new Field(u.Username),
                     icon: new Field(''),
                     permission: new Field(u.Permissions)
                 };

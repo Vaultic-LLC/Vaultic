@@ -32,6 +32,7 @@ export default function setupIPC()
 	ipcMain.handle('userController:reportBug', (e, descrption: string) => validateSender(e, () => vaulticServer.user.reportBug(descrption)));
 	ipcMain.handle('userController:getSharingSettings', (e) => validateSender(e, () => vaulticServer.user.getSharingSettings()));
 	ipcMain.handle('userController:updateSharingSettings', (e, username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => validateSender(e, () => vaulticServer.user.updateSharingSettings(username, allowSharedVaultsFromOthers, allowSharingFrom)));
+	ipcMain.handle('userController:searchForUsers', (e, username: string) => validateSender(e, () => vaulticServer.user.searchForUsers(username)));
 
 	ipcMain.handle('valueController:generateRandomPhrase', (e, length: number) => validateSender(e, () => vaulticServer.value.generateRandomPhrase(length)));
 

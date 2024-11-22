@@ -1,5 +1,5 @@
 import { AllowSharingFrom, UserIDAndPermission } from "./ClientServerTypes";
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, LogResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -24,6 +24,7 @@ export interface ClientUserController
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     getSharingSettings: () => Promise<GetSharingSettings>;
     updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => Promise<UpdateSharingSettingsResponse>;
+    searchForUsers: (username: string) => Promise<SearchForUsersResponse>
 }
 
 export interface ValueController

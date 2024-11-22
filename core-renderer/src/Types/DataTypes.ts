@@ -186,7 +186,7 @@ export interface Member extends IFieldObject, IIdentifiable
     userID: Field<number>;
     firstName: Field<string>;
     lastName: Field<string>;
-    email: Field<string>;
+    username: Field<string>;
     permission: Field<Permissions>
     icon: Field<string | undefined>;
 }
