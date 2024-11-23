@@ -14,7 +14,7 @@
                                     :minWidth="'100px'" :height="'4vh'" :minHeight="'35px'" />
                                 <EnumInputField :label="'CSV Header'" :color="color" v-model="mapper.csvHeader"
                                     :optionsEnum="mockHeadersEnum" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
-                                    :minWidth="'100px'" :maxHeight="'50px'" :zIndex="100 - idx" :fadeIn="true"
+                                    :minWidth="'100px'" :maxHeight="'50px'" :fadeIn="true"
                                     :required="mapper.property.required" />
                                 <TextInputField v-if="mapper.property.requiresDelimiter" :color="color"
                                     :label="'Delimiter'" v-model="mapper.property.delimiter" :width="'4vw'"

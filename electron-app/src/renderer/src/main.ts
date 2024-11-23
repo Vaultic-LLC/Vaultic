@@ -7,7 +7,8 @@ import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
 import app from './core/Objects/Stores/AppStore';
-import { AccountSetupView } from './core/Types/Models';
+import PrimeVue from 'primevue/config';
+import Aura from '@primevue/themes/aura';
 
 api.setAPI(window.api);
 
@@ -92,5 +93,11 @@ function initApp()
 	const app = createApp(App);
 
 	app.use(setupCalendar, {});
+	app.use(PrimeVue, {
+		theme: {
+			preset: Aura,
+		}
+	});
+
 	app.mount("#app");
 }

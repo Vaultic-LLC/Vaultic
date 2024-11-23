@@ -235,7 +235,8 @@ export default defineComponent({
 
 <style scoped>
 .objectPopupContainer {
-    position: absolute;
+    /* do position fixed instead of absolute so that dropdowns work and they don't have the bug where they shift everything to the left */
+    position: fixed;
     width: 100%;
     height: 100%;
     z-index: v-bind(zIndex);

@@ -36,7 +36,7 @@
             <template #body>
                 <SecurityQuestionRow v-if="activeTab == 0" v-for="(sq, index) in passwordState.securityQuestions.value"
                     :key="sq[0]" :rowNumber="index" :colorModel="colorModel" :model="sq[1].value" :disabled="false"
-                    :hideInitialRow="true" :moveButtonsToBottomRatio="1" @onQuesitonDirty="onQuestionDirty(sq[0])"
+                    :hideInitialRow="true" @onQuesitonDirty="onQuestionDirty(sq[0])"
                     @onAnswerDirty="onAnswerDirty(sq[0])" @onDelete="onDeleteSecurityQuestion(sq[0])"
                     :isInitiallyEncrypted="sq[1].value.question.value != ''" />
                 <SelectableTableRow v-else v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
@@ -257,7 +257,7 @@ export default defineComponent({
 
         function onSave()
         {
-            passwordInputField.value?.toggleHidden(true);
+            passwordInputField.value?.toggleMask(true);
             app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 
             return new Promise((resolve, reject) =>

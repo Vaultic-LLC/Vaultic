@@ -1,46 +1,57 @@
 <template>
     <div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
         <div class="textInuptContainer">
-            <input tabindex="0" ref="input" required="false" class="textInputFieldInput" :type="inputType" name="text"
-                autocomplete="off" :value="inputText" @input="onInput(($event.target as HTMLInputElement).value)"
-                :disabled="isDisabled" :maxlength="200" />
-            <label class="textInputFieldLable">{{ label }}</label>
-            <div class="icons">
-                <div v-if="isLocked && showUnlock">
-                    <ion-icon class="encryptedInputIcon" name="lock-open-outline" @click="unlock"></ion-icon>
-                </div>
-                <div v-if="!isLocked && showButtonsUnderneath != true" class="unlockedIcons">
-                    <ion-icon class="encryptedInputIcon" v-if="isHidden" name="eye-outline"
-                        @click="toggleHidden(false)"></ion-icon>
-                    <ion-icon class="encryptedInputIcon" v-else name="eye-off-outline"
-                        @click="toggleHidden(true)"></ion-icon>
-                    <ion-icon class="encryptedInputIcon" v-if="showCopy" name="clipboard-outline"
-                        @click="copyValue"></ion-icon>
-                </div>
-            </div>
+            <FloatLabel variant="in" :dt="floatLabelStyle">
+                <Password
+                    :pt=" 
+                    { 
+                        root: ({state}) => 
+                        {
+                            state.unmasked = isUnmasked;
+                        }, 
+                        pcInputText:
+                        { 
+                            dt: inputStyle,
+                            root: ({ instance, props}) => 
+                            {
+                                textFieldInstance = instance;
+                                //props.dt = inputStyle;
+
+                                return {
+                                    dt: inputStyle
+                                }
+                            }
+                        } 
+                    }"
+                    :fluid="true" name="password" v-model="inputText" :inputId="id" :disabled="disabled" toggleMask :feedback="computedFeedback" 
+                    @update:model-value="onInput">
+                    <template #maskicon="slotProps">
+                        <ion-icon class="p-password-toggle-mask-icon encryptedInputIcon" name="eye-off-outline" @click="toggleMask(true)"></ion-icon>
+                    </template>
+                    <template #unmaskicon="slotProps">
+                        <ion-icon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputIcon" name="lock-open-outline" @click="unlock"></ion-icon>
+                        <ion-icon v-else class="p-password-toggle-mask-icon encryptedInputIcon" name="eye-outline" @click="toggleMask(false)"></ion-icon>
+                    </template>
+                    <template #content>
+                        <div></div>
+                    </template>
+                </Password>
+                <label :for="id">{{ label }}</label>
+            </FloatLabel>
             <Transition name="fade">
                 <div v-if="!isLocked && !disabled && showRandom" class="randomize" @click="generateRandomValue">
                     Random
                 </div>
             </Transition>
-            <div v-if="!isLocked && showButtonsUnderneath == true"
-                class="encryptedInputContainer__unlockIconsUnderneath">
-                <ion-icon class="encryptedInputIcon" v-if="isHidden" name="eye-outline"
-                    @click="toggleHidden(false)"></ion-icon>
-                <ion-icon class="encryptedInputIcon" v-else name="eye-off-outline"
-                    @click="toggleHidden(true)"></ion-icon>
-                <ion-icon class="encryptedInputIcon" v-if="showCopy" name="clipboard-outline"
-                    @click="copyValue"></ion-icon>
-            </div>
         </div>
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId, nextTick } from 'vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import clipboard from 'clipboardy';
-import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
+import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import tippy from 'tippy.js';
 import { InputColorModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
@@ -49,16 +60,25 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import { ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Constants/Keys';
 
+import Password from "primevue/password";
+import FloatLabel from 'primevue/floatlabel';
+ 
 export default defineComponent({
     name: "EncryptedInputField",
+    components: 
+    {
+        Password,
+        FloatLabel
+    },
     emits: ["update:modelValue", "onDirty"],
     props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
         "showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
-        "minHeight", "maxHeight", 'isOnWidget', 'showButtonsUnderneath', 'randomValueType'],
+        "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback'],
     setup(props, ctx)
     {
+        const id = ref(useId());
+        const textFieldInstance: Ref<any> = ref(undefined);
         const container: Ref<HTMLElement | null> = ref(null);
-        const input: Ref<HTMLElement | null> = ref(null);
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
         const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
@@ -73,18 +93,43 @@ export default defineComponent({
         const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
+        const computedFeedback: ComputedRef<boolean> = computed(() => props.feedback != undefined ? props.feedback : false);
+
         const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
         let inputType: Ref<string> = ref("password");
-        let isHidden: Ref<boolean> = ref(true);
 
         let isDisabled: Ref<boolean> = ref(props.isInitiallyEncrypted || props.disabled);
         let isLocked: Ref<boolean> = ref(props.isInitiallyEncrypted);
 
         let inputText: Ref<string> = ref(props.initialLength > 0 ? "*".repeat(props.initialLength) : props.modelValue);
 
+        const isUnmasked: Ref<boolean> = ref(false);
+
         const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
 
         let tippyInstance: any = null;
+
+        let floatLabelStyle = computed(() => {
+            return {
+                onActive: {
+                    background: widgetBackgroundHexString()
+                },
+                focus: 
+                {
+                    color: colorModel.value.color
+                }
+            }
+        });
+
+        let inputStyle = computed(() => {
+            return {
+                focus: 
+                {
+                    borderColor: colorModel.value.color
+                },
+                background: widgetBackgroundHexString()
+            }
+        });
 
         function unlock()
         {
@@ -134,20 +179,6 @@ export default defineComponent({
             ctx.emit("onDirty");
         }
 
-        function toggleHidden(hide: boolean)
-        {
-            if (hide)
-            {
-                isHidden.value = true;
-                inputType.value = "password";
-            }
-            else
-            {
-                isHidden.value = false;
-                inputType.value = "text"
-            }
-        }
-
         async function generateRandomValue()
         {
             if (props.randomValueType == 0)
@@ -179,9 +210,12 @@ export default defineComponent({
 
         function focus()
         {
-            if (input.value)
+            if (textFieldInstance.value.$el)
             {
-                input.value.focus();
+                // need next tick to work
+                nextTick(() => {
+                    textFieldInstance.value.$el.focus();
+                });
             }
         }
 
@@ -189,6 +223,20 @@ export default defineComponent({
         {
             tippyInstance.setContent(message);
             tippyInstance.show();
+        }
+
+        function toggleMask(mask: boolean)
+        {
+            if (mask)
+            {
+                isUnmasked.value = false;
+                inputType.value = "password";
+            }
+            else
+            {
+                isUnmasked.value = true;
+                inputType.value = "text"
+            }
         }
 
         onMounted(() =>
@@ -223,9 +271,9 @@ export default defineComponent({
         })
 
         return {
-            input,
+            id,
+            textFieldInstance,
             isDisabled,
-            isHidden,
             isLocked,
             inputType,
             inputText,
@@ -244,12 +292,16 @@ export default defineComponent({
             onAuthenticationSuccessful,
             onInput,
             unlock,
-            toggleHidden,
             generateRandomValue,
             copyValue,
             focus,
             validate,
-            invalidate
+            invalidate,
+            floatLabelStyle,
+            inputStyle,
+            computedFeedback,
+            isUnmasked,
+            toggleMask,
         }
     }
 })
@@ -287,80 +339,6 @@ export default defineComponent({
     width: 100%;
 }
 
-.textInputFieldContainer .textInputFieldInput {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    left: 0;
-    border: solid 1.5px v-bind('colorModel.borderColor');
-    color: white;
-    border-radius: var(--responsive-border-radius);
-    background: none;
-    font-size: var(--input-font-size);
-    transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.textInputFieldContainer .textInputFieldLable {
-    position: absolute;
-    left: var(--input-label-left);
-    top: 50%;
-    color: v-bind('colorModel.textColor');
-    pointer-events: none;
-    transform: translateY(-50%);
-    transition: var(--input-label-transition);
-    font-size: var(--input-font-size);
-    will-change: transform;
-}
-
-.textInputFieldContainer .textInputFieldInput:focus,
-.textInputFieldContainer .textInputFieldInput:valid,
-.textInputFieldContainer .textInputFieldInput:disabled {
-    outline: none;
-    border: 1.5px solid v-bind('colorModel.activeBorderColor');
-}
-
-.textInputFieldContainer .textInputFieldInput:focus~label,
-.textInputFieldContainer .textInputFieldInput:valid~label,
-.textInputFieldContainer .textInputFieldInput:disabled~label {
-    top: 10%;
-    transform-origin: left;
-    transform: translateY(-80%) scale(0.8);
-    background-color: v-bind(backgroundColor);
-    padding: 0 .2em;
-    color: v-bind('colorModel.activeTextColor');
-}
-
-.textInputFieldContainer .icons {
-    position: absolute;
-    /* width: 50px;
-	height: 50px; */
-    top: 0;
-    right: -10px;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    transform: translate(100%, 50%);
-}
-
-.textInputFieldContainer .icons .unlockedIcons {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    column-gap: 5px;
-}
-
-.encryptedInputContainer__unlockIconsUnderneath {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 10px;
-    margin-left: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    column-gap: 5px;
-}
-
 .textInputFieldContainer .randomize {
     position: absolute;
     top: 100%;
@@ -391,10 +369,9 @@ export default defineComponent({
 }
 
 .encryptedInputIcon {
-    color: white;
-    font-size: clamp(17px, 2vh, 25px);
-    transition: 0.3s;
-    cursor: pointer;
+    width: 1.4rem;
+    height: 1.4rem;
+    top: 45%;
 }
 
 .encryptedInputIcon:hover {

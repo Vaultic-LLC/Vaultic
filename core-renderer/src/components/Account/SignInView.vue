@@ -141,7 +141,7 @@ export default defineComponent({
 
         async function onSubmit()
         {
-            masterKeyField.value?.toggleHidden(true);
+            masterKeyField.value?.toggleMask(true);
             app.popups.showLoadingIndicator(props.color, "Signing In");
 
             if (onlineMode.value)

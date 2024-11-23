@@ -1,50 +1,50 @@
 <template>
-    <div ref="container" :key="refreshKey" :tabindex="0" class="dropDownContainer" @click="onSelectorClick"
-        @keyup.enter="onEnter" @keyup.up="onKeyUp" @keyup.down="onKeyDown" @focus="focused = true" @blur="unFocus"
-        :class="{ active: active, opened: opened, shouldFadeIn: fadeIn }">
-        <div class="dropDownTitle">
-            <label class="dropDownLabel">{{ label }}</label>
-            <div class="dropDownIcon" :class="{ opened: opened }">
-                <ion-icon class="dropDownContainer__dropDownIcon" :class="{ active: active }"
-                    name="chevron-down-circle-outline"></ion-icon>
-            </div>
-            <label class="selectedItemText" :class="{ hasValue: selectedValue != '' }"> {{ selectedValue }}</label>
-        </div>
-        <div class="dropDownSelect" :class="{ opened: opened }">
-            <option class="dropDownSelectOption" :class="{ active: '' == focusedItem }" @click="onOptionClick('')"
-                @mouseover="focusedItem = ''"></option>
-            <option class="dropDownSelectOption" v-for="( item, index ) in  optionsEnum " :key="index"
-                @click="onOptionClick(item)" @mouseover="focusedItem = optionsEnum[item]"
-                :class="{ active: item == focusedItem }">
-                {{ item }}</option>
-        </div>
-        <input class="dropDownInput" type="text" />
+    <div class="dropDownContainer">
+        <FloatLabel variant="in" :dt="floatLabelStyle">
+            <Select :pt="selectLabelStyle" :disabled="disabled" ref="container" class="primeVueSelect" v-model="selectedValue" 
+                showClear :inputId="id" :options="options" optionLabel="name" :fluid="true" :labelStyle="{'text-align': 'left'}" 
+                @update:model-value="onOptionClick" />
+            <label :for="id">{{ label }}</label>
+        </FloatLabel>
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId } from 'vue';
 
-import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
+import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import tippy from 'tippy.js';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
 
+import FloatLabel from 'primevue/floatlabel';
+import Select from "primevue/select";
+
 export default defineComponent({
     name: "EnumInputField",
+    components: 
+    {
+        FloatLabel,
+        Select
+    },
     emits: ["update:modelValue"],
     props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth', 'zIndex', 'required', 'disabled'],
+        'width', 'minWidth', 'maxWidth', 'required', 'disabled'],
     setup(props, ctx)
     {
-        const container: Ref<HTMLElement | null> = ref(null);
+        const id = ref(useId());
+        const container: Ref<any> = ref(null);
         const refreshKey: Ref<string> = ref('');
 
-        let selectedValue: Ref<string> = ref(props.modelValue);
+        const options: ComputedRef<any[]> = computed(() => 
+        {
+            return Object.keys(props.optionsEnum).map((k, i) => { return { name: k, code: i } });
+        });
+
+        let selectedValue: Ref<any> = ref();
         let opened: Ref<boolean> = ref(false);
         let focused: Ref<boolean> = ref(false);
         let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value || focused.value);
 
         const computedRequired: ComputedRef<boolean> = computed(() => props.required === false ? false : true);
-        const computedZIndex: ComputedRef<number> = computed(() => props.zIndex ?? 1);
 
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
@@ -54,6 +54,34 @@ export default defineComponent({
         const enumOptionCount: Ref<number> = ref(-1);
         const focusedItem: Ref<string> = ref("");
         const focusedIndex: Ref<number> = ref(-1);
+
+        let floatLabelStyle = computed(() => {
+            return {
+                onActive: {
+                    background: widgetBackgroundHexString()
+                },
+                focus: 
+                {
+                    color: props.color
+                }
+            }
+        });
+
+        const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
+        const selectLabelStyle = computed(() => {
+            return {
+                option: ({ context }) => {
+                    if (context.selected)
+                    {
+                        return {
+                            style: {
+                                background: props.color,
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
         function onSelectorClick()
         {
@@ -103,10 +131,10 @@ export default defineComponent({
             focused.value = false;
         }
 
-        function onOptionClick(value: string)
+        function onOptionClick(value: any)
         {
             selectedValue.value = value;
-            ctx.emit('update:modelValue', value)
+            ctx.emit('update:modelValue', value?.name ?? null)
         }
 
         function validate()
@@ -156,13 +184,19 @@ export default defineComponent({
 
         onMounted(() =>
         {
+            const initialValue = options.value.filter(v => v.name == props.modelValue);
+            if (initialValue.length > 0)
+            {
+                selectedValue.value = initialValue;
+            }
+
             if (!container.value)
             {
                 return;
             }
 
             validationFunction?.value.push(validate);
-            tippyInstance = tippy(container.value, {
+            tippyInstance = tippy(container.value.$el, {
                 inertia: true,
                 animation: 'scale',
                 theme: 'material',
@@ -179,12 +213,17 @@ export default defineComponent({
 
         onUnmounted(() =>
         {
-            tippyInstance.hide();
+            tippyInstance?.hide();
             validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
         });
 
         return {
+            id,
+            selectLabelStyle,
+            floatLabelStyle,
+            selectBackgroundColor,
             refreshKey,
+            options,
             opened,
             active,
             selectedValue,
@@ -193,7 +232,6 @@ export default defineComponent({
             focused,
             focusedItem,
             enumOptionCount,
-            computedZIndex,
             onSelectorClick,
             onOptionClick,
             unFocus,
@@ -214,156 +252,14 @@ export default defineComponent({
     max-width: v-bind(maxWidth);
     min-height: v-bind(minHeight);
     min-width: v-bind(minWidth);
-
-    border: solid 1.5px #9e9e9e;
-    border-radius: var(--responsive-border-radius);
-    background-color: none;
-    color: white;
-    transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
-
-    cursor: pointer;
-    outline: none;
-
-    z-index: v-bind(computedZIndex);
 }
 
-.dropDownContainer.shouldFadeIn {
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
+.primeVueSelect {
+    background: v-bind(selectBackgroundColor);
 }
 
-.dropDownContainer.active {
-    border: 1.5px solid v-bind(color);
+.primeVueSelect.p-focus {
+    border: 1px solid v-bind(color) !important;
 }
 
-.dropDownContainer.opened {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.dropDownContainer .dropDownTitle .dropDownLabel {
-    position: absolute;
-    top: 30%;
-    left: var(--input-label-left);
-    transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    font-size: clamp(11px, 1.2vh, 25px);
-    will-change: transform;
-}
-
-.dropDownContainer.active .dropDownTitle .dropDownLabel {
-    transform-origin: left;
-    transform: translateY(-150%) scale(0.8);
-    background-color: v-bind(backgroundColor);
-    padding: 0 .2em;
-    color: v-bind(color);
-}
-
-.dropDownContainer .dropDownTitle .dropDownIcon {
-    position: absolute;
-    visibility: unset;
-    top: 30%;
-    right: 5%;
-    font-size: clamp(15px, 2vh, 25px);
-    color: white;
-    transition: 0.3s;
-    transform: rotate(0);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.dropDownContainer .dropDownTitle .dropDownIcon .active {
-    color: v-bind(color);
-}
-
-.dropDownContainer .dropDownTitle .dropDownIcon.opened {
-    transform: rotate(180deg);
-}
-
-.dropDownContainer .dropDownTitle .selectedItemText {
-    display: none;
-    color: white;
-    font-size: clamp(11px, 1.2vh, 25px);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 70%;
-    text-wrap: nowrap;
-    text-align: left;
-}
-
-.dropDownContainer .dropDownTitle .selectedItemText.hasValue {
-    display: block;
-    position: absolute;
-    top: 30%;
-    left: var(--input-label-left);
-    transition: var(--input-label-transition);
-}
-
-.dropDownContainer .dropDownSelect {
-    /* account for the increase in border size compared to .dropDownContainer */
-    width: calc(100% - 0.5px);
-    position: absolute;
-    left: 0;
-    bottom: -2%;
-    background-color: v-bind(backgroundColor);
-    font-size: clamp(11px, 1.2vh, 25px);
-    color: white;
-    transform: translate(-1.5px, 100%);
-    border-bottom-left-radius: 1rem;
-    border-bottom-right-radius: 1rem;
-    z-index: -1;
-    transition: opacity 0.3s;
-    opacity: 0;
-}
-
-.dropDownSelect.opened {
-    /* increase the border so it overlaps any dropdowns below them entirely */
-    border-left: 2px solid v-bind(color);
-    border-right: 2px solid v-bind(color);
-    border-bottom: 2px solid v-bind(color);
-    opacity: 1;
-}
-
-.dropDownContainer .dropDownSelect:focus,
-.dropDownContainer .dropDownSelect:active {
-    outline: none;
-}
-
-.dropDownSelect .dropDownSelectOption {
-    display: none;
-    background-color: v-bind(backgroundColor);
-    transition: opacity 0.3s;
-    opacity: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.dropDownSelect.opened .dropDownSelectOption {
-    display: block;
-    text-align: left;
-    padding-left: 10px;
-    transition: 0.15s;
-    opacity: 1;
-    font-size: clamp(11px, 1.2vh, 25px);
-}
-
-.dropDownSelect.opened .dropDownSelectOption:last-child {
-    border-bottom-left-radius: 1rem;
-    border-bottom-right-radius: 1rem;
-}
-
-.dropDownSelect.opened .dropDownSelectOption:hover,
-.dropDownSelectOption.active {
-    background-color: grey;
-}
-
-.dropDownInput {
-    position: absolute;
-    display: none;
-}
-
-.dropDownContainer__dropDownIcon {
-    visibility: unset;
-}
 </style>

@@ -97,7 +97,7 @@ export default defineComponent({
                 return;
             }
 
-            encryptedInputField.value?.toggleHidden(true);
+            encryptedInputField.value?.toggleMask(true);
 
             app.popups.showLoadingIndicator(primaryColor.value, "Checking Key");
             disabled.value = true;
@@ -118,9 +118,8 @@ export default defineComponent({
                     return;
                 }
 
-                jiggleContainer();
                 app.popups.hideLoadingIndicator();
-                disabled.value = false;
+                handleKeyIsValid(false);
                 defaultHandleFailedResponse(response, false);
             });
         }

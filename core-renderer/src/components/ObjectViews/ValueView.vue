@@ -210,7 +210,7 @@ export default defineComponent({
 
         function onSave()
         {
-            valueInputField.value?.toggleHidden(true);
+            valueInputField.value?.toggleMask(true);
             app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 
             return new Promise((resolve, reject) =>

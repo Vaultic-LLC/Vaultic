@@ -58,7 +58,7 @@
             </div>
             <div></div>
             <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
-            <div v-if="isOnline" class="settingsView__inputSection">
+            <!-- <div v-if="isOnline" class="settingsView__inputSection">
                 // TODO: shold warn users that unchecking this will un share all vaults from them and to them
                 <CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
                     :minHeight="'12.5px'" :disabled="readOnly || failedToLoadSharedData"
@@ -77,7 +77,7 @@
                     v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'"
                     :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || failedToLoadSharedData" />
                 // TODO: show user multiselect if allowSharingFrom == users
-            </div>
+            </div> -->
         </ScrollView>
     </ObjectView>
 </template>
@@ -164,10 +164,10 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
             
             //check / save shared settinsg first in case username is already taken
-            if (!await checkUpdateSettings())
-            {
-                return false;
-            }
+            // if (!await checkUpdateSettings())
+            // {
+            //     return false;
+            // }
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
             if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
@@ -324,21 +324,21 @@ export default defineComponent({
         {
             if (isOnline.value)
             {
-                const response = await api.server.user.getSharingSettings();
-                if (!response.Success)
-                {
-                    failedToLoadSharedData.value = true;
-                    defaultHandleFailedResponse(response, true, "Unable to retrieve Sharing Settings", "We are unable to retrieve your sharing settings at the moment. Please try again later. If the issue persists");
-                    return;
-                }
+                // const response = await api.server.user.getSharingSettings();
+                // if (!response.Success)
+                // {
+                //     failedToLoadSharedData.value = true;
+                //     defaultHandleFailedResponse(response, true, "Unable to retrieve Sharing Settings", "We are unable to retrieve your sharing settings at the moment. Please try again later. If the issue persists");
+                //     return;
+                // }
 
-                originalAllowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
-                originalUsername.value = response.Username!;
-                originalAllowSharingFrom.value = response.AllowSharingFrom!;
+                // originalAllowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
+                // originalUsername.value = response.Username!;
+                // originalAllowSharingFrom.value = response.AllowSharingFrom!;
 
-                allowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
-                username.value = response.Username!;
-                allowSharingFrom.value = response.AllowSharingFrom!;
+                // allowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
+                // username.value = response.Username!;
+                // allowSharingFrom.value = response.AllowSharingFrom!;
                 
             }
         })
