@@ -11,19 +11,13 @@
                         }, 
                         pcInputText:
                         { 
-                            dt: inputStyle,
-                            root: ({ instance, props}) => 
+                            root: ({ instance}) => 
                             {
                                 textFieldInstance = instance;
-                                //props.dt = inputStyle;
-
-                                return {
-                                    dt: inputStyle
-                                }
                             }
                         } 
                     }"
-                    :fluid="true" name="password" v-model="inputText" :inputId="id" :disabled="disabled" toggleMask :feedback="computedFeedback" 
+                    :fluid="true" class="primeVuePasswordField" name="password" v-model="inputText" :inputId="id" :disabled="disabled" toggleMask :feedback="computedFeedback" 
                     @update:model-value="onInput">
                     <template #maskicon="slotProps">
                         <ion-icon class="p-password-toggle-mask-icon encryptedInputIcon" name="eye-off-outline" @click="toggleMask(true)"></ion-icon>
@@ -108,6 +102,7 @@ export default defineComponent({
         const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
 
         let tippyInstance: any = null;
+        const inputBackgroundColor: ComputedRef<string> = computed(() => widgetBackgroundHexString());
 
         let floatLabelStyle = computed(() => {
             return {
@@ -118,16 +113,6 @@ export default defineComponent({
                 {
                     color: colorModel.value.color
                 }
-            }
-        });
-
-        let inputStyle = computed(() => {
-            return {
-                focus: 
-                {
-                    borderColor: colorModel.value.color
-                },
-                background: widgetBackgroundHexString()
             }
         });
 
@@ -298,7 +283,7 @@ export default defineComponent({
             validate,
             invalidate,
             floatLabelStyle,
-            inputStyle,
+            inputBackgroundColor,
             computedFeedback,
             isUnmasked,
             toggleMask,
@@ -337,6 +322,14 @@ export default defineComponent({
     position: relative;
     height: 100%;
     width: 100%;
+}
+
+.primeVuePasswordField :deep(input) {
+    background: v-bind(inputBackgroundColor) !important;
+}
+
+.primeVuePasswordField :deep(input:focus) {
+    border: 1px solid v-bind('colorModel.color') !important;
 }
 
 .textInputFieldContainer .randomize {

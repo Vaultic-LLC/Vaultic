@@ -1,34 +1,78 @@
 <template>
-    <div ref="container" class="colorPickerInputFieldContainer" :class="{ active: active }">
-        <input ref="input" class="colorPicker" :tabindex="0" type="text" data-coloris v-model="pickedColor"
-            @input="onColorSelected(($event.target as HTMLInputElement).value)" @open="onOpen"
-            @close="opened = false" />
-        <label class="colorPickerLabel">{{ label }}</label>
-        <div class="pickedColor"></div>
+    <div ref="container" class="colorPickerInputFieldContainer">
+        <FloatLabel variant="in" :dt="floatLabelStyle">
+            <InputText :pt="{
+                root: {
+                    'data-coloris': 'true'
+                }
+            }" :fluid="true" :id="id" v-model="pickedColor" :dt="inputStyle" @update:model-value="onColorSelected" />
+            <label :for="id">{{ label }}</label>
+            <ColorPicker :pt="{
+                root: 'colorPickerIcon',
+                preview: {
+                    style: {
+                        opacity: '1 !important'
+                    }
+                }
+            }" v-model="pickedColor" :disabled="true" :defaultColor="defaultColor" />
+        </FloatLabel>
     </div>
 </template>
 <script lang="ts">
-import { Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref } from 'vue';
+import { Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId } from 'vue';
 
 import tippy from 'tippy.js';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
+import { widgetBackgroundHexString } from '../../Constants/Colors';
+
+import FloatLabel from 'primevue/floatlabel';
+import InputText from 'primevue/inputtext';
+import ColorPicker from 'primevue/colorpicker';
+import IconField from 'primevue/iconfield';
 
 export default defineComponent({
     name: "ColorPickerInputField",
+    components: 
+    {
+        FloatLabel,
+        InputText,
+        ColorPicker,
+        IconField
+    },
     emits: ["update:modelValue"],
     props: ['modelValue', 'color', 'label', "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight'],
     setup(props, ctx)
     {
-        const container: Ref<HTMLElement | null> = ref(null);
-        const input: Ref<HTMLElement | null> = ref(null);
+        const id = ref(useId());
+        const container: Ref<any> = ref(null);
 
-        const defaultColor: string = "";
+        let defaultColor: Ref<string> = ref(widgetBackgroundHexString());
         let pickedColor: Ref<string> = ref(props.modelValue);
-        let opened: Ref<boolean> = ref(false);
-        let active: Ref<boolean> = computed(() => opened.value || pickedColor.value != defaultColor);
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         let tippyInstance: any = null;
+
+        let floatLabelStyle = computed(() => {
+            return {
+                onActive: {
+                    background: widgetBackgroundHexString()
+                },
+                focus: 
+                {
+                    color: props.color,
+                }
+            }
+        });
+
+        let inputStyle = computed(() => {
+            return {
+                focus: 
+                {
+                    borderColor: props.color
+                },
+                background: widgetBackgroundHexString()
+            }
+        });
 
         function validate()
         {
@@ -50,20 +94,9 @@ export default defineComponent({
         function onOpen()
         {
             tippyInstance.hide();
-            opened.value = true;
         }
 
-        function onFocus()
-        {
-            input.value?.click();
-        }
-
-        function onUnFocus()
-        {
-            //Coloris.close();
-        }
-
-        function onColorSelected(color: string)
+        function onColorSelected(color: string | undefined)
         {
             ctx.emit('update:modelValue', color);
         }
@@ -93,14 +126,13 @@ export default defineComponent({
         });
 
         return {
+            id,
+            floatLabelStyle,
+            inputStyle,
+            defaultColor,
             pickedColor,
-            active,
             container,
-            input,
-            opened,
             onOpen,
-            onFocus,
-            onUnFocus,
             onColorSelected
         }
     }
@@ -116,24 +148,7 @@ export default defineComponent({
     max-width: v-bind(maxWidth);
     min-height: v-bind(minHeight);
     min-width: v-bind(minWidth);
-
-    border: solid 1.5px #9e9e9e;
-    border-radius: var(--responsive-border-radius);
     background: none;
-    font-size: clamp(13px, 1.2vh, 25px);
-    color: white;
-    transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    animation: fadeIn 1s linear forwards;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
 }
 
 .colorPickerInputFieldContainer.active {
@@ -141,44 +156,10 @@ export default defineComponent({
     border: 1.5px solid v-bind(color);
 }
 
-.colorPickerInputFieldContainer.active .colorPickerLabel {
-    top: 0;
-    transform-origin: left;
-    transform: translateY(-80%) scale(0.8);
-    background-color: var(--app-color);
-    padding: 0 .2em;
-    color: v-bind(color);
-}
-
-.colorPickerLabel {
-    position: absolute;
-    color: white;
-    left: var(--input-label-left);
+.colorPickerIcon {
+    position: absolute !important;
     top: 50%;
-    color: #e8e8e8;
-    pointer-events: none;
     transform: translateY(-50%);
-    transition: var(--input-label-transition);
-    font-size: clamp(12px, 1.2vh, 25px);
-}
-
-.colorPicker {
-    opacity: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-    position: relative;
-}
-
-.pickedColor {
-    position: absolute;
-    border-radius: min(0.7vw, 0.7rem);
-    width: 95%;
-    height: 90%;
-    top: 5%;
-    left: 2.5%;
-    z-index: 1;
-
-    background-color: v-bind(pickedColor);
+    right: 5%;
 }
 </style>

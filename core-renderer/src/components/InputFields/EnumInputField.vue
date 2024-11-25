@@ -36,24 +36,18 @@ export default defineComponent({
 
         const options: ComputedRef<any[]> = computed(() => 
         {
-            return Object.keys(props.optionsEnum).map((k, i) => { return { name: k, code: i } });
+            return Object.values(props.optionsEnum).map((k, i) => { return { name: k, code: i } });
         });
 
         let selectedValue: Ref<any> = ref();
-        let opened: Ref<boolean> = ref(false);
-        let focused: Ref<boolean> = ref(false);
-        let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value || focused.value);
 
         const computedRequired: ComputedRef<boolean> = computed(() => props.required === false ? false : true);
-
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         let tippyInstance: any = null;
 
         const enumOptionCount: Ref<number> = ref(-1);
-        const focusedItem: Ref<string> = ref("");
-        const focusedIndex: Ref<number> = ref(-1);
 
         let floatLabelStyle = computed(() => {
             return {
@@ -70,6 +64,7 @@ export default defineComponent({
         const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
         const selectLabelStyle = computed(() => {
             return {
+                // @ts-ignore
                 option: ({ context }) => {
                     if (context.selected)
                     {
@@ -82,54 +77,6 @@ export default defineComponent({
                 }
             }
         });
-
-        function onSelectorClick()
-        {
-            if (props.disabled)
-            {
-                return;
-            }
-
-            opened.value = !opened.value;
-            if (selectedValue.value == '')
-            {
-                focused.value = false;
-            }
-
-            tippyInstance.hide();
-        }
-
-        function onEnter(e: KeyboardEvent)
-        {
-            // Prevent the popup from capturing the enter handler and trying to save / do whatever its doing
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (props.disabled)
-            {
-                return;
-            }
-
-            if (!opened.value)
-            {
-                opened.value = true;
-            }
-            else
-            {
-                opened.value = false;
-                onOptionClick(focusedItem.value);
-                if (selectedValue.value == "")
-                {
-                    focused.value = false;
-                }
-            }
-        }
-
-        function unFocus()
-        {
-            opened.value = false;
-            focused.value = false;
-        }
 
         function onOptionClick(value: any)
         {
@@ -152,25 +99,6 @@ export default defineComponent({
         {
             tippyInstance.setContent(message);
             tippyInstance.show();
-        }
-
-        function onKeyUp()
-        {
-            focusedIndex.value = Math.max(-1, focusedIndex.value - 1);
-            if (focusedIndex.value == -1)
-            {
-                focusedItem.value = "";
-            }
-            else
-            {
-                focusedItem.value = Object.values<string>(props.optionsEnum)[focusedIndex.value];
-            }
-        }
-
-        function onKeyDown()
-        {
-            focusedIndex.value = Math.min(enumOptionCount.value, focusedIndex.value + 1);
-            focusedItem.value = Object.values<string>(props.optionsEnum)[focusedIndex.value];
         }
 
         watch(() => props.modelValue, (newValue) =>
@@ -224,20 +152,11 @@ export default defineComponent({
             selectBackgroundColor,
             refreshKey,
             options,
-            opened,
-            active,
             selectedValue,
             backgroundColor,
             container,
-            focused,
-            focusedItem,
             enumOptionCount,
-            onSelectorClick,
             onOptionClick,
-            unFocus,
-            onKeyUp,
-            onKeyDown,
-            onEnter
         }
     }
 })
