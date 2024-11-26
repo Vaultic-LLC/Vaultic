@@ -6,6 +6,12 @@ import { ImportableDisplayField } from "./Fields";
 import { Field } from "@vaultic/shared/Types/Fields";
 import { IPrimaryDataObject } from "./DataTypes";
 
+export interface TableColumnModel 
+{
+    header: string;
+    field: string;
+}
+
 export interface SmallMetricGaugeModel
 {
     key: string;

@@ -1,6 +1,6 @@
 <template>
     <div class="passwordValueTableContainer">
-        <TableTemplate :name="'passwordValue'" id="passwordValueTable" ref="tableRef" :rowGap="0"
+        <!-- <TableTemplate :name="'passwordValue'" id="passwordValueTable" ref="tableRef" :rowGap="0"
             class="shadow scrollbar" :color="color" :headerModels="headerModels" :scrollbar-size="1"
             :emptyMessage="emptyTableMessage" :showEmptyMessage="collapsibleTableRowModels.visualValues.length == 0"
             :headerTabs="headerTabs" @scrolledToBottom="collapsibleTableRowModels.loadNextChunk()">
@@ -23,7 +23,8 @@
                     </SlideInRow>
                 </CollapsibleTableRow>
             </template>
-        </TableTemplate>
+        </TableTemplate> -->
+        <VaulticTable id="passwordValueTable" :color="color" :columns="tableColumns" :values="passwordsForTable" :headerTabs="headerTabs" />
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="showEditPasswordPopup" :closePopup="onEditPasswordPopupClose" :minWidth="'800px'"
@@ -57,8 +58,9 @@ import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue';
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import SearchBar from './Controls/SearchBar.vue';
+import VaulticTable from './VaulticTable.vue';
 
-import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, emptyHeader } from '../../Types/Models';
+import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, TableColumnModel, emptyHeader } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { createCollapsibleTableRowModels, createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage } from '../../Helpers/ModelHelper';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
@@ -74,6 +76,7 @@ export default defineComponent({
     name: "PasswordValueTable",
     components:
     {
+        VaulticTable,
         ObjectPopup,
         TableTemplate,
         AddDataTableItemButton,
@@ -84,7 +87,7 @@ export default defineComponent({
         SlideInRow,
         EditPasswordPopup,
         EditValuePopup,
-        SearchBar
+        SearchBar,
     },
     setup()
     {
@@ -120,6 +123,25 @@ export default defineComponent({
         const valueSearchText: Ref<string> = ref('');
         const currentSearchText: ComputedRef<Ref<string>> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             passwordSearchText : valueSearchText);
+
+        const passwordsForTable: ComputedRef<ReactivePassword[]> = computed(() => app.currentVault.passwordStore.passwords.map(f => f.value));
+
+        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
+        {
+            const models: TableColumnModel[] = []
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                models.push({ header: "Password For", field: "passwordFor" });
+                models.push({ header: "Username", field: "login" });
+            }
+            else 
+            {
+                models.push({ header: "Name", field: "name" });
+                models.push({ header: "Type", field: "valueType" });
+            }
+
+            return models;
+        });
 
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
@@ -546,6 +568,8 @@ export default defineComponent({
         });
 
         return {
+            passwordsForTable,
+            tableColumns,
             readOnly,
             tableRef,
             activeTable,

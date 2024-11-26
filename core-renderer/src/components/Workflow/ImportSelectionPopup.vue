@@ -113,7 +113,7 @@ export default defineComponent({
 
 <style>
 .importSelectionPopup {
-    position: absolute;
+    position: fixed;
     z-index: v-bind(zIndex);
     width: 100%;
     height: 100%;

@@ -89,7 +89,7 @@
                     <div class="aboutPopupContainer__reportBugSection">
                         <TextAreaInputField :colorModel="colorModel" :label="'Description'" v-model="bugDescription"
                             :width="'19vw'" :height="'15vh'" :minWidth="'216px'" :minHeight="'91px'"
-                            :maxHeight="'203px'" :enableMarkdown="false" />
+                            :maxHeight="'203px'" />
                         <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Report Bug'"
                             :width="'8vw'" :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
                             :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"

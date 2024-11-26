@@ -142,6 +142,7 @@ export default defineComponent({
 @import './Constants/variables.css';
 @import './Constants/animations.css';
 @import './Constants/transitions.css';
+@import 'primeicons/primeicons.css';
 
 /* @media (max-width: 1000px) {
 	html {

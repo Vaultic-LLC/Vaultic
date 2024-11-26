@@ -22,6 +22,7 @@ import { ToggleRadioButtonModel } from '../../Types/Models';
 import { RGBColor } from '../../Types/Colors';
 import { tween } from '../../Helpers/TweenHelper';
 
+
 export default defineComponent({
     name: 'ToggleRadioButton',
     props: ['model', 'height'],
@@ -30,9 +31,8 @@ export default defineComponent({
     {
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const linearGradient: Ref<string> = ref(getLinearGradientFromColor(primaryColor.value));
-
+                
         const model: ComputedRef<ToggleRadioButtonModel> = computed(() => props.model);
-
         const checkedIndex: Ref<number> = ref(model.value.buttonTwo.active ? 1 : 0);
 
         function onButtonClick(index: number)

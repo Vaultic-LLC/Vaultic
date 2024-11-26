@@ -2,21 +2,21 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <ColorPickerInputField class="colorPaletteView__filterColor" :label="'Filter Color'" :color="color"
-            v-model="colorPaletteState.filtersColor" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
+            v-model="colorPaletteState.filtersColor.value" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
             :minWidth="'125px'" />
         <ColorPickerInputField class="colorPaletteView__groupColor" :label="'Group Color'" :color="color"
-            v-model="colorPaletteState.groupsColor" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
+            v-model="colorPaletteState.groupsColor.value" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
             :minWidth="'125px'" />
         <div class="colorPaletteView__groupedColorPickers colorPaletteView__passwordColors">
             <label class="colorPaletteView__groupedColorPickerLabels">Password Colors</label>
             <ColorPickerInputField :label="'Primary'" :color="color"
-                v-model="colorPaletteState.passwordsColor.primaryColor" :width="'8vw'" :height="'4vh'"
+                v-model="colorPaletteState.passwordsColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'"
                 :minHeight="'30px'" :minWidth="'125px'" />
             <ColorPickerInputField :label="'Secondary One'" :color="color"
-                v-model="colorPaletteState.passwordsColor.secondaryColorOne" :width="'8vw'" :height="'4vh'"
+                v-model="colorPaletteState.passwordsColor.value.secondaryColorOne.value" :width="'8vw'" :height="'4vh'"
                 :minHeight="'30px'" :minWidth="'125px'" />
             <ColorPickerInputField :label="'Seconday Two'" :color="color"
-                v-model="colorPaletteState.passwordsColor.secondaryColorTwo" :width="'8vw'" :height="'4vh'"
+                v-model="colorPaletteState.passwordsColor.value.secondaryColorTwo.value" :width="'8vw'" :height="'4vh'"
                 :minHeight="'30px'" :minWidth="'125px'" />
             <ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
                 :size="'clamp(18px, 1.7vw, 28px)'" />
@@ -24,13 +24,13 @@
         <div class="colorPaletteView__groupedColorPickers colorPaletteView__valueColors">
             <label class="colorPaletteView__groupedColorPickerLabels">Value Colors</label>
             <ColorPickerInputField :label="'Primary'" :color="color"
-                v-model="colorPaletteState.valuesColor.primaryColor" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.valuesColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
             <ColorPickerInputField :label="'Secondary One'" :color="color"
-                v-model="colorPaletteState.valuesColor.secondaryColorOne" :width="'8vw'" :height="'4vh'"
+                v-model="colorPaletteState.valuesColor.value.secondaryColorOne.value" :width="'8vw'" :height="'4vh'"
                 :minHeight="'30px'" :minWidth="'125px'" />
             <ColorPickerInputField :label="'Secondary Two'" :color="color"
-                v-model="colorPaletteState.valuesColor.secondaryColorTwo" :width="'8vw'" :height="'4vh'"
+                v-model="colorPaletteState.valuesColor.value.secondaryColorTwo.value" :width="'8vw'" :height="'4vh'"
                 :minHeight="'30px'" :minWidth="'125px'" />
             <ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
                 :size="'clamp(18px, 1.7vw, 28px)'" />
@@ -87,8 +87,8 @@ export default defineComponent({
         async function doSave(key: string)
         {
             app.popups.showLoadingIndicator(primaryColor.value, "Saving Color Palette");
-            colorPaletteState.value.isCreated = true;
-            colorPaletteState.value.editable = true;
+            colorPaletteState.value.isCreated.value = true;
+            colorPaletteState.value.editable.value = true;
 
             await app.updateColorPalette(key, colorPaletteState.value);
 

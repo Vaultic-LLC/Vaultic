@@ -20,13 +20,14 @@
         "clipboardy": "^4.0.0",
         "csv-parse": "^5.5.6",
         "csv-stringify": "^6.5.0",
-        "dompurify": "^3.1.5",
-        "marked": "^13.0.0",
         "primevue": "^4.2.3",
         "tippy.js": "^6.3.7",
         "typescript": "~5.4.0",
         "vue": "^3.5",
         "vue-chartjs": "^5.2.0",
         "vue-tsc": "^2.0.21"
+    },
+    "dependencies": {
+        "quill": "^2.0.2"
     }
 }

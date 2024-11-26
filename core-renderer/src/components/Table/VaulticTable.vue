@@ -1,43 +1,48 @@
 <template>
-    <div class="tableTemplate">
-        <div class="tableTemplate__tableTabs">
-            <div class="tableTemplate__coverOverhandingBorder" :class="scrollbarClass"></div>
-            <TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
-        </div>
-        <div class="tableTemplate__headerAndContent" :class="{
-                'tableTemplate__headerAndContent--border': border,
-                'tableTemplate__headerAndContent--noTabs': headerTabs?.length == 0
+    <div class="vaulticTableContainer">
+        <DataTable scrollable removableSort :value="computedValues" tableStyle="min-width: 70rem"
+            resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable" @columnReorder="onColumnReorder"
+            :pt="{
+                thead: 'vaulticTableContainer__thead',
+                header: 'vaulticTableContainer__header',
+                columnResizeIndicator: 'vaulticTableContainer__columnResizeIndicator',
+                tableContainer: 'vaulticTableContainer__dataTableTableContainer',
+                table: 'vaulticTableContainer__dataTableTable',
+                bodyRow: 'vaulticTableContainer__dataTableRow'
             }">
-            <TableHeaderRow v-if="hideHeader != true" :class="scrollbarClass" :model="headerModels"
-                :height="headerHeight">
-                <template #controls>
-                    <slot name="headerControls"></slot>
+            <template #header>
+                <div class="vaulticTableContainer__tabContainer">
+                    <TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
+                </div>
+            </template>
+            <Column v-for="(column, idx) in columns" :key="column.field" :field="column.field" :header="column.header" :columnKey="idx.toString()" sortable class="vaulticTableContainer__column"
+                :pt="{
+                    headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__headerCell--reOrderable']
+                }">
+                <template #sorticon="{ sortOrder }">
+                    <i v-if="sortOrder === 0" class="pi pi-arrow-up vaulticTableContainer__column--no-sort" />
+                    <i v-else class="pi pi-arrow-up" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
-            </TableHeaderRow>
-            <div class="tableContainer scrollbar" ref="tableContainer" :class="scrollbarClass"
-                @scroll="checkScrollHeight">
-                <table class="tableContent" ref="table">
-                    <!-- Just used to force table row cell widths -->
-                    <tr v-if="headers.length > 0">
-                        <SizingHeaderCell v-for="(header, index) in headers" :key="index" :width="header.width" />
-                    </tr>
-                    <!-- Used so that the header doesn't cover the first rows hover effect -->
-                    <tr v-if="useInitalPaddingRow" class="tableTemplate__paddingRow"></tr>
-                    <slot name="body">
-                    </slot>
-                </table>
-                <Transition name="fade" mode="out-in">
-                    <div v-if="showEmptyMessage == true" class="tableContainer__emptyMessageContainer">
-                        <Transition name="fade" mode="out-in">
-                            <div :key="key" class="tableContainer__emptyMessage">
-                                {{ emptyMessage }}
-                            </div>
-                        </Transition>
-                    </div>
-                </Transition>
-            </div>
-
-        </div>
+                <template #body="slotProps">
+                    {{ slotProps.data[column.field]?.value }}
+                </template>
+            </Column>
+            <Column class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false" 
+                :pt="{
+                    headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__ControlsHeaderCell']
+                }">
+                <template #header="">
+                    <div class="flex justify-end">
+                        <SearchBar :modelValue="searchText" :color="color" />
+                    </div>                
+                </template>
+                <template #body="{ data }">
+                    <Button icon="pi pi-lock" @click="" rounded></Button>
+                    <Button icon="pi pi-pen-to-square" @click=""  rounded></Button>
+                    <Button icon="pi pi-trash" @click=""  rounded></Button>
+                </template>
+            </Column>
+        </DataTable>
     </div>
 </template>
 
@@ -45,10 +50,12 @@
 import { computed, ComputedRef, defineComponent, onMounted, Ref, ref, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
-import TableHeaderRow from './Header/TableHeaderRow.vue';
-import SizingHeaderCell from "./Header/SizingHeaderCell.vue"
+import DataTable from "primevue/datatable";
+import Column from 'primevue/column';
+import Button from 'primevue/button';
+import SearchBar from './Controls/SearchBar.vue';
 
-import { HeaderTabModel, SortableHeaderModel } from '../../Types/Models';
+import { HeaderTabModel, SortableHeaderModel, TableColumnModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
@@ -65,15 +72,17 @@ import * as TWEEN from '@tweenjs/tween.js'
 // Anything else needs to be done manually, i.e. if the number of rows is being changed, by calling calcScrollbarColor
 // on a ref of the TableTemplate that is wrapped in a setTimeout, but only if it isn't already handled by the automatic ones above.
 export default defineComponent({
-    name: "TableTemplate",
+    name: "VaulticTable",
     components:
     {
         TableHeaderTab,
-        TableHeaderRow,
-        SizingHeaderCell
+        DataTable,
+        Column,
+        Button,
+        SearchBar,
     },
     emits: ['scrolledToBottom'],
-    props: ['name', 'color', 'scrollbarSize', 'rowGap', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
+    props: ['color', 'values', 'columns', 'scrollbarSize', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
         'headerTabs', 'headerHeight', 'hideHeader', 'initialPaddingRow'],
     setup(props, ctx)
     {
@@ -83,12 +92,16 @@ export default defineComponent({
         const tableContainer: Ref<HTMLElement | null> = ref(null);
         const primaryColor: ComputedRef<string> = computed(() => props.color);
         const rowGapValue: ComputedRef<string> = computed(() => props.rowGap ?? "0px");
+        const columns: ComputedRef<TableColumnModel[]> = computed(() => props.columns);
         const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels ?? []);
         const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
         const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
         const currentHeaderTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.headerTabs ?? []);
         const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
         const useInitalPaddingRow: ComputedRef<boolean> = computed(() => props.initialPaddingRow === false ? false : true);
+
+        const computedValues: ComputedRef<any[]> = computed(() => props.values);
+        const searchText: ComputedRef<Ref<string | undefined>> = computed(() => ref());
 
         let tweenGroup: TWEEN.Group | undefined = undefined;
         let scrollbarColor: Ref<string> = ref(primaryColor.value);
@@ -206,23 +219,33 @@ export default defineComponent({
             }
         }
 
-        watch(() => props.emptyMessage, () =>
+        // watch(() => props.emptyMessage, () =>
+        // {
+        //     key.value = Date.now().toString();
+        // });
+
+        function onColumnReorder()
         {
-            key.value = Date.now().toString();
-        });
+            console.log(props.columns);
+        }
 
         watch(() => props.color, () =>
         {
             setTimeout(calcScrollbarColor, 1);
-        })
-
-        onMounted(() =>
-        {
-            if (tableContainer.value)
-            {
-                resizeObserver.observe(tableContainer.value);
-            }
         });
+
+        watch(() => props.columns, () => 
+        {
+            console.log(props.columns);
+        });
+
+        // onMounted(() =>
+        // {
+        //     if (tableContainer.value)
+        //     {
+        //         resizeObserver.observe(tableContainer.value);
+        //     }
+        // });
 
         // Don't use this. It causes multiple and unexpected calls to calcScrollbarColor, which will cause Tweens to not function
         // correctly. calcScrollbarColor should only be called when known that it will only call once per needed update.
@@ -232,6 +255,9 @@ export default defineComponent({
         // });
 
         return {
+            columns,
+            computedValues,
+            searchText,
             key,
             table,
             tableContainer,
@@ -247,153 +273,114 @@ export default defineComponent({
             useInitalPaddingRow,
             checkScrollHeight,
             scrollToTop,
-            calcScrollbarColor
+            calcScrollbarColor,
+            onColumnReorder
         }
     },
 })
 </script>
 
 <style scoped>
-.tableTemplate {
+.vaulticTableContainer {
     position: absolute;
-    display: flex;
-    flex-direction: column;
-    /* align-items: flex-end; */
-    border-top-right-radius: 20px;
-    border-top-left-radius: 20px;
 }
 
-.tableTemplate__header {
-    width: calc(100% - 10px);
-    border-top-right-radius: 20px;
-    border-top-left-radius: 20px;
-    transform: translateY(0.5px);
+:deep(.vaulticTableContainer__thead) {
+    background: transparent !important;
 }
 
-.tableContainer {
-    position: relative;
-    overflow-x: hidden;
-    margin-left: auto;
-    margin-right: 1.1%;
-    direction: rtl;
-    overflow-y: scroll;
+:deep(.vaulticTableContainer__header) {
+    background: transparent;
+    padding: 0;
+    height: 6%;
+}
+
+.vaulticTableContainer__tabContainer {
     width: 100%;
-    height: 90%;
-    background-color: v-bind(backgroundColor);
-    border-bottom-left-radius: 1vw;
-    border-bottom-right-radius: 1vw;
-    will-change: transform;
+    height: 100%;
+    display: flex;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    color: white;
+    font-size: clamp(10px, 1vw, 20px);
 }
 
-.tableContainer.small {
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
+.vaulticTableContainer__dataTable{
+    height: 100%;
 }
 
-.tableContainer.medium {
-    border-bottom-left-radius: clamp(9px, 1vw, 13px);
-    border-bottom-right-radius: 1vw;
+:deep(.vaulticTableContainer__dataTableTableContainer) {
+    height: 94%;
+    overflow-x: hidden !important;
+    overflow-y: scroll !important;
+    background: v-bind(backgroundColor);
 }
 
-.tableContent {
-    margin-left: auto;
-    margin-right: 2%;
-    border-spacing: 0 v-bind(rowGapValue);
-
-    width: 98%;
-    direction: ltr;
-
-    border-collapse: separate;
-    /* border-spacing: 10px; */
+:deep(.vaulticTableContainer__dataTableTable){
 }
 
-
-.tableContainer.small::-webkit-scrollbar {
-    width: var(--scrollbar-width-small);
+:deep(.vaulticTableContainer__headerCell) {
+    border-right-width: 1px;
 }
 
-.tableContainer.medium::-webkit-scrollbar {
-    width: var(--scrollbar-width-medium);
+:deep(.vaulticTableContainer__headerCell--reOrderable) {
+    cursor: move;
 }
 
-.tableContainer.border::-webkit-scrollbar-track {
+:deep(.vaulticTableContainer__ControlsHeaderCell) {
+    min-width: 350px;
+    cursor:auto;
+}
+
+:deep(.vaulticTableContainer__columnResizeIndicator) {
+    width: 1px;
+    background: v-bind(color);
+    height: 94% !important;
+    top: 6% !important;
+}
+
+:deep(.vaulticTableContainer__column) {
+    background: transparent !important;
+    transition: 0.3s;
+}
+
+:deep(.vaulticTableContainer__column--no-sort) {
+    opacity: 0;
+    transition: 0.3s;
+}
+
+:deep(.vaulticTableContainer__column):hover .vaulticTableContainer__column--no-sort {
+    opacity: 0.7;
+}
+
+:deep(.vaulticTableContainer__column--sort-rotate) {
+    transition: 0.3s;
+    transform: rotate(180deg);
+}
+
+:deep(.vaulticTableContainer__dataTableRow) {
+    height: clamp(40px, 3.5vw, 100px);
     background: transparent;
 }
 
-.tableContainer.scrollbar::-webkit-scrollbar-track {
+:deep(.vaulticTableContainer__dataTableTableContainer::-webkit-scrollbar) {
+    width: clamp(7px, 0.7vw, 10px);
+}
+
+:deep(.vaulticTableContainer__dataTableTableContainer::-webkit-scrollbar-track) {
     transition: 0.3s;
     background: v-bind(scrollbarColor);
     box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
-    border-top-left-radius: 20px;
-    border-bottom-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 
-.tableContainer.scrollbar::-webkit-scrollbar-thumb {
+:deep(.vaulticTableContainer__dataTableTableContainer::-webkit-scrollbar-thumb) {
     max-width: 50%;
     transition: 0.3s;
     background: v-bind(thumbColor);
     box-shadow: 0 5px 25px rgba(0, 0, 0, 0.25);
-    border-top-left-radius: 20px;
-    border-bottom-left-radius: 20px;
-}
-
-.tableContainer__emptyMessageContainer {
-    position: absolute;
-    width: 80%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -60%);
-}
-
-.tableContainer__emptyMessage {
-    color: grey;
-    font-size: clamp(12px, 1.4vw, 24px);
-    text-align: center;
-}
-
-.tableTemplate__tableTabs {
-    width: calc(100% - 10px);
-    display: flex;
-    border-top-left-radius: 1vw;
-}
-
-.tableTemplate__headerAndContent {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    overflow: hidden;
-}
-
-.tableTemplate__headerAndContent--border {
-    border-right: 3px solid v-bind(color);
-    border-top: 3px solid v-bind(color);
-    border-bottom: 3px solid v-bind(color);
-    border-bottom-left-radius: clamp(9px, 1vw, 13px);
-    border-bottom-right-radius: 1vw;
-    border-top-right-radius: 1vw;
-}
-
-.tableTemplate__headerAndContent--noTabs {
-    border-top-left-radius: 1vw;
-}
-
-.tableTemplate__coverOverhandingBorder {
-    width: 10px;
-    height: 100%;
-    background-color: var(--app-color);
-    transform: translateY(10px)
-}
-
-.tableTemplate__coverOverhandingBorder.small {
-    width: var(--scrollbar-width-small);
-}
-
-.tableTemplate__coverOverhandingBorder.medium {
-    width: var(--scrollbar-width-medium);
-}
-
-.tableTemplate__paddingRow {
-    height: 5px;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 </style>

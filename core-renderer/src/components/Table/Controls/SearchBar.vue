@@ -1,75 +1,95 @@
 <template>
-	<div class="searchBarContainer" :class="{ active: active }">
-		<input ref="input" required="false" class="seachBarInput" type="text" name="text" autocomplete="off"
+	<div class="searchBarContainer">
+		<!-- <input ref="input" required="false" class="seachBarInput" type="text" name="text" autocomplete="off"
 			:value="modelValue.value" @input="onInput(($event.target as HTMLInputElement).value)" @focus="onFocus"
 			@blur="onUnfocus" />
 		<label class="searchBarLabel">Search</label>
 		<div class="searchIcon" @click="onIconClick">
 			<ion-icon name="search-outline"></ion-icon>
-		</div>
+		</div> -->
+        <FloatLabel variant="in" :dt="floatLabelStyle">
+            <IconField>
+                <!-- <div class="searchIcon">
+                    <ion-icon name="search-outline"></ion-icon>
+                </div>            -->
+                <InputIcon class="pi pi-search" />
+                <InputText :dt="inputStyle" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput" />
+            </IconField>
+            <label :for="id">Search</label>
+        </FloatLabel>
 	</div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref, useId } from 'vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../../Types/Colors"
+import { widgetBackgroundHexString } from '../../../Constants/Colors';
+
+import FloatLabel from "primevue/floatlabel";
+import InputText from 'primevue/inputtext';
+import InputIcon from 'primevue/inputicon';
+import IconField from 'primevue/iconfield';
 
 export default defineComponent({
 	name: "SearchBar",
+    components: 
+    {
+        FloatLabel,
+        InputText,
+        InputIcon,
+        IconField
+    },
 	emits: ["update:modelValue"],
 	props: ["modelValue", "color", 'height', 'minHeight', "width", 'minWidth', 'maxWidth', "labelBackground"],
 	setup(props)
 	{
-		const input: Ref<HTMLElement | null> = ref(null);
+        const id = ref(useId());
+
 		const computedWidth: ComputedRef<string> = computed(() => props.width ?? "300px");
 		const computedHeight: ComputedRef<string> = computed(() => props.height ?? '4vh');
 		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? '30px');
 
-		const modelValue: ComputedRef<Ref<string>> = computed(() => props.modelValue);
-		const active: Ref<boolean> = ref(false);
+        const modelValue: ComputedRef<Ref<string>> = computed(() => props.modelValue);
+        const placeholderValue: Ref<string> = ref(modelValue.value.value);
 
-		function onInput(value: string)
-		{
-			modelValue.value.value = value;
-			if (value != '')
-			{
-				active.value = true;
-			}
-		}
+        let floatLabelStyle = computed(() => {
+            return {
+                onActive: {
+                    background: widgetBackgroundHexString()
+                },
+                focus: 
+                {
+                    color: props.color,
+                }
+            }
+        });
 
-		function onFocus()
-		{
-			active.value = true;
-		}
+        let inputStyle = computed(() => {
+            return {
+                focus: 
+                {
+                    borderColor: props.color
+                },
+                background: widgetBackgroundHexString()
+            }
+        });
 
-		function onUnfocus()
+		function onInput(value: string | undefined)
 		{
-			if (modelValue.value.value == '')
-			{
-				active.value = false;
-			}
-		}
-
-		function onIconClick()
-		{
-			if (input.value)
-			{
-				input.value.focus();
-			}
+			modelValue.value.value = value ?? '';
 		}
 
 		return {
-			input,
+            id,
+            placeholderValue,
 			defaultInputColor,
 			defaultInputTextColor,
 			computedWidth,
 			computedHeight,
 			computedMinHeight,
-			active,
-			onInput,
-			onFocus,
-			onUnfocus,
-			onIconClick
+            floatLabelStyle,
+            inputStyle,
+			onInput
 		}
 	}
 })
@@ -84,12 +104,12 @@ export default defineComponent({
 	width: v-bind('computedWidth');
 	min-width: v-bind('minWidth');
 	max-width: v-bind('maxWidth');
-	border: 1.5px solid v-bind(color);
+	/* border: 1.5px solid v-bind(color);
 	border-radius: 2rem;
-	transition: border 300ms cubic-bezier(0.4, 0, 0.2, 1), .3s;
+	transition: border 300ms cubic-bezier(0.4, 0, 0.2, 1), .3s; */
 }
 
-.searchBarContainer .seachBarInput {
+/* .searchBarContainer .seachBarInput {
 	position: absolute;
 	top: 50%;
 	transform: translate(0.1vw, -50%);
@@ -133,7 +153,7 @@ export default defineComponent({
 	padding: 0 .2em;
 	color: v-bind(color);
 	left: 10px;
-}
+} */
 
 .searchBarContainer .searchIcon {
 	position: absolute;
@@ -152,8 +172,4 @@ export default defineComponent({
 	align-items: center;
 }
 
-/* .searchBarContainer .searchIcon:hover {
-	color: v-bind(color);
-	box-shadow: 0 0 25px v-bind(color);
-} */
 </style>

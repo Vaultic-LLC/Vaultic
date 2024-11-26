@@ -1,259 +1,91 @@
 <template>
     <div class="textAreaInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
-        <div class="textAreaInputFieldContainer__scrollbar">
-            <div ref="scrollThumb" class="textAreaInputFieldContainer__scrollthumb"></div>
-        </div>
-        <textarea v-if="!markdownFormat" ref="textArea" required="false" class="textAreaInputFieldContainer__input"
-            :class="{ 'textAreaInputFieldContainer__input--noBorderRadius': textAreaStraightBorder }" name="text"
-            autocomplete="off" :value="modelValue" @input="onInput(($event.target as HTMLInputElement).value)"
-            :disabled="disabled" :maxlength="600" @keyup.enter="onEnter" />
-        <div v-else ref="markdownContainer" v-html="markdownHTML" class="textAreaInputFieldContainer__mdView"
-            :class="{ 'textAreaInputFieldContainer__input--noBorderRadius': textAreaStraightBorder }"></div>
-        <label class="textAreaInputFieldContainer__label">{{ label }}</label>
-        <div v-if="enableMarkdown" class="textAreaInputFieldContainer__formatButton">
-            <ToggleRadioButton :height="'clamp(15px, 1vw, 25px)'" :model="toggleRadioButtonModel"
-                @onButtonClicked="onFormatChange" />
-        </div>
+        <Editor v-model="placeholderValue" :dt="toolbarStyle" @update:modelValue="onInput">
+            <template v-slot:toolbar>
+                <span class="ql-formats">
+                    <select class="ql-header"></select>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                    <button class="ql-strike"></button>
+                </span>
+                <span class="ql-formats">
+                    <select class="ql-color"></select>
+                    <select class="ql-background"></select>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-blockquote"></button>
+                    <button class="ql-code-block"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-list" value="ordered"></button>
+                    <button class="ql-list" value="bullet"></button>
+                    <button class="ql-list" value="check"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-link"></button>
+                    <button class="ql-formula"></button>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-clean"></button>
+                </span>
+            </template>
+        </Editor>
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, ref } from 'vue';
-
-import ToggleRadioButton from './ToggleRadioButton.vue';
+import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
-import { InputColorModel, ToggleRadioButtonModel } from '../../Types/Models';
-import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
-import { marked } from 'marked';
-import DOMPurify from "dompurify"
-import app from "../../Objects/Stores/AppStore";
+import { InputColorModel } from '../../Types/Models';
+
+import Editor from 'primevue/editor';
 
 export default defineComponent({
     name: "TextAreaInputField",
     components:
     {
-        ToggleRadioButton
+        Editor
     },
     emits: ["update:modelValue"],
-    props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isOnWidget", "width",
-        'minWidth', 'maxWidth', "height", 'minHeight', 'maxHeight', 'isEditing', 'enableMarkdown'],
+    props: ["modelValue", "label", "colorModel", "fadeIn", "isOnWidget", "width",
+        'minWidth', 'maxWidth', "height", 'minHeight', 'maxHeight'],
     setup(props, ctx)
     {
-        const textArea: Ref<HTMLElement | null> = ref(null);
-        const scrollThumb: Ref<HTMLElement | null> = ref(null);
-        const markdownContainer: Ref<HTMLElement | null> = ref(null);
+        const placeholderValue: Ref<string> = ref(props.modelValue);
 
         const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
         const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
-        let invalid: Ref<boolean> = ref(false);
 
         const textAreaWidth: ComputedRef<string> = computed(() => props.width ?? "400px");
         const textAreaHeight: ComputedRef<string> = computed(() => props.height ?? "200px");
 
-        const thumbTopNumber: Ref<number> = ref(0);
-        const thumbTopString: ComputedRef<string> = computed(() => thumbTopNumber.value + "px");
-
-        const thumbHeightNumber: Ref<number> = ref(0);
-        const thumbHeightString: ComputedRef<string> = computed(() => thumbHeightNumber.value + "px");
-        const textAreaStraightBorder: ComputedRef<boolean> = computed(() => thumbHeightNumber.value != 0);
-
-        const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
-        let body: HTMLElement | null = null;
-
-        const isOnEditScreen: ComputedRef<boolean> = computed(() => props.isEditing === true);
-
-        const enableMarkdown: Ref<boolean> = computed(() => props.enableMarkdown != undefined ? props.enableMarkdown : true);
-        const markdownFormat: Ref<boolean> = ref(isOnEditScreen.value && app.settings.value.defaultMarkdownInEditScreens.value);
-        const markdownHTML: ComputedRef<string> = computed(() => DOMPurify.sanitize(marked.parse(props.modelValue)));
-        const toggleRadioButtonModel: Ref<ToggleRadioButtonModel> = ref({
-            buttonOne: {
-                text: "Raw",
-                active: !markdownFormat.value
-            },
-            buttonTwo: {
-                text: "Md",
-                active: markdownFormat.value
+        const toolbarStyle = computed(() => 
+        {
+            return {
+                toolbarItemActive: {
+                    color: colorModel.value.color
+                }
             }
         });
-
-        const currentScrollElement: ComputedRef<HTMLElement | null> = computed(() => markdownFormat.value ? markdownContainer.value : textArea.value);
-
-        function onScroll(e: any)
-        {
-            e.preventDefault();
-            if (!currentScrollElement.value)
-            {
-                return;
-            }
-
-            currentScrollElement.value!.scrollTop = currentScrollElement.value!.scrollTop - e.wheelDeltaY;
-            calcScrollbar();
-        }
-
-        let dragging: boolean = false;
-        let yStart: number = 0;
-        let scrollTop: number = 0;
-
-        function onThumbDrag(e: any)
-        {
-            if (!currentScrollElement.value)
-            {
-                return;
-            }
-
-            dragging = true;
-            yStart = e.pageY - currentScrollElement.value.offsetTop;
-            scrollTop = currentScrollElement.value.scrollTop;
-
-            body?.addEventListener('mouseup', onThumbDoneDrag);
-            body?.addEventListener('mousemove', onMouseMove);
-        }
-
-        function onThumbDoneDrag(_: any)
-        {
-            dragging = false;
-            lastScroll = 0;
-
-            body?.removeEventListener('mouseup', onThumbDoneDrag);
-            body?.removeEventListener('mousemove', onMouseMove);
-        }
-
-        let lastScroll: number = 0;
-        function onMouseMove(e: any)
-        {
-            if (!dragging || !currentScrollElement.value)
-            {
-                return;
-            }
-
-            const y = e.pageY - currentScrollElement.value.offsetTop;
-            const scroll = y - yStart;
-
-            currentScrollElement.value.scrollTop = scrollTop + (scroll);
-
-            const thumbToScroll = scroll - lastScroll;
-
-            // dont' let the thumb go past the text area
-            if ((thumbTopNumber.value + thumbHeightNumber.value > currentScrollElement.value.clientHeight && thumbToScroll > 0) ||
-                (thumbTopNumber.value == 0 && thumbToScroll < 0))
-            {
-                return;
-            }
-
-            lastScroll = scroll;
-            calcScrollbar();
-        }
 
         async function onInput(value: string)
         {
             ctx.emit("update:modelValue", value);
-            calcScrollbar();
         }
-
-        function calcScrollbar()
-        {
-            if (currentScrollElement.value)
-            {
-                if (currentScrollElement.value.scrollHeight == currentScrollElement.value.clientHeight)
-                {
-                    thumbTopNumber.value = 0;
-                    thumbHeightNumber.value = 0;
-
-                    return;
-                }
-
-                thumbHeightNumber.value = currentScrollElement.value.clientHeight / currentScrollElement.value.scrollHeight
-                    * currentScrollElement.value.clientHeight;
-
-                // we scrolled to the bottom, make the thumb look like its on the bottom otherwise it'll be 3 px off
-                if (currentScrollElement.value.scrollHeight - currentScrollElement.value.scrollTop - currentScrollElement.value.clientHeight <= 2)
-                {
-                    thumbTopNumber.value = currentScrollElement.value.clientHeight - thumbHeightNumber.value + 3;
-                    return;
-                }
-
-                thumbTopNumber.value = currentScrollElement.value.scrollTop / currentScrollElement.value.scrollHeight *
-                    currentScrollElement.value.clientHeight;
-            }
-        }
-
-        function onFormatChange(index: number)
-        {
-            markdownFormat.value = index == 1;
-            setScrollHandler();
-        }
-
-        function setScrollHandler()
-        {
-            if (markdownFormat.value)
-            {
-                setTimeout(() =>
-                {
-                    markdownContainer.value?.addEventListener("wheel", onScroll);
-
-                    // re calc the scrollbar so that it will match the markdown containers input. Its not a 1-1 between this and the
-                    // text area for when to scroll
-                    calcScrollbar();
-                }, 100);
-            }
-            else
-            {
-                setTimeout(() =>
-                {
-                    textArea.value?.addEventListener("wheel", onScroll);
-                    calcScrollbar();
-                }, 100);
-            }
-        }
-
-        function onEnter(e: KeyboardEvent)
-        {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        onMounted(() =>
-        {
-            body = document.getElementById('body');
-            setScrollHandler();
-
-            if (scrollThumb.value)
-            {
-                scrollThumb.value.addEventListener("mousedown", onThumbDrag);
-                scrollThumb.value.addEventListener("mouseup", onThumbDoneDrag);
-                scrollThumb.value.addEventListener("mousemove", onMouseMove);
-            }
-
-            calcScrollbar();
-        });
-
-        onUnmounted(() =>
-        {
-            textArea.value?.removeEventListener("wheel", onScroll)
-        });
 
         return {
+            toolbarStyle,
+            placeholderValue,
             shouldFadeIn,
-            invalid,
             defaultInputColor,
             defaultInputTextColor,
             textAreaWidth,
             textAreaHeight,
             colorModel,
-            thumbTopString,
-            thumbHeightString,
-            textArea,
-            textAreaStraightBorder,
-            scrollThumb,
-            labelBackgroundColor,
-            markdownFormat,
-            markdownHTML,
-            toggleRadioButtonModel,
-            markdownContainer,
-            enableMarkdown,
-            onFormatChange,
             onInput,
-            onEnter
         }
     }
 })
@@ -274,100 +106,5 @@ export default defineComponent({
 .textAreaInputFieldContainer.fadeIn {
     opacity: 0;
     animation: fadeIn 1s linear forwards;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-.textAreaInputFieldContainer__input,
-.textAreaInputFieldContainer__mdView {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    left: 0;
-    color: white;
-    border-radius: var(--responsive-border-radius);
-    background: none;
-    font-size: var(--input-font-size);
-    transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    resize: none;
-    padding: 5px;
-    overflow: hidden;
-    border: solid 1.5px v-bind('colorModel.borderColor');
-    font-family: Avenir, Helvetica, Arial, sans-serif !important;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.textAreaInputFieldContainer__mdView {
-    text-align: left;
-}
-
-.textAreaInputFieldContainer__label {
-    position: absolute;
-    left: 10px;
-    top: 0;
-    color: v-bind('colorModel.textColor');
-    background-color: v-bind(labelBackgroundColor);
-    pointer-events: none;
-    transform: translateY(min(1vw, 15px));
-    transition: var(--input-label-transition);
-    font-size: clamp(11px, 1.2vh, 25px);
-    will-change: transform;
-}
-
-.textAreaInputFieldContainer__input:focus,
-.textAreaInputFieldContainer__input:valid,
-.textAreaInputFieldContainer__mdView {
-    outline: none;
-    border: 1.5px solid v-bind('colorModel.activeBorderColor');
-}
-
-.textAreaInputFieldContainer__input:focus~label,
-.textAreaInputFieldContainer__input:valid~label,
-.textAreaInputFieldContainer__input:disabled~label,
-.textAreaInputFieldContainer__mdView~label {
-    transform: translateY(-70%) scale(0.8);
-    background-color: v-bind(labelBackgroundColor);
-    padding: 0 .2em;
-    color: v-bind('colorModel.activeTextColor');
-    left: 0px;
-}
-
-.textAreaInputFieldContainer__input--noBorderRadius {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.textAreaInputFieldContainer__scrollbar {
-    position: absolute;
-    height: inherit;
-    width: 2.5%;
-    left: -2.4%;
-    transition: 0.3s;
-}
-
-.textAreaInputFieldContainer__scrollthumb {
-    top: v-bind(thumbTopString);
-    height: v-bind(thumbHeightString);
-    position: absolute;
-    width: 100%;
-    left: -5%;
-    background: v-bind('colorModel.activeBorderColor');
-    border-top-left-radius: 20px;
-    border-bottom-left-radius: 20px;
-    transition: 0.3s;
-}
-
-.textAreaInputFieldContainer__formatButton {
-    position: absolute;
-    bottom: min(-35px, -3.5vh);
 }
 </style>

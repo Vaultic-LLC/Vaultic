@@ -1,15 +1,20 @@
 <template>
-    <div ref="button" tabindex="0" class="popupButton" :class="{ fadeIn: doFadeIn, disabled: disabled }"
-        :disabled="disabled" @click.stop="doOnClick">
-        {{ text }}
+    <div ref="button" class="popupButton">
+        <Button :label="text" :class="'popupButton__primeVueButton'" :fluid="true" :disabled="disabled" @click.stop="doOnClick" />
     </div>
 </template>
 
 <script lang="ts">
 import { Ref, defineComponent, onMounted, onUnmounted, ref } from "vue";
 
+import Button from "primevue/button";
+
 export default defineComponent({
     name: "PopupButton",
+    components: 
+    {
+        Button
+    },
     emits: ['onClick'],
     props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize', 'minFontSize', 'maxFontSize',
         'disabled', 'isSubmit', 'fadeIn'],
@@ -78,34 +83,22 @@ export default defineComponent({
     min-width: v-bind(minWidth);
     max-height: v-bind(maxHeight);
     min-height: v-bind(minHeight);
-    background-color: var(--app-color);
-    color: white;
-    border: 2px solid v-bind(color);
-    border-radius: var(--responsive-border-radius);
     transition: v-bind(transition);
-    font-size: clamp(v-bind(minFontSize), v-bind(fontSize), v-bind(maxFontSize));
     cursor: pointer;
-    outline: none;
-    padding: 2px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .popupButton.fadeIn {
     animation: fadeIn 1s linear forwards;
-
 }
 
-.popupButton:hover,
-.popupButton:focus {
-    box-shadow: 0 0 25px v-bind(color);
+.popupButton__primeVueButton {
+    transition: v-bind(transition) !important;
+    background-color: var(--app-color) !important;
+    color: white !important;
+    border: 1.5px solid v-bind(color) !important;
 }
 
-.popupButton:disabled,
-.popupButton.disabled {
-    box-shadow: 0 0 0 0;
-    border: 2px solid gray;
-    color: gray;
+.popupButton__primeVueButton:hover {
+    box-shadow: 0 0 25px v-bind(color) !important;
 }
 </style>
