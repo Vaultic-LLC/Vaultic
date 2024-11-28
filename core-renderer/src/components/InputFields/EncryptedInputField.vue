@@ -17,7 +17,7 @@
                             }
                         } 
                     }"
-                    :fluid="true" class="primeVuePasswordField" name="password" v-model="inputText" :inputId="id" :disabled="disabled" toggleMask :feedback="computedFeedback" 
+                    :fluid="true" class="primeVuePasswordField" name="password" v-model="inputText" :inputId="id" :disabled="isDisabled" toggleMask :feedback="computedFeedback" 
                     @update:model-value="onInput">
                     <template #maskicon="slotProps">
                         <ion-icon class="p-password-toggle-mask-icon encryptedInputIcon" name="eye-off-outline" @click="toggleMask(true)"></ion-icon>

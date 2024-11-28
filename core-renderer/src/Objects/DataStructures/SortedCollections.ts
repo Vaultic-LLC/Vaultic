@@ -1,147 +1,202 @@
-
-import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
+import { Field } from "@vaultic/shared/Types/Fields";
 import app from "../../Objects/Stores/AppStore";
-import { IGroupable, DataType, Group } from "../../Types/DataTypes";
+import { DataType, Group } from "../../Types/DataTypes";
+import { TableRowModel } from "../../Types/Models";
+import { rowChunkAmount } from "../../Constants/Misc";
 
-export class SortedCollection<T extends { [key: string]: any } & IIdentifiable>
+export class SortedCollection
 {
-    descending: boolean;
-    property: string;
-    values: Field<T>[];
-    calculatedValues: Field<T>[];
-    searchText: string;
+    descending: boolean | undefined;
+    property: string | undefined;
 
-    constructor(values: Field<T>[], property: string)
+    values: TableRowModel[];                // shouldn't ever be modified, kept as a source of truth
+    calculatedValues: TableRowModel[];      // Calculated values based on search text
+    visualValues: TableRowModel[];          // The values to actually render
+
+    searchText: string;
+    onUpdate: (() => void) | undefined;
+
+    private currentID: number;
+
+    constructor(values: TableRowModel[], property?: string, descending?: boolean)
     {
-        this.descending = true;
+        this.descending = descending;
         this.property = property;
         this.values = [...values];
         this.calculatedValues = [...values];
+        this.visualValues = [];
         this.searchText = "";
+        this.currentID = 0;
 
-        this.sort();
+        this.sort(false);
+        this.loadNextChunk();
     }
 
-    protected sort()
+    loadNextChunk()
     {
-        if (this.values.length == 0)
+        this.visualValues.push(...this.calculatedValues.splice(0, rowChunkAmount))
+    }
+
+    protected sort(notifyUpdate: boolean)
+    {
+        if (this.values.length == 0 || this.descending == undefined || this.property == undefined)
         {
             return;
         }
 
-        switch (typeof this.values[0].value[this.property])
+        switch (typeof this.values[0].backingObject?.value[this.property].value)
         {
             case "string":
                 if (this.descending)
                 {
-                    this.values = this.values.sort((a, b) => a.value[this.property].localeCompare(b.value[this.property]))
+                    this.values = this.values.sort((a, b) => a.backingObject?.value[this.property!].value.localeCompare(b.backingObject?.value[this.property!].value))
                 }
                 else
                 {
-                    this.values = this.values.sort((a, b) => b.value[this.property].localeCompare(a.value[this.property]))
+                    this.values = this.values.sort((a, b) => b.backingObject?.value[this.property!].value.localeCompare(a.backingObject?.value[this.property!].value))
                 }
                 break;
             case "number":
                 if (this.descending)
                 {
-                    this.values = this.values.sort((a, b) => a.value[this.property] <= b.value[this.property] ? 1 : -1)
+                    this.values = this.values.sort((a, b) => a.backingObject?.value[this.property!].value <= b.backingObject?.value[this.property!].value ? 1 : -1)
                 }
                 else
                 {
-                    this.values = this.values.sort((a, b) => a.value[this.property] >= b.value[this.property] ? 1 : -1)
+                    this.values = this.values.sort((a, b) => a.backingObject?.value[this.property!].value >= b.backingObject?.value[this.property!].value ? 1 : -1)
                 }
                 break;
             case "boolean":
                 if (this.descending)
                 {
-                    this.values = this.values.sort((a, b) => a.value[this.property] <= b.value[this.property] ? 1 : -1)
+                    this.values = this.values.sort((a, b) => a.backingObject?.value[this.property!].value <= b.backingObject?.value[this.property!].value ? 1 : -1)
                 }
                 else
                 {
-                    this.values = this.values.sort((a, b) => a.value[this.property] >= b.value[this.property] ? 1 : -1)
+                    this.values = this.values.sort((a, b) => a.backingObject?.value[this.property!].value >= b.backingObject?.value[this.property!].value ? 1 : -1)
                 }
         }
 
-        this.search(this.searchText);
+        this.search(this.searchText, notifyUpdate);
+        this.updateIDs();
     }
 
-    updateSort(property: string, descending: boolean)
+    updateSort(property: string | undefined, descending: boolean | undefined, doSort: boolean)
     {
         this.descending = descending;
         this.property = property;
 
-        this.sort();
+        if (doSort)
+        {
+            this.sort(true);
+        }
     }
 
-    updateValues(values: Field<T>[])
+    updateValues(values: TableRowModel[])
     {
         this.values = [...values];
         this.calculatedValues = [...values];
-        this.sort();
+
+        this.sort(false);
+
+        this.visualValues = [];
+        this.loadNextChunk();
+
+        this.onUpdate?.();
     }
 
-    push(value: Field<T>)
+    push(value: TableRowModel)
     {
         this.values.push(value);
-        this.sort();
+        this.sort(false);
+
+        this.visualValues = [];
+        this.loadNextChunk();
+
+        this.onUpdate?.();
     }
 
     remove(id: string)
     {
-        this.values = this.values.filter(v => v.value.id.value != id);
-        this.calculatedValues = this.calculatedValues.filter(v => v.value.id.value != id);
+        this.values = this.values.filter(v => v.backingObject?.value.id.value != id);
+        this.calculatedValues = this.calculatedValues.filter(v => v.backingObject?.value.id.value != id);
+
+        this.visualValues = [];
+        this.loadNextChunk();
+
+        this.onUpdate?.();
     }
 
-    search(search: string)
+    search(search: string, notifyUpdate: boolean = true)
     {
         this.searchText = search;
-        if (this.searchText == "" || this.values.length <= 0 || typeof this.values[0].value[this.property] !== "string")
+        if (!this.property)
         {
-            this.calculatedValues = this.values;
+            return;
+        }
+
+        if (this.searchText == "" || this.values.length <= 0 || typeof this.values[0].backingObject?.value[this.property].value !== "string")
+        {
+            this.calculatedValues = [...this.values];
         }
         else
         {
-            this.calculatedValues = this.values.filter(
-                v => v.value[this.property].toLowerCase().indexOf(this.searchText.toLowerCase()) != -1)
+            this.calculatedValues = [...this.values.filter(
+                v => v.backingObject?.value[this.property].value.toLowerCase().indexOf(this.searchText.toLowerCase()) != -1)]
         }
+
+        if (notifyUpdate)
+        {
+            this.updateIDs();
+
+            this.visualValues = [];
+            this.loadNextChunk();
+
+            this.onUpdate?.();
+        }
+    }
+
+    protected updateIDs()
+    {
+        this.calculatedValues.forEach(v => v.id = (this.currentID++).toString());
     }
 }
 
-export class IGroupableSortedCollection<T extends IGroupable & { [key: string]: string } & IIdentifiable>
-    extends SortedCollection<T>
+export class IGroupableSortedCollection extends SortedCollection
 {
-    dataType: DataType;
-    constructor(dataType: DataType, values: Field<T>[], property: string)
+    private dataType: DataType;
+
+    constructor(dataType: DataType, values: TableRowModel[], property?: string, descending?: boolean)
     {
-        super(values, property);
+        super(values, property, descending);
         this.dataType = dataType;
     }
 
-    protected sort()
+    protected sort(notifyUpdate: boolean)
     {
         if (this.property == "groups")
         {
-            this.groupSort();
+            this.groupSort(notifyUpdate);
         }
         else
         {
-            super.sort();
+            super.sort(notifyUpdate);
         }
     }
 
-    search(search: string)
+    search(search: string, notifyUpdate: boolean = true)
     {
         if (this.property == "groups")
         {
-            this.groupSearch(search);
+            this.groupSearch(search, notifyUpdate);
         }
         else
         {
-            super.search(search);
+            super.search(search, notifyUpdate);
         }
     }
 
-    groupSort()
+    protected groupSort(notifyUpdate: boolean)
     {
         if (this.dataType == DataType.NameValuePairs)
         {
@@ -152,28 +207,39 @@ export class IGroupableSortedCollection<T extends IGroupable & { [key: string]: 
             this.internalGroupSort(app.currentVault.groupStore.sortedPasswordsGroups);
         }
 
-        this.search(this.searchText);
+        this.search(this.searchText, notifyUpdate);
+        super.updateIDs();
     }
 
-    groupSearch(search: string)
+    protected groupSearch(search: string, notifyUpdate: boolean)
     {
         this.searchText = search;
         if (this.searchText == "")
         {
-            this.calculatedValues = this.values;
+            this.calculatedValues = [...this.values];
         }
         else
         {
             if (this.dataType == DataType.Passwords)
             {
                 this.calculatedValues =
-                    this.values.filter(v => this.internalGroupSearch(this.searchText, v.value.groups.value, app.currentVault.groupStore.passwordGroups));
+                    [...this.values.filter(v => this.internalGroupSearch(this.searchText, v.backingObject?.value.groups.value, app.currentVault.groupStore.passwordGroups))];
             }
             else if (this.dataType == DataType.NameValuePairs)
             {
                 this.calculatedValues =
-                    this.values.filter(v => this.internalGroupSearch(this.searchText, v.value.groups.value, app.currentVault.groupStore.valuesGroups));
+                    [...this.values.filter(v => this.internalGroupSearch(this.searchText, v.backingObject?.value.groups.value, app.currentVault.groupStore.valuesGroups))];
             }
+        }
+
+        if (notifyUpdate)
+        {
+            this.updateIDs();
+
+            this.visualValues = [];
+            this.loadNextChunk();
+
+            this.onUpdate?.();
         }
     }
 
@@ -183,40 +249,40 @@ export class IGroupableSortedCollection<T extends IGroupable & { [key: string]: 
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.value.groups.value.size == 0)
+                if (a.backingObject?.value.groups.value.size == 0)
                 {
                     return 1;
                 }
 
-                if (b.value.groups.value.size == 0)
+                if (b.backingObject?.value.groups.value.size == 0)
                 {
                     return -1;
                 }
 
                 return getLowestGroup(a) >= getLowestGroup(b) ? 1 : -1;
-            })
+            });
         }
         else
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.value.groups.value.size == 0)
+                if (a.backingObject?.value.groups.value.size == 0)
                 {
                     return -1;
                 }
 
-                if (b.value.groups.value.size == 0)
+                if (b.backingObject?.value.groups.value.size == 0)
                 {
                     return 1;
                 }
 
                 return getLowestGroup(a) <= getLowestGroup(b) ? 1 : -1;
-            })
+            });
         }
 
-        function getLowestGroup(item: Field<T>): number
+        function getLowestGroup(item: TableRowModel): number
         {
-            return Math.min(...item.value.groups.value.map(id => sortedGroups.findIndex(g => g.value.id.value == id)));
+            return Math.min(...item.backingObject?.value.groups.value.map((id: string) => sortedGroups.findIndex(g => g.value.id.value == id)));
         }
     }
 

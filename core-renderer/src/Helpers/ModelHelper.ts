@@ -1,5 +1,5 @@
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
-import { CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowValue } from "../Types/Models";
+import { AtRiskModel, CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowModel, TableRowValue } from "../Types/Models";
 import { Ref, computed, ref } from "vue";
 import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
 import app from "../Objects/Stores/AppStore";
@@ -335,7 +335,7 @@ export async function createCollapsibleTableRowModels<T extends IPrimaryDataObje
                         app.popups.showBreachedPasswordPopup(p);
                     };
 
-                    addAtRiskValues("This domain had a data breach. Click to learn more!",
+                    addAtRiskValues("This domain had a data breach! Click here to learn more",
                         app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0], onClick);
                 });
                 break;
@@ -505,6 +505,114 @@ export async function createCollapsibleTableRowModels<T extends IPrimaryDataObje
                         (sortedCollection.values as Field<IPrimaryDataObject>[]).indexOf(b.data) ? 1 : -1;
                 });
             }
+        }
+    }
+}
+
+let modelID = 0;
+export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dataType: DataType, allValues: Field<T>[])
+{
+    const newModels = [];
+    if (dataType == DataType.Passwords && app.currentVault.passwordStore.activeAtRiskPasswordType != AtRiskType.None)
+    {
+        switch (app.currentVault.passwordStore.activeAtRiskPasswordType)
+        {
+            case AtRiskType.Old:
+                app.currentVault.passwordStore.oldPasswords.value.forEach(p =>
+                {
+                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.value.oldPasswordDays.value} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
+                });
+                break;
+            case AtRiskType.Duplicate:
+                app.currentVault.passwordStore.duplicatePasswords.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("This Password is used more than once", app.currentVault.passwordStore.passwordsByID.value.get(k)!);
+                });
+                break;
+            case AtRiskType.Weak:
+                app.currentVault.passwordStore.weakPasswords.value.forEach(p =>
+                {
+                    const passwordStore: Field<ReactivePassword> = app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0];
+                    addAtRiskValues(passwordStore.value.isWeakMessage.value, passwordStore);
+                });
+                break;
+            case AtRiskType.ContainsLogin:
+                app.currentVault.passwordStore.containsLoginPasswords.value.forEach(p =>
+                {
+                    addAtRiskValues("This Password contains its Username", app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
+                });
+                break;
+            case AtRiskType.Breached:
+                app.currentVault.passwordStore.breachedPasswords.forEach(p =>
+                {
+                    const onClick = () =>
+                    {
+                        app.popups.showBreachedPasswordPopup(p);
+                    };
+
+                    addAtRiskValues("This domain had a data breach! Click here to learn more",
+                        app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0], onClick);
+                });
+                break;
+        }
+    }
+    else if (dataType == DataType.NameValuePairs && app.currentVault.valueStore.activeAtRiskValueType != AtRiskType.None)
+    {
+        switch (app.currentVault.valueStore.activeAtRiskValueType)
+        {
+            case AtRiskType.Old:
+                app.currentVault.valueStore.oldNameValuePairs.value.forEach(v =>
+                {
+                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.value.oldPasswordDays.value} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
+                });
+                break;
+            case AtRiskType.Duplicate:
+                app.currentVault.valueStore.duplicateNameValuePairs.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairsByID.value.get(k)!);
+                });
+                break;
+            case AtRiskType.WeakPhrase:
+                app.currentVault.valueStore.weakPassphraseValues.value.forEach(v =>
+                {
+                    const valueStore: Field<ReactiveValue> = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0];
+                    addAtRiskValues(valueStore.value.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
+                });
+                break;
+            case AtRiskType.Weak:
+                app.currentVault.valueStore.weakPasscodeValues.value.forEach(v =>
+                {
+                    const valueStore: Field<ReactiveValue> = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0];
+                    addAtRiskValues(valueStore.value.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
+                });
+        }
+    }
+    else 
+    {
+        newModels.push(...allValues.map(v => buildModel(v)));
+    }
+
+    return newModels;
+
+    function addAtRiskValues<U extends IIdentifiable>(message: string, value: Field<U>, onClick?: () => void)
+    {
+        newModels.push(buildModel(value as any as Field<T>, message, onClick))
+    }
+
+    function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void): TableRowModel
+    {
+        modelID += 1;
+
+        let atRiskModel: AtRiskModel | undefined = undefined;
+        if (atRiskMessage)
+        {
+            atRiskModel = { message: atRiskMessage, onClick: onAtRiskClicked }
+        }
+
+        return {
+            id: modelID.toString(),
+            backingObject: v,
+            atRiskModel,
         }
     }
 }

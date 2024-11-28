@@ -41,7 +41,7 @@ export default defineComponent({
     },
 	emits: ["update:modelValue"],
 	props: ["modelValue", "color", 'height', 'minHeight', "width", 'minWidth', 'maxWidth', "labelBackground"],
-	setup(props)
+	setup(props, ctx)
 	{
         const id = ref(useId());
 
@@ -49,8 +49,8 @@ export default defineComponent({
 		const computedHeight: ComputedRef<string> = computed(() => props.height ?? '4vh');
 		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? '30px');
 
-        const modelValue: ComputedRef<Ref<string>> = computed(() => props.modelValue);
-        const placeholderValue: Ref<string> = ref(modelValue.value.value);
+        const modelValue: Ref<string> = ref(props.modelValue);
+        const placeholderValue: Ref<string> = ref(modelValue.value);
 
         let floatLabelStyle = computed(() => {
             return {
@@ -76,7 +76,8 @@ export default defineComponent({
 
 		function onInput(value: string | undefined)
 		{
-			modelValue.value.value = value ?? '';
+			modelValue.value = value ?? '';
+            ctx.emit("update:modelValue", value);
 		}
 
 		return {

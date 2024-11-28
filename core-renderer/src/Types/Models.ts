@@ -3,13 +3,39 @@ import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "@vaultic/shared/Types/Device";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ImportableDisplayField } from "./Fields";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
 import { IPrimaryDataObject } from "./DataTypes";
+import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
 
 export interface TableColumnModel 
 {
     header: string;
     field: string;
+    startingWidth?: string;
+    component?: string;
+    data?: { [key: string]: any };
+}
+
+export interface TableRowModel
+{
+    id: string;
+    atRiskModel?: AtRiskModel;
+    backingObject?: Field<IIdentifiable & { [key: string]: any }>;
+}
+
+export interface TableCollections 
+{
+    activeIndex: () => number;
+    collections: SortedCollection[];
+}
+
+export interface TableDataSource
+{
+    active: ComputedRef<boolean>;
+    color: ComputedRef<string>;
+    values: ComputedRef<any[]>;
+    pinnedValues?: ComputedRef<any[]>;
+    columns: ComputedRef<TableColumnModel[]>;
 }
 
 export interface SmallMetricGaugeModel
@@ -44,6 +70,7 @@ export interface TableRowData
     isPinned?: boolean;
     values: TableRowValue[];
     atRiskModel?: AtRiskModel;
+    backingObject?: Field<any>;
     onPin?: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
@@ -133,7 +160,7 @@ export interface GridDefinition
 
 export interface GroupIconModel
 {
-    iconDisplayText: string;
+    icon: string;
     toolTipText: string;
     color: string;
 }

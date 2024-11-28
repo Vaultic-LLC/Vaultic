@@ -9,6 +9,7 @@ import { setupCalendar } from 'v-calendar-tw';
 import app from './core/Objects/Stores/AppStore';
 import PrimeVue from 'primevue/config';
 import Aura from '@primevue/themes/aura';
+import ConfirmationService from 'primevue/confirmationservice';
 
 api.setAPI(window.api);
 
@@ -99,5 +100,6 @@ function initApp()
 		}
 	});
 
+	app.use(ConfirmationService);
 	app.mount("#app");
 }

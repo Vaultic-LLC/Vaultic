@@ -1,7 +1,7 @@
 <template>
-    <div ref="groupIcon" class="groupIcon">
-        <span class="groupText">
-            {{ groupModel.iconDisplayText }}
+    <div ref="groupIcon" class="groupIconContainer">
+        <span class="groupIconContainer__iconContainer">
+            <i :class='`pi ${groupModel.icon} groupIconContainer__icon`'></i>
         </span>
     </div>
 </template>
@@ -42,26 +42,35 @@ export default defineComponent({
 })
 </script>
 <style>
-.groupIcon {
+.groupIconContainer {
     width: clamp(15.5px, 1.4vw, 40px);
     aspect-ratio: 1 / 1;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-left: 5px;
-    margin-right: 5px;
     transition: 0.5s;
-    background: v-bind('groupModel.color');
-    box-shadow: 0 0 5px v-bind('groupModel.color');
+    /* background: v-bind('groupModel.color'); */
+    /* box-shadow: 0 0 5px v-bind('groupModel.color'); */
+    background: color-mix(in srgb, v-bind('groupModel.color'), transparent 84%);
+    margin: 2px;
+    will-change: transform;
 }
 
-.groupIcon:hover {
+.groupIconContainer:hover {
     transform: scale(1.1);
 }
 
-.groupText {
+.groupIconContainer__iconContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     user-select: none;
     font-size: clamp(10px, 0.7vw, 16px);
+}
+
+.groupIconContainer__icon {
+    color: v-bind('groupModel.color');
+    font-size: 20px !important;
 }
 </style>

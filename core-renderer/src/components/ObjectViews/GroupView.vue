@@ -5,6 +5,8 @@
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
         <ColorPickerInputField class="groupView__color" :label="'Color'" :color="groupColor" v-model="groupState.color.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :minWidth="'125px'" />
+        <TextInputField class="groupView__icon" :label="'Icon'" :color="groupColor" v-model="groupState.icon.value"
+            :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :minWidth="'125px'" />
         <TableTemplate ref="tableRef" id="addGroupTable" class="scrollbar border" :scrollbar-size="1"
             :color="groupColor" :border="true" :headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
             :showEmptyMessage="mounted && tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
@@ -403,7 +405,7 @@ export default defineComponent({
 <style>
 #addGroupTable {
     position: relative;
-    grid-row: 5 / span 8;
+    grid-row: 7 / span 8;
     grid-column: 4 / span 9;
     min-width: 410px;
     min-height: 182px;
@@ -416,6 +418,11 @@ export default defineComponent({
 
 .groupView__color {
     grid-row: 3 / span 2;
+    grid-column: 4 / span 2;
+}
+
+.groupView__icon {
+    grid-row: 5 / span 2;
     grid-column: 4 / span 2;
 }
 </style>

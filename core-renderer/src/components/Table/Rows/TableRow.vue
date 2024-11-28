@@ -286,4 +286,3 @@ export default defineComponent({
     align-items: center;
 }
 </style>
-../../../Types/Colors

@@ -1,5 +1,6 @@
 import { rowChunkAmount } from "../../Constants/Misc";
 
+// TODO: remove
 export default class InfiniteScrollCollection<T>
 {
     chunkSize: number;
