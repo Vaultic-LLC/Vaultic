@@ -1,7 +1,7 @@
 <template>
     <div class="vaulticTableContainer">
         <ConfirmDialog></ConfirmDialog>
-        <DataTable scrollable removableSort :value="rowValues" :frozenValue="pinnedRowValues"
+        <DataTable scrollable removableSort :value="rowValues" paginator :rows="15" :rowsPerPageOptions="[15, 30, 50]"
             resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable" :dataKey="'id'"
             @update:sortOrder="onSortOrder" @update:sortField="onSortField"
             :pt="{
@@ -13,12 +13,43 @@
                     id: tableContainerID,
                     class: 'vaulticTableContainer__dataTableTableContainer'
                 },
-                table:'vaulticTableContainer__dataTableTable',
                 bodyRow: ({ context }) => 
                 {
                     return {
                         class: 'vaulticTableContainer__dataTableRow',
-                        style: { 'animation-delay': `${(context.index % rowChunkAmount) / 8}s` }
+                        style: { 'animation-delay': `${(Math.min(context.index, 10) / 8)}s` }
+                    }
+                },
+                emptyMessage: 'vaulticTableContainer__emptyMessage',
+                emptyMessageCell: 'vaulticTableContainer__emptyMessageCell',
+                pcPaginator: () => 
+                {
+                    return {
+                        paginatorContainer: 'vaulticTableContainer__paginatorContainer',
+                        root: 'vaulticTableContainer__paginator',
+                        page: 'vaulticTableContainer__pageIcon',
+                        first: 'vaulticTableContainer__paginatorNavigationIcon',
+                        prev: 'vaulticTableContainer__paginatorNavigationIcon',
+                        next: 'vaulticTableContainer__paginatorNavigationIcon',
+                        last: 'vaulticTableContainer__paginatorNavigationIcon',
+                        pcRowPerPageDropdown: () => 
+                        {
+                            return {
+                                root: 'vaulticTableContainer__pageCountSelect',
+                                // @ts-ignore
+                                option: ({ context }) => 
+                                {
+                                    if (context.selected)
+                                    {
+                                        return {
+                                            style: {
+                                                'background': `color-mix(in srgb, ${primaryColor}, transparent 84%) !important`
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }">
@@ -26,6 +57,9 @@
                 <div class="vaulticTableContainer__tabContainer">
                     <TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
                 </div>
+            </template>
+            <template #empty>
+                {{ emptyMessage }}
             </template>
             <Column v-for="(column) in columns" :key="column.field" :field="column.field" :header="column.header" :columnKey="getColumnID()" sortable 
                 class="vaulticTableContainer__column" :headerStyle="{'width': `${column.startingWidth ?? 'auto'} !important`}"
@@ -54,14 +88,14 @@
                     </div>
                     <slot name="tableControls"></slot>
                 </template>
-                <template #body="{ data, frozenRow }">
+                <template #body="{ data }">
                     <div class="vaulticTableContainer__rowIconButtonsContainer">
                         <div v-if="(data as TableRowModel).atRiskModel" class="vaulticTableContainer__rowIconButton" @click="(data as TableRowModel).atRiskModel?.onClick">
                             <div class="tableRow__rowIconContainer">
                                 <AtRiskIndicator :color="color" :message="(data as TableRowModel).atRiskModel?.message" />
                             </div>
                         </div>
-                        <div v-if="internalOnPin" class="vaulticTableContainer__rowIconButton" @click="internalOnPin(frozenRow, (data as TableRowModel).backingObject)">
+                        <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel).isPinned === true, data)">
                             <ion-icon class="rowIcon magnet" name="magnet-outline"></ion-icon>
                         </div>
                         <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="onEdit((data as TableRowModel).backingObject)">
@@ -90,7 +124,7 @@ import GroupIconsRowValue from './Rows/GroupIconsRowValue.vue';
 import ConfirmDialog from "primevue/confirmdialog";
 import AtRiskIndicator from "./AtRiskIndicator.vue"
 
-import { HeaderTabModel, SortableHeaderModel, TableCollections, TableColumnModel, TableRowModel } from '../../Types/Models';
+import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
@@ -98,7 +132,6 @@ import { tween } from '../../Helpers/TweenHelper';
 import * as TWEEN from '@tweenjs/tween.js';
 import { useConfirm } from "primevue/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
-import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 
 
 // Base Component for all Tables.
@@ -123,32 +156,27 @@ export default defineComponent({
         ConfirmDialog,
         AtRiskIndicator
     },
-    props: ['color', 'pinnedValues', 'columns', 'scrollbarSize', 'headerModels', 'border', 'showEmptyMessage', 'emptyMessage', 'backgroundColor',
-        'headerTabs', 'headerHeight', 'hideHeader', 'initialPaddingRow', 'allowSearching', 'valueName', 'onPin', 'onEdit', 'onDelete', 'collections'],
+    props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
+        'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete'],
     setup(props)
     {
         const tableContainerID = ref(useId());
 
         const resizeObserver: ResizeObserver = new ResizeObserver(onResize);
         const key: Ref<string> = ref('');
-        const table: Ref<HTMLElement | null> = ref(null);
         const tableContainer: Ref<HTMLElement | null> = ref(null);
         const primaryColor: ComputedRef<string> = computed(() => props.color);
-        const rowGapValue: ComputedRef<string> = computed(() => props.rowGap ?? "0px");
         const columns: ComputedRef<TableColumnModel[]> = computed(() => props.columns);
-        const headers: ComputedRef<SortableHeaderModel[]> = computed(() => props.headerModels ?? []);
         const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
         const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
-        const currentHeaderTabs: ComputedRef<HeaderTabModel[]> = computed(() => props.headerTabs ?? []);
         const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
-        const useInitalPaddingRow: ComputedRef<boolean> = computed(() => props.initialPaddingRow === false ? false : true);
 
         const showSearchBar: ComputedRef<boolean> = computed(() => props.allowSearching != undefined ? props.allowSearching : true);
-        const tableCollections: Ref<TableCollections> = ref(props.collections);    
-        const activeTableCollection: ComputedRef<SortedCollection> = computed(() => tableCollections.value.collections[tableCollections.value.activeIndex()]);
+        const tableDataSources: Ref<TableDataSources> = ref(props.dataSources);    
+        const activeTableDataSource: ComputedRef<TableDataSouce> = computed(() => tableDataSources.value.dataSources[tableDataSources.value.activeIndex()]);
         const rowValues: Ref<TableRowModel[]> = ref([]);
 
-        const pinnedRowValues: Ref<TableRowModel[]> = ref(props.pinnedValues ?? []);
+        const pinnedRowValues: Ref<TableRowModel[] | undefined> = ref(props.pinnedValues ?? []);
         const searchText: Ref<string | undefined > = ref();
 
         let tweenGroup: TWEEN.Group | undefined = undefined;
@@ -261,8 +289,8 @@ export default defineComponent({
             const loadMoreRowsThreshold: number = Math.max(1 / (0.000009 * ((tableContainer.value?.scrollHeight ?? 2) - (tableContainer.value?.offsetHeight ?? 1))), 200);
             if (!tableContainer.value?.offsetHeight || (tableContainer.value?.scrollTop + loadMoreRowsThreshold) >= (tableContainer.value?.scrollHeight - tableContainer.value?.offsetHeight))
             {
-                activeTableCollection.value.loadNextChunk();
-                rowValues.value = activeTableCollection.value.visualValues;
+                activeTableDataSource.value.collection.loadNextChunk();
+                reSetRowValues();
             }
 
             lastCallTime = Date.now();
@@ -281,51 +309,43 @@ export default defineComponent({
         //     key.value = Date.now().toString();
         // });
 
-        function internalOnPin(isPinning: boolean, backingObject: any)
+        function internalOnPin(isPinned: boolean, model: TableRowModel)
         {
-            if (isPinning)
+            if (isPinned)
             {
-                const index = rowValues.value.indexOf(backingObject);
-                if (index < 0)
-                {
-                    return;
-                }
-    
-                rowValues.value.splice(index, 1);
-                pinnedRowValues.value.push(backingObject);
+                model.isPinned = false;
+                activeTableDataSource.value.pinnedCollection?.remove(model.backingObject!.value.id.value);
+                activeTableDataSource.value.collection.push(model);
             }
-            else 
+            else
             {
-                const index = pinnedRowValues.value.indexOf(backingObject);
-                if (index < 0)
-                {
-                    return;
-                }
-    
-                pinnedRowValues.value.splice(index, 1);
-                rowValues.value.push(backingObject);
+                model.isPinned = true;
+                activeTableDataSource.value.pinnedCollection?.push(model);
+                activeTableDataSource.value.collection.remove(model.backingObject!.value.id.value);
             }
 
-            props.onPin?.(isPinning, backingObject);
+            props.onPin?.(isPinned, model.backingObject);
         }
 
         function onSortOrder(value: undefined | number)
         {
-            activeTableCollection.value.updateSort(activeTableCollection.value.property, value == -1, true);
+            activeTableDataSource.value.collection.updateSort(activeTableDataSource.value.collection.property, value == -1, true);
+            activeTableDataSource.value.pinnedCollection?.updateSort(activeTableDataSource.value.pinnedCollection.property, value == -1, true);
         }
 
         function onSortField(value: string)
         {
             // don't actually do the sort yet since onSortOrder will be called after
-            activeTableCollection.value.updateSort(value, activeTableCollection.value.descending, false);
+            activeTableDataSource.value.collection.updateSort(value, activeTableDataSource.value.collection.descending, false);
+            activeTableDataSource.value.pinnedCollection?.updateSort(value, activeTableDataSource.value.pinnedCollection.descending, false);
         }
 
         const confirm = useConfirm();
         const deleteConfirm = (backingObject: any) => 
         {
             confirm.require({
-                message: `Are you sure you want to delete this ${props.valueName}?`,
-                header: `Delete ${props.valueName}`,
+                message: `Are you sure you want to delete this ${activeTableDataSource.value.friendlyDataTypeName}?`,
+                header: `Delete ${activeTableDataSource.value.friendlyDataTypeName}`,
                 icon: 'pi pi-info-circle',
                 rejectLabel: 'Cancel',
                 rejectProps: {
@@ -346,18 +366,27 @@ export default defineComponent({
 
         function onTableCollectionUpdate()
         {
-            rowValues.value = activeTableCollection.value.visualValues;
+            reSetRowValues();
         }
 
         function onSearch(value: string | undefined)
         {
-            activeTableCollection.value.search(value ?? "");
+            activeTableDataSource.value.collection.search(value ?? "");
         }
 
-        watch(() => activeTableCollection.value, () => 
+        function reSetRowValues()
         {
-            rowValues.value = activeTableCollection.value.visualValues;
-            searchText.value = activeTableCollection.value.searchText;
+            // rowValues.value = activeTableDataSource.value.collection.visualValues;
+            // pinnedRowValues.value = activeTableDataSource.value.pinnedCollection?.visualValues ?? [];
+
+            rowValues.value = activeTableDataSource.value.pinnedCollection?.visualValues != undefined ? [...activeTableDataSource.value.pinnedCollection?.visualValues] : [];
+            rowValues.value.push(...activeTableDataSource.value.collection.visualValues);
+        }
+
+        watch(() => activeTableDataSource.value, () => 
+        {
+            reSetRowValues();
+            searchText.value = activeTableDataSource.value.collection.searchText;
         });
 
         watch(() => props.color, () =>
@@ -367,9 +396,16 @@ export default defineComponent({
     
         onMounted(() =>
         {
-            if (tableCollections.value)
+            if (tableDataSources.value)
             {
-                tableCollections.value.collections.forEach(c => c.onUpdate = onTableCollectionUpdate);
+                tableDataSources.value.dataSources.forEach(d => 
+                {
+                    d.collection.onUpdate = onTableCollectionUpdate;
+                    if (d.pinnedCollection)
+                    {
+                        d.pinnedCollection.onUpdate = onTableCollectionUpdate;  
+                    }
+                });
             }
 
             tableContainer.value = document.getElementById(tableContainerID.value);
@@ -405,18 +441,13 @@ export default defineComponent({
             searchText,
             showSearchBar,
             key,
-            table,
             tableContainer,
             primaryColor,
             scrollbarColor,
             thumbColor,
-            rowGapValue,
-            headers,
             applyBorder,
             backgroundColor,
-            currentHeaderTabs,
             scrollbarClass,
-            useInitalPaddingRow,
             checkScrollHeight,
             scrollToTop,
             calcScrollbarColor,
@@ -444,6 +475,9 @@ export default defineComponent({
     background: transparent;
     padding: 0;
     height: 6%;
+
+    /* so that there isn't a little bit of border over the scrollbar on the right */
+    width: calc(100% - clamp(7px, 0.7vw, 10px));
 }
 
 .vaulticTableContainer__tabContainer {
@@ -465,13 +499,15 @@ export default defineComponent({
     overflow-x: hidden !important;
     overflow-y: scroll !important;
     background: v-bind(backgroundColor);
-}
-
-:deep(.vaulticTableContainer__dataTableTable){
+    border-bottom-left-radius: 20px;
 }
 
 :deep(.vaulticTableContainer__headerCell) {
     border-right-width: 1px;
+}
+
+:deep(.vaulticTableContainer__headerCell:focus-visible){
+    outline: 1px solid v-bind(primaryColor) !important;
 }
 
 :deep(.vaulticTableContainer__headerCell--reOrderable) {
@@ -543,6 +579,19 @@ export default defineComponent({
     border-bottom-right-radius: 20px;
 }
 
+:deep(.vaulticTableContainer__emptyMessage) {
+    background: transparent !important;
+    opacity: 0;
+    animation: fadeIn 1s linear forwards;
+}
+
+:deep(.vaulticTableContainer__emptyMessageCell) {
+    text-align: center;
+    color: #c1c1c1;
+    font-size: clamp(12px, 0.8vw, 24px);
+    text-wrap: wrap;
+}
+
 .vaulticTableContainer__rowIconButtonsContainer {
     display: flex;
     justify-content: space-around;
@@ -570,5 +619,38 @@ export default defineComponent({
 .vaulticTableContainer__rowIconButton:hover .magnet {
     color: v-bind(primaryColor);
     transform: rotate(134deg) scale(1.05);
+}
+
+:deep(.vaulticTableContainer__paginatorContainer) {
+    transform: translateY(-100%);
+    background: transparent;
+    border-bottom-left-radius: 20px;
+    width: calc(100% - clamp(7px, 0.7vw, 10px));
+}
+
+:deep(.vaulticTableContainer__paginator) {
+    border-bottom-left-radius: 20px;
+    background: #181822 !important;
+}
+
+:deep(.vaulticTableContainer__pageIcon:focus-visible),
+:deep(.vaulticTableContainer__paginatorNavigationIcon:focus-visible) {
+    outline: 1px solid v-bind(primaryColor);
+}
+
+:deep(.vaulticTableContainer__pageIcon.p-paginator-page-selected){
+    background: color-mix(in srgb, v-bind(primaryColor), transparent 84%)
+}
+
+:deep(.vaulticTableContainer__pageCountSelect) {
+    background: v-bind(backgroundColor) !important;
+}
+
+:deep(.vaulticTableContainer__pageCountSelect.p-focus) {
+    border-color: v-bind(primaryColor) !important;
+}
+
+:deep(.vaulticTableContainer__pageCountSelectOption) {
+    background: color-mix(in srgb, v-bind(primaryColor), transparent 84%) !important;
 }
 </style>

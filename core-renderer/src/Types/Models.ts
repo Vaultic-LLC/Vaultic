@@ -19,14 +19,22 @@ export interface TableColumnModel
 export interface TableRowModel
 {
     id: string;
+    isPinned?: boolean;
     atRiskModel?: AtRiskModel;
     backingObject?: Field<IIdentifiable & { [key: string]: any }>;
 }
 
-export interface TableCollections 
+export interface TableDataSouce 
+{
+    friendlyDataTypeName: string;
+    collection: SortedCollection;
+    pinnedCollection?: SortedCollection;
+}
+
+export interface TableDataSources 
 {
     activeIndex: () => number;
-    collections: SortedCollection[];
+    dataSources: TableDataSouce[];
 }
 
 export interface TableDataSource

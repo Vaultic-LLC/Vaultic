@@ -34,13 +34,14 @@ export class SortedCollection
 
     loadNextChunk()
     {
-        this.visualValues.push(...this.calculatedValues.splice(0, rowChunkAmount))
+        this.visualValues.push(...this.calculatedValues.splice(0, 200))
     }
 
     protected sort(notifyUpdate: boolean)
     {
         if (this.values.length == 0 || this.descending == undefined || this.property == undefined)
         {
+            this.calculatedValues = [...this.values];
             return;
         }
 
@@ -119,7 +120,7 @@ export class SortedCollection
     remove(id: string)
     {
         this.values = this.values.filter(v => v.backingObject?.value.id.value != id);
-        this.calculatedValues = this.calculatedValues.filter(v => v.backingObject?.value.id.value != id);
+        this.sort(false);
 
         this.visualValues = [];
         this.loadNextChunk();

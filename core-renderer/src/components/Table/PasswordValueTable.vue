@@ -1,8 +1,8 @@
 <template>
     <div class="passwordValueTableContainer">
-        <VaulticTable ref="tableRef" id="passwordValueTable" :valueName="'Password'" :color="color" :columns="tableColumns" :values="currentCollectionForTable" 
-        :headerTabs="headerTabs" :collections="tableCollections"
-            :onPin="onPinPassword" :onEdit="onEditPassword" :onDelete="onPasswordDeleteInitiated">
+        <VaulticTable ref="tableRef" id="passwordValueTable" :dataTypeName="dataTypeName" :color="color" :columns="tableColumns" :values="currentCollectionForTable" 
+        :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
+            :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
@@ -32,28 +32,19 @@
 import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
-import SlideInRow from './Rows/SlideInRow.vue';
-import PasswordRow from "./Rows/PasswordRow.vue"
-import NameValuePairRow from './Rows/NameValuePairRow.vue';
-import TableHeaderRow from './Header/TableHeaderRow.vue';
-import TableTemplate from './TableTemplate.vue';
-import CollapsibleTableRow from './Rows/CollapsibleTableRow.vue';
 import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue';
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
-import SearchBar from './Controls/SearchBar.vue';
 import VaulticTable from './VaulticTable.vue';
 
-import { CollapsibleTableRowModel, HeaderTabModel, SortableHeaderModel, TableCollections, TableColumnModel, TableRowModel, emptyHeader } from '../../Types/Models';
+import { HeaderTabModel, TableDataSources, TableColumnModel, TableRowModel } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
-import { createSortableHeaderModels, getEmptyTableMessage, getNoValuesApplyToFilterMessage, getPasswordValueTableRowModels } from '../../Helpers/ModelHelper';
-import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
+import { getEmptyTableMessage, getNoValuesApplyToFilterMessage, getPasswordValueTableRowModels } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
 import { DataType, Filter, FilterStatus, IFilterable, IGroupable } from '../../Types/DataTypes';
-import { HeaderDisplayField } from '../../Types/Fields';
 import { Field, IIdentifiable } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
@@ -62,16 +53,9 @@ export default defineComponent({
     {
         VaulticTable,
         ObjectPopup,
-        TableTemplate,
         AddDataTableItemButton,
-        TableHeaderRow,
-        CollapsibleTableRow,
-        PasswordRow,
-        NameValuePairRow,
-        SlideInRow,
         EditPasswordPopup,
         EditValuePopup,
-        SearchBar,
     },
     setup()
     {
@@ -87,9 +71,6 @@ export default defineComponent({
         const nameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, []);
         const pinnedNameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, []);
 
-        let rowComponent: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ? 'PasswordRow' : 'NameValuePairRow');
-        let collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>> = ref(new InfiniteScrollCollection<CollapsibleTableRowModel>());
-
         let showEditPasswordPopup: Ref<boolean> = ref(false);
         let currentEditingPasswordModel: Ref<ReactivePassword | undefined> = ref(undefined);
 
@@ -99,21 +80,24 @@ export default defineComponent({
         let deletePassword: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
         let deleteValue: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
 
-        const passwordSearchText: Ref<string> = ref('');
-        const valueSearchText: Ref<string> = ref('');
-        const currentSearchText: ComputedRef<Ref<string>> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
-            passwordSearchText : valueSearchText);
+        const dataTypeName: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Password" : "Value");
 
-        const passwordsForTable: Ref<TableRowModel[]> = ref([]);
         const currentCollectionForTable: ComputedRef<IGroupableSortedCollection> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? passwords : nameValuePairs);
-        
-        const tableCollections: Reactive<TableCollections> = reactive(
+        const tableDataSources: Reactive<TableDataSources> = reactive(
         {
             activeIndex: () => app.activePasswordValuesTable == DataType.Passwords ? 0 : 1,
-            collections: 
+            dataSources: 
             [
-                passwords,
-                nameValuePairs
+                {
+                    friendlyDataTypeName: "Password",
+                    collection: passwords,
+                    pinnedCollection: pinnedPasswords
+                },
+                {
+                    friendlyDataTypeName: "Value",
+                    collection: nameValuePairs,
+                    pinnedCollection: pinnedNameValuePairs
+                }
             ]
         });
 
@@ -178,75 +162,6 @@ export default defineComponent({
                 onClick: () => { app.activePasswordValuesTable = DataType.NameValuePairs; }
             }
         ];
-
-        const passwordActiveHeader: Ref<number> = ref(1);
-        const valueActiveHeader: Ref<number> = ref(1);
-
-        const passwordHeaderDisplayFields: HeaderDisplayField[] = [
-            {
-                displayName: "Groups",
-                backingProperty: "groups",
-                width: 'clamp(75px, 5vw, 150px)',
-                clickable: true,
-                centered: true,
-                headerSpaceRight: '20px'
-            },
-            {
-                displayName: "Password For",
-                backingProperty: "passwordFor",
-                width: 'clamp(110px, 7vw, 250px)',
-                clickable: true
-            },
-            {
-                displayName: "Username",
-                backingProperty: "login",
-                width: 'clamp(100px, 9vw, 300px)',
-                clickable: true
-            }
-        ];
-
-        const valueHeaderDisplayFields: HeaderDisplayField[] = [
-            {
-                displayName: "Groups",
-                backingProperty: "groups",
-                width: 'clamp(75px, 5vw, 150px)',
-                clickable: true,
-                centered: true,
-                headerSpaceRight: '20px'
-            },
-            {
-                displayName: "Name",
-                backingProperty: "name",
-                width: 'clamp(110px, 7vw, 250px)',
-                clickable: true
-            },
-            {
-                displayName: "Type",
-                backingProperty: "valueType",
-                width: 'clamp(100px, 9vw, 300px)',
-                clickable: true
-            }
-        ];
-
-        const passwordHeaders: SortableHeaderModel[] = createSortableHeaderModels(passwordActiveHeader, passwordHeaderDisplayFields,
-            passwords, pinnedPasswords, setModels);
-        passwordHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
-
-        const valueHeaders: SortableHeaderModel[] = createSortableHeaderModels(valueActiveHeader, valueHeaderDisplayFields,
-            nameValuePairs, pinnedNameValuePairs, setModels);
-        valueHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()])
-
-        const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
-        {
-            switch (app.activePasswordValuesTable)
-            {
-                case DataType.NameValuePairs:
-                    return valueHeaders;
-                case DataType.Passwords:
-                default:
-                    return passwordHeaders;
-            }
-        });
 
         function filter<T extends IFilterable & IIdentifiable & IGroupable & { [key: string]: string }>(dataType: DataType,
             newValue: Field<Filter>[], oldValue: Field<Filter>[], localVariable: IGroupableSortedCollection, originalVariable: Field<T>[])
@@ -327,11 +242,11 @@ export default defineComponent({
             switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    nameValuePairs.updateValues(getPasswordValueTableRowModels(DataType.NameValuePairs, app.currentVault.valueStore.nameValuePairs));
+                    nameValuePairs.updateValues(getPasswordValueTableRowModels(DataType.NameValuePairs, app.currentVault.valueStore.unpinnedValues));
                     break;
                 case DataType.Passwords:
                 default:
-                    passwords.updateValues(getPasswordValueTableRowModels(DataType.Passwords, app.currentVault.passwordStore.passwords));
+                    passwords.updateValues(getPasswordValueTableRowModels(DataType.Passwords, app.currentVault.passwordStore.unpinnedPasswords));
             }
 
             if (tableRef.value)
@@ -373,6 +288,42 @@ export default defineComponent({
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
+        }
+
+        function onPin(isPinned: boolean, dataType: any)
+        {
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                onPinPassword(isPinned, dataType);
+            }
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            {
+                onPinValue(isPinned, dataType);
+            }
+        }
+
+        function onEdit(dataType: any)
+        {
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                onEditPassword(dataType);
+            }
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            {
+                onEditValue(dataType);
+            }
+        }
+
+        function onDelete(dataType: any)
+        {
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                onPasswordDeleteInitiated(dataType);
+            }
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            {
+                onValueDeleteInitiated(dataType);
+            }
         }
 
         function onEditPassword(password: Field<ReactivePassword>)
@@ -459,28 +410,45 @@ export default defineComponent({
             }
         }
 
-        function onPinPassword(isPinning: boolean, value: Field<ReactivePassword>)
+        function onPinPassword(isPinned: boolean, value: Field<ReactivePassword>)
         {
-            if (isPinning)
-            {
-                app.userPreferences.addPinnedPassword(value.value.id.value);
-            }
-            else 
+            if (isPinned)
             {
                 app.userPreferences.removePinnedPasswords(value.value.id.value);
 
                 // make sure password is still in current filters
                 let activeFilters: Field<Filter>[] = app.currentVault.filterStore.activePasswordFilters;
 
-                // check to see if its in search text first 
-                // TODO: should be able to do vaulticTable. Or do I need to? Will the DataTable already filter it out if I have search text filled in?
+                // password isn't in current filters, remove it
+                if (activeFilters.length > 0 && activeFilters.filter(f => value.value.filters.value.has(f.value.id.value)).length > 0)
+                {
+                    passwords.remove(value.value.id.value);
+                }
+            }
+            else
+            {
+                app.userPreferences.addPinnedPassword(value.value.id.value);
+            }
+        }
+
+        function onPinValue(isPinned: boolean, value: Field<ReactivePassword>)
+        {
+            if (isPinned)
+            {
+                app.userPreferences.removePinnedValues(value.value.id.value);
+
+                // make sure value is still in current filters
+                let activeFilters: Field<Filter>[] = app.currentVault.filterStore.activeNameValuePairFilters;
 
                 // values isn't in current filters, remove it
                 if (activeFilters.length > 0 && activeFilters.filter(f => value.value.filters.value.has(f.value.id.value)).length > 0)
                 {
-                    const modelIndex: number = passwordsForTable.value.findIndex(m => m.backingObject == value);
-                    passwordsForTable.value.splice(modelIndex, 1);
+                    nameValuePairs.remove(value.value.id.value);
                 }
+            }
+            else
+            {
+                app.userPreferences.addPinnedValue(value.value.id.value);
             }
         }
 
@@ -495,20 +463,10 @@ export default defineComponent({
             app.userDataBreaches.removeEvent('onBreachDismissed', initPasswords);
         });
 
-        watch(() => app.activePasswordValuesTable, (newValue) =>
+        watch(() => app.activePasswordValuesTable, () =>
         {
-            switch (newValue)
-            {
-                case DataType.NameValuePairs:
-                    rowComponent.value = 'NameValuePairRow';
-                    break;
-                case DataType.Passwords:
-                default:
-                    rowComponent.value = "PasswordRow";
-            }
-
             setModels();
-        })
+        });
 
         watch(() => app.currentVault.filterStore.activePasswordFilters, (newValue, oldValue) =>
         {
@@ -542,50 +500,33 @@ export default defineComponent({
             initValues();
         });
 
-        watch(() => passwordSearchText.value, (newValue) =>
-        {
-            passwords.search(newValue);
-            setModels();
-            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-        });
-
-        watch(() => valueSearchText.value, (newValue) =>
-        {
-            nameValuePairs.search(newValue);
-            setModels();
-            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-        });
-
         watch(() => app.settings.value.multipleFilterBehavior.value, () =>
         {
             init();
         });
 
         return {
+            dataTypeName,
             currentCollectionForTable,
             tableColumns,
             readOnly,
             tableRef,
             activeTable,
             color,
-            headerModels,
-            rowComponent,
-            collapsibleTableRowModels,
             showEditPasswordPopup,
             currentEditingPasswordModel,
             showEditValuePopup,
             currentEditingValueModel,
-            currentSearchText,
             headerTabs,
             emptyTableMessage,
-            tableCollections,
+            tableDataSources,
             onEditPasswordPopupClose,
             onEditValuePopupClose,
             onDeletePasswordConfirmed,
             onDeleteValueConfirmed,
-            onEditPassword,
-            onPasswordDeleteInitiated,
-            onPinPassword
+            onPin,
+            onEdit,
+            onDelete,
         }
     }
 })
