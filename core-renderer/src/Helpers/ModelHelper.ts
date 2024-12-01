@@ -1,5 +1,5 @@
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
-import { AtRiskModel, SelectableTableRowModel, SortableHeaderModel, TableRowModel } from "../Types/Models";
+import { AtRiskModel, SortableHeaderModel, TableRowModel } from "../Types/Models";
 import { Ref, computed, ref } from "vue";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
@@ -60,8 +60,7 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
 }
 
 let filterGroupModelID = 0;
-export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[],
-    onClick?: (value: T) => Promise<void>)
+export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[])
 {
     let models: TableRowModel[] = [];
     if (groupFilterType == DataType.Groups && passwordValueType == DataType.Passwords && app.currentVault.groupStore.activeAtRiskPasswordGroupType != AtRiskType.None)
@@ -146,7 +145,7 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         models.push(buildModel(value as any as Field<T>, message));
     }
 
-    function buildModel(v: Field<T>, message?: string): SelectableTableRowModel
+    function buildModel(v: Field<T>, message?: string): TableRowModel
     {
         filterGroupModelID += 1;
 
@@ -159,14 +158,7 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         return {
             id: filterGroupModelID.toString(),
             atRiskModel,
-            backingObject: v,
-            onClick: async function ()
-            {
-                if (onClick)
-                {
-                    await onClick(v.value);
-                }
-            }
+            backingObject: v
         }
     }
 }

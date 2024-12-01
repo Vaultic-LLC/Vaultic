@@ -7,23 +7,12 @@
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :minWidth="'125px'" />
         <TextInputField class="groupView__icon" :label="'Icon'" :color="groupColor" v-model="groupState.icon.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :minWidth="'125px'" />
-        <TableTemplate ref="tableRef" id="addGroupTable" class="scrollbar border" :scrollbar-size="1"
-            :color="groupColor" :border="true" :headerModels="tableHeaderModels" :emptyMessage="emptyMessage"
-            :showEmptyMessage="mounted && tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
-            @scrolledToBottom="tableRowDatas.loadNextChunk()">
-            <template #headerControls>
-                <SearchBar v-model="searchText" :color="groupColor" :width="'10vw'" :maxWidth="'250px'"
-                    :minWidth="'130px'" />
-            </template>
-            <template #body>
-                <SelectableTableRow v-for="(trd, index) in tableRowDatas.visualValues" class="hover" :key="trd.id"
-                    :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="groupColor" />
-            </template>
-        </TableTemplate>
+        <VaulticTable ref="tableRef" id="addGroupTable" :color="groupColor" :columns="tableColumns" 
+            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" />
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, onUpdated, ref, watch } from 'vue';
+import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, onUpdated, reactive, ref, watch } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -32,19 +21,23 @@ import SearchBar from '../Table/Controls/SearchBar.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
+import VaulticTable from '../Table/VaulticTable.vue';
 
-import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
-import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
+import { GridDefinition, HeaderTabModel, SelectableBackingObject, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
-import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
-import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
-import { api } from '../../API';
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
-import { HeaderDisplayField } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
+
+interface SelectablePrimaryObject extends SelectableBackingObject
+{
+    passwordFor?: Field<string>;
+    login?: Field<string>;
+    name?: Field<string>;
+    type?: Field<any>;
+}
 
 export default defineComponent({
     name: "GroupView",
@@ -56,7 +49,8 @@ export default defineComponent({
         SearchBar,
         TableTemplate,
         TableHeaderRow,
-        SelectableTableRow
+        SelectableTableRow,
+        VaulticTable
     },
     props: ['creating', 'model'],
     setup(props)
@@ -67,16 +61,8 @@ export default defineComponent({
         const groupState: Ref<Group> = ref(props.model);
         const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor.value);
 
-        const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-
-        const title: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
-            'Passwords in Group' : 'Values in Group');
-
-        // @ts-ignore
-        const tableRowDatas: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
-
-        const passwordSortedCollection: SortedCollection<ReactivePassword> = new SortedCollection(app.currentVault.passwordStore.passwords, "passwordFor");
-        const valueSortedCollection: SortedCollection<ReactiveValue> = new SortedCollection(app.currentVault.valueStore.nameValuePairs, "name");
+        const passwordSortedCollection: SortedCollection = new SortedCollection([]);
+        const valueSortedCollection: SortedCollection = new SortedCollection([]);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -95,23 +81,6 @@ export default defineComponent({
             return "";
         })
 
-        let tableHeaderModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
-        {
-            switch (app.activePasswordValuesTable)
-            {
-                case DataType.NameValuePairs:
-                    return createSortableHeaderModels<ReactiveValue>(
-                        activeValueHeader, valueHeaderDisplayField, valueSortedCollection, undefined, setTableRows);
-                case DataType.Passwords:
-                default:
-                    return createSortableHeaderModels<ReactivePassword>(
-                        activePasswordHeader, passwordHeaderDisplayFields, passwordSortedCollection, undefined, setTableRows);
-            }
-        });
-
-        let headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
-            passwordHeaderTab : valueHeaderTab);
-
         const gridDefinition: GridDefinition =
         {
             rows: 13,
@@ -119,11 +88,6 @@ export default defineComponent({
             columns: 15,
             columnWidth: 'clamp(20px, 4vw, 100px)'
         };
-
-        const activePasswordHeader: Ref<number> = ref(1);
-        const activeValueHeader: Ref<number> = ref(1);
-        const activeHeader: ComputedRef<number> = computed(() => app.activePasswordValuesTable ==
-            DataType.Passwords ? activePasswordHeader.value : activeValueHeader.value);
 
         const passwordHeaderTab: HeaderTabModel[] = [
             {
@@ -143,146 +107,122 @@ export default defineComponent({
             }
         ];
 
-        const passwordHeaderDisplayFields: HeaderDisplayField[] = [
-            {
-                backingProperty: "",
-                displayName: "  ",
-                width: 'clamp(50px, 4vw, 100px)',
-                clickable: false
-            },
-            {
-                backingProperty: "passwordFor",
-                displayName: "Password For",
-                width: 'clamp(100px, 7vw, 200px)',
-                clickable: true
-            },
-            {
-                backingProperty: "login",
-                displayName: "Username",
-                width: 'clamp(100px, 7vw, 200px)',
-                clickable: true
-            }
-        ];
+        let headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
+            passwordHeaderTab : valueHeaderTab);
 
-        const valueHeaderDisplayField: HeaderDisplayField[] = [
+        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
+        {
+            const models: TableColumnModel[] = [];
+            if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                backingProperty: " ",
-                displayName: " ",
-                width: 'clamp(50px, 4vw, 100px)',
-                clickable: false
-            },
-            {
-                backingProperty: "name",
-                displayName: "Name",
-                width: 'clamp(100px, 7vw, 200px)',
-                clickable: true
-            },
-            {
-                displayName: "Type",
-                backingProperty: "valueType",
-                width: 'clamp(100px, 7vw, 200px)',
-                clickable: true
+                models.push({ header: "", field: "isActive", component: 'SelectorButtonTableRowValue', data: { 'color': groupColor, onClick: onPasswordSelected } });
+                models.push({ header: "Password For", field: "passwordFor" });
+                models.push({ header: "Username", field: "login" });
             }
-        ];
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            {
+                models.push({ header: "", field: "isActive", component: 'SelectorButtonTableRowValue', data: { 'color': groupColor, onClick: onValueSelected } });
+                models.push({ header: "Name", field: "name" });
+                models.push({ header: "Type", field: "type" });
+            }
+
+            return models;
+        });
+
+        const tableDataSources: Reactive<TableDataSources> = reactive(
+        {
+            activeIndex: () => app.activePasswordValuesTable == DataType.Passwords ? 0 : 1,
+            dataSources: 
+            [
+                {
+                    friendlyDataTypeName: "Password",
+                    collection: passwordSortedCollection,
+                },
+                {
+                    friendlyDataTypeName: "Value",
+                    collection: valueSortedCollection,
+                }
+            ]
+        });
+        
+        function onPasswordSelected(value: Field<SelectablePrimaryObject>)
+        {     
+            if (value.value.isActive.value)
+            {
+                groupState.value.passwords.value.delete(value.value.id.value);
+                value.value.isActive.value = false;
+            }
+            else
+            {
+                groupState.value.passwords.value.set(value.value.id.value, new Field(value.value.id.value));
+                value.value.isActive.value = true;
+            }
+        }
+
+        function onValueSelected(value: Field<SelectablePrimaryObject>)
+        {     
+            if (value.value.isActive.value)
+            {
+                groupState.value.values.value.delete(value.value.id.value);
+                value.value.isActive.value = false;
+            }
+            else
+            {
+                groupState.value.values.value.set(value.value.id.value, new Field(value.value.id.value));
+                value.value.isActive.value = true;
+            }
+        }
 
         function setTableRows()
         {
-            let pendingRows: Promise<SelectableTableRowData>[] = [];
+            let rows: TableRowModel[] = [];
             switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    pendingRows = valueSortedCollection.calculatedValues.map(async nvp =>
+                    rows = app.currentVault.valueStore.nameValuePairs.map(nvp =>
                     {
-                        const values: TextTableRowValue[] = [
-                            {
-                                component: "TableRowTextValue",
-                                value: nvp.value.name.value,
-                                copiable: false,
-                                width: 'clamp(100px, 7vw, 200px)'
-                            },
-                            {
-                                component: 'TableRowTextValue',
-                                value: nvp.value.valueType?.value ?? '',
-                                copiable: false,
-                                width: 'clamp(100px, 7vw, 200px)'
-                            }
-                        ]
+                        const selectablePrimaryObjectModel: SelectablePrimaryObject = 
+                        {
+                            isActive: new Field(groupState.value.values.value.has(nvp.value.id.value)),
+                            id: nvp.value.id,
+                            name: nvp.value.name,
+                            type: nvp.value.type
+                        };
 
-                        const id = await api.utilities.generator.uniqueId();
-                        return {
-                            id: id,
-                            key: nvp.value.id.value,
-                            values: values,
-                            isActive: ref(groupState.value.values.value.has(nvp.value.id.value)),
-                            selectable: true,
-                            onClick: async function ()
-                            {
-                                if (groupState.value.values.value.has(nvp.value.id.value))
-                                {
-                                    groupState.value.values.value.delete(nvp.value.id.value);
-                                }
-                                else
-                                {
-                                    groupState.value.values.value.set(nvp.value.id.value, new Field(nvp.value.id.value));
-                                }
-                            }
-                        }
+                        const row: TableRowModel = 
+                        {
+                            id: nvp.value.id.value,
+                            backingObject: new Field(selectablePrimaryObjectModel),
+                        };
+
+                        return row;
                     });
+
+                    valueSortedCollection.updateValues(rows);
+
                     break;
                 case DataType.Passwords:
                 default:
-                    pendingRows = passwordSortedCollection.calculatedValues.map(async p =>
+                    rows = app.currentVault.passwordStore.passwords.map(p =>
                     {
-                        const values: TextTableRowValue[] = [
-                            {
-                                component: "TableRowTextValue",
-                                value: p.value.passwordFor.value,
-                                copiable: false,
-                                width: 'clamp(100px, 7vw, 200px)'
-                            },
-                            {
-                                component: "TableRowTextValue",
-                                value: p.value.login.value,
-                                copiable: false,
-                                width: 'clamp(100px, 7vw, 200px)'
-                            }
-                        ];
+                        const selectablePrimaryObjectModel: SelectablePrimaryObject = 
+                        {
+                            isActive: new Field(groupState.value.passwords.value.has(p.value.id.value)),
+                            id: p.value.id,
+                            passwordFor: p.value.passwordFor,
+                            login: p.value.login
+                        };
 
-                        const id = await api.utilities.generator.uniqueId();
-                        const model: SelectableTableRowData = {
-                            id: id,
-                            key: p.value.id.value,
-                            values: values,
-                            isActive: ref(groupState.value.passwords.value.has(p.value.id.value)),
-                            selectable: true,
-                            onClick: async function ()
-                            {
-                                if (groupState.value.passwords.value.has(p.value.id.value))
-                                {
-                                    groupState.value.passwords.value.delete(p.value.id.value);                                
-                                }
-                                else
-                                {
-                                    groupState.value.passwords.value.set(p.value.id.value, new Field(p.value.id.value));
-                                }
-                            }
-                        }
-                        return model;
+                        const row: TableRowModel = 
+                        {
+                            id: p.value.id.value,
+                            backingObject: new Field(selectablePrimaryObjectModel),
+                        };
+
+                        return row;
                     });
-            }
 
-            if (pendingRows.length > 0)
-            {
-                Promise.all(pendingRows).then((rows) =>
-                {
-                    tableRowDatas.value.setValues(rows);
-                    if (tableRef.value)
-                    {
-                        // @ts-ignore
-                        tableRef.value.scrollToTop();
-                        setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-                    }
-                });
+                    passwordSortedCollection.updateValues(rows);
             }
         }
 
@@ -355,47 +295,17 @@ export default defineComponent({
             mounted.value = true;
         });
 
-        onUpdated(() =>
-        {
-            setTableRows();
-        });
-
-        watch(() => app.activePasswordValuesTable, () =>
-        {
-            setTableRows();
-        });
-
-        watch(() => app.currentVault.passwordStore.passwords.length, setTableRows);
-        watch(() => app.currentVault.valueStore.nameValuePairs.length, setTableRows);
-
-        watch(() => searchText.value.value, (newValue) =>
-        {
-            if (app.activePasswordValuesTable == DataType.Passwords)
-            {
-                passwordSortedCollection.search(newValue);
-            }
-            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
-            {
-                valueSortedCollection.search(newValue);
-            }
-
-            setTableRows();
-        });
-
         return {
             groupState,
-            title,
             groupColor,
-            tableHeaderModels,
-            activeHeader,
-            tableRowDatas,
             refreshKey,
             gridDefinition,
-            searchText,
             headerTabs,
             emptyMessage,
             mounted,
             tableRef,
+            tableColumns,
+            tableDataSources,
             onSave
         };
     },

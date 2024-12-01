@@ -14,16 +14,18 @@ export interface OrganizationStoreState extends StoreState
 
 export class OrganizationStore extends Store<OrganizationStoreState>
 {
+    private internalOrganizations: ComputedRef<Field<Organization>[]>;
     private internalPinnedOrganizations: ComputedRef<Field<Organization>[]>;
 
     get failedToRetrieveOrganizations() { return this.state.failedToRetrieveOrganizations.value; }
-    get organizations() { return this.state.organizations; }
+    get organizations() { return this.internalOrganizations; }
     get pinnedOrganizations() { return this.internalPinnedOrganizations.value; }
 
     constructor()
     {
         super('organizationStore');
 
+        this.internalOrganizations = computed(() => this.state.organizations.value.valueArray());
         this.internalPinnedOrganizations = computed(() => [new Field({ id: new Field(""), name: new Field(""), members: new Field(new Map()) })]);
     }
 
@@ -47,11 +49,16 @@ export class OrganizationStore extends Store<OrganizationStoreState>
             return false;
         }
 
+        if (!response.OrganizationsAndUsers)
+        {
+            return true;
+        }
+
         response.OrganizationsAndUsers?.forEach(o => 
         {
             const org: Organization =
             {
-                id: new Field(''),
+                id: new Field(o.OrganizationID.toString()),
                 organizationID: new Field(o.OrganizationID),
                 name: new Field(o.Name),
                 members: new Field(new Map())

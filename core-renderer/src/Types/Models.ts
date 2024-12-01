@@ -35,9 +35,9 @@ export interface TableRowModel
     state?: any;
 }
 
-export interface SelectableTableRowModel extends TableRowModel
+export interface SelectableBackingObject extends IIdentifiable
 {
-    onClick?: () => Promise<void>;
+    isActive: Field<boolean>;
 }
 
 export interface TableDataSouce 

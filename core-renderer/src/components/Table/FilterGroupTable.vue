@@ -198,12 +198,10 @@ export default defineComponent({
                     switch (app.activePasswordValuesTable)
                     {
                         case DataType.Passwords:
-                            passwordFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.Passwords, app.currentVault.filterStore.passwordFilters, 
-                                async (f: Filter) => await app.currentVault.filterStore.toggleFilter(f.id.value)));
+                            passwordFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.Passwords, app.currentVault.filterStore.passwordFilters));
                             break;
                         case DataType.NameValuePairs:
-                            valueFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.NameValuePairs, app.currentVault.filterStore.nameValuePairFilters,
-                                async (f: Filter) => await app.currentVault.filterStore.toggleFilter(f.id.value)));
+                            valueFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.NameValuePairs, app.currentVault.filterStore.nameValuePairFilters));
                             break;
                     }
                 default:

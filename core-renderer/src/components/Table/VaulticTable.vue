@@ -127,6 +127,7 @@ import ColorTableRowValue from './Rows/ColorTableRowValue.vue';
 import PropertySelectorCell from './Rows/PropertySelectorCell.vue';
 import EnumInputCell from './Rows/EnumInputCell.vue';
 import FilterValueSelectorCell from './Rows/FilterValueSelectorCell.vue';
+import EncryptedInputCell from "./Rows/EncryptedInputCell.vue"
 
 import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
@@ -162,7 +163,8 @@ export default defineComponent({
         ColorTableRowValue,
         PropertySelectorCell,
         EnumInputCell,
-        FilterValueSelectorCell
+        FilterValueSelectorCell,
+        EncryptedInputCell
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
         'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel'],
@@ -561,8 +563,8 @@ export default defineComponent({
 :deep(.vaulticTableContainer__dataTableRow) {
     height: clamp(40px, 3.5vw, 100px);
     background: transparent;
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
+    /* opacity: 0;
+    animation: fadeIn 1s linear forwards; */
 }
 
 :deep(.vaulticTableContainer__dataTableTableContainer::-webkit-scrollbar) {

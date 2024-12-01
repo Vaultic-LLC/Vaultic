@@ -14,8 +14,7 @@
                     <PasswordValueTable />
                 </div>
                 <div id="tables" v-else>
-                    <OrganizationsTable />
-                    <DevicesTable />
+                    <OrganizationDeviceTable />
                 </div>
             </Transition>
         </div>
@@ -58,8 +57,8 @@ import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import SideDrawer from "./components/SideDrawer.vue"
-import DevicesTable from './components/Table/DevicesTable.vue';
-import OrganizationsTable from './components/Table/OrganizationsTable.vue';
+import OrganizationDeviceTable from './components/Table/OrganizationDeviceTable.vue';
+// import OrganizationsTable from './components/Table/OrganizationsTable.vue';
 import ConfirmDialog from "primevue/confirmdialog";
 
 import { AccountSetupView } from './Types/Models';
@@ -90,8 +89,7 @@ export default defineComponent({
         LayoutIconCard,
         MenuWidget,
         SideDrawer,
-        DevicesTable,
-        OrganizationsTable,
+        OrganizationDeviceTable,
         ConfirmDialog
     },
     setup()

@@ -25,45 +25,35 @@
         <TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
             v-model="valuesState.additionalInformation.value" :width="'19vw'" :height="'18vh'" :maxHeight="'238px'"
             :minWidth="'216px'" :minHeight="'100px'" />
-        <TableTemplate ref="tableRef" id="valueView__addGroupsTable" class="scrollbar" :scrollbar-size="1"
-            :color="color" :headerModels="groupHeaderModels" :border="true" :emptyMessage="emptyMessage"
-            :showEmptyMessage="mounted && groupModels.visualValues.length == 0" :headerTabs="groupTab"
-            @scrolledToBottom="groupModels.loadNextChunk()">
-            <template #headerControls>
-                <SearchBar v-model="searchText" :color="color" :width="'8vw'" :maxWidth="'250px'" :minWidth="'100px'"
-                    :minHeight="'27px'" />
-            </template>
-            <template #body>
-                <SelectableTableRow v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
-                    :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="color" />
-            </template>
-        </TableTemplate>
+        <VaulticTable ref="tableRef" id="valueView__addGroupsTable" :color="color" :columns="tableColumns" 
+            :headerTabs="groupTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :searchBarSizeModel="searchBarSizeModel" />
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch } from 'vue';
+import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch, Reactive, reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
-import SearchBar from '../Table/Controls/SearchBar.vue';
-import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
-import TableTemplate from '../Table/TableTemplate.vue';
 import ToolTip from '../ToolTip.vue';
+import VaulticTable from '../Table/VaulticTable.vue';
 
-import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
+import { ComponentSizeModel, GridDefinition, HeaderTabModel, InputColorModel, SelectableBackingObject, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
-import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
+import { getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
-import { api } from "../../API"
 import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
-import { HeaderDisplayField } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
+
+interface SelectableGroup extends SelectableBackingObject
+{
+    name: Field<string>;
+    color: Field<string>;
+}
 
 export default defineComponent({
     name: "ValueView",
@@ -74,10 +64,8 @@ export default defineComponent({
         TextAreaInputField,
         EnumInputField,
         CheckboxInputField,
-        SearchBar,
         ToolTip,
-        TableTemplate,
-        SelectableTableRow
+        VaulticTable
     },
     props: ['creating', 'model'],
     setup(props)
@@ -90,10 +78,7 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        // @ts-ignore
-        const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(app.currentVault.groupStore.valuesGroups, "name"));
-        // @ts-ignore
-        const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
+        const groups: SortedCollection = new SortedCollection([], "name");
         const initalLength: Ref<number> = ref(valuesState.value.valueLength?.value ?? 0);
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
@@ -103,43 +88,21 @@ export default defineComponent({
             valuesState.value.valueType?.value == NameValuePairType.Passcode || valuesState.value.valueType?.value == NameValuePairType.Other);
         const randomValueType: ComputedRef<number> = computed(() => valuesState.value.valueType?.value == NameValuePairType.Passphrase ? 0 : 1);
 
-        const gridDefinition: GridDefinition = {
+        const gridDefinition: GridDefinition = 
+        {
             rows: 1,
             rowHeight: '100%',
             columns: 1,
             columnWidth: '100%'
-        }
+        };
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
 
-        const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-
         const emptyMessage: Ref<string> = ref(getObjectPopupEmptyTableMessage('Groups', "Value", "Group", props.creating));
 
-        const activeGroupHeader: Ref<number> = ref(1);
-        const groupHeaderDisplayFields: HeaderDisplayField[] = [
-            {
-                backingProperty: "",
-                displayName: " ",
-                width: 'clamp(25px, 4vw, 100px)',
-                clickable: false
-            },
-            {
-                backingProperty: "name",
-                displayName: "Name",
-                width: 'clamp(80px, 6vw, 150px)',
-                clickable: true
-            },
-            {
-                displayName: "Color",
-                backingProperty: "color",
-                width: 'clamp(50px, 4vw, 100px)',
-                clickable: true
-            }
-        ];
-
-        const groupTab: HeaderTabModel[] = [
+        const groupTab: HeaderTabModel[] = 
+        [
             {
                 name: 'Groups',
                 active: computed(() => true),
@@ -148,64 +111,71 @@ export default defineComponent({
             }
         ];
 
-        // @ts-ignore
-        const groupHeaderModels: SortableHeaderModel[] = createSortableHeaderModels<Group>(
-            activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels);
+        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
+        {
+            const models: TableColumnModel[] = [];
+            models.push({ header: "", field: "isActive", component: 'SelectorButtonTableRowValue', data: { 'color': color, onClick: onGroupSelected } });
+            models.push({ header: "Name", field: "name" });
+            models.push({ header: "Color", field: "color", component: "ColorTableRowValue" });
+
+            return models;
+        });
+
+        const tableDataSources: Reactive<TableDataSources> = reactive(
+        {
+            activeIndex: () => 0,
+            dataSources: 
+            [
+                {
+                    friendlyDataTypeName: "Group",
+                    collection: groups,
+                }
+            ]
+        });
+
+        const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
+            width: '8vw',
+            maxWidth: '250px',
+            minWidth: '100px',
+            minHeight: '27px'
+        });
+
+        function onGroupSelected(value: Field<SelectableGroup>)
+        {     
+            if (value.value.isActive.value)
+            {
+                valuesState.value.groups.value.delete(value.value.id.value);
+                value.value.isActive.value = false;
+            }
+            else
+            {
+                valuesState.value.groups.value.set(value.value.id.value, new Field(value.value.id.value));
+                value.value.isActive.value = true;
+            }
+        }
 
         function setGroupModels()
         {
-            const pendingRows = groups.value.calculatedValues.map(async g =>
+            const rows = app.currentVault.groupStore.valuesGroups.map(g =>
             {
-                const values: any[] =
-                    [
-                        {
-                            component: "TableRowTextValue",
-                            value: g.value.name.value,
-                            copiable: false,
-                            width: 'clamp(80px, 6vw, 150px)'
-                        },
-                        {
-                            component: "TableRowColorValue",
-                            color: g.value.color.value,
-                            copiable: true,
-                            width: 'clamp(50px, 4vw, 100px)',
-                            margin: false
-                        }
-                    ];
-
-                const id = await api.utilities.generator.uniqueId();
-                const model: SelectableTableRowData =
+                const selectableGroup: SelectableGroup = 
                 {
-                    id: id,
-                    key: g.value.id.value,
-                    values: values,
-                    isActive: ref(valuesState.value.groups.value.has(g.value.id.value)),
-                    selectable: true,
-                    onClick: async function ()
-                    {
-                        if (valuesState.value.groups.value.has(g.value.id.value))
-                        {
-                            valuesState.value.groups.value.delete(g.value.id.value);
-                        }
-                        else
-                        {
-                            valuesState.value.groups.value.set(g.value.id.value, new Field(g.value.id.value));
-                        }
-                    }
-                }
-                return model;
+                    isActive: new Field(valuesState.value.groups.value.has(g.value.id.value)),
+                    id: g.value.id,
+                    name: g.value.name,
+                    color: g.value.color
+                };
+
+                const row: TableRowModel = 
+                {
+                    id: g.value.id.value,
+                    backingObject: new Field(selectableGroup),
+                };
+
+                return row;
             });
 
-            Promise.all(pendingRows).then((rows) =>
-            {
-                groupModels.value.setValues(rows);
-                if (tableRef.value)
-                {
-                    // @ts-ignore
-                    tableRef.value.scrollToTop();
-                    setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-                }
-            });
+            groups.updateValues(rows);
         }
 
         function onSave()
@@ -286,26 +256,17 @@ export default defineComponent({
             showNotifyIfWeak.value = newValue == NameValuePairType.Passcode;
         });
 
-        watch(() => searchText.value.value, (newValue) =>
-        {
-            groups.value.search(newValue);
-            setGroupModels();
-        });
-
         return {
             valueInputField,
             initalLength,
             isInitiallyEncrypted,
             valueIsDirty,
-            groupHeaderModels,
-            groupModels,
             color,
             valuesState,
             refreshKey,
             gridDefinition,
             NameValuePairType,
             showNotifyIfWeak,
-            searchText,
             groupTab,
             emptyMessage,
             mounted,
@@ -313,6 +274,9 @@ export default defineComponent({
             tableRef,
             showRandom,
             randomValueType,
+            tableColumns,
+            tableDataSources,
+            searchBarSizeModel,
             onSave,
             onAuthenticationSuccessful
         };
