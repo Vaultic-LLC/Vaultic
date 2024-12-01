@@ -2,6 +2,10 @@
     <div class="objectPopupContainer">
         <div class="objectPopupGlass" @click.stop="doClosePopup">
         </div>
+        <!-- <Dialog v-model:visible="showDialog">
+            <template #container>
+            </template>
+        </Dialog> -->
         <div ref="objectPopup" class="objectyPopup">
             <div v-if="!doPreventClose" class="closeIconContainer" @click.stop="doClosePopup">
                 <ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
@@ -23,6 +27,8 @@
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
+import Dialog from 'primevue/dialog';
+
 import { DataType } from '../../Types/DataTypes';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '../../Types/Colors';
@@ -34,6 +40,10 @@ import { ClosePopupFuncctionKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "ObjectPopup",
+    components:
+    {
+        Dialog
+    },
     props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing"],
     setup(props)
     {
@@ -69,6 +79,8 @@ export default defineComponent({
 
         const previousSecondaryColorTwo: Ref<string> = ref('');
         const secondaryColorTwo: Ref<string> = ref('');
+
+        const showDialog: Ref<boolean> = ref(true);
 
         function transitionColors()
         {
@@ -226,6 +238,7 @@ export default defineComponent({
             computedMinHeight,
             computedMinWidth,
             pulsingWidth,
+            showDialog,
             zIndex: popupInfo.zIndex,
             doClosePopup,
         };

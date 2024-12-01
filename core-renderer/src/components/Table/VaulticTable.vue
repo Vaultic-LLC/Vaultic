@@ -70,11 +70,13 @@
                     <i v-else class="pi pi-arrow-up" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
                 <template #body="slotProps">
-                    <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
-                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" />
-                    <template v-else>
-                        {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
-                    </template>
+                    <KeepAlive>
+                        <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
+                            :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" />
+                        <template v-else>
+                            {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
+                        </template>
+                    </KeepAlive>
                 </template>
             </Column>
             <Column :columnKey="'tableControls'" class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false" 
