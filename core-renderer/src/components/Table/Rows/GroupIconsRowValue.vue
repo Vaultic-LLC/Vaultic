@@ -9,7 +9,7 @@ import { computed, ComputedRef, defineComponent } from 'vue';
 
 import GroupIcon from '../GroupIcon.vue';
 
-import { DataType, Group } from '../../../Types/DataTypes';
+import { DataType, Group, IGroupable } from '../../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
 import app from '../../../Objects/Stores/AppStore';
 import { GroupIconModel } from '../../../Types/Models';
@@ -24,12 +24,12 @@ export default defineComponent({
 	setup(props)
 	{
         const primaryColor: ComputedRef<string> = computed(() => props.data["color"].value);
-        const groups: ComputedRef<Map<string, Field<string>>> = computed(() => props.model);
+        const dataType: ComputedRef<Field<IGroupable>> = computed(() => props.model);
 
         let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
         {
             const groupsToUse = app.activePasswordValuesTable == DataType.Passwords ? app.currentVault.groupStore.passwordGroups : app.currentVault.groupStore.valuesGroups;
-            const allGroups: Field<Group>[] = groupsToUse.filter(g => groups.value.has(g.value.id.value));
+            const allGroups: Field<Group>[] = groupsToUse.filter(g => dataType.value.value.groups.value.has(g.value.id.value));
             if (allGroups.length <= 4)
             {
                 return allGroups.map((g) =>

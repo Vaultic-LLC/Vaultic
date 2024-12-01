@@ -143,6 +143,7 @@ export class SortedCollection
         else
         {
             this.calculatedValues = [...this.values.filter(
+                // @ts-ignore
                 v => v.backingObject?.value[this.property].value.toLowerCase().indexOf(this.searchText.toLowerCase()) != -1)]
         }
 
@@ -159,7 +160,7 @@ export class SortedCollection
 
     protected updateIDs()
     {
-        this.calculatedValues.forEach(v => v.id = (this.currentID++).toString());
+        //this.calculatedValues.forEach(v => v.id = (this.currentID++).toString());
     }
 }
 

@@ -115,7 +115,7 @@ export default defineComponent({
             const initialValue = options.value.filter(v => v.name == props.modelValue);
             if (initialValue.length > 0)
             {
-                selectedValue.value = initialValue;
+                selectedValue.value = initialValue[0];
             }
 
             if (!container.value)

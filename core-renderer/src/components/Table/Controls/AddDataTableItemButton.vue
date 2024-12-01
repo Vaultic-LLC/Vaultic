@@ -1,14 +1,6 @@
 <template>
 	<div class="addTableItem">
 		<AddButton :color="primaryColor" @click="doShowEditControlsPopup" :minSize="minButtonSize" />
-		<Teleport to="#body">
-			<Transition name="fade">
-				<ObjectPopup v-if="showEditControlsPopup" :minWidth="'800px'" :minHeight="'480px'"
-					:closePopup="closePopup">
-					<AddObjectPopup :initalActiveContent="initalActiveContent" />
-				</ObjectPopup>
-			</Transition>
-		</Teleport>
 	</div>
 </template>
 
@@ -18,6 +10,7 @@ import { defineComponent, Ref, ref, ComputedRef, computed } from 'vue';
 import AddButton from './AddButton.vue';
 import ObjectPopup from '../../../components/ObjectPopups/ObjectPopup.vue';
 import AddObjectPopup from "../../../components/ObjectPopups/AddObjectPopup.vue"
+import app from '../../../Objects/Stores/AppStore';
 
 export default defineComponent({
 	name: "AddDataTableItemButton",
@@ -33,24 +26,15 @@ export default defineComponent({
 		let primaryColor: ComputedRef<string> = computed(() => props.color);
 		let initalActiveContent: ComputedRef<number> = computed(() => props.initalActiveContentOnClick);
 
-		let showEditControlsPopup: Ref<boolean> = ref(false);
-
 		function doShowEditControlsPopup()
 		{
-			showEditControlsPopup.value = true;
-		}
-
-		function closePopup()
-		{
-			showEditControlsPopup.value = false;
+            app.popups.showAddDataTypePopup(props.initalActiveContentOnClick);
 		}
 
 		return {
 			primaryColor,
 			initalActiveContent,
-			showEditControlsPopup,
 			doShowEditControlsPopup,
-			closePopup
 		}
 	}
 })

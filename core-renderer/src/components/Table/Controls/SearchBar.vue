@@ -1,17 +1,7 @@
 <template>
 	<div class="searchBarContainer">
-		<!-- <input ref="input" required="false" class="seachBarInput" type="text" name="text" autocomplete="off"
-			:value="modelValue.value" @input="onInput(($event.target as HTMLInputElement).value)" @focus="onFocus"
-			@blur="onUnfocus" />
-		<label class="searchBarLabel">Search</label>
-		<div class="searchIcon" @click="onIconClick">
-			<ion-icon name="search-outline"></ion-icon>
-		</div> -->
         <FloatLabel variant="in" :dt="floatLabelStyle">
             <IconField>
-                <!-- <div class="searchIcon">
-                    <ion-icon name="search-outline"></ion-icon>
-                </div>            -->
                 <InputIcon class="pi pi-search" />
                 <InputText :dt="inputStyle" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput" />
             </IconField>
@@ -29,6 +19,7 @@ import FloatLabel from "primevue/floatlabel";
 import InputText from 'primevue/inputtext';
 import InputIcon from 'primevue/inputicon';
 import IconField from 'primevue/iconfield';
+import { ComponentSizeModel } from '../../../Types/Models';
 
 export default defineComponent({
 	name: "SearchBar",
@@ -40,14 +31,16 @@ export default defineComponent({
         IconField
     },
 	emits: ["update:modelValue"],
-	props: ["modelValue", "color", 'height', 'minHeight', "width", 'minWidth', 'maxWidth', "labelBackground"],
+	props: ["modelValue", "color", "labelBackground", "sizeModel"],
 	setup(props, ctx)
 	{
         const id = ref(useId());
 
-		const computedWidth: ComputedRef<string> = computed(() => props.width ?? "300px");
-		const computedHeight: ComputedRef<string> = computed(() => props.height ?? '4vh');
-		const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? '30px');
+        const sizeModel: ComputedRef<ComponentSizeModel> = computed(() => props.sizeModel);
+
+		const computedWidth: ComputedRef<string> = computed(() => sizeModel.value?.width ?? "300px");
+		const computedHeight: ComputedRef<string> = computed(() => sizeModel.value?.height ?? '4vh');
+		const computedMinHeight: ComputedRef<string> = computed(() => sizeModel.value?.minHeight ?? '30px');
 
         const modelValue: Ref<string> = ref(props.modelValue);
         const placeholderValue: Ref<string> = ref(modelValue.value);
@@ -82,6 +75,7 @@ export default defineComponent({
 
 		return {
             id,
+            sizeModel,
             placeholderValue,
 			defaultInputColor,
 			defaultInputTextColor,
@@ -103,74 +97,8 @@ export default defineComponent({
 	min-height: v-bind(computedMinHeight);
 	max-height: 50px;
 	width: v-bind('computedWidth');
-	min-width: v-bind('minWidth');
-	max-width: v-bind('maxWidth');
-	/* border: 1.5px solid v-bind(color);
-	border-radius: 2rem;
-	transition: border 300ms cubic-bezier(0.4, 0, 0.2, 1), .3s; */
-}
-
-/* .searchBarContainer .seachBarInput {
-	position: absolute;
-	top: 50%;
-	transform: translate(0.1vw, -50%);
-	border: 0;
-	width: 80%;
-	height: inherit;
-	left: 20%;
-	color: white;
-	background: none;
-	font-size: clamp(11px, 1.2vh, 25px);
-}
-
-.searchBarContainer .searchBarLabel {
-	position: absolute;
-	left: 20%;
-	top: 50%;
-	color: v-bind(defaultInputTextColor);
-	pointer-events: none;
-	transform: translate(5px, -50%);
-	transition: var(--input-label-transition);
-	background-color: #121218;
-	font-size: clamp(11px, 1.2vh, 25px);
-}
-
-.searchBarContainer.active {
-	outline: none;
-	border: 1.5px solid v-bind(color);
-}
-
-.searchBarContainer .seachBarInput:focus,
-.searchBarContainer .seachBarInput:valid {
-	border: 0;
-	outline: 0;
-}
-
-.searchBarContainer .seachBarInput:focus~label,
-.searchBarContainer .seachBarInput:valid~label {
-	top: 0;
-	transform: translateY(-80%) scale(0.8);
-	background-color: #15151b;
-	padding: 0 .2em;
-	color: v-bind(color);
-	left: 10px;
-} */
-
-.searchBarContainer .searchIcon {
-	position: absolute;
-	font-size: clamp(11px, 1.2vw, 25px);
-	top: 50%;
-	left: 5%;
-	height: 50%;
-	aspect-ratio: 1 /1;
-	transform: translateY(-50%);
-	color: v-bind(color);
-	border-radius: 50%;
-	/* border: 2px solid v-bind(color); */
-	transition: 0.3s;
-	display: flex;
-	justify-content: center;
-	align-items: center;
+	min-width: v-bind('sizeModel?.minWidth');
+	max-width: v-bind('sizeModel?.maxWidth');
 }
 
 </style>

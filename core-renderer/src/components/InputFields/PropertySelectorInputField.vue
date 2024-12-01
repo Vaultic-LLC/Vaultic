@@ -53,7 +53,7 @@ export default defineComponent({
             selectedValue.value = option;
             ctx.emit('update:modelValue', option?.df?.backingProperty ?? null);
 
-            if (option.df.type != selectedPropertyType)
+            if (option?.df?.type && option?.df?.type != selectedPropertyType)
             {
                 selectedPropertyType = option.df.type;
                 if (selectedPropertyType == PropertyType.Enum)
@@ -115,10 +115,10 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            const initialValue = options.value.filter(v => v.backingProperty == props.modelValue);
+            const initialValue = options.value.filter(v => v.df.backingProperty == props.modelValue);
             if (initialValue.length > 0)
             {
-                selectedValue.value = initialValue;
+                selectedValue.value = initialValue[0];
             }
 
             if (!container.value)

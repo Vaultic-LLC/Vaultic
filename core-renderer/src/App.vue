@@ -1,5 +1,6 @@
 <template>
     <Popups />
+    <ConfirmDialog></ConfirmDialog>
     <div id="mainUI" class="mainUI">
         <SideDrawer />
         <div class="center">
@@ -59,6 +60,7 @@ import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import SideDrawer from "./components/SideDrawer.vue"
 import DevicesTable from './components/Table/DevicesTable.vue';
 import OrganizationsTable from './components/Table/OrganizationsTable.vue';
+import ConfirmDialog from "primevue/confirmdialog";
 
 import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
@@ -89,7 +91,8 @@ export default defineComponent({
         MenuWidget,
         SideDrawer,
         DevicesTable,
-        OrganizationsTable
+        OrganizationsTable,
+        ConfirmDialog
     },
     setup()
     {
@@ -258,5 +261,9 @@ h2 {
 .tippy-box[data-theme~='material'][data-placement^='bottom-start']>.tippy-arrow {
     left: 10px !important;
     transform: translate(0, 0) !important;
+}
+
+ion-icon {
+    visibility: unset !important;
 }
 </style>

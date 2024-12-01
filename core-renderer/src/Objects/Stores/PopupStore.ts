@@ -5,7 +5,7 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { DisplayVault } from "@vaultic/shared/Types/Entities";
 import { IncorrectDeviceResponse, BaseResponse } from "@vaultic/shared/Types/Responses";
 import { ImportableDisplayField } from "../../Types/Fields";
-import { Organization } from "../../Types/DataTypes";
+import { DataType, Organization } from "../../Types/DataTypes";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -101,6 +101,9 @@ export function createPopupStore()
     const organizationPopupIsShowing: Ref<boolean> = ref(false);
     const onOrganizationPopupClose: Ref<(saved: boolean) => void> = ref((_) => { });
     const organizationModel: Ref<Organization | undefined> = ref(undefined);
+
+    const addDataTypePopupIsShowing: Ref<boolean> = ref(false);
+    const initialAddDataTypePopupContent: Ref<DataType | undefined> = ref();
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -344,6 +347,18 @@ export function createPopupStore()
         organizationPopupIsShowing.value = true;
     }
 
+    function showAddDataTypePopup(initialActiveContent: DataType)
+    {
+        initialAddDataTypePopupContent.value = initialActiveContent;
+        addDataTypePopupIsShowing.value = true;
+    }
+
+    function hideAddDataTypePopup()
+    {
+        initialAddDataTypePopupContent.value = undefined;
+        addDataTypePopupIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -385,6 +400,8 @@ export function createPopupStore()
         get organizationPopupIsShowing() { return organizationPopupIsShowing.value; },
         get organizationModel() { return organizationModel.value },
         get onOrganizationPopupClose() { return onOrganizationPopupClose.value; },
+        get addDataTypePopupIsShowing() { return addDataTypePopupIsShowing.value; },
+        get initialAddDataTypePopupContent() { return initialAddDataTypePopupContent.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -411,6 +428,8 @@ export function createPopupStore()
         showImportPopup,
         hideImportPopup,
         showVaultPopup,
-        showOrganizationPopup
+        showOrganizationPopup,
+        showAddDataTypePopup,
+        hideAddDataTypePopup
     }
 }

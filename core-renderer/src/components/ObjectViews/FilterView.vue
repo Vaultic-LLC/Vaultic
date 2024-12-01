@@ -3,21 +3,19 @@
         :gridDefinition="gridDefinition">
         <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
             :width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
-        <TableTemplate ref="tableRef" id="addFilterTable" class="scrollbar" :scrollbar-size="1" :color="color"
-            :row-gap="0" :border="true" :emptyMessage="emptyMessage"
-            :showEmptyMessage="filterState.conditions.value.size == 0" :headerTabs="headerTabs">
-            <template #headerControls>
-                <AddButton :color="color" @click="onAdd" />
+        <VaulticTable ref="tableRef" id="addFilterTable" :color="color" :columns="tableColumns" 
+            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
+            :allowSearching="false" :onDelete="onDelete">
+            <template #tableControls>
+                <Transition name="fade" mode="out-in">
+                    <AddButton :color="color" @click="onAdd" />
+                </Transition>
             </template>
-            <template #body>
-                <FilterConditionRow v-for="(fc, index) in  filterState.conditions.value" :key="fc[0]" :rowNumber="index"
-                    :color="color" :model="fc[1].value" :displayFieldOptions="displayFieldOptions" @onDelete="onDelete(fc[0])" />
-            </template>
-        </TableTemplate>
+        </VaulticTable>
     </ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, onMounted } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, Reactive, reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -25,15 +23,17 @@ import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import FilterConditionRow from '../Table/Rows/FilterConditionRow.vue';
+import VaulticTable from '../Table/VaulticTable.vue';
 
-import { DataType, defaultFilter, Filter } from '../../Types/DataTypes';
-import { GridDefinition, HeaderTabModel } from '../../Types/Models';
+import { DataType, defaultFilter, Filter, FilterCondition, FilterConditionType } from '../../Types/DataTypes';
+import { GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DisplayField, FilterablePasswordProperties, FilterableValueProperties } from '../../Types/Fields';
+import { DisplayField, FilterablePasswordProperties, FilterableValueProperties, PropertyType } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
+import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 
 export default defineComponent({
     name: "FilterView",
@@ -43,7 +43,8 @@ export default defineComponent({
         TableTemplate,
         TableHeaderRow,
         AddButton,
-        FilterConditionRow
+        FilterConditionRow,
+        VaulticTable
     },
     props: ['creating', 'model'],
     setup(props)
@@ -54,6 +55,8 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
         const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
+
+        const filterConditionModels: SortedCollection = new SortedCollection([]);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -77,6 +80,31 @@ export default defineComponent({
             }
         ];
 
+        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
+        {
+            const tableColumnsModels: TableColumnModel[] = [];
+            tableColumnsModels.push({ header: "Property", field: "property", component: "PropertySelectorCell",
+                data: { color: color.value, properties: displayFieldOptions.value, label: "Properties" } });
+            tableColumnsModels.push({ header: "Condition", field: "filterType", component: "EnumInputCell", 
+                data: { color: color.value, label: "Condition" } });
+            tableColumnsModels.push({ header: "Value", field: "value", component: "FilterValueSelectorCell", 
+                data: { color: color.value } });
+
+            return tableColumnsModels;
+        });
+
+        const tableDataSources: Reactive<TableDataSources> = reactive(
+        {
+            activeIndex: () => 0,
+            dataSources: 
+            [
+                {
+                    friendlyDataTypeName: "Filter Condition",
+                    collection: filterConditionModels,
+                }
+            ]
+        });
+        
         function onSave()
         {
             app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled);
@@ -143,20 +171,33 @@ export default defineComponent({
         async function onAdd()
         {
             const id = await generateUniqueIDForMap(filterState.value.conditions.value);
-            filterState.value.conditions.value.set(id,
-                new Field({
-                    id: new Field(id),
-                    property: new Field(''),
-                    value: new Field(''),
-                    filterType: new Field(undefined)
-                }));
+            const filterCondition: Field<FilterCondition> = new Field({
+                id: new Field(id),
+                property: new Field(''),
+                value: new Field(''),
+                filterType: new Field(undefined)
+            });
 
+            filterState.value.conditions.value.set(id, filterCondition);
+
+            const tableRowModel: TableRowModel = 
+            {
+                id: id,
+                backingObject:filterCondition,
+                state: {
+                    filterConditionType: FilterConditionType,
+                    inputType: PropertyType.String
+                }
+            };
+
+            filterConditionModels.push(tableRowModel);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function onDelete(id: string)
+        function onDelete(filterCondition: Field<FilterCondition>)
         {
-            filterState.value.conditions.value.delete(id);
+            filterState.value.conditions.value.delete(filterCondition.value.id.value);
+            filterConditionModels.remove(filterCondition.value.id.value);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
@@ -165,6 +206,23 @@ export default defineComponent({
             if (filterState.value.conditions.value.size == 0)
             {
                 onAdd();
+            }
+            else 
+            {
+                let models: TableRowModel[] = [];
+                filterState.value.conditions.value.forEach((v, k, map) =>
+                {
+                    models.push({
+                        id: k,
+                        backingObject: v,
+                        state: {
+                            filterConditionType: FilterConditionType,
+                            inputType: PropertyType.String
+                        }
+                    })
+                });
+
+                filterConditionModels.updateValues(models);
             }
         })
 
@@ -177,6 +235,8 @@ export default defineComponent({
             gridDefinition,
             emptyMessage,
             headerTabs,
+            tableColumns,
+            tableDataSources,
             onSave,
             onAdd,
             onDelete

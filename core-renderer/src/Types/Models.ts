@@ -7,6 +7,16 @@ import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
 import { IPrimaryDataObject } from "./DataTypes";
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
 
+export interface ComponentSizeModel 
+{
+    height?: string;
+    minHeight?: string;
+    maxHeight?: string;
+    width?: string;
+    minWidth?: string;
+    maxWidth?: string;
+}
+
 export interface TableColumnModel 
 {
     header: string;
@@ -22,6 +32,12 @@ export interface TableRowModel
     isPinned?: boolean;
     atRiskModel?: AtRiskModel;
     backingObject?: Field<IIdentifiable & { [key: string]: any }>;
+    state?: any;
+}
+
+export interface SelectableTableRowModel extends TableRowModel
+{
+    onClick?: () => Promise<void>;
 }
 
 export interface TableDataSouce 
@@ -106,14 +122,6 @@ export interface TextTableRowValue extends TableRowValue
 export interface ColorTableRowValue extends TableRowValue
 {
     color: string;
-}
-
-export interface SelectableTableRowData extends TableRowData
-{
-    key: string;
-    selectable: boolean;
-    isActive?: Ref<boolean>;
-    onClick?: () => Promise<void>;
 }
 
 export interface SelectorButtonModel

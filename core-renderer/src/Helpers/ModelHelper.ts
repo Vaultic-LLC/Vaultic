@@ -1,12 +1,10 @@
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
-import { AtRiskModel, CollapsibleTableRowModel, SelectableTableRowData, SortableHeaderModel, TableRowModel, TableRowValue } from "../Types/Models";
+import { AtRiskModel, SelectableTableRowModel, SortableHeaderModel, TableRowModel } from "../Types/Models";
 import { Ref, computed, ref } from "vue";
-import InfiniteScrollCollection from "../Objects/DataStructures/InfiniteScrollCollection";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
-import { api } from "../API";
-import { DataType, AtRiskType, Filter, IPrimaryDataObject } from "../Types/DataTypes";
+import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject } from "../Types/DataTypes";
 import { HeaderDisplayField } from "../Types/Fields";
 import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
 
@@ -61,455 +59,119 @@ export function createSortableHeaderModels<T extends { [key: string]: any } & II
     });
 }
 
-export function createPinnableSelectableTableRowModels<T extends { [key: string]: any } & IIdentifiable>(groupFilterType: DataType, passwordValueType: DataType,
-    selectableTableRowModels: Ref<InfiniteScrollCollection<SelectableTableRowData>>, sortedCollection: SortedCollection<T>, pinnedCollection: SortedCollection<T>,
-    getValues: (value: T) => TableRowValue[], selectable: boolean, isActiveProp: string, sortOnClick: boolean, onClick?: (value: T) => Promise<void>, onEdit?: (value: T) => void, onDelete?: (value: T) => void)
+let filterGroupModelID = 0;
+export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[],
+    onClick?: (value: T) => Promise<void>)
 {
-    const isFilter = groupFilterType == DataType.Filters;
-    const isGroup = groupFilterType == DataType.Groups;
-
-    selectableTableRowModels.value.setValues([]);
-    const temp: Promise<SelectableTableRowData>[] = [];
-
-    if (isGroup)
+    let models: TableRowModel[] = [];
+    if (groupFilterType == DataType.Groups && passwordValueType == DataType.Passwords && app.currentVault.groupStore.activeAtRiskPasswordGroupType != AtRiskType.None)
     {
-        if (passwordValueType == DataType.Passwords)
+        switch (app.currentVault.groupStore.activeAtRiskPasswordGroupType)
         {
-            switch (app.currentVault.groupStore.activeAtRiskPasswordGroupType)
-            {
-                case AtRiskType.Empty:
-                    app.currentVault.groupStore.emptyPasswordGroups.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
-                    });
-                    break;
-                case AtRiskType.Duplicate:
-                    app.currentVault.groupStore.duplicatePasswordGroups.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
-                    });
-                    break;
-            }
-        }
-        else if (passwordValueType == DataType.NameValuePairs)
-        {
-            switch (app.currentVault.groupStore.activeAtRiskValueGroupType)
-            {
-                case AtRiskType.Empty:
-                    app.currentVault.groupStore.emptyValueGroups.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
-                    });
-                    break;
-                case AtRiskType.Duplicate:
-                    app.currentVault.groupStore.duplicateValueGroups.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
-                    });
-                    break;
-            }
+            case AtRiskType.Empty:
+                app.currentVault.groupStore.emptyPasswordGroups.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
+                });
+                break;
+            case AtRiskType.Duplicate:
+                app.currentVault.groupStore.duplicatePasswordGroups.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
+                });
+                break;
         }
     }
-    else if (isFilter)
+    else if (groupFilterType == DataType.Groups && passwordValueType == DataType.NameValuePairs && app.currentVault.groupStore.activeAtRiskValueGroupType != AtRiskType.None)
     {
-        if (passwordValueType == DataType.Passwords)
+        switch (app.currentVault.groupStore.activeAtRiskValueGroupType)
         {
-            switch (app.currentVault.filterStore.activeAtRiskPasswordFilterType)
-            {
-                case AtRiskType.Empty:
-                    app.currentVault.filterStore.emptyPasswordFilters.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
-                    });
-                    break;
-                case AtRiskType.Duplicate:
-                    app.currentVault.filterStore.duplicatePasswordFilters.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
-                    });
-            }
-        }
-        else if (passwordValueType == DataType.NameValuePairs)
-        {
-            switch (app.currentVault.filterStore.activeAtRiskValueFilterType)
-            {
-                case AtRiskType.Empty:
-                    app.currentVault.filterStore.emptyValueFilters.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
-                    });
-                    break;
-                case AtRiskType.Duplicate:
-                    app.currentVault.filterStore.duplicateValueFilters.value.forEach((v, k, map) =>
-                    {
-                        addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
-                    });
-            }
+            case AtRiskType.Empty:
+                app.currentVault.groupStore.emptyValueGroups.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
+                });
+                break;
+            case AtRiskType.Duplicate:
+                app.currentVault.groupStore.duplicateValueGroups.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
+                });
+                break;
         }
     }
-
-    temp.push(...pinnedCollection.values.map(v => buildModel(v)));
-    temp.push(...sortedCollection.calculatedValues.map(v => buildModel(v)));
-
-    Promise.all(temp).then((rows) =>
+    else if (groupFilterType == DataType.Filters && passwordValueType == DataType.Passwords && app.currentVault.filterStore.activeAtRiskPasswordFilterType != AtRiskType.None)
     {
-        selectableTableRowModels.value.setValues(rows);
-    });
+        switch (app.currentVault.filterStore.activeAtRiskPasswordFilterType)
+        {
+            case AtRiskType.Empty:
+                app.currentVault.filterStore.emptyPasswordFilters.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
+                });
+                break;
+            case AtRiskType.Duplicate:
+                app.currentVault.filterStore.duplicatePasswordFilters.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
+                });
+        }
+    }
+    else if (groupFilterType == DataType.Filters && passwordValueType == DataType.NameValuePairs && app.currentVault.filterStore.activeAtRiskValueFilterType != AtRiskType.None)
+    {
+        switch (app.currentVault.filterStore.activeAtRiskValueFilterType)
+        {
+            case AtRiskType.Empty:
+                app.currentVault.filterStore.emptyValueFilters.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
+                });
+                break;
+            case AtRiskType.Duplicate:
+                app.currentVault.filterStore.duplicateValueFilters.value.forEach((v, k, map) =>
+                {
+                    addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
+                });
+        }
+    }
+    else
+    {
+        models = allValues.map(v => buildModel(v));
+    }
+
+    return models;
 
     function addAtRiskValues<U extends IIdentifiable>(message: string, value: Field<U>)
     {
-        pinnedCollection.remove(value.value.id.value);
-        sortedCollection.remove(value.value.id.value);
-
-        temp.push(buildModel(value as any as Field<T>, message));
+        models.push(buildModel(value as any as Field<T>, message));
     }
 
-    async function buildModel(v: Field<T>, message?: string): Promise<SelectableTableRowData>
+    function buildModel(v: Field<T>, message?: string): SelectableTableRowModel
     {
-        const id = await api.utilities.generator.uniqueId();
+        filterGroupModelID += 1;
+
+        let atRiskModel: AtRiskModel | undefined = undefined;
+        if (message)
+        {
+            atRiskModel = { message: message }
+        }
+
         return {
-            id: id,
-            key: v.value.id.value,
-            selectable: selectable,
-            isPinned: ((isFilter && app.userPreferences.pinnedFilters.value.has(v.value.id.value)) ||
-                (isGroup && app.userPreferences.pinnedGroups.value.has(v.value.id.value))),
-            isActive: ref(v.value[isActiveProp]?.value ?? false),
-            values: getValues(v.value),
-            atRiskModel:
-            {
-                message: message ?? "",
-            },
+            id: filterGroupModelID.toString(),
+            atRiskModel,
+            backingObject: v,
             onClick: async function ()
             {
                 if (onClick)
                 {
                     await onClick(v.value);
-                    if (sortOnClick)
-                    {
-                        sortedCollection.updateSort(sortedCollection.property, sortedCollection.descending);
-                        sortRows();
-                    }
                 }
-            },
-            onEdit: function ()
-            {
-                if (onEdit)
-                {
-                    onEdit(v.value);
-                }
-            },
-            onPin: function ()
-            {
-                if (((isFilter && app.userPreferences.pinnedFilters.value.has(v.value.id.value)) ||
-                    (isGroup && app.userPreferences.pinnedGroups.value.has(v.value.id.value))))
-                {
-                    if (isFilter)
-                    {
-                        app.userPreferences.removePinnedFilters(v.value.id.value);
-                    }
-                    else if (isGroup)
-                    {
-                        app.userPreferences.removePinnedGroups(v.value.id.value);
-                    }
-
-                    const index: number = pinnedCollection.values.indexOf(v);
-                    pinnedCollection.values.splice(index, 1);
-
-                    if (!sortedCollection.searchText || v.value[sortedCollection.property].toLowerCase().includes(sortedCollection.searchText.toLowerCase()))
-                    {
-                        sortedCollection.push(v);
-                    }
-                    else
-                    {
-                        const modelIndex: number = selectableTableRowModels.value.visualValues.findIndex(m => m.key = v.value.id.value);
-                        selectableTableRowModels.value.visualValues.splice(modelIndex, 1);
-                    }
-                }
-                else
-                {
-                    if (isFilter)
-                    {
-                        app.userPreferences.addPinnedFilter(v.value.id.value);
-                    }
-                    else if (isGroup)
-                    {
-                        app.userPreferences.addPinnedGroup(v.value.id.value);
-                    }
-
-                    const index: number = sortedCollection.values.indexOf(v);
-
-                    sortedCollection.values.splice(index, 1);
-                    pinnedCollection.push(v);
-                }
-
-                sortRows();
-            },
-            onDelete: function ()
-            {
-                if (onDelete)
-                {
-                    onDelete(v.value);
-                }
-            }
-        }
-    }
-
-    function sortRows()
-    {
-        selectableTableRowModels.value.visualValues.sort((a, b) =>
-        {
-            if (a.atRiskModel?.message && b.atRiskModel?.message)
-            {
-                return selectableTableRowModels.value.visualValues.indexOf(a) >= selectableTableRowModels.value.visualValues.indexOf(b) ? 1 : -1;
-            }
-            else if (a.atRiskModel?.message)
-            {
-                return -1;
-            }
-            else if (b.atRiskModel?.message)
-            {
-                return 1;
-            }
-            else if (pinnedCollection.values.find(pc => pc.value.id.value == a.key) && pinnedCollection.values.find(pc => pc.value.id.value == b.key))
-            {
-                return pinnedCollection.values.findIndex(pc => pc.value.id.value == a.key) >= pinnedCollection.values.findIndex(pc => pc.value.id.value == b.key) ? 1 : -1;
-            }
-            else if (pinnedCollection.values.find(pc => pc.value.id.value == a.key))
-            {
-                return -1;
-            }
-            else if (pinnedCollection.values.find(pc => pc.value.id.value == b.key))
-            {
-                return 1;
-            }
-
-            return sortedCollection.values.findIndex(sc => sc.value.id.value == a.key) >= sortedCollection.values.findIndex(sc => sc.value.id.value == b.key) ? 1 : -1;
-        });
-    }
-}
-
-export async function createCollapsibleTableRowModels<T extends IPrimaryDataObject>(
-    dataType: DataType, collapsibleTableRowModels: Ref<InfiniteScrollCollection<CollapsibleTableRowModel>>, sortedCollection: SortedCollection<T>,
-    pinnedCollection: SortedCollection<T>, getValues: (value: T) => TableRowValue[], onEdit: (value: T) => void, onDelete: (value: T) => void)
-{
-    const isPassword = dataType == DataType.Passwords;
-    const isValue = dataType == DataType.NameValuePairs;
-
-    collapsibleTableRowModels.value.setValues([]);
-    const temp: Promise<CollapsibleTableRowModel>[] = [];
-
-    if (isPassword)
-    {
-        switch (app.currentVault.passwordStore.activeAtRiskPasswordType)
-        {
-            case AtRiskType.Old:
-                app.currentVault.passwordStore.oldPasswords.value.forEach(p =>
-                {
-                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.value.oldPasswordDays.value} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
-                });
-                break;
-            case AtRiskType.Duplicate:
-                app.currentVault.passwordStore.duplicatePasswords.value.forEach((v, k, map) =>
-                {
-                    addAtRiskValues("This Password is used more than once", app.currentVault.passwordStore.passwordsByID.value.get(k)!);
-                });
-                break;
-            case AtRiskType.Weak:
-                app.currentVault.passwordStore.weakPasswords.value.forEach(p =>
-                {
-                    const passwordStore: Field<ReactivePassword> = app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0];
-                    addAtRiskValues(passwordStore.value.isWeakMessage.value, passwordStore);
-                });
-                break;
-            case AtRiskType.ContainsLogin:
-                app.currentVault.passwordStore.containsLoginPasswords.value.forEach(p =>
-                {
-                    addAtRiskValues("This Password contains its Username", app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
-                });
-                break;
-            case AtRiskType.Breached:
-                app.currentVault.passwordStore.breachedPasswords.forEach(p =>
-                {
-                    const onClick = () =>
-                    {
-                        app.popups.showBreachedPasswordPopup(p);
-                    };
-
-                    addAtRiskValues("This domain had a data breach! Click here to learn more",
-                        app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0], onClick);
-                });
-                break;
-        }
-    }
-    else if (isValue)
-    {
-        switch (app.currentVault.valueStore.activeAtRiskValueType)
-        {
-            case AtRiskType.Old:
-                app.currentVault.valueStore.oldNameValuePairs.value.forEach(v =>
-                {
-                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.value.oldPasswordDays.value} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
-                });
-                break;
-            case AtRiskType.Duplicate:
-                app.currentVault.valueStore.duplicateNameValuePairs.value.forEach((v, k, map) =>
-                {
-                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairsByID.value.get(k)!);
-                });
-                break;
-            case AtRiskType.WeakPhrase:
-                app.currentVault.valueStore.weakPassphraseValues.value.forEach(v =>
-                {
-                    const valueStore: Field<ReactiveValue> = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0];
-                    addAtRiskValues(valueStore.value.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
-                });
-                break;
-            case AtRiskType.Weak:
-                app.currentVault.valueStore.weakPasscodeValues.value.forEach(v =>
-                {
-                    const valueStore: Field<ReactiveValue> = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0];
-                    addAtRiskValues(valueStore.value.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
-                });
-        }
-    }
-
-    temp.push(...pinnedCollection.values.map(v => buildModel(v)));
-    temp.push(...sortedCollection.calculatedValues.map(v => buildModel(v)));
-
-    const rows = await Promise.all(temp);
-    collapsibleTableRowModels.value.setValues(rows);
-
-    function addAtRiskValues<U extends IIdentifiable>(message: string, value: Field<U>, onClick?: () => void)
-    {
-        pinnedCollection.remove(value.value.id.value);
-        sortedCollection.remove(value.value.id.value);
-
-        temp.push(buildModel(value as any as Field<T>, message, onClick))
-    }
-
-    async function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void): Promise<CollapsibleTableRowModel>
-    {
-        const id = await api.utilities.generator.uniqueId();
-        return {
-            id: id,
-            isPinned: ((isPassword && app.userPreferences.pinnedPasswords.value.has(v.value.id.value)) ||
-                (isValue && app.userPreferences.pinnedValues.value.has(v.value.id.value))),
-            data: v,
-            values: getValues(v.value),
-            atRiskModel:
-            {
-                message: atRiskMessage ?? "",
-                onClick: onAtRiskClicked
-            },
-            onEdit: function ()
-            {
-                onEdit(v.value);
-            },
-            onDelete: function ()
-            {
-                onDelete(v.value);
-            },
-            onPin: function ()
-            {
-                if (!isPassword && !isValue)
-                {
-                    return;
-                }
-
-                if ((isPassword && app.userPreferences.pinnedPasswords.value.has(v.value.id.value)) ||
-                    (isValue && app.userPreferences.pinnedValues.value.has(v.value.id.value)))
-                {
-                    if (isPassword)
-                    {
-                        app.userPreferences.removePinnedPasswords(v.value.id.value);
-                    }
-                    else if (isValue)
-                    {
-                        app.userPreferences.removePinnedValues(v.value.id.value);
-                    }
-
-                    const index: number = pinnedCollection.values.indexOf(v);
-                    pinnedCollection.values.splice(index, 1);
-
-                    let activeFilters: Field<Filter>[] = [];
-                    if (isPassword || isValue)
-                    {
-                        activeFilters = isPassword ?
-                            app.currentVault.filterStore.activePasswordFilters : app.currentVault.filterStore.activeNameValuePairFilters;
-                    }
-
-                    if (!sortedCollection.searchText || v.value[sortedCollection.property].toLowerCase().includes(sortedCollection.searchText.toLowerCase()))
-                    {
-                        if (activeFilters.length == 0 || activeFilters.filter(f => v.value.filters.value.has(f.value.id.value)).length > 0)
-                        {
-                            sortedCollection.push(v);
-                        }
-                        else
-                        {
-                            const modelIndex: number = collapsibleTableRowModels.value.visualValues.findIndex(m => m.data = v);
-                            collapsibleTableRowModels.value.visualValues.splice(modelIndex, 1);
-                        }
-                    }
-                    else
-                    {
-                        const modelIndex: number = collapsibleTableRowModels.value.visualValues.findIndex(m => m.data = v);
-                        collapsibleTableRowModels.value.visualValues.splice(modelIndex, 1);
-                    }
-                }
-                else
-                {
-                    if (isPassword)
-                    {
-                        app.userPreferences.addPinnedPassword(v.value.id.value);
-                    }
-                    else if (isValue)
-                    {
-                        app.userPreferences.addPinnedValue(v.value.id.value);
-                    }
-                    const index: number = sortedCollection.values.indexOf(v);
-
-                    sortedCollection.values.splice(index, 1);
-                    pinnedCollection.push(v);
-                }
-
-                collapsibleTableRowModels.value.visualValues.sort((a, b) =>
-                {
-                    if (a.atRiskModel?.message && b.atRiskModel?.message)
-                    {
-                        return collapsibleTableRowModels.value.visualValues.indexOf(a) >= collapsibleTableRowModels.value.visualValues.indexOf(b) ? 1 : -1;
-                    }
-                    else if (a.atRiskModel?.message)
-                    {
-                        return -1;
-                    }
-                    else if (b.atRiskModel?.message)
-                    {
-                        return 1;
-                    }
-                    else if ((pinnedCollection.values as Field<IPrimaryDataObject>[]).includes(a.data) &&
-                        (pinnedCollection.values as Field<IPrimaryDataObject>[]).includes(b.data))
-                    {
-                        return (pinnedCollection.values as Field<IPrimaryDataObject>[]).indexOf(a.data) >=
-                            (pinnedCollection.values as Field<IPrimaryDataObject>[]).indexOf(b.data) ? 1 : -1;
-                    }
-                    else if ((pinnedCollection.values as Field<IPrimaryDataObject>[]).includes(a.data))
-                    {
-                        return -1;
-                    }
-                    else if ((pinnedCollection.values as Field<IPrimaryDataObject>[]).includes(b.data))
-                    {
-                        return 1;
-                    }
-
-                    return (sortedCollection.values as Field<IPrimaryDataObject>[]).indexOf(a.data) >=
-                        (sortedCollection.values as Field<IPrimaryDataObject>[]).indexOf(b.data) ? 1 : -1;
-                });
             }
         }
     }
 }
 
-let modelID = 0;
+let passwordValueModelID = 0;
 export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dataType: DataType, allValues: Field<T>[])
 {
     const newModels = [];
@@ -601,7 +263,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dat
 
     function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void): TableRowModel
     {
-        modelID += 1;
+        passwordValueModelID += 1;
 
         let atRiskModel: AtRiskModel | undefined = undefined;
         if (atRiskMessage)
@@ -610,7 +272,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dat
         }
 
         return {
-            id: modelID.toString(),
+            id: passwordValueModelID.toString(),
             backingObject: v,
             atRiskModel,
         }

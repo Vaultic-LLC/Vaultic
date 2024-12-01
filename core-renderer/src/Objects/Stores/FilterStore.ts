@@ -50,7 +50,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
             return;
         }
 
-        filter.value.isActive.value = filter.value.isActive.value;
+        filter.value.isActive.value = !filter.value.isActive.value;
     }
 
     async addFilter(masterKey: string, filter: Filter): Promise<boolean>
@@ -400,10 +400,10 @@ export class ReactiveFilterStore extends FilterStore
         super(vault);
 
         this.internalPasswordFilters = computed(() => this.state.passwordFiltersByID.value.map((k, v) => v));
-        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.value.isActive) ?? []);
+        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.value.isActive.value) ?? []);
 
         this.internalNameValuePairFilters = computed(() => this.state.valueFiltersByID.value.map((k, v) => v));
-        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.value.isActive) ?? []);
+        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.value.isActive.value) ?? []);
 
         this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);

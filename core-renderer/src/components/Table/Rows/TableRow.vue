@@ -42,6 +42,7 @@ import { ColorPalette } from '../../..//Types/Colors';
 import app from "../../../Objects/Stores/AppStore";
 import { rowChunkAmount } from '../../../Constants/Misc';
 
+// TODO: remove once all tables are converted over and all other table row stuff
 export default defineComponent({
     name: "TableRow",
     components:

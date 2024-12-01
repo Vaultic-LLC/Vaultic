@@ -1,6 +1,6 @@
 <template>
     <div class="passwordValueTableContainer">
-        <VaulticTable ref="tableRef" id="passwordValueTable" :dataTypeName="dataTypeName" :color="color" :columns="tableColumns" :values="currentCollectionForTable" 
+        <VaulticTable ref="tableRef" id="passwordValueTable" :color="color" :columns="tableColumns" 
         :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
             :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete">
             <template #tableControls>
@@ -80,9 +80,6 @@ export default defineComponent({
         let deletePassword: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
         let deleteValue: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
 
-        const dataTypeName: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Password" : "Value");
-
-        const currentCollectionForTable: ComputedRef<IGroupableSortedCollection> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? passwords : nameValuePairs);
         const tableDataSources: Reactive<TableDataSources> = reactive(
         {
             activeIndex: () => app.activePasswordValuesTable == DataType.Passwords ? 0 : 1,
@@ -471,13 +468,11 @@ export default defineComponent({
         watch(() => app.currentVault.filterStore.activePasswordFilters, (newValue, oldValue) =>
         {
             filter(DataType.Passwords, newValue, oldValue, passwords, app.currentVault.passwordStore.unpinnedPasswords);
-            setModels();
         });
 
         watch(() => app.currentVault.filterStore.activeNameValuePairFilters, (newValue, oldValue) =>
         {
             filter(DataType.NameValuePairs, newValue, oldValue, nameValuePairs, app.currentVault.valueStore.unpinnedValues);
-            setModels();
         });
 
         watch(() => app.currentVault.passwordStore.passwords.length, () =>
@@ -506,8 +501,6 @@ export default defineComponent({
         });
 
         return {
-            dataTypeName,
-            currentCollectionForTable,
             tableColumns,
             readOnly,
             tableRef,
@@ -522,8 +515,6 @@ export default defineComponent({
             tableDataSources,
             onEditPasswordPopupClose,
             onEditValuePopupClose,
-            onDeletePasswordConfirmed,
-            onDeleteValueConfirmed,
             onPin,
             onEdit,
             onDelete,
@@ -534,7 +525,7 @@ export default defineComponent({
 
 <style>
 #passwordValueTable {
-    height: 55%;
+    height: 50%;
     width: 43%;
     min-width: 547px;
     left: 38%;

@@ -69,6 +69,14 @@
                 </ObjectPopup>
             </Transition>
         </Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.addDataTypePopupIsShowing" :minWidth="'800px'" :minHeight="'480px'"
+					:closePopup="popupStore.hideAddDataTypePopup">
+					<AddObjectPopup :initalActiveContent="popupStore.initialAddDataTypePopupContent" />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -87,6 +95,7 @@ import ImportSelectionPopup from "./Workflow/ImportSelectionPopup.vue"
 import ObjectPopup from "./ObjectPopups/ObjectPopup.vue";
 import VaultView from "./ObjectViews/VaultView.vue";
 import OrganizationView from './ObjectViews/OrganizationView.vue';
+import AddObjectPopup from './ObjectPopups/AddObjectPopup.vue';
 
 import app from "../Objects/Stores/AppStore";
 
@@ -105,7 +114,8 @@ export default defineComponent({
         ImportSelectionPopup,
         ObjectPopup,
         VaultView,
-        OrganizationView
+        OrganizationView,
+        AddObjectPopup
     },
     setup()
     {

@@ -1,9 +1,8 @@
 <template>
     <div class="vaulticTableContainer">
-        <ConfirmDialog></ConfirmDialog>
-        <DataTable scrollable removableSort :value="rowValues" paginator :rows="15" :rowsPerPageOptions="[15, 30, 50]"
-            resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable" :dataKey="'id'"
-            @update:sortOrder="onSortOrder" @update:sortField="onSortField"
+        <DataTable scrollable removableSort :value="rowValues" paginator :rows="15" :rowsPerPageOptions="[5, 15, 30]"
+            resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
+            @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor"
             :pt="{
                 thead: 'vaulticTableContainer__thead',
                 header: 'vaulticTableContainer__header',
@@ -71,7 +70,8 @@
                     <i v-else class="pi pi-arrow-up" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
                 <template #body="slotProps">
-                    <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject?.value[column.field]?.value" :data="column.data" />
+                    <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
+                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" />
                     <template v-else>
                         {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
                     </template>
@@ -84,7 +84,7 @@
                 }">
                 <template #header="">
                     <div class="flex justify-end" v-if="showSearchBar">
-                        <SearchBar :modelValue="searchText" :color="color" @update:modelValue="onSearch" />
+                        <SearchBar :modelValue="searchText" :color="color" :sizeModel="searchBarSizeModel" @update:modelValue="onSearch" />
                     </div>
                     <slot name="tableControls"></slot>
                 </template>
@@ -96,7 +96,7 @@
                             </div>
                         </div>
                         <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel).isPinned === true, data)">
-                            <ion-icon class="rowIcon magnet" name="magnet-outline"></ion-icon>
+                            <ion-icon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel).isPinned === true}" name="magnet-outline"></ion-icon>
                         </div>
                         <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="onEdit((data as TableRowModel).backingObject)">
                             <ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
@@ -121,8 +121,12 @@ import Button from 'primevue/button';
 import SearchBar from './Controls/SearchBar.vue';
 
 import GroupIconsRowValue from './Rows/GroupIconsRowValue.vue';
-import ConfirmDialog from "primevue/confirmdialog";
-import AtRiskIndicator from "./AtRiskIndicator.vue"
+import AtRiskIndicator from "./AtRiskIndicator.vue";
+import SelectorButtonTableRowValue from './Rows/SelectorButtonTableRowValue.vue';
+import ColorTableRowValue from './Rows/ColorTableRowValue.vue';
+import PropertySelectorCell from './Rows/PropertySelectorCell.vue';
+import EnumInputCell from './Rows/EnumInputCell.vue';
+import FilterValueSelectorCell from './Rows/FilterValueSelectorCell.vue';
 
 import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
@@ -153,11 +157,15 @@ export default defineComponent({
         Button,
         SearchBar,
         GroupIconsRowValue,
-        ConfirmDialog,
-        AtRiskIndicator
+        AtRiskIndicator,
+        SelectorButtonTableRowValue,
+        ColorTableRowValue,
+        PropertySelectorCell,
+        EnumInputCell,
+        FilterValueSelectorCell
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
-        'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete'],
+        'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel'],
     setup(props)
     {
         const tableContainerID = ref(useId());
@@ -474,7 +482,7 @@ export default defineComponent({
 :deep(.vaulticTableContainer__header) {
     background: transparent;
     padding: 0;
-    height: 6%;
+    height: 50px;
 
     /* so that there isn't a little bit of border over the scrollbar on the right */
     width: calc(100% - clamp(7px, 0.7vw, 10px));
@@ -495,11 +503,11 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__dataTableTableContainer) {
-    height: 94%;
+    height: calc(100% - 50px);
     overflow-x: hidden !important;
     overflow-y: scroll !important;
     background: v-bind(backgroundColor);
-    border-bottom-left-radius: 20px;
+    /* border-bottom-left-radius: 20px; */
 }
 
 :deep(.vaulticTableContainer__headerCell) {
@@ -521,7 +529,6 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__headerControlsContent) {
     justify-content: end;
-    padding-right: 25px;
     column-gap: 15px;
 }
 
@@ -613,7 +620,12 @@ export default defineComponent({
 }
 
 .vaulticTableContainer__rowIconButton .magnet {
-    transform: rotate(134deg)
+    transform: rotate(134deg);
+}
+
+.vaulticTableContainer__rowIconButton .magnet.isPinned {
+    color: v-bind(primaryColor);
+    transform: rotate(134deg);
 }
 
 .vaulticTableContainer__rowIconButton:hover .magnet {
@@ -622,7 +634,7 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__paginatorContainer) {
-    transform: translateY(-100%);
+    /* transform: translateY(-100%); */
     background: transparent;
     border-bottom-left-radius: 20px;
     width: calc(100% - clamp(7px, 0.7vw, 10px));
