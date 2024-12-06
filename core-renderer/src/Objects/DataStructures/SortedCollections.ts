@@ -10,13 +10,10 @@ export class SortedCollection
     property: string | undefined;
 
     values: TableRowModel[];                // shouldn't ever be modified, kept as a source of truth
-    calculatedValues: TableRowModel[];      // Calculated values based on search text
-    visualValues: TableRowModel[];          // The values to actually render
+    calculatedValues: TableRowModel[];      // Calculated values to show
 
     searchText: string;
     onUpdate: (() => void) | undefined;
-
-    private currentID: number;
 
     constructor(values: TableRowModel[], property?: string, descending?: boolean)
     {
@@ -24,17 +21,9 @@ export class SortedCollection
         this.property = property;
         this.values = [...values];
         this.calculatedValues = [...values];
-        this.visualValues = [];
         this.searchText = "";
-        this.currentID = 0;
 
         this.sort(false);
-        this.loadNextChunk();
-    }
-
-    loadNextChunk()
-    {
-        this.visualValues.push(...this.calculatedValues.splice(0, 200))
     }
 
     protected sort(notifyUpdate: boolean)
@@ -79,7 +68,6 @@ export class SortedCollection
         }
 
         this.search(this.searchText, notifyUpdate);
-        this.updateIDs();
     }
 
     updateSort(property: string | undefined, descending: boolean | undefined, doSort: boolean)
@@ -100,9 +88,6 @@ export class SortedCollection
 
         this.sort(false);
 
-        this.visualValues = [];
-        this.loadNextChunk();
-
         this.onUpdate?.();
     }
 
@@ -111,9 +96,6 @@ export class SortedCollection
         this.values.push(value);
         this.sort(false);
 
-        this.visualValues = [];
-        this.loadNextChunk();
-
         this.onUpdate?.();
     }
 
@@ -121,9 +103,6 @@ export class SortedCollection
     {
         this.values = this.values.filter(v => v.backingObject?.value.id.value != id);
         this.sort(false);
-
-        this.visualValues = [];
-        this.loadNextChunk();
 
         this.onUpdate?.();
     }
@@ -149,18 +128,8 @@ export class SortedCollection
 
         if (notifyUpdate)
         {
-            this.updateIDs();
-
-            this.visualValues = [];
-            this.loadNextChunk();
-
             this.onUpdate?.();
         }
-    }
-
-    protected updateIDs()
-    {
-        //this.calculatedValues.forEach(v => v.id = (this.currentID++).toString());
     }
 }
 
@@ -210,7 +179,6 @@ export class IGroupableSortedCollection extends SortedCollection
         }
 
         this.search(this.searchText, notifyUpdate);
-        super.updateIDs();
     }
 
     protected groupSearch(search: string, notifyUpdate: boolean)
@@ -236,11 +204,6 @@ export class IGroupableSortedCollection extends SortedCollection
 
         if (notifyUpdate)
         {
-            this.updateIDs();
-
-            this.visualValues = [];
-            this.loadNextChunk();
-
             this.onUpdate?.();
         }
     }

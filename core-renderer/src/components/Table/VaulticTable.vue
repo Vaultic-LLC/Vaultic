@@ -1,8 +1,9 @@
 <template>
     <div class="vaulticTableContainer">
-        <DataTable scrollable removableSort :value="rowValues" paginator :rows="15" :rowsPerPageOptions="[5, 15, 30]"
+        <DataTable scrollable removableSort lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" :totalRecords="totalRecords" paginator 
+            :rowsPerPageOptions="[5, 15, 30, 50]"
             resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
-            @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor"
+            @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor" @page="onPage"
             :pt="{
                 thead: 'vaulticTableContainer__thead',
                 header: 'vaulticTableContainer__header',
@@ -70,13 +71,11 @@
                     <i v-else class="pi pi-arrow-up" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
                 <template #body="slotProps">
-                    <KeepAlive>
-                        <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
-                            :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" />
-                        <template v-else>
-                            {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
-                        </template>
-                    </KeepAlive>
+                    <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
+                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" />
+                    <template v-else>
+                        {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
+                    </template>
                 </template>
             </Column>
             <Column :columnKey="'tableControls'" class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false" 
@@ -114,18 +113,18 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, nextTick, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
-import DataTable from "primevue/datatable";
+import DataTable, { DataTablePageEvent } from "primevue/datatable";
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import SearchBar from './Controls/SearchBar.vue';
 
-import GroupIconsRowValue from './Rows/GroupIconsRowValue.vue';
+import GroupIconsRowCell from './Rows/GroupIconsRowCell.vue';
 import AtRiskIndicator from "./AtRiskIndicator.vue";
-import SelectorButtonTableRowValue from './Rows/SelectorButtonTableRowValue.vue';
-import ColorTableRowValue from './Rows/ColorTableRowValue.vue';
+import SelectorButtonTableRowCell from './Rows/SelectorButtonTableRowCell.vue';
+import ColorTableRowCell from './Rows/ColorTableRowCell.vue';
 import PropertySelectorCell from './Rows/PropertySelectorCell.vue';
 import EnumInputCell from './Rows/EnumInputCell.vue';
 import FilterValueSelectorCell from './Rows/FilterValueSelectorCell.vue';
@@ -159,10 +158,10 @@ export default defineComponent({
         Column,
         Button,
         SearchBar,
-        GroupIconsRowValue,
+        GroupIconsRowCell,
         AtRiskIndicator,
-        SelectorButtonTableRowValue,
-        ColorTableRowValue,
+        SelectorButtonTableRowCell,
+        ColorTableRowCell,
         PropertySelectorCell,
         EnumInputCell,
         FilterValueSelectorCell,
@@ -202,6 +201,11 @@ export default defineComponent({
         let lastClientWidth: number | undefined = 0;
 
         let currentColumnId = 0;
+
+        const allRows: Ref<TableRowModel[]> = ref([]);
+        const totalRecords: Ref<number> = ref(0);
+        const firstRow: Ref<number> = ref(0);
+        const rowsToDisplay: Ref<number> = ref(15);
 
         function getColumnID()
         {
@@ -298,11 +302,11 @@ export default defineComponent({
                 return;
             }
 
-            const loadMoreRowsThreshold: number = Math.max(1 / (0.000009 * ((tableContainer.value?.scrollHeight ?? 2) - (tableContainer.value?.offsetHeight ?? 1))), 200);
-            if (!tableContainer.value?.offsetHeight || (tableContainer.value?.scrollTop + loadMoreRowsThreshold) >= (tableContainer.value?.scrollHeight - tableContainer.value?.offsetHeight))
+            // @ts-ignore
+            const currentPlace = tableContainer.value?.scrollHeight - tableContainer.value?.offsetHeight - tableContainer.value?.scrollTop;
+            if (currentPlace < 600)
             {
-                activeTableDataSource.value.collection.loadNextChunk();
-                reSetRowValues();
+                loadNextChunk();
             }
 
             lastCallTime = Date.now();
@@ -388,11 +392,28 @@ export default defineComponent({
 
         function reSetRowValues()
         {
-            // rowValues.value = activeTableDataSource.value.collection.visualValues;
-            // pinnedRowValues.value = activeTableDataSource.value.pinnedCollection?.visualValues ?? [];
+            totalRecords.value = (activeTableDataSource.value.pinnedCollection?.values.length ?? 0) + activeTableDataSource.value.collection.values.length;
+            allRows.value = activeTableDataSource.value.pinnedCollection?.calculatedValues != undefined ? [...activeTableDataSource.value.pinnedCollection?.calculatedValues] : [];
+            allRows.value.push(...activeTableDataSource.value.collection.calculatedValues);
 
-            rowValues.value = activeTableDataSource.value.pinnedCollection?.visualValues != undefined ? [...activeTableDataSource.value.pinnedCollection?.visualValues] : [];
-            rowValues.value.push(...activeTableDataSource.value.collection.visualValues);
+            rowValues.value = allRows.value.slice(0, rowChunkAmount);
+            scrollToTop();
+        }
+        
+        function onPage(e: DataTablePageEvent)
+        {
+            firstRow.value = e.first;
+            rowsToDisplay.value = e.rows;
+            rowValues.value = allRows.value.slice(e.first, e.first + Math.min(e.rows, rowChunkAmount));
+            scrollToTop();
+        }
+
+        function loadNextChunk()
+        {
+            const rowsToLoad = Math.min(20, rowsToDisplay.value - rowValues.value.length);
+            const start = firstRow.value + rowValues.value.length;
+
+            rowValues.value.push(...allRows.value.slice(start, start + rowsToLoad));
         }
 
         watch(() => activeTableDataSource.value, () => 
@@ -445,6 +466,9 @@ export default defineComponent({
         // });
 
         return {
+            totalRecords,
+            firstRow,
+            rowsToDisplay,
             tableContainerID,
             rowChunkAmount,
             columns,
@@ -468,7 +492,8 @@ export default defineComponent({
             getColumnID,
             onSortOrder,
             onSortField,
-            onSearch
+            onSearch,
+            onPage
         }
     },
 })

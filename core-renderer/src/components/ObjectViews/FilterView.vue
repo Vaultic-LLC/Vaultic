@@ -1,17 +1,21 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
-            :width="'8vw'" :height="'4vh'" :minHeight="'35px'" />
-        <VaulticTable ref="tableRef" id="addFilterTable" :color="color" :columns="tableColumns" 
-            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
-            :allowSearching="false" :onDelete="onDelete">
-            <template #tableControls>
-                <Transition name="fade" mode="out-in">
-                    <AddButton :color="color" @click="onAdd" />
-                </Transition>
-            </template>
-        </VaulticTable>
+        <VaulticFieldset :centered="true">
+            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
+                :width="'50%'" :height="''" :minHeight="''" :maxWidth="''" :maxHeight="''" :fadeIn="false" />
+        </VaulticFieldset>
+        <VaulticFieldset :centered="true" :end="true" :fill-space="true" :static="true">
+            <VaulticTable ref="tableRef" id="addFilterTable" :color="color" :columns="tableColumns" 
+                :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
+                :allowSearching="false" :onDelete="onDelete">
+                <template #tableControls>
+                    <Transition name="fade" mode="out-in">
+                        <AddButton :color="color" @click="onAdd" />
+                    </Transition>
+                </template>
+            </VaulticTable>
+        </VaulticFieldset>
     </ObjectView>
 </template>
 <script lang="ts">
@@ -22,8 +26,8 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import TableTemplate from '../Table/TableTemplate.vue';
 import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
-import FilterConditionRow from '../Table/Rows/FilterConditionRow.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
+import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { DataType, defaultFilter, Filter, FilterCondition, FilterConditionType } from '../../Types/DataTypes';
 import { GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
@@ -43,8 +47,8 @@ export default defineComponent({
         TableTemplate,
         TableHeaderRow,
         AddButton,
-        FilterConditionRow,
-        VaulticTable
+        VaulticTable,
+        VaulticFieldset
     },
     props: ['creating', 'model'],
     setup(props)
@@ -84,7 +88,7 @@ export default defineComponent({
         {
             const tableColumnsModels: TableColumnModel[] = [];
             tableColumnsModels.push({ header: "Property", field: "property", component: "PropertySelectorCell",
-                data: { color: color.value, properties: displayFieldOptions.value, label: "Properties" } });
+                data: { color: color.value, properties: displayFieldOptions.value, label: "Property" } });
             tableColumnsModels.push({ header: "Condition", field: "filterType", component: "EnumInputCell", 
                 data: { color: color.value, label: "Condition" } });
             tableColumnsModels.push({ header: "Value", field: "value", component: "FilterValueSelectorCell", 
@@ -248,15 +252,8 @@ export default defineComponent({
 <style>
 #addFilterTable {
     position: relative;
-    grid-row: 4 / span 8;
-    grid-column: 4 / span 9;
-    height: 110%;
-    min-width: 410px;
-    min-height: 200px;
-}
-
-.filterView__name {
-    grid-row: 1 / span 2;
-    grid-column: 4 / span 2;
+    width: 70%;
+    height: 70%;
+    transform: translateY(-15%);
 }
 </style>

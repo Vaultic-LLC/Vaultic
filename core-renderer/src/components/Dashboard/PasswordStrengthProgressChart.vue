@@ -507,8 +507,8 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 5px;
-    width: 10%;
+    padding: 12px;
+    width: 13%;
     height: 7%;
     color: white;
     border-radius: min(1vw, 1rem);

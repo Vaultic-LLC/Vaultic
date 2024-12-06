@@ -1,29 +1,54 @@
 <template>
     <div class="dropDownContainer">
         <FloatLabel variant="in" :dt="floatLabelStyle">
-            <Select :pt="selectLabelStyle" :disabled="disabled" ref="container" class="primeVueSelect" v-model="selectedValue" 
+            <Select 
+                :pt="{
+                    root: {
+                        class: { 
+                            'dropDownContainer__select--invalid': isInvalid
+                        }
+                    },
+                    option: ({ context }) => {
+                        if (context.selected)
+                        {
+                            return {
+                                style: {
+                                    background: color,
+                                }
+                            }
+                        }
+                    }
+                }" :invalid="isInvalid" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
                 showClear :inputId="id" :options="options" optionLabel="name" :fluid="true" :labelStyle="{'text-align': 'left'}" 
                 @update:model-value="onOptionClick" />
             <label :for="id">{{ label }}</label>
         </FloatLabel>
+        <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+            :pt="{
+                root: 'dropDownContainer__message'
+            }">
+            {{ invalidMessage }}
+        </Message>
     </div>
 </template>
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId } from 'vue';
 
-import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
-import tippy from 'tippy.js';
-import { ValidationFunctionsKey } from '../../Constants/Keys';
-
 import FloatLabel from 'primevue/floatlabel';
 import Select from "primevue/select";
+import Message from "primevue/message";
+
+import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
+import { ValidationFunctionsKey } from '../../Constants/Keys';
+import app from '../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "EnumInputField",
     components: 
     {
         FloatLabel,
-        Select
+        Select,
+        Message
     },
     emits: ["update:modelValue"],
     props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget', 'height', 'minHeight', 'maxHeight',
@@ -31,8 +56,10 @@ export default defineComponent({
     setup(props, ctx)
     {
         const id = ref(useId());
-        const container: Ref<any> = ref(null);
         const refreshKey: Ref<string> = ref('');
+
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
 
         const options: ComputedRef<any[]> = computed(() => 
         {
@@ -41,12 +68,13 @@ export default defineComponent({
 
         let selectedValue: Ref<any> = ref();
 
+        const isInvalid: Ref<boolean> = ref(false);
+        const invalidMessage: Ref<string> = ref('');
+
         const computedRequired: ComputedRef<boolean> = computed(() => props.required === false ? false : true);
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
-        let tippyInstance: any = null;
-
         const enumOptionCount: Ref<number> = ref(-1);
 
         let floatLabelStyle = computed(() => {
@@ -57,35 +85,24 @@ export default defineComponent({
                 focus: 
                 {
                     color: props.color
-                }
-            }
-        });
-
-        const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
-        const selectLabelStyle = computed(() => {
-            return {
-                // @ts-ignore
-                option: ({ context }) => {
-                    if (context.selected)
-                    {
-                        return {
-                            style: {
-                                background: props.color,
-                            }
-                        }
-                    }
+                },
+                invalid: 
+                {
+                    color: errorColor.value
                 }
             }
         });
 
         function onOptionClick(value: any)
         {
+            isInvalid.value = false;
             selectedValue.value = value;
             ctx.emit('update:modelValue', value?.name ?? null)
         }
 
         function validate()
         {
+            isInvalid.value = false;
             if (computedRequired.value && (selectedValue.value == '' || selectedValue.value == undefined))
             {
                 invalidate("Please select a value");
@@ -97,8 +114,8 @@ export default defineComponent({
 
         function invalidate(message: string)
         {
-            tippyInstance.setContent(message);
-            tippyInstance.show();
+            isInvalid.value = true;
+            invalidMessage.value = message;
         }
 
         watch(() => props.modelValue, (newValue) =>
@@ -118,21 +135,7 @@ export default defineComponent({
                 selectedValue.value = initialValue[0];
             }
 
-            if (!container.value)
-            {
-                return;
-            }
-
             validationFunction?.value.push(validate);
-            tippyInstance = tippy(container.value.$el, {
-                inertia: true,
-                animation: 'scale',
-                theme: 'material',
-                placement: "bottom-start",
-                trigger: 'manual',
-                hideOnClick: false
-            });
-
             for (let _ in props.optionsEnum)
             {
                 enumOptionCount.value += 1;
@@ -141,20 +144,20 @@ export default defineComponent({
 
         onUnmounted(() =>
         {
-            tippyInstance?.hide();
             validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
         });
 
         return {
             id,
-            selectLabelStyle,
+            errorColor,
             floatLabelStyle,
             selectBackgroundColor,
             refreshKey,
             options,
             selectedValue,
             backgroundColor,
-            container,
+            isInvalid,
+            invalidMessage,
             enumOptionCount,
             onOptionClick,
         }
@@ -181,4 +184,12 @@ export default defineComponent({
     border: 1px solid v-bind(color) !important;
 }
 
+:deep(.dropDownContainer__message) {
+    transform: translateX(5px);
+    margin-top: 1px;
+}
+
+:deep(.dropDownContainer__select--invalid) {
+    border-color: v-bind(errorColor) !important;
+}
 </style>

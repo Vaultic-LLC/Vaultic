@@ -272,7 +272,7 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 5px;
+    padding: 12px;
     width: 10%;
     height: 7%;
     color: white;
@@ -286,7 +286,7 @@ export default defineComponent({
 .breachedPasswordsContainer__scanButton.scanning {
     color: grey;
     border: clamp(1.5px, 0.1vw, 2px) solid grey;
-    width: 15%;
+    width: 17%;
     left: 3%
 }
 

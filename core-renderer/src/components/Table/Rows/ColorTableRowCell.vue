@@ -10,7 +10,7 @@ import { computed, ComputedRef, defineComponent } from 'vue';
 import ColorPicker from 'primevue/colorpicker';
 
 export default defineComponent({
-	name: "ColorTableRowValue",
+	name: "ColorTableRowCell",
 	components:
 	{
 		ColorPicker

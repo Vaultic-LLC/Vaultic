@@ -103,13 +103,13 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                models.push({ header: "Groups", field: "groups", component: "GroupIconsRowValue", data: { 'color': color }, startingWidth: '105px' });
+                models.push({ header: "Groups", field: "groups", component: "GroupIconsRowCell", data: { 'color': color }, startingWidth: '105px' });
                 models.push({ header: "Password For", field: "passwordFor" });
                 models.push({ header: "Username", field: "login" });
             }
             else 
             {
-                models.push({ header: "Groups", field: "groups", component: "GroupIconsRowValue", data: { 'color': color }, startingWidth: '105px' });
+                models.push({ header: "Groups", field: "groups", component: "GroupIconsRowCell", data: { 'color': color }, startingWidth: '105px' });
                 models.push({ header: "Name", field: "name" });
                 models.push({ header: "Type", field: "valueType" });
             }
@@ -525,7 +525,7 @@ export default defineComponent({
 
 <style>
 #passwordValueTable {
-    height: 50%;
+    height: 50.5%;
     width: 43%;
     min-width: 547px;
     left: 38%;

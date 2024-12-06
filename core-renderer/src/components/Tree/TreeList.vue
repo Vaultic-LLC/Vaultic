@@ -1,7 +1,7 @@
 <template>
     <div class="treeList">
         <div class="treeList__controls">
-            <SearchBar :modelValue="searchText" :color="primaryColor" :width="'200px'" :height="'3vh'" />
+            <SearchBar :modelValue="searchText" :color="primaryColor" :sizeModel="searchSize" />
             <div class="treeList__buttons">
                 <VaulticButton :color="primaryColor" :preferredSize="'1vw'" @click="expandAll">
                     <ion-icon name="chevron-expand-outline"></ion-icon>
@@ -30,7 +30,7 @@ import TreeNode from "./TreeNode.vue";
 import VaulticButton from "../InputFields/VaulticButton.vue";
 
 import app from "../../Objects/Stores/AppStore";
-import { TreeNodeModel } from "../../Types/Models";
+import { ComponentSizeModel, TreeNodeModel } from "../../Types/Models";
 import { TreeNodeMember } from "../../Types/Tree";
 
 export default defineComponent({
@@ -53,6 +53,10 @@ export default defineComponent({
 
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
+        const searchSize: Ref<ComponentSizeModel> = ref({
+            width: '200px'
+        });
+        
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
         const selectedLeafNode: Ref<TreeNodeMember | undefined> = ref(treeNodes.value.filter(n => !n.isParent && n.selected)?.[0]);
 
@@ -179,6 +183,31 @@ export default defineComponent({
             {
                 const lower = newValue.toLowerCase();
                 currentTreeNodes.value = treeNodes.value.filter(n => n.text.toLowerCase().includes(lower));
+
+                const newTreeNodes: TreeNodeMember[] = [];
+                for (let i = 0; i < treeNodes.value.length; i++)
+                {
+                    if (treeNodes.value[i].isParent)
+                    {
+                        continue;
+                    }
+
+                    if (treeNodes.value[i].text.toLocaleLowerCase().includes(lower))
+                    {
+                        const parents: TreeNodeMember[] = [];
+                        let current: TreeNodeMember | undefined = treeNodes.value[i];
+
+                        while (current)
+                        {
+                            parents.unshift(current);
+                            current = current.parent;
+                        }
+
+                        newTreeNodes.push(...parents)
+                    }
+                }
+
+                currentTreeNodes.value = newTreeNodes;
             }
             else 
             {
@@ -194,6 +223,7 @@ export default defineComponent({
             models,
             displayModels,
             isOnline,
+            searchSize,
             expandAll,
             collapseAll
         };

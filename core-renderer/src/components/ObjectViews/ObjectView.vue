@@ -1,13 +1,17 @@
 <template>
     <div class="objectViewContainer">
         <div class="objectViewContainer__form">
-            <slot></slot>
+            <ScrollView :color="primaryColor">
+                <div class="objectViewContainer__formWrapper">
+                    <slot></slot>
+                </div>
+            </ScrollView>
         </div>
         <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
-            <PopupButton :color="color" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
+            <PopupButton :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
                 :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" :fontSize="'1vw'"
                 :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSave" />
-            <PopupButton v-if="creating == true" :color="color" :text="'Create and Close'" :disabled="disabled"
+            <PopupButton v-if="creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
                 :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'"
                 :height="'2vw'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
                 @onClick="onSaveAndClose" />
@@ -18,11 +22,18 @@
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 
 import PopupButton from '../InputFields/PopupButton.vue';
+import ScrollView from './ScrollView.vue';
+
 import app from "../../Objects/Stores/AppStore";
 import { ClosePopupFuncctionKey, DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "ObjectView",
+    components: 
+    {
+        ScrollView,
+        PopupButton
+    },
     props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 'anchorButtonsDown'],
     setup(props)
     {
@@ -31,8 +42,6 @@ export default defineComponent({
         const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
         const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
         const disabled: Ref<boolean> = ref(false);
-        const gridRows: ComputedRef<string> = computed(() => `repeat(${props.gridDefinition.rows}, ${props.gridDefinition.rowHeight})`);
-        const gridColumns: ComputedRef<string> = computed(() => `repeat(${props.gridDefinition.columns}, ${props.gridDefinition.columnWidth})`)
 
         const showAuthPopup: Ref<boolean> = ref(false);
 
@@ -142,9 +151,8 @@ export default defineComponent({
         });
 
         return {
+            primaryColor,
             buttonText,
-            gridRows,
-            gridColumns,
             showAuthPopup,
             disabled,
             onAuthenticationSuccessful,
@@ -152,8 +160,7 @@ export default defineComponent({
             onSave,
             onSaveAndClose
         };
-    },
-    components: { PopupButton }
+    }
 })
 </script>
 
@@ -170,20 +177,25 @@ export default defineComponent({
 .objectViewContainer__form {
     height: 90%;
     width: 100%;
-    display: grid;
-    row-gap: 0px;
-    column-gap: 0px;
+}
+
+.objectViewContainer__formWrapper {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    row-gap: 15px;
+    align-items: center;
     position: relative;
-    grid-template-rows: v-bind(gridRows);
-    grid-template-columns: v-bind(gridColumns);
 }
 
 .objectViewContainer .createButtons {
-    margin-bottom: clamp(3%, 1.5vw, 10%);
+    /* margin-bottom: clamp(3%, 1.5vw, 10%); */
     display: flex;
     align-items: center;
     justify-content: space-between;
     column-gap: 50px;
+    flex-grow: 1;
 }
 
 .objectViewContainer .createButtons.anchorDown {

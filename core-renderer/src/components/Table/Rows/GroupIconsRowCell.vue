@@ -15,7 +15,7 @@ import app from '../../../Objects/Stores/AppStore';
 import { GroupIconModel } from '../../../Types/Models';
 
 export default defineComponent({
-	name: "GroupIconsRowValue",
+	name: "GroupIconsRowCell",
 	components:
 	{
 		GroupIcon

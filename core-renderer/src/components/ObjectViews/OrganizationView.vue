@@ -2,19 +2,6 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <TextInputField :label="'Name'" v-model="orgState.name.value" class="organizationView__nameInput" :color="color" />
-        <TableTemplate ref="tableRef" id="organizationView__table" class="scrollbar border" :scrollbar-size="1"
-            :color="color" :border="true" :headerModels="tableHeaderModels" :emptyMessage="''"
-            :showEmptyMessage="false" :headerTabs="userHeaderTab"
-            @scrolledToBottom="tableRowDatas.loadNextChunk()">
-            <template #headerControls>
-                <SearchBar v-model="searchText" :color="color" :width="'10vw'" :maxWidth="'250px'"
-                    :minWidth="'130px'" />
-            </template>
-            <template #body>
-                <SelectableTableRow v-for="(trd, index) in tableRowDatas.visualValues" class="hover" :key="trd.id"
-                    :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="color" />
-            </template>
-        </TableTemplate>
     </ObjectView>
 </template>
 <script lang="ts">
@@ -22,11 +9,8 @@ import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted } fr
 
 import ObjectView from "./ObjectView.vue";
 import TextInputField from '../InputFields/TextInputField.vue';
-import TableTemplate from '../Table/TableTemplate.vue';
-import SearchBar from '../Table/Controls/SearchBar.vue';
-import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
 
-import { GridDefinition, HeaderTabModel, SelectableTableRowData, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { defaultOrganization, Member, Organization } from '../../Types/DataTypes';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
@@ -42,9 +26,6 @@ export default defineComponent({
     components: {
         ObjectView,
         TextInputField,
-        TableTemplate,
-        SearchBar,
-        SelectableTableRow
     },
     props: ['creating', 'model'],
     setup(props)
@@ -59,7 +40,7 @@ export default defineComponent({
 
         // @ts-ignore
         const tableRowDatas: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
-        const userSortedCollection: SortedCollection<Member> = new SortedCollection([], "lastName");
+        const userSortedCollection: SortedCollection = new SortedCollection([], "lastName");
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;

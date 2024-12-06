@@ -138,8 +138,6 @@ export default defineComponent({
             }
             else
             {
-                forceShowIcon.value = true;
-                await new Promise((resolve) => setTimeout(resolve, 100));
                 ctx.emit("onAuthenticationSuccessful", key.value);
             }
         }
@@ -148,12 +146,6 @@ export default defineComponent({
         {
             key.value = "";
             ctx.emit("onCanceled");
-        }
-
-        async function playUnlockAnimation()
-        {
-            app.popups.hideLoadingIndicator();
-            unlocked.value = true;
         }
 
         function jiggleContainer()
@@ -226,7 +218,6 @@ export default defineComponent({
             backgroundGradient,
             onEnter,
             onCancel,
-            playUnlockAnimation
         }
     }
 })

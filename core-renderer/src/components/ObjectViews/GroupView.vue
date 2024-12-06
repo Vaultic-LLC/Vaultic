@@ -2,43 +2,30 @@
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <TextInputField class="groupView__name" :label="'Name'" :color="groupColor" v-model="groupState.name.value"
-            :width="'8vw'" :height="'4vh'" :minHeight="'30px'" />
+            :width="'50%'" :height="''" :minHeight="''" :maxWidth="''" :maxHeight="''" />
         <ColorPickerInputField class="groupView__color" :label="'Color'" :color="groupColor" v-model="groupState.color.value"
-            :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :minWidth="'125px'" />
+            :width="'50%'" :height="''" :minHeight="''" :minWidth="'125px'" :maxWidth="''" />
         <TextInputField class="groupView__icon" :label="'Icon'" :color="groupColor" v-model="groupState.icon.value"
-            :width="'8vw'" :height="'4vh'" :minHeight="'30px'" :minWidth="'125px'" />
-        <VaulticTable ref="tableRef" id="addGroupTable" :color="groupColor" :columns="tableColumns" 
-            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" />
+            :width="'50%'" :height="''" :minHeight="''" :minWidth="'125px'" :maxWidth="''" :maxHeight="''" />
+        <div class="valueView__objectMultiSelect">
+            <ObjectMultiSelect :label="selectLabel" :color="groupColor" v-model="selectedOptions" :options="allOptions" />
+        </div>
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, onUpdated, reactive, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, ref } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
-import SearchBar from '../Table/Controls/SearchBar.vue';
-import TableTemplate from '../Table/TableTemplate.vue';
-import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
-import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
-import VaulticTable from '../Table/VaulticTable.vue';
+import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 
-import { GridDefinition, HeaderTabModel, SelectableBackingObject, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
-import { getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
-import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
+import { GridDefinition, ObjectMultiSelectOptionModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { TableTemplateComponent } from '../../Types/Components';
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
 
-interface SelectablePrimaryObject extends SelectableBackingObject
-{
-    passwordFor?: Field<string>;
-    login?: Field<string>;
-    name?: Field<string>;
-    type?: Field<any>;
-}
-
+// TODO: need to create an IconSelector so that users don't have to type in the name of the icon
 export default defineComponent({
     name: "GroupView",
     components:
@@ -46,40 +33,21 @@ export default defineComponent({
         ObjectView,
         TextInputField,
         ColorPickerInputField,
-        SearchBar,
-        TableTemplate,
-        TableHeaderRow,
-        SelectableTableRow,
-        VaulticTable
+        ObjectMultiSelect,
     },
     props: ['creating', 'model'],
     setup(props)
     {
         const refreshKey: Ref<string> = ref("");
-        const tableRef: Ref<TableTemplateComponent | null> = ref(null);
-        const mounted: Ref<boolean> = ref(false);
         const groupState: Ref<Group> = ref(props.model);
         const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor.value);
 
-        const passwordSortedCollection: SortedCollection = new SortedCollection([]);
-        const valueSortedCollection: SortedCollection = new SortedCollection([]);
+        const selectLabel: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values");
+        const selectedOptions: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
+        const allOptions: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
-
-        const emptyMessage: ComputedRef<string> = computed(() =>
-        {
-            if (app.activePasswordValuesTable == DataType.Passwords)
-            {
-                return getObjectPopupEmptyTableMessage("Passwords", "Group", "Password", props.creating);
-            }
-            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
-            {
-                return getObjectPopupEmptyTableMessage("Values", "Group", "Value", props.creating);
-            }
-
-            return "";
-        })
 
         const gridDefinition: GridDefinition =
         {
@@ -88,143 +56,6 @@ export default defineComponent({
             columns: 15,
             columnWidth: 'clamp(20px, 4vw, 100px)'
         };
-
-        const passwordHeaderTab: HeaderTabModel[] = [
-            {
-                name: 'Passwords',
-                active: computed(() => true),
-                color: groupColor,
-                onClick: () => { }
-            }
-        ];
-
-        const valueHeaderTab: HeaderTabModel[] = [
-            {
-                name: 'Values',
-                active: computed(() => true),
-                color: groupColor,
-                onClick: () => { }
-            }
-        ];
-
-        let headerTabs: ComputedRef<HeaderTabModel[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
-            passwordHeaderTab : valueHeaderTab);
-
-        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
-        {
-            const models: TableColumnModel[] = [];
-            if (app.activePasswordValuesTable == DataType.Passwords)
-            {
-                models.push({ header: "", field: "isActive", component: 'SelectorButtonTableRowValue', data: { 'color': groupColor, onClick: onPasswordSelected } });
-                models.push({ header: "Password For", field: "passwordFor" });
-                models.push({ header: "Username", field: "login" });
-            }
-            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
-            {
-                models.push({ header: "", field: "isActive", component: 'SelectorButtonTableRowValue', data: { 'color': groupColor, onClick: onValueSelected } });
-                models.push({ header: "Name", field: "name" });
-                models.push({ header: "Type", field: "type" });
-            }
-
-            return models;
-        });
-
-        const tableDataSources: Reactive<TableDataSources> = reactive(
-        {
-            activeIndex: () => app.activePasswordValuesTable == DataType.Passwords ? 0 : 1,
-            dataSources: 
-            [
-                {
-                    friendlyDataTypeName: "Password",
-                    collection: passwordSortedCollection,
-                },
-                {
-                    friendlyDataTypeName: "Value",
-                    collection: valueSortedCollection,
-                }
-            ]
-        });
-        
-        function onPasswordSelected(value: Field<SelectablePrimaryObject>)
-        {     
-            if (value.value.isActive.value)
-            {
-                groupState.value.passwords.value.delete(value.value.id.value);
-                value.value.isActive.value = false;
-            }
-            else
-            {
-                groupState.value.passwords.value.set(value.value.id.value, new Field(value.value.id.value));
-                value.value.isActive.value = true;
-            }
-        }
-
-        function onValueSelected(value: Field<SelectablePrimaryObject>)
-        {     
-            if (value.value.isActive.value)
-            {
-                groupState.value.values.value.delete(value.value.id.value);
-                value.value.isActive.value = false;
-            }
-            else
-            {
-                groupState.value.values.value.set(value.value.id.value, new Field(value.value.id.value));
-                value.value.isActive.value = true;
-            }
-        }
-
-        function setTableRows()
-        {
-            let rows: TableRowModel[] = [];
-            switch (app.activePasswordValuesTable)
-            {
-                case DataType.NameValuePairs:
-                    rows = app.currentVault.valueStore.nameValuePairs.map(nvp =>
-                    {
-                        const selectablePrimaryObjectModel: SelectablePrimaryObject = 
-                        {
-                            isActive: new Field(groupState.value.values.value.has(nvp.value.id.value)),
-                            id: nvp.value.id,
-                            name: nvp.value.name,
-                            type: nvp.value.type
-                        };
-
-                        const row: TableRowModel = 
-                        {
-                            id: nvp.value.id.value,
-                            backingObject: new Field(selectablePrimaryObjectModel),
-                        };
-
-                        return row;
-                    });
-
-                    valueSortedCollection.updateValues(rows);
-
-                    break;
-                case DataType.Passwords:
-                default:
-                    rows = app.currentVault.passwordStore.passwords.map(p =>
-                    {
-                        const selectablePrimaryObjectModel: SelectablePrimaryObject = 
-                        {
-                            isActive: new Field(groupState.value.passwords.value.has(p.value.id.value)),
-                            id: p.value.id,
-                            passwordFor: p.value.passwordFor,
-                            login: p.value.login
-                        };
-
-                        const row: TableRowModel = 
-                        {
-                            id: p.value.id.value,
-                            backingObject: new Field(selectablePrimaryObjectModel),
-                        };
-
-                        return row;
-                    });
-
-                    passwordSortedCollection.updateValues(rows);
-            }
-        }
 
         function onSave()
         {
@@ -239,13 +70,31 @@ export default defineComponent({
         async function doSave(key: string)
         {
             app.popups.showLoadingIndicator(groupColor.value, "Saving Group");
+
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                groupState.value.passwords.value = new Map();
+                selectedOptions.value.forEach(g => 
+                {
+                    groupState.value.passwords.value.set(g.backingObject.value.id.value, new Field(g.backingObject.value.id.value));
+                });
+            }
+            else 
+            {
+                groupState.value.values.value = new Map();
+                selectedOptions.value.forEach(g => 
+                {
+                    groupState.value.values.value.set(g.backingObject.value.id.value, new Field(g.backingObject.value.id.value));
+                });
+            }
+
             if (props.creating)
             {
                 if (await app.currentVault.groupStore.addGroup(key, groupState.value))
                 {
                     groupState.value = defaultGroup(groupState.value.type.value);
-                    setTableRows();
                     refreshKey.value = Date.now().toString();
+                    selectedOptions.value = [];
 
                     handleSaveResponse(true);
                     return;
@@ -291,8 +140,60 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            setTableRows();
-            mounted.value = true;
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                allOptions.value = app.currentVault.passwordStore.passwords.map(p => 
+                {
+                    const option: ObjectMultiSelectOptionModel = 
+                    {
+                        label: p.value.passwordFor.value,
+                        backingObject: p,
+                    };
+
+                    return option
+                });
+
+                groupState.value.passwords.value.forEach((v, k, map) => 
+                {
+                    const password = app.currentVault.passwordStore.passwordsByID.value.get(k);
+                    if (!password)
+                    {
+                        return;
+                    }
+
+                    selectedOptions.value.push({
+                        label: password.value.passwordFor.value,
+                        backingObject: password,
+                    });
+                });
+            }
+            else 
+            {
+                allOptions.value = app.currentVault.valueStore.nameValuePairs.map(v => 
+                {
+                    const option: ObjectMultiSelectOptionModel = 
+                    {
+                        label: v.value.name.value,
+                        backingObject: v,
+                    };
+
+                    return option
+                });
+
+                groupState.value.values.value.forEach((v, k, map) => 
+                {
+                    const value = app.currentVault.valueStore.nameValuePairsByID.value.get(k);
+                    if (!value)
+                    {
+                        return;
+                    }
+
+                    selectedOptions.value.push({
+                        label: value.value.name.value,
+                        backingObject: value,
+                    });
+                });
+            }
         });
 
         return {
@@ -300,12 +201,9 @@ export default defineComponent({
             groupColor,
             refreshKey,
             gridDefinition,
-            headerTabs,
-            emptyMessage,
-            mounted,
-            tableRef,
-            tableColumns,
-            tableDataSources,
+            allOptions,
+            selectedOptions,
+            selectLabel,
             onSave
         };
     },
@@ -321,18 +219,7 @@ export default defineComponent({
     min-height: 182px;
 }
 
-.groupView__name {
-    grid-row: 1 / span 2;
-    grid-column: 4 / span 2;
-}
-
-.groupView__color {
-    grid-row: 3 / span 2;
-    grid-column: 4 / span 2;
-}
-
-.groupView__icon {
-    grid-row: 5 / span 2;
-    grid-column: 4 / span 2;
+.valueView__objectMultiSelect {
+    width: 50%;
 }
 </style>

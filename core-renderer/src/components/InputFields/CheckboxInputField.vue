@@ -18,7 +18,7 @@ export default defineComponent({
     props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "height", "minHeight", "maxHeight"],
     setup(props, ctx)
     {
-        const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
+        const shouldFadeIn: ComputedRef<boolean> = computed(() => false);
         const checked: Ref<boolean> = ref(props.modelValue);
 
         const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "auto")

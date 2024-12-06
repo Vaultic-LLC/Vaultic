@@ -160,13 +160,8 @@ export default defineComponent({
 
         async function closeWithAnimation()
         {
-            app.popups.showGlobalAuthWithLockIcon(primaryColor.value);
-
-            ctx.emit('onClose');
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
             app.popups.hideLoadingIndicator();
-            app.popups.playUnlockAnimation();
+            ctx.emit('onClose');
         }
 
         function close()

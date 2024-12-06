@@ -1,11 +1,11 @@
 <template>
     <div class="filterValueSelectorCell">
         <TextInputField v-if="inputType == 0" :label="'Value'" :color="color"
-            v-model="modelField.value" :fadeIn="true" :isOnWidget="true" :width="'100%'"
-            :height="'3.8vh'" :minHeight="'33px'" :minWidth="'100px'" :maxHeight="'49px'" />
+            v-model="modelField.value" :fadeIn="false" :isOnWidget="true" :width="'100%'"
+            :height="''" :minHeight="''" :minWidth="'100px'" :maxHeight="''" />
         <EnumInputField v-if="inputType == 1" :label="'Value'" :color="color"
-            v-model="modelField.value" :optionsEnum="inputEnumType" fadeIn="true" :isOnWidget="true"
-            :width="'100%'" :height="'4vh'" :minHeight="'35px'" :minWidth="'100px'" :maxHeight="'50px'" />
+            v-model="modelField.value" :optionsEnum="inputEnumType" :fadeIn="false" :isOnWidget="true"
+            :width="'100%'" :height="''" :minHeight="''" :minWidth="'100px'" :maxHeight="''" />
     </div>
 </template>
 

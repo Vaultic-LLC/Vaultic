@@ -21,7 +21,7 @@ export default defineComponent({
     setup(props, ctx)
     {
         const button: Ref<HTMLElement | null> = ref(null);
-        const doFadeIn: Ref<boolean> = ref(props.fadeIn !== false);
+        const doFadeIn: Ref<boolean> = ref(false);
         const transition: Ref<string> = ref('0s');
 
         function doOnClick()

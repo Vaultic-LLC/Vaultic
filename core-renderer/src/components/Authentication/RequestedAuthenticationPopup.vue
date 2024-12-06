@@ -1,18 +1,17 @@
 <template>
 	<div class="requestAuthContainer">
 		<div class="requestAuthGlass" @click="onCancel"></div>
-		<AuthenticationPopup ref="authPopup" @onAuthenticationSuccessful="onAuthSuccessful" :rubberbandOnUnlock="false"
+		<AuthenticationPopup @onAuthenticationSuccessful="onAuthSuccessful" :rubberbandOnUnlock="false"
 			:showPulsing="false" :allowCancel="true" @onCanceled="onCancel" :setupKey="needsToSetupKey" :title="title"
 			:color="color" :focusOnShow="true" :popupIndex="enterOrder" />
 	</div>
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
+import { ComputedRef, computed, defineComponent } from 'vue';
 
 import AuthenticationPopup from "./AuthenticationPopup.vue"
 
-import { AuthPopup } from '../../Types/Components';
 import { popups } from '../../Objects/Stores/PopupStore';
 
 export default defineComponent({
@@ -26,17 +25,12 @@ export default defineComponent({
 	{
 		const popupInfo = popups.requestAuth;
 
-		const authPopup: Ref<AuthPopup | null> = ref(null);
 		const needsToSetupKey: ComputedRef<boolean> = computed(() => props.setupKey ?? false);
 		const title: ComputedRef<string> = computed(() => props.setupKey ? "Please create your Master Key" : "");
 
 		function onAuthSuccessful(key: string)
 		{
-			authPopup.value?.playUnlockAnimation();
-			setTimeout(() =>
-			{
-				props.authenticationSuccessful(key)
-			}, 800);
+            props.authenticationSuccessful(key)
 		}
 
 		function onCancel()
@@ -47,7 +41,6 @@ export default defineComponent({
 		return {
 			needsToSetupKey,
 			title,
-			authPopup,
 			zIndex: popupInfo.zIndex,
 			enterOrder: popupInfo.enterOrder,
 			onAuthSuccessful,

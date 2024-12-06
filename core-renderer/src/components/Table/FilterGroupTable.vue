@@ -159,14 +159,14 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                models.push({ header: "Active", field: "isActive", component: 'SelectorButtonTableRowValue', 
+                models.push({ header: "Active", field: "isActive", component: 'SelectorButtonTableRowCell', 
                     data: { 'color': color, onClick: (f: Field<Filter>) => app.currentVault.filterStore.toggleFilter(f.value.id.value) }, startingWidth: '105px' });
                 models.push({ header: "Name", field: "name" });
             }
             else
             {
                 models.push({ header: "Name", field: "name" });
-                models.push({ header: "Color", field: "color", component: 'ColorTableRowValue' });
+                models.push({ header: "Color", field: "color", component: 'ColorTableRowCell' });
             }
 
             return models;

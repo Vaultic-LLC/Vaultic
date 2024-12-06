@@ -1,5 +1,6 @@
 <template>
-    <div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
+    <div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @mouseenter="hovering = true" 
+        @mouseleave="onContainerMouseLeave">
         <div class="textInuptContainer">
             <FloatLabel variant="in" :dt="floatLabelStyle">
                 <Password
@@ -7,18 +8,22 @@
                     { 
                         root: ({state}) => 
                         {
+                            isFocused = state.focused;
                             state.unmasked = isUnmasked;
                         }, 
                         pcInputText:
                         { 
-                            root: ({ instance}) => 
+                            root: ({ instance, context}) => 
                             {
                                 textFieldInstance = instance;
+                                return {
+                                    class: { 'encryptedInputFieldContainer__input--invalid': isInvalid }
+                                }
                             }
                         } 
                     }"
                     :fluid="true" class="primeVuePasswordField" name="password" v-model="inputText" :inputId="id" :disabled="isDisabled" toggleMask :feedback="computedFeedback" 
-                    @update:model-value="onInput">
+                    :invalid="isInvalid" @update:model-value="onInput">
                     <template #maskicon="slotProps">
                         <ion-icon class="p-password-toggle-mask-icon encryptedInputIcon" name="eye-off-outline" @click="toggleMask(true)"></ion-icon>
                     </template>
@@ -32,21 +37,37 @@
                 </Password>
                 <label :for="id">{{ label }}</label>
             </FloatLabel>
-            <Transition name="fade">
-                <div v-if="!isLocked && !disabled && showRandom" class="randomize" @click="generateRandomValue">
-                    Random
+            <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+                :pt="{
+                    root: 'textInputFieldContainer__message'
+                }">
+                {{ invalidMessage }}
+            </Message>
+            <Popover ref="popover" @mouseenter="popoverHover = true" @mouseleave="onPopoverMouseLeave"
+                :pt="{
+                    root: ({state}) =>
+                    {
+                        popupIsShowing = state.visible;
+                    }
+                }">
+                <div>
+                    TODO
                 </div>
-            </Transition>
+            </Popover>
         </div>
     </div>
 </template>
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId, nextTick } from 'vue';
 
+import Password from "primevue/password";
+import FloatLabel from 'primevue/floatlabel';
+import Popover from 'primevue/popover';
+import Message from "primevue/message";
+
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import clipboard from 'clipboardy';
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
-import tippy from 'tippy.js';
 import { InputColorModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import cryptHelper from '../../Helpers/cryptHelper';
@@ -54,28 +75,36 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import { ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Constants/Keys';
 
-import Password from "primevue/password";
-import FloatLabel from 'primevue/floatlabel';
- 
 export default defineComponent({
     name: "EncryptedInputField",
     components: 
     {
         Password,
-        FloatLabel
+        FloatLabel,
+        Popover,
+        Message
     },
     emits: ["update:modelValue", "onDirty"],
     props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
         "showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
         "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback'],
     setup(props, ctx)
-    {
+    {        
         const id = ref(useId());
         const textFieldInstance: Ref<any> = ref(undefined);
         const container: Ref<HTMLElement | null> = ref(null);
+        const popover: Ref<any> = ref();
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
         const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+
+        const hovering: Ref<boolean> = ref(false);
+        const popoverHover: Ref<boolean> = ref(false);
+        const isFocused: Ref<boolean> = ref(false);
+        const popupIsShowing: Ref<boolean> = ref(false);
+        const showPopup: ComputedRef<boolean> = computed(() => props.showRandom === true && isLocked.value === false && 
+            isDisabled.value === false && (hovering.value || isFocused.value || popoverHover.value));
 
         const computedHeight: ComputedRef<string> = computed(() => props.height ?? "50px");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "50px");
@@ -89,19 +118,19 @@ export default defineComponent({
 
         const computedFeedback: ComputedRef<boolean> = computed(() => props.feedback != undefined ? props.feedback : false);
 
-        const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
+        const shouldFadeIn: ComputedRef<boolean> = computed(() => false);
         let inputType: Ref<string> = ref("password");
 
         let isDisabled: Ref<boolean> = ref(props.isInitiallyEncrypted || props.disabled);
         let isLocked: Ref<boolean> = ref(props.isInitiallyEncrypted);
-
         let inputText: Ref<string> = ref(props.initialLength > 0 ? "*".repeat(props.initialLength) : props.modelValue);
 
         const isUnmasked: Ref<boolean> = ref(false);
 
-        const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
+        const isInvalid: Ref<boolean> = ref(false);
+        const invalidMessage: Ref<string> = ref('');
 
-        let tippyInstance: any = null;
+        const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
         const inputBackgroundColor: ComputedRef<string> = computed(() => widgetBackgroundHexString());
 
         let floatLabelStyle = computed(() => {
@@ -112,6 +141,10 @@ export default defineComponent({
                 focus: 
                 {
                     color: colorModel.value.color
+                },
+                invalid:
+                {
+                    color: errorColor.value
                 }
             }
         });
@@ -123,6 +156,7 @@ export default defineComponent({
 
         function validate(): boolean
         {
+            isInvalid.value = false;
             if (!props.modelValue && props.required)
             {
                 invalidate("Please enter a value");
@@ -157,7 +191,7 @@ export default defineComponent({
 
         function onInput(value: string)
         {
-            tippyInstance.hide();
+            isInvalid.value = false;
             inputText.value = value;
 
             ctx.emit("update:modelValue", value);
@@ -206,8 +240,8 @@ export default defineComponent({
 
         function invalidate(message: string)
         {
-            tippyInstance.setContent(message);
-            tippyInstance.show();
+            isInvalid.value = true;
+            invalidMessage.value = message;
         }
 
         function toggleMask(mask: boolean)
@@ -224,44 +258,66 @@ export default defineComponent({
             }
         }
 
+        // delay it so that there isn't any jitter when moving from hovering over the container to the 
+        // popover
+        function onContainerMouseLeave()
+        {
+            setTimeout(() => 
+            {
+                hovering.value = false;
+            }, 50);
+        }
+
+        // delay it so that there isn't any jitter when moving from hovering over the container to the 
+        // popover
+        function onPopoverMouseLeave()
+        {
+            setTimeout(() => 
+            {
+                popoverHover.value = false;
+            }, 50);
+        }
+
         onMounted(() =>
         {
-            if (!container.value)
-            {
-                return;
-            }
-
             validationFunction?.value.push(validate);
             decryptFunctions?.value.push(onAuthenticationSuccessful);
-
-            tippyInstance = tippy(container.value, {
-                inertia: true,
-                animation: 'scale',
-                theme: 'material',
-                placement: "bottom-start",
-                trigger: 'manual',
-                hideOnClick: false
-            });
         });
 
         onUnmounted(() =>
         {
-            tippyInstance.hide();
             validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
         });
 
         watch(() => props.modelValue, (newValue) =>
         {
             inputText.value = newValue;
-        })
+        });
+
+        watch(() => showPopup.value, (newValue) => 
+        {
+            if (newValue != popupIsShowing.value)
+            {
+                popover.value.toggle({currentTarget: container.value}); 
+                popupIsShowing.value = newValue;        
+            }
+        });
 
         return {
             id,
+            errorColor,
             textFieldInstance,
+            popover,
             isDisabled,
+            hovering,
+            popoverHover,
+            popupIsShowing,
+            isFocused,
             isLocked,
             inputType,
             inputText,
+            isInvalid,
+            invalidMessage,
             shouldFadeIn,
             defaultInputColor,
             defaultInputTextColor,
@@ -287,6 +343,8 @@ export default defineComponent({
             computedFeedback,
             isUnmasked,
             toggleMask,
+            onContainerMouseLeave,
+            onPopoverMouseLeave
         }
     }
 })
@@ -370,5 +428,14 @@ export default defineComponent({
 .encryptedInputIcon:hover {
     color: v-bind('colorModel.activeBorderColor');
     transform: scale(1.05);
+}
+
+:deep(.textInputFieldContainer__message) {
+    transform: translateX(5px);
+    margin-top: 1px;
+}
+
+:deep(.encryptedInputFieldContainer__input--invalid) {
+    border-color: v-bind(errorColor) !important;
 }
 </style>

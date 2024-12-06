@@ -225,7 +225,7 @@ export default defineComponent({
 
 <style>
 #organizationDevicesTable {
-    height: 55%;
+    height: 50.5%;
     width: 43%;
     min-width: 547px;
     left: 38%;

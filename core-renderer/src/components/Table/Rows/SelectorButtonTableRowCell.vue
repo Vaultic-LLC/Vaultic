@@ -11,7 +11,7 @@ import SelectorButton from '../../InputFields/SelectorButton.vue';
 import { SelectorButtonModel } from '../../../Types/Models';
 
 export default defineComponent({
-	name: "SelectorButtonTableRowValue",
+	name: "SelectorButtonTableRowCell",
 	components:
 	{
 		SelectorButton

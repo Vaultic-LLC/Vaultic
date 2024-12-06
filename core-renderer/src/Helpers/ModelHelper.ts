@@ -180,7 +180,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dat
             case AtRiskType.Duplicate:
                 app.currentVault.passwordStore.duplicatePasswords.value.forEach((v, k, map) =>
                 {
-                    addAtRiskValues("This Password is used more than once", app.currentVault.passwordStore.passwordsByID.value.get(k)!);
+                    addAtRiskValues("This Password is used more than once. For best security, create unique Passwords.", app.currentVault.passwordStore.passwordsByID.value.get(k)!);
                 });
                 break;
             case AtRiskType.Weak:
@@ -193,7 +193,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dat
             case AtRiskType.ContainsLogin:
                 app.currentVault.passwordStore.containsLoginPasswords.value.forEach(p =>
                 {
-                    addAtRiskValues("This Password contains its Username", app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
+                    addAtRiskValues("This Password contains its Username, which makes it easier to guess. For best secuirty, create Passwords that are hard to guess.", app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
                 });
                 break;
             case AtRiskType.Breached:

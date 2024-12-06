@@ -1,11 +1,11 @@
 <template>
-    <div ref="container" class="colorPickerInputFieldContainer">
+    <div class="colorPickerInputFieldContainer">
         <FloatLabel variant="in" :dt="floatLabelStyle">
             <InputText :pt="{
                 root: {
                     'data-coloris': 'true'
                 }
-            }" :fluid="true" :id="id" v-model="pickedColor" :dt="inputStyle" @update:model-value="onColorSelected" />
+            }" :fluid="true" :invalid="isInvalid" :id="id" v-model="pickedColor" :dt="inputStyle" @update:model-value="onColorSelected" />
             <label :for="id">{{ label }}</label>
             <ColorPicker :pt="{
                 root: 'colorPickerIcon',
@@ -16,19 +16,25 @@
                 }
             }" v-model="pickedColor" :disabled="true" :defaultColor="defaultColor" />
         </FloatLabel>
+        <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+                :pt="{
+                    root: 'colorPickerInputFieldContainer__message'
+                }">{{ invalidMessage }}
+        </Message>
     </div>
 </template>
 <script lang="ts">
-import { Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId } from 'vue';
-
-import tippy from 'tippy.js';
-import { ValidationFunctionsKey } from '../../Constants/Keys';
-import { widgetBackgroundHexString } from '../../Constants/Colors';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId } from 'vue';
 
 import FloatLabel from 'primevue/floatlabel';
 import InputText from 'primevue/inputtext';
 import ColorPicker from 'primevue/colorpicker';
 import IconField from 'primevue/iconfield';
+import Message from "primevue/message";
+
+import { ValidationFunctionsKey } from '../../Constants/Keys';
+import { widgetBackgroundHexString } from '../../Constants/Colors';
+import app from '../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "ColorPickerInputField",
@@ -37,20 +43,23 @@ export default defineComponent({
         FloatLabel,
         InputText,
         ColorPicker,
-        IconField
+        IconField,
+        Message
     },
     emits: ["update:modelValue"],
     props: ['modelValue', 'color', 'label', "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight'],
     setup(props, ctx)
     {
         const id = ref(useId());
-        const container: Ref<any> = ref(null);
-
+        
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
         let defaultColor: Ref<string> = ref(widgetBackgroundHexString());
         let pickedColor: Ref<string> = ref(props.modelValue);
 
+        const isInvalid: Ref<boolean> = ref(false);
+        const invalidMessage: Ref<string> = ref('');
+
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
-        let tippyInstance: any = null;
 
         let floatLabelStyle = computed(() => {
             return {
@@ -60,6 +69,10 @@ export default defineComponent({
                 focus: 
                 {
                     color: props.color,
+                },
+                invalid:
+                {
+                    color: errorColor.value
                 }
             }
         });
@@ -70,12 +83,18 @@ export default defineComponent({
                 {
                     borderColor: props.color
                 },
-                background: widgetBackgroundHexString()
+                background: widgetBackgroundHexString(),
+                invalid: 
+                {
+                    borderColor: errorColor.value,
+                    placeholderColor: errorColor.value
+                }
             }
         });
 
         function validate()
         {
+            isInvalid.value = false;
             if (pickedColor.value == '' || pickedColor.value == undefined)
             {
                 invalidate("Please pick a color");
@@ -87,41 +106,23 @@ export default defineComponent({
 
         function invalidate(message: string)
         {
-            tippyInstance.setContent(message);
-            tippyInstance.show();
-        }
-
-        function onOpen()
-        {
-            tippyInstance.hide();
+            isInvalid.value = true;
+            invalidMessage.value = message;
         }
 
         function onColorSelected(color: string | undefined)
         {
+            isInvalid.value = false;
             ctx.emit('update:modelValue', color);
         }
 
         onMounted(() =>
         {
-            if (!container.value)
-            {
-                return;
-            }
-
             validationFunction?.value.push(validate);
-            tippyInstance = tippy(container.value, {
-                inertia: true,
-                animation: 'scale',
-                theme: 'material',
-                placement: "bottom-start",
-                trigger: 'manual',
-                hideOnClick: false
-            });
         });
 
         onUnmounted(() =>
         {
-            tippyInstance.hide();
             validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
         });
 
@@ -131,8 +132,8 @@ export default defineComponent({
             inputStyle,
             defaultColor,
             pickedColor,
-            container,
-            onOpen,
+            isInvalid,
+            invalidMessage,
             onColorSelected
         }
     }
@@ -161,5 +162,10 @@ export default defineComponent({
     top: 50%;
     transform: translateY(-50%);
     right: 5%;
+}
+
+:deep(.colorPickerInputFieldContainer__message) {
+    transform: translateX(5px);
+    margin-top: 1px;
 }
 </style>

@@ -13,20 +13,6 @@
                     @onOk="popupStore.hideAlert()" />
             </Transition>
         </Teleport>
-        <Teleport to="#body">
-            <Transition name="fade" mode="out-in">
-                <IncorrectDevicePopup v-if="popupStore.incorrectDeviceIsShowing" :response="popupStore.response"
-                    @onClose="popupStore.hideIncorrectDevice()" />
-            </Transition>
-        </Teleport>
-        <Teleport to="#body">
-            <Transition name="lockFade" mode="out-in">
-                <GlobalAuthenticationPopup ref="globalAuthPopup" v-if="popupStore.globalAuthIsShowing"
-                    :focusInput="popupStore.focusGlobalAuthInput"
-                    :playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
-                    @onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
-            </Transition>
-        </Teleport>
         <Transition name="fade">
             <RequestedAuthenticationPopup v-if="popupStore.requestAuthenticationIsShowing"
                 :authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
@@ -85,9 +71,7 @@ import { defineComponent } from 'vue';
 
 import LoadingPopup from './Loading/LoadingPopup.vue';
 import AlertPopup from './AlertPopup.vue';
-import IncorrectDevicePopup from './IncorrectDevice/IncorrectDevicePopup.vue';
 import AccountSetupPopup from "./Account/AccountSetupPopup.vue"
-import GlobalAuthenticationPopup from './Authentication/GlobalAuthenticationPopup.vue';
 import RequestedAuthenticationPopup from './Authentication/RequestedAuthenticationPopup.vue';
 import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue"
 import ToastPopup from './ToastPopup.vue';
@@ -105,9 +89,7 @@ export default defineComponent({
     {
         LoadingPopup,
         AlertPopup,
-        IncorrectDevicePopup,
         AccountSetupPopup,
-        GlobalAuthenticationPopup,
         RequestedAuthenticationPopup,
         BreachedPasswordPopup,
         ToastPopup,

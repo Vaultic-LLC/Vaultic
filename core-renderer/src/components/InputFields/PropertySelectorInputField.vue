@@ -1,30 +1,55 @@
 <template>
     <div class="dropDownContainer">
         <FloatLabel variant="in" :dt="floatLabelStyle">
-            <Select :pt="selectLabelStyle" ref="container" class="primeVueSelect" v-model="selectedValue" 
+            <Select 
+                :pt="{
+                    root: {
+                        class: { 
+                            'dropDownContainer__select--invalid': isInvalid
+                        }
+                    },
+                    option: ({ context }) => {
+                        if (context.selected)
+                        {
+                            return {
+                                style: {
+                                    background: color,
+                                }
+                            }
+                        }
+                    }
+                }" class="primeVueSelect" v-model="selectedValue" 
                 showClear :inputId="id" :options="options" optionLabel="name" :fluid="true" :labelStyle="{'text-align': 'left'}" 
                 @update:model-value="onOptionClick" />
             <label :for="id">{{ label }}</label>
         </FloatLabel>
+        <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+            :pt="{
+                root: 'dropDownContainer__message'
+            }">
+            {{ invalidMessage }}
+        </Message>
     </div>
 </template>
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId } from 'vue';
 
-import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
-import tippy from 'tippy.js';
-import { ValidationFunctionsKey } from '../../Constants/Keys';
-import { PropertyType, PropertySelectorDisplayFields } from '../../Types/Fields';
-
 import FloatLabel from 'primevue/floatlabel';
 import Select from "primevue/select";
+import Message from "primevue/message";
+
+import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
+import { ValidationFunctionsKey } from '../../Constants/Keys';
+import { PropertyType, PropertySelectorDisplayFields } from '../../Types/Fields';
+import app from '../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "PropertySelectorInputField",
     components: 
     {
         FloatLabel,
-        Select
+        Select,
+        Message
     },
     emits: ["update:modelValue", "propertyTypeChanged"],
     props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget', 'fadeIn', 'height', 'minHeight', 'maxHeight',
@@ -32,12 +57,17 @@ export default defineComponent({
     setup(props, ctx)
     {
         const id = ref(useId());
-        const container: Ref<any> = ref(null);
+
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
 
         const options: ComputedRef<any[]> = computed(() => 
         {
             return (props.displayFieldOptions as PropertySelectorDisplayFields[]).map((k, i) => { return { name: k.displayName, code: i, df: k } });
         });
+
+        const isInvalid: Ref<boolean> = ref(false);
+        const invalidMessage: Ref<string> = ref('');
         
         let selectedValue: Ref<any> = ref();
         let selectedPropertyType: PropertyType = PropertyType.String;
@@ -50,6 +80,7 @@ export default defineComponent({
 
         function onOptionClick(option: any)
         {
+            isInvalid.value = false;
             selectedValue.value = option;
             ctx.emit('update:modelValue', option?.df?.backingProperty ?? null);
 
@@ -69,6 +100,7 @@ export default defineComponent({
 
         function validate()
         {
+            isInvalid.value = false;
             if (selectedValue.value == '' || selectedValue.value == undefined)
             {
                 invalidate("Please select a value");
@@ -80,8 +112,8 @@ export default defineComponent({
 
         function invalidate(message: string)
         {
-            tippyInstance.setContent(message);
-            tippyInstance.show();
+            isInvalid.value = true;
+            invalidMessage.value = message;
         }
 
         let floatLabelStyle = computed(() => {
@@ -92,23 +124,10 @@ export default defineComponent({
                 focus: 
                 {
                     color: props.color
-                }
-            }
-        });
-
-        const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
-        const selectLabelStyle = computed(() => {
-            return {
-                // @ts-ignore
-                option: ({ context }) => {
-                    if (context.selected)
-                    {
-                        return {
-                            style: {
-                                background: props.color,
-                            }
-                        }
-                    }
+                },
+                invalid: 
+                {
+                    color: errorColor.value
                 }
             }
         });
@@ -121,37 +140,24 @@ export default defineComponent({
                 selectedValue.value = initialValue[0];
             }
 
-            if (!container.value)
-            {
-                return;
-            }
-
             validationFunction?.value.push(validate);
-            tippyInstance = tippy(container.value.$el, {
-                inertia: true,
-                animation: 'scale',
-                theme: 'material',
-                placement: "bottom-start",
-                trigger: 'manual',
-                hideOnClick: false
-            });
         });
 
         onUnmounted(() =>
         {
-            tippyInstance.hide();
             validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
         });
 
         return {
             id,
+            errorColor,
+            isInvalid,
+            invalidMessage,
             floatLabelStyle,
             selectBackgroundColor,
-            selectLabelStyle,
             options,
             selectedValue,
             backgroundColor,
-            container,
             displayFieldCount,
             onOptionClick
         }
@@ -183,5 +189,9 @@ export default defineComponent({
 
 .primeVueSelect.p-focus {
     border: 1px solid v-bind(color) !important;
+}
+
+:deep(.dropDownContainer__select--invalid) {
+    border-color: v-bind(errorColor) !important;
 }
 </style>

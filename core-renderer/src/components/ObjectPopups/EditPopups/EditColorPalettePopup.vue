@@ -62,11 +62,10 @@ export default defineComponent({
 <style>
 .editColorPaletteHeader {
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     color: white;
     animation: fadeIn 1s linear forwards;
     margin: 5%;
-    margin-left: 11%;
     margin-bottom: 0;
     font-size: clamp(15px, 1vw, 25px);
 }
