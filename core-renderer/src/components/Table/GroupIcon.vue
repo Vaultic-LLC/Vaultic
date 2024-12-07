@@ -43,7 +43,7 @@ export default defineComponent({
 </script>
 <style>
 .groupIconContainer {
-    width: clamp(15.5px, 1.4vw, 40px);
+    width: clamp(20px, 1.4vw, 40px);
     aspect-ratio: 1 / 1;
     border-radius: 50%;
     display: flex;
@@ -71,6 +71,6 @@ export default defineComponent({
 
 .groupIconContainer__icon {
     color: v-bind('groupModel.color');
-    font-size: 20px !important;
+    font-size: clamp(13px, 1vw, 20px) !important;
 }
 </style>

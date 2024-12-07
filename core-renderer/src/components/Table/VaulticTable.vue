@@ -67,8 +67,8 @@
                     headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__headerCell--reOrderable']
                 }">
                 <template #sorticon="{ sortOrder }">
-                    <i v-if="sortOrder === 0" class="pi pi-arrow-up vaulticTableContainer__column--no-sort" />
-                    <i v-else class="pi pi-arrow-up" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
+                    <i v-if="sortOrder === 0" class="pi pi-arrow-up vaulticTableContainer__sortIcon vaulticTableContainer__column--no-sort" />
+                    <i v-else class="pi pi-arrow-up vaulticTableContainer__sortIcon" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
                 <template #body="slotProps">
                     <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
@@ -511,7 +511,7 @@ export default defineComponent({
 :deep(.vaulticTableContainer__header) {
     background: transparent;
     padding: 0;
-    height: 50px;
+    height: clamp(30px, 5vh, 50px);
 
     /* so that there isn't a little bit of border over the scrollbar on the right */
     width: calc(100% - clamp(7px, 0.7vw, 10px));
@@ -571,6 +571,12 @@ export default defineComponent({
 :deep(.vaulticTableContainer__column) {
     background: transparent !important;
     transition: 0.3s;
+    font-size: clamp(12px, 1vw, 16px);
+    padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
+}
+
+:deep(.vaulticTableContainer__sortIcon) {
+    font-size: clamp(12px, 0.8vw, 16px);
 }
 
 :deep(.vaulticTableContainer__column--no-sort) {

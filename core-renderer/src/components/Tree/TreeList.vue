@@ -35,7 +35,8 @@ import { TreeNodeMember } from "../../Types/Tree";
 
 export default defineComponent({
     name: "TreeList",
-    components: {
+    components: 
+    {
         SearchBar,
         AddButton,
         TreeNode,

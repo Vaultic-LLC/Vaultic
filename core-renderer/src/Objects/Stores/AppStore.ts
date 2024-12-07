@@ -41,7 +41,7 @@ export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
 export class AppStore extends Store<AppStoreState, AppStoreEvents>
 {
-    private loadedUser: boolean;
+    private internaLoadedUser: Ref<boolean>;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
 
     private internalActiveAppView: Ref<AppView> = ref(AppView.Vault);
@@ -67,6 +67,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
 
+    get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.settings; }
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
@@ -91,7 +92,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     {
         super("appStoreState");
 
-        this.loadedUser = false;
+        this.internaLoadedUser = ref(false);
         this.internalUserDataBreachStore = new UserDataBreachStore();
         this.internalDeviceStore = new DeviceStore();
         this.internalOrganizationStore = new OrganizationStore();
@@ -188,7 +189,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         await api.cache.clear();
 
         this.isOnline = false;
-        this.loadedUser = false;
+        this.internaLoadedUser.value = false;
     }
 
     public resetSessionTime()
@@ -203,7 +204,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     public async loadUserData(masterKey: string, payload?: UserDataPayload)
     {
-        if (this.loadedUser)
+        if (this.internaLoadedUser.value)
         {
             return false;
         }
@@ -225,7 +226,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
-        this.loadedUser = true;
+        this.internaLoadedUser.value = true;
         this.internalActiveAppView.value = AppView.Vault;
 
         // don't bother waiting for this, just trigger it so they are there if we need them

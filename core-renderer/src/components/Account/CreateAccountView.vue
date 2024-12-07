@@ -6,13 +6,13 @@
                 <div :key="refreshKey" class="createAccountViewContainer__content">
                     <div class="createAccountViewContainer__inputs">
                         <TextInputField :color="color" :label="'First Name'" v-model="firstName" :width="'80%'"
-                            :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+                            :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" />
                         <TextInputField :color="color" :label="'Last Name'" v-model="lastName" :width="'80%'"
-                            :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+                            :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" />
                         <TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email" :width="'80%'"
-                            :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :isEmailField="true" />
+                            :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" :isEmailField="true" />
                         <TextInputField ref="emailField" :color="color" :label="'Confirm Email'" v-model="reEnterEmail"
-                            :width="'80%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :isEmailField="true"
+                            :width="'80%'" :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" :isEmailField="true"
                             :additionalValidationFunction="emailsMatch" />
                     </div>
                 </div>

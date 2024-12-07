@@ -10,12 +10,11 @@ import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted } fr
 import ObjectView from "./ObjectView.vue";
 import TextInputField from '../InputFields/TextInputField.vue';
 
-import { GridDefinition, HeaderTabModel, SortableHeaderModel, TextTableRowValue } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { defaultOrganization, Member, Organization } from '../../Types/DataTypes';
 import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { createSortableHeaderModels } from '../../Helpers/ModelHelper';
 import { HeaderDisplayField } from '../../Types/Fields';
 import { TableTemplateComponent } from '../../Types/Components';
 import { api } from '../../API';
@@ -95,83 +94,10 @@ export default defineComponent({
                 clickable: true
             },
         ];
-        
-        let tableHeaderModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
-        {
-            return createSortableHeaderModels<Member>(
-                activeUserHeader, userHeaderDisplayFields, userSortedCollection, undefined, setTableRows);
-        });
 
         function setTableRows()
         {
-            let pendingRows: Promise<SelectableTableRowData>[] = [];
-            pendingRows = userSortedCollection.calculatedValues.map(async p =>
-            {
-                const values: TextTableRowValue[] = [
-                    // {
-                    //     component: "TableRowTextValue",
-                    //     value: p.value.firstName.value,
-                    //     copiable: false,
-                    //     width: 'clamp(100px, 7vw, 200px)'
-                    // },
-                    // {
-                    //     component: "TableRowTextValue",
-                    //     value: p.value.lastName.value,
-                    //     copiable: false,
-                    //     width: 'clamp(100px, 7vw, 200px)'
-                    // },
-                    {
-                        component: "TableRowTextValue",
-                        value: p.value.username.value,
-                        copiable: false,
-                        width: 'clamp(100px, 7vw, 200px)'
-                    },
-                    {
-                        component: "TableRowTextValue",
-                        value: p.value.permission.value.toString(),
-                        copiable: false,
-                        width: 'clamp(20px, 3vw, 40px)'
-                    }
-                ];
 
-                const id = await api.utilities.generator.uniqueId();
-                const model: SelectableTableRowData = 
-                {
-                    id: id,
-                    key: id,
-                    values: values,
-                    isActive: ref(orgState.value.members.value.has(p.value.userID.value)),
-                    selectable: true,
-                    onClick: async function ()
-                    {
-                        if (orgState.value.members.value.has(p.value.userID.value))
-                        {
-                            orgState.value.members.value.delete(p.value.userID.value);                                
-                        }
-                        else
-                        {
-                            // TODO: is this ok to just add the field here or should I create a new one?
-                            orgState.value.members.value.set(p.value.userID.value, p);
-                        }
-                    }
-                }
-                return model;
-            });
-            
-
-            if (pendingRows.length > 0)
-            {
-                Promise.all(pendingRows).then((rows) =>
-                {
-                    tableRowDatas.value.setValues(rows);
-                    if (tableRef.value)
-                    {
-                        // @ts-ignore
-                        tableRef.value.scrollToTop();
-                        setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-                    }
-                });
-            }
         }
 
         function onSave()
@@ -250,7 +176,6 @@ export default defineComponent({
             gridDefinition,
             searchText,
             tableRowDatas,
-            tableHeaderModels,
             userHeaderTab,
             onSave,
         };

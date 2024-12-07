@@ -1,63 +1,9 @@
-import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
-import { AtRiskModel, SortableHeaderModel, TableRowModel } from "../Types/Models";
-import { Ref, computed, ref } from "vue";
+import { AtRiskModel, TableRowModel } from "../Types/Models";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject } from "../Types/DataTypes";
-import { HeaderDisplayField } from "../Types/Fields";
 import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
-
-export function createSortableHeaderModels<T extends { [key: string]: any } & IIdentifiable>(activeHeaderTracker: Ref<number>, headerDisplayField: HeaderDisplayField[],
-    sortableCollection: SortedCollection<T>, pinnedCollection?: SortedCollection<T>, updateModels?: () => void): SortableHeaderModel[]
-{
-    return headerDisplayField.map((header, index) =>
-    {
-        const sortableHeaderModel: SortableHeaderModel =
-        {
-            isActive: computed(() => activeHeaderTracker.value == index),
-            name: header.displayName,
-            descending: ref(true),
-            clickable: header.clickable,
-            width: header.width,
-            padding: header.padding,
-            centered: header.centered,
-            headerSpaceRight: header.headerSpaceRight,
-            onClick: function ()
-            {
-                if (!header.clickable)
-                {
-                    return;
-                }
-
-                if (!this.descending)
-                {
-                    return;
-                }
-
-                if (this.isActive.value)
-                {
-                    this.descending.value = !this.descending.value;
-                }
-                else
-                {
-                    this.descending.value = true;
-                }
-
-                activeHeaderTracker.value = index;
-                sortableCollection.updateSort(header.backingProperty, this.descending.value == true);
-                pinnedCollection?.updateSort(header.backingProperty, this.descending.value == true);
-
-                if (updateModels)
-                {
-                    updateModels();
-                }
-            }
-        }
-
-        return sortableHeaderModel;
-    });
-}
 
 let filterGroupModelID = 0;
 export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[])

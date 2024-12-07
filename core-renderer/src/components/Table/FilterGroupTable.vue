@@ -482,9 +482,9 @@ export default defineComponent({
     top: max(252px, 42%);
 }
 
-@media (max-width: 1300px) {
+/* @media (max-width: 1300px) {
     #filterTable {
         left: max(11px, 1%);
     }
-}
+} */
 </style>

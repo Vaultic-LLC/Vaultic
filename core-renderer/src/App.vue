@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, ComputedRef, computed } from 'vue';
+import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, watch } from 'vue';
 
 import TableSelector from "./components/TableSelector.vue"
 import FilterGroupTable from './components/Table/FilterGroupTable.vue';
@@ -107,19 +107,31 @@ export default defineComponent({
         let lastMouseover: number = 0;
         const threshold: number = 1000;
 
-        onMounted(async () =>
+        function onMouseover()
         {
-            document.getElementById('body')?.addEventListener('mouseover', (_) =>
+            if (Date.now() - lastMouseover < threshold)
             {
-                if (Date.now() - lastMouseover < threshold)
-                {
-                    return;
-                }
+                return;
+            }
 
-                app.resetSessionTime();
-                lastMouseover = Date.now();
-            });
+            app.resetSessionTime();
+            lastMouseover = Date.now();
+        }
 
+        watch(() => app.loadedUser.value, (newValue) => 
+        {
+            if (newValue)
+            {
+                document.getElementById('body')?.addEventListener('mouseover', onMouseover);
+            }
+            else 
+            {
+                document.getElementById('body')?.removeEventListener('mouseover', onMouseover);
+            }
+        });
+
+        onMounted(() =>
+        {
             finishedMounting.value = true;
             app.popups.showAccountSetup(AccountSetupView.SignIn);
         });
@@ -217,7 +229,7 @@ h2 {
     }
 }
 
-@media (max-width: 1300px) {
+/* @media (max-width: 1300px) {
     .loginHistoryCalendarWidget {
         left: max(890px, 78%);
         width: 21.5%;
@@ -228,7 +240,7 @@ h2 {
     .secureProgressChartWidget {
         left: max(627px, 55%);
     }
-}
+} */
 
 @media (max-height: 750px) {
     .loginHistoryCalendarWidget {

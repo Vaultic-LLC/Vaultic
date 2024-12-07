@@ -3,7 +3,7 @@
         <FloatLabel variant="in" :dt="floatLabelStyle">
             <IconField>
                 <InputIcon class="pi pi-search" />
-                <InputText :dt="inputStyle" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput" />
+                <InputText :dt="inputStyle" size="small" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput" />
             </IconField>
             <label :for="id">Search</label>
         </FloatLabel>

@@ -61,11 +61,11 @@ export default defineComponent({
     transition: 0.3s;
 }
 
-@media (max-width: 1300px) {
+/* @media (max-width: 1300px) {
     .colorPalettesContainer {
         left: 1%;
     }
-}
+} */
 
 .colorPalettesContainer__displayOne {
     grid-row: 1;

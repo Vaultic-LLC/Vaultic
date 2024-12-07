@@ -92,6 +92,7 @@ export default defineComponent({
 }
 
 .popupButton__primeVueButton {
+    height: 100% !important;
     transition: v-bind(transition) !important;
     background-color: var(--app-color) !important;
     color: white !important;

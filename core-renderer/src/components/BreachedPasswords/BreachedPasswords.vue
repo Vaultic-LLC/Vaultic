@@ -197,11 +197,11 @@ export default defineComponent({
     background: rgb(44 44 51 / 16%);
 }
 
-@media (max-width: 1300px) {
+/* @media (max-width: 1300px) {
     .breachedPasswordsContainer {
         left: max(325px, 28.5%);
     }
-}
+} */
 
 @media (max-height: 650px) {
     .breachedPasswordsContainer {

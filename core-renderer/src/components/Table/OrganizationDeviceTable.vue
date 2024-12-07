@@ -232,9 +232,9 @@ export default defineComponent({
     top: max(252px, 42%);
 }
 
-@media (max-width: 1300px) {
+/* @media (max-width: 1300px) {
     #organizationDevicesTable {
         left: max(324px, 28.5%);
     }
-}
+} */
 </style>

@@ -1,9 +1,11 @@
 <template>
     <div class="editSettingsHeader">
+        <!-- TODO: remove once account info is moved to user view and then move the settings view up higher -->
         <TableSelector class="settingsPopupHeader__controls" :singleSelectorItems="singleSelectorItems" />
     </div>
     <div class="settingPopupContainer">
         <Transition name="fade" mode="out-in">
+
             <SettingsView v-if="activeSection == 0" :creating="false" />
             <AccountInfoView v-else-if="activeSection == 2" />
         </Transition>

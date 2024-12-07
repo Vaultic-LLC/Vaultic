@@ -1,7 +1,6 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <ScrollView :color="color" class="settingsView__container">
             <div class="settingsView__sectionTitle settingsView__appSettings">App Settings</div>
             <div class="settingsView__inputSection">
                 <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
@@ -78,7 +77,6 @@
                     :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || failedToLoadSharedData" />
                 // TODO: show user multiselect if allowSharingFrom == users
             </div> -->
-        </ScrollView>
     </ObjectView>
 </template>
 <script lang="ts">
@@ -88,7 +86,6 @@ import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
-import ScrollView from './ScrollView.vue';
 
 import { AutoLockTime } from '../../Types/App';
 import { GridDefinition } from '../../Types/Models';
@@ -109,7 +106,6 @@ export default defineComponent({
         TextInputField,
         CheckboxInputField,
         EnumInputField,
-        ScrollView
     },
     props: ['creating', 'currentView'],
     setup(props)

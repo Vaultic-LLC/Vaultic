@@ -7,24 +7,22 @@
                     <div class="signInViewContainer__content">
                         <div v-if="showEmailField" class="signInViewContainer__inputs">
                             <TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
-                                :width="'70%'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'"
+                                :width="'70%'" :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''"
                                 :isEmailField="true" />
                             <EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
                                 v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
-                                :height="'4vh'" :minHeight="'35px'" />
+                                :height="''" :minHeight="''" :maxHeight="''" />
                         </div>
                         <div class="signInContainer__offlineMode">
                             <CheckboxInputField :label="'Online Mode'"
                                 :color="color" v-model="onlineMode" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
-                                :minHeight="'10px'" />
-                            <ToolTip :message="'Restore last backup from the server. Will override all local data'"
-                                :size="'20px'" :color="color" />
+                                :minHeight="'18px'" :fontSize="'clamp(13px, 1vh, 20px)'" />
                         </div>
                         <div v-if="reloadAllDataIsToggled" class="signInContainer__restoreLastBackup">
                             <CheckboxInputField :label="'Restore Last Backup'"
                                 :color="color" v-model="reloadAllData" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
-                                :minHeight="'10px'" />
+                                :minHeight="'18px'" :fontSize="'clamp(13px, 1vw, 20px)'" />
                             <ToolTip :message="'Restore last backup from the server. Will override all local data'"
                                 :size="'20px'" :color="color" />
                         </div>
@@ -63,11 +61,11 @@
                         <div class="signInViewContainer__divider__text">Or</div>
                         <div class="signInViewContainer__divider__line"></div>
                     </div>
-                    <div class="signInViewContainer__limitedMode">
+                    <!-- <div class="signInViewContainer__limitedMode">
                         <ButtonLink :color="color" :text="'Continue in Offline Mode'" @onClick="moveToLimitedMode" />
-                    </div>
+                    </div> -->
                     <div class="signInViewContainer__createAccountLink">Don't have an account?
-                        <ButtonLink :color="color" :text="'Create One'" @onClick="moveToCreateAccount" />
+                        <ButtonLink :color="color" :text="'Create One'" :fontSize="'clamp(15px, 1vw, 20px)'" @onClick="moveToCreateAccount" />
                     </div>
                 </div>
             </template>
@@ -121,7 +119,7 @@ export default defineComponent({
         const showEmailField: Ref<boolean> = ref(true);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
 
-        const contentBottomRowGap: Ref<string> = ref(showEmailField.value ? "min(1.5vh, 25px)" : "min(2.5vh, 40px)");
+        const contentBottomRowGap: Ref<string> = ref(showEmailField.value ? "min(1.5vh, 25px)" : "min(2.5vh, 20px)");
         const contentBottomMargin: ComputedRef<string> = computed(() => showEmailField.value ? "15px" : "130px");
 
         function moveToCreateAccount()
@@ -374,7 +372,7 @@ export default defineComponent({
 
 .signInViewContainer__createAccountLink {
     color: white;
-    font-size: clamp(13px, 1vw, 20px);
+    font-size: clamp(15px, 1vw, 20px);
 }
 
 .signInViewContainer__divider {

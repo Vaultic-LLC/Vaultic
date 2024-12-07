@@ -1,30 +1,40 @@
 <template>
-    <div class="checkboxInputContainer" :class="{ fadeIn: shouldFadeIn }" @click="onClick">
-        <div class="checkboxInputCheckbox" :class="{ checked: checked, disabled: disabled }">
-            <ion-icon class="checkedIcon" v-if="checked" name="checkmark-outline"></ion-icon>
-        </div>
-        <label class="checkboxInputFieldLabel" :class="{ disabled: disabled }">{{ label }}</label>
-        <input class="checkboxInputField" type="checkbox" />
+    <div class="checkboxInputContainer">
+        <Checkbox :inputId="id" v-model="checked" binary :disabled="disabled" @update:modelValue="onClick"
+            :pt="{
+                box: 'checkboxInputContainer__box',
+                icon: 'checkboxInputContainer__icon'
+            }" />
+        <label :for="id" class="checkboxInputFieldLabel">{{ label }}</label>
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref, watch, useId } from 'vue';
+
+import Checkbox from 'primevue/checkbox';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
+import { widgetBackgroundHexString } from '../../Constants/Colors';
 
 export default defineComponent({
     name: "CheckboxInputField",
+    components:
+    {
+        Checkbox
+    },
     emits: ["update:modelValue"],
-    props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "height", "minHeight", "maxHeight"],
+    props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", "height", "minHeight", "maxHeight", "fontSize"],
     setup(props, ctx)
     {
-        const shouldFadeIn: ComputedRef<boolean> = computed(() => false);
+        const id = ref(useId());
         const checked: Ref<boolean> = ref(props.modelValue);
 
+        const backgroundColor: Ref<string> = ref(widgetBackgroundHexString());
         const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "auto")
         const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : "20px");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "5px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "20px");
+        const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ? props.fontSize : "clamp(10px, 1vh, 20px)")
 
         function onClick()
         {
@@ -33,7 +43,6 @@ export default defineComponent({
                 return;
             }
 
-            checked.value = !checked.value;
             ctx.emit("update:modelValue", checked.value);
         }
 
@@ -43,7 +52,7 @@ export default defineComponent({
         });
 
         return {
-            shouldFadeIn,
+            id,
             defaultInputColor,
             defaultInputTextColor,
             checked,
@@ -51,6 +60,8 @@ export default defineComponent({
             computedHeight,
             computedMinHeight,
             computedMaxHeight,
+            computedFontSize,
+            backgroundColor,
             onClick
         }
     }
@@ -70,60 +81,20 @@ export default defineComponent({
     column-gap: clamp(5px, 0.4vw, 10px);
 }
 
-.checkboxInputContainer.fadeIn {
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
-}
-
-.checkboxInputCheckbox {
-    background-color: var(--app-color);
-    border: 1.5px solid white;
-    border-radius: 30%;
-    height: v-bind(computedHeight);
-    min-height: v-bind(computedMinHeight);
-    max-height: v-bind(computedMaxHeight);
-    aspect-ratio: 1 /1;
-    transition: 0.3s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-}
-
-.checkboxInputCheckbox.disabled {
-    border: 1.5px solid grey;
-}
-
-.checkboxInputCheckbox .checkedIcon {
-    color: white;
-    font-size: 18px;
-}
-
-.checkboxInputCheckbox.checked {
-    border: 1.5px solid v-bind(color);
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
 .checkboxInputContainer .checkboxInputFieldLabel {
     color: white;
-    font-size: clamp(10px, 1vh, 20px);
+    font-size: v-bind(computedFontSize);
 }
 
-.checkboxInputContainer .checkboxInputFieldLabel.disabled {
-    color: grey;
+:deep(.checkboxInputContainer__icon) {
+    color: white !important;
 }
 
-.checkboxInputField {
-    position: absolute;
-    display: none;
+:deep(.checkboxInputContainer__box) {
+    background: v-bind(backgroundColor) !important
+}
+
+:deep(.p-checkbox-checked .p-checkbox-box.checkboxInputContainer__box) {
+    border-color: v-bind(color) !important;
 }
 </style>

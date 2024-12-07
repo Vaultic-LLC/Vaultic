@@ -43,11 +43,11 @@ export default defineComponent({
     border-radius: 1vw;
 }
 
-@media (max-width: 1300px) {
+/* @media (max-width: 1300px) {
     .menuWidgetContainer {
         left: max(11px, 1%);
     }
-}
+} */
 
 #lockIconCard {
     grid-row: 1;

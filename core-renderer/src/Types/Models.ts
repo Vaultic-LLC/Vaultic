@@ -1,10 +1,9 @@
-import { ComputedRef, Ref, ref } from "vue";
+import { ComputedRef, Ref } from "vue";
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "@vaultic/shared/Types/Device";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ImportableDisplayField } from "./Fields";
 import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
-import { IPrimaryDataObject } from "./DataTypes";
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
 
 export interface ComponentSizeModel 
@@ -83,11 +82,6 @@ export interface SmallMetricGaugeModel
     onClick: () => void;
 }
 
-export interface CollapsibleTableRowModel extends TableRowData
-{
-    data: Field<IPrimaryDataObject>;
-}
-
 export interface SingleSelectorItemModel
 {
     title: Ref<string>;
@@ -96,59 +90,16 @@ export interface SingleSelectorItemModel
     onClick: () => void;
 }
 
-export interface TableRowData
-{
-    id: string;
-    isPinned?: boolean;
-    values: TableRowValue[];
-    atRiskModel?: AtRiskModel;
-    backingObject?: Field<any>;
-    onPin?: () => void;
-    onEdit?: () => void;
-    onDelete?: () => void;
-}
-
-export interface TableRowValue
-{
-    component: string;
-    copiable: boolean;
-    width: string;
-    margin?: boolean;
-}
-
 export interface AtRiskModel
 {
     message: string;
     onClick?: () => void;
 }
 
-export interface TextTableRowValue extends TableRowValue
-{
-    value: string;
-}
-
-export interface ColorTableRowValue extends TableRowValue
-{
-    color: string;
-}
-
 export interface SelectorButtonModel
 {
     isActive: Ref<boolean>;
     color: Ref<string>;
-    onClick: () => void;
-}
-
-export interface SortableHeaderModel
-{
-    isActive: Ref<boolean>;
-    name?: string;
-    descending?: Ref<boolean>;
-    clickable: boolean;
-    width: string;
-    padding?: string;
-    centered?: boolean;
-    headerSpaceRight?: string;
     onClick: () => void;
 }
 
@@ -159,19 +110,6 @@ export interface HeaderTabModel
     color: ComputedRef<string>;
     size?: 'small' | 'regular';
     onClick?: () => void;
-}
-
-export function emptyHeader(): SortableHeaderModel
-{
-    return {
-        isActive: ref(false),
-        name: '',
-        descending: ref(false),
-        clickable: false,
-        width: 'auto',
-        padding: '0',
-        onClick: () => { }
-    }
 }
 
 export interface GridDefinition

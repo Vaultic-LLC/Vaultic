@@ -23,8 +23,6 @@ import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, Reactive, 
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
-import TableTemplate from '../Table/TableTemplate.vue';
-import TableHeaderRow from '../Table/Header/TableHeaderRow.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
@@ -44,8 +42,6 @@ export default defineComponent({
     components: {
         ObjectView,
         TextInputField,
-        TableTemplate,
-        TableHeaderRow,
         AddButton,
         VaulticTable,
         VaulticFieldset
