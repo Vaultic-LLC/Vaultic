@@ -28,54 +28,55 @@ export default defineComponent({
 
         let groupIconModels: ComputedRef<GroupIconModel[]> = computed(() =>
         {
-            const groupsToUse = app.activePasswordValuesTable == DataType.Passwords ? app.currentVault.groupStore.passwordGroups : app.currentVault.groupStore.valuesGroups;
-            const allGroups: Field<Group>[] = groupsToUse.filter(g => dataType.value.value.groups.value.has(g.value.id.value));
-            if (allGroups.length <= 4)
+            const models: GroupIconModel[] = [];
+            if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                return allGroups.map((g) =>
+                dataType.value.value.groups.value.forEach((v, k, map) => 
                 {
-                    const groupIconModel: GroupIconModel =
+                    const group = app.currentVault.groupStore.passwordGroupsByID.value.get(k);
+                    if (!group)
                     {
-                        icon: g.value.icon.value,
-                        toolTipText: g.value.name.value,
-                        color: g.value.color.value
+                        return;
                     }
 
-                    return groupIconModel;
+                    addToModels(models, group);
+                });
+            }
+            else
+            {
+                dataType.value.value.groups.value.forEach((v, k, map) => 
+                {
+                    const group = app.currentVault.groupStore.valueGroupsByID.value.get(k);
+                    if (!group)
+                    {
+                        return;
+                    }
+
+                    addToModels(models, group);
                 });
             }
 
-            let tempGroupModels: GroupIconModel[] = [...allGroups.filter((_, i) => i < 3)].map((g) =>
-            {
-                const groupIconModel: GroupIconModel =
-                {
-                    icon: g.value.icon.value,
-                    toolTipText: g.value.name.value,
-                    color: g.value.color.value
-                }
 
-                return groupIconModel;
-            });
-
-            let lastGroupModel: GroupIconModel =
-            {
-                icon: `+${allGroups.length - 3}`,
-                toolTipText: '',
-                color: primaryColor.value
-            };
-
-            for (let i = 3; i < allGroups.length; i++)
-            {
-                lastGroupModel.toolTipText += `${allGroups[i].value.name.value}`;
-                if (i != allGroups.length - 1)
-                {
-                    lastGroupModel.toolTipText += ", ";
-                }
-            }
-
-            tempGroupModels.push(lastGroupModel);
-            return tempGroupModels;
+            return models;
         });
+
+        function addToModels(currentModels: GroupIconModel[], group: Field<Group>)
+        {
+            if (currentModels.length < 4)
+            {
+                currentModels.push({
+                    icon: group.value.icon.value,
+                    toolTipText: group.value.name.value,
+                    color: group.value.color.value
+                });
+            }
+            else
+            {
+                currentModels[3].icon = `+${currentModels.length - 3}`;
+                currentModels[3].toolTipText += `, ${group.value.name.value}`;
+                currentModels[3].color = primaryColor.value
+            }
+        }
 
 		return {
             groupIconModels

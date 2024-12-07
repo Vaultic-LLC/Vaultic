@@ -92,6 +92,7 @@ api.environment.failedToInitalizeDatabase().then((failed: boolean) =>
 function initApp()
 {
 	const app = createApp(App);
+	app.config.performance = true;
 
 	app.use(setupCalendar, {});
 	app.use(PrimeVue, {

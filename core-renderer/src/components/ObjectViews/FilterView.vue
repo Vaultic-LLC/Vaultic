@@ -207,7 +207,7 @@ export default defineComponent({
             {
                 onAdd();
             }
-            else 
+            else
             {
                 let models: TableRowModel[] = [];
                 filterState.value.conditions.value.forEach((v, k, map) =>
@@ -215,7 +215,8 @@ export default defineComponent({
                     models.push({
                         id: k,
                         backingObject: v,
-                        state: {
+                        state: 
+                        {
                             filterConditionType: FilterConditionType,
                             inputType: PropertyType.String
                         }

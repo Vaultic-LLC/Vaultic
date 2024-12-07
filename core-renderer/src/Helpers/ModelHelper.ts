@@ -187,7 +187,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dat
                 });
         }
     }
-    else 
+    else
     {
         newModels.push(...allValues.map(v => buildModel(v)));
     }

@@ -107,7 +107,7 @@ export default defineComponent({
                 models.push({ header: "Password For", field: "passwordFor" });
                 models.push({ header: "Username", field: "login" });
             }
-            else 
+            else
             {
                 models.push({ header: "Groups", field: "groups", component: "GroupIconsRowCell", data: { 'color': color }, startingWidth: '105px' });
                 models.push({ header: "Name", field: "name" });
