@@ -71,7 +71,16 @@
                     <i v-else class="pi pi-arrow-up vaulticTableContainer__sortIcon" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
                 <template #body="slotProps">
-                    <component v-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
+                    <!-- TODO Tooltip no longer works on group icons -->
+                    <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
+                        <div v-for="model in (slotProps.data as TableRowModel).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
+                            :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
+                            <span class="vaulticTableContainer__groupIconSpan">
+                                <i :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
                         :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" />
                     <template v-else>
                         {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
@@ -121,7 +130,6 @@ import Column from 'primevue/column';
 import Button from 'primevue/button';
 import SearchBar from './Controls/SearchBar.vue';
 
-import GroupIconsRowCell from './Rows/GroupIconsRowCell.vue';
 import AtRiskIndicator from "./AtRiskIndicator.vue";
 import SelectorButtonTableRowCell from './Rows/SelectorButtonTableRowCell.vue';
 import ColorTableRowCell from './Rows/ColorTableRowCell.vue';
@@ -158,7 +166,6 @@ export default defineComponent({
         Column,
         Button,
         SearchBar,
-        GroupIconsRowCell,
         AtRiskIndicator,
         SelectorButtonTableRowCell,
         ColorTableRowCell,
@@ -699,5 +706,41 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__pageCountSelectOption) {
     background: color-mix(in srgb, v-bind(primaryColor), transparent 84%) !important;
+}
+
+.vaulticTableContainer__groupIconCell {
+    display: flex;
+    height: inherit;
+    justify-content: left;
+    align-items: center;
+    overflow: hidden;
+    flex-wrap: wrap;
+    width: auto;
+}
+
+.vaulticTableContainer__groupIconContainer {
+    width: clamp(20px, 1.4vw, 40px);
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.5s;
+    /* background: v-bind('groupModel.color'); */
+    /* box-shadow: 0 0 5px v-bind('groupModel.color'); */
+    margin: 2px;
+    will-change: transform;
+}
+
+.vaulticTableContainer__groupIconSpan {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    font-size: clamp(10px, 0.7vw, 16px);
+}
+
+.vaulticTableContainer__groupIcon {
+    font-size: clamp(13px, 1vw, 20px) !important;
 }
 </style>

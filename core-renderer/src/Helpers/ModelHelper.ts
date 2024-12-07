@@ -1,8 +1,8 @@
-import { AtRiskModel, TableRowModel } from "../Types/Models";
+import { AtRiskModel, GroupIconModel, TableRowModel } from "../Types/Models";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
-import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject } from "../Types/DataTypes";
+import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject, Group } from "../Types/DataTypes";
 import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
 
 let filterGroupModelID = 0;
@@ -110,7 +110,7 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
 }
 
 let passwordValueModelID = 0;
-export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dataType: DataType, allValues: Field<T>[])
+export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(color: string, dataType: DataType, allValues: Field<T>[])
 {
     const newModels = [];
     if (dataType == DataType.Passwords && app.currentVault.passwordStore.activeAtRiskPasswordType != AtRiskType.None)
@@ -209,10 +209,60 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(dat
             atRiskModel = { message: atRiskMessage, onClick: onAtRiskClicked }
         }
 
+        const groupModels: GroupIconModel[] = [];
+        if (app.activePasswordValuesTable == DataType.Passwords)
+        {
+            v.value.groups.value.forEach((v, k, map) => 
+            {
+                const group = app.currentVault.groupStore.passwordGroupsByID.value.get(k);
+                if (!group)
+                {
+                    return;
+                }
+
+                addToModels(groupModels, group);
+            });
+        }
+        else 
+        {
+            v.value.groups.value.forEach((v, k, map) => 
+            {
+                const group = app.currentVault.groupStore.valueGroupsByID.value.get(k);
+                if (!group)
+                {
+                    return;
+                }
+
+                addToModels(groupModels, group);
+            });
+        }
+
         return {
             id: passwordValueModelID.toString(),
             backingObject: v,
             atRiskModel,
+            state:
+            {
+                groupModels: groupModels
+            }
+        }
+    }
+
+    function addToModels(currentModels: GroupIconModel[], group: Field<Group>)
+    {
+        if (currentModels.length < 4)
+        {
+            currentModels.push({
+                icon: group.value.icon.value,
+                toolTipText: group.value.name.value,
+                color: group.value.color.value
+            });
+        }
+        else
+        {
+            currentModels[3].icon = `+${currentModels.length - 3}`;
+            currentModels[3].toolTipText += `, ${group.value.name.value}`;
+            currentModels[3].color = color
         }
     }
 }

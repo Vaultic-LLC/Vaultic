@@ -103,13 +103,13 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                models.push({ header: "Groups", field: "groups", component: "GroupIconsRowCell", data: { 'color': color }, startingWidth: '105px' });
+                models.push({ header: "Groups", field: "groups", isGroupIconCell: true, data: { 'color': color }, startingWidth: '105px' });
                 models.push({ header: "Password For", field: "passwordFor" });
                 models.push({ header: "Username", field: "login" });
             }
             else
             {
-                models.push({ header: "Groups", field: "groups", component: "GroupIconsRowCell", data: { 'color': color }, startingWidth: '105px' });
+                models.push({ header: "Groups", field: "groups", isGroupIconCell: true, data: { 'color': color }, startingWidth: '105px' });
                 models.push({ header: "Name", field: "name" });
                 models.push({ header: "Type", field: "valueType" });
             }
@@ -166,7 +166,7 @@ export default defineComponent({
             // no active filters
             if (newValue.length == 0)
             {
-                localVariable.updateValues(getPasswordValueTableRowModels(dataType, originalVariable));
+                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, originalVariable));
             }
             // adding first filter
             else if (oldValue.length == 0)
@@ -177,7 +177,7 @@ export default defineComponent({
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.value.filters.value.has(f.value.id.value)));
                 });
 
-                localVariable.updateValues(getPasswordValueTableRowModels(dataType, temp));
+                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, temp));
             }
             // Activated filter
             else if (newValue.length > oldValue.length)
@@ -198,7 +198,7 @@ export default defineComponent({
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
                 }
 
-                localVariable.updateValues(getPasswordValueTableRowModels(dataType, temp));
+                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, temp));
             }
             // removed filter
             else if (newValue.length < oldValue.length)
@@ -230,7 +230,7 @@ export default defineComponent({
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
                 }
 
-                localVariable.updateValues(getPasswordValueTableRowModels(dataType, temp));
+                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, temp));
             }
         }
 
@@ -239,11 +239,11 @@ export default defineComponent({
             switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    nameValuePairs.updateValues(getPasswordValueTableRowModels(DataType.NameValuePairs, app.currentVault.valueStore.unpinnedValues));
+                    nameValuePairs.updateValues(getPasswordValueTableRowModels(color.value, DataType.NameValuePairs, app.currentVault.valueStore.unpinnedValues));
                     break;
                 case DataType.Passwords:
                 default:
-                    passwords.updateValues(getPasswordValueTableRowModels(DataType.Passwords, app.currentVault.passwordStore.unpinnedPasswords));
+                    passwords.updateValues(getPasswordValueTableRowModels(color.value, DataType.Passwords, app.currentVault.passwordStore.unpinnedPasswords));
             }
 
             if (tableRef.value)

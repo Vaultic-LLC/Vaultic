@@ -22,6 +22,7 @@ export interface TableColumnModel
     field: string;
     startingWidth?: string;
     component?: string;
+    isGroupIconCell?: boolean;
     data?: { [key: string]: any };
 }
 
