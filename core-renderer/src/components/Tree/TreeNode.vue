@@ -3,7 +3,7 @@
         <div class="treeNode__parentRow">
             <ion-icon class="treeNode__arrowIcon" v-if="treeNodeModel.isParent"
                 :class="{ selected: treeNodeModel.selected }" name="chevron-forward-outline"></ion-icon>
-            <component :is="treeNodeModel.icon" :fontSize="'17px'" />
+            <component :is="treeNodeModel.icon" :fontSize="'clamp(12px, 0.6vw, 17px)'" />
             <div class="treeNode__selectIcon" v-if="!treeNodeModel.isParent">
                 <SelectorButton :selectorButtonModel="selectorButtonModel" :width="'clamp(8px, 0.7vw, 20px)'"
                     :borderWidth="'0.06vw'" />
@@ -13,7 +13,7 @@
                 <div class="treeNode__buttons" v-if="!treeNodeModel.isParent && hovering">
                     <div class="treeNode__button" v-for="(button, idx) in treeNodeModel.buttons" :key="idx"
                         @click.stop="button.onClick(treeNodeModel.data)">
-                        <VaulticIcon :fontSize="'21px'">
+                        <VaulticIcon :fontSize="'clamp(15px, 1vw, 23px)'">
                             <ion-icon :name="button.icon"></ion-icon>
                         </VaulticIcon>
                     </div>
@@ -95,8 +95,8 @@ export default defineComponent({
     background-color: transparent;
     transition: 300ms;
     cursor: pointer;
-    padding-top: 10px;
-    padding-bottom: 10px
+    padding-top: clamp(6px, 0.3vw, 10px);
+    padding-bottom: clamp(6px, 0.3vw, 10px)
 }
 
 .treeNode:hover {
@@ -113,6 +113,7 @@ export default defineComponent({
     color: white;
     transition: 200ms;
     visibility: visible;
+    font-size: clamp(12px, 0.6vw, 17px);
 }
 
 .treeNode__arrowIcon.selected {
@@ -126,6 +127,7 @@ export default defineComponent({
     white-space: nowrap;
     text-align: left;
     flex-grow: 1;
+    font-size: clamp(12px, 0.6vw, 17px);
 }
 
 .treeNode__buttons {

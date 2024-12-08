@@ -11,15 +11,15 @@
         </div>
         <div class="sideDrawer__currentUser">
             <div class="sideDrawer__currentUserIcon">
-                <PersonOutlineIcon />
+                <PersonOutlineIcon :fontSize="'clamp(25px, 2vw, 35px)'" />
             </div>
             <div class="sideDrawer__currentUserName">Tyler Wanta</div>
         </div>
-        <div class="sideDrawer__currentView">
-            <ToggleRadioButton :model="toggleButtonModel" :height="'45px'" @onButtonClicked="onAppViewChange" />
-        </div>
         <div class="sideDrawer__vaultList">
             <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
+        </div>
+        <div class="sideDrawer__currentView">
+            <ToggleRadioButton :model="toggleButtonModel" :height="'clamp(30px, 4vh, 45px)'" @onButtonClicked="onAppViewChange" />
         </div>
     </div>
 </template>
@@ -321,6 +321,8 @@ export default defineComponent({
     left: 0;
     top: 0;
     border-right: 1px solid #2d303f;
+    display: flex;
+    flex-direction: column;
 }
 
 .sideDrawer__onlineStatusContainer {
@@ -328,13 +330,13 @@ export default defineComponent({
     justify-content: flex-start;
     align-items: center;
     column-gap: 5px;
-    height: 43px;
+    width: clamp(70px, 42%, 97px);
+    height: clamp(30px, 5vh, 43px);
     position: relative;
-    width: 42%;
     border-radius: 10px;
     background-color: var(--widget-background-color);
     padding-left: 10px;
-    margin-left: 10px;
+    margin-left: clamp(2px, 0.4vw, 10px);
     margin-top: 10px;
 }
 
@@ -362,33 +364,40 @@ export default defineComponent({
 .sideDrawer__currentUser {
     background-color: var(--widget-background-color);
     width: 90%;
-    margin-left: 10px;
+    margin-left: clamp(2px, 0.4vw, 10px);
     border-radius: 10px;
     color: white;
     display: flex;
-    height: 50px;
+    height: clamp(35px, 5vh, 50px);
     align-items: center;
-    column-gap: 10px;
-    margin-top: 20px;
+    column-gap: clamp(7px, 0.3vw, 10px);
+    margin-top: clamp(5px, 1vw, 20px);
 }
 
 .sideDrawer__currentUserIcon {
-    margin-left: 10px;
+    margin-left: clamp(0px, 0.4vw, 10px);
     font-size: 30px;
 }
 
 .sideDrawer__currentView {
-    margin-left: 10px;
+    margin-left: clamp(2px, 0.4vw, 10px);
     display: flex;
     align-items: center;
     justify-content: center;
     width: 90%;
     height: 60px;
-    position: absolute;
-    bottom: 25px;
+    margin-bottom: 5%;
 }
 
 .sideDrawer__vaultList {
-    margin-top: 50px;
+    margin-top: clamp(20px, 2vw, 50px);
+    flex-grow: 1;
+}
+
+.sideDrawer__currentUserName {
+    font-size: clamp(7px, 1vw, 18px);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 </style>

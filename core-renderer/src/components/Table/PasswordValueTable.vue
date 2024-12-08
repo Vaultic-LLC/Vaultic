@@ -480,9 +480,19 @@ export default defineComponent({
             initPasswords();
         });
 
+        watch(() => app.currentVault.groupStore.passwordGroups.length, () =>
+        {
+            initPasswords();
+        });
+
         watch(() => app.currentVault.valueStore.nameValuePairs.length, () =>
         {
             initValues();
+        });
+
+        watch(() => app.currentVault.groupStore.valuesGroups.length, () =>
+        {
+            initPasswords();
         });
 
         watch(() => app.currentVault.passwordStore.activeAtRiskPasswordType, () =>

@@ -122,7 +122,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, nextTick, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
 import DataTable, { DataTablePageEvent } from "primevue/datatable";

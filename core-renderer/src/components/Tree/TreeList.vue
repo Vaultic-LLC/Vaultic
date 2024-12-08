@@ -263,6 +263,7 @@ export default defineComponent({
 }
 
 .treeList__nodes {
-    padding-left: 10px;
+    padding-left: clamp(2px, 0.3vw, 10px);
+    flex-grow: 1;
 }
 </style>
