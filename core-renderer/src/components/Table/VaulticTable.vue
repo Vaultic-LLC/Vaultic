@@ -27,15 +27,23 @@
                     return {
                         paginatorContainer: 'vaulticTableContainer__paginatorContainer',
                         root: 'vaulticTableContainer__paginator',
+                        content: 'vaulticTableContainer__paginatorContent',
+                        first: 'vaulticTableContainer__paginatorNavigationButton',
+                        firstIcon: 'vaulticTableContainer__paginatorNavigationIcon',
+                        pages: 'vaulticTableContainer__paginatorPages',
                         page: 'vaulticTableContainer__pageIcon',
-                        first: 'vaulticTableContainer__paginatorNavigationIcon',
-                        prev: 'vaulticTableContainer__paginatorNavigationIcon',
-                        next: 'vaulticTableContainer__paginatorNavigationIcon',
-                        last: 'vaulticTableContainer__paginatorNavigationIcon',
+                        prev: 'vaulticTableContainer__paginatorNavigationButton',
+                        prevIcon: 'vaulticTableContainer__paginatorNavigationIcon',
+                        next: 'vaulticTableContainer__paginatorNavigationButton',
+                        nextIcon: 'vaulticTableContainer__paginatorNavigationIcon',
+                        last: 'vaulticTableContainer__paginatorNavigationButton',
+                        lastIcon: 'vaulticTableContainer__paginatorNavigationIcon',
                         pcRowPerPageDropdown: () => 
                         {
                             return {
                                 root: 'vaulticTableContainer__pageCountSelect',
+                                label: 'vaulticTableContainer__pageCountSelectLabel',
+                                dropdown: 'vaulticTableContainer__pageCountSelectDropdown',
                                 // @ts-ignore
                                 option: ({ context }) => 
                                 {
@@ -680,16 +688,46 @@ export default defineComponent({
     background: transparent;
     border-bottom-left-radius: 20px;
     width: calc(100% - clamp(7px, 0.7vw, 10px));
+    height: clamp(40px, 5vh, 60px);
 }
 
 :deep(.vaulticTableContainer__paginator) {
     border-bottom-left-radius: 20px;
     background: #181822 !important;
+    height: 100%;
+    padding: clamp(4px, 0.4vw, 8px) clamp(8px, 0.8vw, 16px) !important;
+}
+
+:deep(.vaulticTableContainer__paginatorContent) {
+    height: 100%;
+}
+
+:deep(.vaulticTableContainer__paginatorNavigationButton) {
+    height: 90%;
+    min-width: unset !important;
+    aspect-ratio: 1 / 1;
+}
+
+:deep(.vaulticTableContainer__paginatorPages) {
+    height: 100%;
 }
 
 :deep(.vaulticTableContainer__pageIcon:focus-visible),
-:deep(.vaulticTableContainer__paginatorNavigationIcon:focus-visible) {
+:deep(.vaulticTableContainer__paginatorNavigationButton:focus-visible) {
     outline: 1px solid v-bind(primaryColor);
+}
+
+:deep(.vaulticTableContainer__pageIcon) {
+    min-width: unset !important;
+    aspect-ratio: 1 / 1;
+    height: 90% !important;
+    font-size: clamp(10px, 1vw, 15px) !important;
+}
+
+:deep(.vaulticTableContainer__paginatorNavigationIcon) {
+    height: 50%;
+    width: unset !important;
+    aspect-ratio: 1 / 1;
 }
 
 :deep(.vaulticTableContainer__pageIcon.p-paginator-page-selected){
@@ -698,10 +736,28 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__pageCountSelect) {
     background: v-bind(backgroundColor) !important;
+    justify-content: space-evenly;
+    height: 90%;
+    display: flex !important;
+    align-items: center;
+    column-gap: 5px;
 }
 
 :deep(.vaulticTableContainer__pageCountSelect.p-focus) {
     border-color: v-bind(primaryColor) !important;
+}
+
+:deep(.vaulticTableContainer__pageCountSelectLabel) {
+    height: 100%;
+    font-size: clamp(10px, 1vw, 16px);
+    display: flex !important;
+    align-items: center;
+    text-align: center;
+    padding: 0 clamp(6px, 0.6vw, 12px) !important;
+}
+
+:deep(.vaulticTableContainer__pageCountSelectDropdown) {
+    width: clamp(25px, 1.5vw, 40px) !important;
 }
 
 :deep(.vaulticTableContainer__pageCountSelectOption) {
