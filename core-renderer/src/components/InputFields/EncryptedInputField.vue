@@ -1,8 +1,11 @@
 <template>
-    <div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @mouseenter="hovering = true" 
+    <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @mouseenter="hovering = true" 
         @mouseleave="onContainerMouseLeave">
         <div class="textInuptContainer">
-            <FloatLabel variant="in" :dt="floatLabelStyle">
+            <FloatLabel variant="in" :dt="floatLabelStyle"
+                :pt="{
+                    root: 'encryptedInputFieldContainer__floatLabel'
+                }">
                 <Password
                     :pt=" 
                     { 
@@ -10,6 +13,8 @@
                         {
                             isFocused = state.focused;
                             state.unmasked = isUnmasked;
+
+                            return 'encryptedInputFieldContainer__password'
                         }, 
                         pcInputText:
                         { 
@@ -17,29 +22,32 @@
                             {
                                 textFieldInstance = instance;
                                 return {
-                                    class: { 'encryptedInputFieldContainer__input--invalid': isInvalid }
+                                    class: {
+                                        'encryptedInputFieldContainer__input': true,
+                                        'encryptedInputFieldContainer__input--invalid': isInvalid 
+                                    }
                                 }
                             }
                         } 
                     }"
-                    :fluid="true" class="primeVuePasswordField" name="password" v-model="inputText" :inputId="id" :disabled="isDisabled" toggleMask :feedback="computedFeedback" 
+                    :fluid="true" name="password" v-model="inputText" :inputId="id" :disabled="isDisabled" toggleMask :feedback="computedFeedback" 
                     :invalid="isInvalid" @update:model-value="onInput">
                     <template #maskicon="slotProps">
-                        <ion-icon class="p-password-toggle-mask-icon encryptedInputIcon" name="eye-off-outline" @click="toggleMask(true)"></ion-icon>
+                        <ion-icon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" name="eye-off-outline" @click="toggleMask(true)"></ion-icon>
                     </template>
                     <template #unmaskicon="slotProps">
-                        <ion-icon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputIcon" name="lock-open-outline" @click="unlock"></ion-icon>
-                        <ion-icon v-else class="p-password-toggle-mask-icon encryptedInputIcon" name="eye-outline" @click="toggleMask(false)"></ion-icon>
+                        <ion-icon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" name="lock-open-outline" @click="unlock"></ion-icon>
+                        <ion-icon v-else class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" name="eye-outline" @click="toggleMask(false)"></ion-icon>
                     </template>
                     <template #content>
                         <div></div>
                     </template>
                 </Password>
-                <label :for="id">{{ label }}</label>
+                <label class="encryptedInputFieldContainer__label" :for="id">{{ label }}</label>
             </FloatLabel>
             <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
                 :pt="{
-                    root: 'textInputFieldContainer__message'
+                    root: 'encryptedInputFieldContainer__message'
                 }">
                 {{ invalidMessage }}
             </Message>
@@ -106,11 +114,11 @@ export default defineComponent({
         const showPopup: ComputedRef<boolean> = computed(() => props.showRandom === true && isLocked.value === false && 
             isDisabled.value === false && (hovering.value || isFocused.value || popoverHover.value));
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "50px");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "50px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
-        const computedWidth: ComputedRef<string> = computed(() => props.width ? props.width : "200px");
+        const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
         const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
         const colorModel: ComputedRef<InputColorModel> = computed(() => props.colorModel);
@@ -351,7 +359,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.textInputFieldContainer {
+.encryptedInputFieldContainer {
     position: relative;
     height: v-bind(computedHeight);
     min-height: v-bind(computedMinHeight);
@@ -361,36 +369,30 @@ export default defineComponent({
     max-width: v-bind(computedMaxWidth);
 }
 
-.textInputFieldContainer.fadeIn {
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-.textInputFieldContainer .textInuptContainer {
+.encryptedInputFieldContainer .textInuptContainer {
     position: relative;
     height: 100%;
     width: 100%;
 }
 
-.primeVuePasswordField :deep(input) {
-    background: v-bind(inputBackgroundColor) !important;
+:deep(.encryptedInputFieldContainer__floatLabel) {
+    height: 100%;
 }
 
-.primeVuePasswordField :deep(input:focus) {
+.encryptedInputFieldContainer__password {
+    height: 100%;
+}
+
+.encryptedInputFieldContainer__password :deep(input) {
+    background: v-bind(inputBackgroundColor) !important;
+    height: 100%;
+}
+
+.encryptedInputFieldContainer__password :deep(input:focus) {
     border: 1px solid v-bind('colorModel.color') !important;
 }
 
-.textInputFieldContainer .randomize {
+.encryptedInputFieldContainer .randomize {
     position: absolute;
     top: 100%;
     left: 0;
@@ -410,32 +412,50 @@ export default defineComponent({
     font-size: clamp(7px, 0.7vw, 13px);
 }
 
-.textInputFieldContainer .randomize:hover {
+.encryptedInputFieldContainer .randomize:hover {
     border: solid 1.5px v-bind('colorModel.activeBorderColor');
     transform: scale(1.05);
 }
 
-.textInputFieldContainer .randomize:hover {
+.encryptedInputFieldContainer .randomize:hover {
     color: v-bind('colorModel.activeTextColor');
 }
 
-.encryptedInputIcon {
-    width: 1.4rem;
-    height: 1.4rem;
-    top: 45%;
+.encryptedInputFieldContainer__icon {
+    width: clamp(15px, 1.5vw, 25px) !important;
+    height: clamp(15px, 1.5vw, 25px) !important;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    transition: 0.3s;
 }
 
-.encryptedInputIcon:hover {
+.encryptedInputFieldContainer__icon:hover {
     color: v-bind('colorModel.activeBorderColor');
-    transform: scale(1.05);
+    transform: translateY(-50%) scale(1.05);
 }
 
-:deep(.textInputFieldContainer__message) {
+:deep(.encryptedInputFieldContainer__message) {
     transform: translateX(5px);
     margin-top: 1px;
 }
 
+:deep(.encryptedInputFieldContainer__input) {
+    height: 100%;
+    font-size: var(--input-font-size);
+}
+
 :deep(.encryptedInputFieldContainer__input--invalid) {
     border-color: v-bind(errorColor) !important;
+}
+
+:deep(.encryptedInputFieldContainer__label) {
+    font-size: var(--input-font-size);
+}
+
+:deep(.p-floatlabel-in:has(input:focus) .encryptedInputFieldContainer__label),
+:deep(.p-floatlabel-in:has(input.p-filled) .encryptedInputFieldContainer__label) {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
 }
 </style>

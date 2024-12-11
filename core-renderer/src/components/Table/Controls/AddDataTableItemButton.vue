@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, Ref, ref, ComputedRef, computed } from 'vue';
+import { defineComponent, ComputedRef, computed } from 'vue';
 
 import AddButton from './AddButton.vue';
 import ObjectPopup from '../../../components/ObjectPopups/ObjectPopup.vue';

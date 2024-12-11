@@ -207,7 +207,7 @@ export default defineComponent({
 }
 
 .colorPaletteContainer.notCreated {
-    border-radius: 20px;
+    border-radius: clamp(10px, 1vw, 1.2rem);
     /* background: #11181e;
 	box-shadow: inset 5px 5px 10px #070a0c,
 		inset -5px -5px 10px #1b2630; */

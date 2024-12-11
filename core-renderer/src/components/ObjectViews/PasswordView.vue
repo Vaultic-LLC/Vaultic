@@ -3,27 +3,24 @@
         :gridDefinition="gridDefinition">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-                v-model="passwordState.passwordFor.value" :width="'50%'" :height="''" :minHeight="''" :maxWidth="''" :maxHeight="''" />
+                v-model="passwordState.passwordFor.value" :width="'50%'" :maxWidth="''" />
             <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login.value"
-                :width="'50%'" :height="''" :minHeight="'30px'" :maxWidth="''" :maxHeight="''" />
+                :width="'50%'" :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
                 :label="'Password'" v-model="passwordState.password.value" :initialLength="initalLength"
                 :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true" :required="true"
-                showCopy="true" :width="'50%'" :maxWidth="''" :height="''" :minHeight="''" :maxHeight="''"
-                @onDirty="passwordIsDirty = true" />
+                showCopy="true" :width="'50%'" :maxWidth="''" @onDirty="passwordIsDirty = true" />
             <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain.value"
                 :showToolTip="true"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
-                :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :height="''" :minHeight="''" :maxWidth="''" :maxHeight="''" />
+                :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email.value"
-                :width="'50%'" :height="''" :minHeight="''" :maxHeight="''" :isEmailField="true" :maxWidth="''" />
-            <div class="passwordView__objectMultiSelect">
-                <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" />
-            </div>
+                :width="'50%'" :isEmailField="true" :maxWidth="''" />
+            <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset :fillSpace="true" :static="true">
             <TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
@@ -376,9 +373,5 @@ export default defineComponent({
     justify-content: center;
     align-items: center;
     column-gap: clamp(10px, 1vw, 25px);
-}
-
-.passwordView__objectMultiSelect {
-    width: 50%;
 }
 </style>

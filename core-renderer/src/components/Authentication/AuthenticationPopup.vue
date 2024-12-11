@@ -10,7 +10,7 @@
                 <div class="title">Please enter your Key</div>
                 <EncryptedInputField ref="encryptedInputField" class="authenticationPopupContent__key" :label="'Key'"
                     :colorModel="colorModel" v-model="key" :required="true" :width="'70%'" :minWidth="'150px'"
-                    :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+                    :maxWidth="'300px'" />
             </div>
             <div v-if="!showIcon" class="authenticationPopupButtons">
                 <PopupButton id="authPopupContainer__enterButton" :color="color" :text="'Enter'" :disabled="disabled"

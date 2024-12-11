@@ -45,7 +45,8 @@ export default defineComponent({
 
 .selectorButton.active {
     transition: 0.6s;
-    box-shadow: 0 0 10px v-bind(primaryColor);
+    /* box-shadow: 0 0 10px v-bind(primaryColor); */
+    box-shadow: 0 0 clamp(3px, 0.5vw, 10px) v-bind(primaryColor);
 }
 
 .selectorButton.active::before {

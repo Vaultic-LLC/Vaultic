@@ -97,6 +97,8 @@ export default defineComponent({
     background-color: var(--app-color) !important;
     color: white !important;
     border: 1.5px solid v-bind(color) !important;
+    padding: clamp(2px, 0.3vw, 8px) clamp(6px, 0.5vw, 12px) !important;
+    font-size: clamp(10px, 1vw, 16px) !important;
 }
 
 .popupButton__primeVueButton:hover {

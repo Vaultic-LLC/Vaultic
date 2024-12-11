@@ -3,7 +3,7 @@
         :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
             <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
-                :width="'50%'" :height="''" :minHeight="''" :maxWidth="''" :maxHeight="''" :fadeIn="false" />
+                :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :end="true" :fill-space="true" :static="true">
             <VaulticTable ref="tableRef" id="addFilterTable" :color="color" :columns="tableColumns" 
@@ -250,7 +250,7 @@ export default defineComponent({
 #addFilterTable {
     position: relative;
     width: 70%;
-    height: 70%;
+    height: 76%;
     transform: translateY(-15%);
 }
 </style>

@@ -6,13 +6,13 @@
                 <div :key="refreshKey" class="createAccountViewContainer__content">
                     <div class="createAccountViewContainer__inputs">
                         <TextInputField :color="color" :label="'First Name'" v-model="firstName" :width="'80%'"
-                            :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" />
+                            :maxWidth="'300px'" />
                         <TextInputField :color="color" :label="'Last Name'" v-model="lastName" :width="'80%'"
-                            :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" />
+                            :maxWidth="'300px'" />
                         <TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email" :width="'80%'"
-                            :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" :isEmailField="true" />
+                            :maxWidth="'300px'" :isEmailField="true" />
                         <TextInputField ref="emailField" :color="color" :label="'Confirm Email'" v-model="reEnterEmail"
-                            :width="'80%'" :maxWidth="'300px'" :height="''" :minHeight="''" :maxHeight="''" :isEmailField="true"
+                            :width="'80%'" :maxWidth="'300px'" :isEmailField="true"
                             :additionalValidationFunction="emailsMatch" />
                     </div>
                 </div>
@@ -25,7 +25,6 @@
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import TextInputField from '../InputFields/TextInputField.vue';
-import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
@@ -39,7 +38,6 @@ export default defineComponent({
     components:
     {
         TextInputField,
-        EncryptedInputField,
         AccountSetupView,
     },
     emits: ['onSuccess'],

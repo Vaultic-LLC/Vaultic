@@ -41,20 +41,27 @@
                         pcRowPerPageDropdown: () => 
                         {
                             return {
+                                'appendTo': 'self',
                                 root: 'vaulticTableContainer__pageCountSelect',
                                 label: 'vaulticTableContainer__pageCountSelectLabel',
                                 dropdown: 'vaulticTableContainer__pageCountSelectDropdown',
                                 // @ts-ignore
                                 option: ({ context }) => 
                                 {
+                                    const style: { [key: string]: any} = 
+                                    {
+                                        padding: 'clamp(4px, 0.4vw, 8px) clamp(6px, 0.6vw, 12px) !important',
+                                        'font-size': 'clamp(11px, 1vw, 16px)'
+                                    };
+
                                     if (context.selected)
                                     {
-                                        return {
-                                            style: {
-                                                'background': `color-mix(in srgb, ${primaryColor}, transparent 84%) !important`
-                                            }
-                                        }
+                                        style['background'] = `color-mix(in srgb, ${primaryColor}, transparent 84%) !important`;
                                     }
+
+                                    return {
+                                        style
+                                    };
                                 }
                             }
                         }
@@ -95,7 +102,7 @@
                     </template>
                 </template>
             </Column>
-            <Column :columnKey="'tableControls'" class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false" 
+            <Column :columnKey="'tableControls'" class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false"
                 :pt="{
                     headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__ControlsHeaderCell'],
                     columnHeaderContent: 'vaulticTableContainer__headerControlsContent'
@@ -556,6 +563,7 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__headerCell) {
     border-right-width: 1px;
+    font-size: clamp(11px, 1vw, 16px) !important;
 }
 
 :deep(.vaulticTableContainer__headerCell:focus-visible){
@@ -573,7 +581,6 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__headerControlsContent) {
     justify-content: end;
-    column-gap: 15px;
 }
 
 :deep(.vaulticTableContainer__columnResizeIndicator) {
@@ -616,7 +623,7 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__dataTableTableContainer::-webkit-scrollbar) {
-    width: clamp(7px, 0.7vw, 10px);
+    width: clamp(5px, 0.5vw, 10px);
 }
 
 :deep(.vaulticTableContainer__dataTableTableContainer::-webkit-scrollbar-track) {
@@ -646,7 +653,7 @@ export default defineComponent({
     text-align: center;
     color: #c1c1c1;
     font-size: clamp(12px, 0.8vw, 24px);
-    text-wrap: wrap;
+    text-wrap: wrap !important;
 }
 
 .vaulticTableContainer__rowIconButtonsContainer {
@@ -758,10 +765,6 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__pageCountSelectDropdown) {
     width: clamp(25px, 1.5vw, 40px) !important;
-}
-
-:deep(.vaulticTableContainer__pageCountSelectOption) {
-    background: color-mix(in srgb, v-bind(primaryColor), transparent 84%) !important;
 }
 
 .vaulticTableContainer__groupIconCell {

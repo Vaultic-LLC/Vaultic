@@ -1,25 +1,40 @@
 <template>
     <div class="objectMultiSelectContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle">
+        <FloatLabel variant="in" :dt="floatLabelStyle"
+            :pt="{
+                root: 'objectMultiSelectContainer__floatLabel'
+            }">
             <MultiSelect :fluid="true" :dt="inputStyle" :id="id" v-model="selectedItemsPlaceHolder" :options="options" optionLabel="label"
                 filter :virtualScrollerOptions="{ itemSize: 50 }" @selectall-change="onSelectAllChange($event)" @change="onChange($event)" :appendTo="'self'"
                 :pt="{
-                    pcFilter: {
-                        root:  'objectMultiSelectContainer__searchBar'
+                    root: 'objectMultiSelectContainer__multiSelect',
+                    virtualScroller: {
+                        root: 'objectMultiSelectContainer__virtualScroller',
+                        spacer: 'objectMultiSelectContainer__virtualScrollerSpacer'
                     },
+                    labelContainer: 'objectMultiSelectContainer__multiSelectLabelContainer',
+                    label: 'objectMultiSelectContainer__multiSelectLabel',
+                    dropdownIcon: 'objectMultiSelectContainer__multiSelectDropDownIcon',
+                    pcFilter: {
+                        root:  'objectMultiSelectContainer__searchBar',
+                    },
+                    filterIcon: 'objectMultiSelectContainer__filterIcon',
                     pcHeaderCheckbox: {
+                        root: 'objectMultiSelectContainer__checkboxContainer',
                         box: 'objectMultiSelectContainer__checkbox'
                     },
                     pcOptionCheckbox: {
+                        root: 'objectMultiSelectContainer__checkboxContainer',
                         box: 'objectMultiSelectContainer__checkbox'
-                    }
+                    },
+                    option: 'objectMultiSelectContainer__optionItem'
                 }">
                 <template #option="slotProps">
                     <div class="objectMultiSelectContainer__option">
                         <div v-if="slotProps.option.icon" class="objectMultiSelectContainer__iconContianer">
                             <i :class='`pi ${slotProps.option.icon} objectMultiSelectContainer__optionIcon`' :style="{color: slotProps.option.color ?? '#FFFFFF'}"></i>
                         </div>
-                        <div>{{ slotProps.option.label }}</div>
+                        <div class="objectMultiSelectContainer__optionLabel">{{ slotProps.option.label }}</div>
                         <div v-if="detailsView" class="objectMultiSelectContainer__objectDetails" @mouseover="(e) => onViewHover(e, slotProps.index)" 
                             @mouseleave="(e) => onViewUnhover(e, slotProps.index)">
                             <i :class='`pi pi-external-link`' :style="{color: slotProps.option.color ?? '#FFFFFF'}"></i>
@@ -30,7 +45,7 @@
                     </div>
                 </template>
             </MultiSelect>
-            <label :for="id">{{ label }}</label>
+            <label class="objectMultiSelectContainer__label" :for="id">{{ label }}</label>
         </FloatLabel>
     </div>
 </template>
@@ -57,7 +72,8 @@ export default defineComponent({
         Popover
     },
     emits: ["update:modelValue", "onOptionSelect"],
-    props: ["modelValue", "options", "label", "color", "disabled", "detailsView"],
+    props: ["modelValue", "options", "label", "color", "disabled", "detailsView", 
+        "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight'],
     setup(props, ctx)
     {
         const popoverRefs: Ref<any[]> = ref([]);
@@ -67,6 +83,14 @@ export default defineComponent({
         const validationFunction: Ref<{ (): boolean; }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const selectAll = ref(false);
         const background: Ref<string> = ref(widgetBackgroundHexString());
+
+        const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
+        const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
+        const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
+
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
         let floatLabelStyle = computed(() => {
             return {
@@ -143,6 +167,12 @@ export default defineComponent({
             defaultInputColor,
             defaultInputTextColor,
             background,
+            computedWidth,
+            computedMinWidth,
+            computedMaxWidth,
+            computedHeight,
+            computedMinHeight,
+            computedMaxHeight,
             onSelectAllChange,
             onChange,
             onViewHover,
@@ -153,6 +183,56 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.objectMultiSelectContainer {
+    height: v-bind(computedHeight);
+    width: v-bind(computedWidth);
+    max-height: v-bind(computedMaxHeight);
+    max-width: v-bind(computedMaxWidth);
+    min-height: v-bind(computedMinHeight);
+    min-width: v-bind(computedMinWidth);
+}
+
+:deep(.objectMultiSelectContainer__floatLabel) {
+    height: 100%;
+}
+
+:deep(.objectMultiSelectContainer__multiSelect) {
+    height: 100%;
+}
+
+:deep(.objectMultiSelectContainer__multiSelectLabelContainer) {
+    height: 100%;
+}
+
+:deep(.objectMultiSelectContainer__virtualScroller) {
+    height: clamp(150px, 16vh, 225px) !important;
+}
+
+:deep(.objectMultiSelectContainer__virtualScrollerSpacer) {
+    height: auto !important;
+}
+
+:deep(.objectMultiSelectContainer__multiSelectLabel) {
+    height: 100% !important;
+    font-size: var(--input-font-size) !important;
+    padding-block-start: clamp(17px, 1vw, 24px) !important;
+    padding-block-end: clamp(2px, 0.4vw, 5px) !important;
+}
+
+:deep(.objectMultiSelectContainer__label) {
+    font-size: var(--input-font-size) !important;
+}
+
+:deep(.p-floatlabel-in:has(.p-inputwrapper-focus)) label, 
+:deep(.p-floatlabel-in:has(.p-inputwrapper-filled)) label {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.objectMultiSelectContainer__optionItem) {
+    height: clamp(30px, 4vh, 50px) !important;
+}
+
 .objectMultiSelectContainer__option {
     display: flex;
     column-gap: 10px;
@@ -163,16 +243,27 @@ export default defineComponent({
 }
 
 .objectMultiSelectContainer__optionIcon {
-    font-size: 1.2rem;
+    font-size: clamp(15px, 1vw, 19px);
+}
+
+:deep(.objectMultiSelectContainer__checkboxContainer) {
+    width: clamp(15px, 1.2vw, 20px) !important;
+    height: clamp(15px, 1.2vw, 20px) !important;
 }
 
 :deep(.objectMultiSelectContainer__checkbox) {
     background: v-bind(background) !important;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 :deep(.objectMultiSelectContainer__searchBar) {
     background: v-bind(background) !important;
     padding-block-start: 0.5rem !important;
+    /* padding-block-start: clamp(6px, 0.3vw, 8px) !important;
+    padding-block-end: clamp(6px, 0.3vw, 8px) !important; */
+    font-size: var(--input-font-size) !important;
+
 }
 
 :deep(.objectMultiSelectContainer__searchBar:focus) {
@@ -182,5 +273,19 @@ export default defineComponent({
 :deep(.p-checkbox-checked .objectMultiSelectContainer__checkbox) {
     background: v-bind(color) !important;
     border-color: v-bind(color) !important;
+}
+
+:deep(.objectMultiSelectContainer__multiSelectDropDownIcon) {
+    width: clamp(12px, 1.5vw, 16px) !important;
+    height: clamp(12px, 1.5vw, 16px) !important;
+}
+
+:deep(.objectMultiSelectContainer__filterIcon) {
+    width: clamp(12px, 0.8vw, 16px) !important;
+    height: clamp(12px, 0.8vw, 16px) !important;
+}
+
+.objectMultiSelectContainer__optionLabel {
+    font-size: clamp(14px, 1vw, 16px);
 }
 </style>

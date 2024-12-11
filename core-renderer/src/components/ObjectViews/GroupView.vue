@@ -2,14 +2,12 @@
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <TextInputField class="groupView__name" :label="'Name'" :color="groupColor" v-model="groupState.name.value"
-            :width="'50%'" :height="''" :minHeight="''" :maxWidth="''" :maxHeight="''" />
+            :width="'50%'" :maxWidth="''" />
         <ColorPickerInputField class="groupView__color" :label="'Color'" :color="groupColor" v-model="groupState.color.value"
-            :width="'50%'" :height="''" :minHeight="''" :minWidth="'125px'" :maxWidth="''" />
+            :width="'50%'" :minHeight="''" :minWidth="'125px'" :maxWidth="''" />
         <TextInputField class="groupView__icon" :label="'Icon'" :color="groupColor" v-model="groupState.icon.value"
-            :width="'50%'" :height="''" :minHeight="''" :minWidth="'125px'" :maxWidth="''" :maxHeight="''" />
-        <div class="valueView__objectMultiSelect">
-            <ObjectMultiSelect :label="selectLabel" :color="groupColor" v-model="selectedOptions" :options="allOptions" />
-        </div>
+            :width="'50%'" :minWidth="'125px'" :maxWidth="''" />
+        <ObjectMultiSelect :label="selectLabel" :color="groupColor" v-model="selectedOptions" :options="allOptions" :width="'50%'" :maxWidth="''" />
     </ObjectView>
 </template>
 <script lang="ts">
@@ -217,9 +215,5 @@ export default defineComponent({
     grid-column: 4 / span 9;
     min-width: 410px;
     min-height: 182px;
-}
-
-.valueView__objectMultiSelect {
-    width: 50%;
 }
 </style>

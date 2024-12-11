@@ -1,8 +1,8 @@
 <template>
     <div class="passwordValueTableContainer">
         <VaulticTable ref="tableRef" id="passwordValueTable" :color="color" :columns="tableColumns" 
-        :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
-            :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete">
+            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
+            :searchBarSizeModel="searchBarSizeModel" :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
@@ -37,7 +37,7 @@ import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue'
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import VaulticTable from './VaulticTable.vue';
 
-import { HeaderTabModel, TableDataSources, TableColumnModel, TableRowModel } from '../../Types/Models';
+import { HeaderTabModel, TableDataSources, TableColumnModel, TableRowModel, ComponentSizeModel } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { getEmptyTableMessage, getNoValuesApplyToFilterMessage, getPasswordValueTableRowModels } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
@@ -79,6 +79,11 @@ export default defineComponent({
 
         let deletePassword: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
         let deleteValue: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
+
+        const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
+            width: '9vw',
+            minWidth: '110px',
+        });
 
         const tableDataSources: Reactive<TableDataSources> = reactive(
         {
@@ -523,6 +528,7 @@ export default defineComponent({
             headerTabs,
             emptyTableMessage,
             tableDataSources,
+            searchBarSizeModel,
             onEditPasswordPopupClose,
             onEditValuePopupClose,
             onPin,
@@ -537,14 +543,13 @@ export default defineComponent({
 #passwordValueTable {
     height: 50.5%;
     width: 43%;
-    min-width: 547px;
     left: 38%;
     top: max(252px, 42%);
 }
 
-/* @media (max-width: 1300px) {
+@media (max-width: 1300px) {
     #passwordValueTable {
-        left: max(324px, 28.5%);
+        left: 35%;
     }
-} */
+}
 </style>

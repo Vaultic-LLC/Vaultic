@@ -27,7 +27,7 @@ export default defineComponent({
         {
             if (container.value)
             {
-                staticHeight.value = `${container.value.clientHeight}px`;
+                //staticHeight.value = `${container.value.clientHeight}px`;
             }
         }
 

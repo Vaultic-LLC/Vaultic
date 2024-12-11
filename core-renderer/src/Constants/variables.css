@@ -28,8 +28,10 @@
     --responsive-border-radius: clamp(10px, 0.8vw, 0.85rem);
     --input-label-left: clamp(5px, 1vw, 15px);
 
-    --input-font-size: clamp(11px, 1.2vh, 25px);
-
     --scrollbar-width-small: 5px;
     --scrollbar-width-medium: clamp(7px, 0.7vw, 10px);
+
+    --input-font-size: clamp(10px, 0.7vw, 16px);
+    --input-label-active-top: clamp(1%, 0.5vw, 10px);
+    --input-label-active-font-size: clamp(8px, 0.5vw, 13px);
 }

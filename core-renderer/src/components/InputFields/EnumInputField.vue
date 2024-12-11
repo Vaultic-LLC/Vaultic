@@ -1,27 +1,40 @@
 <template>
     <div class="dropDownContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle">
+        <FloatLabel variant="in" :dt="floatLabelStyle"
+            :pt="{
+                root: 'dropDownContainer__floatLabel'
+            }">
             <Select 
                 :pt="{
                     root: {
                         class: { 
+                            'dropDownContainer__select': true,
                             'dropDownContainer__select--invalid': isInvalid
                         }
                     },
+                    clearIcon: 'dropDownContainer__clearIcon',
+                    dropdownIcon: 'dropDownContainer__dropDownicon',
+                    label: 'dropDownContainer__selectLabel',
                     option: ({ context }) => {
+                        const style: { [key: string]: any} = 
+                        {
+                            'font-size': 'var(--input-font-size)',
+                            padding: 'clamp(3px, 0.5vw, 8px) 12px'
+                        };
+
                         if (context.selected)
                         {
-                            return {
-                                style: {
-                                    background: color,
-                                }
-                            }
+                            style['background'] = `color-mix(in srgb, ${color} ,transparent 84%)`;
                         }
+
+                        return {
+                            style
+                        };
                     }
                 }" :invalid="isInvalid" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
                 showClear :inputId="id" :options="options" optionLabel="name" :fluid="true" :labelStyle="{'text-align': 'left'}" 
                 @update:model-value="onOptionClick" />
-            <label :for="id">{{ label }}</label>
+            <label class="dropDownContainer__label" :for="id">{{ label }}</label>
         </FloatLabel>
         <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
             :pt="{
@@ -51,7 +64,7 @@ export default defineComponent({
         Message
     },
     emits: ["update:modelValue"],
-    props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget', 'height', 'minHeight', 'maxHeight',
+    props: ["modelValue", "optionsEnum", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
         'width', 'minWidth', 'maxWidth', 'required', 'disabled'],
     setup(props, ctx)
     {
@@ -76,6 +89,14 @@ export default defineComponent({
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const enumOptionCount: Ref<number> = ref(-1);
+
+        const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
+        const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
+        const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
+
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
         let floatLabelStyle = computed(() => {
             return {
@@ -159,6 +180,12 @@ export default defineComponent({
             isInvalid,
             invalidMessage,
             enumOptionCount,
+            computedWidth,
+            computedMinWidth,
+            computedMaxWidth,
+            computedHeight,
+            computedMinHeight,
+            computedMaxHeight,
             onOptionClick,
         }
     }
@@ -168,12 +195,12 @@ export default defineComponent({
 <style scoped>
 .dropDownContainer {
     position: relative;
-    height: v-bind(height);
-    width: v-bind(width);
-    max-height: v-bind(maxHeight);
-    max-width: v-bind(maxWidth);
-    min-height: v-bind(minHeight);
-    min-width: v-bind(minWidth);
+    height: v-bind(computedHeight);
+    width: v-bind(computedWidth);
+    max-height: v-bind(computedMaxHeight);
+    max-width: v-bind(computedMaxWidth);
+    min-height: v-bind(computedMinHeight);
+    min-width: v-bind(computedMinWidth);
 }
 
 .primeVueSelect {
@@ -191,5 +218,40 @@ export default defineComponent({
 
 :deep(.dropDownContainer__select--invalid) {
     border-color: v-bind(errorColor) !important;
+}
+
+:deep(.dropDownContainer__floatLabel) {
+    height: 100%;
+}
+
+:deep(.dropDownContainer__select) {
+    height: 100%;
+}
+
+:deep(.dropDownContainer__selectLabel) {
+    font-size: var(--input-font-size);
+    padding-block-start: clamp(17px, 1vw, 24px) !important;
+    padding-block-end: clamp(2px, 0.4vw, 5px) !important;
+}
+
+:deep(.dropDownContainer__label) {
+    font-size: var(--input-font-size);
+}
+
+:deep(.dropDownContainer__clearIcon) {
+    margin: 0 !important;
+    transform: translateY(-50%);
+}
+
+:deep(.dropDownContainer__clearIcon),
+:deep(.dropDownContainer__dropDownicon) {
+    width: clamp(12px, 1.5vw, 16px) !important;
+    height: clamp(12px, 1.5vw, 16px) !important;
+}
+
+.p-floatlabel-in:has(.p-inputwrapper-focus) .dropDownContainer__label, 
+.p-floatlabel-in:has(.p-inputwrapper-filled) .dropDownContainer__label {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
 }
 </style>

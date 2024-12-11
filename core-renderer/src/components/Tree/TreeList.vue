@@ -3,13 +3,13 @@
         <div class="treeList__controls">
             <SearchBar :modelValue="searchText" :color="primaryColor" :sizeModel="searchSize" />
             <div class="treeList__buttons">
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" @click="expandAll">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="expandAll">
                     <ion-icon name="chevron-expand-outline"></ion-icon>
                 </VaulticButton>
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" @click="collapseAll">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="collapseAll">
                     <ion-icon name="chevron-collapse-outline"></ion-icon>
                 </VaulticButton>
-                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" @click="$emit('onAdd')" />
+                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="$emit('onAdd')" />
             </div>
         </div>
         <div class="treeList__divider"></div>
@@ -55,7 +55,7 @@ export default defineComponent({
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const searchSize: Ref<ComponentSizeModel> = ref({
-            width: '200px'
+            width: '8vw'
         });
         
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
@@ -238,14 +238,14 @@ export default defineComponent({
     color: white;
     display: flex;
     flex-direction: column;
-    row-gap: 15px;
+    row-gap: clamp(7px, 1vh, 15px);
 }
 
 .treeList__controls {
     display: flex;
     flex-direction: column;
     align-items: center;
-    row-gap: 20px;
+    row-gap: clamp(10px, 1vh, 20px);
 }
 
 .treeList__buttons {

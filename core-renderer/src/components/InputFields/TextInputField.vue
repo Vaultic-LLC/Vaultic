@@ -1,38 +1,48 @@
 <template>
     <div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
-        <div class="card flex justify-center">
-            <InputGroup>
-                <InputGroupAddon v-if="inputGroupAddon" 
-                    :pt="{
-                        root: {
-                            class: {
-                                'textInputFieldContainer__inputGroupAddon': true,
-                                'textInputFieldContainer__inputGroupAddon--invalid': isInvalid
-                            }
-                        }
-                    }">{{ inputGroupAddon }}</InputGroupAddon>
-                <FloatLabel variant="in" :dt="floatLabelStyle">
-                    <IconField>
-                        <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :dt="inputStyle" :disabled="disabled" :invalid="isInvalid" 
-                            @update:model-value="onInput"
-                            :pt="{
-                                root: {
-                                    class: { 'textInputFieldContainer__input--groupAddon': inputGroupAddon }
-                                }
-                            }" />
-                        <InputIcon ref="inputIcon" v-if="showToolTip" class="pi pi-info-circle"
-                            :pt="{
-                                root: 'textInputFieldContainer__tooltipIcon'
-                            }" />
-                    </IconField>
-                    <label :for="id">{{ label }}</label>
-                </FloatLabel>
-            </InputGroup>
-            <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+        <InputGroup 
+            :pt="{
+                root: 'textInputFieldContainer__inputGroup'
+            }">
+            <InputGroupAddon v-if="inputGroupAddon" 
                 :pt="{
-                    root: 'textInputFieldContainer__message'
-                }">{{ invalidMessage }}</Message>
-        </div>
+                    root: {
+                        class: {
+                            'textInputFieldContainer__inputGroupAddon': true,
+                            'textInputFieldContainer__inputGroupAddon--invalid': isInvalid
+                        }
+                    }
+                }">{{ inputGroupAddon }}</InputGroupAddon>
+            <FloatLabel variant="in" :dt="floatLabelStyle"
+                :pt="{
+                    root: 'textInputFieldContainer__floatLabel'
+                }">
+                <IconField 
+                    :pt="{
+                        root: 'textInputFieldContainer__iconField'
+                    }">
+                    <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :dt="inputStyle" :disabled="disabled" :invalid="isInvalid" 
+                        @update:model-value="onInput"
+                        :pt="{
+                            root: {
+                                class: {
+                                    'textInputFieldContainer__input': true,
+                                    'textInputFieldContainer__input--groupAddon': inputGroupAddon 
+                                }
+                            }
+                        }" />
+                    <InputIcon ref="inputIcon" v-if="showToolTip" class="pi pi-info-circle"
+                        :pt="{
+                            root: 'textInputFieldContainer__tooltipIcon'
+                        }" />
+                </IconField>
+                <label class="textInputFieldContainer__label" :for="id">{{ label }}</label>
+            </FloatLabel>
+        </InputGroup>
+        <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+            :pt="{
+                root: 'textInputFieldContainer__message'
+            }">{{ invalidMessage }}</Message>
     </div>
 </template>
 <script lang="ts">
@@ -82,9 +92,9 @@ export default defineComponent({
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
         const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "50px");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "50px");
-        const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "55px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
         
         const isInvalid: Ref<boolean> = ref(false);
         const invalidMessage: Ref<string> = ref('');
@@ -234,14 +244,19 @@ export default defineComponent({
     max-width: v-bind(computedMaxWidth);
 }
 
-.textInputFieldContainer.fadeIn {
-    color: white;
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
+:deep(.textInputFieldContainer__input) {
+    height: 100%;
+    font-size: var(--input-font-size);
+}
+
+:deep(.textInputFieldContainer__inputGroup) {
+    height: 100%;
 }
 
 :deep(.textInputFieldContainer__inputGroupAddon) {
     background: v-bind(background) !important;
+    font-size: var(--input-font-size) !important;
+    height: 100%;
 }
 
 :deep(.textInputFieldContainer__inputGroupAddon--invalid) {
@@ -252,6 +267,14 @@ export default defineComponent({
 :deep(.textInputFieldContainer__input--groupAddon) {
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
+}
+
+:deep(.textInputFieldContainer__floatLabel) {
+    height: 100%;
+}
+
+:deep(.textInputFieldContainer__iconField) {
+    height: 100%;
 }
 
 :deep(.textInputFieldContainer__tooltipIcon) {
@@ -268,5 +291,15 @@ export default defineComponent({
 :deep(.textInputFieldContainer__message) {
     transform: translateX(5px);
     margin-top: 1px;
+}
+
+:deep(.textInputFieldContainer__label) {
+    font-size: var(--input-font-size);
+}
+
+:deep(.p-floatlabel-in:has(input:focus) .textInputFieldContainer__label),
+:deep(.p-floatlabel-in:has(input.p-filled) .textInputFieldContainer__label) {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
 }
 </style>

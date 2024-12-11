@@ -1,9 +1,11 @@
 <template>
     <div class="popups">
-        <Transition name="fade" mode="out-in">
-            <LoadingPopup v-if="popupStore.loadingIndicatorIsShowing" :color="popupStore.color"
-                :text="popupStore.loadingText" :glassOpacity="popupStore.loadingOpacity" />
-        </Transition>
+        <Teleport to ="#body">
+            <Transition name="fade" mode="out-in">
+                <LoadingPopup v-if="popupStore.loadingIndicatorIsShowing" :color="popupStore.color"
+                    :text="popupStore.loadingText" :glassOpacity="popupStore.loadingOpacity" />
+            </Transition>
+        </Teleport>
         <Teleport to="#body">
             <Transition name="fade" mode="out-in">
                 <AlertPopup v-if="popupStore.alertIsShowing" :showContactSupport="popupStore.showContactSupport"

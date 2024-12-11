@@ -1,7 +1,8 @@
 <template>
     <div class="encryptedInputCellContainer">
         <EncryptedInputField :label="label" v-model="modelField.value" :initialLength="initialLengthField.value" :fadeIn="false" :showRandom="false"
-            :showUnlock="false" :required="true" :colorModel="colorModel" :isInitiallyEncrypted="isInitiallyEncrypted" @onDirty="onDirty" />
+            :showUnlock="false" :required="true" :colorModel="colorModel" :isInitiallyEncrypted="isInitiallyEncrypted"
+            :width="''" :maxWidth="''" :minWidth="''" :height="'4vh'" @onDirty="onDirty" />
     </div>
 </template>
 

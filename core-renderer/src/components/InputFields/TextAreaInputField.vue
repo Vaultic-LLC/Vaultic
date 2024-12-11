@@ -4,6 +4,7 @@
             :pt="{
                 root: 'textAreaInputFieldContainer__panel',
                 header: 'textAreaInputFieldContainer__panelHeader',
+                title: 'textAreaInputFieldContainer__panelTitle',
                 contentContainer: 'textAreaInputFieldContainer__panelContentContainer',
                 content: 'textAreaInputFieldContainer__panelContent'
             }">
@@ -166,7 +167,12 @@ export default defineComponent({
 }
 
 :deep(.textAreaInputFieldContainer__panelHeader) {
-    height: 10%;
+    /* height: 10%; */
+    padding: clamp(10px, 1vw, 18px) !important;
+}
+
+:deep(.textAreaInputFieldContainer__panelTitle) {
+    font-size: clamp(10px, 1vw, 16px) !important;
 }
 
 :deep(.textAreaInputFieldContainer__panelContentContainer) {

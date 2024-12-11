@@ -3,13 +3,13 @@
         :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
             <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name.value" :width="'50%'"
-                :height="''" :minHeight="''" :maxWidth="''" :maxHeight="''" />
+                :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <div class="valueView__valueTypeContainer">
                 <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType.value"
-                    :optionsEnum="NameValuePairType" :fadeIn="true" :width="'100%'" :height="''" :minHeight="''"
-                    :minWidth="'130px'" :maxHeight="''" :showRandom="showRandom" :maxWidth="''" />
+                    :optionsEnum="NameValuePairType" :fadeIn="true" :width="'100%'"
+                    :minWidth="'130px'" :showRandom="showRandom" :maxWidth="''" />
                 <Transition name="fade">
                     <div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
                         <CheckboxInputField class="valueView__notifyIfWeak" :label="'Notify if Weak'" :color="color"
@@ -25,13 +25,10 @@
             <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
                 v-model="valuesState.value.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
                 :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
-                :required="true" :width="'50%'" :maxWidth="''" :minWidth="'150px'" :height="''" :minHeight="''" :maxHeight="''"
-                @onDirty="valueIsDirty = true"  />
+                :required="true" :width="'50%'" :maxWidth="''" :minWidth="'150px'" @onDirty="valueIsDirty = true"  />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
-            <div class="valueView__objectMultiSelect">
-                <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" />
-            </div>
+            <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :fillSpace="true" :static="true">
             <TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
@@ -283,10 +280,6 @@ export default defineComponent({
     justify-content: center;
     align-items: start;
     flex-direction: column;
-    row-gap: 10px;
-}
-
-.valueView__objectMultiSelect {
-    width: 50%;
+    row-gap: clamp(3px, 0.5vw, 10px);
 }
 </style>

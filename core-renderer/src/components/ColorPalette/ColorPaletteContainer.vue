@@ -50,14 +50,14 @@ export default defineComponent({
     min-width: 228px;
     min-height: 120px;
     height: 20%;
-    top: max(30px, 5%);
+    top: 4%;
     /* left: max(11px, 2%); */
     left: max(11px, 12%);
     column-gap: 10%;
     row-gap: 10%;
     z-index: 1;
-    grid-template-rows: repeat(3, max(30px, 5vh));
-    grid-template-columns: repeat(2, max(91px, 8vw));
+    grid-template-rows: repeat(3, clamp(30px, 7vh, 68px));
+    grid-template-columns: repeat(2, clamp(91px, 9vw, 205px));
     transition: 0.3s;
 }
 
@@ -66,6 +66,12 @@ export default defineComponent({
         left: 1%;
     }
 } */
+
+@media (max-height: 650px) {
+    .colorPalettesContainer {
+        top: 2%;
+    }
+}
 
 .colorPalettesContainer__displayOne {
     grid-row: 1;

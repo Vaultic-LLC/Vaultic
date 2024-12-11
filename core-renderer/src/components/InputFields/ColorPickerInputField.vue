@@ -1,18 +1,25 @@
 <template>
     <div class="colorPickerInputFieldContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle">
+        <FloatLabel variant="in" :dt="floatLabelStyle"
+            :pt="{
+                root: 'colorPickerInputFieldContainer__floatLabel'
+            }">
             <InputText :pt="{
                 root: {
-                    'data-coloris': 'true'
+                    'data-coloris': 'true',
+                    class: {
+                        'colorPickerInputFieldContainer__inputText': true
+                    }
                 }
             }" :fluid="true" :invalid="isInvalid" :id="id" v-model="pickedColor" :dt="inputStyle" @update:model-value="onColorSelected" />
-            <label :for="id">{{ label }}</label>
+            <label class="colorPickerInputFieldContainer__label" :for="id">{{ label }}</label>
             <ColorPicker :pt="{
                 root: 'colorPickerIcon',
                 preview: {
                     style: {
                         opacity: '1 !important'
-                    }
+                    },
+                    class: 'colorPickerInputFieldContainer__colorPreview'
                 }
             }" v-model="pickedColor" :disabled="true" :defaultColor="defaultColor" />
         </FloatLabel>
@@ -55,6 +62,14 @@ export default defineComponent({
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
         let defaultColor: Ref<string> = ref(widgetBackgroundHexString());
         let pickedColor: Ref<string> = ref(props.modelValue);
+
+        const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
+        const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
+        const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
+
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
         const isInvalid: Ref<boolean> = ref(false);
         const invalidMessage: Ref<string> = ref('');
@@ -134,27 +149,52 @@ export default defineComponent({
             pickedColor,
             isInvalid,
             invalidMessage,
-            onColorSelected
+            onColorSelected,
+            computedWidth,
+            computedMinWidth,
+            computedMaxWidth,
+            computedHeight,
+            computedMinHeight,
+            computedMaxHeight
         }
     }
 })
 </script>
 
-<style>
+<style scoped>
 .colorPickerInputFieldContainer {
     position: relative;
-    height: v-bind(height);
-    width: v-bind(width);
-    max-height: v-bind(maxHeight);
-    max-width: v-bind(maxWidth);
-    min-height: v-bind(minHeight);
-    min-width: v-bind(minWidth);
+    height: v-bind(computedHeight);
+    width: v-bind(computedWidth);
+    max-height: v-bind(computedMaxHeight);
+    max-width: v-bind(computedMaxWidth);
+    min-height: v-bind(computedMinHeight);
+    min-width: v-bind(computedMinWidth);
     background: none;
 }
 
 .colorPickerInputFieldContainer.active {
     outline: none;
     border: 1.5px solid v-bind(color);
+}
+
+:deep(.colorPickerInputFieldContainer__floatLabel) {
+    height: 100%;
+}
+
+:deep(.colorPickerInputFieldContainer__inputText) {
+    height: 100%;
+    font-size: var(--input-font-size) !important;
+}
+
+:deep(.colorPickerInputFieldContainer__label) {
+    font-size: var(--input-font-size) !important;
+}
+
+:deep(.p-floatlabel-in:has(input:focus) .colorPickerInputFieldContainer__label),
+:deep(.p-floatlabel-in:has(input.p-filled) .colorPickerInputFieldContainer__label) {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
 }
 
 .colorPickerIcon {
@@ -167,5 +207,10 @@ export default defineComponent({
 :deep(.colorPickerInputFieldContainer__message) {
     transform: translateX(5px);
     margin-top: 1px;
+}
+
+:deep(.colorPickerInputFieldContainer__colorPreview) {
+    height: clamp(15px, 1vw, 24px) !important;
+    width: clamp(15px, 1vw, 24px) !important;
 }
 </style>

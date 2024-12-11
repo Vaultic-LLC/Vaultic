@@ -175,7 +175,7 @@ export default defineComponent({
         const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
             width: '9vw',
             maxWidth: '250px',
-            minWidth: '100px',
+            minWidth: '85px',
             minHeight: '25px'
         });
 
@@ -482,9 +482,9 @@ export default defineComponent({
     top: max(252px, 42%);
 }
 
-/* @media (max-width: 1300px) {
+@media (max-width: 1300px) {
     #filterTable {
-        left: max(11px, 1%);
+        left: 10%;
     }
-} */
+}
 </style>

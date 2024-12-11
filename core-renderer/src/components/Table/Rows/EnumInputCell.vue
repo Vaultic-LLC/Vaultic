@@ -1,6 +1,7 @@
 <template>
     <div class="enumInputCellContainer">
-        <EnumInputField v-model="modelField.value" :label="label" :color="color" :optionsEnum="state['filterConditionType']"   />
+        <EnumInputField v-model="modelField.value" :label="label" :color="color" :optionsEnum="state['filterConditionType']"
+            :width="''" :minWidth="''"/>
     </div>
 </template>
 

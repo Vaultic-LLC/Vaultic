@@ -6,7 +6,8 @@
             }
         }" 
         :pt="{
-            content: 'scrollView__content'
+            content: 'scrollView__content',
+            barY: 'scrollView__barY'
         }">
         <slot></slot>
     </ScrollPanel>
@@ -39,5 +40,9 @@ export default defineComponent({
 .scrollView__content {
     height: 100% !important;
     width: 100% !important;
+}
+
+.scrollView__barY {
+    width: clamp(5px, .5vw, 9px) !important;
 }
 </style>

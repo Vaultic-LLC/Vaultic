@@ -175,12 +175,6 @@ export default defineComponent({
     height: 30%;
 }
 
-@media (max-width: 1450px) {
-    .passwordValueGaugesWidget {
-        left: max(935px, 82%);
-    }
-}
-
 @media (max-height: 650px) {
     .passwordValueGaugesWidget {
         top: max(12px, 2%);

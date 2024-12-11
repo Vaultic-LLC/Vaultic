@@ -171,6 +171,11 @@ export default defineComponent({
     color: var(--app-color);
     min-width: 1140px;
     min-height: 600px;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
 }
 
 body {
@@ -212,21 +217,16 @@ h2 {
     width: 19%;
     height: 24.7%;
     min-height: 190px;
-    min-width: 250px;
+    /* TODO: test this when the chart is working again to make sure it isn't too small */
+    /* min-width: 250px; */
 }
 
 .loginHistoryCalendarWidget {
     top: 70.5%;
-    left: 83%;
     width: 16%;
     min-width: 240px;
     min-height: 140px;
-}
-
-@media (max-width: 1450px) {
-    .loginHistoryCalendarWidget {
-        width: 18%;
-    }
+    right: 1%;
 }
 
 /* @media (max-width: 1300px) {

@@ -7,7 +7,7 @@
                     <div class="createMasterKeyViewContainer__inputs">
                         <EncryptedInputField ref="encryptedInputField"
                             :label="'Master Key'" :colorModel="colorModel" v-model="key" :required="true"
-                            :width="'70%'" :maxWidth="''" :height="''" :minHeight="''" :maxHeight="''" />
+                            :width="'70%'" :maxWidth="''"/>
                         <div class="createMasterKeyViewContainer__keyRequirements">
                             <CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
                                 :color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
@@ -24,8 +24,7 @@
                         </div>
                         <EncryptedInputField ref="confirmEncryptedInputField"
                             :label="'Confirm Key'"
-                            :colorModel="colorModel" v-model="reEnterKey" :width="'70%'" :maxWidth="''"
-                            :height="''" :minHeight="''" :maxHeight="''" />
+                            :colorModel="colorModel" v-model="reEnterKey" :width="'70%'" :maxWidth="''" />
                         <CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'"
                             :color="color" v-model="matchesKey" :fadeIn="true" :width="'70%'" :height="'1.25vh'"
                             :minHeight="'18px'" :fontSize="'clamp(13px, 1vh, 20px)'" :disabled="true" />

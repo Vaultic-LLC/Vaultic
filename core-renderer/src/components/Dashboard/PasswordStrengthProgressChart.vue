@@ -509,9 +509,10 @@ export default defineComponent({
     align-items: center;
     padding: 12px;
     width: 13%;
+    min-width: 38px;
     height: 7%;
     color: white;
-    border-radius: min(1vw, 1rem);
+    border-radius: clamp(7px, 0.4vw, 0.425rem);
     border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
     transition: 0.3s;
     font-size: clamp(10px, 0.7vw, 17px);

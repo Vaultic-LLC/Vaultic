@@ -187,7 +187,7 @@ export default defineComponent({
     left: max(325px, 38%);
     width: 23%;
     height: 24.5%;
-    min-width: 280px;
+    /* min-width: 280px; */
     min-height: 190px;
     display: flex;
     flex-direction: column;
@@ -274,9 +274,10 @@ export default defineComponent({
     align-items: center;
     padding: 12px;
     width: 10%;
+    min-width: 35px;
     height: 7%;
     color: white;
-    border-radius: min(1vw, 1rem);
+    border-radius: clamp(7px, 0.4vw, 0.425rem);
     border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
     transition: 0.3s;
     font-size: clamp(10px, 0.8vw, 17px);
@@ -287,6 +288,7 @@ export default defineComponent({
     color: grey;
     border: clamp(1.5px, 0.1vw, 2px) solid grey;
     width: 17%;
+    min-width: 60px;
     left: 3%
 }
 

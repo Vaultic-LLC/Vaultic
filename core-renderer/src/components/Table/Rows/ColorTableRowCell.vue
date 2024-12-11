@@ -1,6 +1,12 @@
 <template>
     <div class="colorTableRowValueContainer">
-        <ColorPicker v-model="pickedColor" :disabled="true" />    
+        <ColorPicker v-model="pickedColor" :disabled="true"
+            :pt="{
+                root: 'colorPickerIcon',
+                preview: {
+                    class: 'colorTableRowValueContainer__colorPreview'
+                }
+            }" />
     </div>
 </template>
 
@@ -27,5 +33,8 @@ export default defineComponent({
 })
 </script>
 <style scoped>
-
+:deep(.colorTableRowValueContainer__colorPreview) {
+    height: clamp(15px, 1vw, 24px) !important;
+    width: clamp(15px, 1vw, 24px) !important;
+}
 </style>

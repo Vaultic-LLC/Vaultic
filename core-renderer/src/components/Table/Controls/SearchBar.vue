@@ -1,11 +1,23 @@
 <template>
 	<div class="searchBarContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle">
-            <IconField>
-                <InputIcon class="pi pi-search" />
-                <InputText :dt="inputStyle" size="small" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput" />
+        <FloatLabel variant="in" :dt="floatLabelStyle"
+            :pt="{
+                root: 'searchBarContainer__floatLabel'
+            }">
+            <IconField 
+                :pt="{
+                    root: 'searchBarContainer__iconField'
+                }">
+                <InputIcon class="pi pi-search" 
+                    :pt="{
+                        root: 'searchBarContainer__inputIcon'
+                    }" />
+                <InputText :dt="inputStyle" size="small" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput"
+                    :pt="{
+                        root: 'searchBarContainer__inputText'
+                    }" />
             </IconField>
-            <label :for="id">Search</label>
+            <label class="searchBarContainer__label" :for="id">Search</label>
         </FloatLabel>
 	</div>
 </template>
@@ -101,4 +113,35 @@ export default defineComponent({
 	max-width: v-bind('sizeModel?.maxWidth');
 }
 
+:deep(.searchBarContainer__floatLabel) {
+    height: 100%;
+}
+
+:deep(.searchBarContainer__iconField) {
+    height: 100%;
+}
+
+:deep(.searchBarContainer__inputIcon) {
+    font-size: clamp(9px, 1vw, 14px) !important;
+    display: flex !important;
+    align-items: center;
+}
+
+:deep(.searchBarContainer__inputText) {
+    padding-inline-start: clamp(30px, 2vw, 40px) !important;
+    height: 100%;
+    font-size: var(--input-font-size) !important;
+    padding-block-start: clamp(18px, 1.5vw, 24px) !important;
+}
+
+.searchBarContainer__label {
+    font-size: var(--input-font-size) !important;
+    inset-inline-start: clamp(30px, 2vw, 40px) !important;
+}
+
+:deep(.p-floatlabel-in:has(input:focus) .searchBarContainer__label),
+:deep(.p-floatlabel-in:has(input.p-filled) .searchBarContainer__label) {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
+}
 </style>

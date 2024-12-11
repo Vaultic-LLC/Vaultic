@@ -167,11 +167,13 @@ export default defineComponent({
 <style>
 .objectViewContainer {
     position: relative;
-    height: 90%;
-    margin: 5%;
+    height: 93%;
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 3%;
+    margin-left: 5%;
+    margin-right: 5%;
 }
 
 .objectViewContainer__form {

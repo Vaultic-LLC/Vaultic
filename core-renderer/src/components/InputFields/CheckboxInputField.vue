@@ -2,6 +2,7 @@
     <div class="checkboxInputContainer">
         <Checkbox :inputId="id" v-model="checked" binary :disabled="disabled" @update:modelValue="onClick"
             :pt="{
+                root: 'checkboxInputContainer__checkbox',
                 box: 'checkboxInputContainer__box',
                 icon: 'checkboxInputContainer__icon'
             }" />
@@ -86,12 +87,21 @@ export default defineComponent({
     font-size: v-bind(computedFontSize);
 }
 
+:deep(.checkboxInputContainer__checkbox) {
+    height: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    width: auto !important;
+}
+
 :deep(.checkboxInputContainer__icon) {
     color: white !important;
 }
 
 :deep(.checkboxInputContainer__box) {
-    background: v-bind(backgroundColor) !important
+    background: v-bind(backgroundColor) !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 3px !important;
 }
 
 :deep(.p-checkbox-checked .p-checkbox-box.checkboxInputContainer__box) {

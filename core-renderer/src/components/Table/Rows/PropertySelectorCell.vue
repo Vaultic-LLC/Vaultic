@@ -1,7 +1,7 @@
 <template>
     <div class="propertySelectorCellContainer">
         <PropertySelectorInputField v-model="modelField.value" :label="label" :color="color" :displayFieldOptions="displayFieldOptions" 
-            @propertyTypeChanged="onPropertyTypeChanged"  />
+            :width="''" :minWidth="''" @propertyTypeChanged="onPropertyTypeChanged"  />
     </div>
 </template>
 
