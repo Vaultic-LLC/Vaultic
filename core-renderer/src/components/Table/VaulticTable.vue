@@ -91,7 +91,8 @@
                         <div v-for="model in (slotProps.data as TableRowModel).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
                             :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
                             <span class="vaulticTableContainer__groupIconSpan">
-                                <i :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
+                                <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
+                                <template v-else class="vaulticTableContainer__groupIcon" :style="{color: model.color}">{{ model.toolTipText[0] }}</template>
                             </span>
                         </div>
                     </div>

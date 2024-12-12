@@ -15,11 +15,11 @@
             <div v-if="!showIcon" class="authenticationPopupButtons">
                 <PopupButton id="authPopupContainer__enterButton" :color="color" :text="'Enter'" :disabled="disabled"
                     :width="'5vw'" :minWidth="'75px'" :maxWidth="'120px'" :height="'3vh'" :minHeight="'25px'"
-                    :maxHeight="'40px'" :fontSize="'0.8vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
+                    :maxHeight="'40px'" :fontSize="'clamp(13px, 0.8vw, 20px)'" :isSubmit="true"
                     @onClick="onEnter"></PopupButton>
                 <PopupButton v-if="allowCancel" :color="color" :text="'Cancel'" :disabled="disabled" :width="'5vw'"
                     :minWidth="'75px'" :maxWidth="'120px'" :height="'3vh'" :minHeight="'25px'" :maxHeight="'40px'"
-                    :fontSize="'0.8vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onCancel"></PopupButton>
+                    :fontSize="'clamp(13px, 0.8vw, 20px)'" @onClick="onCancel"></PopupButton>
             </div>
         </div>
         <div v-if="showPulsing" class="pulsingCircles" :class="{ unlocked: unlocked }">

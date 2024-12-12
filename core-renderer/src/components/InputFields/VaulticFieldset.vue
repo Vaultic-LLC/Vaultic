@@ -3,7 +3,6 @@
         :class="
         {
             'vaulticFieldsetContainer--fillSpace': fillSpace === true,
-            'vaulticFieldsetContainer--static': static === true,
             'vaulticFieldsetContainer--centered': centered === true,
             'vaulticFieldsetContainer--end': end === true
         }">
@@ -12,48 +11,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
+import { defineComponent } from 'vue';
 
 export default defineComponent({
 	name: "VaulticFieldset",
-	props: ["fillSpace", "static", "centered", "end"],
+	props: ["fillSpace", "centered", "end"],
 	setup()
 	{
-        const container: Ref<HTMLElement | null> = ref(null)
-        const resizeHandler: ResizeObserver = new ResizeObserver(setHeight);
-        const staticHeight: Ref<string> = ref('');
-
-        function setHeight()
-        {
-            if (container.value)
-            {
-                //staticHeight.value = `${container.value.clientHeight}px`;
-            }
-        }
-
-        onMounted(() => 
-        {
-            const body = document.getElementById('body');
-            if (body)
-            {
-                resizeHandler.observe(body)
-            }
-
-            setHeight();
-        });
-
-        onUnmounted(() => 
-        {
-            const body = document.getElementById('body');
-            if (body)
-            {
-                resizeHandler.unobserve(body)
-            }        
-        });
-
 		return {
-            container,
-            staticHeight
         };
 	},
 })
@@ -67,10 +32,6 @@ export default defineComponent({
 
 .vaulticFieldsetContainer--fillSpace {
     flex-grow: 1;
-}
-
-.vaulticFieldsetContainer--static {
-    height: v-bind(staticHeight);
 }
 
 .vaulticFieldsetContainer--centered {

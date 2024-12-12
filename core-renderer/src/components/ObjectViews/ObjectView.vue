@@ -9,11 +9,10 @@
         </div>
         <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
             <PopupButton :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
-                :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" :fontSize="'1vw'"
-                :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onSave" />
+                :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" @onClick="onSave" />
             <PopupButton v-if="creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
                 :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'"
-                :height="'2vw'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
+                :height="'2vw'" :isSubmit="true"
                 @onClick="onSaveAndClose" />
         </div>
     </div>
@@ -186,7 +185,7 @@ export default defineComponent({
     width: 100%;
     display: flex;
     flex-direction: column;
-    row-gap: 15px;
+    row-gap: clamp(15px, 1vw, 20px);
     align-items: center;
     position: relative;
 }

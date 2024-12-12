@@ -4,7 +4,7 @@ import { Store, StoreEvents, StoreState } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { ColorPalette, colorPalettes } from "../../Types/Colors";
+import { ColorPalette, defaultColorPalettes, emptyUserColorPalettes } from "../../Types/Colors";
 import { AppView, AutoLockTime } from "../../Types/App";
 import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
 import { UserPreferencesStore } from "./UserPreferencesStore";
@@ -20,7 +20,7 @@ import { OrganizationStore } from "./OrganizationStore";
 
 export interface AppSettings extends IFieldedObject
 {
-    colorPalettes: Field<Map<string, Field<ColorPalette>>>;
+    userColorPalettes: Field<Map<string, Field<ColorPalette>>>;
     autoLockTime: Field<AutoLockTime>;
     randomValueLength: Field<number>;
     randomPhraseLength: Field<number>;
@@ -98,7 +98,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => this.state.settings.value.colorPalettes.value.valueArray())
+        this.internalColorPalettes = computed(() => [...defaultColorPalettes.valueArray(), ...this.state.settings.value.userColorPalettes.value.valueArray()])
 
         this.internalUserVaults = ref([]);
         this.internalSharedVaults = ref([]);
@@ -125,7 +125,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             id: new Field(""),
             settings: new Field({
                 id: new Field(""),
-                colorPalettes: new Field(colorPalettes),
+                userColorPalettes: new Field(emptyUserColorPalettes),
                 autoLockTime: new Field(AutoLockTime.OneMinute),
                 randomValueLength: new Field(25),
                 randomPhraseLength: new Field(7),
@@ -423,6 +423,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return true;
     }
 
+    // TODO: post release
     public shareToVault<T>(value: T, toVault: number)
     {
 
@@ -433,7 +434,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
 
-        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.colorPalettes.value.get(colorPalette.id.value);
+        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.userColorPalettes.value.get(colorPalette.id.value);
         if (!oldColorPalette)
         {
             return Promise.resolve();

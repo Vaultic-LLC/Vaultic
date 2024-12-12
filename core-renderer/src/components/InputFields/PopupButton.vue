@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, onUnmounted, ref } from "vue";
+import { Ref, defineComponent, onMounted, onUnmounted, ref, computed, ComputedRef } from "vue";
 
 import Button from "primevue/button";
 
@@ -16,13 +16,15 @@ export default defineComponent({
         Button
     },
     emits: ['onClick'],
-    props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize', 'minFontSize', 'maxFontSize',
+    props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize',
         'disabled', 'isSubmit', 'fadeIn'],
     setup(props, ctx)
     {
         const button: Ref<HTMLElement | null> = ref(null);
         const doFadeIn: Ref<boolean> = ref(false);
         const transition: Ref<string> = ref('0s');
+
+        const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ?? "clamp(10px, 1vw, 16px)");
 
         function doOnClick()
         {
@@ -69,6 +71,7 @@ export default defineComponent({
             button,
             doFadeIn,
             transition,
+            computedFontSize,
             doOnClick
         }
     }
@@ -98,7 +101,7 @@ export default defineComponent({
     color: white !important;
     border: 1.5px solid v-bind(color) !important;
     padding: clamp(2px, 0.3vw, 8px) clamp(6px, 0.5vw, 12px) !important;
-    font-size: clamp(10px, 1vw, 16px) !important;
+    font-size: v-bind(computedFontSize) !important;
 }
 
 .popupButton__primeVueButton:hover {

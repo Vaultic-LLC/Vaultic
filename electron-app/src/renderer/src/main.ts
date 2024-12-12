@@ -98,6 +98,9 @@ function initApp()
 	app.use(PrimeVue, {
 		theme: {
 			preset: Aura,
+			options: {
+				darkModeSelector: '.darkMode',
+			}
 		}
 	});
 

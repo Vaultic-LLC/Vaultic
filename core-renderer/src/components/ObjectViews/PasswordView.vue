@@ -3,24 +3,25 @@
         :gridDefinition="gridDefinition">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-                v-model="passwordState.passwordFor.value" :width="'50%'" :maxWidth="''" />
+                v-model="passwordState.passwordFor.value" :width="'50%'" :maxWidth="''" :maxHeight="''" />
             <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login.value"
-                :width="'50%'" :maxWidth="''" />
+                :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
                 :label="'Password'" v-model="passwordState.password.value" :initialLength="initalLength"
                 :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true" :required="true"
-                showCopy="true" :width="'50%'" :maxWidth="''" @onDirty="passwordIsDirty = true" />
+                showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
             <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain.value"
                 :showToolTip="true"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
-                :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" />
+                :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email.value"
-                :width="'50%'" :isEmailField="true" :maxWidth="''" />
-            <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" :maxWidth="''" />
+                :width="'50%'" :isEmailField="true" :maxWidth="''" :maxHeight="''" />
+            <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
+                :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset :fillSpace="true" :static="true">
             <TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
@@ -55,7 +56,7 @@ import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { Password, SecurityQuestion, defaultPassword } from '../../Types/DataTypes';
-import { ComponentSizeModel, GridDefinition, HeaderTabModel, InputColorModel, ObjectMultiSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
@@ -97,8 +98,8 @@ export default defineComponent({
 
         const locked: Ref<boolean> = ref(!props.creating);
 
-        const selectedGroups: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
-        const groupOptions: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
+        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -183,7 +184,7 @@ export default defineComponent({
             passwordState.value.groups.value = new Map();
             selectedGroups.value.forEach(g => 
             {
-                passwordState.value.groups.value.set(g.backingObject.value.id.value, new Field(g.backingObject.value.id.value));
+                passwordState.value.groups.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
             });
 
             if (props.creating)
@@ -302,7 +303,7 @@ export default defineComponent({
             setSecurityQuestionModels();
             groupOptions.value = app.currentVault.groupStore.passwordGroups.map(g => 
             {
-                const option: ObjectMultiSelectOptionModel = 
+                const option: ObjectSelectOptionModel = 
                 {
                     label: g.value.name.value,
                     backingObject: g,

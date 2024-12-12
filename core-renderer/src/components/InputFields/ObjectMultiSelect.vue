@@ -60,7 +60,7 @@ import MultiSelect, { MultiSelectAllChangeEvent, MultiSelectChangeEvent } from '
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
-import { ObjectMultiSelectOptionModel } from '../../Types/Models';
+import { ObjectSelectOptionModel } from '../../Types/Models';
 
 export default defineComponent({
     name: "ObjectMultiSelect",
@@ -79,7 +79,7 @@ export default defineComponent({
         const popoverRefs: Ref<any[]> = ref([]);
         const id = ref(useId());
         const selectedItemsPlaceHolder = ref(props.modelValue);
-        const options: ComputedRef<ObjectMultiSelectOptionModel[]> = computed(() => props.options)
+        const options: ComputedRef<ObjectSelectOptionModel[]> = computed(() => props.options)
         const validationFunction: Ref<{ (): boolean; }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const selectAll = ref(false);
         const background: Ref<string> = ref(widgetBackgroundHexString());
@@ -88,8 +88,8 @@ export default defineComponent({
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
         const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
         let floatLabelStyle = computed(() => {
@@ -145,7 +145,7 @@ export default defineComponent({
         watch(() => props.modelValue, (newValue) =>
         {
             selectedItemsPlaceHolder.value = newValue;
-        })
+        });
 
         onMounted(() =>
         {

@@ -15,11 +15,13 @@
                     @onOk="popupStore.hideAlert()" />
             </Transition>
         </Teleport>
-        <Transition name="fade">
-            <RequestedAuthenticationPopup v-if="popupStore.requestAuthenticationIsShowing"
-                :authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
-                :setupKey="popupStore.needsToSetupKey" :color="popupStore.color" />
-        </Transition>
+        <Teleport to="#body">
+            <Transition name="fade">
+                <RequestedAuthenticationPopup v-if="popupStore.requestAuthenticationIsShowing"
+                    :authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
+                    :setupKey="popupStore.needsToSetupKey" :color="popupStore.color" />
+            </Transition>
+        </Teleport>
         <Teleport to="#body">
             <Transition name="accountSetupFade" mode="out-in">
                 <AccountSetupPopup v-if="popupStore.accountSetupIsShowing" :model="popupStore.accountSetupModel"
@@ -32,15 +34,19 @@
                     :passwordID="popupStore.breachedPasswordID" @onClose="popupStore.hideBreachedPasswordPopup()" />
             </Transition>
         </Teleport>
-        <Transition name="fade" mode="out-in">
-            <ToastPopup v-if="popupStore.toastIsShowing" :color="popupStore.color" :text="popupStore.toastText"
-                :success="popupStore.toastSuccess" />
-        </Transition>
-        <Transition name="fade">
-            <ImportSelectionPopup v-if="popupStore.importPopupIsShowing" :color="popupStore.color"
-                :csvHeaders="popupStore.csvImportHeaders" :properties="popupStore.importProperties"
-                @onConfirm="popupStore.onImportConfirmed" @onClose="popupStore.hideImportPopup" />
-        </Transition>
+        <Teleport to="#body">
+            <Transition name="fade" mode="out-in">
+                <ToastPopup v-if="popupStore.toastIsShowing" :color="popupStore.color" :text="popupStore.toastText"
+                    :success="popupStore.toastSuccess" />
+            </Transition>
+        </Teleport>
+        <Teleport to="#body">
+            <Transition name="fade">
+                <ImportSelectionPopup v-if="popupStore.importPopupIsShowing" :color="popupStore.color"
+                    :csvHeaders="popupStore.csvImportHeaders" :properties="popupStore.importProperties"
+                    @onConfirm="popupStore.onImportConfirmed" @onClose="popupStore.hideImportPopup" />
+            </Transition>
+        </Teleport>
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="popupStore.vaultPopupIsShowing" :closePopup="popupStore.onVaultPopupClose"

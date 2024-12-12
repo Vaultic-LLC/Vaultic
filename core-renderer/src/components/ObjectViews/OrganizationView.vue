@@ -13,7 +13,6 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import { GridDefinition, HeaderTabModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { defaultOrganization, Member, Organization } from '../../Types/DataTypes';
-import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { HeaderDisplayField } from '../../Types/Fields';
 import { TableTemplateComponent } from '../../Types/Components';
@@ -37,8 +36,6 @@ export default defineComponent({
         
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
 
-        // @ts-ignore
-        const tableRowDatas: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
         const userSortedCollection: SortedCollection = new SortedCollection([], "lastName");
 
         let saveSucceeded: (value: boolean) => void;
@@ -175,7 +172,6 @@ export default defineComponent({
             refreshKey,
             gridDefinition,
             searchText,
-            tableRowDatas,
             userHeaderTab,
             onSave,
         };

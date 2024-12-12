@@ -14,9 +14,11 @@
         </div>
         <div class="treeList__divider"></div>
         <div class="treeList__nodes">
-            <TransitionGroup name="listFade">
-                <TreeNode v-for="model in displayModels" :key="model.id" :model="model" :color="primaryColor" />
-            </TransitionGroup>
+            <ScrollView :color="primaryColor">
+                <TransitionGroup name="listFade">
+                    <TreeNode v-for="model in displayModels" :key="model.id" :model="model" :color="primaryColor" />
+                </TransitionGroup>
+            </ScrollView>
         </div>
     </div>
 </template>
@@ -28,6 +30,7 @@ import SearchBar from "../Table/Controls/SearchBar.vue";
 import AddButton from "../Table/Controls/AddButton.vue";
 import TreeNode from "./TreeNode.vue";
 import VaulticButton from "../InputFields/VaulticButton.vue";
+import ScrollView from '../ObjectViews/ScrollView.vue';
 
 import app from "../../Objects/Stores/AppStore";
 import { ComponentSizeModel, TreeNodeModel } from "../../Types/Models";
@@ -40,7 +43,8 @@ export default defineComponent({
         SearchBar,
         AddButton,
         TreeNode,
-        VaulticButton
+        VaulticButton,
+        ScrollView
     },
     props: ['nodes', 'onLeafClicked'],
     emits: ['onAdd'],

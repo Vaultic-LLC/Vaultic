@@ -38,7 +38,8 @@
         </FloatLabel>
         <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
             :pt="{
-                root: 'dropDownContainer__message'
+                root: 'dropDownContainer__message',
+                text: 'dropDownContainer__messageText'
             }">
             {{ invalidMessage }}
         </Message>
@@ -94,8 +95,8 @@ export default defineComponent({
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
         const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
         let floatLabelStyle = computed(() => {
@@ -253,5 +254,9 @@ export default defineComponent({
 .p-floatlabel-in:has(.p-inputwrapper-filled) .dropDownContainer__label {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.dropDownContainer__messageText) {
+    font-size: clamp(9px, 1vw, 14px) !important;
 }
 </style>

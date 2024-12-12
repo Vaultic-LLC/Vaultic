@@ -7,7 +7,7 @@
             <Select 
                 :pt="{
                     root: {
-                        class: {
+                        class: { 
                             'dropDownContainer__select': true,
                             'dropDownContainer__select--invalid': isInvalid
                         }
@@ -31,9 +31,18 @@
                             style
                         };
                     }
-                }" class="primeVueSelect" v-model="selectedValue" 
-                showClear :inputId="id" :options="options" optionLabel="name" :fluid="true" :labelStyle="{'text-align': 'left'}" 
-                @update:model-value="onOptionClick" />
+                }" :invalid="isInvalid" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
+                showClear :inputId="id" :options="options" optionLabel="label" :fluid="true" :labelStyle="{'text-align': 'left'}" 
+                @update:model-value="onOptionClick">
+                <template #option="slotProps">
+                    <div class="dropDownContainer__option">
+                        <div v-if="slotProps.option.icon" class="dropDownContainer__iconContianer">
+                            <i :class='`pi ${slotProps.option.icon} dropDownContainer__optionIcon`' :style="{color: slotProps.option.color ?? '#FFFFFF'}"></i>
+                        </div>
+                        <div class="dropDownContainer__optionLabel">{{ slotProps.option.label }}</div>
+                    </div>
+                </template>
+            </Select>
             <label class="dropDownContainer__label" :for="id">{{ label }}</label>
         </FloatLabel>
         <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
@@ -46,7 +55,7 @@
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId } from 'vue';
 
 import FloatLabel from 'primevue/floatlabel';
 import Select from "primevue/select";
@@ -54,41 +63,40 @@ import Message from "primevue/message";
 
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
-import { PropertyType, PropertySelectorDisplayFields } from '../../Types/Fields';
 import app from '../../Objects/Stores/AppStore';
+import { ObjectSelectOptionModel } from '../../Types/Models';
 
 export default defineComponent({
-    name: "PropertySelectorInputField",
+    name: "ObjectSingleSelect",
     components: 
     {
         FloatLabel,
         Select,
         Message
     },
-    emits: ["update:modelValue", "propertyTypeChanged"],
-    props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth'],
+    emits: ["update:modelValue"],
+    props: ["modelValue", "options", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
+        'width', 'minWidth', 'maxWidth', 'required', 'disabled'],
     setup(props, ctx)
     {
         const id = ref(useId());
+        const refreshKey: Ref<string> = ref('');
 
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
         const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
 
-        const options: ComputedRef<any[]> = computed(() => 
-        {
-            return (props.displayFieldOptions as PropertySelectorDisplayFields[]).map((k, i) => { return { name: k.displayName, code: i, df: k } });
-        });
+        const options: ComputedRef<ObjectSelectOptionModel[]> = computed(() => props.options)
+
+        let selectedValue: Ref<any> = ref(props.modelValue);
 
         const isInvalid: Ref<boolean> = ref(false);
         const invalidMessage: Ref<string> = ref('');
-        
-        let selectedValue: Ref<any> = ref();
-        let selectedPropertyType: PropertyType = PropertyType.String;
+
+        const computedRequired: ComputedRef<boolean> = computed(() => props.required === false ? false : true);
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
-        const displayFieldCount: Ref<number> = ref(Object.keys(props.displayFieldOptions).length - 1);
+        const enumOptionCount: Ref<number> = ref(-1);
 
         const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
@@ -97,44 +105,6 @@ export default defineComponent({
         const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
-
-        function onOptionClick(option: any)
-        {
-            isInvalid.value = false;
-            selectedValue.value = option;
-            ctx.emit('update:modelValue', option?.df?.backingProperty ?? null);
-
-            if (option?.df?.type && option?.df?.type != selectedPropertyType)
-            {
-                selectedPropertyType = option.df.type;
-                if (selectedPropertyType == PropertyType.Enum)
-                {
-                    ctx.emit("propertyTypeChanged", selectedPropertyType, option.df.enum);
-                }
-                else
-                {
-                    ctx.emit("propertyTypeChanged", selectedPropertyType);
-                }
-            }
-        }
-
-        function validate()
-        {
-            isInvalid.value = false;
-            if (selectedValue.value == '' || selectedValue.value == undefined)
-            {
-                invalidate("Please select a value");
-                return false;
-            }
-
-            return true;
-        }
-
-        function invalidate(message: string)
-        {
-            isInvalid.value = true;
-            invalidMessage.value = message;
-        }
 
         let floatLabelStyle = computed(() => {
             return {
@@ -152,14 +122,46 @@ export default defineComponent({
             }
         });
 
-        onMounted(() =>
+        function onOptionClick(value: any)
         {
-            const initialValue = options.value.filter(v => v.df.backingProperty == props.modelValue);
-            if (initialValue.length > 0)
+            isInvalid.value = false;
+            selectedValue.value = value;
+            ctx.emit('update:modelValue', value)
+        }
+
+        function validate()
+        {
+            isInvalid.value = false;
+            if (computedRequired.value && (selectedValue.value == '' || selectedValue.value == undefined))
             {
-                selectedValue.value = initialValue[0];
+                invalidate("Please select a value");
+                return false;
             }
 
+            return true;
+        }
+
+        function invalidate(message: string)
+        {
+            isInvalid.value = true;
+            invalidMessage.value = message;
+        }
+
+        watch(() => props.modelValue, (newValue) =>
+        {
+            if (newValue === undefined)
+            {
+                onOptionClick('');
+                refreshKey.value = Date.now().toString();
+            }
+            else 
+            {
+                selectedValue.value = newValue;
+            }
+        });
+
+        onMounted(() =>
+        {
             validationFunction?.value.push(validate);
         });
 
@@ -171,21 +173,22 @@ export default defineComponent({
         return {
             id,
             errorColor,
-            isInvalid,
-            invalidMessage,
             floatLabelStyle,
             selectBackgroundColor,
+            refreshKey,
             options,
             selectedValue,
             backgroundColor,
-            displayFieldCount,
+            isInvalid,
+            invalidMessage,
+            enumOptionCount,
             computedWidth,
             computedMinWidth,
             computedMaxWidth,
             computedHeight,
             computedMinHeight,
             computedMaxHeight,
-            onOptionClick
+            onOptionClick,
         }
     }
 })
@@ -200,8 +203,6 @@ export default defineComponent({
     max-width: v-bind(computedMaxWidth);
     min-height: v-bind(computedMinHeight);
     min-width: v-bind(computedMinWidth);
-
-    cursor: pointer;
 }
 
 .primeVueSelect {
@@ -210,6 +211,11 @@ export default defineComponent({
 
 .primeVueSelect.p-focus {
     border: 1px solid v-bind(color) !important;
+}
+
+:deep(.dropDownContainer__message) {
+    transform: translateX(5px);
+    margin-top: 1px;
 }
 
 :deep(.dropDownContainer__select--invalid) {
@@ -253,5 +259,22 @@ export default defineComponent({
 
 :deep(.dropDownContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+}
+
+.dropDownContainer__option {
+    display: flex;
+    column-gap: 10px;
+}
+
+.dropDownContainer__iconContianer {
+    padding-left: 5px;
+}
+
+.dropDownContainer__optionIcon {
+    font-size: clamp(15px, 1vw, 19px);
+}
+
+.dropDownContainer__optionLabel {
+    font-size: clamp(14px, 1vw, 16px);
 }
 </style>

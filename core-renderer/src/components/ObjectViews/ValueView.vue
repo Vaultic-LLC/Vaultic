@@ -49,7 +49,7 @@ import ToolTip from '../ToolTip.vue';
 import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
-import { GridDefinition, InputColorModel, ObjectMultiSelectOptionModel, defaultInputColorModel } from '../../Types/Models';
+import { GridDefinition, InputColorModel, ObjectSelectOptionModel, defaultInputColorModel } from '../../Types/Models';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent } from '../../Types/Components';
@@ -78,8 +78,8 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const selectedGroups: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
-        const groupOptions: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
+        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
         const initalLength: Ref<number> = ref(valuesState.value.valueLength?.value ?? 0);
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
@@ -105,7 +105,7 @@ export default defineComponent({
             valuesState.value.groups.value = new Map();
             selectedGroups.value.forEach(g => 
             {
-                valuesState.value.groups.value.set(g.backingObject.value.id.value, new Field(g.backingObject.value.id.value));
+                valuesState.value.groups.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
             });
 
             valueInputField.value?.toggleMask(true);
@@ -178,7 +178,7 @@ export default defineComponent({
         {
             groupOptions.value = app.currentVault.groupStore.valuesGroups.map(g => 
             {
-                const option: ObjectMultiSelectOptionModel = 
+                const option: ObjectSelectOptionModel = 
                 {
                     label: g.value.name.value,
                     backingObject: g,

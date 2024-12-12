@@ -11,23 +11,23 @@
                         <div class="createMasterKeyViewContainer__keyRequirements">
                             <CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
                                 :color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
-                                :height="'1.25vh'" :minHeight="'18px'" :fontSize="'clamp(13px, 1vh, 20px)'" :disabled="true" />
+                                :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                             <CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Upper and Lower Case'"
                                 :color="color" v-model="containesUpperAndLowerCase" :fadeIn="true" :width="'100%'"
-                                :height="'1.25vh'" :minHeight="'18px'" :fontSize="'clamp(13px, 1vh, 20px)'" :disabled="true" />
+                                :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                             <CheckboxInputField class="containsNumber" :label="'Number'" :color="color"
                                 v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
-                                :minHeight="'18px'" :fontSize="'clamp(13px, 1vh, 20px)'" :disabled="true" />
+                                :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                             <CheckboxInputField class="containsSpecialCharacter" :label="'Special Character'"
                                 :color="color" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
-                                :height="'1.25vh'" :minHeight="'18px'" :fontSize="'clamp(13px, 1vh, 20px)'" :disabled="true" />
+                                :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                         </div>
                         <EncryptedInputField ref="confirmEncryptedInputField"
                             :label="'Confirm Key'"
                             :colorModel="colorModel" v-model="reEnterKey" :width="'70%'" :maxWidth="''" />
                         <CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'"
                             :color="color" v-model="matchesKey" :fadeIn="true" :width="'70%'" :height="'1.25vh'"
-                            :minHeight="'18px'" :fontSize="'clamp(13px, 1vh, 20px)'" :disabled="true" />
+                            :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                     </div>
                     <div class="createMasterKeyViewContainer__info">
                         <ButtonLink :color="color" :text="'Help Creating a Strong and Memorable Key'" :fontSize="'clamp(17px, 1vw, 20px)'"

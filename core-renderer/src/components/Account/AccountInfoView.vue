@@ -11,8 +11,7 @@
                 </div>
                 <PopupButton :color="currentPrimaryColor" :disabled="disableButtons" :text="'View Subscription'"
                     :width="'12vw'" :minWidth="'120px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
-                    :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-                    @onClick="openPaymentInfoLink" />
+                    :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="openPaymentInfoLink" />
             </div>
         </div>
         <div class="accountInfoView__section">
@@ -33,8 +32,7 @@
                         :height="'4vh'" :minHeight="'35px'" :additionalValidationFunction="isValidGuid" />
                     <PopupButton :color="currentPrimaryColor" :disabled="disableButtons" :text="'Deactivate'"
                         :width="'8vw'" :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
-                        :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-                        @onClick="deactivateSubscription" />
+                        :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="deactivateSubscription" />
                 </div>
             </div>
             <div class="accountInfoView__redownloadDeactivationKey">
@@ -44,7 +42,7 @@
                 </div>
                 <PopupButton :color="currentPrimaryColor" :disabled="disableButtons" :text="'Download'" :width="'8vw'"
                     :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                    :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="downloadDeactivationKey" />
+                    :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="downloadDeactivationKey" />
             </div>
         </div>
     </div>

@@ -2,12 +2,12 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
-            <ColorPickerInputField :label="'Filter Color'" :color="color"
+            <ColorPickerInputField :label="'Sub Color One'" :color="color"
                 v-model="colorPaletteState.filtersColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
-            <ColorPickerInputField :label="'Group Color'" :color="color"
+            <ColorPickerInputField :label="'Sub Color Two'" :color="color"
                 v-model="colorPaletteState.groupsColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
         </VaulticFieldset>
@@ -18,7 +18,7 @@
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <div class="colorPaletteView__groupedColorPickers colorPaletteView__passwordColors">
-                <label class="colorPaletteView__groupedColorPickerLabels">Password Colors</label>
+                <label class="colorPaletteView__groupedColorPickerLabels">Main Colors One</label>
                 <ColorPickerInputField :label="'Primary'" :color="color"
                     v-model="colorPaletteState.passwordsColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
@@ -34,7 +34,7 @@
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <div class="colorPaletteView__groupedColorPickers colorPaletteView__valueColors">
-                <label class="colorPaletteView__groupedColorPickerLabels">Value Colors</label>
+                <label class="colorPaletteView__groupedColorPickerLabels">Main Colors Two</label>
                 <ColorPickerInputField :label="'Primary'" :color="color"
                     v-model="colorPaletteState.valuesColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
                     :minWidth="'125px'" />

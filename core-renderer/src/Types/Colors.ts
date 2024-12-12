@@ -60,7 +60,7 @@ export const emptyColorPalette: ColorPalette =
     errorColor: new Field("#ef4444")
 }
 
-export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
+export const defaultColorPalettes: Map<string, Field<ColorPalette>> = new Map([
     ["EEA4135C-DE25-4B47-B678-486E2D64F675", new Field({
         id: new Field("EEA4135C-DE25-4B47-B678-486E2D64F675"),
         active: new Field(false),
@@ -132,7 +132,10 @@ export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
         tableColor: new Field("#161e29"),
         widgetColor: new Field("#2c2c3329"),
         errorColor: new Field("#FFFFFF")
-    })],
+    })]
+]);
+
+export const emptyUserColorPalettes: Map<string, Field<ColorPalette>> = new Map([
     ["EDD79A67-A9D0-48B8-B895-D1FD7DFA6180", new Field({
         id: new Field("EDD79A67-A9D0-48B8-B895-D1FD7DFA6180"),
         active: new Field(false),

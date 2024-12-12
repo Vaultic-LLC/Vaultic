@@ -1,13 +1,14 @@
 <template>
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField class="groupView__name" :label="'Name'" :color="groupColor" v-model="groupState.name.value"
+        <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name.value"
             :width="'50%'" :maxWidth="''" />
-        <ColorPickerInputField class="groupView__color" :label="'Color'" :color="groupColor" v-model="groupState.color.value"
+        <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color.value"
             :width="'50%'" :minHeight="''" :minWidth="'125px'" :maxWidth="''" />
-        <TextInputField class="groupView__icon" :label="'Icon'" :color="groupColor" v-model="groupState.icon.value"
-            :width="'50%'" :minWidth="'125px'" :maxWidth="''" />
-        <ObjectMultiSelect :label="selectLabel" :color="groupColor" v-model="selectedOptions" :options="allOptions" :width="'50%'" :maxWidth="''" />
+        <ObjectSingleSelect :label="'Icon'" :color="groupColor" v-model="selectedIcon"
+            :options="allIcons" :width="'50%'" :minWidth="'125px'" :maxWidth="''" @update:model-value="onIconSelected" />
+        <ObjectMultiSelect :label="selectLabel" :color="groupColor" v-model="selectedDataObjectOptions" :options="allDataObjectsOptions" 
+            :width="'50%'" :maxWidth="''" />
     </ObjectView>
 </template>
 <script lang="ts">
@@ -17,13 +18,14 @@ import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
 import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
+import ObjectSingleSelect from '../InputFields/ObjectSingleSelect.vue';
 
-import { GridDefinition, ObjectMultiSelectOptionModel } from '../../Types/Models';
+import { GridDefinition, ObjectSelectOptionModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
+import icons from '../../Constants/Icons';
 
-// TODO: need to create an IconSelector so that users don't have to type in the name of the icon
 export default defineComponent({
     name: "GroupView",
     components:
@@ -32,6 +34,7 @@ export default defineComponent({
         TextInputField,
         ColorPickerInputField,
         ObjectMultiSelect,
+        ObjectSingleSelect
     },
     props: ['creating', 'model'],
     setup(props)
@@ -41,8 +44,11 @@ export default defineComponent({
         const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor.value);
 
         const selectLabel: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values");
-        const selectedOptions: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
-        const allOptions: Ref<ObjectMultiSelectOptionModel[]> = ref([]);
+        const selectedDataObjectOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const allDataObjectsOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
+
+        const selectedIcon: Ref<ObjectSelectOptionModel | undefined> = ref();
+        const allIcons: Ref<ObjectSelectOptionModel[]> = ref(icons);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -72,17 +78,17 @@ export default defineComponent({
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
                 groupState.value.passwords.value = new Map();
-                selectedOptions.value.forEach(g => 
+                selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.passwords.value.set(g.backingObject.value.id.value, new Field(g.backingObject.value.id.value));
+                    groupState.value.passwords.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
                 });
             }
             else 
             {
                 groupState.value.values.value = new Map();
-                selectedOptions.value.forEach(g => 
+                selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.values.value.set(g.backingObject.value.id.value, new Field(g.backingObject.value.id.value));
+                    groupState.value.values.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
                 });
             }
 
@@ -92,7 +98,7 @@ export default defineComponent({
                 {
                     groupState.value = defaultGroup(groupState.value.type.value);
                     refreshKey.value = Date.now().toString();
-                    selectedOptions.value = [];
+                    selectedDataObjectOptions.value = [];
 
                     handleSaveResponse(true);
                     return;
@@ -136,13 +142,24 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        function onIconSelected(model: ObjectSelectOptionModel)
+        {
+            groupState.value.icon.value = model.icon!;
+        }
+
         onMounted(() =>
         {
+            const foundIcon = icons.filter(i => i.icon == groupState.value.icon.value);
+            if (foundIcon.length == 1)
+            {
+                selectedIcon.value = foundIcon[0];
+            }
+
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                allOptions.value = app.currentVault.passwordStore.passwords.map(p => 
+                allDataObjectsOptions.value = app.currentVault.passwordStore.passwords.map(p => 
                 {
-                    const option: ObjectMultiSelectOptionModel = 
+                    const option: ObjectSelectOptionModel = 
                     {
                         label: p.value.passwordFor.value,
                         backingObject: p,
@@ -159,7 +176,7 @@ export default defineComponent({
                         return;
                     }
 
-                    selectedOptions.value.push({
+                    selectedDataObjectOptions.value.push({
                         label: password.value.passwordFor.value,
                         backingObject: password,
                     });
@@ -167,9 +184,9 @@ export default defineComponent({
             }
             else 
             {
-                allOptions.value = app.currentVault.valueStore.nameValuePairs.map(v => 
+                allDataObjectsOptions.value = app.currentVault.valueStore.nameValuePairs.map(v => 
                 {
-                    const option: ObjectMultiSelectOptionModel = 
+                    const option: ObjectSelectOptionModel = 
                     {
                         label: v.value.name.value,
                         backingObject: v,
@@ -186,7 +203,7 @@ export default defineComponent({
                         return;
                     }
 
-                    selectedOptions.value.push({
+                    selectedDataObjectOptions.value.push({
                         label: value.value.name.value,
                         backingObject: value,
                     });
@@ -199,10 +216,13 @@ export default defineComponent({
             groupColor,
             refreshKey,
             gridDefinition,
-            allOptions,
-            selectedOptions,
+            allDataObjectsOptions,
+            selectedDataObjectOptions,
             selectLabel,
-            onSave
+            selectedIcon,
+            allIcons,
+            onSave,
+            onIconSelected
         };
     },
 })

@@ -41,7 +41,8 @@
         </InputGroup>
         <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
             :pt="{
-                root: 'textInputFieldContainer__message'
+                root: 'textInputFieldContainer__message',
+                text: 'textInputFieldContainer__messageText'
             }">{{ invalidMessage }}</Message>
     </div>
 </template>
@@ -62,7 +63,6 @@ import tippy from 'tippy.js';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
 import app from '../../Objects/Stores/AppStore';
 
-// TODO: remplace tippy with PrimeVue invalid functionalty
 export default defineComponent({
     name: "TextInputField",
     components:
@@ -92,8 +92,8 @@ export default defineComponent({
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
         const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
         
         const isInvalid: Ref<boolean> = ref(false);
@@ -301,5 +301,9 @@ export default defineComponent({
 :deep(.p-floatlabel-in:has(input.p-filled) .textInputFieldContainer__label) {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.textInputFieldContainer__messageText) {
+    font-size: clamp(9px, 1vw, 14px) !important;
 }
 </style>

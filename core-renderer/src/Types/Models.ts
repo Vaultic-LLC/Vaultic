@@ -62,12 +62,12 @@ export interface TableDataSource
     columns: ComputedRef<TableColumnModel[]>;
 }
 
-export interface ObjectMultiSelectOptionModel
+export interface ObjectSelectOptionModel
 {
     icon?: string;
     color?: string;
     label: string;
-    backingObject: Field<IIdentifiable>;
+    backingObject?: Field<IIdentifiable>;
 }
 
 export interface SmallMetricGaugeModel

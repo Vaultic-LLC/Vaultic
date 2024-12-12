@@ -92,8 +92,7 @@
                             :maxHeight="'203px'" />
                         <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Report Bug'"
                             :width="'8vw'" :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'"
-                            @onClick="reportBug" />
+                            :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="reportBug" />
                     </div>
                 </div>
                 <div class="aboutPopupContainer__section">

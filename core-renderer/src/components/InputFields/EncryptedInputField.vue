@@ -47,7 +47,8 @@
             </FloatLabel>
             <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
                 :pt="{
-                    root: 'encryptedInputFieldContainer__message'
+                    root: 'encryptedInputFieldContainer__message',
+                    text: 'encryptedInputFieldContainer__messageText'
                 }">
                 {{ invalidMessage }}
             </Message>
@@ -114,8 +115,8 @@ export default defineComponent({
         const showPopup: ComputedRef<boolean> = computed(() => props.showRandom === true && isLocked.value === false && 
             isDisabled.value === false && (hovering.value || isFocused.value || popoverHover.value));
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
         const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
@@ -457,5 +458,9 @@ export default defineComponent({
 :deep(.p-floatlabel-in:has(input.p-filled) .encryptedInputFieldContainer__label) {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.encryptedInputFieldContainer__messageText) {
+    font-size: clamp(9px, 1vw, 14px) !important;
 }
 </style>

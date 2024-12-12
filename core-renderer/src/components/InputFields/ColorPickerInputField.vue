@@ -25,7 +25,8 @@
         </FloatLabel>
         <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
                 :pt="{
-                    root: 'colorPickerInputFieldContainer__message'
+                    root: 'colorPickerInputFieldContainer__message',
+                    text: 'colorPickerInputFieldContainer__messageText'
                 }">{{ invalidMessage }}
         </Message>
     </div>
@@ -67,8 +68,8 @@ export default defineComponent({
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
         const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "6vh");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "30px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
         const isInvalid: Ref<boolean> = ref(false);
@@ -212,5 +213,9 @@ export default defineComponent({
 :deep(.colorPickerInputFieldContainer__colorPreview) {
     height: clamp(15px, 1vw, 24px) !important;
     width: clamp(15px, 1vw, 24px) !important;
+}
+
+:deep(.colorPickerInputFieldContainer__messageText) {
+    font-size: clamp(9px, 1vw, 14px) !important;
 }
 </style>
