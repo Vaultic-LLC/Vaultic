@@ -55,12 +55,6 @@ export default defineComponent({
     width: 16%;
 }
 
-@media (max-width: 1450px) {
-    .filterGroupGaugesWidget {
-        left: max(935px, 82%);
-    }
-}
-
 @media (max-height: 650px) {
     .filterGroupGaugesWidget {
         top: max(258px, 43%);

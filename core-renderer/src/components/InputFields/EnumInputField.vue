@@ -1,116 +1,130 @@
 <template>
-    <div ref="container" :key="refreshKey" :tabindex="0" class="dropDownContainer" @click="onSelectorClick"
-        @keyup.enter="onEnter" @keyup.up="onKeyUp" @keyup.down="onKeyDown" @focus="focused = true" @blur="unFocus"
-        :class="{ active: active, opened: opened, shouldFadeIn: fadeIn }">
-        <div class="dropDownTitle">
-            <label class="dropDownLabel">{{ label }}</label>
-            <div class="dropDownIcon" :class="{ opened: opened }">
-                <ion-icon class="dropDownContainer__dropDownIcon" :class="{ active: active }"
-                    name="chevron-down-circle-outline"></ion-icon>
-            </div>
-            <label class="selectedItemText" :class="{ hasValue: selectedValue != '' }"> {{ selectedValue }}</label>
-        </div>
-        <div class="dropDownSelect" :class="{ opened: opened }">
-            <option class="dropDownSelectOption" :class="{ active: '' == focusedItem }" @click="onOptionClick('')"
-                @mouseover="focusedItem = ''"></option>
-            <option class="dropDownSelectOption" v-for="( item, index ) in  optionsEnum " :key="index"
-                @click="onOptionClick(item)" @mouseover="focusedItem = optionsEnum[item]"
-                :class="{ active: item == focusedItem }">
-                {{ item }}</option>
-        </div>
-        <input class="dropDownInput" type="text" />
+    <div class="dropDownContainer">
+        <FloatLabel variant="in" :dt="floatLabelStyle"
+            :pt="{
+                root: 'dropDownContainer__floatLabel'
+            }">
+            <Select 
+                :pt="{
+                    root: {
+                        class: { 
+                            'dropDownContainer__select': true,
+                            'dropDownContainer__select--invalid': isInvalid
+                        }
+                    },
+                    clearIcon: 'dropDownContainer__clearIcon',
+                    dropdownIcon: 'dropDownContainer__dropDownicon',
+                    label: 'dropDownContainer__selectLabel',
+                    option: ({ context }) => {
+                        const style: { [key: string]: any} = 
+                        {
+                            'font-size': 'var(--input-font-size)',
+                            padding: 'clamp(3px, 0.5vw, 8px) 12px'
+                        };
+
+                        if (context.selected)
+                        {
+                            style['background'] = `color-mix(in srgb, ${color} ,transparent 84%)`;
+                        }
+
+                        return {
+                            style
+                        };
+                    }
+                }" :invalid="isInvalid" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
+                showClear :inputId="id" :options="options" optionLabel="name" :fluid="true" :labelStyle="{'text-align': 'left'}" 
+                @update:model-value="onOptionClick" />
+            <label class="dropDownContainer__label" :for="id">{{ label }}</label>
+        </FloatLabel>
+        <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+            :pt="{
+                root: 'dropDownContainer__message',
+                text: 'dropDownContainer__messageText'
+            }">
+            {{ invalidMessage }}
+        </Message>
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId } from 'vue';
 
-import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
-import tippy from 'tippy.js';
+import FloatLabel from 'primevue/floatlabel';
+import Select from "primevue/select";
+import Message from "primevue/message";
+
+import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
+import app from '../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "EnumInputField",
+    components: 
+    {
+        FloatLabel,
+        Select,
+        Message
+    },
     emits: ["update:modelValue"],
-    props: ["modelValue", "optionsEnum", "label", "color", 'fadeIn', 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth', 'zIndex', 'required', 'disabled'],
+    props: ["modelValue", "optionsEnum", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
+        'width', 'minWidth', 'maxWidth', 'required', 'disabled'],
     setup(props, ctx)
     {
-        const container: Ref<HTMLElement | null> = ref(null);
+        const id = ref(useId());
         const refreshKey: Ref<string> = ref('');
 
-        let selectedValue: Ref<string> = ref(props.modelValue);
-        let opened: Ref<boolean> = ref(false);
-        let focused: Ref<boolean> = ref(false);
-        let active: ComputedRef<boolean> = computed(() => !!selectedValue.value || opened.value || focused.value);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
+
+        const options: ComputedRef<any[]> = computed(() => 
+        {
+            return Object.values(props.optionsEnum).map((k, i) => { return { name: k, code: i } });
+        });
+
+        let selectedValue: Ref<any> = ref();
+
+        const isInvalid: Ref<boolean> = ref(false);
+        const invalidMessage: Ref<string> = ref('');
 
         const computedRequired: ComputedRef<boolean> = computed(() => props.required === false ? false : true);
-        const computedZIndex: ComputedRef<number> = computed(() => props.zIndex ?? 1);
-
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
-        let tippyInstance: any = null;
-
         const enumOptionCount: Ref<number> = ref(-1);
-        const focusedItem: Ref<string> = ref("");
-        const focusedIndex: Ref<number> = ref(-1);
 
-        function onSelectorClick()
-        {
-            if (props.disabled)
-            {
-                return;
-            }
+        const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
+        const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
+        const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 
-            opened.value = !opened.value;
-            if (selectedValue.value == '')
-            {
-                focused.value = false;
-            }
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
+        const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
-            tippyInstance.hide();
-        }
-
-        function onEnter(e: KeyboardEvent)
-        {
-            // Prevent the popup from capturing the enter handler and trying to save / do whatever its doing
-            e.preventDefault();
-            e.stopPropagation();
-
-            if (props.disabled)
-            {
-                return;
-            }
-
-            if (!opened.value)
-            {
-                opened.value = true;
-            }
-            else
-            {
-                opened.value = false;
-                onOptionClick(focusedItem.value);
-                if (selectedValue.value == "")
+        let floatLabelStyle = computed(() => {
+            return {
+                onActive: {
+                    background: widgetBackgroundHexString()
+                },
+                focus: 
                 {
-                    focused.value = false;
+                    color: props.color
+                },
+                invalid: 
+                {
+                    color: errorColor.value
                 }
             }
-        }
+        });
 
-        function unFocus()
+        function onOptionClick(value: any)
         {
-            opened.value = false;
-            focused.value = false;
-        }
-
-        function onOptionClick(value: string)
-        {
+            isInvalid.value = false;
             selectedValue.value = value;
-            ctx.emit('update:modelValue', value)
+            ctx.emit('update:modelValue', value?.name ?? null)
         }
 
         function validate()
         {
+            isInvalid.value = false;
             if (computedRequired.value && (selectedValue.value == '' || selectedValue.value == undefined))
             {
                 invalidate("Please select a value");
@@ -122,27 +136,8 @@ export default defineComponent({
 
         function invalidate(message: string)
         {
-            tippyInstance.setContent(message);
-            tippyInstance.show();
-        }
-
-        function onKeyUp()
-        {
-            focusedIndex.value = Math.max(-1, focusedIndex.value - 1);
-            if (focusedIndex.value == -1)
-            {
-                focusedItem.value = "";
-            }
-            else
-            {
-                focusedItem.value = Object.values<string>(props.optionsEnum)[focusedIndex.value];
-            }
-        }
-
-        function onKeyDown()
-        {
-            focusedIndex.value = Math.min(enumOptionCount.value, focusedIndex.value + 1);
-            focusedItem.value = Object.values<string>(props.optionsEnum)[focusedIndex.value];
+            isInvalid.value = true;
+            invalidMessage.value = message;
         }
 
         watch(() => props.modelValue, (newValue) =>
@@ -156,21 +151,13 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            if (!container.value)
+            const initialValue = options.value.filter(v => v.name == props.modelValue);
+            if (initialValue.length > 0)
             {
-                return;
+                selectedValue.value = initialValue[0];
             }
 
             validationFunction?.value.push(validate);
-            tippyInstance = tippy(container.value, {
-                inertia: true,
-                animation: 'scale',
-                theme: 'material',
-                placement: "bottom-start",
-                trigger: 'manual',
-                hideOnClick: false
-            });
-
             for (let _ in props.optionsEnum)
             {
                 enumOptionCount.value += 1;
@@ -179,27 +166,28 @@ export default defineComponent({
 
         onUnmounted(() =>
         {
-            tippyInstance.hide();
             validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
         });
 
         return {
+            id,
+            errorColor,
+            floatLabelStyle,
+            selectBackgroundColor,
             refreshKey,
-            opened,
-            active,
+            options,
             selectedValue,
             backgroundColor,
-            container,
-            focused,
-            focusedItem,
+            isInvalid,
+            invalidMessage,
             enumOptionCount,
-            computedZIndex,
-            onSelectorClick,
+            computedWidth,
+            computedMinWidth,
+            computedMaxWidth,
+            computedHeight,
+            computedMinHeight,
+            computedMaxHeight,
             onOptionClick,
-            unFocus,
-            onKeyUp,
-            onKeyDown,
-            onEnter
         }
     }
 })
@@ -208,162 +196,67 @@ export default defineComponent({
 <style scoped>
 .dropDownContainer {
     position: relative;
-    height: v-bind(height);
-    width: v-bind(width);
-    max-height: v-bind(maxHeight);
-    max-width: v-bind(maxWidth);
-    min-height: v-bind(minHeight);
-    min-width: v-bind(minWidth);
-
-    border: solid 1.5px #9e9e9e;
-    border-radius: var(--responsive-border-radius);
-    background-color: none;
-    color: white;
-    transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
-
-    cursor: pointer;
-    outline: none;
-
-    z-index: v-bind(computedZIndex);
+    height: v-bind(computedHeight);
+    width: v-bind(computedWidth);
+    max-height: v-bind(computedMaxHeight);
+    max-width: v-bind(computedMaxWidth);
+    min-height: v-bind(computedMinHeight);
+    min-width: v-bind(computedMinWidth);
 }
 
-.dropDownContainer.shouldFadeIn {
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
+.primeVueSelect {
+    background: v-bind(selectBackgroundColor);
 }
 
-.dropDownContainer.active {
-    border: 1.5px solid v-bind(color);
+.primeVueSelect.p-focus {
+    border: 1px solid v-bind(color) !important;
 }
 
-.dropDownContainer.opened {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+:deep(.dropDownContainer__message) {
+    transform: translateX(5px);
+    margin-top: 1px;
 }
 
-.dropDownContainer .dropDownTitle .dropDownLabel {
-    position: absolute;
-    top: 30%;
-    left: var(--input-label-left);
-    transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: pointer;
-    font-size: clamp(11px, 1.2vh, 25px);
-    will-change: transform;
+:deep(.dropDownContainer__select--invalid) {
+    border-color: v-bind(errorColor) !important;
 }
 
-.dropDownContainer.active .dropDownTitle .dropDownLabel {
-    transform-origin: left;
-    transform: translateY(-150%) scale(0.8);
-    background-color: v-bind(backgroundColor);
-    padding: 0 .2em;
-    color: v-bind(color);
+:deep(.dropDownContainer__floatLabel) {
+    height: 100%;
 }
 
-.dropDownContainer .dropDownTitle .dropDownIcon {
-    position: absolute;
-    visibility: unset;
-    top: 30%;
-    right: 5%;
-    font-size: clamp(15px, 2vh, 25px);
-    color: white;
-    transition: 0.3s;
-    transform: rotate(0);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+:deep(.dropDownContainer__select) {
+    height: 100%;
 }
 
-.dropDownContainer .dropDownTitle .dropDownIcon .active {
-    color: v-bind(color);
+:deep(.dropDownContainer__selectLabel) {
+    font-size: var(--input-font-size);
+    padding-block-start: clamp(17px, 1vw, 24px) !important;
+    padding-block-end: clamp(2px, 0.4vw, 5px) !important;
 }
 
-.dropDownContainer .dropDownTitle .dropDownIcon.opened {
-    transform: rotate(180deg);
+:deep(.dropDownContainer__label) {
+    font-size: var(--input-font-size);
 }
 
-.dropDownContainer .dropDownTitle .selectedItemText {
-    display: none;
-    color: white;
-    font-size: clamp(11px, 1.2vh, 25px);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 70%;
-    text-wrap: nowrap;
-    text-align: left;
+:deep(.dropDownContainer__clearIcon) {
+    margin: 0 !important;
+    transform: translateY(-50%);
 }
 
-.dropDownContainer .dropDownTitle .selectedItemText.hasValue {
-    display: block;
-    position: absolute;
-    top: 30%;
-    left: var(--input-label-left);
-    transition: var(--input-label-transition);
+:deep(.dropDownContainer__clearIcon),
+:deep(.dropDownContainer__dropDownicon) {
+    width: clamp(12px, 1.5vw, 16px) !important;
+    height: clamp(12px, 1.5vw, 16px) !important;
 }
 
-.dropDownContainer .dropDownSelect {
-    /* account for the increase in border size compared to .dropDownContainer */
-    width: calc(100% - 0.5px);
-    position: absolute;
-    left: 0;
-    bottom: -2%;
-    background-color: v-bind(backgroundColor);
-    font-size: clamp(11px, 1.2vh, 25px);
-    color: white;
-    transform: translate(-1.5px, 100%);
-    border-bottom-left-radius: 1rem;
-    border-bottom-right-radius: 1rem;
-    z-index: -1;
-    transition: opacity 0.3s;
-    opacity: 0;
+.p-floatlabel-in:has(.p-inputwrapper-focus) .dropDownContainer__label, 
+.p-floatlabel-in:has(.p-inputwrapper-filled) .dropDownContainer__label {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
 }
 
-.dropDownSelect.opened {
-    /* increase the border so it overlaps any dropdowns below them entirely */
-    border-left: 2px solid v-bind(color);
-    border-right: 2px solid v-bind(color);
-    border-bottom: 2px solid v-bind(color);
-    opacity: 1;
-}
-
-.dropDownContainer .dropDownSelect:focus,
-.dropDownContainer .dropDownSelect:active {
-    outline: none;
-}
-
-.dropDownSelect .dropDownSelectOption {
-    display: none;
-    background-color: v-bind(backgroundColor);
-    transition: opacity 0.3s;
-    opacity: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.dropDownSelect.opened .dropDownSelectOption {
-    display: block;
-    text-align: left;
-    padding-left: 10px;
-    transition: 0.15s;
-    opacity: 1;
-    font-size: clamp(11px, 1.2vh, 25px);
-}
-
-.dropDownSelect.opened .dropDownSelectOption:last-child {
-    border-bottom-left-radius: 1rem;
-    border-bottom-right-radius: 1rem;
-}
-
-.dropDownSelect.opened .dropDownSelectOption:hover,
-.dropDownSelectOption.active {
-    background-color: grey;
-}
-
-.dropDownInput {
-    position: absolute;
-    display: none;
-}
-
-.dropDownContainer__dropDownIcon {
-    visibility: unset;
+:deep(.dropDownContainer__messageText) {
+    font-size: clamp(9px, 1vw, 14px) !important;
 }
 </style>

@@ -1,11 +1,12 @@
 <template>
     <div class="editSettingsHeader">
+        <!-- TODO: remove once account info is moved to user view and then move the settings view up higher -->
         <TableSelector class="settingsPopupHeader__controls" :singleSelectorItems="singleSelectorItems" />
     </div>
     <div class="settingPopupContainer">
         <Transition name="fade" mode="out-in">
+
             <SettingsView v-if="activeSection == 0" :creating="false" />
-            <DevicesView v-else-if="activeSection == 1" :color="currentPrimaryColor" />
             <AccountInfoView v-else-if="activeSection == 2" />
         </Transition>
     </div>
@@ -14,7 +15,6 @@
 import { computed, ComputedRef, defineComponent, ref, Ref } from 'vue';
 
 import SettingsView from '../../../components/ObjectViews/SettingsView.vue';
-import DevicesView from '../../../components/IncorrectDevice/DevicesView.vue';
 import TableSelector from '../../../components/TableSelector.vue';
 import ButtonLink from '../../../components/InputFields/ButtonLink.vue';
 import AccountInfoView from '../../../components/Account/AccountInfoView.vue';
@@ -29,7 +29,6 @@ export default defineComponent({
         ButtonLink,
         TableSelector,
         SettingsView,
-        DevicesView,
         AccountInfoView
     },
     setup()
@@ -49,16 +48,6 @@ export default defineComponent({
             }
         });
 
-        const devicesView: ComputedRef<SingleSelectorItemModel> = computed(() =>
-        {
-            return {
-                title: ref("Devices"),
-                color: ref(app.userPreferences.currentPrimaryColor.value),
-                isActive: computed(() => activeSection.value == 1),
-                onClick: () => { activeSection.value = 1; }
-            }
-        });
-
         const paymentView: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
             return {
@@ -72,18 +61,12 @@ export default defineComponent({
         const singleSelectorItems: ComputedRef<SingleSelectorItemModel[]> = computed(() =>
         {
             let items: SingleSelectorItemModel[] = [settingsView.value];
-            if (app.isOnline)
-            {
-                items.push(devicesView.value);
-            }
-
             items.push(paymentView.value);
             return items;
         });
 
         return {
             settingsView,
-            devicesView,
             paymentView,
             activeSection,
             currentPrimaryColor,
@@ -96,7 +79,7 @@ export default defineComponent({
 <style>
 .editSettingsHeader {
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     color: white;
     animation: fadeIn 1s linear forwards;
     width: 100%;

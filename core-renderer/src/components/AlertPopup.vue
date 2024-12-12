@@ -24,12 +24,12 @@
                 </div>
                 <div class="unknownResponsePopup__buttons">
                     <PopupButton :color="primaryColor" :text="leftButton.text" :width="'6vw'" :minWidth="'75px'"
-                        :maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'" :fontSize="'0.7vw'"
-                        :minFontSize="'15px'" :maxFontSize="'20px'" @onClick="onLeftButtonClick">
+                        :maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'" :fontSize="'clamp(15px, 0.7vw, 20px)'" 
+                        @onClick="onLeftButtonClick">
                     </PopupButton>
                     <PopupButton v-if="rightButton" :color="primaryColor" :text="rightButton?.text" :width="'6vw'"
                         :minWidth="'75px'" :maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'"
-                        :fontSize="'0.7vw'" :minFontSize="'15px'" :maxFontSize="'20px'" @onClick="onRightButtonClick">
+                        :fontSize="'clamp(15px, 0.7vw, 20px)'" @onClick="onRightButtonClick">
                     </PopupButton>
                 </div>
             </div>

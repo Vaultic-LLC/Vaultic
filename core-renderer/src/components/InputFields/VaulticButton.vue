@@ -49,7 +49,7 @@ export default defineComponent({
     border-radius: 50%;
     color: white;
     transition: v-bind(transition);
-    border: 2px solid v-bind(color);
+    border: 1.5px solid v-bind(color);
 }
 
 .vaulticButtonContainer__button:hover {

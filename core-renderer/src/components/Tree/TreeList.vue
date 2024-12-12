@@ -1,22 +1,24 @@
 <template>
     <div class="treeList">
         <div class="treeList__controls">
-            <SearchBar :modelValue="searchText" :color="primaryColor" :width="'200px'" :height="'3vh'" />
+            <SearchBar :modelValue="searchText" :color="primaryColor" :sizeModel="searchSize" />
             <div class="treeList__buttons">
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" @click="expandAll">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="expandAll">
                     <ion-icon name="chevron-expand-outline"></ion-icon>
                 </VaulticButton>
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" @click="collapseAll">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="collapseAll">
                     <ion-icon name="chevron-collapse-outline"></ion-icon>
                 </VaulticButton>
-                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" @click="$emit('onAdd')" />
+                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="$emit('onAdd')" />
             </div>
         </div>
         <div class="treeList__divider"></div>
         <div class="treeList__nodes">
-            <TransitionGroup name="listFade">
-                <TreeNode v-for="model in displayModels" :key="model.id" :model="model" :color="primaryColor" />
-            </TransitionGroup>
+            <ScrollView :color="primaryColor">
+                <TransitionGroup name="listFade">
+                    <TreeNode v-for="model in displayModels" :key="model.id" :model="model" :color="primaryColor" />
+                </TransitionGroup>
+            </ScrollView>
         </div>
     </div>
 </template>
@@ -28,18 +30,21 @@ import SearchBar from "../Table/Controls/SearchBar.vue";
 import AddButton from "../Table/Controls/AddButton.vue";
 import TreeNode from "./TreeNode.vue";
 import VaulticButton from "../InputFields/VaulticButton.vue";
+import ScrollView from '../ObjectViews/ScrollView.vue';
 
 import app from "../../Objects/Stores/AppStore";
-import { TreeNodeModel } from "../../Types/Models";
+import { ComponentSizeModel, TreeNodeModel } from "../../Types/Models";
 import { TreeNodeMember } from "../../Types/Tree";
 
 export default defineComponent({
     name: "TreeList",
-    components: {
+    components: 
+    {
         SearchBar,
         AddButton,
         TreeNode,
-        VaulticButton
+        VaulticButton,
+        ScrollView
     },
     props: ['nodes', 'onLeafClicked'],
     emits: ['onAdd'],
@@ -53,6 +58,10 @@ export default defineComponent({
 
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
+        const searchSize: Ref<ComponentSizeModel> = ref({
+            width: '8vw'
+        });
+        
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
         const selectedLeafNode: Ref<TreeNodeMember | undefined> = ref(treeNodes.value.filter(n => !n.isParent && n.selected)?.[0]);
 
@@ -179,6 +188,31 @@ export default defineComponent({
             {
                 const lower = newValue.toLowerCase();
                 currentTreeNodes.value = treeNodes.value.filter(n => n.text.toLowerCase().includes(lower));
+
+                const newTreeNodes: TreeNodeMember[] = [];
+                for (let i = 0; i < treeNodes.value.length; i++)
+                {
+                    if (treeNodes.value[i].isParent)
+                    {
+                        continue;
+                    }
+
+                    if (treeNodes.value[i].text.toLocaleLowerCase().includes(lower))
+                    {
+                        const parents: TreeNodeMember[] = [];
+                        let current: TreeNodeMember | undefined = treeNodes.value[i];
+
+                        while (current)
+                        {
+                            parents.unshift(current);
+                            current = current.parent;
+                        }
+
+                        newTreeNodes.push(...parents)
+                    }
+                }
+
+                currentTreeNodes.value = newTreeNodes;
             }
             else 
             {
@@ -194,6 +228,7 @@ export default defineComponent({
             models,
             displayModels,
             isOnline,
+            searchSize,
             expandAll,
             collapseAll
         };
@@ -207,14 +242,14 @@ export default defineComponent({
     color: white;
     display: flex;
     flex-direction: column;
-    row-gap: 15px;
+    row-gap: clamp(7px, 1vh, 15px);
 }
 
 .treeList__controls {
     display: flex;
     flex-direction: column;
     align-items: center;
-    row-gap: 20px;
+    row-gap: clamp(10px, 1vh, 20px);
 }
 
 .treeList__buttons {
@@ -232,6 +267,7 @@ export default defineComponent({
 }
 
 .treeList__nodes {
-    padding-left: 10px;
+    padding-left: clamp(2px, 0.3vw, 10px);
+    flex-grow: 1;
 }
 </style>

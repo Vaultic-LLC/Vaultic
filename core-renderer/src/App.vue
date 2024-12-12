@@ -1,5 +1,6 @@
 <template>
     <Popups />
+    <ConfirmDialog></ConfirmDialog>
     <div id="mainUI" class="mainUI">
         <SideDrawer />
         <div class="center">
@@ -13,8 +14,7 @@
                     <PasswordValueTable />
                 </div>
                 <div id="tables" v-else>
-                    <OrganizationsTable />
-                    <DevicesTable />
+                    <OrganizationDeviceTable />
                 </div>
             </Transition>
         </div>
@@ -39,7 +39,7 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, ComputedRef, computed } from 'vue';
+import { Ref, defineComponent, onMounted, ref, ComputedRef, computed, watch } from 'vue';
 
 import TableSelector from "./components/TableSelector.vue"
 import FilterGroupTable from './components/Table/FilterGroupTable.vue';
@@ -57,8 +57,9 @@ import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import SideDrawer from "./components/SideDrawer.vue"
-import DevicesTable from './components/Table/DevicesTable.vue';
-import OrganizationsTable from './components/Table/OrganizationsTable.vue';
+import OrganizationDeviceTable from './components/Table/OrganizationDeviceTable.vue';
+// import OrganizationsTable from './components/Table/OrganizationsTable.vue';
+import ConfirmDialog from "primevue/confirmdialog";
 
 import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
@@ -88,8 +89,8 @@ export default defineComponent({
         LayoutIconCard,
         MenuWidget,
         SideDrawer,
-        DevicesTable,
-        OrganizationsTable
+        OrganizationDeviceTable,
+        ConfirmDialog
     },
     setup()
     {
@@ -106,19 +107,31 @@ export default defineComponent({
         let lastMouseover: number = 0;
         const threshold: number = 1000;
 
-        onMounted(async () =>
+        function onMouseover()
         {
-            document.getElementById('body')?.addEventListener('mouseover', (_) =>
+            if (Date.now() - lastMouseover < threshold)
             {
-                if (Date.now() - lastMouseover < threshold)
-                {
-                    return;
-                }
+                return;
+            }
 
-                app.resetSessionTime();
-                lastMouseover = Date.now();
-            });
+            app.resetSessionTime();
+            lastMouseover = Date.now();
+        }
 
+        watch(() => app.loadedUser.value, (newValue) => 
+        {
+            if (newValue)
+            {
+                document.getElementById('body')?.addEventListener('mouseover', onMouseover);
+            }
+            else 
+            {
+                document.getElementById('body')?.removeEventListener('mouseover', onMouseover);
+            }
+        });
+
+        onMounted(() =>
+        {
             finishedMounting.value = true;
             app.popups.showAccountSetup(AccountSetupView.SignIn);
         });
@@ -142,6 +155,7 @@ export default defineComponent({
 @import './Constants/variables.css';
 @import './Constants/animations.css';
 @import './Constants/transitions.css';
+@import 'primeicons/primeicons.css';
 
 /* @media (max-width: 1000px) {
 	html {
@@ -157,6 +171,11 @@ export default defineComponent({
     color: var(--app-color);
     min-width: 1140px;
     min-height: 600px;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
 }
 
 body {
@@ -198,24 +217,19 @@ h2 {
     width: 19%;
     height: 24.7%;
     min-height: 190px;
-    min-width: 250px;
+    /* TODO: test this when the chart is working again to make sure it isn't too small */
+    /* min-width: 250px; */
 }
 
 .loginHistoryCalendarWidget {
     top: 70.5%;
-    left: 83%;
     width: 16%;
     min-width: 240px;
     min-height: 140px;
+    right: 1%;
 }
 
-@media (max-width: 1450px) {
-    .loginHistoryCalendarWidget {
-        width: 18%;
-    }
-}
-
-@media (max-width: 1300px) {
+/* @media (max-width: 1300px) {
     .loginHistoryCalendarWidget {
         left: max(890px, 78%);
         width: 21.5%;
@@ -226,7 +240,7 @@ h2 {
     .secureProgressChartWidget {
         left: max(627px, 55%);
     }
-}
+} */
 
 @media (max-height: 750px) {
     .loginHistoryCalendarWidget {
@@ -257,5 +271,9 @@ h2 {
 .tippy-box[data-theme~='material'][data-placement^='bottom-start']>.tippy-arrow {
     left: 10px !important;
     transform: translate(0, 0) !important;
+}
+
+ion-icon {
+    visibility: unset !important;
 }
 </style>

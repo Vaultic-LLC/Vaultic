@@ -7,7 +7,9 @@ import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
 import app from './core/Objects/Stores/AppStore';
-import { AccountSetupView } from './core/Types/Models';
+import PrimeVue from 'primevue/config';
+import Aura from '@primevue/themes/aura';
+import ConfirmationService from 'primevue/confirmationservice';
 
 api.setAPI(window.api);
 
@@ -90,7 +92,18 @@ api.environment.failedToInitalizeDatabase().then((failed: boolean) =>
 function initApp()
 {
 	const app = createApp(App);
+	app.config.performance = true;
 
 	app.use(setupCalendar, {});
+	app.use(PrimeVue, {
+		theme: {
+			preset: Aura,
+			options: {
+				darkModeSelector: '.darkMode',
+			}
+		}
+	});
+
+	app.use(ConfirmationService);
 	app.mount("#app");
 }

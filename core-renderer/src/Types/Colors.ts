@@ -31,6 +31,7 @@ export interface ColorPalette extends IFieldedObject
     backgroundColor: Field<string>;
     tableColor: Field<string>;
     widgetColor: Field<string>;
+    errorColor: Field<string>;
 }
 
 export const emptyColorPalette: ColorPalette =
@@ -55,10 +56,11 @@ export const emptyColorPalette: ColorPalette =
     groupsColor: new Field(""),
     backgroundColor: new Field("#0f111d"),
     tableColor: new Field("#161e29"),
-    widgetColor: new Field("#2c2c3329")
+    widgetColor: new Field("#2c2c3329"),
+    errorColor: new Field("#ef4444")
 }
 
-export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
+export const defaultColorPalettes: Map<string, Field<ColorPalette>> = new Map([
     ["EEA4135C-DE25-4B47-B678-486E2D64F675", new Field({
         id: new Field("EEA4135C-DE25-4B47-B678-486E2D64F675"),
         active: new Field(false),
@@ -80,7 +82,8 @@ export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
         groupsColor: new Field("#19A7CE"),
         backgroundColor: new Field("#0f111d"),
         tableColor: new Field("#161e29"),
-        widgetColor: new Field("#2c2c3329")
+        widgetColor: new Field("#2c2c3329"),
+        errorColor: new Field("#ef4444")
     })],
     ["26BBFA34-E38F-4754-8413-4F9A2F6C7997", new Field({
         id: new Field("26BBFA34-E38F-4754-8413-4F9A2F6C7997"),
@@ -103,7 +106,8 @@ export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
         groupsColor: new Field("#E36414"),
         backgroundColor: new Field("#0f111d"),
         tableColor: new Field("#161e29"),
-        widgetColor: new Field("#2c2c3329")
+        widgetColor: new Field("#2c2c3329"),
+        errorColor: new Field("#ef4444")
     })],
     ["4EFC4459-D9C8-45A2-A43D-87884E73CCB6", new Field({
         id: new Field("4EFC4459-D9C8-45A2-A43D-87884E73CCB6"),
@@ -126,8 +130,12 @@ export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
         groupsColor: new Field("#8e9a98"),
         backgroundColor: new Field("#0f111d"),
         tableColor: new Field("#161e29"),
-        widgetColor: new Field("#2c2c3329")
-    })],
+        widgetColor: new Field("#2c2c3329"),
+        errorColor: new Field("#FFFFFF")
+    })]
+]);
+
+export const emptyUserColorPalettes: Map<string, Field<ColorPalette>> = new Map([
     ["EDD79A67-A9D0-48B8-B895-D1FD7DFA6180", new Field({
         id: new Field("EDD79A67-A9D0-48B8-B895-D1FD7DFA6180"),
         active: new Field(false),
@@ -149,7 +157,8 @@ export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
         groupsColor: new Field(""),
         backgroundColor: new Field("#0f111d"),
         tableColor: new Field("#161e29"),
-        widgetColor: new Field("#2c2c3329")
+        widgetColor: new Field("#2c2c3329"),
+        errorColor: new Field("")
     })],
     ["343CD217-7910-4ED6-A93E-3C78957040C9", new Field({
         id: new Field("343CD217-7910-4ED6-A93E-3C78957040C9"),
@@ -172,7 +181,8 @@ export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
         groupsColor: new Field(""),
         backgroundColor: new Field("#0f111d"),
         tableColor: new Field("#161e29"),
-        widgetColor: new Field("#2c2c3329")
+        widgetColor: new Field("#2c2c3329"),
+        errorColor: new Field("")
     })],
     ["5083AB8E-26B7-4FD9-9C48-8939D41625F4", new Field({
         id: new Field("5083AB8E-26B7-4FD9-9C48-8939D41625F4"),
@@ -195,6 +205,7 @@ export const colorPalettes: Map<string, Field<ColorPalette>> = new Map([
         groupsColor: new Field(""),
         backgroundColor: new Field("#0f111d"),
         tableColor: new Field("#161e29"),
-        widgetColor: new Field("#2c2c3329")
+        widgetColor: new Field("#2c2c3329"),
+        errorColor: new Field("")
     })]
 ]);

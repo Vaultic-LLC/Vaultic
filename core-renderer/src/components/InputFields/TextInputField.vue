@@ -1,56 +1,145 @@
 <template>
-    <div ref="container" class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
-        <input required="false" class="textInputFieldInput" type="text" name="text" autocomplete="off"
-            :value="modelValue" @input="onInput(($event.target as HTMLInputElement).value)" @keypress="validateType"
-            :disabled="disabled" :maxlength="200" />
-        <label class="textInputFieldLable">{{ label }}</label>
-        <div v-if="showToolTip" class="textInputFieldContainer__tooltipContainer">
-            <ToolTip :color="color" :message="toolTipMessage" :size="toolTipSize" />
-        </div>
+    <div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
+        <InputGroup 
+            :pt="{
+                root: 'textInputFieldContainer__inputGroup'
+            }">
+            <InputGroupAddon v-if="inputGroupAddon" 
+                :pt="{
+                    root: {
+                        class: {
+                            'textInputFieldContainer__inputGroupAddon': true,
+                            'textInputFieldContainer__inputGroupAddon--invalid': isInvalid
+                        }
+                    }
+                }">{{ inputGroupAddon }}</InputGroupAddon>
+            <FloatLabel variant="in" :dt="floatLabelStyle"
+                :pt="{
+                    root: 'textInputFieldContainer__floatLabel'
+                }">
+                <IconField 
+                    :pt="{
+                        root: 'textInputFieldContainer__iconField'
+                    }">
+                    <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :dt="inputStyle" :disabled="disabled" :invalid="isInvalid" 
+                        @update:model-value="onInput"
+                        :pt="{
+                            root: {
+                                class: {
+                                    'textInputFieldContainer__input': true,
+                                    'textInputFieldContainer__input--groupAddon': inputGroupAddon 
+                                }
+                            }
+                        }" />
+                    <InputIcon ref="inputIcon" v-if="showToolTip" class="pi pi-info-circle"
+                        :pt="{
+                            root: 'textInputFieldContainer__tooltipIcon'
+                        }" />
+                </IconField>
+                <label class="textInputFieldContainer__label" :for="id">{{ label }}</label>
+            </FloatLabel>
+        </InputGroup>
+        <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
+            :pt="{
+                root: 'textInputFieldContainer__message',
+                text: 'textInputFieldContainer__messageText'
+            }">{{ invalidMessage }}</Message>
     </div>
 </template>
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId, watch } from 'vue';
+
+import FloatLabel from "primevue/floatlabel";
+import InputText from 'primevue/inputtext';
+import InputIcon from 'primevue/inputicon';
+import IconField from 'primevue/iconfield';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
+import Message from "primevue/message";
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
-import { appHexColor, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
+import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import tippy from 'tippy.js';
-import ToolTip from '../ToolTip.vue';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
+import app from '../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "TextInputField",
     components:
     {
-        ToolTip
+        FloatLabel,
+        InputText,
+        InputIcon,
+        IconField,
+        InputGroupAddon,
+        InputGroup,
+        Message
     },
     emits: ["update:modelValue"],
-    props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight',
-        "inputType", "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField'],
+    props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight', 
+    "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField', 'inputGroupAddon'],
     setup(props, ctx)
     {
-        const container: Ref<HTMLElement | null> = ref(null);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const id = ref(useId());
+        const valuePlaceHolder = ref(props.modelValue);
+        const inputIcon: Ref<any> = ref();
         const validationFunction: Ref<{ (): boolean; }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
-        const shouldFadeIn: ComputedRef<boolean> = computed(() => props.fadeIn ?? true);
+        const shouldFadeIn: ComputedRef<boolean> = computed(() => false);
+        const background: Ref<string> = ref(widgetBackgroundHexString());
 
         const computedWidth: ComputedRef<string> = computed(() => props.width ?? "200px");
         const computedMinWidth: ComputedRef<string> = computed(() => props.minWidth ?? "125px");
         const computedMaxWidth: ComputedRef<string> = computed(() => props.maxWidth ?? '200px');
 
-        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "50px");
-        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "50px");
+        const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
+        const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
+        
+        const isInvalid: Ref<boolean> = ref(false);
+        const invalidMessage: Ref<string> = ref('');
 
-        const type: ComputedRef<string> = computed(() => props.inputType ? props.inputType : "text");
         const additionalValidationFunction: Ref<{ (input: string): [boolean, string]; } | undefined> = ref(props.additionalValidationFunction);
         const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
-        let tippyInstance: any = null;
+
+        let floatLabelStyle = computed(() => {
+            return {
+                onActive: {
+                    background: background.value
+                },
+                focus: 
+                {
+                    color: props.color,
+                },
+                invalid:
+                {
+                    color: errorColor.value
+                }
+            }
+        });
+
+        let inputStyle = computed(() => {
+            return {
+                focus: 
+                {
+                    borderColor: props.color
+                },
+                background: background.value,
+                invalid: 
+                {
+                    borderColor: errorColor.value,
+                    placeholderColor: errorColor.value
+                }
+            }
+        });
 
         function validate(): boolean
         {
+            isInvalid.value = false;
+
             if (!props.modelValue)
             {
-                invalidate("Pleas enter a value");
+                invalidate("Please enter a value");
                 return false;
             }
 
@@ -78,57 +167,51 @@ export default defineComponent({
 
         function invalidate(message: string)
         {
-            tippyInstance.setContent(message);
-            tippyInstance.show();
+            isInvalid.value = true;
+            invalidMessage.value = message;
         }
 
-        function validateType(event: KeyboardEvent)
+        function onInput(value: string | undefined)
         {
-            if (type.value === "number")
-            {
-                var charCode = event.key;
-                if (!/\d/.test(charCode))
-                {
-                    event.preventDefault();
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        function onInput(value: string)
-        {
-            tippyInstance.hide();
+            isInvalid.value = false;
             ctx.emit("update:modelValue", value);
         }
 
+        watch(() => props.modelValue, (newValue) =>
+        {
+            valuePlaceHolder.value = newValue;
+        });
+
         onMounted(() =>
         {
-            if (!container.value)
-            {
-                return;
-            }
-
             validationFunction?.value.push(validate);
-            tippyInstance = tippy(container.value, {
-                inertia: true,
-                animation: 'scale',
-                theme: 'material',
-                placement: "bottom-start",
-                trigger: 'manual',
-                hideOnClick: false
-            });
+            if (props.showToolTip && inputIcon.value?.$el)
+            {
+                tippy(inputIcon.value.$el, 
+                {
+					content: props.toolTipMessage,
+					inertia: true,
+					animation: 'scale',
+					theme: 'material',
+                });
+            }
         });
 
         onUnmounted(() =>
         {
-            tippyInstance.hide();
             validationFunction?.value.splice(validationFunction?.value.indexOf(validate), 1);
         });
 
         return {
+            id,
+            errorColor,
+            isInvalid,
+            invalidMessage,
+            background,
+            valuePlaceHolder,
             shouldFadeIn,
-            container,
+            floatLabelStyle,
+            inputStyle,
             defaultInputColor,
             defaultInputTextColor,
             computedWidth,
@@ -137,9 +220,8 @@ export default defineComponent({
             computedHeight,
             computedMinHeight,
             computedMaxHeight,
-            type,
             labelBackgroundColor,
-            validateType,
+            inputIcon,
             onInput,
             invalidate
         };
@@ -148,6 +230,10 @@ export default defineComponent({
 </script>
 
 <style scoped>
+/* .p-inputtext {
+    width: 100%;
+} */
+
 .textInputFieldContainer {
     position: relative;
     height: v-bind(computedHeight);
@@ -158,68 +244,66 @@ export default defineComponent({
     max-width: v-bind(computedMaxWidth);
 }
 
-.textInputFieldContainer.fadeIn {
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
-}
-
-@keyframes fadeIn {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
-}
-
-.textInputFieldContainer .textInputFieldInput {
-    position: absolute;
-    width: 100%;
+:deep(.textInputFieldContainer__input) {
     height: 100%;
-    left: 0;
-    border: solid 1.5px v-bind(defaultInputColor);
-    color: white;
-    border-radius: var(--responsive-border-radius);
-    background: none;
     font-size: var(--input-font-size);
-    transition: border 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.textInputFieldContainer .textInputFieldLable {
-    position: absolute;
-    left: var(--input-label-left);
-    top: 50%;
-    color: v-bind(defaultInputTextColor);
-    pointer-events: none;
-    transform: translateY(-40%);
-    transition: var(--input-label-transition);
-    font-size: clamp(11px, 1.2vh, 25px);
-    will-change: transform;
+:deep(.textInputFieldContainer__inputGroup) {
+    height: 100%;
 }
 
-.textInputFieldContainer .textInputFieldInput:focus,
-.textInputFieldContainer .textInputFieldInput:valid,
-.textInputFieldContainer .textInputFieldInput:disabled {
-    outline: none;
-    border: 1.5px solid v-bind(color);
+:deep(.textInputFieldContainer__inputGroupAddon) {
+    background: v-bind(background) !important;
+    font-size: var(--input-font-size) !important;
+    height: 100%;
 }
 
-.textInputFieldContainer .textInputFieldInput:focus~label,
-.textInputFieldContainer .textInputFieldInput:valid~label,
-.textInputFieldContainer .textInputFieldInput:disabled~label {
-    top: 10%;
-    transform-origin: left;
-    transform: translateY(-80%) scale(0.8);
-    background-color: v-bind(labelBackgroundColor);
-    padding: 0 .2em;
+:deep(.textInputFieldContainer__inputGroupAddon--invalid) {
+    border-color: v-bind(errorColor) !important;
+    color: v-bind(errorColor);
+}
+
+:deep(.textInputFieldContainer__input--groupAddon) {
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+}
+
+:deep(.textInputFieldContainer__floatLabel) {
+    height: 100%;
+}
+
+:deep(.textInputFieldContainer__iconField) {
+    height: 100%;
+}
+
+:deep(.textInputFieldContainer__tooltipIcon) {
+    transition: 0.3s;
+	will-change: transform;
+    color: white;
+}
+
+:deep(.textInputFieldContainer__tooltipIcon:hover) {
     color: v-bind(color);
+    transform: scale(1.1);
 }
 
-.textInputFieldContainer__tooltipContainer {
-    position: absolute;
-    top: 50%;
-    right: -20%;
-    transform: translateY(-50%);
+:deep(.textInputFieldContainer__message) {
+    transform: translateX(5px);
+    margin-top: 1px;
+}
+
+:deep(.textInputFieldContainer__label) {
+    font-size: var(--input-font-size);
+}
+
+:deep(.p-floatlabel-in:has(input:focus) .textInputFieldContainer__label),
+:deep(.p-floatlabel-in:has(input.p-filled) .textInputFieldContainer__label) {
+    top: var(--input-label-active-top) !important;
+    font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.textInputFieldContainer__messageText) {
+    font-size: clamp(9px, 1vw, 14px) !important;
 }
 </style>

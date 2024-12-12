@@ -1,23 +1,14 @@
 <template>
     <div id="filterGroupTableContainer">
-        <TableTemplate :name="'filterGroup'" ref="tableRef" :rowGap="0" class="shadow scrollbar" id="filterTable"
-            :color="color" :headerModels="headerModels" :scrollbar-size="1" :emptyMessage="emptyTableMessage"
-            :showEmptyMessage="tableRowDatas.visualValues.length == 0" :headerTabs="headerTabs"
-            @scrolledToBottom="tableRowDatas.loadNextChunk()">
-            <template #headerControls>
-                <SearchBar v-model="currentSearchText" :color="color" :width="'9vw'" :maxWidth="'250px'"
-                    :minWidth="'100px'" :minHeight="'25px'" />
+        <VaulticTable ref="tableRef" id="filterTable" :color="color" :columns="tableColumns" 
+            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
+            :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete" :searchBarSizeModel="searchBarSizeModel">
+            <template #tableControls>
                 <Transition name="fade" mode="out-in">
-                    <AddDataTableItemButton v-if="!readOnly" :color="color"
-                        :initalActiveContentOnClick="tabToOpenOnAdd" />
+                    <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
                 </Transition>
             </template>
-            <template #body>
-                <SelectableTableRow class="shadow hover" v-for="(trd, index) in tableRowDatas.visualValues"
-                    :key="trd.id" :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false"
-                    :color="color" :allowPin="true" :allowEdit="true" :allowDelete="true" />
-            </template>
-        </TableTemplate>
+        </VaulticTable>
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="showEditGroupPopup" :closePopup="onEditGroupPopupClosed" :minWidth="'800px'"
@@ -38,38 +29,31 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, reactive, ref, watch } from 'vue';
 
-import TableTemplate from './TableTemplate.vue';
-import TableHeaderRow from './Header/TableHeaderRow.vue';
-import SelectableTableRow from './Rows/SelectableTableRow.vue';
+import VaulticTable from './VaulticTable.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
 import EditGroupPopup from '../ObjectPopups/EditPopups/EditGroupPopup.vue';
 import EditFilterPopup from '../ObjectPopups/EditPopups/EditFilterPopup.vue';
-import SearchBar from './Controls/SearchBar.vue';
 import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 
-import { HeaderTabModel, SelectableTableRowData, SortableHeaderModel, emptyHeader } from '../../Types/Models';
+import { ComponentSizeModel, HeaderTabModel, TableColumnModel, TableDataSources } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { createPinnableSelectableTableRowModels, createSortableHeaderModels, getEmptyTableMessage } from '../../Helpers/ModelHelper';
-import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
+import { getEmptyTableMessage, getFilterGroupTableRowModels } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
-import { Filter, DataType, Group } from '../../Types/DataTypes';
-import { HeaderDisplayField } from '../../Types/Fields';
+import { Filter, DataType, Group, ISecondaryDataObject } from '../../Types/DataTypes';
+import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: 'FilterGroupTable',
     components:
     {
-        TableTemplate,
-        SelectableTableRow,
-        TableHeaderRow,
+        VaulticTable,
         AddDataTableItemButton,
         ObjectPopup,
         EditGroupPopup,
         EditFilterPopup,
-        SearchBar
     },
     setup()
     {
@@ -77,48 +61,23 @@ export default defineComponent({
         const tabToOpenOnAdd: ComputedRef<number> = computed(() => app.activeFilterGroupsTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
-        const passwordFilters: SortedCollection<Filter> = new SortedCollection(
-            app.currentVault.filterStore.passwordFilters, "name");
-        const pinnedPasswordFilters: SortedCollection<Filter> = new SortedCollection(
-            [], "name");
+        const passwordFilters: SortedCollection = new SortedCollection(app.currentVault.filterStore.passwordFilters, "name");
+        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], "name");
 
-        const passwordGroups: SortedCollection<Group> = new SortedCollection(
-            app.currentVault.groupStore.passwordGroups, "name");
-        const pinnedPasswordGroups: SortedCollection<Group> = new SortedCollection(
-            [], "name");
+        const passwordGroups: SortedCollection = new SortedCollection(app.currentVault.groupStore.passwordGroups, "name");
+        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], "name");
 
-        const valueFilters: SortedCollection<Filter> = new SortedCollection(
-            app.currentVault.filterStore.nameValuePairFilters, "name");
-        const pinnedValueFilters: SortedCollection<Filter> = new SortedCollection(
-            [], "name");
+        const valueFilters: SortedCollection = new SortedCollection(app.currentVault.filterStore.nameValuePairFilters, "name");
+        const pinnedValueFilters: SortedCollection = new SortedCollection([], "name");
 
-        const valueGroups: SortedCollection<Group> = new SortedCollection(
-            app.currentVault.groupStore.valuesGroups, "name");
-        const pinnedValueGroups: SortedCollection<Group> = new SortedCollection(
-            [], "name");
-
-        const currentFilters: ComputedRef<SortedCollection<Filter>> = computed(() =>
-            app.activePasswordValuesTable == DataType.Passwords ? passwordFilters : valueFilters);
-        const currentPinnedFilter: ComputedRef<SortedCollection<Filter>> = computed(() =>
-            app.activePasswordValuesTable == DataType.Passwords ? pinnedPasswordFilters : pinnedValueFilters);
-
-        const currentGroups: ComputedRef<SortedCollection<Group>> = computed(() =>
-            app.activePasswordValuesTable == DataType.Passwords ? passwordGroups : valueGroups);
-        const currentPinnedGroups: ComputedRef<SortedCollection<Group>> = computed(() =>
-            app.activePasswordValuesTable == DataType.Passwords ? pinnedPasswordGroups : pinnedValueGroups);
-
-        const tableRowDatas: Ref<InfiniteScrollCollection<SelectableTableRowData>> | any = ref(new InfiniteScrollCollection<SelectableTableRowData>());
+        const valueGroups: SortedCollection = new SortedCollection(app.currentVault.groupStore.valuesGroups, "name");
+        const pinnedValueGroups: SortedCollection = new SortedCollection([], "name");
 
         const showEditGroupPopup: Ref<boolean> = ref(false);
         const currentlyEditingGroupModel: Ref<Group | any> = ref({});
 
         const showEditFilterPopup: Ref<boolean> = ref(false);
         const currentlyEditingFilterModel: Ref<Filter | any> = ref({});
-
-        const filterSearchText: Ref<string> = ref('');
-        const groupSearchText: Ref<string> = ref('');
-        const currentSearchText: ComputedRef<Ref<string>> = computed(() => app.activeFilterGroupsTable == DataType.Filters ?
-            filterSearchText : groupSearchText);
 
         let deleteFilter: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
         let deleteGroup: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
@@ -140,6 +99,46 @@ export default defineComponent({
             }
         });
 
+        const tableDataSources: Reactive<TableDataSources> = reactive(
+        {
+            activeIndex: () => 
+            {
+                if (app.activePasswordValuesTable == DataType.Passwords)
+                {
+                    return app.activeFilterGroupsTable == DataType.Filters ? 0 : 1;
+                }
+                else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+                {
+                    return app.activeFilterGroupsTable == DataType.Filters ? 2 : 3;
+                }
+
+                return -1;
+            },
+            dataSources: 
+            [
+                {
+                    friendlyDataTypeName: "Filter",
+                    collection: passwordFilters,
+                    pinnedCollection: pinnedPasswordFilters
+                },
+                {
+                    friendlyDataTypeName: "Group",
+                    collection: passwordGroups,
+                    pinnedCollection: pinnedPasswordGroups
+                },
+                {
+                    friendlyDataTypeName: "Filter",
+                    collection: valueFilters,
+                    pinnedCollection: pinnedValueFilters
+                },
+                {
+                    friendlyDataTypeName: "Group",
+                    collection: valueGroups,
+                    pinnedCollection: pinnedValueGroups
+                }
+            ]
+        });
+        
         const headerTabs: HeaderTabModel[] = [
             {
                 name: 'Filters',
@@ -155,76 +154,29 @@ export default defineComponent({
             }
         ];
 
-        const filterHeaderDisplayField: HeaderDisplayField[] = [
-            {
-                displayName: "Active",
-                backingProperty: "isActive",
-                width: 'clamp(60px, 4.3vw, 112px)',
-                padding: 'clamp(5px, 0.5vw, 12px)',
-                clickable: true
-            },
-            {
-                displayName: "Name",
-                backingProperty: "name",
-                width: 'clamp(60px, 4.3vw, 100px)',
-                clickable: true
-            }
-        ];
-
-        const groupHeaderDisplayField: HeaderDisplayField[] = [
-            {
-                displayName: "Name",
-                backingProperty: "name",
-                width: 'clamp(60px, 4.3vw, 112px)',
-                padding: 'clamp(5px, 0.5vw, 12px)',
-                clickable: true
-            },
-            {
-                displayName: "Color",
-                backingProperty: "color",
-                width: 'clamp(60px, 4.3vw, 100px)',
-                clickable: true
-            }
-        ];
-
-        const activePasswordFilterHeader: Ref<number> = ref(1);
-        const passwordFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(activePasswordFilterHeader, filterHeaderDisplayField, currentFilters.value,
-            currentPinnedFilter.value, setTableRowDatas);
-        passwordFilterHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
-
-        const activeValueFilterHeader: Ref<number> = ref(1);
-        const valueFilterHeaders: SortableHeaderModel[] = createSortableHeaderModels<Filter>(activeValueFilterHeader, filterHeaderDisplayField, currentFilters.value,
-            currentPinnedFilter.value, setTableRowDatas);
-        valueFilterHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
-
-        const passwordGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(ref(0), groupHeaderDisplayField,
-            currentGroups.value, currentPinnedGroups.value, setTableRowDatas);
-        passwordGroupHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
-
-        const valueGroupHeaders: SortableHeaderModel[] = createSortableHeaderModels<Group>(ref(0), groupHeaderDisplayField,
-            currentGroups.value, currentPinnedGroups.value, setTableRowDatas);
-        valueGroupHeaders.push(...[emptyHeader(), emptyHeader(), emptyHeader(), emptyHeader()]);
-
-        const headerModels: ComputedRef<SortableHeaderModel[]> = computed(() =>
+        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() =>
         {
-            switch (app.activeFilterGroupsTable)
+            const models: TableColumnModel[] = []
+            if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                case DataType.Groups:
-                    if (app.activePasswordValuesTable == DataType.Passwords)
-                    {
-                        return passwordGroupHeaders;
-                    }
-
-                    return valueGroupHeaders;
-                case DataType.Filters:
-                default:
-                    if (app.activePasswordValuesTable == DataType.Passwords)
-                    {
-                        return passwordFilterHeaders;
-                    }
-
-                    return valueFilterHeaders;
+                models.push({ header: "Active", field: "isActive", component: 'SelectorButtonTableRowCell', 
+                    data: { 'color': color, onClick: (f: Field<Filter>) => app.currentVault.filterStore.toggleFilter(f.value.id.value) }, startingWidth: '105px' });
+                models.push({ header: "Name", field: "name" });
             }
+            else
+            {
+                models.push({ header: "Name", field: "name" });
+                models.push({ header: "Color", field: "color", component: 'ColorTableRowCell' });
+            }
+
+            return models;
+        });
+
+        const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
+            width: '9vw',
+            maxWidth: '250px',
+            minWidth: '85px',
+            minHeight: '25px'
         });
 
         function setTableRowDatas()
@@ -232,21 +184,27 @@ export default defineComponent({
             switch (app.activeFilterGroupsTable)
             {
                 case DataType.Groups:
-                    createPinnableSelectableTableRowModels<Group>(DataType.Groups, app.activePasswordValuesTable, tableRowDatas,
-                        currentGroups.value, currentPinnedGroups.value, (g: Group) =>
+                    switch (app.activePasswordValuesTable)
                     {
-                        return [{ component: 'TableRowTextValue', value: g.name.value, copiable: false, width: 'calc(clamp(60px, 4.3vw, 112px) - clamp(5px, 0.5vw, 12px))', margin: true },
-                        { component: "TableRowColorValue", color: g.color.value, copiable: true, width: 'clamp(60px, 4.3vw, 100px)', margin: false }]
-                    },
-                        false, "", false, undefined, onEditGroup,
-                        onGroupDeleteInitiated);
+                        case DataType.Passwords:
+                            passwordGroups.updateValues(getFilterGroupTableRowModels(DataType.Groups, DataType.Passwords, app.currentVault.groupStore.passwordGroups));
+                            break;
+                        case DataType.NameValuePairs:
+                            valueGroups.updateValues(getFilterGroupTableRowModels(DataType.Groups, DataType.NameValuePairs, app.currentVault.groupStore.valuesGroups));
+                            break;
+                    }
                     break;
                 case DataType.Filters:
+                    switch (app.activePasswordValuesTable)
+                    {
+                        case DataType.Passwords:
+                            passwordFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.Passwords, app.currentVault.filterStore.passwordFilters));
+                            break;
+                        case DataType.NameValuePairs:
+                            valueFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.NameValuePairs, app.currentVault.filterStore.nameValuePairFilters));
+                            break;
+                    }
                 default:
-                    createPinnableSelectableTableRowModels<Filter>(DataType.Filters, app.activePasswordValuesTable,
-                        tableRowDatas, currentFilters.value, currentPinnedFilter.value, (f: Filter) =>
-                    { return [{ component: 'TableRowTextValue', value: f.name.value, copiable: false, width: 'clamp(60px, 4.3vw, 100px)' }] },
-                        true, "isActive", true, async (f: Filter) => await app.currentVault.filterStore.toggleFilter(f.id.value), onEditFilter, onFilterDeleteInitiated);
             }
 
             if (tableRef.value)
@@ -352,6 +310,66 @@ export default defineComponent({
             }
         }
 
+        function onPinFilter(isPinned: boolean, value: Field<Filter>)
+        {
+            if (isPinned)
+            {
+                app.userPreferences.removePinnedFilters(value.value.id.value);
+            }
+            else
+            {
+                app.userPreferences.addPinnedFilter(value.value.id.value);
+            }
+        }
+
+        function onPinGroup(isPinned: boolean, value: Field<Group>)
+        {
+            if (isPinned)
+            {
+                app.userPreferences.removePinnedGroups(value.value.id.value);
+            }
+            else
+            {
+                app.userPreferences.addPinnedGroup(value.value.id.value);
+            }
+        }
+
+        function onPin(isPinned: boolean, dataType: Field<Filter | Group>)
+        {
+            if (app.activeFilterGroupsTable == DataType.Filters)
+            {
+                onPinFilter(isPinned, dataType as Field<Filter>);
+            }
+            else if (app.activeFilterGroupsTable == DataType.Groups)
+            {
+                onPinGroup(isPinned, dataType as Field<Group>);
+            }
+        }
+
+        function onEdit(dataType: Field<Filter | Group>)
+        {
+            if (app.activeFilterGroupsTable == DataType.Filters)
+            {
+                onEditFilter(dataType.value as Filter);
+            }
+            else if (app.activeFilterGroupsTable == DataType.Groups)
+            {
+                onEditGroup(dataType.value as Group);
+            }
+        }
+
+        function onDelete(dataType: Field<Filter | Group>)
+        {
+            if (app.activeFilterGroupsTable == DataType.Filters)
+            {
+                onFilterDeleteInitiated(dataType.value as Filter);
+            }
+            else if (app.activeFilterGroupsTable == DataType.Groups)
+            {
+                onGroupDeleteInitiated(dataType.value as Group);
+            }
+        }
+
         onMounted(() =>
         {
             setTableRowDatas();
@@ -431,38 +449,25 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
-        watch(() => filterSearchText.value, (newValue) =>
-        {
-            currentFilters.value.search(newValue);
-            setTableRowDatas();
-            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-        });
-
-        watch(() => groupSearchText.value, (newValue) =>
-        {
-            currentGroups.value.search(newValue);
-            setTableRowDatas();
-            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-        });
-
         return {
             readOnly,
             tableRef,
+            tableDataSources,
             tabToOpenOnAdd,
-            headerModels,
-            tableRowDatas,
+            tableColumns,
             color,
             showEditGroupPopup,
             currentlyEditingGroupModel,
             showEditFilterPopup,
             currentlyEditingFilterModel,
-            currentSearchText,
             headerTabs,
             emptyTableMessage,
+            searchBarSizeModel,
             onEditGroupPopupClosed,
             onEditFilterPopupClosed,
-            onFilterDeleteConfirmed,
-            onGroupDeleteConfirmed
+            onPin,
+            onEdit,
+            onDelete
         }
     }
 });
@@ -470,7 +475,7 @@ export default defineComponent({
 
 <style>
 #filterTable {
-    height: 43%;
+    height: 39%;
     width: 24%;
     min-width: 285px;
     left: 11%;
@@ -479,7 +484,7 @@ export default defineComponent({
 
 @media (max-width: 1300px) {
     #filterTable {
-        left: max(11px, 1%);
+        left: 10%;
     }
 }
 </style>

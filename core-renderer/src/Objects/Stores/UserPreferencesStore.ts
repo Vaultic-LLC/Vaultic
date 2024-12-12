@@ -1,4 +1,4 @@
-import { ColorPalette, colorPalettes, emptyColorPalette } from "../../Types/Colors";
+import { ColorPalette, defaultColorPalettes, emptyColorPalette } from "../../Types/Colors";
 import { Store, StoreState } from "./Base";
 import { computed, ComputedRef, Ref, ref, watch } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -165,7 +165,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         }
 
         return {
-            currentColorPalette: colorPalettes.entries().next().value![1],
+            currentColorPalette: defaultColorPalettes.entries().next().value![1],
             pinnedDataTypes: defaultPinnedDataTypes,
             pinnedDesktopDevices: new Field(new Map()),
             pinnedMobileDevices: new Field(new Map())

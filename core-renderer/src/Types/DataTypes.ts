@@ -165,6 +165,7 @@ export interface Group extends ISecondaryDataObject
 {
     name: Field<string>;
     color: Field<string>; // hex value
+    icon: Field<string>;
 }
 
 export class RelatedDataTypeChanges 
@@ -263,7 +264,8 @@ export function defaultGroup(type: DataType): Group
         values: new Field(new Map()),
         name: new Field(''),
         type: new Field(type),
-        color: new Field('')
+        color: new Field(''),
+        icon: new Field('')
     }
 }
 

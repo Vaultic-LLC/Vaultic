@@ -1,23 +1,30 @@
 <template>
-    <div ref="button" tabindex="0" class="popupButton" :class="{ fadeIn: doFadeIn, disabled: disabled }"
-        :disabled="disabled" @click.stop="doOnClick">
-        {{ text }}
+    <div ref="button" class="popupButton">
+        <Button :label="text" :class="'popupButton__primeVueButton'" :fluid="true" :disabled="disabled" @click.stop="doOnClick" />
     </div>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, onUnmounted, ref } from "vue";
+import { Ref, defineComponent, onMounted, onUnmounted, ref, computed, ComputedRef } from "vue";
+
+import Button from "primevue/button";
 
 export default defineComponent({
     name: "PopupButton",
+    components: 
+    {
+        Button
+    },
     emits: ['onClick'],
-    props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize', 'minFontSize', 'maxFontSize',
+    props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize',
         'disabled', 'isSubmit', 'fadeIn'],
     setup(props, ctx)
     {
         const button: Ref<HTMLElement | null> = ref(null);
-        const doFadeIn: Ref<boolean> = ref(props.fadeIn !== false);
+        const doFadeIn: Ref<boolean> = ref(false);
         const transition: Ref<string> = ref('0s');
+
+        const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ?? "clamp(10px, 1vw, 16px)");
 
         function doOnClick()
         {
@@ -64,6 +71,7 @@ export default defineComponent({
             button,
             doFadeIn,
             transition,
+            computedFontSize,
             doOnClick
         }
     }
@@ -78,34 +86,25 @@ export default defineComponent({
     min-width: v-bind(minWidth);
     max-height: v-bind(maxHeight);
     min-height: v-bind(minHeight);
-    background-color: var(--app-color);
-    color: white;
-    border: 2px solid v-bind(color);
-    border-radius: var(--responsive-border-radius);
     transition: v-bind(transition);
-    font-size: clamp(v-bind(minFontSize), v-bind(fontSize), v-bind(maxFontSize));
     cursor: pointer;
-    outline: none;
-    padding: 2px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 .popupButton.fadeIn {
     animation: fadeIn 1s linear forwards;
-
 }
 
-.popupButton:hover,
-.popupButton:focus {
-    box-shadow: 0 0 25px v-bind(color);
+.popupButton__primeVueButton {
+    height: 100% !important;
+    transition: v-bind(transition) !important;
+    background-color: var(--app-color) !important;
+    color: white !important;
+    border: 1.5px solid v-bind(color) !important;
+    padding: clamp(2px, 0.3vw, 8px) clamp(6px, 0.5vw, 12px) !important;
+    font-size: v-bind(computedFontSize) !important;
 }
 
-.popupButton:disabled,
-.popupButton.disabled {
-    box-shadow: 0 0 0 0;
-    border: 2px solid gray;
-    color: gray;
+.popupButton__primeVueButton:hover {
+    box-shadow: 0 0 25px v-bind(color) !important;
 }
 </style>

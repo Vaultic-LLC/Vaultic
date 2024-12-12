@@ -35,11 +35,10 @@ export default defineComponent({
 <style>
 .editFilterHeader {
 	display: flex;
-	justify-content: flex-start;
+	justify-content: center;
 	color: white;
 	animation: fadeIn 1s linear forwards;
 	margin: 5%;
-	margin-left: 22.3%;
 	font-size: clamp(15px, 1vw, 25px);
 }
 

@@ -35,8 +35,7 @@
                     </div>
                     <PopupButton :color="primaryColor" :fadeIn="false" :disabled="disabled" :text="'Dismiss Breach'"
                         :width="'7vw'" :minWidth="'100px'" :maxWidth="'175px'" :height="'3vh'" :minHeight="'25px'"
-                        :maxHeight="'45px'" :fontSize="'0.8vw'" :minFontSize="'11px'" :maxFontSize="'20px'"
-                        @onClick="onDismissBreach" />
+                        :maxHeight="'45px'" :fontSize="'clamp(11px, 0.8vw, 20px)'" @onClick="onDismissBreach" />
                 </div>
             </div>
         </ObjectPopup>

@@ -10,16 +10,16 @@
                 <div class="title">Please enter your Key</div>
                 <EncryptedInputField ref="encryptedInputField" class="authenticationPopupContent__key" :label="'Key'"
                     :colorModel="colorModel" v-model="key" :required="true" :width="'70%'" :minWidth="'150px'"
-                    :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" />
+                    :maxWidth="'300px'" />
             </div>
             <div v-if="!showIcon" class="authenticationPopupButtons">
                 <PopupButton id="authPopupContainer__enterButton" :color="color" :text="'Enter'" :disabled="disabled"
                     :width="'5vw'" :minWidth="'75px'" :maxWidth="'120px'" :height="'3vh'" :minHeight="'25px'"
-                    :maxHeight="'40px'" :fontSize="'0.8vw'" :minFontSize="'13px'" :maxFontSize="'20px'" :isSubmit="true"
+                    :maxHeight="'40px'" :fontSize="'clamp(13px, 0.8vw, 20px)'" :isSubmit="true"
                     @onClick="onEnter"></PopupButton>
                 <PopupButton v-if="allowCancel" :color="color" :text="'Cancel'" :disabled="disabled" :width="'5vw'"
                     :minWidth="'75px'" :maxWidth="'120px'" :height="'3vh'" :minHeight="'25px'" :maxHeight="'40px'"
-                    :fontSize="'0.8vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="onCancel"></PopupButton>
+                    :fontSize="'clamp(13px, 0.8vw, 20px)'" @onClick="onCancel"></PopupButton>
             </div>
         </div>
         <div v-if="showPulsing" class="pulsingCircles" :class="{ unlocked: unlocked }">
@@ -97,7 +97,7 @@ export default defineComponent({
                 return;
             }
 
-            encryptedInputField.value?.toggleHidden(true);
+            encryptedInputField.value?.toggleMask(true);
 
             app.popups.showLoadingIndicator(primaryColor.value, "Checking Key");
             disabled.value = true;
@@ -118,9 +118,8 @@ export default defineComponent({
                     return;
                 }
 
-                jiggleContainer();
                 app.popups.hideLoadingIndicator();
-                disabled.value = false;
+                handleKeyIsValid(false);
                 defaultHandleFailedResponse(response, false);
             });
         }
@@ -139,8 +138,6 @@ export default defineComponent({
             }
             else
             {
-                forceShowIcon.value = true;
-                await new Promise((resolve) => setTimeout(resolve, 100));
                 ctx.emit("onAuthenticationSuccessful", key.value);
             }
         }
@@ -149,12 +146,6 @@ export default defineComponent({
         {
             key.value = "";
             ctx.emit("onCanceled");
-        }
-
-        async function playUnlockAnimation()
-        {
-            app.popups.hideLoadingIndicator();
-            unlocked.value = true;
         }
 
         function jiggleContainer()
@@ -227,7 +218,6 @@ export default defineComponent({
             backgroundGradient,
             onEnter,
             onCancel,
-            playUnlockAnimation
         }
     }
 })

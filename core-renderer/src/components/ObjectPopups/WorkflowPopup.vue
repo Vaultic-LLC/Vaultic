@@ -12,10 +12,10 @@
                 <div class="workflowPopupContainer__section__buttons">
                     <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
                         :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="doImportPasswords" />
+                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doImportPasswords" />
                     <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
                         :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="doImportValues" />
+                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doImportValues" />
                 </div>
             </div>
             <div class="workflowPopupContainer__section">
@@ -26,10 +26,10 @@
                 <div class="workflowPopupContainer__section__buttons">
                     <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
                         :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportPasswords" />
+                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportPasswords" />
                     <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
                         :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportValues" />
+                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportValues" />
                 </div>
             </div>
             <div class="workflowPopupContainer__section">
@@ -37,7 +37,7 @@
                 <div class="workflowPopupContainer__section__buttons">
                     <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Export'" :width="'8vw'"
                         :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'1vw'" :minFontSize="'13px'" :maxFontSize="'20px'" @onClick="exportLogs" />
+                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportLogs" />
                 </div>
             </div>
         </ScrollView>

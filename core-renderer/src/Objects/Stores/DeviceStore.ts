@@ -14,9 +14,11 @@ export interface DeviceStoreState extends StoreState
 
 export class DeviceStore extends Store<DeviceStoreState>
 {
+    private internalDevices: ComputedRef<Field<ClientDevice>[]>;
     private internalPinnedDeviceIDs: ComputedRef<Set<number>>;
     private internalPinnedDevices: ComputedRef<Field<ClientDevice>[]>;
 
+    get devices() { return this.internalDevices.value; }
     get failedToGetDevices() { return this.state.failedToGetDevices.value; }
     get pinnedDevices() { return this.internalPinnedDevices.value; }
 
@@ -24,11 +26,12 @@ export class DeviceStore extends Store<DeviceStoreState>
     {
         super('deviceStore');
 
+        this.internalDevices = computed(() => this.state.devices.value.valueArray());
         this.internalPinnedDeviceIDs = computed(() => new Set([...app.userPreferences.pinnedDesktopDevices.value.keyArray(), ...app.userPreferences.pinnedMobileDevices.value.keyArray()]));
 
         this.internalPinnedDevices = computed(() =>
-            this.state.devices.value.mapWhere((k, v) => v.value.UserDesktopDeviceID ? this.internalPinnedDeviceIDs.value.has(v.value.UserDesktopDeviceID) :
-                this.internalPinnedDeviceIDs.value.has(v.value.UserMobileDeviceID!),
+            this.state.devices.value.mapWhere((k, v) => v.value.userDesktopDeviceID.value ? this.internalPinnedDeviceIDs.value.has(v.value.userDesktopDeviceID.value) :
+                this.internalPinnedDeviceIDs.value.has(v.value.userMobileDeviceID.value!),
                 (k, v) => v));
     }
 
@@ -76,7 +79,12 @@ export class DeviceStore extends Store<DeviceStoreState>
             {
                 ...devices[i],
                 id: new Field(deviceId),
-                Type: desktop ? "Desktop" : "Mobile"
+                userDesktopDeviceID: new Field(devices[i].UserDesktopDeviceID),
+                userMobileDeviceID: new Field(devices[i].UserMobileDeviceID),
+                name: new Field(devices[i].Name),
+                model: new Field(devices[i].Model),
+                version: new Field(devices[i].Version),
+                type: new Field(desktop ? "Desktop" : "Mobile")
             };
 
             this.state.devices.value.set(deviceId, new Field(clientDevice))
@@ -91,7 +99,7 @@ export class DeviceStore extends Store<DeviceStoreState>
             return true;
         }
 
-        const response = await api.server.user.deleteDevice(masterKey, device.value.UserDesktopDeviceID, device.value.UserMobileDeviceID);
+        const response = await api.server.user.deleteDevice(masterKey, device.value.userDesktopDeviceID.value, device.value.userMobileDeviceID.value);
         if (response)
         {
             this.state.devices.value.delete(id);

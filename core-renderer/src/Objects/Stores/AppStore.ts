@@ -4,7 +4,7 @@ import { Store, StoreEvents, StoreState } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { ColorPalette, colorPalettes } from "../../Types/Colors";
+import { ColorPalette, defaultColorPalettes, emptyUserColorPalettes } from "../../Types/Colors";
 import { AppView, AutoLockTime } from "../../Types/App";
 import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
 import { UserPreferencesStore } from "./UserPreferencesStore";
@@ -20,7 +20,7 @@ import { OrganizationStore } from "./OrganizationStore";
 
 export interface AppSettings extends IFieldedObject
 {
-    colorPalettes: Field<Map<string, Field<ColorPalette>>>;
+    userColorPalettes: Field<Map<string, Field<ColorPalette>>>;
     autoLockTime: Field<AutoLockTime>;
     randomValueLength: Field<number>;
     randomPhraseLength: Field<number>;
@@ -41,7 +41,7 @@ export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
 export class AppStore extends Store<AppStoreState, AppStoreEvents>
 {
-    private loadedUser: boolean;
+    private internaLoadedUser: Ref<boolean>;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
 
     private internalActiveAppView: Ref<AppView> = ref(AppView.Vault);
@@ -67,6 +67,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
 
+    get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.settings; }
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
@@ -91,13 +92,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     {
         super("appStoreState");
 
-        this.loadedUser = false;
+        this.internaLoadedUser = ref(false);
         this.internalUserDataBreachStore = new UserDataBreachStore();
         this.internalDeviceStore = new DeviceStore();
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => this.state.settings.value.colorPalettes.value.valueArray())
+        this.internalColorPalettes = computed(() => [...defaultColorPalettes.valueArray(), ...this.state.settings.value.userColorPalettes.value.valueArray()])
 
         this.internalUserVaults = ref([]);
         this.internalSharedVaults = ref([]);
@@ -124,7 +125,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             id: new Field(""),
             settings: new Field({
                 id: new Field(""),
-                colorPalettes: new Field(colorPalettes),
+                userColorPalettes: new Field(emptyUserColorPalettes),
                 autoLockTime: new Field(AutoLockTime.OneMinute),
                 randomValueLength: new Field(25),
                 randomPhraseLength: new Field(7),
@@ -188,7 +189,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         await api.cache.clear();
 
         this.isOnline = false;
-        this.loadedUser = false;
+        this.internaLoadedUser.value = false;
     }
 
     public resetSessionTime()
@@ -203,7 +204,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     public async loadUserData(masterKey: string, payload?: UserDataPayload)
     {
-        if (this.loadedUser)
+        if (this.internaLoadedUser.value)
         {
             return false;
         }
@@ -225,7 +226,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
-        this.loadedUser = true;
+        this.internaLoadedUser.value = true;
         this.internalActiveAppView.value = AppView.Vault;
 
         // don't bother waiting for this, just trigger it so they are there if we need them
@@ -422,6 +423,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return true;
     }
 
+    // TODO: post release
     public shareToVault<T>(value: T, toVault: number)
     {
 
@@ -432,7 +434,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
 
-        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.colorPalettes.value.get(colorPalette.id.value);
+        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.userColorPalettes.value.get(colorPalette.id.value);
         if (!oldColorPalette)
         {
             return Promise.resolve();

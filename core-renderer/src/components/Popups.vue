@@ -1,9 +1,11 @@
 <template>
     <div class="popups">
-        <Transition name="fade" mode="out-in">
-            <LoadingPopup v-if="popupStore.loadingIndicatorIsShowing" :color="popupStore.color"
-                :text="popupStore.loadingText" :glassOpacity="popupStore.loadingOpacity" />
-        </Transition>
+        <Teleport to ="#body">
+            <Transition name="fade" mode="out-in">
+                <LoadingPopup v-if="popupStore.loadingIndicatorIsShowing" :color="popupStore.color"
+                    :text="popupStore.loadingText" :glassOpacity="popupStore.loadingOpacity" />
+            </Transition>
+        </Teleport>
         <Teleport to="#body">
             <Transition name="fade" mode="out-in">
                 <AlertPopup v-if="popupStore.alertIsShowing" :showContactSupport="popupStore.showContactSupport"
@@ -14,24 +16,12 @@
             </Transition>
         </Teleport>
         <Teleport to="#body">
-            <Transition name="fade" mode="out-in">
-                <IncorrectDevicePopup v-if="popupStore.incorrectDeviceIsShowing" :response="popupStore.response"
-                    @onClose="popupStore.hideIncorrectDevice()" />
+            <Transition name="fade">
+                <RequestedAuthenticationPopup v-if="popupStore.requestAuthenticationIsShowing"
+                    :authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
+                    :setupKey="popupStore.needsToSetupKey" :color="popupStore.color" />
             </Transition>
         </Teleport>
-        <Teleport to="#body">
-            <Transition name="lockFade" mode="out-in">
-                <GlobalAuthenticationPopup ref="globalAuthPopup" v-if="popupStore.globalAuthIsShowing"
-                    :focusInput="popupStore.focusGlobalAuthInput"
-                    :playUnlockAnimation="popupStore.playingUnlockAnimation" :iconOnly="popupStore.onlyShowLockIcon"
-                    @onAuthenticationSuccessful="popupStore.hideGlobalAuthentication" />
-            </Transition>
-        </Teleport>
-        <Transition name="fade">
-            <RequestedAuthenticationPopup v-if="popupStore.requestAuthenticationIsShowing"
-                :authenticationSuccessful="popupStore.onSuccess" :authenticationCanceled="popupStore.onCancel"
-                :setupKey="popupStore.needsToSetupKey" :color="popupStore.color" />
-        </Transition>
         <Teleport to="#body">
             <Transition name="accountSetupFade" mode="out-in">
                 <AccountSetupPopup v-if="popupStore.accountSetupIsShowing" :model="popupStore.accountSetupModel"
@@ -44,15 +34,19 @@
                     :passwordID="popupStore.breachedPasswordID" @onClose="popupStore.hideBreachedPasswordPopup()" />
             </Transition>
         </Teleport>
-        <Transition name="fade" mode="out-in">
-            <ToastPopup v-if="popupStore.toastIsShowing" :color="popupStore.color" :text="popupStore.toastText"
-                :success="popupStore.toastSuccess" />
-        </Transition>
-        <Transition name="fade">
-            <ImportSelectionPopup v-if="popupStore.importPopupIsShowing" :color="popupStore.color"
-                :csvHeaders="popupStore.csvImportHeaders" :properties="popupStore.importProperties"
-                @onConfirm="popupStore.onImportConfirmed" @onClose="popupStore.hideImportPopup" />
-        </Transition>
+        <Teleport to="#body">
+            <Transition name="fade" mode="out-in">
+                <ToastPopup v-if="popupStore.toastIsShowing" :color="popupStore.color" :text="popupStore.toastText"
+                    :success="popupStore.toastSuccess" />
+            </Transition>
+        </Teleport>
+        <Teleport to="#body">
+            <Transition name="fade">
+                <ImportSelectionPopup v-if="popupStore.importPopupIsShowing" :color="popupStore.color"
+                    :csvHeaders="popupStore.csvImportHeaders" :properties="popupStore.importProperties"
+                    @onConfirm="popupStore.onImportConfirmed" @onClose="popupStore.hideImportPopup" />
+            </Transition>
+        </Teleport>
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="popupStore.vaultPopupIsShowing" :closePopup="popupStore.onVaultPopupClose"
@@ -64,11 +58,19 @@
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="popupStore.organizationPopupIsShowing" :closePopup="popupStore.onOrganizationPopupClose"
-                    :minWidth="'800px'" :minHeight="'480px'">
+                    :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
                     <OrganizationView :creating="popupStore.organizationModel == undefined" :model="popupStore.organizationModel" />
                 </ObjectPopup>
             </Transition>
         </Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.addDataTypePopupIsShowing" :minWidth="'800px'" :minHeight="'480px'"
+					:closePopup="popupStore.hideAddDataTypePopup">
+					<AddObjectPopup :initalActiveContent="popupStore.initialAddDataTypePopupContent" />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -77,9 +79,7 @@ import { defineComponent } from 'vue';
 
 import LoadingPopup from './Loading/LoadingPopup.vue';
 import AlertPopup from './AlertPopup.vue';
-import IncorrectDevicePopup from './IncorrectDevice/IncorrectDevicePopup.vue';
 import AccountSetupPopup from "./Account/AccountSetupPopup.vue"
-import GlobalAuthenticationPopup from './Authentication/GlobalAuthenticationPopup.vue';
 import RequestedAuthenticationPopup from './Authentication/RequestedAuthenticationPopup.vue';
 import BreachedPasswordPopup from "./BreachedPasswords/BreachedPasswordPopup.vue"
 import ToastPopup from './ToastPopup.vue';
@@ -87,6 +87,7 @@ import ImportSelectionPopup from "./Workflow/ImportSelectionPopup.vue"
 import ObjectPopup from "./ObjectPopups/ObjectPopup.vue";
 import VaultView from "./ObjectViews/VaultView.vue";
 import OrganizationView from './ObjectViews/OrganizationView.vue';
+import AddObjectPopup from './ObjectPopups/AddObjectPopup.vue';
 
 import app from "../Objects/Stores/AppStore";
 
@@ -96,16 +97,15 @@ export default defineComponent({
     {
         LoadingPopup,
         AlertPopup,
-        IncorrectDevicePopup,
         AccountSetupPopup,
-        GlobalAuthenticationPopup,
         RequestedAuthenticationPopup,
         BreachedPasswordPopup,
         ToastPopup,
         ImportSelectionPopup,
         ObjectPopup,
         VaultView,
-        OrganizationView
+        OrganizationView,
+        AddObjectPopup
     },
     setup()
     {

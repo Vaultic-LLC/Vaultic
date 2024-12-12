@@ -1,10 +1,74 @@
-import { ComputedRef, Ref, ref } from "vue";
+import { ComputedRef, Ref } from "vue";
 import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "@vaultic/shared/Types/Device";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ImportableDisplayField } from "./Fields";
-import { Field } from "@vaultic/shared/Types/Fields";
-import { IPrimaryDataObject } from "./DataTypes";
+import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
+import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
+
+export interface ComponentSizeModel 
+{
+    height?: string;
+    minHeight?: string;
+    maxHeight?: string;
+    width?: string;
+    minWidth?: string;
+    maxWidth?: string;
+}
+
+export interface TableColumnModel 
+{
+    header: string;
+    field: string;
+    startingWidth?: string;
+    component?: string;
+    isGroupIconCell?: boolean;
+    data?: { [key: string]: any };
+}
+
+export interface TableRowModel
+{
+    id: string;
+    isPinned?: boolean;
+    atRiskModel?: AtRiskModel;
+    backingObject?: Field<IIdentifiable & { [key: string]: any }>;
+    state?: any;
+}
+
+export interface SelectableBackingObject extends IIdentifiable
+{
+    isActive: Field<boolean>;
+}
+
+export interface TableDataSouce 
+{
+    friendlyDataTypeName: string;
+    collection: SortedCollection;
+    pinnedCollection?: SortedCollection;
+}
+
+export interface TableDataSources 
+{
+    activeIndex: () => number;
+    dataSources: TableDataSouce[];
+}
+
+export interface TableDataSource
+{
+    active: ComputedRef<boolean>;
+    color: ComputedRef<string>;
+    values: ComputedRef<any[]>;
+    pinnedValues?: ComputedRef<any[]>;
+    columns: ComputedRef<TableColumnModel[]>;
+}
+
+export interface ObjectSelectOptionModel
+{
+    icon?: string;
+    color?: string;
+    label: string;
+    backingObject?: Field<IIdentifiable>;
+}
 
 export interface SmallMetricGaugeModel
 {
@@ -19,11 +83,6 @@ export interface SmallMetricGaugeModel
     onClick: () => void;
 }
 
-export interface CollapsibleTableRowModel extends TableRowData
-{
-    data: Field<IPrimaryDataObject>;
-}
-
 export interface SingleSelectorItemModel
 {
     title: Ref<string>;
@@ -32,66 +91,16 @@ export interface SingleSelectorItemModel
     onClick: () => void;
 }
 
-export interface TableRowData
-{
-    id: string;
-    isPinned?: boolean;
-    values: TableRowValue[];
-    atRiskModel?: AtRiskModel;
-    onPin?: () => void;
-    onEdit?: () => void;
-    onDelete?: () => void;
-}
-
-export interface TableRowValue
-{
-    component: string;
-    copiable: boolean;
-    width: string;
-    margin?: boolean;
-}
-
 export interface AtRiskModel
 {
     message: string;
     onClick?: () => void;
 }
 
-export interface TextTableRowValue extends TableRowValue
-{
-    value: string;
-}
-
-export interface ColorTableRowValue extends TableRowValue
-{
-    color: string;
-}
-
-export interface SelectableTableRowData extends TableRowData
-{
-    key: string;
-    selectable: boolean;
-    isActive?: Ref<boolean>;
-    onClick?: () => Promise<void>;
-}
-
 export interface SelectorButtonModel
 {
     isActive: Ref<boolean>;
     color: Ref<string>;
-    onClick: () => void;
-}
-
-export interface SortableHeaderModel
-{
-    isActive: Ref<boolean>;
-    name?: string;
-    descending?: Ref<boolean>;
-    clickable: boolean;
-    width: string;
-    padding?: string;
-    centered?: boolean;
-    headerSpaceRight?: string;
     onClick: () => void;
 }
 
@@ -104,19 +113,6 @@ export interface HeaderTabModel
     onClick?: () => void;
 }
 
-export function emptyHeader(): SortableHeaderModel
-{
-    return {
-        isActive: ref(false),
-        name: '',
-        descending: ref(false),
-        clickable: false,
-        width: 'auto',
-        padding: '0',
-        onClick: () => { }
-    }
-}
-
 export interface GridDefinition
 {
     rows: number;
@@ -127,7 +123,7 @@ export interface GridDefinition
 
 export interface GroupIconModel
 {
-    iconDisplayText: string;
+    icon: string;
     toolTipText: string;
     color: string;
 }

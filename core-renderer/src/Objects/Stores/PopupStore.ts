@@ -3,16 +3,15 @@ import { Ref, ref } from "vue";
 import app from "./AppStore";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { DisplayVault } from "@vaultic/shared/Types/Entities";
-import { IncorrectDeviceResponse, BaseResponse } from "@vaultic/shared/Types/Responses";
+import { BaseResponse } from "@vaultic/shared/Types/Responses";
 import { ImportableDisplayField } from "../../Types/Fields";
-import { Organization } from "../../Types/DataTypes";
+import { DataType, Organization } from "../../Types/DataTypes";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
 type PopupName = "loading" |
     "alert" |
     "devicePopup" |
-    "incorrectDevice" |
     "globalAuth" |
     "requestAuth" |
     "accountSetup" |
@@ -36,7 +35,6 @@ export const popups: Popups =
     "loading": { zIndex: 200 },
     "alert": { zIndex: 170, enterOrder: 0 },
     "devicePopup": { zIndex: 161 },
-    "incorrectDevice": { zIndex: 160, enterOrder: 1 },
     "accountSetup": { zIndex: 150, enterOrder: 2 },
     "globalAuth": { zIndex: 100, enterOrder: 3 },
     "requestAuth": { zIndex: 90, enterOrder: 4 },
@@ -65,16 +63,8 @@ export function createPopupStore()
     const logID: Ref<number | undefined> = ref(undefined);
     const axiosCode: Ref<string | undefined> = ref('');
 
-    const incorrectDeviceIsShowing: Ref<boolean> = ref(false);
-    const response: Ref<IncorrectDeviceResponse | undefined> = ref();
-
     const accountSetupIsShowing: Ref<boolean> = ref(true);
     const accountSetupModel: Ref<AccountSetupModel> = ref({ currentView: AccountSetupView.SignIn });
-
-    const globalAuthIsShowing: Ref<boolean> = ref(false);
-    const focusGlobalAuthInput: Ref<boolean> = ref(false);
-    const onlyShowLockIcon: Ref<boolean> = ref(false);
-    const playingUnlockAnimation: Ref<boolean> = ref(false);
 
     const requestAuthenticationIsShowing: Ref<boolean> = ref(false);
     const needsToSetupKey: Ref<boolean> = ref(false);
@@ -101,6 +91,9 @@ export function createPopupStore()
     const organizationPopupIsShowing: Ref<boolean> = ref(false);
     const onOrganizationPopupClose: Ref<(saved: boolean) => void> = ref((_) => { });
     const organizationModel: Ref<Organization | undefined> = ref(undefined);
+
+    const addDataTypePopupIsShowing: Ref<boolean> = ref(false);
+    const initialAddDataTypePopupContent: Ref<DataType | undefined> = ref();
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -186,17 +179,6 @@ export function createPopupStore()
         alertIsShowing.value = false;
     }
 
-    function showIncorrectDevice(incorrectDeviceResponse?: IncorrectDeviceResponse)
-    {
-        response.value = incorrectDeviceResponse;
-        incorrectDeviceIsShowing.value = true;
-    }
-
-    function hideIncorrectDevice()
-    {
-        incorrectDeviceIsShowing.value = false;
-    }
-
     function showSessionExpired()
     {
         app.lock(false, false);
@@ -230,32 +212,6 @@ export function createPopupStore()
         accountSetupModel.value.reloadAllDataIsToggled = false;
         accountSetupModel.value.infoMessage = "";
         accountSetupIsShowing.value = false;
-    }
-
-    function showGlobalAuthWithLockIcon(clr: string)
-    {
-        color.value = clr;
-        onlyShowLockIcon.value = true;
-        globalAuthIsShowing.value = true;
-    }
-
-    function playUnlockAnimation()
-    {
-        playingUnlockAnimation.value = true;
-    }
-
-    function showGlobalAuthentication(clr: string, focusInput: boolean)
-    {
-        color.value = clr;
-        onlyShowLockIcon.value = false;
-        focusGlobalAuthInput.value = focusInput;
-        globalAuthIsShowing.value = true;
-    }
-
-    function hideGlobalAuthentication()
-    {
-        playingUnlockAnimation.value = false;
-        globalAuthIsShowing.value = false;
     }
 
     async function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
@@ -344,6 +300,18 @@ export function createPopupStore()
         organizationPopupIsShowing.value = true;
     }
 
+    function showAddDataTypePopup(initialActiveContent: DataType)
+    {
+        initialAddDataTypePopupContent.value = initialActiveContent;
+        addDataTypePopupIsShowing.value = true;
+    }
+
+    function hideAddDataTypePopup()
+    {
+        initialAddDataTypePopupContent.value = undefined;
+        addDataTypePopupIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -358,14 +326,8 @@ export function createPopupStore()
         get statusCode() { return statusCode.value },
         get logID() { return logID.value },
         get axiosCode() { return axiosCode.value },
-        get incorrectDeviceIsShowing() { return incorrectDeviceIsShowing.value },
-        get response() { return response.value },
         get accountSetupIsShowing() { return accountSetupIsShowing.value },
         get accountSetupModel() { return accountSetupModel.value },
-        get globalAuthIsShowing() { return globalAuthIsShowing.value },
-        get focusGlobalAuthInput() { return focusGlobalAuthInput.value },
-        get onlyShowLockIcon() { return onlyShowLockIcon.value },
-        get playingUnlockAnimation() { return playingUnlockAnimation.value },
         get requestAuthenticationIsShowing() { return requestAuthenticationIsShowing.value },
         get needsToSetupKey() { return needsToSetupKey.value },
         get onSuccess() { return onSuccess.value },
@@ -385,6 +347,8 @@ export function createPopupStore()
         get organizationPopupIsShowing() { return organizationPopupIsShowing.value; },
         get organizationModel() { return organizationModel.value },
         get onOrganizationPopupClose() { return onOrganizationPopupClose.value; },
+        get addDataTypePopupIsShowing() { return addDataTypePopupIsShowing.value; },
+        get initialAddDataTypePopupContent() { return initialAddDataTypePopupContent.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -393,16 +357,10 @@ export function createPopupStore()
         showErrorAlert,
         showAlert,
         hideAlert,
-        showIncorrectDevice,
-        hideIncorrectDevice,
         showSessionExpired,
         showAccountSetup,
         showPaymentSetup,
         hideAccountSetup,
-        showGlobalAuthWithLockIcon,
-        playUnlockAnimation,
-        showGlobalAuthentication,
-        hideGlobalAuthentication,
         showRequestAuthentication,
         hideRequesetAuthentication,
         showToast,
@@ -411,6 +369,8 @@ export function createPopupStore()
         showImportPopup,
         hideImportPopup,
         showVaultPopup,
-        showOrganizationPopup
+        showOrganizationPopup,
+        showAddDataTypePopup,
+        hideAddDataTypePopup
     }
 }

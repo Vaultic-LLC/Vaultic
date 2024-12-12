@@ -1,6 +1,6 @@
 <template>
     <div class="accountSetupPopupContainer">
-        <ObjectPopup ref="objectPopup" :height="'40%'" :width="'30%'" :minHeight="'350px'" :minWidth="'230px'"
+        <ObjectPopup ref="objectPopup" :height="'40%'" :width="'30%'" :minHeight="'450px'" :minWidth="'550px'"
             :preventClose="true" :glassOpacity="1" :showPulsing="true">
             <Transition name="fade" mode="out-in">
                 <div v-if="navigationStack.length > 0 && !disableBack" class="accountSetupPopupContainer__backButton"
@@ -20,8 +20,8 @@
                     :color="primaryColor" :account="account" @onSuccess="onCreateMasterKeySuccess"
                     @onLoginFailed="onLoginFailedAfterRegistration" />
                 <CreateSubscriptionView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
-            accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
-            accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor"
+                    accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
+                    accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor"
                     :creating="creatingAccount" @onSubscriptionCreated="onSubscriptionCreated" />
                 <DownloadDeactivationKeyView :color="primaryColor"
                     v-else-if="accountSetupModel.currentView == AccountSetupView.DownloadDeactivationKey"
@@ -160,13 +160,8 @@ export default defineComponent({
 
         async function closeWithAnimation()
         {
-            app.popups.showGlobalAuthWithLockIcon(primaryColor.value);
-
-            ctx.emit('onClose');
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
             app.popups.hideLoadingIndicator();
-            app.popups.playUnlockAnimation();
+            ctx.emit('onClose');
         }
 
         function close()

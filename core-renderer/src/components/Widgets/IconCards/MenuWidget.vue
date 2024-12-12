@@ -45,7 +45,7 @@ export default defineComponent({
 
 @media (max-width: 1300px) {
     .menuWidgetContainer {
-        left: max(11px, 1%);
+        left: 10%;
     }
 }
 

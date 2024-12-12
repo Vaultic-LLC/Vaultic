@@ -122,7 +122,7 @@ export default defineComponent({
     box-shadow: 0 0 25px v-bind(hoverColor);
 }
 
-.tableHeaderTab:nth-child(2) {
+.tableHeaderTab:nth-child(1) {
     border-top-left-radius: min(1.2vw, 20px);
 }
 

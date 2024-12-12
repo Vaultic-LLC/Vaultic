@@ -7,13 +7,11 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
+import { defineComponent, onMounted, Ref, ref } from 'vue';
 
-import { ColorPalette } from '../../Types/Colors';
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import 'tippy.js/animations/scale.css';
-import app from "../../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "AtRiskIndicator",

@@ -1,4 +1,4 @@
-import { IIdentifiable } from "./Fields";
+import { Field, IIdentifiable } from "./Fields";
 
 export interface Device
 {
@@ -12,9 +12,14 @@ export interface Device
 
 type DeviceType = "Desktop" | "Mobile";
 
-export interface ClientDevice extends IIdentifiable, Device
+export interface ClientDevice extends IIdentifiable
 {
-    Type: DeviceType;
+    userDesktopDeviceID: Field<number | undefined>;
+    userMobileDeviceID: Field<number | undefined>;
+    name: Field<string>;
+    model: Field<string>;
+    version: Field<string>;
+    type: Field<DeviceType>;
 }
 
 export interface DeviceInfo

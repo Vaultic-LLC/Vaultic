@@ -1,43 +1,40 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name.value" :width="'8vw'"
-            :height="'4vh'" :minHeight="'35px'" />
-        <div class="valueView__valueTypeContainer">
-            <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType.value"
-                :optionsEnum="NameValuePairType" :fadeIn="true" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
-                :minWidth="'130px'" :maxHeight="'50px'" :showRandom="showRandom" />
-            <Transition name="fade">
-                <div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
-                    <CheckboxInputField class="valueView__notifyIfWeak" :label="'Notify if Weak'" :color="color"
-                        v-model="valuesState.notifyIfWeak.value" :fadeIn="false" :width="''" :height="'0.7vw'"
-                        :minHeight="'12px'" />
-                    <ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
-                        :message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
-                </div>
-            </Transition>
-        </div>
-        <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
-            v-model="valuesState.value.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
-            :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
-            :required="true" :width="'11vw'" :maxWidth="'300px'" :minWidth="'150px'" :height="'4vh'" :minHeight="'35px'"
-            @onDirty="valueIsDirty = true" />
-        <TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
-            v-model="valuesState.additionalInformation.value" :width="'19vw'" :height="'18vh'" :maxHeight="'238px'"
-            :minWidth="'216px'" :minHeight="'100px'" :isEditing="!creating" />
-        <TableTemplate ref="tableRef" id="valueView__addGroupsTable" class="scrollbar" :scrollbar-size="1"
-            :color="color" :headerModels="groupHeaderModels" :border="true" :emptyMessage="emptyMessage"
-            :showEmptyMessage="mounted && groupModels.visualValues.length == 0" :headerTabs="groupTab"
-            @scrolledToBottom="groupModels.loadNextChunk()">
-            <template #headerControls>
-                <SearchBar v-model="searchText" :color="color" :width="'8vw'" :maxWidth="'250px'" :minWidth="'100px'"
-                    :minHeight="'27px'" />
-            </template>
-            <template #body>
-                <SelectableTableRow v-for="(trd, index) in groupModels.visualValues" class="hover" :key="trd.id"
-                    :rowNumber="index" :selectableTableRowData="trd" :preventDeselect="false" :color="color" />
-            </template>
-        </TableTemplate>
+        <VaulticFieldset :centered="true">
+            <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name.value" :width="'50%'"
+                :maxWidth="''" />
+        </VaulticFieldset>
+        <VaulticFieldset :centered="true">
+            <div class="valueView__valueTypeContainer">
+                <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType.value"
+                    :optionsEnum="NameValuePairType" :fadeIn="true" :width="'100%'"
+                    :minWidth="'130px'" :showRandom="showRandom" :maxWidth="''" />
+                <Transition name="fade">
+                    <div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
+                        <CheckboxInputField class="valueView__notifyIfWeak" :label="'Notify if Weak'" :color="color"
+                            v-model="valuesState.notifyIfWeak.value" :fadeIn="false" :width="''" :height="'0.7vw'"
+                            :minHeight="'12px'" />
+                        <ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
+                            :message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
+                    </div>
+                </Transition>
+            </div>
+        </VaulticFieldset>
+        <VaulticFieldset :centered="true">
+            <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
+                v-model="valuesState.value.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
+                :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
+                :required="true" :width="'50%'" :maxWidth="''" :minWidth="'150px'" @onDirty="valueIsDirty = true"  />
+        </VaulticFieldset>
+        <VaulticFieldset :centered="true">
+            <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" :maxWidth="''" />
+        </VaulticFieldset>
+        <VaulticFieldset :centered="true" :fillSpace="true" :static="true">
+            <TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
+                v-model="valuesState.additionalInformation.value" :width="'50%'" :height="''" :maxHeight="''"
+                :minWidth="'216px'" :minHeight="''" :maxWidth="''" />
+        </VaulticFieldset>
     </ObjectView>
 </template>
 <script lang="ts">
@@ -48,21 +45,15 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
-import SearchBar from '../Table/Controls/SearchBar.vue';
-import SelectableTableRow from '../Table/Rows/SelectableTableRow.vue';
-import TableTemplate from '../Table/TableTemplate.vue';
 import ToolTip from '../ToolTip.vue';
+import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
+import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
-import { GridDefinition, HeaderTabModel, InputColorModel, SelectableTableRowData, SortableHeaderModel, defaultInputColorModel } from '../../Types/Models';
+import { GridDefinition, InputColorModel, ObjectSelectOptionModel, defaultInputColorModel } from '../../Types/Models';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
-import { createSortableHeaderModels, getObjectPopupEmptyTableMessage } from '../../Helpers/ModelHelper';
-import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import InfiniteScrollCollection from '../../Objects/DataStructures/InfiniteScrollCollection';
 import app from "../../Objects/Stores/AppStore";
-import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
-import { api } from "../../API"
+import { EncryptedInputFieldComponent } from '../../Types/Components';
 import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
-import { HeaderDisplayField } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
@@ -74,26 +65,21 @@ export default defineComponent({
         TextAreaInputField,
         EnumInputField,
         CheckboxInputField,
-        SearchBar,
         ToolTip,
-        TableTemplate,
-        SelectableTableRow
+        ObjectMultiSelect,
+        VaulticFieldset
     },
     props: ['creating', 'model'],
     setup(props)
     {
         const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
-        const tableRef: Ref<TableTemplateComponent | null> = ref(null);
-        const mounted: Ref<boolean> = ref(false);
         const refreshKey: Ref<string> = ref("");
         const valuesState: Ref<NameValuePair> = ref(props.model);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        // @ts-ignore
-        const groups: Ref<SortedCollection<Group>> = ref(new SortedCollection<Group>(app.currentVault.groupStore.valuesGroups, "name"));
-        // @ts-ignore
-        const groupModels: Ref<InfiniteScrollCollection<SelectableTableRowData>> = ref(new InfiniteScrollCollection<SelectableTableRowData>());
+        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
         const initalLength: Ref<number> = ref(valuesState.value.valueLength?.value ?? 0);
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
@@ -103,114 +89,26 @@ export default defineComponent({
             valuesState.value.valueType?.value == NameValuePairType.Passcode || valuesState.value.valueType?.value == NameValuePairType.Other);
         const randomValueType: ComputedRef<number> = computed(() => valuesState.value.valueType?.value == NameValuePairType.Passphrase ? 0 : 1);
 
-        const gridDefinition: GridDefinition = {
+        const gridDefinition: GridDefinition = 
+        {
             rows: 1,
             rowHeight: '100%',
             columns: 1,
             columnWidth: '100%'
-        }
+        };
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
 
-        const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-
-        const emptyMessage: Ref<string> = ref(getObjectPopupEmptyTableMessage('Groups', "Value", "Group", props.creating));
-
-        const activeGroupHeader: Ref<number> = ref(1);
-        const groupHeaderDisplayFields: HeaderDisplayField[] = [
-            {
-                backingProperty: "",
-                displayName: " ",
-                width: 'clamp(25px, 4vw, 100px)',
-                clickable: false
-            },
-            {
-                backingProperty: "name",
-                displayName: "Name",
-                width: 'clamp(80px, 6vw, 150px)',
-                clickable: true
-            },
-            {
-                displayName: "Color",
-                backingProperty: "color",
-                width: 'clamp(50px, 4vw, 100px)',
-                clickable: true
-            }
-        ];
-
-        const groupTab: HeaderTabModel[] = [
-            {
-                name: 'Groups',
-                active: computed(() => true),
-                color: color,
-                onClick: () => { }
-            }
-        ];
-
-        // @ts-ignore
-        const groupHeaderModels: SortableHeaderModel[] = createSortableHeaderModels<Group>(
-            activeGroupHeader, groupHeaderDisplayFields, groups.value, undefined, setGroupModels);
-
-        function setGroupModels()
-        {
-            const pendingRows = groups.value.calculatedValues.map(async g =>
-            {
-                const values: any[] =
-                    [
-                        {
-                            component: "TableRowTextValue",
-                            value: g.value.name.value,
-                            copiable: false,
-                            width: 'clamp(80px, 6vw, 150px)'
-                        },
-                        {
-                            component: "TableRowColorValue",
-                            color: g.value.color.value,
-                            copiable: true,
-                            width: 'clamp(50px, 4vw, 100px)',
-                            margin: false
-                        }
-                    ];
-
-                const id = await api.utilities.generator.uniqueId();
-                const model: SelectableTableRowData =
-                {
-                    id: id,
-                    key: g.value.id.value,
-                    values: values,
-                    isActive: ref(valuesState.value.groups.value.has(g.value.id.value)),
-                    selectable: true,
-                    onClick: async function ()
-                    {
-                        if (valuesState.value.groups.value.has(g.value.id.value))
-                        {
-                            valuesState.value.groups.value.delete(g.value.id.value);
-                        }
-                        else
-                        {
-                            valuesState.value.groups.value.set(g.value.id.value, new Field(g.value.id.value));
-                        }
-                    }
-                }
-                return model;
-            });
-
-            Promise.all(pendingRows).then((rows) =>
-            {
-                groupModels.value.setValues(rows);
-                if (tableRef.value)
-                {
-                    // @ts-ignore
-                    tableRef.value.scrollToTop();
-                    setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
-                }
-            });
-        }
-
         function onSave()
         {
-            valueInputField.value?.toggleHidden(true);
+            valuesState.value.groups.value = new Map();
+            selectedGroups.value.forEach(g => 
+            {
+                valuesState.value.groups.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
+            });
+
+            valueInputField.value?.toggleMask(true);
             app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 
             return new Promise((resolve, reject) =>
@@ -228,6 +126,7 @@ export default defineComponent({
                 if (await app.currentVault.valueStore.addNameValuePair(key, valuesState.value))
                 {
                     valuesState.value = defaultValue();
+                    selectedGroups.value = [];
                     refreshKey.value = Date.now().toString();
 
                     handleSaveResponse(true);
@@ -277,8 +176,34 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            setGroupModels();
-            mounted.value = true;
+            groupOptions.value = app.currentVault.groupStore.valuesGroups.map(g => 
+            {
+                const option: ObjectSelectOptionModel = 
+                {
+                    label: g.value.name.value,
+                    backingObject: g,
+                    icon: g.value.icon.value,
+                    color: g.value.color.value
+                };
+
+                return option
+            });
+
+            valuesState.value.groups.value.forEach((v, k) => 
+            {
+                const group = app.currentVault.groupStore.valueGroupsByID.value.get(k);
+                if (!group)
+                {
+                    return;
+                }
+
+                selectedGroups.value.push({
+                    label: group.value.name.value,
+                    backingObject: group,
+                    icon: group.value.icon.value,
+                    color: group.value.color.value
+                });
+            });
         });
 
         watch(() => valuesState.value.valueType.value, (newValue) =>
@@ -286,33 +211,22 @@ export default defineComponent({
             showNotifyIfWeak.value = newValue == NameValuePairType.Passcode;
         });
 
-        watch(() => searchText.value.value, (newValue) =>
-        {
-            groups.value.search(newValue);
-            setGroupModels();
-        });
-
         return {
             valueInputField,
             initalLength,
             isInitiallyEncrypted,
             valueIsDirty,
-            groupHeaderModels,
-            groupModels,
             color,
             valuesState,
             refreshKey,
             gridDefinition,
             NameValuePairType,
             showNotifyIfWeak,
-            searchText,
-            groupTab,
-            emptyMessage,
-            mounted,
             colorModel,
-            tableRef,
             showRandom,
             randomValueType,
+            groupOptions,
+            selectedGroups,
             onSave,
             onAuthenticationSuccessful
         };
@@ -326,11 +240,7 @@ export default defineComponent({
     justify-content: flex-start;
     align-items: flex-start;
     column-gap: clamp(5px, 0.4vw, 10px);
-    position: absolute;
-    width: 8vw;
-    min-width: 130px;
     margin-left: 5px;
-    margin-top: 5px;
 }
 
 @media (max-width: 2200px) {
@@ -338,22 +248,12 @@ export default defineComponent({
         grid-row: 3 / span 8 !important;
         transform: translateY(0);
     }
-
-    /* .valueView__additionalInfo {
-		grid-row: 6 / span 4 !important;
-	} */
 }
 
 @media (min-width: 2400px) {
     #valueView__addGroupsTable {
         transform: translateY(calc(clamp(10px, 2.1vw, 50px) * 0.2));
     }
-}
-
-.valueView__additionalInfo {
-    position: absolute !important;
-    left: 10% !important;
-    bottom: 10% !important;
 }
 
 #valueView__addGroupsTable {
@@ -366,16 +266,6 @@ export default defineComponent({
     min-width: 308px;
 }
 
-.valueView__name {
-    position: absolute !important;
-    left: 10%;
-}
-
-.valueView__valueTypeContainer {
-    position: absolute !important;
-    left: 31%;
-}
-
 .valueView__valueType {
     z-index: 9;
 }
@@ -384,9 +274,12 @@ export default defineComponent({
     z-index: 8;
 }
 
-.valueView__value {
-    position: absolute !important;
-    left: 10%;
-    top: max(75px, 15%);
+.valueView__valueTypeContainer {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: start;
+    flex-direction: column;
+    row-gap: clamp(3px, 0.5vw, 10px);
 }
 </style>
