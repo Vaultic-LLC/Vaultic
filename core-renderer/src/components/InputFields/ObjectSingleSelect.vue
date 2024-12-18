@@ -32,8 +32,9 @@
                         };
                     }
                 }" :invalid="isInvalid" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
-                showClear :inputId="id" :options="options" optionLabel="label" :fluid="true" :labelStyle="{'text-align': 'left'}" 
-                @update:model-value="onOptionClick">
+                showClear :inputId="id" :options="options" optionLabel="label" :fluid="true" :labelStyle="{'text-align': 'left'}"
+                :loading="loading" :placeHolder="loading === true ? 'Loading...' : undefined"
+                @update:model-value="onOptionClick" @filter="(e) => $.emit('onSearch', e.value)">
                 <template #option="slotProps">
                     <div class="dropDownContainer__option">
                         <div v-if="slotProps.option.icon" class="dropDownContainer__iconContianer">
@@ -74,9 +75,9 @@ export default defineComponent({
         Select,
         Message
     },
-    emits: ["update:modelValue"],
+    emits: ["update:modelValue", "onSearch"],
     props: ["modelValue", "options", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth', 'required', 'disabled'],
+        'width', 'minWidth', 'maxWidth', 'required', 'disabled', 'loading'],
     setup(props, ctx)
     {
         const id = ref(useId());

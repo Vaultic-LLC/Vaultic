@@ -11,12 +11,13 @@ import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
-import { DisplayVault, UserData, CondensedVaultData } from "@vaultic/shared/Types/Entities";
-import { FilterStatus, DataType } from "../../Types/DataTypes";
+import { DisplayVault, UserData, CondensedVaultData, VaultType } from "@vaultic/shared/Types/Entities";
+import { FilterStatus, DataType, Organization } from "../../Types/DataTypes";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
+import { Member } from "@vaultic/shared/Types/DataTypes";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -56,10 +57,19 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
 
+    // TODO: should work with this some more to make it more convient to use / search through
+    // Have array of all local userVaults
+    // have all userVaults minus current vault?
+    // have private and shared local userVaults for tree list?
+    // need to be able to show all userVaults when adding / editing org
+    // need to be able to find userVaults that an org has 
     private internalUserVaults: Ref<DisplayVault[]>;
-    private internalSharedVaults: Ref<BasicVaultStore[]>;
+    private internalSharedWithUserVaults: Ref<BasicVaultStore[]>;
     private internalArchivedVaults: Ref<BasicVaultStore[]>;
     private internalCurrentVault: ReactiveVaultStore;
+
+    private internalPrivateVaults: ComputedRef<DisplayVault[]>;
+    private internalSharedWithOthersVaults: ComputedRef<DisplayVault[]>;
 
     private internalUsersPreferencesStore: UserPreferencesStore;
     private internalUserDataBreachStore: UserDataBreachStore;
@@ -101,9 +111,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalColorPalettes = computed(() => [...defaultColorPalettes.valueArray(), ...this.state.settings.value.userColorPalettes.value.valueArray()])
 
         this.internalUserVaults = ref([]);
-        this.internalSharedVaults = ref([]);
+        this.internalSharedWithUserVaults = ref([]);
         this.internalArchivedVaults = ref([]);
         this.internalCurrentVault = new ReactiveVaultStore();
+
+        this.internalPrivateVaults = computed(() => this.userVaults.value.filter(v => v.type == VaultType.Private));
+        this.internalSharedWithOthersVaults = computed(() => this.userVaults.value.filter(v => v.type == VaultType.SharedWithOthers));
+
         // done after current vault so we can watch for userVaultID
         this.internalUsersPreferencesStore = new UserPreferencesStore(this);
 
@@ -183,7 +197,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         this.internalUserVaults.value = [];
         this.internalArchivedVaults.value = [];
-        this.internalSharedVaults.value = [];
+        this.internalSharedWithUserVaults.value = [];
         this.internalCurrentVault.resetToDefault();
 
         await api.cache.clear();
@@ -222,7 +236,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
 
         this.internalUserVaults.value = parsedUserData.displayVaults!;
-        this.internalSharedVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
+        this.internalSharedWithUserVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
         this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
@@ -236,9 +250,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return true;
     }
 
-    async createNewVault(masterKey: string, name: string, setAsActive: boolean)
+    async createNewVault(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
+        addedOrganizations: Organization[], addedMembers: Member[])
     {
-        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, name, setAsActive, this.isOnline);
+        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, name, shared, setAsActive,
+            addedOrganizations, addedMembers, this.isOnline);
+
         if (!result.success)
         {
             defaultHandleFailedResponse(result);
@@ -246,6 +263,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         const vaultData = result.value!;
+        this.organizations.updateOrgsForVault(vaultData.userVaultID, addedOrganizations, []);
+
         if (setAsActive)
         {
             await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData);
@@ -255,6 +274,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         // force trigger reactivity
         const temp = [...this.internalUserVaults.value];
         temp.push({
+            userOrganizationID: vaultData.userOrganizationID,
             userVaultID: vaultData.userVaultID,
             name: vaultData.name,
             lastUsed: setAsActive
@@ -264,13 +284,19 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return true;
     }
 
-    async updateVault(masterKey: string, displayVault: DisplayVault): Promise<boolean>
+    async updateVault(masterKey: string, displayVault: DisplayVault, shared: boolean, addedOrganizations: Organization[],
+        removedOrganizations: Organization[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]):
+        Promise<boolean>
     {
-        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID!, JSON.vaulticStringify(displayVault));
+        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID!, JSON.vaulticStringify(displayVault),
+            shared, addedOrganizations, removedOrganizations);
+
         if (!success)
         {
             return false;
         }
+
+        this.organizations.updateOrgsForVault(displayVault.userVaultID, addedOrganizations, removedOrganizations);
 
         const index = this.userVaults.value.findIndex(uv => uv.userVaultID == displayVault.userVaultID);
         if (index == -1)
@@ -323,7 +349,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         if (!archivedVault[0].isLoaded)
         {
-            const vaultData = await api.helpers.vault.loadArchivedVault(masterKey, userVaultID);
+            const vaultData = await api.helpers.vault.loadArchivedVault(masterKey, archivedVault[0].userOrganizationID, userVaultID);
             if (!vaultData.success)
             {
                 return false;
@@ -347,7 +373,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         const selected = this.currentVault.userVaultID == userVaultID;
-        let response = await api.helpers.vault.unarchiveVault(masterKey, userVaultID, selected);
+        let response = await api.helpers.vault.unarchiveVault(masterKey, this.internalArchivedVaults.value[index].userOrganizationID, userVaultID, selected);
 
         if (!response.success)
         {
@@ -361,6 +387,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         tempArchivedVaults.splice(index, 1);
         tempUserVaults.push({
+            userOrganizationID: vaultData.userOrganizationID,
             name: vaultData.name,
             userVaultID: vaultData.userVaultID,
             lastUsed: selected
@@ -387,7 +414,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const response = await api.server.vault.deleteVault(userVaultID);
+        const response = await api.server.vault.deleteVault(this.internalArchivedVaults.value[index].userOrganizationID, userVaultID);
         if (!response)
         {
             return false;

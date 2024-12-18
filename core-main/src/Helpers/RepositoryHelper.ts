@@ -136,27 +136,27 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
 // Only call within a method wrapped in safetifyMethod
 export async function backupData(masterKey: string)
 {
+    console.time("6");
     const userToBackup = await environment.repositories.users.getEntityThatNeedsToBeBackedUp(masterKey);
     if (!userToBackup.success)
     {
-        console.log('no user to backup');
         return false;
     }
 
     const userVaultsToBackup = await environment.repositories.userVaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!userVaultsToBackup.success)
     {
-        console.log('no user vaults to backup');
         return false;
     }
 
     const vaultsToBackup = await environment.repositories.vaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!vaultsToBackup.success)
     {
-        console.log('no vaults to backup');
         return false;
     }
 
+    console.timeEnd("6");
+    console.time("7");
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: {} };
     if (userToBackup.value)
     {
@@ -173,16 +173,18 @@ export async function backupData(masterKey: string)
         postData.userDataPayload["vaults"] = vaultsToBackup.value.vaults;
     }
 
-    console.log(`Backing up data: ${JSON.stringify(postData)}`);
     const backupResponse = await vaulticServer.user.backupData(postData);
+    console.timeEnd("7");
     if (!backupResponse.Success)
     {
-        console.log(`Backup Failed: ${JSON.stringify(backupResponse)}`);
-        return await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload)
+        console.time("8");
+        const s = await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload);
+        console.timeEnd("8");
+        return s;
     }
     else
     {
-        console.log('backup succeeded');
+        console.time("9");
         const transaction = new Transaction();
         if (userToBackup.value)
         {
@@ -206,6 +208,7 @@ export async function backupData(masterKey: string)
         {
             return false;
         }
+        console.timeEnd("9");
     }
 
     return true;

@@ -31,7 +31,7 @@ export interface TableRowModel
     id: string;
     isPinned?: boolean;
     atRiskModel?: AtRiskModel;
-    backingObject?: Field<IIdentifiable & { [key: string]: any }>;
+    backingObject?: any;
     state?: any;
 }
 
@@ -67,7 +67,7 @@ export interface ObjectSelectOptionModel
     icon?: string;
     color?: string;
     label: string;
-    backingObject?: Field<IIdentifiable>;
+    backingObject?: any;
 }
 
 export interface SmallMetricGaugeModel

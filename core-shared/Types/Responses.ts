@@ -1,5 +1,5 @@
 import { Device } from "./Device";
-import { AllowSharingFrom, ChartData, LicenseStatus, OrganizationAndUsers, Session, UserDataBreach, UserDataPayload, UserDemographics } from "./ClientServerTypes";
+import { AllowSharingFrom, ChartData, LicenseStatus, OrganizationInfo, Session, UserDataBreach, UserDataPayload, UserDemographics, UserOrgInfo } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -194,7 +194,7 @@ export interface BackupResponse extends BaseResponse, UserDataPayloadResponse { 
 
 export interface GetOrganizationsResponse extends BaseResponse
 {
-    OrganizationsAndUsers?: OrganizationAndUsers[];
+    OrganizationInfo?: OrganizationInfo[];
 }
 
 export interface GetSharingSettings extends BaseResponse 
@@ -212,4 +212,9 @@ export interface UpdateSharingSettingsResponse extends BaseResponse
 export interface SearchForUsersResponse extends BaseResponse
 {
     Users?: UserDemographics[];
+}
+
+export interface GetVaultMembersResponse extends BaseResponse
+{
+    UserOrgInfo?: UserOrgInfo[];
 }

@@ -118,14 +118,14 @@ export default defineComponent({
                     return;
                 }
 
-                app.popups.hideLoadingIndicator();
                 handleKeyIsValid(false);
                 defaultHandleFailedResponse(response, false);
             });
         }
-
+        
         async function handleKeyIsValid(isValid: boolean)
         {
+            app.popups.hideLoadingIndicator();
             if (!isValid)
             {
                 disabled.value = false;

@@ -258,7 +258,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         const secretResponse = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
         if (!secretResponse.success)
         {
-            console.log(`Key: ${key}, Secret: ${this.signatureSecret}`);
             return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
         }
 
@@ -316,7 +315,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         if (!selfVerification.success)
         {
             selfVerification.addToCallStack(`Verifying ${this.entityName()}`);
-            console.log(JSON.vaulticStringify(selfVerification));
             throw selfVerification;
         }
 
@@ -330,7 +328,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
                 {
                     response.addToCallStack(`Verifying ${nestedVaulticEntites[i]}`);
                     response.addToErrorMessage(`ID: ${this.identifier()}`);
-                    console.log(JSON.vaulticStringify(selfVerification));
 
                     throw response;
                 }

@@ -183,7 +183,7 @@ export default defineComponent({
             const tableRowModel: TableRowModel = 
             {
                 id: id,
-                backingObject:filterCondition,
+                backingObject: filterCondition,
                 state: {
                     filterConditionType: FilterConditionType,
                     inputType: PropertyType.String

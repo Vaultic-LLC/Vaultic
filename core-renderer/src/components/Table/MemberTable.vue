@@ -1,0 +1,305 @@
+<template>
+    <VaulticFieldset>
+        <VaulticTable :color="color" :columns="tableColumns" :loading="externalLoading"
+            :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
+            :onEdit="onEditMember" :onDelete="onDeleteMember">
+            <template #tableControls>
+                <AddButton :color="color" @click="(e) => onOpenPopover(e, true)" />
+            </template>
+        </VaulticTable>
+    </VaulticFieldset>
+    <Popover ref="popover">
+        <div class="addMemberPopoverContainer">
+            <VaulticFieldset>
+                <ObjectSingleSelect :label="'Member'" :color="color" :loading="loading" v-model="selectedUserDemographics"
+                    :options="allSearchedUserDemographics" :disabled="disableMemberSearch" @onSearch="onUserSearch"
+                    @update:model-value="onUserSelected"/>
+            </VaulticFieldset>
+            <VaulticFieldset>
+                <EnumInputField :label="'Permission'" :disabled="!editingMember" :color="color" v-model="editingMember!.permission" 
+                    :optionsEnum="Permissions" />
+            </VaulticFieldset>
+            <VaulticFieldset>
+                <PopupButton :color="color" :disabled="!editingMember" :text="'Confirm'" @onClick="onSaveMember" />
+            </VaulticFieldset>
+        </div>
+    </Popover>
+</template>
+<script lang="ts">
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, Reactive, reactive } from 'vue';
+
+import TextInputField from '../InputFields/TextInputField.vue';
+import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
+import VaulticTable from '../Table/VaulticTable.vue';
+import AddButton from '../Table/Controls/AddButton.vue';
+import Popover from 'primevue/popover';
+import ObjectSingleSelect from '../InputFields/ObjectSingleSelect.vue';
+import EnumInputField from '../InputFields/EnumInputField.vue';
+import PopupButton from '../InputFields/PopupButton.vue';
+import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
+
+import { HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import app from "../../Objects/Stores/AppStore";
+import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
+import { api } from '../../API';
+import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
+import { Permissions, UserDemographics } from '@vaultic/shared/Types/ClientServerTypes';
+import { Field } from '@vaultic/shared/Types/Fields';
+import { Member } from '@vaultic/shared/Types/DataTypes';
+import { MemberChanges } from '../../Types/Components';
+
+export default defineComponent({
+    name: "MemberTable",
+    components: 
+    {
+        TextInputField,
+        VaulticFieldset,
+        VaulticTable,
+        AddButton,
+        Popover,
+        ObjectSingleSelect,
+        EnumInputField,
+        PopupButton,
+        ObjectMultiSelect
+    },
+    props: ['currentMembers', 'emptyMessage', 'color', 'externalLoading'],
+    setup(props)
+    {
+        const popover: Ref<any> = ref();
+        const refreshKey: Ref<string> = ref("");
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+
+        const members: Ref<Map<number, Member>> = ref(props.currentMembers);
+        
+        const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
+        const memberCollection: SortedCollection = new SortedCollection([]);
+
+        const disableMemberSearch: Ref<boolean> = ref(false);
+        const selectedUserDemographics: Ref<ObjectSelectOptionModel | undefined> = ref();
+        const allSearchedUserDemographics: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const loading: Ref<boolean> = ref(false);
+
+        const editingMember: Ref<Member | undefined> = ref(undefined);
+
+        const addedMembers: Map<number, Member> = new Map();
+        const updatedMembers: Map<number, Member> = new Map();
+        const removedMembers: Map<number, Member> = new Map();
+
+        const userHeaderTab: HeaderTabModel[] = [
+            {
+                name: 'Members',
+                active: computed(() => true),
+                color: color,
+                onClick: () => { }
+            }
+        ];
+
+        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
+        {
+            const models: TableColumnModel[] = []
+            models.push({ header: "Username", field: "username"});
+
+            // TODO: should each individual user have the same permissiosn in a group or should they be custom? 
+            // Should the group have the permissions or should the members within? 
+            // probably the members within. Don't think I accounted for that anywhere
+            models.push({ header: "Permissions", field: "permissions" });
+
+            return models;
+        });
+
+        const tableDataSources: Reactive<TableDataSources> = reactive(
+        {
+            activeIndex: () => 0,
+            dataSources: 
+            [
+                {
+                    friendlyDataTypeName: "Member",
+                    collection: memberCollection
+                }
+            ]
+        });
+
+        function setTableRows()
+        {
+            const rows: TableRowModel[] = [];
+            members.value.forEach(v =>
+            {
+                rows.push({
+                    id: v.userID.toString(),
+                    backingObject: v
+                });
+            });
+
+            memberCollection.updateValues(rows);
+        }
+
+        let lastSearchTime = 0;
+        async function onUserSearch(value: string)
+        {
+            if (Date.now() - lastSearchTime >= 200)
+            {
+                loading.value = true;
+                lastSearchTime = Date.now();
+
+                const response = await api.server.user.searchForUsers(value);
+                if (!response.Success)
+                {
+                    loading.value = false;
+                    defaultHandleFailedResponse(response);
+                    return;
+                }
+
+                if (!response.Users || response.Users.length == 0)
+                {
+                    allSearchedUserDemographics.value = [];
+                    loading.value = false;
+
+                    return;
+                }
+
+                allSearchedUserDemographics.value = response.Users?.map(u => 
+                {
+                    const model: ObjectSelectOptionModel = 
+                    {
+                        label: u.Username,
+                        backingObject: u
+                    }
+
+                    return model;
+                });
+
+                loading.value = false;
+            }
+        }
+
+        function onOpenPopover(e: any, creating: boolean)
+        {
+            if (creating)
+            {
+                disableMemberSearch.value = false;
+                editingMember.value = 
+                {
+                    userID: -1,
+                    firstName: '',
+                    lastName: '',
+                    username: '',
+                    permission: Permissions.Read,
+                    icon: undefined,
+                    publicKey: undefined
+                };
+            }
+            else 
+            {
+                selectedUserDemographics.value = 
+                {
+                    label: editingMember.value!.username,
+                    backingObject: editingMember.value
+                };
+
+                disableMemberSearch.value = true;
+            }
+
+            popover.value.toggle(e);
+        }
+
+        function onUserSelected(model: ObjectSelectOptionModel)
+        {
+            const userDemographics: UserDemographics = model.backingObject;
+            editingMember.value!.userID = userDemographics.UserID;
+            editingMember.value!.firstName = userDemographics.FirstName;
+            editingMember.value!.lastName = userDemographics.LastName;
+            editingMember.value!.username = userDemographics.Username;
+            editingMember.value!.publicKey = userDemographics.PublicKey;        
+        }
+
+        function onEditMember(member: Field<Member>, e: any)
+        {
+            editingMember.value = member.value;
+            onOpenPopover(e, false);
+        }
+
+        function onSaveMember()
+        {
+            if (members.value.has(editingMember.value!.userID))
+            {
+                updatedMembers.set(editingMember.value!.userID, editingMember.value!);
+            }
+            else
+            {
+                members.value.set(editingMember.value!.userID, editingMember.value!);
+                addedMembers.set(editingMember.value!.userID, editingMember.value!);
+            }
+        }
+
+        function onDeleteMember(member: Field<Member>)
+        {
+            if (members.value.has(member.value.userID) && !removedMembers.has(member.value.userID))
+            {
+                removedMembers.set(member.value.userID, member.value);
+            }
+
+            if (addedMembers.has(member.value.userID))
+            {
+                addedMembers.delete(member.value.userID);
+            }
+
+            if (updatedMembers.has(member.value.userID))
+            {
+                updatedMembers.delete(member.value.userID);
+            }
+        }
+
+        function getChanges(): MemberChanges
+        {
+            return {
+                addedMembers,
+                updatedMembers,
+                removedMembers
+            }
+        }
+
+        onMounted(() =>
+        {
+            setTableRows();
+        });
+
+        return {
+            popover,
+            color,
+            refreshKey,
+            searchText,
+            userHeaderTab,
+            tableColumns,
+            tableDataSources,
+            Permissions,
+            editingMember,
+            loading,
+            selectedUserDemographics,
+            allSearchedUserDemographics,
+            disableMemberSearch,
+            onOpenPopover,
+            onDeleteMember,
+            onSaveMember,
+            onEditMember,
+            onUserSearch,
+            onUserSelected,
+            getChanges
+        };
+    },
+})
+</script>
+
+<style>
+.organizationView__nameInput {
+    grid-row: 1 / span 2;
+    grid-column: 4 / span 2;
+}
+
+#organizationView__table {
+    position: relative;
+    grid-row: 5 / span 8;
+    grid-column: 4 / span 9;
+    min-width: 410px;
+    min-height: 182px;
+}
+</style>

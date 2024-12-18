@@ -11,7 +11,8 @@ import serverHelper from "./Core/Helpers/ServerHelper";
 import vaultHelper from "./Core/Helpers/VaultHelper";
 import { safeBackupData } from "./Core/Helpers/RepositoryHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
-import { AllowSharingFrom, UserIDAndPermission } from "@vaultic/shared/Types/ClientServerTypes";
+import { AllowSharingFrom, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 
 export default function setupIPC()
 {
@@ -36,11 +37,12 @@ export default function setupIPC()
 
 	ipcMain.handle('valueController:generateRandomPhrase', (e, length: number) => validateSender(e, () => vaulticServer.value.generateRandomPhrase(length)));
 
-	ipcMain.handle('vaultController:deleteVault', (e, userVaultID: number) => validateSender(e, () => vaulticServer.vault.deleteVault(userVaultID)));
+	ipcMain.handle('vaultController:deleteVault', (e, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaulticServer.vault.deleteVault(userOrganizationID, userVaultID)));
+	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, userVaultID)));
 
 	ipcMain.handle('organizationController:getOrganizations', (e) => validateSender(e, () => vaulticServer.organization.getOrganizations()));
-	ipcMain.handle('organizationController:createOrganizations', (e, name: string, userIDsAndPermissions: UserIDAndPermission[]) => validateSender(e, () => vaulticServer.organization.createOrganization(name, userIDsAndPermissions)));
-	ipcMain.handle('organizationController:updateOrganizations', (e, organizationID: number, name?: string, addedUserIDsAndPermissions?: UserIDAndPermission[], removedUserIDsAndPermissions?: UserIDAndPermission[]) => validateSender(e, () => vaulticServer.organization.updateOrganization(organizationID, name, addedUserIDsAndPermissions, removedUserIDsAndPermissions)));
+	ipcMain.handle('organizationController:createOrganizations', (e, name: string, addedMembers: Member[]) => validateSender(e, () => vaulticServer.organization.createOrganization(name, addedMembers)));
+	ipcMain.handle('organizationController:updateOrganizations', (e, organizationID: number, name?: string, addedMembers?: Member[], updatedMembers?: Member[], removedMembers?: Member[]) => validateSender(e, () => vaulticServer.organization.updateOrganization(organizationID, name, addedMembers, updatedMembers, removedMembers)));
 	ipcMain.handle('organizationController:deleteOrganizations', (e, organizationID: number) => validateSender(e, () => vaulticServer.organization.deleteOrganization(organizationID)));
 
 	ipcMain.handle('cryptUtility:encrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.encrypt(key, value)));
@@ -72,8 +74,8 @@ export default function setupIPC()
 	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) =>
 		validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData)));
 
-	ipcMain.handle('vaultHelper:loadArchivedVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => vaultHelper.loadArchivedVault(masterKey, userVaultID)));
-	ipcMain.handle('vaultHelper:unarchiveVault', (e, masterKey: string, userVaultID: number, select: boolean) => validateSender(e, () => vaultHelper.unarchiveVault(masterKey, userVaultID, select)));
+	ipcMain.handle('vaultHelper:loadArchivedVault', (e, masterKey: string, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaultHelper.loadArchivedVault(masterKey, userOrganizationID, userVaultID)));
+	ipcMain.handle('vaultHelper:unarchiveVault', (e, masterKey: string, userOrganizationID: number, userVaultID: number, select: boolean) => validateSender(e, () => vaultHelper.unarchiveVault(masterKey, userOrganizationID, userVaultID, select)));
 
 	ipcMain.handle('repositoryHelper:backupData', (e, masterKey: string) => validateSender(e, () => safeBackupData(masterKey)));
 
@@ -88,7 +90,7 @@ export default function setupIPC()
 
 	ipcMain.handle('vaultRepository:setActiveVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.setActiveVault(masterKey, userVaultID)));
 	ipcMain.handle('vaultRepository:saveVault', (e, masterKey: string, userVaultID: number, newData: string, currentData?: string) => validateSender(e, () => environment.repositories.vaults.saveVault(masterKey, userVaultID, newData, currentData)));
-	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, name, setAsActive, doBackup)));
+	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, name, shared, setAsActive, addedOrganizations, addedMembers, doBackupData)));
 	ipcMain.handle('vaultRepository:archiveVault', (e, masterKey: string, userVaultID: number, backup: boolean) => validateSender(e, () => environment.repositories.vaults.archiveVault(masterKey, userVaultID, backup)));
 	ipcMain.handle('vaultRepository:getStoreStates', (e, masterKey: string, userVaultID: number, storeStatesToRetrive: CondensedVaultData) => validateSender(e, () => environment.repositories.vaults.getStoreStates(masterKey, userVaultID, storeStatesToRetrive)));
 

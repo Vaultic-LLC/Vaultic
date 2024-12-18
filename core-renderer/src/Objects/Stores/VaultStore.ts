@@ -33,6 +33,7 @@ export class BaseVaultStore<V extends PasswordStore,
 {
     protected internalName: string;
 
+    protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
     protected internalPasswordStore: V;
     protected internalValueStore: W;
@@ -41,6 +42,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalVaultPreferencesStore: VaultPreferencesStore;
 
     get name() { return this.internalName; }
+    get userOrganizationID() { return this.internalUserOrganizationID; }
     get userVaultID() { return this.internalUserVaultID; }
     get settings() { return this.state.settings; }
 
@@ -58,7 +60,9 @@ export class BaseVaultStore<V extends PasswordStore,
 
     protected async setBaseVaultStoreData(data: CondensedVaultData)
     {
+        this.internalUserOrganizationID = data.userOrganizationID;
         this.internalUserVaultID = data.userVaultID;
+
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
     }

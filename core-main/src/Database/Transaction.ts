@@ -184,7 +184,6 @@ export default class Transaction
                 // the transaction will be rolled back if an error is thrown inside it
                 if (!succeeded)
                 {
-                    console.log('\ntransaction failed');
                     // TODO: this actually causes the application to crash, find a better way to do transaction
                     throw new Error();
                 }
@@ -193,7 +192,6 @@ export default class Transaction
                     manager.queryRunner?.commitTransaction();
                 }
 
-                console.log('\ntransaction succeeded');
                 resolve(succeeded);
             });
         });

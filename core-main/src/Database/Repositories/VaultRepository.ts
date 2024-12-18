@@ -23,6 +23,9 @@ import { IVaultRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { VaultsAndKeys } from "../../Types/Responses";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { AddedOrgInfo, ModifiedOrgMember, OrgAndUserKeys } from "@vaultic/shared/Types/ClientServerTypes";
+import { vaultAddedMembersToOrgMembers, vaultAddedOrgsToOrgsAndUserVaultKeys } from "../../Helpers/MemberHelper";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -66,15 +69,28 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return await transaction.commit();
     }
 
-    public async createNewVault(name: string): Promise<boolean | [UserVault, Vault, string]>
+    public async createNewVault(name: string, shared: boolean, addedOrganizations: Organization[],
+        addedMembers: Member[]): Promise<boolean | [UserVault, Vault, string]>
     {
-        const response = await vaulticServer.vault.create();
+        const vaultKey = environment.utilities.generator.randomValue(60);
+
+        let orgsAndUserKeys: AddedOrgInfo;
+        if (addedOrganizations.length > 0)
+        {
+            orgsAndUserKeys = await vaultAddedOrgsToOrgsAndUserVaultKeys(vaultKey, addedOrganizations);
+        }
+
+        let modifiedOrgMembers: ModifiedOrgMember[] = [];
+        if (addedMembers.length > 0)
+        {
+            modifiedOrgMembers = await vaultAddedMembersToOrgMembers(vaultKey, addedMembers);
+        }
+
+        const response = await vaulticServer.vault.create(name, shared, orgsAndUserKeys, modifiedOrgMembers);
         if (!response.Success)
         {
             return false;
         }
-
-        const vaultKey = environment.utilities.generator.randomValue(60);
 
         const userVault = new UserVault().makeReactive();
         userVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
@@ -82,6 +98,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const vault = new Vault().makeReactive();
         vault.lastUsed = true;
         vault.name = name;
+        vault.shared = shared;
         vault.vaultStoreState = new VaultStoreState().makeReactive();
         vault.passwordStoreState = new PasswordStoreState().makeReactive();
         vault.valueStoreState = new ValueStoreState().makeReactive();
@@ -118,7 +135,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return [userVault, vault, vaultKey];
     }
 
-    public async createNewVaultForUser(masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
+    // TODO: why is doBackupData here? You can't create a vault unless you are online because we need to get the IDs from 
+    // the server
+    public async createNewVaultForUser(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
+        addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
     {
         return await safetifyMethod(this, internalCreateNewVaultForUser);
 
@@ -130,7 +150,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const vaultData = await this.createNewVault(name);
+            const vaultData = await this.createNewVault(name, shared, addedOrganizations, addedMembers);
             if (!vaultData)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "No Vault Data");
@@ -168,7 +188,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (!(await transaction.commit()))
             {
-                await vaulticServer.vault.failedToSaveVault(userVault.userVaultID);
+                await vaulticServer.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 
@@ -678,7 +698,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
             else 
             {
-                console.log('override filter store state');
                 const partialFilterStoreState: DeepPartial<FilterStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.filterStoreState);
                 transaction.overrideEntity(newVault.filterStoreState.filterStoreStateID, partialFilterStoreState, () => environment.repositories.filterStoreStates);
             }

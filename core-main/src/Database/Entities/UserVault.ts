@@ -103,6 +103,7 @@ export class UserVault extends VaulticEntity implements IUserVault
     public condense(): CondensedVaultData
     {
         return {
+            userOrganizationID: this.userOrganizationID,
             userVaultID: this.userVaultID,
             vaultPreferencesStoreState: this.vaultPreferencesStoreState.state,
             name: this.vault.name,

@@ -55,7 +55,8 @@ class VaultHelper
         return condensedVault;
     }
 
-    public async loadArchivedVault(masterKey: string, userVaultID: number): Promise<TypedMethodResponse<boolean | CondensedVaultData | undefined>>
+    public async loadArchivedVault(masterKey: string, userOrganizationID: number, userVaultID: number):
+        Promise<TypedMethodResponse<boolean | CondensedVaultData | undefined>>
     {
         return await safetifyMethod(this, internalLoadArchiveVault);
 
@@ -67,7 +68,7 @@ class VaultHelper
                 return TypedMethodResponse.fail(errorCodes.VERIFICATION_FAILED, undefined, "User");
             }
 
-            const response = await vaulticServer.vault.getArchivedVaultData(userVaultID);
+            const response = await vaulticServer.vault.getArchivedVaultData(userOrganizationID, userVaultID);
             if (!response.Success)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "Failed to get archived vault from server");
@@ -97,6 +98,7 @@ class VaultHelper
 
             let condensedVault: CondensedVaultData | null =
             {
+                userOrganizationID: userVault.userOrganizationID,
                 userVaultID: userVault.userVaultID!,
                 vaultPreferencesStoreState: userVault.vaultPreferencesStoreState!.state!,
                 name: vault.name!,
@@ -118,7 +120,8 @@ class VaultHelper
         }
     }
 
-    public async unarchiveVault(masterKey: string, userVaultID: number, select: boolean): Promise<TypedMethodResponse<boolean | CondensedVaultData | undefined>>
+    public async unarchiveVault(masterKey: string, userOrganizationID: number, userVaultID: number, select: boolean):
+        Promise<TypedMethodResponse<boolean | CondensedVaultData | undefined>>
     {
         return await safetifyMethod(this, internalUnarchiveVault);
 
@@ -130,7 +133,7 @@ class VaultHelper
                 return TypedMethodResponse.fail(errorCodes.VERIFICATION_FAILED, undefined, "User");
             }
 
-            const response = await vaulticServer.vault.unarchiveVault(userVaultID);
+            const response = await vaulticServer.vault.unarchiveVault(userOrganizationID, userVaultID);
             if (!response.Success)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "Failed to un archive vault on server");
@@ -168,6 +171,7 @@ class VaultHelper
 
             let condensedVault: CondensedVaultData | null =
             {
+                userOrganizationID: userVault.userOrganizationID,
                 userVaultID: userVault.userVaultID!,
                 vaultPreferencesStoreState: userVault.vaultPreferencesStoreState!.state!,
                 name: vault.name!,

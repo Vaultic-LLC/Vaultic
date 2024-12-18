@@ -113,7 +113,7 @@ export default defineComponent({
 
                 async function onKeySuccess(key: string)
                 {
-                    if (data['type'] == VaultType.Personal)
+                    if (data['type'] == VaultType.Private)
                     {
                         if (!(await app.setActiveVault(key, data['userVaultID'])))
                         {
@@ -272,7 +272,7 @@ export default defineComponent({
                 buttons.push(treeNodeArchiveButton);
             }
 
-            updateNodeList(privateVaultsID, VaultType.Personal, buttons, newValue, oldValue);
+            updateNodeList(privateVaultsID, VaultType.Private, buttons, newValue, oldValue);
         });
 
         watch(() => app.archivedVaults.value, (newValue, oldValue) => 

@@ -151,7 +151,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             userPreferencesStoreState.state = "{}"
             user.userPreferencesStoreState = userPreferencesStoreState;
 
-            const vaults = await environment.repositories.vaults.createNewVault("Personal");
+            const vaults = await environment.repositories.vaults.createNewVault("Personal", false, [], []);
             if (!vaults)
             {
                 return TypedMethodResponse.fail(errorCodes.FAILED_TO_CREATE_NEW_VAULT, undefined, "Create new Vault");
@@ -202,7 +202,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const succeeded = await transaction.commit();
             if (!succeeded)
             {
-                await vaulticServer.vault.failedToSaveVault(userVault.userVaultID);
+                await vaulticServer.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 
@@ -364,6 +364,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 }
 
                 userData.displayVaults!.push({
+                    userOrganizationID: userVaults[i].userOrganizationID,
                     userVaultID: userVaults[i].userVaultID,
                     name: userVaults[i].name,
                     lastUsed: userVaults[i].lastUsed

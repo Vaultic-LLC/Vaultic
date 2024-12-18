@@ -112,6 +112,10 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "text"
                 },
                 {
+                    name: "shared",
+                    type: "boolean"
+                },
+                {
                     name: "lastUsed",
                     type: "boolean"
                 }

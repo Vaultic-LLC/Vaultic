@@ -1,4 +1,5 @@
 import { DeepPartial } from "../Helpers/TypeScriptHelper";
+import { Organization, Member } from "./DataTypes";
 import { CondensedVaultData, UserData } from "./Entities";
 import { TypedMethodResponse } from "./MethodResponse";
 
@@ -18,7 +19,7 @@ export interface ClientVaultRepository
 {
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     saveVault: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => Promise<TypedMethodResponse<boolean | undefined>>;
-    createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
+    createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
     getStoreStates: (masterKey: string, userVaultID: number, storesToRetrieve: CondensedVaultData) => Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>;
 }

@@ -24,7 +24,6 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         }
         catch (e)
         {
-            console.log(e);
             throw e;
         }
     }

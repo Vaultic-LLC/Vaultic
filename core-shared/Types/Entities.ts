@@ -112,8 +112,8 @@ export interface IFilterStoreState extends IStoreState
 
 export interface IGroupStoreState extends IStoreState
 {
-    groupStoreStateID: number
-    vaultID: number
+    groupStoreStateID: number;
+    vaultID: number;
     vault: IVault;
 }
 
@@ -121,13 +121,15 @@ export interface DisplayVault
 {
     name: string;
     userVaultID: number;
+    userOrganizationID: number;
     lastUsed?: boolean;
+    type?: VaultType;
 }
 
 export enum VaultType
 {
-    Personal,
-    Shared,
+    Private,
+    SharedWithOthers,
     Archived
 };
 
@@ -147,6 +149,7 @@ export interface UserData
 
 export interface CondensedVaultData
 {
+    userOrganizationID: number;
     userVaultID: number;
     vaultPreferencesStoreState: string;
     name: string;

@@ -24,6 +24,9 @@ export class Vault extends VaulticEntity implements IVault
     @Column("text")
     name: string
 
+    @Column("boolean")
+    shared: boolean
+
     // Not backed up
     // Not encrypted
     @Column("boolean")
@@ -63,7 +66,8 @@ export class Vault extends VaulticEntity implements IVault
     {
         return [
             nameof<Vault>("vaultID"),
-            nameof<Vault>("name")
+            nameof<Vault>("name"),
+            nameof<Vault>("shared")
         ];
     }
 
@@ -79,6 +83,7 @@ export class Vault extends VaulticEntity implements IVault
         const properties = super.backupableProperties();
         properties.push("vaultID");
         properties.push("name");
+        properties.push("shared");
 
         return properties;
     }
@@ -86,7 +91,8 @@ export class Vault extends VaulticEntity implements IVault
     getEncryptableProperties(): string[]
     {
         return [
-            nameof<Vault>("name")
+            nameof<Vault>("name"),
+            nameof<Vault>("shared")
         ];
     }
 
@@ -94,6 +100,7 @@ export class Vault extends VaulticEntity implements IVault
     {
         return [
             nameof<Vault>("name"),
+            nameof<Vault>("shared"),
             nameof<Vault>("vaultStoreState"),
             nameof<Vault>("passwordStoreState"),
             nameof<Vault>("valueStoreState"),
@@ -106,6 +113,7 @@ export class Vault extends VaulticEntity implements IVault
     {
         return [
             nameof<Vault>("name"),
+            nameof<Vault>("shared"),
             nameof<Vault>("vaultStoreState"),
             nameof<Vault>("passwordStoreState"),
             nameof<Vault>("valueStoreState"),

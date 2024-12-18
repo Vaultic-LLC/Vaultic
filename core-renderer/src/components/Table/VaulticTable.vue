@@ -1,7 +1,7 @@
 <template>
     <div class="vaulticTableContainer">
-        <DataTable scrollable removableSort lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" :totalRecords="totalRecords" paginator 
-            :rowsPerPageOptions="[5, 15, 30, 50]"
+        <DataTable scrollable removableSort lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" 
+            :totalRecords="totalRecords" paginator :rowsPerPageOptions="[5, 15, 30, 50]" :loading="loading"
             resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
             @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor" @page="onPage"
             :pt="{
@@ -124,7 +124,7 @@
                         <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel).isPinned === true, data)">
                             <ion-icon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel).isPinned === true}" name="magnet-outline"></ion-icon>
                         </div>
-                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="onEdit((data as TableRowModel).backingObject)">
+                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit((data as TableRowModel).backingObject, e)">
                             <ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
                         </div>
                         <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm((data as TableRowModel).backingObject)">
@@ -191,7 +191,7 @@ export default defineComponent({
         EncryptedInputCell
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
-        'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel'],
+        'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading'],
     setup(props)
     {
         const tableContainerID = ref(useId());

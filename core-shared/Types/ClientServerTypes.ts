@@ -50,42 +50,69 @@ export interface UserDataPayload
 
 export enum Permissions
 {
-    Read,
-    Write
+    Read = "Read Only",
+    Write = "Read & Write"
 }
 
-export interface UserIDAndPermission
+export interface VaultIDAndKey
+{
+    VaultID: number;
+    VaultKey: string;
+}
+
+export interface UserIDAndKey
+{
+    UserID: number;
+    VaultKey: string;
+}
+
+export interface OrgAndUserKeys
+{
+    OrganizationID: number;
+    UserIDsAndKeys: UserIDAndKey[];
+}
+
+export interface AddedOrgInfo
+{
+    AllMembers: number[];
+    OrgsAndUsersKeys: { [key: number]: OrgAndUserKeys };
+}
+
+export interface ModifiedOrgMember
 {
     UserID: number;
     Permission: Permissions;
+    VaultIDAndKeys?: VaultIDAndKey[];
 }
 
-export interface UserOrgInfo
+export interface UserInfo 
 {
     UserID: number;
     FirstName: string;
     LastName: string;
     Username: string;
+}
+
+export interface UserOrgInfo extends UserInfo
+{
     Permissions: Permissions;
 }
 
-export interface OrganizationAndUsers
+export interface UserDemographics extends UserInfo
+{
+    PublicKey: string;
+}
+
+export interface OrganizationInfo
 {
     OrganizationID: number;
     Name: string;
     UserDemographics: UserOrgInfo[];
+    UserVaults: number[];
 }
 
 export enum AllowSharingFrom
 {
     Everyone,
     SpecificUsers
-}
-
-export interface UserDemographics
-{
-    UserID: number;
-    FirstName: string;
-    LastName: string;
-    Username: string;
 }

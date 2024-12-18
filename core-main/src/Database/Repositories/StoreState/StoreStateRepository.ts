@@ -74,7 +74,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         }
         catch (e)
         {
-            console.log(e);
             throw e;
         }
 
