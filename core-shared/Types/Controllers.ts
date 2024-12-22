@@ -42,7 +42,7 @@ export interface ClientVaultController
 export interface OrganizationController
 {
     getOrganizations: () => Promise<GetOrganizationsResponse>;
-    createOrganization: (name: string, addedMembers: Member[]) => Promise<BaseResponse>;
-    updateOrganization: (organizationID: number, name?: string, addedMembers?: Member[], updatedMembers?: Member[], removedMembers?: Member[]) => Promise<BaseResponse>
+    createOrganization: (masterKey: string, name: string, addedVaults: number[], addedMembers: Member[]) => Promise<BaseResponse>;
+    updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: number[], removedUserVaultID: number[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => Promise<BaseResponse>;
     deleteOrganization: (organizationID: number) => Promise<BaseResponse>
 }

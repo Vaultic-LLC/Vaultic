@@ -13,7 +13,7 @@ import { StoreState } from "../Entities/States/StoreState";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { EntityState, UserData } from "@vaultic/shared/Types/Entities";
+import { EntityState, UserData, VaultType } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
@@ -367,7 +367,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     userOrganizationID: userVaults[i].userOrganizationID,
                     userVaultID: userVaults[i].userVaultID,
                     name: userVaults[i].name,
-                    lastUsed: userVaults[i].lastUsed
+                    lastUsed: userVaults[i].lastUsed,
+                    type: userVaults[i].shared ? VaultType.SharedWithOthers : VaultType.Private
                 });
             }
 

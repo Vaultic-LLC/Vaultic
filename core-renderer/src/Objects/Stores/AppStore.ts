@@ -12,12 +12,12 @@ import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, UserData, CondensedVaultData, VaultType } from "@vaultic/shared/Types/Entities";
-import { FilterStatus, DataType, Organization } from "../../Types/DataTypes";
+import { FilterStatus, DataType } from "../../Types/DataTypes";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
-import { Member } from "@vaultic/shared/Types/DataTypes";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -57,19 +57,14 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
 
-    // TODO: should work with this some more to make it more convient to use / search through
-    // Have array of all local userVaults
-    // have all userVaults minus current vault?
-    // have private and shared local userVaults for tree list?
-    // need to be able to show all userVaults when adding / editing org
-    // need to be able to find userVaults that an org has 
     private internalUserVaults: Ref<DisplayVault[]>;
     private internalSharedWithUserVaults: Ref<BasicVaultStore[]>;
     private internalArchivedVaults: Ref<BasicVaultStore[]>;
-    private internalCurrentVault: ReactiveVaultStore;
 
     private internalPrivateVaults: ComputedRef<DisplayVault[]>;
     private internalSharedWithOthersVaults: ComputedRef<DisplayVault[]>;
+
+    private internalCurrentVault: ReactiveVaultStore;
 
     private internalUsersPreferencesStore: UserPreferencesStore;
     private internalUserDataBreachStore: UserDataBreachStore;
@@ -90,7 +85,10 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     set activeFilterGroupsTable(value: DataType) { this.internalActiveFilterGroupTable.value = value; }
     get colorPalettes() { return this.internalColorPalettes.value; }
     get userVaults() { return this.internalUserVaults; }
+    get sharedWithUserVaults() { return this.internalSharedWithUserVaults; }
     get archivedVaults() { return this.internalArchivedVaults; }
+    get privateVaults() { return this.internalPrivateVaults; }
+    get sharedWithOthersVaults() { return this.internalSharedWithOthersVaults; }
     get currentVault() { return this.internalCurrentVault; }
     get userPreferences() { return this.internalUsersPreferencesStore; }
     get userDataBreaches() { return this.internalUserDataBreachStore; }
@@ -288,8 +286,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         removedOrganizations: Organization[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]):
         Promise<boolean>
     {
-        const success = await api.repositories.vaults.saveVault(masterKey, displayVault.userVaultID!, JSON.vaulticStringify(displayVault),
-            shared, addedOrganizations, removedOrganizations);
+        const success = await api.repositories.vaults.updateVault(masterKey, displayVault.userVaultID!, displayVault.name, shared,
+            addedOrganizations, removedOrganizations, addedMembers, updatedMembers, removedMembers, this.isOnline);
 
         if (!success)
         {

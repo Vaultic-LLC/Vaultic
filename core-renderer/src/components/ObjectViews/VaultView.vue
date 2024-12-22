@@ -28,8 +28,7 @@ import MemberTable from '../Table/MemberTable.vue';
 import app from "../../Objects/Stores/AppStore";
 import { DisplayVault } from '@vaultic/shared/Types/Entities';
 import { ObjectSelectOptionModel } from '../../Types/Models';
-import { Organization } from '../../Types/DataTypes';
-import { Member } from '@vaultic/shared/Types/DataTypes';
+import { Member, Organization } from '@vaultic/shared/Types/DataTypes';
 import { api } from '../../API';
 import { MemberTableComponent } from '../../Types/Components';
 
@@ -84,13 +83,28 @@ export default defineComponent({
 
             if (originalOrgs)
             {
-                addedOrgs = selectedOrganizations.value.filter(
-                    o => originalOrgs.filter(oo => oo == (o.backingObject as Organization).organizationID).length == 0)
-                    .map(o => o.backingObject);
+                for (let i = 0; i < selectedOrganizations.value.length; i++)
+                {
+                    if (!originalOrgs.has((selectedOrganizations.value[i].backingObject as Organization).organizationID))
+                    {
+                        addedOrgs.push(selectedOrganizations.value[i].backingObject);
+                    }
+                }
                 
-                const removedOrgIds = originalOrgs.filter(
-                    o => selectedOrganizations.value.filter(so => (so.backingObject as Organization).organizationID == o).length == 0);
-                removedOrgs = removedOrgIds.map(o => app.organizations.organizationsByID.get(o)!);
+                if (!props.creating)
+                {
+                    originalOrgs.forEach(v => 
+                    {
+                        if (selectedOrganizations.value.findIndex(o => (o.backingObject as Organization).organizationID == v) == -1)
+                        {
+                            const organization = app.organizations.organizationsByID.get(v);
+                            if (organization)
+                            {
+                                removedOrgs.push(organization);
+                            }
+                        }
+                    });
+                }
             }
 
             const sharedIndividualsChanges = memberTable.value?.getChanges()!;
@@ -102,7 +116,8 @@ export default defineComponent({
             else
             {
                 handleSaveResponse((await app.updateVault(key, vaultState.value, shareVault.value, 
-                addedOrgs, removedOrgs)));
+                    addedOrgs, removedOrgs, sharedIndividualsChanges.addedMembers.valueArray(), 
+                    sharedIndividualsChanges.updatedMembers.valueArray(), sharedIndividualsChanges.removedMembers.valueArray())));
             }
         }
 

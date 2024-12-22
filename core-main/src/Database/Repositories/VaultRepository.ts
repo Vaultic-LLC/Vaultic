@@ -24,8 +24,8 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { VaultsAndKeys } from "../../Types/Responses";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-import { AddedOrgInfo, ModifiedOrgMember, OrgAndUserKeys } from "@vaultic/shared/Types/ClientServerTypes";
-import { vaultAddedMembersToOrgMembers, vaultAddedOrgsToOrgsAndUserVaultKeys } from "../../Helpers/MemberHelper";
+import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
+import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -77,10 +77,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         let orgsAndUserKeys: AddedOrgInfo;
         if (addedOrganizations.length > 0)
         {
-            orgsAndUserKeys = await vaultAddedOrgsToOrgsAndUserVaultKeys(vaultKey, addedOrganizations);
+            orgsAndUserKeys = await vaultAddedOrgsToAddedOrgInfo(vaultKey, addedOrganizations);
         }
 
-        let modifiedOrgMembers: ModifiedOrgMember[] = [];
+        let modifiedOrgMembers: AddedVaultMembersInfo;
         if (addedMembers.length > 0)
         {
             modifiedOrgMembers = await vaultAddedMembersToOrgMembers(vaultKey, addedMembers);
@@ -243,14 +243,118 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async saveVault(masterKey: string, userVaultID: number, newData: string, currentData?: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async updateVault(masterKey: string, userVaultID: number, name: string, shared: boolean, addedOrganizations: Organization[],
+        removedOrganizations: Organization[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[], doBackup: boolean):
+        Promise<TypedMethodResponse<boolean | undefined>>
     {
-        return await safetifyMethod(this, internalSaveVault);
+        return await safetifyMethod(this, internalUpdateVault);
 
-        async function internalSaveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        async function internalUpdateVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
-            if (userVaults[0].length == 0)
+            if (userVaults[0].length != 1)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVault");
+            }
+
+            const oldVault = userVaults[0][0].vault.makeReactive();
+
+            let needToUpdateSharing = false;
+            let needsToUpdateVault = false;
+
+            let addedOrgInfo: AddedOrgInfo;
+            let removedOrgIDs: number[];
+
+            let addedVaultMemberInfo: AddedVaultMembersInfo;
+            let updatedModifiedOrgMembers: ModifiedOrgMember[];
+            let removedMemberIDs: number[];
+
+            if (shared != oldVault.shared)
+            {
+                oldVault.shared = shared;
+
+                needToUpdateSharing = true;
+                needsToUpdateVault = true;
+            }
+
+            if (addedOrganizations.length > 0)
+            {
+                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(userVaults[1][0], addedOrganizations);
+                needToUpdateSharing = true;
+            }
+
+            if (removedOrganizations.length > 0)
+            {
+                removedOrgIDs = organizationArrayToOrganizationIDArray(removedOrganizations);
+                needToUpdateSharing = true;
+            }
+
+            if (addedMembers.length > 0)
+            {
+                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(userVaults[1][0], addedMembers);
+                needToUpdateSharing = true;
+            }
+
+            if (updatedMembers.length > 0)
+            {
+                updatedModifiedOrgMembers = memberArrayToModifiedOrgMemberWithoutVaultKey(updatedMembers);
+                needToUpdateSharing = true;
+            }
+
+            if (removedMembers.length > 0)
+            {
+                removedMemberIDs = memberArrayToUserIDArray(removedMembers);
+                needToUpdateSharing = true;
+            }
+
+            if (needToUpdateSharing)
+            {
+                const response = await vaulticServer.vault.updateVault(userVaultID, userVaults[0][0].userOrganizationID, shared, addedOrgInfo,
+                    removedOrgIDs, addedVaultMemberInfo, updatedModifiedOrgMembers, removedMemberIDs);
+
+                if (!response.Success)
+                {
+                    return TypedMethodResponse.fail();
+                }
+            }
+
+            if (name != oldVault.name)
+            {
+                oldVault.name = name;
+                needsToUpdateVault = true;
+            }
+
+            if (needsToUpdateVault)
+            {
+                const transaction = new Transaction();
+
+                const vaultKey = userVaults[1][0];
+                transaction.updateEntity(oldVault, vaultKey, () => this);
+
+                const success = await transaction.commit();
+                if (!success)
+                {
+                    return TypedMethodResponse.fail();
+                }
+
+                if (doBackup)
+                {
+                    await backupData(masterKey);
+                }
+            }
+
+            return TypedMethodResponse.success();
+        }
+    }
+
+    public async saveVaultData(masterKey: string, userVaultID: number, newData: string, currentData?: string): Promise<TypedMethodResponse<boolean | undefined>>
+    {
+        return await safetifyMethod(this, internalSaveVaultData);
+
+        async function internalSaveVaultData(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        {
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
+            if (userVaults[0].length != 1)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "No UserVault");
             }
@@ -264,12 +368,11 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
-                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVault");
+                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVaultData");
             }
 
             const transaction = new Transaction();
-
-            if (newVaultData.name)
+            if (newVaultData.name != oldVault.name)
             {
                 oldVault.name = newVaultData.name;
                 transaction.updateEntity(oldVault, vaultKey, () => this);

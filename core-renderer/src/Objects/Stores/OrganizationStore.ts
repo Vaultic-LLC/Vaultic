@@ -1,15 +1,15 @@
 import { Store, StoreState } from "./Base";
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { Organization } from "../../Types/DataTypes";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
-import { Member } from "@vaultic/shared/Types/DataTypes";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { DisplayVault } from "@vaultic/shared/Types/Entities";
 
 export class OrganizationStore extends Store<StoreState>
 {
     private internalFailedToRetrieveOrganizations: Ref<boolean>;
     private internalOrganizationsByID: Ref<Map<number, Organization>>;
-    private internalOrganizationIDsByUserVaultID: Ref<Map<number, number[]>>;
+    private internalOrganizationIDsByUserVaultID: Ref<Map<number, Set<number>>>;
 
     private internalOrganizations: ComputedRef<Organization[]>;
     private internalPinnedOrganizations: ComputedRef<Organization[]>;
@@ -80,10 +80,10 @@ export class OrganizationStore extends Store<StoreState>
 
                 if (!this.internalOrganizationIDsByUserVaultID.value.has(uv))
                 {
-                    this.internalOrganizationIDsByUserVaultID.value.set(uv, []);
+                    this.internalOrganizationIDsByUserVaultID.value.set(uv, new Set());
                 }
 
-                this.internalOrganizationIDsByUserVaultID.value.get(uv)?.push(o.OrganizationID);
+                this.internalOrganizationIDsByUserVaultID.value.get(uv)?.add(o.OrganizationID);
             });
 
             o.UserDemographics.forEach(u => 
@@ -108,23 +108,25 @@ export class OrganizationStore extends Store<StoreState>
         return true;
     }
 
-    async createOrganization(organization: Organization, addedMembers: Member[]): Promise<boolean>
+    async createOrganization(masterKey: string, organization: Organization, addedVaults: number[], addedMembers: Member[]): Promise<boolean>
     {
-        const response = await api.server.organization.createOrganization(organization.name, addedMembers);
+        const response = await api.server.organization.createOrganization(masterKey, organization.name, addedVaults, addedMembers);
         if (!response.Success)
         {
             defaultHandleFailedResponse(response);
             return false;
         }
 
+        // TODO: add members to organization in org store
+
         return true;
     }
 
-    async updateOrganization(organization: Organization, addedMembers: Member[], updatedMembers: Member[],
-        removedMembers: Member[]): Promise<boolean>
+    async updateOrganization(masterKey: string, organization: Organization, addedVaults: number[], removedVaults: number[],
+        originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]): Promise<boolean>
     {
-        const response = await api.server.organization.updateOrganization(organization.organizationID,
-            organization.name, addedMembers, updatedMembers, removedMembers);
+        const response = await api.server.organization.updateOrganization(masterKey, organization.organizationID, organization.name, addedVaults, removedVaults,
+            originalMembers, addedMembers, updatedMembers, removedMembers);
 
         if (!response.Success)
         {
@@ -132,12 +134,21 @@ export class OrganizationStore extends Store<StoreState>
             return false;
         }
 
+        // TODO: update members in organization in org store
+
         return true;
     }
 
-    updateOrganizationsAfterVault(userVaultID: number, addedOrganizations: number[], removedOrganizations: number[])
+    updateOrgsForVault(userVaultID: number, addedOrganizations: Organization[], removedOrganizations: Organization[])
     {
+        const organizationsByUserVaultID: Set<number> | undefined = this.organizationIDsByUserVaultIDs.get(userVaultID);
+        if (!organizationsByUserVaultID)
+        {
+            return;
+        }
 
+        addedOrganizations.forEach(o => organizationsByUserVaultID.add(o.organizationID));
+        removedOrganizations.forEach(o => organizationsByUserVaultID.delete(o.organizationID));
     }
 
     async deleteOrganization(masterKey: string, id: number): Promise<boolean>

@@ -58,8 +58,8 @@ const vaultController: ClientVaultController =
 const organizationController: OrganizationController =
 {
 	getOrganizations: () => ipcRenderer.invoke('organizationController:getOrganizations'),
-	createOrganization: (name: string, addedMembers: Member[]) => ipcRenderer.invoke('organizationController:getOrganizations', name, addedMembers),
-	updateOrganization: (organizationID: number, name?: string, addedMembers?: Member[], updatedMembers?: Member[], removedMembers?: Member[]) => ipcRenderer.invoke('organizationController:updateOrganizations', organizationID, name, addedMembers, updatedMembers, removedMembers),
+	createOrganization: (masterKey: string, name: string, addedVaults: number[], addedMembers: Member[]) => ipcRenderer.invoke('organizationController:getOrganizations', masterKey, name, addedVaults, addedMembers),
+	updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: number[], removedUserVaultID: number[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => ipcRenderer.invoke('organizationController:updateOrganizations', masterKey, organizationID, name, addedVaults, removedUserVaultID, originalMembers, addedMembers, updatedMembers, removedMembers),
 	deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganizations', organizationID)
 }
 
@@ -144,8 +144,9 @@ const userRepository: ClientUserRepository =
 
 const vaultRepository: ClientVaultRepository =
 {
+	updateVault: (masterKey: string, userVaultID: number, name: string, shared: boolean, addedOrganizations: Organization[], removedOrganizations: Organization[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[], doBackup: boolean) => ipcRenderer.invoke('vaultRepository:updateVault', masterKey, userVaultID, name, shared, addedOrganizations, removedOrganizations, addedMembers, updatedMembers, removedMembers, doBackup),
 	setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
-	saveVault: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVault', masterKey, userVaultID, newData, currentData),
+	saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, newData, currentData),
 	createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, shared, setAsActive, addedOrganizations, addedMembers, doBackupData),
 	archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => ipcRenderer.invoke('vaultRepository:archiveVault', masterKey, userVaultID, backup),
 	getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve)

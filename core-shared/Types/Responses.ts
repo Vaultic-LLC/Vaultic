@@ -218,3 +218,8 @@ export interface GetVaultMembersResponse extends BaseResponse
 {
     UserOrgInfo?: UserOrgInfo[];
 }
+
+export interface GetPublicKeysResponse extends BaseResponse
+{
+    UsersAndPublicKeys?: { [key: number]: string };
+}

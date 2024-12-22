@@ -4,13 +4,13 @@
             <TextInputField :label="'Name'" v-model="orgState.name" class="organizationView__nameInput" :color="color" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <ObjectMultiSelect :label="'Vaults'" :color="color" />
+            <ObjectMultiSelect :label="'Vaults'" :color="color" :modelValue="selectedVaults" :options="allVaults" />
         </VaulticFieldset>
         <MemberTable ref="memberTable" :color="color" :emptyMessage="emptyMessage" :currentMembers="orgState.members" />
     </ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted } from 'vue';
 
 import ObjectView from "./ObjectView.vue";
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -20,9 +20,9 @@ import MemberTable from '../Table/MemberTable.vue';
 
 import { ObjectSelectOptionModel, TableRowModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { defaultOrganization, Organization } from '../../Types/DataTypes';
+import { defaultOrganization } from '../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
-import { Member } from '@vaultic/shared/Types/DataTypes';
+import { Member, Organization } from '@vaultic/shared/Types/DataTypes';
 import { MemberTableComponent } from '../../Types/Components';
 
 export default defineComponent({
@@ -45,6 +45,9 @@ export default defineComponent({
         
         const emptyMessage: Ref<string> = ref(`You currently don't have any Members in this Organization. Click '+' to add one`);
 
+        const allVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
+
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
 
@@ -62,16 +65,40 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(color.value, "Saving Vault");
 
+            const addedVaults: number[] = [];
+            const removedVaults: number[] = [];
+
+            selectedVaults.value.forEach(v => 
+            {
+                if (!orgState.value.userVaultIDs.has(v.backingObject))
+                {
+                    addedVaults.push(v.backingObject);
+                }
+            });
+
+            if (!props.creating)
+            {
+                orgState.value.userVaultIDs.forEach((v, k, map) =>
+                {
+                    const vault = selectedVaults.value.find(s => s.backingObject == k);
+                    if (!vault)
+                    {
+                        removedVaults.push(k);
+                    }
+                });
+            }
+
             const memberChanges = memberTable.value?.getChanges()!;
             if (props.creating)
             {
-                handleSaveResponse((await app.organizations.createOrganization(orgState.value, memberChanges.addedMembers.valueArray())));
+                handleSaveResponse((await app.organizations.createOrganization(key, orgState.value, 
+                addedVaults, memberChanges.addedMembers.valueArray())));
             }
             else
             {
-                handleSaveResponse((await app.organizations.updateOrganization(orgState.value, 
-                    memberChanges.addedMembers.valueArray(), memberChanges.updatedMembers.valueArray(), 
-                    memberChanges.removedMembers.valueArray())));
+                handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value,
+                    addedVaults, removedVaults, orgState.value.members.valueArray(), memberChanges.addedMembers.valueArray(), 
+                    memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray())));
             }
         }
 
@@ -99,12 +126,61 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        onMounted(() =>
+        {
+            const currentVaultModel: ObjectSelectOptionModel = 
+            {
+                label: app.currentVault.name,
+                backingObject: app.currentVault.userVaultID
+            };
+
+            allVaults.value.push(currentVaultModel);
+            allVaults.value = app.userVaults.value.map(v => 
+            {
+                const model: ObjectSelectOptionModel =
+                {
+                    label: v.name,
+                    backingObject: app.currentVault.userVaultID
+                };
+
+                return model;
+            });
+
+            if (orgState.value.userVaultIDs.has(app.currentVault.userVaultID))
+            {
+                const currentVaultModel: ObjectSelectOptionModel = 
+                {
+                    label: app.currentVault.name,
+                    backingObject: app.currentVault.userVaultID
+                };
+                
+                selectedVaults.value.push(currentVaultModel);
+            }
+
+            orgState.value.userVaultIDs.forEach((v, k, map) =>
+            {
+                const vault = app.userVaults.value.find(v => v.userVaultID == k);
+                if (vault)
+                {
+                    const currentVaultModel: ObjectSelectOptionModel = 
+                    {
+                        label: vault.name,
+                        backingObject: vault.userVaultID
+                    };
+                    
+                    selectedVaults.value.push(currentVaultModel)
+                }
+            });
+        });
+
         return {
             memberTable,
             refreshKey,
             orgState,
             color,
             emptyMessage,
+            selectedVaults,
+            allVaults,
             onSave,
         };
     },

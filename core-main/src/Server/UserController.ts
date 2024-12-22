@@ -1,4 +1,4 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetSharingSettings, GetUserDataBreachesResponse, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetPublicKeysResponse, GetSharingSettings, GetUserDataBreachesResponse, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
@@ -8,6 +8,7 @@ export interface UserController extends ClientUserController
 {
     getUserIDs: () => Promise<GetUserIDResponse>;
     backupData: (postData: { userDataPayload: UserDataPayload }) => Promise<BackupResponse>;
+    getPublicKeys: (userIDs: number[]) => Promise<GetPublicKeysResponse>;
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -111,6 +112,13 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
+    function getPublicKeys(userIDs: number[]): Promise<GetPublicKeysResponse>
+    {
+        return axiosHelper.api.post('User/GetPublicKeys', {
+            UserIDs: userIDs,
+        });
+    }
+
     return {
         validateEmail,
         getUserIDs,
@@ -125,6 +133,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         reportBug,
         getSharingSettings,
         updateSharingSettings,
-        searchForUsers
+        searchForUsers,
+        getPublicKeys
     }
 }

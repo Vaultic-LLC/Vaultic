@@ -275,6 +275,16 @@ export default defineComponent({
             updateNodeList(privateVaultsID, VaultType.Private, buttons, newValue, oldValue);
         });
 
+        watch(() => app.sharedWithOthersVaults.value, (newValue, oldValue) => 
+        {
+            updateNodeList(sharedWithOthersID, VaultType.SharedWithOthers, [treeNodeEditButton, treeNodeArchiveButton], newValue, oldValue);
+        });
+
+        watch(() => app.sharedWithUserVaults.value, (newValue, oldValue) => 
+        {
+            updateNodeList(sharedWithMeID, VaultType.SharedWithUser, [treeNodeEditButton, treeNodeArchiveButton], newValue, oldValue);
+        });
+
         watch(() => app.archivedVaults.value, (newValue, oldValue) => 
         {
             updateNodeList(archivedVaultsID, VaultType.Archived, [treeNodeUndoButton, treeNodePermanentlyDeleteButton], newValue, oldValue);

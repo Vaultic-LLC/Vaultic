@@ -22,8 +22,8 @@ import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
 import { ClientDevice } from '@vaultic/shared/Types/Device';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { Organization } from '../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
+import { Organization } from '@vaultic/shared/Types/DataTypes';
 
 export default defineComponent({
     name: "OrganizationDeviceTable",
@@ -145,7 +145,7 @@ export default defineComponent({
             {
                 const row: TableRowModel = 
                 {
-                    id: o.value.id.value,
+                    id: o.organizationID.toString(),
                     backingObject: o,
                 };
 
@@ -156,7 +156,7 @@ export default defineComponent({
             {
                 const row: TableRowModel = 
                 {
-                    id: o.value.id.value,
+                    id: o.organizationID.toString(),
                     backingObject: o,
                 };
 

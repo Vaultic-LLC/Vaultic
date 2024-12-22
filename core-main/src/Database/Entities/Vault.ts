@@ -91,8 +91,7 @@ export class Vault extends VaulticEntity implements IVault
     getEncryptableProperties(): string[]
     {
         return [
-            nameof<Vault>("name"),
-            nameof<Vault>("shared")
+            nameof<Vault>("name")
         ];
     }
 
@@ -113,7 +112,6 @@ export class Vault extends VaulticEntity implements IVault
     {
         return [
             nameof<Vault>("name"),
-            nameof<Vault>("shared"),
             nameof<Vault>("vaultStoreState"),
             nameof<Vault>("passwordStoreState"),
             nameof<Vault>("valueStoreState"),
@@ -139,6 +137,7 @@ export class Vault extends VaulticEntity implements IVault
             !!vault.currentSignature &&
             !!vault.vaultID &&
             !!vault.name &&
+            !!vault.shared &&
             !!vault.vaultStoreState &&
             !!vault.passwordStoreState &&
             !!vault.valueStoreState &&

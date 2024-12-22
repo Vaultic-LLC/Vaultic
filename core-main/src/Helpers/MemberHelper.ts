@@ -1,9 +1,9 @@
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
-import { AddedOrgInfo, ModifiedOrgMember, OrgAndUserKeys, UserIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultInfo, AddedVaultMembersInfo, ModifiedOrgMember, OrgAndUserKeys, UserIDAndKey, VaultIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
 
-export async function vaultAddedOrgsToOrgsAndUserVaultKeys(vaultKey: string, addedOrgs: Organization[]): Promise<AddedOrgInfo>
+export async function vaultAddedOrgsToAddedOrgInfo(vaultKey: string, addedOrgs: Organization[]): Promise<AddedOrgInfo>
 {
     const users: Set<number> = new Set();
     addedOrgs.forEach(o => 
@@ -64,9 +64,11 @@ export async function vaultAddedOrgsToOrgsAndUserVaultKeys(vaultKey: string, add
     };
 }
 
-export async function vaultAddedMembersToOrgMembers(vaultKey: string, members: Member[])
+export async function vaultAddedMembersToOrgMembers(vaultKey: string, members: Member[]): Promise<AddedVaultMembersInfo>
 {
+    const allUsers: number[] = [];
     const orgMembers: ModifiedOrgMember[] = [];
+
     for (let i = 0; i < members.length; i++)
     {
         const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(members[i].publicKey, vaultKey);
@@ -79,19 +81,134 @@ export async function vaultAddedMembersToOrgMembers(vaultKey: string, members: M
         {
             UserID: members[i].userID,
             Permission: members[i].permission,
-            VaultIDAndKeys: [
-                {
-                    VaultID: -1,
-                    VaultKey: JSON.vaulticStringify({
-                        vaultKey: encryptedVaultKey.value.data,
-                        publicKey: encryptedVaultKey.value.publicKey
-                    })
-                }
-            ]
-        }
+            VaultKeysByVaultID: {}
+        };
 
+        orgMember.VaultKeysByVaultID[-1] = JSON.vaulticStringify({
+            vaultKey: encryptedVaultKey.value.data,
+            publicKey: encryptedVaultKey.value.publicKey
+        });
+
+        allUsers.push(members[i].userID);
         orgMembers.push(orgMember);
     }
 
-    return orgMembers;
+    return {
+        AllMembers: allUsers,
+        ModifiedOrgMembers: orgMembers
+    };
+}
+
+export function memberArrayToModifiedOrgMemberWithoutVaultKey(members: Member[]): ModifiedOrgMember[]
+{
+    return members.map(m => 
+    {
+        const modifiedOrgMember: ModifiedOrgMember =
+        {
+            UserID: m.userID,
+            Permission: m.permission
+        }
+
+        return modifiedOrgMember;
+    });
+}
+
+export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey: string, addedVaults: number[], addedMembers: Member[])
+{
+    const addedOrgMembers: ModifiedOrgMember[] = addedMembers.map(m => 
+    {
+        const mom: ModifiedOrgMember =
+        {
+            UserID: m.userID,
+            Permission: m.permission,
+            VaultKeysByVaultID: {}
+        };
+
+        return mom;
+    });
+
+    if (addedVaults.length > 0)
+    {
+        const memberVaultIdAndKeys: Map<number, { [key: number]: string }> = new Map();
+        const userVaultsAndKeys = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, addedVaults);
+
+        for (let i = 0; i < userVaultsAndKeys[0].length; i++)
+        {
+            for (let j = 0; j < addedMembers.length; j++)
+            {
+                const response = await environment.utilities.crypt.ECEncrypt(addedMembers[j].publicKey, userVaultsAndKeys[1][i]);
+                if (!response.success)
+                {
+                    return;
+                }
+
+                const vaultKey = JSON.vaulticStringify({
+                    vaultKey: response.value.data,
+                    publicKey: response.value.publicKey
+                });
+
+                if (!memberVaultIdAndKeys.has(addedMembers[j].userID))
+                {
+                    memberVaultIdAndKeys.set(addedMembers[j].userID, {});
+                }
+
+                memberVaultIdAndKeys.get(addedMembers[j].userID)[userVaultsAndKeys[0][i].vault.vaultID] = vaultKey;
+            }
+        }
+
+        addedOrgMembers.forEach(m => 
+        {
+            m.VaultKeysByVaultID = memberVaultIdAndKeys.get(m.UserID);
+        });
+    }
+
+    return addedOrgMembers;
+}
+
+export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: string, addedVaults: number[], allMembers: Member[]):
+    Promise<AddedVaultInfo>
+{
+    const users: Set<number> = new Set();
+    allMembers.forEach(m => 
+    {
+        users.add(m.userID);
+    });
+
+    const allMembersArray = Array.from(users);
+    const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(allMembersArray);
+    if (!getPublicKeyResponse.Success)
+    {
+        return;
+    }
+
+    allMembers.forEach(m => 
+    {
+        const publicKey = getPublicKeyResponse.UsersAndPublicKeys[m.userID];
+        if (publicKey)
+        {
+            m.publicKey = publicKey;
+        }
+    });
+
+    const modifiedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, addedVaults, allMembers);
+    return {
+        AllVaults: addedVaults,
+        ModifiedOrgMembers: modifiedOrgMembers
+    }
+}
+
+export function organizationArrayToOrganizationIDArray(organizations: Organization[]): number[]
+{
+    const set: Set<number> = new Set();
+    organizations.forEach(o => set.add(o.organizationID));
+
+    return Array.from(set);
+}
+
+export function memberArrayToUserIDArray(members: Member[]): number[]
+{
+    const set: Set<number> = new Set();
+    members.forEach(m => set.add(m.userID));
+
+    return Array.from(set);
 }

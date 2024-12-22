@@ -130,6 +130,7 @@ export enum VaultType
 {
     Private,
     SharedWithOthers,
+    SharedWithUser,
     Archived
 };
 
@@ -153,6 +154,7 @@ export interface CondensedVaultData
     userVaultID: number;
     vaultPreferencesStoreState: string;
     name: string;
+    shared: boolean;
     lastUsed: boolean;
     vaultStoreState: string;
     passwordStoreState: string;

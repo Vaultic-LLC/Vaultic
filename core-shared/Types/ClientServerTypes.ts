@@ -78,11 +78,23 @@ export interface AddedOrgInfo
     OrgsAndUsersKeys: { [key: number]: OrgAndUserKeys };
 }
 
+export interface AddedVaultMembersInfo
+{
+    AllMembers: number[];
+    ModifiedOrgMembers: ModifiedOrgMember[];
+}
+
+export interface AddedVaultInfo
+{
+    AllVaults: number[];
+    ModifiedOrgMembers: ModifiedOrgMember[];
+}
+
 export interface ModifiedOrgMember
 {
     UserID: number;
     Permission: Permissions;
-    VaultIDAndKeys?: VaultIDAndKey[];
+    VaultKeysByVaultID?: { [key: number]: string };
 }
 
 export interface UserInfo 
