@@ -1,6 +1,6 @@
 <template>
     <div class="workflowPopupHeader">
-        <TableSelector class="workflowPopupHeader__controls" :singleSelectorItems="[worflowsSelectorItem]" />
+        <h2>Workflows</h2>
     </div>
     <div class="workflowPopupContainer">
         <ScrollView class="workflowPopupContainer__sections" :color="primaryColor">
@@ -179,22 +179,20 @@ export default defineComponent({
 
 <style>
 .workflowPopupHeader {
-    width: 100%;
-}
-
-.workflowPopupHeader__controls {
-    left: 50%;
-    transform: translateX(-50%);
-    top: 0%;
-    width: 20%;
-    z-index: 10;
+    height: 5%;
+    display: flex;
+    justify-content: center;
+    color: white;
+    animation: fadeIn 1s linear forwards;
+    margin: 5%;
+    margin-bottom: 0;
+    font-size: clamp(15px, 1vw, 25px);
 }
 
 .workflowPopupContainer {
-    position: absolute;
-    top: 14%;
     width: 100%;
     height: 86%;
+    margin-top: 2%;
 }
 
 .workflowPopupContainer__sections {
@@ -210,7 +208,7 @@ export default defineComponent({
 
 .workflowPopupContainer__section {
     direction: ltr;
-    margin-bottom: 50px;
+    margin-bottom: clamp(10px, 5vh, 50px);
 }
 
 .workflowPopupContainer__section__header {

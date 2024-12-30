@@ -2,10 +2,6 @@
     <div class="objectPopupContainer">
         <div class="objectPopupGlass" @click.stop="doClosePopup">
         </div>
-        <!-- <Dialog v-model:visible="showDialog">
-            <template #container>
-            </template>
-        </Dialog> -->
         <div ref="objectPopup" class="objectyPopup">
             <div v-if="!doPreventClose" class="closeIconContainer" @click.stop="doClosePopup">
                 <ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
@@ -27,8 +23,6 @@
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
-import Dialog from 'primevue/dialog';
-
 import { DataType } from '../../Types/DataTypes';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '../../Types/Colors';
@@ -40,11 +34,8 @@ import { ClosePopupFuncctionKey } from '../../Constants/Keys';
 
 export default defineComponent({
     name: "ObjectPopup",
-    components:
-    {
-        Dialog
-    },
-    props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing"],
+    props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing",
+        "colorSetOverride"],
     setup(props)
     {
         const popupInfo = popups.defaultObjectPopup;
@@ -82,6 +73,8 @@ export default defineComponent({
 
         const showDialog: Ref<boolean> = ref(true);
 
+        const colorSetOverride: ComputedRef<DataType | undefined> = computed(() => props.colorSetOverride);
+
         function transitionColors()
         {
             let startColorTransitionTime: number;
@@ -90,13 +83,15 @@ export default defineComponent({
             let currentSecondaryColorOne: string = '';
             let currentSecondaryColorTwo: string = '';
 
-            if (app.activePasswordValuesTable == DataType.Passwords)
+            if ((colorSetOverride.value != undefined && colorSetOverride.value == DataType.Passwords) || 
+                (colorSetOverride.value == undefined && app.activePasswordValuesTable == DataType.Passwords))
             {
                 currentPrimaryColor = app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
                 currentSecondaryColorOne = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
                 currentSecondaryColorTwo = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
             }
-            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            else if ((colorSetOverride.value != undefined && colorSetOverride.value == DataType.NameValuePairs) || 
+                (colorSetOverride.value == undefined && app.activePasswordValuesTable == DataType.NameValuePairs))
             {
                 currentPrimaryColor = app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value;
                 currentSecondaryColorOne = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;

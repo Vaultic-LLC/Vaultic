@@ -5,7 +5,8 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { DisplayVault } from "@vaultic/shared/Types/Entities";
 import { BaseResponse } from "@vaultic/shared/Types/Responses";
 import { ImportableDisplayField } from "../../Types/Fields";
-import { DataType, Organization } from "../../Types/DataTypes";
+import { DataType } from "../../Types/DataTypes";
+import { Organization } from "@vaultic/shared/Types/DataTypes";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -32,10 +33,10 @@ type Popups = {
 
 export const popups: Popups =
 {
-    "loading": { zIndex: 200 },
-    "alert": { zIndex: 170, enterOrder: 0 },
+    "loading": { zIndex: 2000 },
+    "alert": { zIndex: 1990, enterOrder: 0 },
     "devicePopup": { zIndex: 161 },
-    "accountSetup": { zIndex: 150, enterOrder: 2 },
+    "accountSetup": { zIndex: 1500, enterOrder: 2 },
     "globalAuth": { zIndex: 100, enterOrder: 3 },
     "requestAuth": { zIndex: 90, enterOrder: 4 },
     "breachedPasswords": { zIndex: 50 },
@@ -94,6 +95,8 @@ export function createPopupStore()
 
     const addDataTypePopupIsShowing: Ref<boolean> = ref(false);
     const initialAddDataTypePopupContent: Ref<DataType | undefined> = ref();
+
+    const emergencyDeactivationIsShowing: Ref<boolean> = ref(false);
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -312,6 +315,16 @@ export function createPopupStore()
         addDataTypePopupIsShowing.value = false;
     }
 
+    function showEmergencyDeactivationPopup()
+    {
+        emergencyDeactivationIsShowing.value = true;
+    }
+
+    function hideEmergencyDeactivationPopup()
+    {
+        emergencyDeactivationIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -349,6 +362,7 @@ export function createPopupStore()
         get onOrganizationPopupClose() { return onOrganizationPopupClose.value; },
         get addDataTypePopupIsShowing() { return addDataTypePopupIsShowing.value; },
         get initialAddDataTypePopupContent() { return initialAddDataTypePopupContent.value; },
+        get emergencyDeactivationIsShowing() { return emergencyDeactivationIsShowing.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -371,6 +385,8 @@ export function createPopupStore()
         showVaultPopup,
         showOrganizationPopup,
         showAddDataTypePopup,
-        hideAddDataTypePopup
+        hideAddDataTypePopup,
+        showEmergencyDeactivationPopup,
+        hideEmergencyDeactivationPopup
     }
 }

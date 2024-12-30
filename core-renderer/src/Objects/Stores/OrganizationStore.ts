@@ -3,7 +3,6 @@ import { ComputedRef, Ref, computed, ref } from "vue";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-import { DisplayVault } from "@vaultic/shared/Types/Entities";
 
 export class OrganizationStore extends Store<StoreState>
 {
@@ -32,6 +31,7 @@ export class OrganizationStore extends Store<StoreState>
 
         // TODO: this may need to stay fielded since it will be saved in the user preferences store state =(
         // this.internalPinnedOrganizations = computed(() => [new Field({ id: new Field(""), name: new Field(""), members: new Field(new Map()) })]);
+        this.internalPinnedOrganizations = computed(() => []);
     }
 
     public resetToDefault(): void
@@ -117,8 +117,15 @@ export class OrganizationStore extends Store<StoreState>
             return false;
         }
 
-        // TODO: add members to organization in org store
+        addedMembers.forEach(m => 
+        {
+            if (!organization.members.has(m.userID))
+            {
+                organization.members.set(m.userID, m);
+            }
+        });
 
+        addedVaults.forEach(v => this.updateOrgsForVault(v, [organization], []));
         return true;
     }
 
@@ -134,7 +141,32 @@ export class OrganizationStore extends Store<StoreState>
             return false;
         }
 
-        // TODO: update members in organization in org store
+        addedMembers.forEach(m => 
+        {
+            if (!organization.members.has(m.userID))
+            {
+                organization.members.set(m.userID, m);
+            }
+        });
+
+        updatedMembers.forEach(m =>
+        {
+            if (organization.members.has(m.userID))
+            {
+                organization.members.get(m.userID)!.permission = m.permission;
+            }
+        });
+
+        removedMembers.forEach(m => 
+        {
+            if (organization.members.has(m.userID))
+            {
+                organization.members.delete(m.userID);
+            }
+        });
+
+        addedVaults.forEach(v => this.updateOrgsForVault(v, [organization], []));
+        removedVaults.forEach(v => this.updateOrgsForVault(v, [], [organization]));
 
         return true;
     }
@@ -144,6 +176,10 @@ export class OrganizationStore extends Store<StoreState>
         const organizationsByUserVaultID: Set<number> | undefined = this.organizationIDsByUserVaultIDs.get(userVaultID);
         if (!organizationsByUserVaultID)
         {
+            const set: Set<number> = new Set();
+            addedOrganizations.forEach(o => set.add(o.organizationID));
+
+            this.organizationIDsByUserVaultIDs.set(userVaultID, set);
             return;
         }
 

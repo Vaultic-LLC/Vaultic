@@ -1,13 +1,24 @@
 <template>
-    <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
-        <VaulticFieldset>
-            <TextInputField :label="'Name'" v-model="orgState.name" class="organizationView__nameInput" :color="color" />
-        </VaulticFieldset>
-        <VaulticFieldset>
-            <ObjectMultiSelect :label="'Vaults'" :color="color" :modelValue="selectedVaults" :options="allVaults" />
-        </VaulticFieldset>
-        <MemberTable ref="memberTable" :color="color" :emptyMessage="emptyMessage" :currentMembers="orgState.members" />
-    </ObjectView>
+    <div class="organizationView__header">
+        <h2 v-if="creating">Create Organization</h2>
+        <h2 v-else>Edit Organization</h2>
+    </div>
+    <div class="organizationView__content">
+        <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
+            <VaulticFieldset :centered="true">
+                <TextInputField :label="'Name'" v-model="orgState.name" class="organizationView__nameInput" :color="color"
+                    :width="'50%'" :maxWidth="''" />
+            </VaulticFieldset :centered="true">
+            <VaulticFieldset :centered="true">
+                <ObjectMultiSelect :label="'Vaults'" :color="color" :modelValue="selectedVaults" :options="allVaults"
+                    :width="'50%'" :maxWidth="''" />
+            </VaulticFieldset>
+            <VaulticFieldset :centered="true" :fill-space="true">
+                <MemberTable ref="memberTable" :id="'organizationView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
+                    :currentMembers="orgState.members" />
+            </VaulticFieldset>
+        </ObjectView>
+    </div>
 </template>
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, Ref, ref, onMounted } from 'vue';
@@ -40,8 +51,8 @@ export default defineComponent({
         const memberTable: Ref<MemberTableComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref('');
 
-        const orgState: Ref<Organization> = ref(JSON.vaulticParse(JSON.vaulticStringify(props.model)) ?? defaultOrganization());
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const orgState: Ref<Organization> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultOrganization());
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
         
         const emptyMessage: Ref<string> = ref(`You currently don't have any Members in this Organization. Click '+' to add one`);
 
@@ -188,4 +199,27 @@ export default defineComponent({
 </script>
 
 <style>
+.organizationView__header {
+    height: 5%;
+    display: flex;
+    justify-content: center;
+    color: white;
+    animation: fadeIn 1s linear forwards;
+    margin: 5%;
+    margin-bottom: 0;
+    font-size: clamp(15px, 1vw, 25px);
+}
+
+.organizationView__content {
+	position: absolute;
+	top: 15%;
+	width: 100%;
+	height: 85%;
+}
+
+#organizationView__memberTable {
+    position: relative;
+    height: 90%;
+    width: 85%;
+}
 </style>

@@ -5,7 +5,6 @@ import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { EntityState } from "@vaultic/shared/Types/Entities";
-import { ChangeTracking } from "../Database/Entities/ChangeTracking";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>

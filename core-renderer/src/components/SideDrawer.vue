@@ -19,7 +19,7 @@
             <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
         </div>
         <div class="sideDrawer__currentView">
-            <ToggleRadioButton :model="toggleButtonModel" :height="'clamp(30px, 4vh, 45px)'" @onButtonClicked="onAppViewChange" />
+            <ToggleRadioButton :model="toggleButtonModel" :height="'clamp(30px, 4vh, 45px)'" />
         </div>
     </div>
 </template>
@@ -53,16 +53,21 @@ export default defineComponent({
         const text: Ref<string> = ref(online.value ? "Online" : "Offline");
         let refreshKey: Ref<string> = ref('');
 
-        const toggleButtonModel: Ref<ToggleRadioButtonModel> = ref({
-            buttonOne: {
+        const toggleButtonModel: ToggleRadioButtonModel = 
+        {
+            buttonOne:
+            {
                 text: "Vault",
-                active: true
+                active: computed(() => app.isVaultView),
+                onClick: () => app.activeAppView = AppView.Vault
             },
-            buttonTwo: {
+            buttonTwo:
+            {
                 text: "User",
-                active: false
+                active: computed(() => !app.isVaultView),
+                onClick: () => app.activeAppView = AppView.User
             }
-        });
+        };
 
         const manager = new TreeNodeListManager();
 
@@ -236,18 +241,6 @@ export default defineComponent({
             allNodes.value = manager.buildList();
         }
 
-        function onAppViewChange(index: number)
-        {
-            if (index == 0)
-            {
-                app.activeAppView = AppView.Vault;
-            }
-            else 
-            {
-                app.activeAppView = AppView.User;
-            }
-        }
-
         watch(() => app.userVaults.value, (newValue, oldValue) => 
         {
             // Add Archive button as we now have 2 vaults
@@ -317,8 +310,7 @@ export default defineComponent({
             text,
             toggleButtonModel,
             openCreateVaultPopup,
-            onLeafClicked,
-            onAppViewChange
+            onLeafClicked
         };
     }
 })

@@ -50,8 +50,8 @@ export interface UserDataPayload
 
 export enum Permissions
 {
-    Read = "Read Only",
-    Write = "Read & Write"
+    View = "View",
+    ViewAndEdit = "View And Edit"
 }
 
 export interface VaultIDAndKey

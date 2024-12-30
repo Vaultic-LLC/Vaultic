@@ -147,7 +147,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
             userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
-            userPreferencesStoreState.userID = response.UserPreferencesStoreStateID!;
+            userPreferencesStoreState.userID = response.UserID!;
             userPreferencesStoreState.state = "{}"
             user.userPreferencesStoreState = userPreferencesStoreState;
 
@@ -215,6 +215,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.backupFail();
             }
 
+            console.log('create user succeeded');
             return TypedMethodResponse.success();
         }
     }
@@ -324,6 +325,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalGetCurrentUserData(this: UserRepository): Promise<TypedMethodResponse<string | undefined>>
         {
+            console.log('getting data');
             const currentUser = await this.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
@@ -381,6 +383,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
                 userData.displayVaults![0].lastUsed = true;
             }
+
+            console.log(`finished getting data: ${JSON.vaulticStringify(userData)}`);
 
             userData.success = true;
             return TypedMethodResponse.success(JSON.vaulticStringify(userData));

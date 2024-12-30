@@ -178,7 +178,8 @@ export interface ButtonModel
 interface ToggleRadioButton
 {
     text: string;
-    active: boolean;
+    active: ComputedRef<boolean>;
+    onClick: () => void;
 }
 
 export interface ToggleRadioButtonModel

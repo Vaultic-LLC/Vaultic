@@ -28,7 +28,6 @@ export interface AppSettings extends IFieldedObject
     multipleFilterBehavior: Field<FilterStatus>;
     oldPasswordDays: Field<number>;
     percentMetricForPulse: Field<number>;
-    defaultMarkdownInEditScreens: Field<boolean>;
 }
 
 export interface IAppStoreState extends StoreState
@@ -143,8 +142,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 randomPhraseLength: new Field(7),
                 multipleFilterBehavior: new Field(FilterStatus.Or),
                 oldPasswordDays: new Field(365),
-                percentMetricForPulse: new Field(1),
-                defaultMarkdownInEditScreens: new Field(true)
+                percentMetricForPulse: new Field(1)
             })
         };
     }

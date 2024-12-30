@@ -58,7 +58,7 @@
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="popupStore.organizationPopupIsShowing" :closePopup="popupStore.onOrganizationPopupClose"
-                    :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
+                    :width="'50%'" :minWidth="'600px'" :minHeight="'480px'" :colorSetOverride="DataType.NameValuePairs">
                     <OrganizationView :creating="popupStore.organizationModel == undefined" :model="popupStore.organizationModel" />
                 </ObjectPopup>
             </Transition>
@@ -68,6 +68,14 @@
 				<ObjectPopup v-if="popupStore.addDataTypePopupIsShowing" :minWidth="'800px'" :minHeight="'480px'"
 					:closePopup="popupStore.hideAddDataTypePopup">
 					<AddObjectPopup :initalActiveContent="popupStore.initialAddDataTypePopupContent" />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'800px'" :minHeight="'480px'"
+					:closePopup="popupStore.hideEmergencyDeactivationPopup">
+					<EmergencyDeactivationView />
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
@@ -88,8 +96,10 @@ import ObjectPopup from "./ObjectPopups/ObjectPopup.vue";
 import VaultView from "./ObjectViews/VaultView.vue";
 import OrganizationView from './ObjectViews/OrganizationView.vue';
 import AddObjectPopup from './ObjectPopups/AddObjectPopup.vue';
+import EmergencyDeactivationView from './Account/EmergencyDeactivationView.vue';
 
 import app from "../Objects/Stores/AppStore";
+import { DataType } from '../Types/DataTypes';
 
 export default defineComponent({
     name: 'Popups',
@@ -105,12 +115,14 @@ export default defineComponent({
         ObjectPopup,
         VaultView,
         OrganizationView,
-        AddObjectPopup
+        AddObjectPopup,
+        EmergencyDeactivationView
     },
     setup()
     {
         return {
             popupStore: app.popups,
+            DataType
         }
     }
 });

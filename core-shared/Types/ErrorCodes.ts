@@ -9,6 +9,7 @@ class ErrorCodes
     get BACKUP_FAILED() { return 10005; }
     get EC_DECRYPTION_FAILED() { return 10006; }
     get EC_ENCRYPTION_FAILED() { return 10007; }
+    get INVALID_PROPERTY_WHILE_ENCRYPTING() { return 10008; }
 
     // Entity Verification Errors
     get NO_SIGNATURE_SECRET_OR_SIGNATURE() { return 11000; }

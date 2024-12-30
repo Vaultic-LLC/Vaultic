@@ -346,6 +346,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
+            await environment.repositories.logs.log(errorCodes.INVALID_PROPERTY_WHILE_ENCRYPTING, property);
             return false;
         }
 
@@ -366,6 +367,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         {
             if (!await this.encryptAndSet(key, properties[i]))
             {
+                console.log(`Failed to encrypt property: ${properties[i]}. Key: ${key}`)
                 return false;
             }
         }

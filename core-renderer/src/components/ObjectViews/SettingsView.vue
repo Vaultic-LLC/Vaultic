@@ -5,10 +5,10 @@
             <div class="settingsView__inputSection">
                 <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
                     v-model="appSettings.autoLockTime.value" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
-                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
+                    :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
                 <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
                     :color="color" v-model="appSettings.multipleFilterBehavior.value" :optionsEnum="FilterStatus"
-                    fadeIn="true" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
+                    fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                     :disabled="readOnly" />
             </div>
             <div class="settingsView__inputSection">
@@ -22,12 +22,6 @@
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
-            </div>
-            <div class="settingsView__inputSection">
-                <CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
-                    :minHeight="'12.5px'" :disabled="readOnly"
-                    :label="'Default Additional Information to Markdown on Edit Screens'"
-                    v-model="appSettings.defaultMarkdownInEditScreens.value" />
             </div>
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
             <div class="settingsView__inputSection">

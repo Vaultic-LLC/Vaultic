@@ -5,7 +5,7 @@
             <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
-        <VaulticFieldset :centered="true" :end="true" :fill-space="true" :static="true">
+        <VaulticFieldset :centered="true" :end="true" :fill-space="true">
             <VaulticTable ref="tableRef" id="addFilterTable" :color="color" :columns="tableColumns" 
                 :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
                 :allowSearching="false" :onDelete="onDelete">

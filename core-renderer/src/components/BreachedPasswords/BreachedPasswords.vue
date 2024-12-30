@@ -142,15 +142,6 @@ export default defineComponent({
             return false;
         }
 
-        // should request the data breeches once when the app first loads and store them somewhere
-        onMounted(() =>
-        {
-            if (app.currentVault.passwordStore.passwords.length > 0)
-            {
-                startScan(false);
-            }
-        });
-
         watch(() => app.currentVault.passwordStore.passwords.length, (newValue, oldValue) =>
         {
             if (newValue > oldValue)
@@ -159,8 +150,13 @@ export default defineComponent({
             }
         });
 
-        watch(() => app.isOnline, () =>
+        watch(() => app.isOnline, (newValue) =>
         {
+            if (!newValue)
+            {
+                return;
+            }
+
             if (app.currentVault.passwordStore.passwords.length == 0)
             {
                 return;

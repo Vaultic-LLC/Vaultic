@@ -1,25 +1,24 @@
 <template>
-    <VaulticFieldset>
-        <VaulticTable :color="color" :columns="tableColumns" :loading="externalLoading"
-            :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
-            :onEdit="onEditMember" :onDelete="onDeleteMember">
-            <template #tableControls>
-                <AddButton :color="color" @click="(e) => onOpenPopover(e, true)" />
-            </template>
-        </VaulticTable>
-    </VaulticFieldset>
+    <VaulticTable :id="id" :color="color" :columns="tableColumns" :loading="externalLoading"
+        :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
+        :onEdit="onEditMember" :onDelete="onDeleteMember">
+        <template #tableControls>
+            <AddButton :color="color" @click="(e) => onOpenPopover(e, true)" />
+        </template>
+    </VaulticTable>
     <Popover ref="popover">
-        <div class="addMemberPopoverContainer">
-            <VaulticFieldset>
+        <div class="memberTable__addMemberPopupContainer">
+            <VaulticFieldset :centered="true">
                 <ObjectSingleSelect :label="'Member'" :color="color" :loading="loading" v-model="selectedUserDemographics"
-                    :options="allSearchedUserDemographics" :disabled="disableMemberSearch" @onSearch="onUserSearch"
-                    @update:model-value="onUserSelected"/>
+                    :options="allSearchedUserDemographics" :disabled="disableMemberSearch" :width="'100%'" :maxWidth="''"
+                    :emptyMessage="'Start typing to search for Users'" :noResultsMessage="'No Users found with this Username'"
+                    @onSearch="onUserSearch" @update:model-value="onUserSelected"/>
             </VaulticFieldset>
-            <VaulticFieldset>
+            <VaulticFieldset :centered="true">
                 <EnumInputField :label="'Permission'" :disabled="!editingMember" :color="color" v-model="editingMember!.permission" 
-                    :optionsEnum="Permissions" />
+                    :optionsEnum="Permissions" :width="'100%'" :maxWidth="''" />
             </VaulticFieldset>
-            <VaulticFieldset>
+            <VaulticFieldset :centered="true">
                 <PopupButton :color="color" :disabled="!editingMember" :text="'Confirm'" @onClick="onSaveMember" />
             </VaulticFieldset>
         </div>
@@ -39,7 +38,6 @@ import PopupButton from '../InputFields/PopupButton.vue';
 import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 
 import { HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
-import app from "../../Objects/Stores/AppStore";
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -62,12 +60,12 @@ export default defineComponent({
         PopupButton,
         ObjectMultiSelect
     },
-    props: ['currentMembers', 'emptyMessage', 'color', 'externalLoading'],
+    props: ['currentMembers', 'emptyMessage', 'color', 'externalLoading', 'id'],
     setup(props)
     {
         const popover: Ref<any> = ref();
         const refreshKey: Ref<string> = ref("");
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const color: ComputedRef<string> = computed(() => props.color);
 
         const members: Ref<Map<number, Member>> = ref(props.currentMembers);
         
@@ -134,11 +132,23 @@ export default defineComponent({
         }
 
         let lastSearchTime = 0;
+        let searchTimeout: any = undefined;
         async function onUserSearch(value: string)
         {
-            if (Date.now() - lastSearchTime >= 200)
+            if (searchTimeout != undefined)
             {
-                loading.value = true;
+                clearTimeout(searchTimeout);
+            }
+
+            if (!value)
+            {
+                loading.value = false;
+                return;
+            }
+
+            loading.value = true;
+            searchTimeout = setTimeout(async() => 
+            {
                 lastSearchTime = Date.now();
 
                 const response = await api.server.user.searchForUsers(value);
@@ -169,7 +179,7 @@ export default defineComponent({
                 });
 
                 loading.value = false;
-            }
+            }, 200);
         }
 
         function onOpenPopover(e: any, creating: boolean)
@@ -183,7 +193,7 @@ export default defineComponent({
                     firstName: '',
                     lastName: '',
                     username: '',
-                    permission: Permissions.Read,
+                    permission: Permissions.View,
                     icon: undefined,
                     publicKey: undefined
                 };
@@ -290,16 +300,12 @@ export default defineComponent({
 </script>
 
 <style>
-.organizationView__nameInput {
-    grid-row: 1 / span 2;
-    grid-column: 4 / span 2;
-}
-
-#organizationView__table {
-    position: relative;
-    grid-row: 5 / span 8;
-    grid-column: 4 / span 9;
-    min-width: 410px;
-    min-height: 182px;
+.memberTable__addMemberPopupContainer {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+    width: 15vw;
+    justify-content: center;
+    align-items: center;
 }
 </style>

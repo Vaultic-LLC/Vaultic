@@ -326,6 +326,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (needsToUpdateVault)
             {
+                console.log('updating in updateVault');
                 const transaction = new Transaction();
 
                 const vaultKey = userVaults[1][0];
@@ -372,7 +373,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
 
             const transaction = new Transaction();
-            if (newVaultData.name != oldVault.name)
+            if (newVaultData.name && newVaultData.name != oldVault.name)
             {
                 oldVault.name = newVaultData.name;
                 transaction.updateEntity(oldVault, vaultKey, () => this);
