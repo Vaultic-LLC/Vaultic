@@ -25,18 +25,6 @@
             </div>
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
             <div class="settingsView__inputSection">
-                <TextInputField class="settingsView__randomPasswordLength" :color="color"
-                    :label="'Random Password Length'" v-model.number="appSettings.randomValueLength.value"
-                    :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :disabled="readOnly"
-                    :additionalValidationFunction="enforceMinRandomPasswordLength" />
-                <TextInputField class="settingsView__randomPassphraseLength" :color="color"
-                    :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength.value"
-                    :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :disabled="readOnly"
-                    :additionalValidationFunction="enforceMinRandomPassphraseLength" />
-            </div>
-            <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
                     v-model.number="appSettings.oldPasswordDays.value" :inputType="'number'" :width="'10vw'"
                     :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
@@ -49,28 +37,50 @@
                     :toolTipSize="'clamp(15px, 1vw, 28px)'"
                     :toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
             </div>
-            <div></div>
-            <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
-            <!-- <div v-if="isOnline" class="settingsView__inputSection">
-                // TODO: shold warn users that unchecking this will un share all vaults from them and to them
-                <CheckboxInputField class="settingsView__defaultMarkdown" :color="color" :height="'1.75vh'"
-                    :minHeight="'12.5px'" :disabled="readOnly || failedToLoadSharedData"
-                    :label="'Allow Shared Vaults From Others'"
-                    v-model="allowSharedVaultsFromOthers" />
+            <div class="settingsView__inputSection">
+                <TextInputField :color="color"
+                    :label="'Random Password Length'" v-model.number="appSettings.randomValueLength.value"
+                    :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceMinRandomPasswordLength" />
+                <TextInputField class="settingsView__randomPassphraseLength" :color="color"
+                    :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength.value"
+                    :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+                    :minHeight="'35px'" :disabled="readOnly"
+                    :additionalValidationFunction="enforceMinRandomPassphraseLength" />
             </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Include Numbers in Random Passwords'" v-model="appSettings.includeNumbersInRandomPassword.value" />
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword.value" />
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.includeAmbiguousCharactersInRandomPassword.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.passphraseSeperator.value"
+                    :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
+            </div>
+            <div></div>
+            <!-- TODO: show loading over this section until requests comes back with data -->
+            <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
             <div v-if="isOnline" class="settingsView__inputSection">
+                <!-- // TODO: shold warn users that unchecking this will un share all vaults from them and to them -->
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly || failedToLoadSharedData"
+                    :label="'Allow Shared Vaults From Others'" v-model="allowSharedVaultsFromOthers" />
+            </div>
+            <div v-if="isOnline && allowSharedVaultsFromOthers" class="settingsView__inputSection">
                 <TextInputField ref="usernameField" class="settingsView__maxLoginRecordsPerDay" :color="color"
                     :label="'Username'" v-model="username"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || failedToLoadSharedData"
-                    :additionalValidationFunction="enforceLoginRecordsPerDay" />
-                // Should warn user that changing this from everyone -> users will remove all vaults that aren't from 
-                // the people they pick
+                    :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || failedToLoadSharedData" />
+                <!-- // Should warn user that changing this from everyone -> users will remove all vaults that aren't from 
+                // the people they pick -->
                 <EnumInputField class="settingsView__autoLockTime" :label="'Allow Sharing From'" :color="color"
-                    v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'"
+                    v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'" :maxWidth="'300px'"
                     :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || failedToLoadSharedData" />
-                // TODO: show user multiselect if allowSharingFrom == users
-            </div> -->
+                <!-- // TODO: show user member tsble if allowSharingFrom == users -->
+            </div>
     </ObjectView>
 </template>
 <script lang="ts">
@@ -154,10 +164,10 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
             
             //check / save shared settinsg first in case username is already taken
-            // if (!await checkUpdateSettings())
-            // {
-            //     return false;
-            // }
+            if (!await checkUpdateSettings())
+            {
+                return false;
+            }
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
             if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
@@ -314,22 +324,33 @@ export default defineComponent({
         {
             if (isOnline.value)
             {
-                // const response = await api.server.user.getSharingSettings();
-                // if (!response.Success)
-                // {
-                //     failedToLoadSharedData.value = true;
-                //     defaultHandleFailedResponse(response, true, "Unable to retrieve Sharing Settings", "We are unable to retrieve your sharing settings at the moment. Please try again later. If the issue persists");
-                //     return;
-                // }
+                const response = await api.server.user.getSharingSettings();
+                if (!response.Success)
+                {
+                    failedToLoadSharedData.value = true;
+                    defaultHandleFailedResponse(response, true, "Unable to retrieve Sharing Settings", "We are unable to retrieve your sharing settings at the moment. Please try again later. If the issue persists");
+                    return;
+                }
 
-                // originalAllowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
-                // originalUsername.value = response.Username!;
-                // originalAllowSharingFrom.value = response.AllowSharingFrom!;
+                originalAllowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
+                originalUsername.value = response.Username!;
 
-                // allowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
-                // username.value = response.Username!;
-                // allowSharingFrom.value = response.AllowSharingFrom!;
-                
+                allowSharedVaultsFromOthers.value = response.AllowSharedVaultsFromOthers!
+                username.value = response.Username!;
+
+                if (response.AllowSharingFrom != undefined && response.AllowSharingFrom != null)
+                {
+                    if (response.AllowSharingFrom == 0)
+                    {
+                        originalAllowSharingFrom.value = AllowSharingFrom.Everyone;
+                        allowSharingFrom.value = AllowSharingFrom.Everyone;       
+                    }
+                    else
+                    {
+                        originalAllowSharingFrom.value = AllowSharingFrom.SpecificUsers;
+                        allowSharingFrom.value = AllowSharingFrom.SpecificUsers;
+                    }
+                }
             }
         })
 

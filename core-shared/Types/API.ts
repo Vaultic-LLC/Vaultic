@@ -1,8 +1,8 @@
 import { Promisify } from "../Helpers/TypeScriptHelper";
-import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController, ValueController } from "./Controllers";
+import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "./Controllers";
 import { DeviceInfo } from "./Device";
 import { ClientEnvironment, ClientVaulticCache } from "./Environment";
-import { ClientVaultHelper, RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "./Helpers";
+import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "./Helpers";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "./Repositories";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "./Utilities";
 
@@ -18,7 +18,6 @@ export interface Helpers
     validation: Promisify<ValidationHelper>;
     vaultic: VaulticHelper;
     server: ServerHelper;
-    vault: ClientVaultHelper;
     repositories: RepositoryHelper;
 }
 
@@ -27,7 +26,6 @@ export interface VaulticServer
     app: AppController;
     session: SessionController;
     user: ClientUserController;
-    value: ValueController;
     vault: ClientVaultController;
     organization: OrganizationController;
 }

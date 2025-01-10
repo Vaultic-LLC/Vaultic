@@ -15,14 +15,27 @@ export interface ClientUserRepository
     getStoreStates: (masterKey: string, storesToRetrieve: UserData) => Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>;
 }
 
+export interface UpdateVaultData
+{
+    userVaultID: number;
+    name?: string;
+    shared?: boolean;
+    isArchived?: boolean;
+    addedOrganizations?: Organization[];
+    removedOrganizations?: Organization[];
+    addedMembers?: Member[];
+    updatedMembers?: Member[];
+    removedMembers?: Member[];
+}
+
 export interface ClientVaultRepository
 {
-    updateVault: (masterKey: string, userVaultID: number, name: string, shared: boolean, addedOrganizations: Organization[], removedOrganizations: Organization[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[], doBackup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
+    updateVault: (masterKey: string, updateVaultData: string, doBackup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
-    archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => Promise<TypedMethodResponse<boolean | undefined>>;
     getStoreStates: (masterKey: string, userVaultID: number, storesToRetrieve: CondensedVaultData) => Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>;
+    deleteVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<boolean | undefined>>;
 }
 
 export interface ClientUserVaultRepository

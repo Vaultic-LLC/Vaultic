@@ -7,9 +7,8 @@ export interface VaultController extends ClientVaultController
 {
     create: (name: string, shared: boolean, addedOrgs: AddedOrgInfo, addedMembers: AddedVaultMembersInfo) => Promise<CreateVaultResponse>;
     updateVault: (userVaultID: number, userOrganizationID: number, shared: boolean, addedOrganizations: AddedOrgInfo, removedOrganizations: number[], addedMembers: AddedVaultMembersInfo, updatedMembers: ModifiedOrgMember[], removedMembers: number[]) => Promise<BaseResponse>;
-    getArchivedVaultData: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultDataResponse>;
-    unarchiveVault: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultDataResponse>;
     failedToSaveVault: (userOrganizationID: number, userVaultID: number) => Promise<BaseResponse>;
+    deleteVault: (userOrganizationID: number, userVaultID: number) => Promise<BaseResponse>;
 }
 
 export function createVaultController(axiosHelper: AxiosHelper)
@@ -28,7 +27,7 @@ export function createVaultController(axiosHelper: AxiosHelper)
         removedOrganizations: number[], addedMembers: AddedVaultMembersInfo, updatedMembers: ModifiedOrgMember[], removedMembers: number[]):
         Promise<BaseResponse>
     {
-        return axiosHelper.api.post('Vault/Create', {
+        return axiosHelper.api.post('Vault/UpdateVault', {
             UserVaultID: userVaultID,
             UserOrganizationID: userOrganizationID,
             Shared: shared,
@@ -37,23 +36,6 @@ export function createVaultController(axiosHelper: AxiosHelper)
             AddedMembers: addedMembers,
             UpdatedMembers: updatedMembers,
             RemovedMembers: removedMembers
-        });
-    }
-
-    // TODO: these need to also pass back the organizationID on the userVault record
-    function getArchivedVaultData(userOrganizationID: number, userVaultID: number): Promise<GetVaultDataResponse>
-    {
-        return axiosHelper.api.post('Vault/GetArchivedVaultData', {
-            UserOrganizationID: userOrganizationID,
-            UserVaultID: userVaultID
-        });
-    }
-
-    function unarchiveVault(userOrganizationID: number, userVaultID: number): Promise<GetVaultDataResponse>
-    {
-        return axiosHelper.api.post('Vault/UnarchiveVault', {
-            UserOrganizationID: userOrganizationID,
-            UserVaultID: userVaultID
         });
     }
 
@@ -75,7 +57,7 @@ export function createVaultController(axiosHelper: AxiosHelper)
 
     function getMembers(userOrganizationID: number, userVaultID: number): Promise<GetVaultMembersResponse>
     {
-        return axiosHelper.api.post('Vault/FailedToSaveVault', {
+        return axiosHelper.api.post('Vault/GetMembers', {
             UserOrganizationID: userOrganizationID,
             UserVaultID: userVaultID
         });
@@ -83,8 +65,6 @@ export function createVaultController(axiosHelper: AxiosHelper)
 
     return {
         create,
-        getArchivedVaultData,
-        unarchiveVault,
         deleteVault,
         failedToSaveVault,
         getMembers,

@@ -59,8 +59,38 @@
                         popupIsShowing = state.visible;
                     }
                 }">
-                <div>
-                    TODO
+                <div class="encryptedInputFieldContainer__randomPasswordPopover">
+                    <VaulticFieldset>
+                        <TextInputField :color="colorModel.color" :label="'Value'" v-model="randomPasswordPreview"
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" />
+                    </VaulticFieldset>
+                    <VaulticFieldset>
+                        <EnumInputField :color="colorModel.color" :label="'Type'" v-model="randomValueType" :optionsEnum="RandomValueType" 
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" />
+                    </VaulticFieldset>
+                    <VaulticFieldset>
+                        <!-- Slider for length -->
+                    </VaulticFieldset>
+                    <VaulticFieldset> 
+                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.includeNumbersInRandomPassword.value" 
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" />
+                    </VaulticFieldset>
+                    <VaulticFieldset> 
+                        <CheckboxInputField :color="colorModel.color" :label="'Special Characters'" 
+                            v-model="appSettings.includeSpecialCharactersInRandomPassword.value" :width="'100%'" :maxWidth="''" :maxHeight="''" />
+                    </VaulticFieldset>
+                    <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
+                        <CheckboxInputField :color="colorModel.color" :label="'Include Ambiguous Characters'"
+                            v-model="appSettings.includeAmbiguousCharactersInRandomPassword.value":width="'100%'" :maxWidth="''" :maxHeight="''" />
+                    </VaulticFieldset>
+                    <VaulticFieldset v-if="randomValueType == RandomValueType.Passphrase">
+                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.passphraseSeperator.value" 
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" />
+                    </VaulticFieldset>
+                    <div>
+                        <PopupButton :color="colorModel.color" :label="'Generate'" @onClick="onGenerateRandomPasswordOrPhrase" />
+                        <PopupButton :color="colorModel.color" :label="'Confirm'" @onClick="confirmRandomPasswordOrPhrase" />
+                    </div>
                 </div>
             </Popover>
         </div>
@@ -73,16 +103,22 @@ import Password from "primevue/password";
 import FloatLabel from 'primevue/floatlabel';
 import Popover from 'primevue/popover';
 import Message from "primevue/message";
+import VaulticFieldset from './VaulticFieldset.vue';
+import TextInputField from './TextInputField.vue';
+import EnumInputField from './EnumInputField.vue';
+import CheckboxInputField from './CheckboxInputField.vue';
+import PopupButton from './PopupButton.vue';
+import SliderInput from './SliderInput.vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import clipboard from 'clipboardy';
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { InputColorModel } from '../../Types/Models';
-import app from "../../Objects/Stores/AppStore";
+import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import cryptHelper from '../../Helpers/cryptHelper';
-import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
-import { api } from '../../API';
 import { ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Constants/Keys';
+import { RandomValueType } from '@vaultic/shared/Types/Fields';
+import { api } from '../../API';
 
 export default defineComponent({
     name: "EncryptedInputField",
@@ -91,7 +127,13 @@ export default defineComponent({
         Password,
         FloatLabel,
         Popover,
-        Message
+        Message,
+        VaulticFieldset,
+        TextInputField,
+        EnumInputField,
+        CheckboxInputField,
+        PopupButton,
+        SliderInput
     },
     emits: ["update:modelValue", "onDirty"],
     props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
@@ -130,8 +172,8 @@ export default defineComponent({
         const shouldFadeIn: ComputedRef<boolean> = computed(() => false);
         let inputType: Ref<string> = ref("password");
 
-        let isDisabled: Ref<boolean> = ref(props.isInitiallyEncrypted || props.disabled);
-        let isLocked: Ref<boolean> = ref(props.isInitiallyEncrypted);
+        let isDisabled: Ref<boolean> = ref(!!props.isInitiallyEncrypted || !!props.disabled);
+        let isLocked: Ref<boolean> = ref(!!props.isInitiallyEncrypted);
         let inputText: Ref<string> = ref(props.initialLength > 0 ? "*".repeat(props.initialLength) : props.modelValue);
 
         const isUnmasked: Ref<boolean> = ref(false);
@@ -141,6 +183,10 @@ export default defineComponent({
 
         const additionalValidationFunction: Ref<{ (input: string): [boolean, string] }> = ref(props.additionalValidationFunction);
         const inputBackgroundColor: ComputedRef<string> = computed(() => widgetBackgroundHexString());
+
+        const randomPasswordPreview: Ref<string> = ref('');
+        const randomValueType: Ref<RandomValueType> = ref(RandomValueType.Password);
+        const appSettings: Ref<AppSettings> = JSON.vaulticParse(JSON.vaulticStringify(app.settings));
 
         let floatLabelStyle = computed(() => {
             return {
@@ -207,29 +253,6 @@ export default defineComponent({
             ctx.emit("onDirty");
         }
 
-        async function generateRandomValue()
-        {
-            if (props.randomValueType == 0)
-            {
-                app.popups.showLoadingIndicator(colorModel.value.color, "Generating Phrase");
-                const response = await api.server.value.generateRandomPhrase(app.settings.value.randomPhraseLength.value);
-                app.popups.hideLoadingIndicator();
-
-                if (response.Success)
-                {
-                    onInput(response.Phrase!);
-                }
-                else
-                {
-                    defaultHandleFailedResponse(response);
-                }
-
-                return;
-            }
-
-            onInput(await api.utilities.generator.randomPassword(app.settings.value.randomValueLength.value));
-        }
-
         function copyValue()
         {
             clipboard.write(inputText.value);
@@ -281,10 +304,25 @@ export default defineComponent({
         // popover
         function onPopoverMouseLeave()
         {
-            setTimeout(() => 
+            setTimeout(() =>
             {
                 popoverHover.value = false;
             }, 50);
+        }
+
+        async function onGenerateRandomPasswordOrPhrase()
+        {
+            randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, 
+                randomValueType.value == RandomValueType.Password ? appSettings.value.randomValueLength.value : appSettings.value.randomPhraseLength.value,
+                appSettings.value.includeNumbersInRandomPassword.value, appSettings.value.includeSpecialCharactersInRandomPassword.value, 
+                appSettings.value.includeAmbiguousCharactersInRandomPassword.value, appSettings.value.passphraseSeperator.value);
+        }
+
+        function confirmRandomPasswordOrPhrase()
+        {
+            onInput(randomPasswordPreview.value);
+            randomPasswordPreview.value = "";
+            popover.value.toggle();
         }
 
         onMounted(() =>
@@ -339,10 +377,12 @@ export default defineComponent({
             backgroundColor,
             container,
             colorModel,
+            RandomValueType,
+            randomValueType,
+            appSettings,
             onAuthenticationSuccessful,
             onInput,
             unlock,
-            generateRandomValue,
             copyValue,
             focus,
             validate,
@@ -350,10 +390,13 @@ export default defineComponent({
             floatLabelStyle,
             inputBackgroundColor,
             computedFeedback,
+            randomPasswordPreview,
             isUnmasked,
             toggleMask,
             onContainerMouseLeave,
-            onPopoverMouseLeave
+            onPopoverMouseLeave,
+            onGenerateRandomPasswordOrPhrase,
+            confirmRandomPasswordOrPhrase
         }
     }
 })

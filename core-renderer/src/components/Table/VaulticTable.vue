@@ -97,7 +97,10 @@
                         </div>
                     </div>
                     <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
-                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" />
+                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" :isFielded="column.isFielded" />
+                    <template v-else-if="column.isFielded === false">
+                        {{ (slotProps.data as TableRowModel).backingObject?.[column.field] }}
+                    </template>
                     <template v-else>
                         {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
                     </template>

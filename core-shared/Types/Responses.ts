@@ -201,7 +201,7 @@ export interface GetSharingSettings extends BaseResponse
 {
     Username?: string;
     AllowSharedVaultsFromOthers?: boolean;
-    AllowSharingFrom?: AllowSharingFrom;
+    AllowSharingFrom?: number;
 }
 
 export interface UpdateSharingSettingsResponse extends BaseResponse

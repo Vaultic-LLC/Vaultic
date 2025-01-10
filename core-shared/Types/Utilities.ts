@@ -1,3 +1,4 @@
+import { RandomValueType } from "./Fields";
 import { ECEncryptionResult, TypedMethodResponse } from "./MethodResponse";
 
 export interface CoreCryptUtility
@@ -27,7 +28,7 @@ export interface ClientGeneratorUtility extends CoreGeneratorUtility
 {
     uniqueId: () => string;
     randomValue: (length: number) => string;
-    randomPassword: (length: number) => string;
+    generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => string;
 }
 
 export interface HashUtility

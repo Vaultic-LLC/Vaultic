@@ -164,8 +164,8 @@ export class VaulticRepository<T extends VaulticEntity>
 
         try 
         {
+            console.log(`Updating. Old Entity: ${JSON.stringify(entity)}\n New Entity: ${JSON.stringify(mockEntity)}\n`);
             const result = await repo.update(entity.identifier(), mockEntity);
-            console.log(`Updated rows: ${result.affected}`);
             return result.affected == 1;
         }
         catch (e)
@@ -189,7 +189,7 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             console.log(`Filed to override entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
-            await logRepository.log(undefined, `Failed to override entity\n ${e}`);
+            await logRepository.log(undefined, `Failed to override entity\n ${JSON.stringify(entity)}, \n${e}`);
             return false;
         }
 

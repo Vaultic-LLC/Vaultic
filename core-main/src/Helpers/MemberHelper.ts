@@ -8,7 +8,7 @@ export async function vaultAddedOrgsToAddedOrgInfo(vaultKey: string, addedOrgs: 
     const users: Set<number> = new Set();
     addedOrgs.forEach(o => 
     {
-        o.members.forEach((v, k, map) => users.add(k));
+        o.membersByUserID.forEach((v, k, map) => users.add(k));
     });
 
     const allMembers = Array.from(users);
@@ -23,7 +23,7 @@ export async function vaultAddedOrgsToAddedOrgInfo(vaultKey: string, addedOrgs: 
     {
         const userIDsAndKeys: UserIDAndKey[] = [];
 
-        for (const [key, value] of addedOrgs[i].members.entries()) 
+        for (const [key, value] of addedOrgs[i].membersByUserID.entries()) 
         {
             const usersPublicKey = getPublicKeyResponse.UsersAndPublicKeys[key];
             if (!usersPublicKey)
@@ -84,6 +84,7 @@ export async function vaultAddedMembersToOrgMembers(vaultKey: string, members: M
             VaultKeysByVaultID: {}
         };
 
+        // There will only be one vaultKeysByVaultID here so we can just set -1
         orgMember.VaultKeysByVaultID[-1] = JSON.vaulticStringify({
             vaultKey: encryptedVaultKey.value.data,
             publicKey: encryptedVaultKey.value.publicKey
@@ -113,7 +114,8 @@ export function memberArrayToModifiedOrgMemberWithoutVaultKey(members: Member[])
     });
 }
 
-export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey: string, addedVaults: number[], addedMembers: Member[])
+export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey: string, addedVaults: number[], addedMembers: Member[]):
+    Promise<[number[], ModifiedOrgMember[]]>
 {
     const addedOrgMembers: ModifiedOrgMember[] = addedMembers.map(m => 
     {
@@ -127,6 +129,7 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
         return mom;
     });
 
+    const vaultIDs: Set<number> = new Set();
     if (addedVaults.length > 0)
     {
         const memberVaultIdAndKeys: Map<number, { [key: number]: string }> = new Map();
@@ -134,6 +137,7 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
 
         for (let i = 0; i < userVaultsAndKeys[0].length; i++)
         {
+            vaultIDs.add(userVaultsAndKeys[0][i].vaultID);
             for (let j = 0; j < addedMembers.length; j++)
             {
                 const response = await environment.utilities.crypt.ECEncrypt(addedMembers[j].publicKey, userVaultsAndKeys[1][i]);
@@ -162,7 +166,7 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
         });
     }
 
-    return addedOrgMembers;
+    return [Array.from(vaultIDs), addedOrgMembers];
 }
 
 export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: string, addedVaults: number[], allMembers: Member[]):
@@ -193,7 +197,7 @@ export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: 
     const modifiedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, addedVaults, allMembers);
     return {
         AllVaults: addedVaults,
-        ModifiedOrgMembers: modifiedOrgMembers
+        ModifiedOrgMembers: modifiedOrgMembers[1]
     }
 }
 

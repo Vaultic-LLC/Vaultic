@@ -20,6 +20,7 @@ export interface TableColumnModel
 {
     header: string;
     field: string;
+    isFielded?: boolean;
     startingWidth?: string;
     component?: string;
     isGroupIconCell?: boolean;

@@ -121,9 +121,26 @@ export interface DisplayVault
 {
     name: string;
     userVaultID: number;
+    vaultID: number;
     userOrganizationID: number;
+    shared: boolean;
+    isArchived: boolean;
     lastUsed?: boolean;
     type?: VaultType;
+}
+
+export function getVaultType(vault: DisplayVault)
+{
+    if (vault.shared)
+    {
+        return VaultType.SharedWithOthers;
+    }
+    else if (vault.isArchived)
+    {
+        return VaultType.Archived;
+    }
+
+    return VaultType.Private;
 }
 
 export enum VaultType
@@ -137,6 +154,7 @@ export enum VaultType
 export interface ServerDisplayVault extends DisplayVault
 {
     vaultKey: string;
+    isSetup: boolean;
 }
 
 export interface UserData 
@@ -152,13 +170,21 @@ export interface CondensedVaultData
 {
     userOrganizationID: number;
     userVaultID: number;
+    vaultID: number;
     vaultPreferencesStoreState: string;
     name: string;
     shared: boolean;
+    isArchived: boolean;
     lastUsed: boolean;
     vaultStoreState: string;
     passwordStoreState: string;
     valueStoreState: string;
     filterStoreState: string;
     groupStoreState: string;
+}
+
+export interface UserVaultIDAndVaultID
+{
+    userVaultID: number;
+    vaultID: number;
 }

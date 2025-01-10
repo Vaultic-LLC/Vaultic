@@ -116,6 +116,10 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "boolean"
                 },
                 {
+                    name: "isArchived",
+                    type: "boolean"
+                },
+                {
                     name: "lastUsed",
                     type: "boolean"
                 }

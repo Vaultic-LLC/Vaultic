@@ -3,12 +3,13 @@ import { ComputedRef, Ref, computed, ref } from "vue";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 
 export class OrganizationStore extends Store<StoreState>
 {
     private internalFailedToRetrieveOrganizations: Ref<boolean>;
     private internalOrganizationsByID: Ref<Map<number, Organization>>;
-    private internalOrganizationIDsByUserVaultID: Ref<Map<number, Set<number>>>;
+    private internalOrganizationIDsByVaultIDs: Ref<Map<number, Set<number>>>;
 
     private internalOrganizations: ComputedRef<Organization[]>;
     private internalPinnedOrganizations: ComputedRef<Organization[]>;
@@ -16,7 +17,7 @@ export class OrganizationStore extends Store<StoreState>
     get failedToRetrieveOrganizations() { return this.state.failedToRetrieveOrganizations.value; }
     get organizations() { return this.internalOrganizations; }
     get organizationsByID() { return this.internalOrganizationsByID.value; }
-    get organizationIDsByUserVaultIDs() { return this.internalOrganizationIDsByUserVaultID.value; }
+    get organizationIDsByVaultIDs() { return this.internalOrganizationIDsByVaultIDs.value; }
     get pinnedOrganizations() { return this.internalPinnedOrganizations.value; }
 
     constructor()
@@ -25,7 +26,7 @@ export class OrganizationStore extends Store<StoreState>
 
         this.internalFailedToRetrieveOrganizations = ref(false);
         this.internalOrganizationsByID = ref(new Map());
-        this.internalOrganizationIDsByUserVaultID = ref(new Map());
+        this.internalOrganizationIDsByVaultIDs = ref(new Map());
 
         this.internalOrganizations = computed(() => this.internalOrganizationsByID.value.valueArray());
 
@@ -38,7 +39,7 @@ export class OrganizationStore extends Store<StoreState>
     {
         this.internalFailedToRetrieveOrganizations.value = false;
         this.internalOrganizationsByID.value = new Map();
-        this.internalOrganizationIDsByUserVaultID.value = new Map();
+        this.internalOrganizationIDsByVaultIDs.value = new Map();
     }
 
     protected defaultState()
@@ -49,16 +50,16 @@ export class OrganizationStore extends Store<StoreState>
     async getOrganizations(): Promise<boolean>
     {
         // reset so we don't have any duplicates
-        this.updateState(this.defaultState());
+        this.resetToDefault();
 
         const response = await api.server.organization.getOrganizations();
         if (!response.Success)
         {
-            this.state.failedToRetrieveOrganizations.value = true;
+            this.internalFailedToRetrieveOrganizations.value = true;
             return false;
         }
 
-        this.state.failedToRetrieveOrganizations.value = false;
+        this.internalFailedToRetrieveOrganizations.value = false;
         if (!response.OrganizationsAndUsers)
         {
             return true;
@@ -70,20 +71,20 @@ export class OrganizationStore extends Store<StoreState>
             {
                 organizationID: o.OrganizationID,
                 name: o.Name,
-                members: new Map(),
-                userVaultIDs: new Map()
+                membersByUserID: new Map(),
+                vaultIDsByVaultID: new Map()
             };
 
-            o.UserVaults.forEach(uv => 
+            o.VaultIDs.forEach(uv => 
             {
-                org.userVaultIDs.set(uv, uv);
+                org.vaultIDsByVaultID.set(uv, uv);
 
-                if (!this.internalOrganizationIDsByUserVaultID.value.has(uv))
+                if (!this.internalOrganizationIDsByVaultIDs.value.has(uv))
                 {
-                    this.internalOrganizationIDsByUserVaultID.value.set(uv, new Set());
+                    this.internalOrganizationIDsByVaultIDs.value.set(uv, new Set());
                 }
 
-                this.internalOrganizationIDsByUserVaultID.value.get(uv)?.add(o.OrganizationID);
+                this.internalOrganizationIDsByVaultIDs.value.get(uv)?.add(o.OrganizationID);
             });
 
             o.UserDemographics.forEach(u => 
@@ -99,7 +100,7 @@ export class OrganizationStore extends Store<StoreState>
                     publicKey: undefined
                 };
 
-                org.members.set(u.UserID, member)
+                org.membersByUserID.set(u.UserID, member)
             });
 
             this.internalOrganizationsByID.value.set(o.OrganizationID, org);
@@ -108,7 +109,7 @@ export class OrganizationStore extends Store<StoreState>
         return true;
     }
 
-    async createOrganization(masterKey: string, organization: Organization, addedVaults: number[], addedMembers: Member[]): Promise<boolean>
+    async createOrganization(masterKey: string, organization: Organization, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]): Promise<boolean>
     {
         const response = await api.server.organization.createOrganization(masterKey, organization.name, addedVaults, addedMembers);
         if (!response.Success)
@@ -117,19 +118,19 @@ export class OrganizationStore extends Store<StoreState>
             return false;
         }
 
-        addedMembers.forEach(m => 
+        addedMembers.forEach(m =>
         {
-            if (!organization.members.has(m.userID))
+            if (!organization.membersByUserID.has(m.userID))
             {
-                organization.members.set(m.userID, m);
+                organization.membersByUserID.set(m.userID, m);
             }
         });
 
-        addedVaults.forEach(v => this.updateOrgsForVault(v, [organization], []));
+        addedVaults.forEach(v => this.updateOrgsForVault(v.vaultID, [organization], []));
         return true;
     }
 
-    async updateOrganization(masterKey: string, organization: Organization, addedVaults: number[], removedVaults: number[],
+    async updateOrganization(masterKey: string, organization: Organization, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[],
         originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]): Promise<boolean>
     {
         const response = await api.server.organization.updateOrganization(masterKey, organization.organizationID, organization.name, addedVaults, removedVaults,
@@ -143,43 +144,43 @@ export class OrganizationStore extends Store<StoreState>
 
         addedMembers.forEach(m => 
         {
-            if (!organization.members.has(m.userID))
+            if (!organization.membersByUserID.has(m.userID))
             {
-                organization.members.set(m.userID, m);
+                organization.membersByUserID.set(m.userID, m);
             }
         });
 
         updatedMembers.forEach(m =>
         {
-            if (organization.members.has(m.userID))
+            if (organization.membersByUserID.has(m.userID))
             {
-                organization.members.get(m.userID)!.permission = m.permission;
+                organization.membersByUserID.get(m.userID)!.permission = m.permission;
             }
         });
 
         removedMembers.forEach(m => 
         {
-            if (organization.members.has(m.userID))
+            if (organization.membersByUserID.has(m.userID))
             {
-                organization.members.delete(m.userID);
+                organization.membersByUserID.delete(m.userID);
             }
         });
 
-        addedVaults.forEach(v => this.updateOrgsForVault(v, [organization], []));
-        removedVaults.forEach(v => this.updateOrgsForVault(v, [], [organization]));
+        addedVaults.forEach(v => this.updateOrgsForVault(v.vaultID, [organization], []));
+        removedVaults.forEach(v => this.updateOrgsForVault(v.vaultID, [], [organization]));
 
         return true;
     }
 
-    updateOrgsForVault(userVaultID: number, addedOrganizations: Organization[], removedOrganizations: Organization[])
+    updateOrgsForVault(vaultID: number, addedOrganizations: Organization[], removedOrganizations: Organization[])
     {
-        const organizationsByUserVaultID: Set<number> | undefined = this.organizationIDsByUserVaultIDs.get(userVaultID);
+        const organizationsByUserVaultID: Set<number> | undefined = this.internalOrganizationIDsByVaultIDs.value.get(vaultID);
         if (!organizationsByUserVaultID)
         {
             const set: Set<number> = new Set();
             addedOrganizations.forEach(o => set.add(o.organizationID));
 
-            this.organizationIDsByUserVaultIDs.set(userVaultID, set);
+            this.internalOrganizationIDsByVaultIDs.value.set(vaultID, set);
             return;
         }
 

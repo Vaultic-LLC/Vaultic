@@ -245,6 +245,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             .sign(secretBytes);
 
         this.currentSignature = jwt;
+        console.log(`Signing Signature Makeup: ${seriazliedMakeup}, Hash: ${hashedEntity}, Secret: ${signatureSecret}, Signature: ${jwt}\n`);
         return true;
     }
 
@@ -270,6 +271,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         const serializedMakeup = JSON.vaulticStringify(signatureMakeup);
         const hashedEntity = environment.utilities.hash.insecureHash(serializedMakeup);
         const secretBytes = new TextEncoder().encode(secretResponse.value!);
+        console.log(`Verifying Signature Makeup: ${serializedMakeup}, Hash: ${hashedEntity}, Secret: ${secretResponse.value}, Signature: ${this.currentSignature} \n`);
 
         try
         {
@@ -295,6 +297,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
             if (!equalHashes)
             {
+                console.log(`Failed verify: ${JSON.stringify(this)}`);
                 return TypedMethodResponse.fail(errorCodes.HASHES_DONT_MATCH);
             }
 

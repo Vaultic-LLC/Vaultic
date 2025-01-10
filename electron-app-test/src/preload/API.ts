@@ -3,7 +3,7 @@ import { ipcRenderer } from "electron";
 import { DeviceInfo } from "@vaultic/shared/Types/Device";
 import { AppController, ClientUserController, ClientVaultController, SessionController, ValueController } from "@vaultic/shared/Types/Controllers";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
-import { ClientVaultHelper, RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
+import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
 import { IAPI } from "@vaultic/shared/Types/API";
@@ -92,12 +92,6 @@ const serverHelper: ServerHelper =
     logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData)
 };
 
-const vaultHelper: ClientVaultHelper =
-{
-    loadArchivedVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultHelper:loadArchivedVault', masterKey, userVaultID),
-    unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => ipcRenderer.invoke('vaultHelper:unarchiveVault', masterKey, userVaultID, select)
-}
-
 const repositoryHelepr: RepositoryHelper =
 {
     backupData: (masterKey: string) => ipcRenderer.invoke('repositoryHelper:backupData', masterKey)
@@ -134,7 +128,6 @@ const vaultRepository: ClientVaultRepository =
     setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
     saveVault: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVault', masterKey, userVaultID, newData, currentData),
     createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, setAsActive, doBackup),
-    archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => ipcRenderer.invoke('vaultRepository:archiveVault', masterKey, userVaultID, backup),
     getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve)
 };
 
@@ -171,7 +164,6 @@ const api: IAPI =
         validation: validationHelper,
         vaultic: vaulticHelper,
         server: serverHelper,
-        vault: vaultHelper,
         repositories: repositoryHelepr
     },
     repositories: {

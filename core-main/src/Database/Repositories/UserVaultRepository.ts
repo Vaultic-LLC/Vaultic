@@ -353,11 +353,12 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             }
             else 
             {
-                const partialVaultPreferencesStoreState: DeepPartial<VaultPreferencesStoreState> =
-                    StoreState.getUpdatedPropertiesFromObject(newUserVault.vaultPreferencesStoreState);
-
-                transaction.overrideEntity(newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
-                    partialVaultPreferencesStoreState, () => environment.repositories.vaultPreferencesStoreStates);
+                const partialVaultPreferencesStoreState: DeepPartial<VaultPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUserVault.vaultPreferencesStoreState);
+                if (Object.keys(partialVaultPreferencesStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
+                        partialVaultPreferencesStoreState, () => environment.repositories.vaultPreferencesStoreStates);
+                }
             }
         }
 

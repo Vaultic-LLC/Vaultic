@@ -10,12 +10,12 @@
                     :width="'50%'" :maxWidth="''" />
             </VaulticFieldset :centered="true">
             <VaulticFieldset :centered="true">
-                <ObjectMultiSelect :label="'Vaults'" :color="color" :modelValue="selectedVaults" :options="allVaults"
+                <ObjectMultiSelect :label="'Vaults'" :color="color" v-model="selectedVaults" :options="allVaults"
                     :width="'50%'" :maxWidth="''" />
             </VaulticFieldset>
             <VaulticFieldset :centered="true" :fill-space="true">
                 <MemberTable ref="memberTable" :id="'organizationView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
-                    :currentMembers="orgState.members" />
+                    :currentMembers="orgState.membersByUserID" />
             </VaulticFieldset>
         </ObjectView>
     </div>
@@ -32,9 +32,9 @@ import MemberTable from '../Table/MemberTable.vue';
 import { ObjectSelectOptionModel, TableRowModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { defaultOrganization } from '../../Types/DataTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { Member, Organization } from '@vaultic/shared/Types/DataTypes';
 import { MemberTableComponent } from '../../Types/Components';
+import { UserVaultIDAndVaultID } from '@vaultic/shared/Types/Entities';
 
 export default defineComponent({
     name: "OrganizationView",
@@ -74,14 +74,14 @@ export default defineComponent({
 
         async function doSave(key: string)
         {
-            app.popups.showLoadingIndicator(color.value, "Saving Vault");
+            app.popups.showLoadingIndicator(color.value, "Saving Organization");
 
-            const addedVaults: number[] = [];
-            const removedVaults: number[] = [];
+            const addedVaults: UserVaultIDAndVaultID[] = [];
+            const removedVaults: UserVaultIDAndVaultID[] = [];
 
             selectedVaults.value.forEach(v => 
             {
-                if (!orgState.value.userVaultIDs.has(v.backingObject))
+                if (!orgState.value.vaultIDsByVaultID.has(v.backingObject.vaultID))
                 {
                     addedVaults.push(v.backingObject);
                 }
@@ -89,12 +89,19 @@ export default defineComponent({
 
             if (!props.creating)
             {
-                orgState.value.userVaultIDs.forEach((v, k, map) =>
+                orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
                 {
-                    const vault = selectedVaults.value.find(s => s.backingObject == k);
+                    const vault = selectedVaults.value.find(s => s.backingObject.vaultID == k);
                     if (!vault)
                     {
-                        removedVaults.push(k);
+                        const existingVault = app.userVaults.value.find(v => v.vaultID == k);
+                        if (existingVault)
+                        {
+                            removedVaults.push({
+                                userVaultID: existingVault.userVaultID,
+                                vaultID: existingVault.vaultID
+                            });                      
+                        }
                     }
                 });
             }
@@ -108,8 +115,13 @@ export default defineComponent({
             else
             {
                 handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value,
-                    addedVaults, removedVaults, orgState.value.members.valueArray(), memberChanges.addedMembers.valueArray(), 
+                    addedVaults, removedVaults, orgState.value.membersByUserID.valueArray(), memberChanges.addedMembers.valueArray(), 
                     memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray())));
+            }
+
+            if (props.creating)
+            {
+                refreshKey.value = Date.now().toString();
             }
         }
 
@@ -139,44 +151,57 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            const currentVaultModel: ObjectSelectOptionModel = 
-            {
-                label: app.currentVault.name,
-                backingObject: app.currentVault.userVaultID
-            };
-
-            allVaults.value.push(currentVaultModel);
-            allVaults.value = app.userVaults.value.map(v => 
-            {
-                const model: ObjectSelectOptionModel =
-                {
-                    label: v.name,
-                    backingObject: app.currentVault.userVaultID
-                };
-
-                return model;
-            });
-
-            if (orgState.value.userVaultIDs.has(app.currentVault.userVaultID))
+            if (app.currentVault.shared)
             {
                 const currentVaultModel: ObjectSelectOptionModel = 
                 {
                     label: app.currentVault.name,
                     backingObject: app.currentVault.userVaultID
                 };
+    
+                allVaults.value.push(currentVaultModel);    
+            }
+
+            allVaults.value = app.userVaults.value.filter(v => v.shared).map(v => 
+            {
+                const model: ObjectSelectOptionModel =
+                {
+                    label: v.name,
+                    // TODO: include vaultID and userVaultID
+                    backingObject: app.currentVault.userVaultID
+                };
+
+                return model;
+            });
+
+            if (orgState.value.vaultIDsByVaultID.has(app.currentVault.vaultID))
+            {
+                const currentVaultModel: ObjectSelectOptionModel = 
+                {
+                    label: app.currentVault.name,
+                    backingObject: 
+                    {
+                        userVaultID: app.currentVault.userVaultID,
+                        vaultID: app.currentVault.vaultID
+                    }
+                };
                 
                 selectedVaults.value.push(currentVaultModel);
             }
 
-            orgState.value.userVaultIDs.forEach((v, k, map) =>
+            orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
             {
-                const vault = app.userVaults.value.find(v => v.userVaultID == k);
+                const vault = app.userVaults.value.find(v => v.vaultID == k);
                 if (vault)
                 {
                     const currentVaultModel: ObjectSelectOptionModel = 
                     {
                         label: vault.name,
-                        backingObject: vault.userVaultID
+                        backingObject: 
+                        {
+                            userVaultID: vault.userVaultID,
+                            vaultID: vault.vaultID
+                        }
                     };
                     
                     selectedVaults.value.push(currentVaultModel)

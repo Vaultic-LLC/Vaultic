@@ -4,8 +4,8 @@ export interface Organization
 {
     organizationID: number;
     name: string;
-    members: Map<number, Member>;
-    userVaultIDs: Map<number, number>;
+    membersByUserID: Map<number, Member>;
+    vaultIDsByVaultID: Map<number, number>;
 }
 
 export interface Member

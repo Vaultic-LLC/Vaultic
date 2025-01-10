@@ -342,6 +342,8 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
         }
     }
 
+    // TODO: handle deleting vaults the user no longer has access to 
+
     // we've handled all trackedChanges. Clear them
     await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
 

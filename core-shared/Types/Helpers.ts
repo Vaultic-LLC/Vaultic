@@ -23,12 +23,6 @@ export interface ServerHelper
     logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
 };
 
-export interface ClientVaultHelper
-{
-    loadArchivedVault: (masterKey: string, userOrganizationID: number, userVaultID: number) => Promise<TypedMethodResponse<boolean | CondensedVaultData | null | undefined>>;
-    unarchiveVault: (masterKey: string, userOrganizationID: number, userVaultID: number, select: boolean) => Promise<TypedMethodResponse<boolean | CondensedVaultData | undefined>>;
-};
-
 export interface RepositoryHelper 
 {
     backupData: (masterKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;

@@ -18,10 +18,10 @@ export default defineComponent({
 	{
 		EnumInputField
 	},
-	props: ["model", "field", "data", "state"],
+	props: ["model", "field", "data", "state", "isFielded"],
 	setup(props)
 	{
-        const modelField: Ref<Field<any>> = ref(props.model.value[props.field]);
+        const modelField: Ref<Field<any>> = ref(props.isFielded === false ? props.model[props.field] : props.model.value[props.field]);
         const color: ComputedRef<string> = computed(() => props.data["color"]);
         const state: ComputedRef<any> = computed(() => props.state);
         const label: ComputedRef<string> = computed(() => props.data["label"]);

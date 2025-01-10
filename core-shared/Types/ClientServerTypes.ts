@@ -120,11 +120,11 @@ export interface OrganizationInfo
     OrganizationID: number;
     Name: string;
     UserDemographics: UserOrgInfo[];
-    UserVaults: number[];
+    VaultIDs: number[];
 }
 
 export enum AllowSharingFrom
 {
-    Everyone,
-    SpecificUsers
+    Everyone = "Everyone",
+    SpecificUsers = "Specific Users"
 }

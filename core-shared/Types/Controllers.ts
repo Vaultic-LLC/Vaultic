@@ -1,5 +1,6 @@
 import { AllowSharingFrom, ModifiedOrgMember } from "./ClientServerTypes";
 import { Member } from "./DataTypes";
+import { UserVaultIDAndVaultID } from "./Entities";
 import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
@@ -28,21 +29,15 @@ export interface ClientUserController
     searchForUsers: (username: string) => Promise<SearchForUsersResponse>
 }
 
-export interface ValueController
-{
-    generateRandomPhrase: (length: number) => Promise<GenerateRandomPhraseResponse>;
-}
-
 export interface ClientVaultController 
 {
-    deleteVault: (userOrganizationID: number, userVaultID: number) => Promise<BaseResponse>;
     getMembers: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultMembersResponse>;
 }
 
 export interface OrganizationController
 {
     getOrganizations: () => Promise<GetOrganizationsResponse>;
-    createOrganization: (masterKey: string, name: string, addedVaults: number[], addedMembers: Member[]) => Promise<BaseResponse>;
-    updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: number[], removedUserVaultID: number[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => Promise<BaseResponse>;
+    createOrganization: (masterKey: string, name: string, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]) => Promise<BaseResponse>;
+    updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => Promise<BaseResponse>;
     deleteOrganization: (organizationID: number) => Promise<BaseResponse>
 }

@@ -42,7 +42,6 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { Permissions, UserDemographics } from '@vaultic/shared/Types/ClientServerTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { Member } from '@vaultic/shared/Types/DataTypes';
 import { MemberChanges } from '../../Types/Components';
 
@@ -95,12 +94,12 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = []
-            models.push({ header: "Username", field: "username"});
+            models.push({ header: "Username", field: "username", isFielded: false});
 
             // TODO: should each individual user have the same permissiosn in a group or should they be custom? 
             // Should the group have the permissions or should the members within? 
             // probably the members within. Don't think I accounted for that anywhere
-            models.push({ header: "Permissions", field: "permissions" });
+            models.push({ header: "Permissions", field: "permission", isFielded: false });
 
             return models;
         });
@@ -151,6 +150,7 @@ export default defineComponent({
             {
                 lastSearchTime = Date.now();
 
+                // TODO: this should exclude the current members in the table
                 const response = await api.server.user.searchForUsers(value);
                 if (!response.Success)
                 {
@@ -206,6 +206,7 @@ export default defineComponent({
                     backingObject: editingMember.value
                 };
 
+                allSearchedUserDemographics.value = [selectedUserDemographics.value];
                 disableMemberSearch.value = true;
             }
 
@@ -222,41 +223,53 @@ export default defineComponent({
             editingMember.value!.publicKey = userDemographics.PublicKey;        
         }
 
-        function onEditMember(member: Field<Member>, e: any)
+        function onEditMember(member: Member, e: any)
         {
-            editingMember.value = member.value;
+            editingMember.value = {...member};
             onOpenPopover(e, false);
         }
 
         function onSaveMember()
         {
-            if (members.value.has(editingMember.value!.userID))
+            if (members.value.has(editingMember.value!.userID) && !addedMembers.has(editingMember.value!.userID))
             {
                 updatedMembers.set(editingMember.value!.userID, editingMember.value!);
             }
             else
             {
-                members.value.set(editingMember.value!.userID, editingMember.value!);
                 addedMembers.set(editingMember.value!.userID, editingMember.value!);
             }
+
+            members.value.set(editingMember.value!.userID, editingMember.value!);
+            selectedUserDemographics.value = 
+            {
+                label: "",
+                backingObject: {}
+            };
+
+            popover.value.toggle();
+            setTableRows();
         }
 
-        function onDeleteMember(member: Field<Member>)
+        function onDeleteMember(member: Member)
         {
-            if (members.value.has(member.value.userID) && !removedMembers.has(member.value.userID))
+            if (members.value.has(member.userID) && !removedMembers.has(member.userID))
             {
-                removedMembers.set(member.value.userID, member.value);
+                removedMembers.set(member.userID, member);
             }
 
-            if (addedMembers.has(member.value.userID))
+            if (addedMembers.has(member.userID))
             {
-                addedMembers.delete(member.value.userID);
+                addedMembers.delete(member.userID);
             }
 
-            if (updatedMembers.has(member.value.userID))
+            if (updatedMembers.has(member.userID))
             {
-                updatedMembers.delete(member.value.userID);
+                updatedMembers.delete(member.userID);
             }
+
+            members.value.delete(member.userID);
+            setTableRows();
         }
 
         function getChanges(): MemberChanges

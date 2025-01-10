@@ -105,9 +105,11 @@ export class UserVault extends VaulticEntity implements IUserVault
         return {
             userOrganizationID: this.userOrganizationID,
             userVaultID: this.userVaultID,
+            vaultID: this.vault.vaultID,
             vaultPreferencesStoreState: this.vaultPreferencesStoreState.state,
             name: this.vault.name,
             shared: this.vault.shared,
+            isArchived: this.vault.isArchived,
             lastUsed: this.vault.lastUsed,
             vaultStoreState: this.vault.vaultStoreState.state,
             passwordStoreState: this.vault.passwordStoreState.state,

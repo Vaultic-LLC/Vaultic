@@ -27,6 +27,9 @@ export class Vault extends VaulticEntity implements IVault
     @Column("boolean")
     shared: boolean
 
+    @Column("boolean")
+    isArchived: boolean;
+
     // Not backed up
     // Not encrypted
     @Column("boolean")
@@ -67,7 +70,8 @@ export class Vault extends VaulticEntity implements IVault
         return [
             nameof<Vault>("vaultID"),
             nameof<Vault>("name"),
-            nameof<Vault>("shared")
+            nameof<Vault>("shared"),
+            nameof<Vault>("isArchived")
         ];
     }
 
@@ -84,6 +88,7 @@ export class Vault extends VaulticEntity implements IVault
         properties.push("vaultID");
         properties.push("name");
         properties.push("shared");
+        properties.push(nameof<Vault>("isArchived"));
 
         return properties;
     }
@@ -100,6 +105,7 @@ export class Vault extends VaulticEntity implements IVault
         return [
             nameof<Vault>("name"),
             nameof<Vault>("shared"),
+            nameof<Vault>("isArchived"),
             nameof<Vault>("vaultStoreState"),
             nameof<Vault>("passwordStoreState"),
             nameof<Vault>("valueStoreState"),
@@ -137,7 +143,8 @@ export class Vault extends VaulticEntity implements IVault
             !!vault.currentSignature &&
             !!vault.vaultID &&
             !!vault.name &&
-            !!vault.shared &&
+            (vault.shared === true || vault.shared === false) &&
+            (vault.isArchived === true || vault.isArchived === false) &&
             !!vault.vaultStoreState &&
             !!vault.passwordStoreState &&
             !!vault.valueStoreState &&

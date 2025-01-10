@@ -65,14 +65,15 @@ export type KnownMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataO
     "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "userColorPalettes" | "pinnedDataTypes" |
     "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
     "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices";
-
+    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" | "membersByUserID" |
+    "vaultIDsByVaultID";
 
 export const MapFields: Set<KnownMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
     "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "userColorPalettes", "pinnedDataTypes", "pinnedFilters",
     "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
     "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
-    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices"
+    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices",
+    "membersByUserID", "vaultIDsByVaultID"
 ]);
 
 export class Field<T>
@@ -89,4 +90,10 @@ export class Field<T>
         this.lastModifiedTime = Date.now();
         this.forceUpdate = false;
     }
+}
+
+export enum RandomValueType
+{
+    Password = "Password",
+    Passphrase = "Passphrase"
 }

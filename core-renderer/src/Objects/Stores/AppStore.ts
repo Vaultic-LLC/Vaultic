@@ -11,23 +11,28 @@ import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
-import { DisplayVault, UserData, CondensedVaultData, VaultType } from "@vaultic/shared/Types/Entities";
+import { DisplayVault, UserData, CondensedVaultData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
 import { FilterStatus, DataType } from "../../Types/DataTypes";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 
 export interface AppSettings extends IFieldedObject
 {
     userColorPalettes: Field<Map<string, Field<ColorPalette>>>;
     autoLockTime: Field<AutoLockTime>;
-    randomValueLength: Field<number>;
-    randomPhraseLength: Field<number>;
     multipleFilterBehavior: Field<FilterStatus>;
     oldPasswordDays: Field<number>;
     percentMetricForPulse: Field<number>;
+    randomValueLength: Field<number>;
+    randomPhraseLength: Field<number>;
+    includeNumbersInRandomPassword: Field<boolean>;
+    includeSpecialCharactersInRandomPassword: Field<boolean>;
+    includeAmbiguousCharactersInRandomPassword: Field<boolean>;
+    passphraseSeperator: Field<string>;
 }
 
 export interface IAppStoreState extends StoreState
@@ -58,7 +63,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalUserVaults: Ref<DisplayVault[]>;
     private internalSharedWithUserVaults: Ref<BasicVaultStore[]>;
-    private internalArchivedVaults: Ref<BasicVaultStore[]>;
+    private internalArchivedVaults: ComputedRef<DisplayVault[]>;
 
     private internalPrivateVaults: ComputedRef<DisplayVault[]>;
     private internalSharedWithOthersVaults: ComputedRef<DisplayVault[]>;
@@ -109,7 +114,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         this.internalUserVaults = ref([]);
         this.internalSharedWithUserVaults = ref([]);
-        this.internalArchivedVaults = ref([]);
+        this.internalArchivedVaults = computed(() => this.internalUserVaults.value.filter(v => v.isArchived));
         this.internalCurrentVault = new ReactiveVaultStore();
 
         this.internalPrivateVaults = computed(() => this.userVaults.value.filter(v => v.type == VaultType.Private));
@@ -138,11 +143,15 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 id: new Field(""),
                 userColorPalettes: new Field(emptyUserColorPalettes),
                 autoLockTime: new Field(AutoLockTime.OneMinute),
-                randomValueLength: new Field(25),
-                randomPhraseLength: new Field(7),
                 multipleFilterBehavior: new Field(FilterStatus.Or),
                 oldPasswordDays: new Field(365),
-                percentMetricForPulse: new Field(1)
+                percentMetricForPulse: new Field(1),
+                randomValueLength: new Field(25),
+                randomPhraseLength: new Field(7),
+                includeNumbersInRandomPassword: new Field(true),
+                includeSpecialCharactersInRandomPassword: new Field(true),
+                includeAmbiguousCharactersInRandomPassword: new Field(true),
+                passphraseSeperator: new Field('-')
             })
         };
     }
@@ -192,7 +201,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore.resetToDefault();
 
         this.internalUserVaults.value = [];
-        this.internalArchivedVaults.value = [];
         this.internalSharedWithUserVaults.value = [];
         this.internalCurrentVault.resetToDefault();
 
@@ -233,7 +241,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         this.internalUserVaults.value = parsedUserData.displayVaults!;
         this.internalSharedWithUserVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
-        this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
+        //this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         this.internaLoadedUser.value = true;
@@ -272,8 +280,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         temp.push({
             userOrganizationID: vaultData.userOrganizationID,
             userVaultID: vaultData.userVaultID,
+            vaultID: vaultData.vaultID,
             name: vaultData.name,
-            lastUsed: setAsActive
+            shared: vaultData.shared,
+            isArchived: vaultData.isArchived,
+            lastUsed: setAsActive,
+            type: getVaultType(vaultData)
         });
 
         this.internalUserVaults.value = temp;
@@ -284,9 +296,19 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         removedOrganizations: Organization[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]):
         Promise<boolean>
     {
-        const success = await api.repositories.vaults.updateVault(masterKey, displayVault.userVaultID!, displayVault.name, shared,
-            addedOrganizations, removedOrganizations, addedMembers, updatedMembers, removedMembers, this.isOnline);
+        const updateVaultData: UpdateVaultData =
+        {
+            userVaultID: displayVault.userVaultID!,
+            name: displayVault.name,
+            shared: shared,
+            addedOrganizations: addedOrganizations,
+            removedOrganizations: removedOrganizations,
+            addedMembers: addedMembers,
+            updatedMembers: updatedMembers,
+            removedMembers: removedMembers,
+        };
 
+        const success = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData), this.isOnline);
         if (!success)
         {
             return false;
@@ -300,15 +322,27 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
+        if (displayVault.shared != shared)
+        {
+            displayVault.shared = shared;
+            displayVault.type = shared ? VaultType.SharedWithOthers : VaultType.Private;
+        }
+
         this.userVaults.value[index] = displayVault;
         this.emit("onVaultUpdated", displayVault);
 
         return true;
     }
 
-    async archiveVault(masterKey: string, userVaultID: number): Promise<boolean>
+    async updateArchiveStatus(masterKey: string, userVaultID: number, isArchived: boolean): Promise<boolean>
     {
-        const response = await api.repositories.vaults.archiveVault(masterKey, userVaultID, app.isOnline);
+        const updateVaultData: UpdateVaultData =
+        {
+            userVaultID: userVaultID,
+            isArchived: isArchived
+        };
+
+        const response = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData), app.isOnline);
         if (!response.success)
         {
             defaultHandleFailedResponse(response);
@@ -321,105 +355,30 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const tempUserVaults = [...this.userVaults.value];
-        const archivedDisplayVault = tempUserVaults.splice(index, 1)
-        const archviedVault = new BasicVaultStore(archivedDisplayVault[0])
-
-        // force reactivity. For some reason it doesn't work otherwise
-        this.internalUserVaults.value = tempUserVaults;
-
-        const tempArchivedVaults = [...this.internalArchivedVaults.value];
-        tempArchivedVaults.push(archviedVault);
-        this.internalArchivedVaults.value = tempArchivedVaults;
-
-        return true;
-    }
-
-    async loadArchivedVault(masterKey: string, userVaultID: number): Promise<boolean>
-    {
-        const archivedVault = this.archivedVaults.value.filter(v => v.userVaultID == userVaultID);
-        if (archivedVault.length != 1)
-        {
-            return false;
-        }
-
-        if (!archivedVault[0].isLoaded)
-        {
-            const vaultData = await api.helpers.vault.loadArchivedVault(masterKey, archivedVault[0].userOrganizationID, userVaultID);
-            if (!vaultData.success)
-            {
-                return false;
-            }
-
-            await archivedVault[0].setBasicVaultStoreData(vaultData.value as CondensedVaultData);
-        }
-
-        await this.internalCurrentVault.setVaultDataFromBasicVault(masterKey, archivedVault[0], false, true);
-        this.internalActiveAppView.value = AppView.Vault;
-
-        return true;
-    }
-
-    async unarchiveVault(masterKey: string, userVaultID: number): Promise<boolean>
-    {
-        const index = this.archivedVaults.value.findIndex(v => v.userVaultID == userVaultID);
-        if (index == -1)
-        {
-            return false;
-        }
-
-        const selected = this.currentVault.userVaultID == userVaultID;
-        let response = await api.helpers.vault.unarchiveVault(masterKey, this.internalArchivedVaults.value[index].userOrganizationID, userVaultID, selected);
-
-        if (!response.success)
-        {
-            return false;
-        }
-
-        const vaultData = response.value! as CondensedVaultData;
-
-        const tempUserVaults = [...this.internalUserVaults.value];
-        const tempArchivedVaults = [...this.internalArchivedVaults.value];
-
-        tempArchivedVaults.splice(index, 1);
-        tempUserVaults.push({
-            userOrganizationID: vaultData.userOrganizationID,
-            name: vaultData.name,
-            userVaultID: vaultData.userVaultID,
-            lastUsed: selected
-        });
-
-        // force reactivity. For some reason it doesn't work otherwise
-        this.internalUserVaults.value = tempUserVaults;
-        this.internalArchivedVaults.value = tempArchivedVaults;
-
-        if (selected)
-        {
-            await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData)
-            this.internalActiveAppView.value = AppView.Vault;
-        }
+        this.userVaults.value[index].isArchived = isArchived;
+        this.userVaults.value[index].type = getVaultType(this.userVaults.value[index]);
 
         return true;
     }
 
     async permanentlyDeleteVault(masterKey: string, userVaultID: number): Promise<boolean>
     {
-        const index = this.archivedVaults.value.findIndex(v => v.userVaultID == userVaultID);
+        const index = this.userVaults.value.findIndex(v => v.userVaultID == userVaultID);
         if (index == -1)
         {
             return false;
         }
 
-        const response = await api.server.vault.deleteVault(this.internalArchivedVaults.value[index].userOrganizationID, userVaultID);
-        if (!response)
+        const response = await api.repositories.vaults.deleteVault(masterKey, userVaultID);
+        if (!response.success)
         {
             return false;
         }
 
-        const tempArchivedVaults = [...this.internalArchivedVaults.value];
+        const tempArchivedVaults = [...this.internalUserVaults.value];
         tempArchivedVaults.splice(index, 1);
 
-        this.internalArchivedVaults.value = tempArchivedVaults;
+        this.internalUserVaults.value = tempArchivedVaults;
 
         const selected = this.currentVault.userVaultID == userVaultID;
         if (selected)
@@ -428,6 +387,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.emit('onVaultActive', this.internalUserVaults.value[0].userVaultID);
         }
 
+        return true;
+    }
+
+    async loadSharedVault(masterKey: string, userVaultID: number): Promise<boolean>
+    {
         return true;
     }
 

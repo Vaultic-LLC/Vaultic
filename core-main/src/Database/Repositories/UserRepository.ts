@@ -13,7 +13,7 @@ import { StoreState } from "../Entities/States/StoreState";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { EntityState, UserData, VaultType } from "@vaultic/shared/Types/Entities";
+import { EntityState, getVaultType, UserData, VaultType } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
@@ -325,7 +325,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalGetCurrentUserData(this: UserRepository): Promise<TypedMethodResponse<string | undefined>>
         {
-            console.log('getting data');
             const currentUser = await this.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
@@ -368,9 +367,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 userData.displayVaults!.push({
                     userOrganizationID: userVaults[i].userOrganizationID,
                     userVaultID: userVaults[i].userVaultID,
+                    vaultID: userVaults[i].vaultID,
                     name: userVaults[i].name,
+                    shared: userVaults[i].shared,
+                    isArchived: userVaults[i].isArchived,
                     lastUsed: userVaults[i].lastUsed,
-                    type: userVaults[i].shared ? VaultType.SharedWithOthers : VaultType.Private
+                    type: getVaultType(userVaults[i])
                 });
             }
 
@@ -579,6 +581,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             return false;
         }
 
+        console.log(`User: \n${JSON.stringify(user)}`)
         transaction.insertExistingEntity(user, () => this);
         transaction.insertExistingEntity(user.appStoreState!, () => environment.repositories.appStoreStates);
         transaction.insertExistingEntity(user.userPreferencesStoreState!, () => environment.repositories.userPreferencesStoreStates);
@@ -644,10 +647,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
                 needsToRePushData = true;
             }
-            else 
+            else
             {
                 const partialAppStoreState: Partial<AppStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
-                transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
+                if (Object.keys(partialAppStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
+                }
             }
         }
 
@@ -666,11 +672,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             else 
             {
                 const partialUserPreferencesStoreState: Partial<UserPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.userPreferencesStoreState);
-
-                transaction.overrideEntity(
-                    newUser.userPreferencesStoreState.userPreferencesStoreStateID,
-                    partialUserPreferencesStoreState,
-                    () => environment.repositories.userPreferencesStoreStates);
+                if (Object.keys(partialUserPreferencesStoreState).length > 0)
+                {
+                    transaction.overrideEntity(
+                        newUser.userPreferencesStoreState.userPreferencesStoreStateID,
+                        partialUserPreferencesStoreState,
+                        () => environment.repositories.userPreferencesStoreStates);
+                }
             }
         }
 

@@ -32,9 +32,12 @@ export class BaseVaultStore<V extends PasswordStore,
     W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState> implements DisplayVault
 {
     protected internalName: string;
+    protected internalShared: boolean;
+    protected internalIsArchived: boolean;
 
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
+    protected internalVaultID: number;
     protected internalPasswordStore: V;
     protected internalValueStore: W;
     protected internalFilterStore: X;
@@ -42,8 +45,11 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalVaultPreferencesStore: VaultPreferencesStore;
 
     get name() { return this.internalName; }
+    get shared() { return this.internalShared; }
+    get isArchived() { return this.internalIsArchived; }
     get userOrganizationID() { return this.internalUserOrganizationID; }
     get userVaultID() { return this.internalUserVaultID; }
+    get vaultID() { return this.internalVaultID; }
     get settings() { return this.state.settings; }
 
     get passwordStore() { return this.internalPasswordStore; }
@@ -62,6 +68,9 @@ export class BaseVaultStore<V extends PasswordStore,
     {
         this.internalUserOrganizationID = data.userOrganizationID;
         this.internalUserVaultID = data.userVaultID;
+        this.internalVaultID = data.vaultID;
+        this.internalShared = data.shared;
+        this.internalIsArchived = data.isArchived;
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
@@ -97,7 +106,10 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
 
         this.internalIsLoaded = false;
         this.internalName = displayVault.name;
+        this.internalShared = displayVault.shared;
+        this.internalUserOrganizationID = displayVault.userOrganizationID;
         this.internalUserVaultID = displayVault.userVaultID;
+        this.internalVaultID = displayVault.vaultID;
     }
 
     public async setBasicVaultStoreData(data: CondensedVaultData)
@@ -137,7 +149,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     {
         await super.setBaseVaultStoreData(data);
 
-        this.internalIsReadOnly.value = false;
+        this.internalIsReadOnly.value = data.isArchived;
 
         await this.internalPasswordStore.initalizeNewStateFromJSON(data.passwordStoreState);
         await this.internalValueStore.initalizeNewStateFromJSON(data.valueStoreState);
@@ -150,7 +162,9 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     public async setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)
     {
         this.internalIsReadOnly.value = readOnly;
+        this.internalUserOrganizationID = basicVault.userOrganizationID;
         this.internalUserVaultID = basicVault.userVaultID;
+        this.internalVaultID = basicVault.vaultID;
         this.initalizeNewState(basicVault.getState());
         this.internalVaultPreferencesStore.initalizeNewState(basicVault.vaultPreferencesStore.getState());
 

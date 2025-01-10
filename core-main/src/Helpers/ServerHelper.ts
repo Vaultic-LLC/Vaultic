@@ -11,6 +11,7 @@ import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
+import { ServerDisplayVault } from "@vaultic/shared/Types/Entities";
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
 {
@@ -115,8 +116,8 @@ async function logUserIn(masterKey: string, email: string,
                 console.timeEnd("2");
                 console.time("3");
 
-                // TODO: the userVault properties won't be e2e encrypted if this is the first time the user is loading 
-                // a vault shared from someone else
+                // Don't have to worry about shared vaults not being e2e encrypted when they are first shared since only display
+                // vaults of them run through here
                 const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
                 if (!result.success)
                 {
@@ -146,7 +147,7 @@ async function logUserIn(masterKey: string, email: string,
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
                 }
-                else 
+                else
                 {
                     finishResponse.userDataPayload = payload as UserDataPayload;
                 }
@@ -158,6 +159,7 @@ async function logUserIn(masterKey: string, email: string,
     }
 }
 
+// TODO: this shouldn't be needed until I return displayVaults from the server again
 async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
 {
     const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
@@ -168,8 +170,20 @@ async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDat
 
     for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
     {
-        const vault = payload!.archivedVaults![i];
-        const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!);
+        await decryptAndSetName(payload!.archivedVaults[i]);
+    }
+
+    for (let i = 0; i < (payload?.sharedVaults?.length ?? 0); i++)
+    {
+        await decryptAndSetName(payload!.sharedVaults[i]);
+    }
+
+    return payload;
+
+    async function decryptAndSetName(vault: ServerDisplayVault)
+    {
+        const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!, vault.isSetup);
+
         if (!vaultKey.success)
         {
             return false;
@@ -181,10 +195,8 @@ async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDat
             return false;
         }
 
-        payload!.archivedVaults![i].name = decryptedName.value;
+        vault.name = decryptedName.value;
     }
-
-    return payload;
 }
 
 const serverHelper: ServerHelper =
