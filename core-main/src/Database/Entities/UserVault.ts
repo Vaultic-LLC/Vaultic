@@ -57,6 +57,8 @@ export class UserVault extends VaulticEntity implements IUserVault
         return new UserVault();
     }
 
+    // Make sure this are included in repository.updateFromServer() so the signature can be re built properly when
+    // returning data from the server
     protected internalGetSignableProperties(): string[] 
     {
         return [

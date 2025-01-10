@@ -65,6 +65,8 @@ export class Vault extends VaulticEntity implements IVault
         return new Vault();
     }
 
+    // Make sure this are included in repository.updateFromServer() so the signature can be re built properly when
+    // returning data from the server
     protected internalGetSignableProperties(): string[] 
     {
         return [

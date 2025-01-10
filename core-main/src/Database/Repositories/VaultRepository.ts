@@ -732,6 +732,18 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             updatedVault = true;
         }
 
+        if (newVault.shared)
+        {
+            partialVault[nameof<Vault>("shared")] = newVault.shared;
+            updatedVault = true;
+        }
+
+        if (newVault.isArchived)
+        {
+            partialVault[nameof<Vault>("isArchived")] = newVault.isArchived;
+            updatedVault = true;
+        }
+
         if (updatedVault)
         {
             transaction.overrideEntity(newVault.vaultID, partialVault, () => this);
