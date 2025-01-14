@@ -35,6 +35,12 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return environment.databaseDataSouce.getRepository(Vault);
     }
 
+    public async getAllVaultIDs(): Promise<Set<number>>
+    {
+        const vaults = await this.repository.find();
+        return new Set(vaults.map(v => v.vaultID));
+    }
+
     public async setLastUsedVault(user: User, userVaultID: number)
     {
         const transaction = new Transaction();
@@ -113,6 +119,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         userVault.userVaultID = response.UserVaultID!;
         userVault.userOrganizationID = response.UserOrganizationID!;
         userVault.vaultID = response.VaultID!;
+        userVault.isOwner = true;
         userVault.vaultPreferencesStoreState.userVaultID = response.UserVaultID!;
         userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = response.VaultPreferencesStoreStateID!;
         userVault.vaultPreferencesStoreState.state = "{}";
@@ -862,22 +869,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
 
         return needsToRePushData;
-    }
-
-    public async deleteFromServer(vault: Partial<Vault>)
-    {
-        if (!vault.vaultID || vault.userVaults?.length == 0)
-        {
-            return;
-        }
-
-        const deleteVaultPromise = await this.repository.createQueryBuilder()
-            .delete()
-            .where("vaultID = :vaultID", { vaultID: vault.vaultID })
-            .execute();
-
-        const deleteUserVaultsPromise = environment.repositories.userVaults.deleteFromServerAndVault(vault.vaultID);
-        return Promise.all([deleteVaultPromise, deleteUserVaultsPromise]);
     }
 
     public async getStoreStates(masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>

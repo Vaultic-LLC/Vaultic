@@ -6,7 +6,7 @@ import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { ColorPalette, defaultColorPalettes, emptyUserColorPalettes } from "../../Types/Colors";
 import { AppView, AutoLockTime } from "../../Types/App";
-import { BasicVaultStore, ReactiveVaultStore } from "./VaultStore";
+import { ReactiveVaultStore } from "./VaultStore";
 import { UserPreferencesStore } from "./UserPreferencesStore";
 import { UserDataBreachStore } from "./UserDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
@@ -62,7 +62,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
 
     private internalUserVaults: Ref<DisplayVault[]>;
-    private internalSharedWithUserVaults: Ref<BasicVaultStore[]>;
+    private internalSharedWithUserVaults: ComputedRef<DisplayVault[]>;
     private internalArchivedVaults: ComputedRef<DisplayVault[]>;
 
     private internalPrivateVaults: ComputedRef<DisplayVault[]>;
@@ -113,12 +113,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalColorPalettes = computed(() => [...defaultColorPalettes.valueArray(), ...this.state.settings.value.userColorPalettes.value.valueArray()])
 
         this.internalUserVaults = ref([]);
-        this.internalSharedWithUserVaults = ref([]);
-        this.internalArchivedVaults = computed(() => this.internalUserVaults.value.filter(v => v.isArchived));
         this.internalCurrentVault = new ReactiveVaultStore();
 
         this.internalPrivateVaults = computed(() => this.userVaults.value.filter(v => v.type == VaultType.Private));
         this.internalSharedWithOthersVaults = computed(() => this.userVaults.value.filter(v => v.type == VaultType.SharedWithOthers));
+        this.internalSharedWithUserVaults = computed(() => this.internalUserVaults.value.filter(v => v.type == VaultType.SharedWithUser));
+        this.internalArchivedVaults = computed(() => this.internalUserVaults.value.filter(v => v.isArchived));
 
         // done after current vault so we can watch for userVaultID
         this.internalUsersPreferencesStore = new UserPreferencesStore(this);
@@ -201,7 +201,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore.resetToDefault();
 
         this.internalUserVaults.value = [];
-        this.internalSharedWithUserVaults.value = [];
         this.internalCurrentVault.resetToDefault();
 
         await api.cache.clear();
@@ -240,8 +239,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
 
         this.internalUserVaults.value = parsedUserData.displayVaults!;
-        this.internalSharedWithUserVaults.value = payload?.sharedVaults?.map(v => new BasicVaultStore(v)) ?? [];
-        //this.internalArchivedVaults.value = payload?.archivedVaults?.map(v => new BasicVaultStore(v)) ?? [];
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         this.internaLoadedUser.value = true;
@@ -284,6 +281,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             name: vaultData.name,
             shared: vaultData.shared,
             isArchived: vaultData.isArchived,
+            isOwner: vaultData.isOwner,
             lastUsed: setAsActive,
             type: getVaultType(vaultData)
         });

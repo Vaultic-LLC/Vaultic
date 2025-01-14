@@ -370,6 +370,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     vaultID: userVaults[i].vaultID,
                     name: userVaults[i].name,
                     shared: userVaults[i].shared,
+                    isOwner: userVaults[i].isOwner,
                     isArchived: userVaults[i].isArchived,
                     lastUsed: userVaults[i].lastUsed,
                     type: getVaultType(userVaults[i])

@@ -8,7 +8,7 @@ import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
-import { CondensedVaultData, EntityState } from "@vaultic/shared/Types/Entities";
+import { CondensedVaultData, EntityState, SharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
@@ -331,6 +331,12 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             updatedUserVault = true;
         }
 
+        if (newUserVault.permissions)
+        {
+            partialUserVault[nameof<UserVault>("permissions")] = newUserVault.permissions;
+            updatedUserVault = true;
+        }
+
         if (updatedUserVault)
         {
             transaction.overrideEntity(newUserVault.userVaultID, partialUserVault, () => this);
@@ -365,14 +371,6 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return needsToRePushData;
     }
 
-    public async deleteFromServerAndVault(vaultID: number)
-    {
-        this.repository.createQueryBuilder()
-            .delete()
-            .where("vaultID = :vaultID", { vaultID })
-            .execute();
-    }
-
     public async getStoreStates(masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>
     {
         return await safetifyMethod(this, internalGetStoreStates);
@@ -392,6 +390,35 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
 
             return TypedMethodResponse.success({ vaultPreferencesStoreState: condensedVaults[0][0].vaultPreferencesStoreState.state });
         }
+    }
+
+    public async setupSharedUserVault(masterKey: string, userVault: SharedClientUserVault): Promise<TypedMethodResponse<any>>
+    {
+        const newUserVault = new UserVault().makeReactive();
+        newUserVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
+
+        newUserVault.userVaultID = userVault.userVaultID;
+        newUserVault.userID = userVault.userID;
+        newUserVault.vaultID = userVault.vaultID;
+        newUserVault.userOrganizationID = userVault.userOrganizationID;
+        newUserVault.isOwner = false;
+        newUserVault.permissions = userVault.permissions;
+        newUserVault.vaultKey = userVault.vaultKey;
+
+        newUserVault.vaultPreferencesStoreState.userVaultID = userVault.userVaultID;
+        newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID;
+        newUserVault.vaultPreferencesStoreState.state = "{}";
+
+        const transaction = new Transaction();
+        transaction.insertEntity(newUserVault, masterKey, () => this);
+        transaction.insertEntity(newUserVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+
+        if (!await transaction.commit())
+        {
+            return TypedMethodResponse.transactionFail();
+        }
+
+        return TypedMethodResponse.success();
     }
 }
 

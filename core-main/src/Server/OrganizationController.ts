@@ -3,7 +3,7 @@ import { AxiosHelper } from "./AxiosHelper";
 import { OrganizationController } from "@vaultic/shared/Types/Controllers";
 import { Member } from "@vaultic/shared/Types/DataTypes";
 import { organizationUpdateAddedMembersToAddedOrgMembers, organizationUpdateAddedVaultsToAddedOrgMembers } from "../Helpers/MemberHelper";
-import { AddedVaultInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedVaultInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 
 export function createOrganizationController(axiosHelper: AxiosHelper): OrganizationController

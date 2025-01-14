@@ -5,6 +5,7 @@ import { VaulticEntity } from "./VaulticEntity"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData, IUserVault } from "@vaultic/shared/Types/Entities"
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
+import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity implements IUserVault
@@ -32,6 +33,12 @@ export class UserVault extends VaulticEntity implements IUserVault
     @ManyToOne(() => Vault, (vault: Vault) => vault.userVaults, { eager: true })
     @JoinColumn({ name: "vaultID" })
     vault: Vault;
+
+    @Column("boolean")
+    isOwner: boolean;
+
+    @Column("integer")
+    permissions?: ServerPermissions;
 
     // Encrypted by Users Private Key
     // Backed Up
@@ -66,6 +73,7 @@ export class UserVault extends VaulticEntity implements IUserVault
             nameof<UserVault>("userOrganizationID"),
             nameof<UserVault>("userID"),
             nameof<UserVault>("vaultID"),
+            nameof<UserVault>("isOwner"),
             nameof<UserVault>("vaultKey")
         ];
     }
@@ -112,7 +120,9 @@ export class UserVault extends VaulticEntity implements IUserVault
             name: this.vault.name,
             shared: this.vault.shared,
             isArchived: this.vault.isArchived,
+            isOwner: this.isOwner,
             lastUsed: this.vault.lastUsed,
+            permissions: this.permissions,
             vaultStoreState: this.vault.vaultStoreState.state,
             passwordStoreState: this.vault.passwordStoreState.state,
             valueStoreState: this.vault.valueStoreState.state,

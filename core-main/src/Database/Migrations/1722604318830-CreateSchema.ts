@@ -92,6 +92,15 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "integer"
                 },
                 {
+                    name: "isOwner",
+                    type: "boolean",
+                },
+                {
+                    name: "permissions",
+                    type: "integer",
+                    isNullable: true
+                },
+                {
                     name: "vaultKey",
                     type: "text"
                 }

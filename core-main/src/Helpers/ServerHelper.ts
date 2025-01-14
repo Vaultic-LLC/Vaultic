@@ -11,7 +11,6 @@ import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
-import { ServerDisplayVault } from "@vaultic/shared/Types/Entities";
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
 {
@@ -142,15 +141,16 @@ async function logUserIn(masterKey: string, email: string,
                 // This has to go after merging in the event that the user isn't in the local data yet
                 await environment.repositories.users.setCurrentUser(masterKey, email);
 
-                const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
-                if (!payload)
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
-                }
-                else
-                {
-                    finishResponse.userDataPayload = payload as UserDataPayload;
-                }
+                // const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
+                // if (!payload)
+                // {
+                //     return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
+                // }
+                // else
+                // {
+                //     finishResponse.userDataPayload = payload as UserDataPayload;
+                // }
+
                 console.timeEnd("5");
             }
         }
@@ -160,44 +160,43 @@ async function logUserIn(masterKey: string, email: string,
 }
 
 // TODO: this shouldn't be needed until I return displayVaults from the server again
-async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
-{
-    const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-    if (!currentUser)
-    {
-        return false;
-    }
+// async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
+// {
+//     const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+//     if (!currentUser)
+//     {
+//         return false;
+//     }
 
-    for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
-    {
-        await decryptAndSetName(payload!.archivedVaults[i]);
-    }
+//     for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
+//     {
+//         await decryptAndSetName(payload!.archivedVaults[i]);
+//     }
 
-    for (let i = 0; i < (payload?.sharedVaults?.length ?? 0); i++)
-    {
-        await decryptAndSetName(payload!.sharedVaults[i]);
-    }
+//     for (let i = 0; i < (payload?.sharedVaults?.length ?? 0); i++)
+//     {
+//         await decryptAndSetName(payload!.sharedVaults[i]);
+//     }
 
-    return payload;
+//     return payload;
 
-    async function decryptAndSetName(vault: ServerDisplayVault)
-    {
-        const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!, vault.isSetup);
+//     async function decryptAndSetName(vault: ServerDisplayVault)
+//     {
+//         const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!, vault.isSetup);
+//         if (!vaultKey.success)
+//         {
+//             return false;
+//         }
 
-        if (!vaultKey.success)
-        {
-            return false;
-        }
+//         const decryptedName = await environment.utilities.crypt.decrypt(vaultKey.value!, vault.name!);
+//         if (!decryptedName.success)
+//         {
+//             return false;
+//         }
 
-        const decryptedName = await environment.utilities.crypt.decrypt(vaultKey.value!, vault.name!);
-        if (!decryptedName.success)
-        {
-            return false;
-        }
-
-        vault.name = decryptedName.value;
-    }
-}
+//         vault.name = decryptedName.value;
+//     }
+// }
 
 const serverHelper: ServerHelper =
 {

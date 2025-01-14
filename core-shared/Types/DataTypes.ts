@@ -1,4 +1,4 @@
-import { Permissions } from "./ClientServerTypes";
+import { ServerPermissions } from "./ClientServerTypes";
 
 export interface Organization
 {
@@ -14,7 +14,7 @@ export interface Member
     firstName: string;
     lastName: string;
     username: string;
-    permission: Permissions;
+    permission: ServerPermissions;
     icon: string | undefined;
     publicKey: string | undefined;
 }

@@ -8,6 +8,7 @@ import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 
 export interface VaultSettings extends IFieldedObject
 {
@@ -34,6 +35,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalName: string;
     protected internalShared: boolean;
     protected internalIsArchived: boolean;
+    protected internalIsOwner: boolean;
 
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
@@ -47,6 +49,7 @@ export class BaseVaultStore<V extends PasswordStore,
     get name() { return this.internalName; }
     get shared() { return this.internalShared; }
     get isArchived() { return this.internalIsArchived; }
+    get isOwner() { return this.internalIsOwner; }
     get userOrganizationID() { return this.internalUserOrganizationID; }
     get userVaultID() { return this.internalUserVaultID; }
     get vaultID() { return this.internalVaultID; }
@@ -90,6 +93,7 @@ export class BaseVaultStore<V extends PasswordStore,
     }
 }
 
+// Currently not used anymore with the change to store archived / shared vaults locally
 export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, FilterStore, GroupStore>
 {
     protected internalIsLoaded: boolean;
@@ -149,7 +153,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     {
         await super.setBaseVaultStoreData(data);
 
-        this.internalIsReadOnly.value = data.isArchived;
+        this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
 
         await this.internalPasswordStore.initalizeNewStateFromJSON(data.passwordStoreState);
         await this.internalValueStore.initalizeNewStateFromJSON(data.valueStoreState);

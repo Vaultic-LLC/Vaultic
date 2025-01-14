@@ -1,3 +1,5 @@
+import { ServerPermissions } from "./ClientServerTypes"
+
 export enum EntityState
 {
     Inserted,
@@ -32,13 +34,15 @@ export interface IUser extends IVaulticEntity
 
 export interface IUserVault extends IVaulticEntity 
 {
-    userVaultID: number
-    userID: number
-    userOrganizationID: number
-    user: IUser
-    vaultID: number
+    userVaultID: number;
+    userID: number;
+    userOrganizationID: number;
+    user: IUser;
+    vaultID: number;
     vault: IVault;
-    vaultKey: string
+    vaultKey: string;
+    isOwner: boolean;
+    permissions?: ServerPermissions;
     vaultPreferencesStoreState: IVaultPreferencesStoreState;
 };
 
@@ -125,6 +129,7 @@ export interface DisplayVault
     userOrganizationID: number;
     shared: boolean;
     isArchived: boolean;
+    isOwner: boolean;
     lastUsed?: boolean;
     type?: VaultType;
 }
@@ -133,7 +138,12 @@ export function getVaultType(vault: DisplayVault)
 {
     if (vault.shared)
     {
-        return VaultType.SharedWithOthers;
+        if (vault.isOwner)
+        {
+            return VaultType.SharedWithOthers;
+        }
+
+        return VaultType.SharedWithUser;
     }
     else if (vault.isArchived)
     {
@@ -151,9 +161,8 @@ export enum VaultType
     Archived
 };
 
-export interface ServerDisplayVault extends DisplayVault
+export interface SharedClientUserVault extends IUserVault
 {
-    vaultKey: string;
     isSetup: boolean;
 }
 
@@ -175,7 +184,9 @@ export interface CondensedVaultData
     name: string;
     shared: boolean;
     isArchived: boolean;
+    isOwner: boolean;
     lastUsed: boolean;
+    permissions?: ServerPermissions;
     vaultStoreState: string;
     passwordStoreState: string;
     valueStoreState: string;

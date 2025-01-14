@@ -119,17 +119,12 @@ export default defineComponent({
 
                 async function onKeySuccess(key: string)
                 {
-                    if (data['type'] == VaultType.Private || 
-                        data['type'] == VaultType.SharedWithOthers ||
-                        data['type'] == VaultType.Archived)
+                    if (!(await app.setActiveVault(key, data['userVaultID'])))
                     {
-                        if (!(await app.setActiveVault(key, data['userVaultID'])))
-                        {
-                            app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
-                            resolve(false);
+                        app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
+                        resolve(false);
 
-                            return;
-                        }
+                        return;
                     }
 
                     resolve(true);

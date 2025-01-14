@@ -1,7 +1,7 @@
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
-import { AddedOrgInfo, AddedVaultInfo, AddedVaultMembersInfo, ModifiedOrgMember, OrgAndUserKeys, UserIDAndKey, VaultIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultInfo, AddedVaultMembersInfo, ModifiedOrgMember, OrgAndUserKeys, ServerPermissions, UserIDAndKey, VaultIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
 
 export async function vaultAddedOrgsToAddedOrgInfo(vaultKey: string, addedOrgs: Organization[]): Promise<AddedOrgInfo>
 {

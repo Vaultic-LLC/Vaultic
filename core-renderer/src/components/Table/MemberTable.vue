@@ -15,8 +15,8 @@
                     @onSearch="onUserSearch" @update:model-value="onUserSelected"/>
             </VaulticFieldset>
             <VaulticFieldset :centered="true">
-                <EnumInputField :label="'Permission'" :disabled="!editingMember" :color="color" v-model="editingMember!.permission" 
-                    :optionsEnum="Permissions" :width="'100%'" :maxWidth="''" />
+                <EnumInputField :label="'Permission'" :disabled="!editingMember" :color="color" v-model="editingPermission" 
+                    :optionsEnum="ViewableServerPermissions" :width="'100%'" :maxWidth="''" />
             </VaulticFieldset>
             <VaulticFieldset :centered="true">
                 <PopupButton :color="color" :disabled="!editingMember" :text="'Confirm'" @onClick="onSaveMember" />
@@ -41,7 +41,7 @@ import { HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSou
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
-import { Permissions, UserDemographics } from '@vaultic/shared/Types/ClientServerTypes';
+import { ServerPermissions, serverPermissionToViewableServerPermission, UserDemographics, ViewableServerPermissions, viewableServerPermissionsToServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
 import { Member } from '@vaultic/shared/Types/DataTypes';
 import { MemberChanges } from '../../Types/Components';
 
@@ -76,6 +76,7 @@ export default defineComponent({
         const allSearchedUserDemographics: Ref<ObjectSelectOptionModel[]> = ref([]);
         const loading: Ref<boolean> = ref(false);
 
+        const editingPermission: Ref<ViewableServerPermissions> = ref(ViewableServerPermissions.View);
         const editingMember: Ref<Member | undefined> = ref(undefined);
 
         const addedMembers: Map<number, Member> = new Map();
@@ -130,7 +131,6 @@ export default defineComponent({
             memberCollection.updateValues(rows);
         }
 
-        let lastSearchTime = 0;
         let searchTimeout: any = undefined;
         async function onUserSearch(value: string)
         {
@@ -148,8 +148,6 @@ export default defineComponent({
             loading.value = true;
             searchTimeout = setTimeout(async() => 
             {
-                lastSearchTime = Date.now();
-
                 // TODO: this should exclude the current members in the table
                 const response = await api.server.user.searchForUsers(value);
                 if (!response.Success)
@@ -187,19 +185,21 @@ export default defineComponent({
             if (creating)
             {
                 disableMemberSearch.value = false;
-                editingMember.value = 
+                editingPermission.value = ViewableServerPermissions.View;
+                editingMember.value =
                 {
                     userID: -1,
                     firstName: '',
                     lastName: '',
                     username: '',
-                    permission: Permissions.View,
+                    permission: ServerPermissions.View,
                     icon: undefined,
                     publicKey: undefined
                 };
             }
             else 
             {
+                editingPermission.value = serverPermissionToViewableServerPermission(editingMember.value!.permission);
                 selectedUserDemographics.value = 
                 {
                     label: editingMember.value!.username,
@@ -231,6 +231,7 @@ export default defineComponent({
 
         function onSaveMember()
         {
+            editingMember.value!.permission = viewableServerPermissionsToServerPermissions(editingPermission.value);
             if (members.value.has(editingMember.value!.userID) && !addedMembers.has(editingMember.value!.userID))
             {
                 updatedMembers.set(editingMember.value!.userID, editingMember.value!);
@@ -294,8 +295,9 @@ export default defineComponent({
             userHeaderTab,
             tableColumns,
             tableDataSources,
-            Permissions,
+            ViewableServerPermissions,
             editingMember,
+            editingPermission,
             loading,
             selectedUserDemographics,
             allSearchedUserDemographics,

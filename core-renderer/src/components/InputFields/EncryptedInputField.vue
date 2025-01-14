@@ -69,7 +69,7 @@
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
-                        <!-- Slider for length -->
+                        <SliderInput :color="colorModel.color" />
                     </VaulticFieldset>
                     <VaulticFieldset> 
                         <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.includeNumbersInRandomPassword.value" 

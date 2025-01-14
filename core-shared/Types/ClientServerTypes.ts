@@ -1,5 +1,5 @@
 import { DeepPartial } from "../Helpers/TypeScriptHelper";
-import { IUser, IUserVault, IVault, ServerDisplayVault } from "./Entities";
+import { IUser, IUserVault, IVault, SharedClientUserVault } from "./Entities";
 
 export interface Session
 {
@@ -44,14 +44,43 @@ export interface UserDataPayload
     user?: DeepPartial<IUser>;
     userVaults?: DeepPartial<IUserVault>[];
     vaults?: DeepPartial<IVault>[];
-    archivedVaults?: ServerDisplayVault[];
-    sharedVaults?: ServerDisplayVault[];
+    sharedUserVaults?: SharedClientUserVault[];
+    removedUserVaults?: DeepPartial<IUserVault>[];
+    removedVaults?: DeepPartial<IVault>[];
 };
 
-export enum Permissions
+export enum ServerPermissions
+{
+    View,
+    ViewAndEdit
+}
+
+export enum ViewableServerPermissions
 {
     View = "View",
     ViewAndEdit = "View And Edit"
+}
+
+export function viewableServerPermissionsToServerPermissions(p: ViewableServerPermissions)
+{
+    switch (p)
+    {
+        case ViewableServerPermissions.View:
+            return ServerPermissions.View;
+        case ViewableServerPermissions.ViewAndEdit:
+            return ServerPermissions.ViewAndEdit;
+    }
+}
+
+export function serverPermissionToViewableServerPermission(p: ServerPermissions)
+{
+    switch (p)
+    {
+        case ServerPermissions.View:
+            return ViewableServerPermissions.View;
+        case ServerPermissions.ViewAndEdit:
+            return ViewableServerPermissions.ViewAndEdit;
+    }
 }
 
 export interface VaultIDAndKey
@@ -93,7 +122,7 @@ export interface AddedVaultInfo
 export interface ModifiedOrgMember
 {
     UserID: number;
-    Permission: Permissions;
+    Permission: ServerPermissions;
     VaultKeysByVaultID?: { [key: number]: string };
 }
 
@@ -107,7 +136,7 @@ export interface UserInfo
 
 export interface UserOrgInfo extends UserInfo
 {
-    Permissions: Permissions;
+    Permissions: ServerPermissions;
 }
 
 export interface UserDemographics extends UserInfo

@@ -1,5 +1,6 @@
 <template>
     <div class="sliderContainer">
+        <div>{{ label }}</div>
         <Slider v-model="valueHolder" @update:model-value="onInput" :min="minValue" :max="maxValue" />
         <TextInputField v-model.number="valueHolder" :color="color" :width="'5vw'" :minWidth="''" :maxWidth="''" 
             @update:model-value="onInput" />
