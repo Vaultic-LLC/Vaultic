@@ -25,7 +25,7 @@
     </Popover>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, Reactive, reactive } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, Reactive, reactive, watch } from 'vue';
 
 import TextInputField from '../InputFields/TextInputField.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
@@ -66,7 +66,7 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
         const color: ComputedRef<string> = computed(() => props.color);
 
-        const members: Ref<Map<number, Member>> = ref(props.currentMembers);
+        const members: Ref<Map<number, Member>> = ref(props.currentMembers ?? new Map());
         
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
         const memberCollection: SortedCollection = new SortedCollection([]);
@@ -96,11 +96,7 @@ export default defineComponent({
         {
             const models: TableColumnModel[] = []
             models.push({ header: "Username", field: "username", isFielded: false});
-
-            // TODO: should each individual user have the same permissiosn in a group or should they be custom? 
-            // Should the group have the permissions or should the members within? 
-            // probably the members within. Don't think I accounted for that anywhere
-            models.push({ header: "Permissions", field: "permission", isFielded: false });
+            models.push({ header: "Permissions", field: "permission", isFielded: false, component: 'PermissionsCell' });
 
             return models;
         });
@@ -281,6 +277,12 @@ export default defineComponent({
                 removedMembers
             }
         }
+
+        watch(() => props.currentMembers, (newValue, _) =>
+        {
+            members.value = newValue;
+            setTableRows();
+        });
 
         onMounted(() =>
         {

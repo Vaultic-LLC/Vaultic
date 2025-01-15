@@ -334,9 +334,9 @@ export default defineComponent({
             showEditPasswordPopup.value = true;
         }
 
-        function onEditValue(value: ReactiveValue)
+        function onEditValue(value: Field<ReactiveValue>)
         {
-            currentEditingValueModel.value = value;
+            currentEditingValueModel.value = value.value;
             showEditValuePopup.value = true;
         }
 
@@ -360,11 +360,11 @@ export default defineComponent({
             }
         }
 
-        function onPasswordDeleteInitiated(password: ReactivePassword)
+        function onPasswordDeleteInitiated(password: Field<ReactivePassword>)
         {
             deletePassword.value = async (key: string) =>
             {
-                return await app.currentVault.passwordStore.deletePassword(key, password);
+                return await app.currentVault.passwordStore.deletePassword(key, password.value);
             };
 
             app.popups.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
@@ -386,11 +386,11 @@ export default defineComponent({
             }
         }
 
-        function onValueDeleteInitiated(value: ReactiveValue)
+        function onValueDeleteInitiated(value: Field<ReactiveValue>)
         {
             deleteValue.value = async (key: string) =>
             {
-                return await app.currentVault.valueStore.deleteNameValuePair(key, value);
+                return await app.currentVault.valueStore.deleteNameValuePair(key, value.value);
             };
 
             app.popups.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });

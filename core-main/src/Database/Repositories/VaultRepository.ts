@@ -24,7 +24,7 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { VaultsAndKeys } from "../../Types/Responses";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 
@@ -329,7 +329,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 const response = await vaulticServer.vault.updateVault(parsedUpdateVaultData.userVaultID, userVaults[0][0].userOrganizationID,
                     parsedUpdateVaultData.shared, addedOrgInfo, removedOrgIDs, addedVaultMemberInfo, updatedModifiedOrgMembers, removedMemberIDs);
 
-
                 if (!response.Success)
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed to update vault on server");
@@ -484,6 +483,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const partialVaultsToBackup: Partial<Vault>[] = [];
         const vaultKeys: string[] = [];
 
+        console.log(`\nUser Vaults with vaults to backup: ${JSON.stringify(userVaultsWithVaultsToBackup[0])}\n`)
         for (let i = 0; i < userVaultsWithVaultsToBackup[0].length; i++)
         {
             const vaultBackup = {};
@@ -545,6 +545,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 .leftJoinAndSelect("vault.filterStoreState", "filterStoreState")
                 .leftJoinAndSelect("vault.groupStoreState", "groupStoreState")
                 .where("userVaults.userID = :userID", { userID: currentUser?.userID })
+                .andWhere("(userVaults.isOwner = true OR userVaults.permissions = :permissions)", { permissions: ServerPermissions.ViewAndEdit })
                 .andWhere(`(
                     vault.entityState != :entityState OR 
                     vaultStoreState.entityState != :entityState OR 

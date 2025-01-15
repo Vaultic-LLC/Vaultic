@@ -4,6 +4,7 @@ import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
+import { CreateOrganizationData } from "@vaultic/shared/Types/Controllers";
 
 export class OrganizationStore extends Store<StoreState>
 {
@@ -111,7 +112,14 @@ export class OrganizationStore extends Store<StoreState>
 
     async createOrganization(masterKey: string, organization: Organization, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]): Promise<boolean>
     {
-        const response = await api.server.organization.createOrganization(masterKey, organization.name, addedVaults, addedMembers);
+        const data: CreateOrganizationData =
+        {
+            name: organization.name,
+            addedVaults,
+            addedMembers
+        };
+
+        const response = await api.server.organization.createOrganization(masterKey, JSON.vaulticStringify(data));
         if (!response.Success)
         {
             defaultHandleFailedResponse(response);

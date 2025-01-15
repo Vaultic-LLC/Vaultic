@@ -155,7 +155,8 @@ import ColorTableRowCell from './Rows/ColorTableRowCell.vue';
 import PropertySelectorCell from './Rows/PropertySelectorCell.vue';
 import EnumInputCell from './Rows/EnumInputCell.vue';
 import FilterValueSelectorCell from './Rows/FilterValueSelectorCell.vue';
-import EncryptedInputCell from "./Rows/EncryptedInputCell.vue"
+import EncryptedInputCell from "./Rows/EncryptedInputCell.vue";
+import PermissionsCell from './Rows/PermissionsCell.vue';
 
 import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
@@ -191,7 +192,8 @@ export default defineComponent({
         PropertySelectorCell,
         EnumInputCell,
         FilterValueSelectorCell,
-        EncryptedInputCell
+        EncryptedInputCell,
+        PermissionsCell
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
         'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading'],

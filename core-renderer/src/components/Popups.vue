@@ -50,7 +50,7 @@
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="popupStore.vaultPopupIsShowing" :closePopup="popupStore.onVaultPopupClose"
-                    :minWidth="'800px'" :minHeight="'480px'">
+                    :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
                     <VaultView :creating="popupStore.vaultModel == undefined" :model="popupStore.vaultModel" />
                 </ObjectPopup>
             </Transition>

@@ -1,14 +1,17 @@
 import { ipcRenderer } from "electron";
 
 import { DeviceInfo } from "@vaultic/shared/Types/Device";
-import { AppController, ClientUserController, ClientVaultController, SessionController, ValueController } from "@vaultic/shared/Types/Controllers";
+import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
 import { IAPI } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
+import { CondensedVaultData, UserData, UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
+import { AllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { RandomValueType } from "@vaultic/shared/Types/Fields";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
 {
@@ -36,16 +39,23 @@ const userController: ClientUserController =
     deactivateUserSubscription: (email: string, deactivationKey: string) => ipcRenderer.invoke('userController:deactivateUserSubscription', email, deactivationKey),
     getDevices: () => ipcRenderer.invoke('userController:getDevices'),
     reportBug: () => ipcRenderer.invoke('userController:reportBug'),
-};
+    getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
+    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom),
+    searchForUsers: (username: string) => ipcRenderer.invoke('userController:searchForUsers', username)
 
-const valueController: ValueController =
-{
-    generateRandomPhrase: (length: number) => ipcRenderer.invoke('valueController:generateRandomPhrase', length)
 };
 
 const vaultController: ClientVaultController =
 {
-    deleteVault: (userVaultID: number) => ipcRenderer.invoke('vaultController:deleteVault', userVaultID)
+    getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID)
+}
+
+const organizationController: OrganizationController =
+{
+    getOrganizations: () => ipcRenderer.invoke('organizationController:getOrganizations'),
+    createOrganization: (masterKey: string, createOrganizationData: string) => ipcRenderer.invoke('organizationController:createOrganization', masterKey, createOrganizationData),
+    updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => ipcRenderer.invoke('organizationController:updateOrganization', masterKey, organizationID, name, addedVaults, removedVaults, originalMembers, addedMembers, updatedMembers, removedMembers),
+    deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganization', organizationID)
 }
 
 const cryptUtility: ClientCryptUtility =
@@ -67,7 +77,7 @@ const generatorUtility: Promisify<ClientGeneratorUtility> =
 {
     uniqueId: () => ipcRenderer.invoke('generatorUtility:uniqueId'),
     randomValue: (length: number) => ipcRenderer.invoke('generatorUtility:randomValue', length),
-    randomPassword: (length: number) => ipcRenderer.invoke('generatorUtility:randomPassword', length),
+    generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => ipcRenderer.invoke('generatorUtility:generateRandomPasswordOrPassphrase', type, length, includeNumbers, includeSpecialCharacters, includeAbmiguousCharacters, passphraseSeperator),
     ECKeys: () => ipcRenderer.invoke('generatorUtility:ECKeys')
 };
 
@@ -125,10 +135,12 @@ const userRepository: ClientUserRepository =
 
 const vaultRepository: ClientVaultRepository =
 {
+    updateVault: (masterKey: string, updateVaultData: string, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:updateVault', masterKey, updateVaultData, doBackup),
     setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
-    saveVault: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVault', masterKey, userVaultID, newData, currentData),
-    createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, setAsActive, doBackup),
-    getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve)
+    saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, newData, currentData),
+    createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, shared, setAsActive, addedOrganizations, addedMembers, doBackupData),
+    getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve),
+    deleteVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:deleteVault', masterKey, userVaultID)
 };
 
 const userVaultRepository: ClientUserVaultRepository =
@@ -152,8 +164,8 @@ const api: IAPI =
         app: appController,
         session: sessionController,
         user: userController,
-        value: valueController,
-        vault: vaultController
+        vault: vaultController,
+        organization: organizationController
     },
     utilities: {
         crypt: cryptUtility,

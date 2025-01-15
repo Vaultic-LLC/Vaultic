@@ -80,7 +80,7 @@ export async function vaultAddedMembersToOrgMembers(vaultKey: string, members: M
         const orgMember: ModifiedOrgMember =
         {
             UserID: members[i].userID,
-            Permission: members[i].permission,
+            Permissions: members[i].permission,
             VaultKeysByVaultID: {}
         };
 
@@ -107,7 +107,7 @@ export function memberArrayToModifiedOrgMemberWithoutVaultKey(members: Member[])
         const modifiedOrgMember: ModifiedOrgMember =
         {
             UserID: m.userID,
-            Permission: m.permission
+            Permissions: m.permission
         }
 
         return modifiedOrgMember;
@@ -122,7 +122,7 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
         const mom: ModifiedOrgMember =
         {
             UserID: m.userID,
-            Permission: m.permission,
+            Permissions: m.permission,
             VaultKeysByVaultID: {}
         };
 

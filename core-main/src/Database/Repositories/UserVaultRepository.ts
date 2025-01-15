@@ -331,7 +331,8 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             updatedUserVault = true;
         }
 
-        if (newUserVault.permissions)
+        // need to check for null since enum value could be 0
+        if (newUserVault.permissions != null)
         {
             partialUserVault[nameof<UserVault>("permissions")] = newUserVault.permissions;
             updatedUserVault = true;
@@ -392,7 +393,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         }
     }
 
-    public async setupSharedUserVault(masterKey: string, userVault: SharedClientUserVault): Promise<TypedMethodResponse<any>>
+    public async setupSharedUserVault(masterKey: string, userVault: SharedClientUserVault, transaction: Transaction): Promise<void>
     {
         const newUserVault = new UserVault().makeReactive();
         newUserVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
@@ -409,16 +410,8 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID;
         newUserVault.vaultPreferencesStoreState.state = "{}";
 
-        const transaction = new Transaction();
         transaction.insertEntity(newUserVault, masterKey, () => this);
         transaction.insertEntity(newUserVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
-
-        if (!await transaction.commit())
-        {
-            return TypedMethodResponse.transactionFail();
-        }
-
-        return TypedMethodResponse.success();
     }
 }
 

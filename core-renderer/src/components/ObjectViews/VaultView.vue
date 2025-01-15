@@ -1,26 +1,32 @@
 <template>
-    <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
-        <VaulticFieldset :centered="true">
-            <TextInputField :label="'Name'" v-model="vaultState.name" :color="color"
-                :width="'50%'" :maxWidth="''" />
-        </VaulticFieldset>
-        <VaulticFieldset  :centered="true">
-            <CheckboxInputField :label="'Share'" v-model="shareVault" :color="color"
-                :width="'50%'" :maxWidth="''" :height="'1.25vh'" :minHeight="'12px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
-        </VaulticFieldset>
-        <Transition name="fade">
-            <VaulticFieldset v-if="shareVault" :centered="true">
-                <ObjectMultiSelect :label="'Organizations'" :color="color" v-model="selectedOrganizations" 
-                    :options="allOrganizations" :width="'50%'" :maxWidth="''" />
+    <div class="vaultView__header">
+        <h2 v-if="creating">Create Vault</h2>
+        <h2 v-else>Edit Vault</h2>
+    </div>
+    <div class="vaultView__content">
+        <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
+            <VaulticFieldset :centered="true">
+                <TextInputField :label="'Name'" v-model="vaultState.name" :color="color"
+                    :width="'50%'" :maxWidth="''" />
             </VaulticFieldset>
-        </Transition>
-        <Transition name="fade">
-            <VaulticFieldset v-if="shareVault" :centered="true" :fillSpace="true">
-                <MemberTable ref="memberTable" :id="'vaultView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
-                    :currentMembers="vaultMembers" :externalLoading="loadingIndividuals" />
+            <VaulticFieldset  :centered="true">
+                <CheckboxInputField :label="'Share'" v-model="shareVault" :color="color"
+                    :width="'50%'" :maxWidth="''" :height="'1.25vh'" :minHeight="'12px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
             </VaulticFieldset>
-        </Transition>
-    </ObjectView>
+            <Transition name="fade">
+                <VaulticFieldset v-if="shareVault" :centered="true">
+                    <ObjectMultiSelect :label="'Organizations'" :color="color" v-model="selectedOrganizations" 
+                        :options="allOrganizations" :width="'50%'" :maxWidth="''" />
+                </VaulticFieldset>
+            </Transition>
+            <Transition name="fade">
+                <VaulticFieldset v-if="shareVault" :centered="true" :fillSpace="true">
+                    <MemberTable ref="memberTable" :id="'vaultView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
+                        :currentMembers="vaultMembers" :externalLoading="loadingIndividuals" />
+                </VaulticFieldset>
+            </Transition>
+        </ObjectView>
+    </div>
 </template>
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, Ref, ref, onMounted } from 'vue';
@@ -194,6 +200,7 @@ export default defineComponent({
 
             if (response.Success)
             {
+                const tempMembers: Map<number, Member> = new Map();
                 response.UserOrgInfo?.forEach(u => 
                 {
                     const member: Member =
@@ -207,8 +214,10 @@ export default defineComponent({
                         publicKey: undefined
                     };
 
-                    vaultMembers.value.set(u.UserID, member);
+                    tempMembers.set(u.UserID, member);
                 });
+
+                vaultMembers.value = tempMembers;
             }
 
             loadingIndividuals.value = false;
@@ -227,11 +236,29 @@ export default defineComponent({
             loadingIndividuals,
             onSave,
         };
-    },
+    }
 })
 </script>
 
 <style>
+.vaultView__header {
+    height: 5%;
+    display: flex;
+    justify-content: center;
+    color: white;
+    animation: fadeIn 1s linear forwards;
+    margin: 5%;
+    margin-bottom: 0;
+    font-size: clamp(15px, 1vw, 25px);
+}
+
+.vaultView__content {
+	position: absolute;
+	top: 15%;
+	width: 100%;
+	height: 85%;
+}
+
 #vaultView__memberTable {
     position: relative;
     height: 90%;

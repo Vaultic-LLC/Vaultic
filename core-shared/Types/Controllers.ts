@@ -34,10 +34,17 @@ export interface ClientVaultController
     getMembers: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultMembersResponse>;
 }
 
+export interface CreateOrganizationData
+{
+    name: string;
+    addedVaults: UserVaultIDAndVaultID[];
+    addedMembers: Member[];
+}
+
 export interface OrganizationController
 {
     getOrganizations: () => Promise<GetOrganizationsResponse>;
-    createOrganization: (masterKey: string, name: string, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]) => Promise<BaseResponse>;
+    createOrganization: (masterKey: string, createOrganizationData: string) => Promise<BaseResponse>;
     updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => Promise<BaseResponse>;
     deleteOrganization: (organizationID: number) => Promise<BaseResponse>
 }

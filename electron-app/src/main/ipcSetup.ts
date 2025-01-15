@@ -39,7 +39,7 @@ export default function setupIPC()
 	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, userVaultID)));
 
 	ipcMain.handle('organizationController:getOrganizations', (e) => validateSender(e, () => vaulticServer.organization.getOrganizations()));
-	ipcMain.handle('organizationController:createOrganization', (e, masterKey: string, name: string, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]) => validateSender(e, () => vaulticServer.organization.createOrganization(masterKey, name, addedVaults, addedMembers)));
+	ipcMain.handle('organizationController:createOrganization', (e, masterKey: string, createOrganizationData: string) => validateSender(e, () => vaulticServer.organization.createOrganization(masterKey, createOrganizationData)));
 	ipcMain.handle('organizationController:updateOrganization', (e, masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => validateSender(e, () => vaulticServer.organization.updateOrganization(masterKey, organizationID, name, addedVaults, removedVaults, originalMembers, addedMembers, updatedMembers, removedMembers)));
 	ipcMain.handle('organizationController:deleteOrganization', (e, organizationID: number) => validateSender(e, () => vaulticServer.organization.deleteOrganization(organizationID)));
 

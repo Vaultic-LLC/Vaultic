@@ -53,7 +53,7 @@ const vaultController: ClientVaultController =
 const organizationController: OrganizationController =
 {
 	getOrganizations: () => ipcRenderer.invoke('organizationController:getOrganizations'),
-	createOrganization: (masterKey: string, name: string, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]) => ipcRenderer.invoke('organizationController:createOrganization', masterKey, name, addedVaults, addedMembers),
+	createOrganization: (masterKey: string, createOrganizationData: string) => ipcRenderer.invoke('organizationController:createOrganization', masterKey, createOrganizationData),
 	updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => ipcRenderer.invoke('organizationController:updateOrganization', masterKey, organizationID, name, addedVaults, removedVaults, originalMembers, addedMembers, updatedMembers, removedMembers),
 	deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganization', organizationID)
 }

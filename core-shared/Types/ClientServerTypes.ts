@@ -122,7 +122,7 @@ export interface AddedVaultInfo
 export interface ModifiedOrgMember
 {
     UserID: number;
-    Permission: ServerPermissions;
+    Permissions: ServerPermissions;
     VaultKeysByVaultID?: { [key: number]: string };
 }
 

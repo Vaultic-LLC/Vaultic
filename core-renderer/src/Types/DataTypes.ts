@@ -257,7 +257,7 @@ export function defaultOrganization(): Organization
     return {
         organizationID: -1,
         name: '',
-        members: new Map(),
-        userVaultIDs: new Map()
+        membersByUserID: new Map(),
+        vaultIDsByVaultID: new Map()
     }
 }

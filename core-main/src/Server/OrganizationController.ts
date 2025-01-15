@@ -1,9 +1,9 @@
 import { BaseResponse, GetOrganizationsResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
-import { OrganizationController } from "@vaultic/shared/Types/Controllers";
+import { CreateOrganizationData, OrganizationController } from "@vaultic/shared/Types/Controllers";
 import { Member } from "@vaultic/shared/Types/DataTypes";
 import { organizationUpdateAddedMembersToAddedOrgMembers, organizationUpdateAddedVaultsToAddedOrgMembers } from "../Helpers/MemberHelper";
-import { AddedVaultInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedVaultInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 
 export function createOrganizationController(axiosHelper: AxiosHelper): OrganizationController
@@ -13,11 +13,13 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         return axiosHelper.api.post('Organization/GetOrganizations');
     }
 
-    async function createOrganization(masterKey: string, name: string, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]): Promise<BaseResponse>
+    async function createOrganization(masterKey: string, createOrganizationData: string): Promise<BaseResponse>
     {
-        const addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, addedVaults.map(v => v.userVaultID), addedMembers);
+        const orgData: CreateOrganizationData = JSON.vaulticParse(createOrganizationData);
+        const addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, orgData.addedVaults.map(v => v.userVaultID), orgData.addedMembers);
+
         return axiosHelper.api.post('Organization/CreateOrganization', {
-            Name: name,
+            Name: orgData.name,
             AddedVaults: addedOrgMembers[0],
             AddedMembers: addedOrgMembers[1]
         });
@@ -58,7 +60,7 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
                 const modifiedOrgMember: ModifiedOrgMember =
                 {
                     UserID: m.userID,
-                    Permission: m.permission
+                    Permissions: m.permission
                 }
 
                 return modifiedOrgMember;

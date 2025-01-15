@@ -356,7 +356,9 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             for (let i = 0; i < userVaults.length; i++)
             {
-                if (userVaults[i].lastUsed)
+                // we only want to set our last used vault for our vaults, not ones another user 
+                // may have accessed
+                if (userVaults[i].lastUsed && userVaults[i].isOwner)
                 {
                     if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
                     {
