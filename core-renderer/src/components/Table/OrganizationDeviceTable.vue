@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, reactive, ref } from 'vue';
+import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, reactive, ref, watch } from 'vue';
 
 import VaulticTable from './VaulticTable.vue';
 import AddButton from './Controls/AddButton.vue';
@@ -83,14 +83,14 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (activeTab.value == 0)
             {
-                models.push({ header: "Name", field: "name"});
+                models.push({ header: "Name", field: "name" });
                 models.push({ header: "Type", field: "type" });
                 models.push({ header: "Model", field: "model" });
                 models.push({ header: "Version", field: "version" });
             }
             else 
             {
-                models.push({ header: "Name", field: "name" });
+                models.push({ header: "Name", field: "name", isFielded: false });
             }
 
             return models;
@@ -194,16 +194,16 @@ export default defineComponent({
             app.popups.showOrganizationPopup(() => {});
         }
 
-        function onEditOrganization(organization: Field<Organization>)
+        function onEditOrganization(organization: Organization)
         {
-            
+            app.popups.showOrganizationPopup(() => {}, organization);
         }
 
         function onDeleteOrganization(organization: Field<Organization>)
-        {
-            
+        {        
         }
 
+        watch(() => app.organizations.organizations.value.length, setTableRows);
         onMounted(setTableRows);
 
         return {

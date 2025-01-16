@@ -15,12 +15,12 @@ You can run unit tests by calling `runAllTests` at the end of the `initApp` meth
 to view the progress and result of Unit Tests. **Note: this requires the Setup above to be completed **
 
 ### Additional Testing 
-PG Admin will be running locally if you need to query the database. You can access it by navigating to `localhost:5050`, logging in, and adding the server.
+PG Admin will be running locally if you need to query and analyze the database. You can access it by navigating to `localhost:5050`, logging in, and adding the server.
 Account Credentials:
 - Email: root@root.com
 - Password: root
 
 Server Credentials:
 - Name: VaulticTest
-- Connection: host.docker.internal
+- Host name / address: host.docker.internal
 - Password: root

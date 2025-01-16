@@ -1,5 +1,7 @@
 <template>
-    {{ permissionString }}
+    <div>
+        {{ permissionString }}
+    </div>
 </template>
 
 <script lang="ts">
@@ -15,7 +17,7 @@ export default defineComponent({
 	{
         const permissionString: ComputedRef<string> = computed(() => 
             serverPermissionToViewableServerPermission((props.model as Member).permission));
-            
+
 		return {
             permissionString
 		};

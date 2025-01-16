@@ -1,10 +1,8 @@
 import { BaseResponse, GetOrganizationsResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
-import { CreateOrganizationData, OrganizationController } from "@vaultic/shared/Types/Controllers";
-import { Member } from "@vaultic/shared/Types/DataTypes";
+import { CreateOrganizationData, OrganizationController, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 import { organizationUpdateAddedMembersToAddedOrgMembers, organizationUpdateAddedVaultsToAddedOrgMembers } from "../Helpers/MemberHelper";
 import { AddedVaultInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
-import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 
 export function createOrganizationController(axiosHelper: AxiosHelper): OrganizationController
 {
@@ -25,37 +23,38 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         });
     }
 
-    async function updateOrganization(masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[],
-        removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[],
-        removedMembers: Member[]): Promise<BaseResponse>
+    async function updateOrganization(masterKey: string, updateOrganizationData: string): Promise<BaseResponse>
     {
+        const parsedUpdatedOrgData: UpdateOrganizationData = JSON.vaulticParse(updateOrganizationData);
+
         let addedVaultModifiedOrgMembers: AddedVaultInfo;
-        let removedVaultIDs: number[];
-        let addedOrgMembers: [number[], ModifiedOrgMember[]];
-        let updatedModifiedOrgMembers: ModifiedOrgMember[];
-        let removedMemberIDs: number[];
+        let removedVaultIDs: number[] = [];
+        let addedOrgMembers: [number[], ModifiedOrgMember[]] = [[], []];
+        let updatedModifiedOrgMembers: ModifiedOrgMember[] = [];
+        let removedMemberIDs: number[] = [];
 
-        const addedUserVaultIDs = addedVaults.map(v => v.userVaultID);
+        const addedUserVaultIDs = parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID);
 
-        if (addedVaults.length > 0)
+        if (parsedUpdatedOrgData.addedVaults.length > 0)
         {
-            const allMembers = [...originalMembers, ...addedMembers];
+            const allMembers = [...parsedUpdatedOrgData.originalMembers, ...parsedUpdatedOrgData.addedMembers];
             addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, addedUserVaultIDs, allMembers);
         }
 
-        if (removedVaults.length > 0)
+        if (parsedUpdatedOrgData.removedVaults.length > 0)
         {
-            removedVaultIDs = removedVaults.map(v => v.vaultID);
+            removedVaultIDs = parsedUpdatedOrgData.removedVaults.map(v => v.vaultID);
         }
 
-        if (addedMembers.length > 0)
+        if (parsedUpdatedOrgData.addedMembers.length > 0)
         {
-            addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, addedUserVaultIDs, addedMembers);
+            addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, [...addedUserVaultIDs, ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)],
+                parsedUpdatedOrgData.addedMembers);
         }
 
-        if (updatedMembers.length > 0)
+        if (parsedUpdatedOrgData.updatedMembers.length > 0)
         {
-            updatedModifiedOrgMembers = updatedMembers.map(m =>
+            updatedModifiedOrgMembers = parsedUpdatedOrgData.updatedMembers.map(m =>
             {
                 const modifiedOrgMember: ModifiedOrgMember =
                 {
@@ -67,9 +66,9 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
             });
         }
 
-        if (removedMembers.length > 0)
+        if (parsedUpdatedOrgData.removedMembers.length > 0)
         {
-            removedMemberIDs = removedMembers.map(m => m.userID);
+            removedMemberIDs = parsedUpdatedOrgData.removedMembers.map(m => m.userID);
         }
         // addedMembers have public keys so those are good
         // if there are any addedVautls, we need to get public keys for everyone in the org in order to add those vaults
@@ -80,8 +79,8 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         // should only have to fetch public keys if there is an added vault
 
         return axiosHelper.api.post('Organization/UpdateOrganizaiton', {
-            OrganizationID: organizationID,
-            Name: name,
+            OrganizationID: parsedUpdatedOrgData.organizationID,
+            Name: parsedUpdatedOrgData.name,
             AddedVaults: addedVaultModifiedOrgMembers,
             RemovedVaults: removedVaultIDs,
             AddedMembers: addedOrgMembers[1],

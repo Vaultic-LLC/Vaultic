@@ -54,7 +54,7 @@ const organizationController: OrganizationController =
 {
 	getOrganizations: () => ipcRenderer.invoke('organizationController:getOrganizations'),
 	createOrganization: (masterKey: string, createOrganizationData: string) => ipcRenderer.invoke('organizationController:createOrganization', masterKey, createOrganizationData),
-	updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => ipcRenderer.invoke('organizationController:updateOrganization', masterKey, organizationID, name, addedVaults, removedVaults, originalMembers, addedMembers, updatedMembers, removedMembers),
+	updateOrganization: (masterKey: string, updateOrganizationData: string) => ipcRenderer.invoke('organizationController:updateOrganization', masterKey, updateOrganizationData),
 	deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganization', organizationID)
 }
 

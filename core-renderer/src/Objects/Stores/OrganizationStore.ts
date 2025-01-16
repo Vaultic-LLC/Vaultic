@@ -4,7 +4,7 @@ import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
-import { CreateOrganizationData } from "@vaultic/shared/Types/Controllers";
+import { CreateOrganizationData, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 
 export class OrganizationStore extends Store<StoreState>
 {
@@ -61,11 +61,6 @@ export class OrganizationStore extends Store<StoreState>
         }
 
         this.internalFailedToRetrieveOrganizations.value = false;
-        if (!response.OrganizationsAndUsers)
-        {
-            return true;
-        }
-
         response.OrganizationInfo?.forEach(o => 
         {
             const org: Organization =
@@ -126,6 +121,15 @@ export class OrganizationStore extends Store<StoreState>
             return false;
         }
 
+        organization.organizationID = response.OrganizationID!;
+        addedVaults.forEach(v => 
+        {
+            if (!organization.vaultIDsByVaultID.has(v.vaultID))
+            {
+                organization.vaultIDsByVaultID.set(v.vaultID, v.vaultID);
+            }
+        });
+
         addedMembers.forEach(m =>
         {
             if (!organization.membersByUserID.has(m.userID))
@@ -135,15 +139,28 @@ export class OrganizationStore extends Store<StoreState>
         });
 
         addedVaults.forEach(v => this.updateOrgsForVault(v.vaultID, [organization], []));
+        this.organizationsByID.set(organization.organizationID, organization);
+
         return true;
     }
 
-    async updateOrganization(masterKey: string, organization: Organization, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[],
-        originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]): Promise<boolean>
+    async updateOrganization(masterKey: string, organization: Organization, unchangedVaults: UserVaultIDAndVaultID[], addedVaults: UserVaultIDAndVaultID[],
+        removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]): Promise<boolean>
     {
-        const response = await api.server.organization.updateOrganization(masterKey, organization.organizationID, organization.name, addedVaults, removedVaults,
-            originalMembers, addedMembers, updatedMembers, removedMembers);
+        const updateOrganizationData: UpdateOrganizationData =
+        {
+            organizationID: organization.organizationID,
+            name: organization.name,
+            unchangedVaults,
+            addedVaults,
+            removedVaults,
+            originalMembers,
+            addedMembers,
+            updatedMembers,
+            removedMembers
+        };
 
+        const response = await api.server.organization.updateOrganization(masterKey, JSON.vaulticStringify(updateOrganizationData));
         if (!response.Success)
         {
             defaultHandleFailedResponse(response);

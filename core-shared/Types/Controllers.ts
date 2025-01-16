@@ -1,7 +1,7 @@
 import { AllowSharingFrom, ModifiedOrgMember } from "./ClientServerTypes";
 import { Member } from "./DataTypes";
 import { UserVaultIDAndVaultID } from "./Entities";
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -41,10 +41,23 @@ export interface CreateOrganizationData
     addedMembers: Member[];
 }
 
+export interface UpdateOrganizationData
+{
+    organizationID: number;
+    name: string;
+    unchangedVaults: UserVaultIDAndVaultID[];
+    addedVaults: UserVaultIDAndVaultID[];
+    removedVaults: UserVaultIDAndVaultID[];
+    originalMembers: Member[];
+    addedMembers: Member[];
+    updatedMembers: Member[];
+    removedMembers: Member[];
+}
+
 export interface OrganizationController
 {
     getOrganizations: () => Promise<GetOrganizationsResponse>;
-    createOrganization: (masterKey: string, createOrganizationData: string) => Promise<BaseResponse>;
-    updateOrganization: (masterKey: string, organizationID: number, name: string, addedVaults: UserVaultIDAndVaultID[], removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]) => Promise<BaseResponse>;
+    createOrganization: (masterKey: string, createOrganizationData: string) => Promise<CreateOrganizationResponse>;
+    updateOrganization: (masterKey: string, updateOrganizationData: string) => Promise<BaseResponse>;
     deleteOrganization: (organizationID: number) => Promise<BaseResponse>
 }

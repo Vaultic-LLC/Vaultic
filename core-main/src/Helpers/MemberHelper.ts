@@ -114,7 +114,7 @@ export function memberArrayToModifiedOrgMemberWithoutVaultKey(members: Member[])
     });
 }
 
-export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey: string, addedVaults: number[], addedMembers: Member[]):
+export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey: string, allUserVaultsInOrgIDs: number[], addedMembers: Member[]):
     Promise<[number[], ModifiedOrgMember[]]>
 {
     const addedOrgMembers: ModifiedOrgMember[] = addedMembers.map(m => 
@@ -130,10 +130,10 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
     });
 
     const vaultIDs: Set<number> = new Set();
-    if (addedVaults.length > 0)
+    if (allUserVaultsInOrgIDs.length > 0)
     {
         const memberVaultIdAndKeys: Map<number, { [key: number]: string }> = new Map();
-        const userVaultsAndKeys = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, addedVaults);
+        const userVaultsAndKeys = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, allUserVaultsInOrgIDs);
 
         for (let i = 0; i < userVaultsAndKeys[0].length; i++)
         {
@@ -166,7 +166,7 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
         });
     }
 
-    return [Array.from(vaultIDs), addedOrgMembers];
+    return [Array.from(vaultIDs), addedOrgMembers ?? []];
 }
 
 export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: string, addedVaults: number[], allMembers: Member[]):

@@ -11,7 +11,7 @@
             </VaulticFieldset :centered="true">
             <VaulticFieldset :centered="true">
                 <ObjectMultiSelect :label="'Vaults'" :color="color" v-model="selectedVaults" :options="allVaults"
-                    :width="'50%'" :maxWidth="''" />
+                    :width="'50%'" :maxWidth="''" :emptyMessage="`No Vaults marked as 'Shared'`" />
             </VaulticFieldset>
             <VaulticFieldset :centered="true" :fill-space="true">
                 <MemberTable ref="memberTable" :id="'organizationView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
@@ -76,6 +76,7 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(color.value, "Saving Organization");
 
+            const unchangedVaults: UserVaultIDAndVaultID[] = [];
             const addedVaults: UserVaultIDAndVaultID[] = [];
             const removedVaults: UserVaultIDAndVaultID[] = [];
 
@@ -103,6 +104,17 @@ export default defineComponent({
                             });                      
                         }
                     }
+                    else
+                    {
+                        const existingVault = app.userVaults.value.find(v => v.vaultID == k);
+                        if (existingVault)
+                        {
+                            unchangedVaults.push({
+                                userVaultID: existingVault.userVaultID,
+                                vaultID: existingVault.vaultID
+                            });                      
+                        } 
+                    }
                 });
             }
 
@@ -114,7 +126,7 @@ export default defineComponent({
             }
             else
             {
-                handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value,
+                handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value, unchangedVaults,
                     addedVaults, removedVaults, orgState.value.membersByUserID.valueArray(), memberChanges.addedMembers.valueArray(), 
                     memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray())));
             }
@@ -151,43 +163,22 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            if (app.currentVault.shared)
-            {
-                const currentVaultModel: ObjectSelectOptionModel = 
-                {
-                    label: app.currentVault.name,
-                    backingObject: app.currentVault.userVaultID
-                };
-    
-                allVaults.value.push(currentVaultModel);    
-            }
-
             allVaults.value = app.userVaults.value.filter(v => v.shared).map(v => 
             {
+                const ids: UserVaultIDAndVaultID = 
+                {
+                    userVaultID: v.userVaultID,
+                    vaultID: v.vaultID
+                };
+
                 const model: ObjectSelectOptionModel =
                 {
                     label: v.name,
-                    // TODO: include vaultID and userVaultID
-                    backingObject: app.currentVault.userVaultID
+                    backingObject: ids
                 };
 
                 return model;
             });
-
-            if (orgState.value.vaultIDsByVaultID.has(app.currentVault.vaultID))
-            {
-                const currentVaultModel: ObjectSelectOptionModel = 
-                {
-                    label: app.currentVault.name,
-                    backingObject: 
-                    {
-                        userVaultID: app.currentVault.userVaultID,
-                        vaultID: app.currentVault.vaultID
-                    }
-                };
-                
-                selectedVaults.value.push(currentVaultModel);
-            }
 
             orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
             {

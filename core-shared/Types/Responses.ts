@@ -223,3 +223,8 @@ export interface GetPublicKeysResponse extends BaseResponse
 {
     UsersAndPublicKeys?: { [key: number]: string };
 }
+
+export interface CreateOrganizationResponse extends BaseResponse
+{
+    OrganizationID?: number;
+}

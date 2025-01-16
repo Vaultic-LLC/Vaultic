@@ -60,8 +60,6 @@ api.environment.failedToInitalizeDatabase().then((failed: boolean) =>
     app.userPreferences.loadLastUsersPreferences().then(initApp).catch(initApp);
 });
 
-// read userpreferences before any UI elements for themeing
-
 function initApp()
 {
     const app = createApp(App);

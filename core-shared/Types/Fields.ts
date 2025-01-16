@@ -29,10 +29,10 @@ export type KnownMappedFields<T> = {
     ? U extends {} // is our value an object?
     ? KnownMappedFields<U> extends never // did our nested call to knownMappedFields successed?
     ? never // it didn't, so we can just fail
-    : P extends KnownMappedFieldsType // our nested call succeeded, is our key a KnownMappedField
+    : P extends KnownFieldedMappedFieldsType // our nested call succeeded, is our key a KnownMappedField
     ? T[P] // succeeded, then our type is ok
     : never // failed, are top map is not a KnownMappedField
-    : P extends KnownMappedFieldsType // U isn't an object, is our current map a KnownMappedField?
+    : P extends KnownFieldedMappedFieldsType // U isn't an object, is our current map a KnownMappedField?
     ? T[P] // It is, so we are ok
     : never // it isn't, so we fail
     : T[P] extends IFieldedObject // we aren't a map, check if we are an object
@@ -61,20 +61,22 @@ export type SecondaryDataObjectCollectionType =
     }
 
 // We use this to know what fields need to be specially handled when serializing / parsing objects into JSON
-export type KnownMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataObjectCollection | "passwordsByID" | "valuesByID" |
+export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataObjectCollection | "passwordsByID" | "valuesByID" |
     "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "userColorPalettes" | "pinnedDataTypes" |
     "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
     "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" | "membersByUserID" |
-    "vaultIDsByVaultID";
+    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices";
 
-export const MapFields: Set<KnownMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
+export type KnownUnfieldedMappedFieldsType = "membersByUserID" | "vaultIDsByVaultID";
+
+export const FieldedMapFields: Set<KnownFieldedMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
     "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "userColorPalettes", "pinnedDataTypes", "pinnedFilters",
     "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
     "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
-    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices",
-    "membersByUserID", "vaultIDsByVaultID"
+    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices"
 ]);
+
+export const UnfieldedMapFields: Set<KnownUnfieldedMappedFieldsType> = new Set(["membersByUserID", "vaultIDsByVaultID"])
 
 export class Field<T>
 {
