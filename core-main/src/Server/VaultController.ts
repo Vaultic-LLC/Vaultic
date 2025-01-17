@@ -32,7 +32,7 @@ export function createVaultController(axiosHelper: AxiosHelper)
             UserOrganizationID: userOrganizationID,
             Shared: shared,
             AddedOrgs: addedOrganizations,
-            RemovedOrg: removedOrganizations,
+            RemovedOrgs: removedOrganizations,
             AddedMembers: addedMembers,
             UpdatedMembers: updatedMembers,
             RemovedMembers: removedMembers

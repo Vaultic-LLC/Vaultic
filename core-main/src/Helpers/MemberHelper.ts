@@ -12,6 +12,7 @@ export async function vaultAddedOrgsToAddedOrgInfo(vaultKey: string, addedOrgs: 
     });
 
     const allMembers = Array.from(users);
+
     const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(allMembers);
     if (!getPublicKeyResponse.Success)
     {
@@ -22,7 +23,6 @@ export async function vaultAddedOrgsToAddedOrgInfo(vaultKey: string, addedOrgs: 
     for (let i = 0; i < addedOrgs.length; i++)
     {
         const userIDsAndKeys: UserIDAndKey[] = [];
-
         for (const [key, value] of addedOrgs[i].membersByUserID.entries()) 
         {
             const usersPublicKey = getPublicKeyResponse.UsersAndPublicKeys[key];

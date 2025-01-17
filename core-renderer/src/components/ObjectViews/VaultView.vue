@@ -91,34 +91,31 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(color.value, "Saving Vault");
 
-            const originalOrgs = app.organizations.organizationIDsByVaultIDs.get(vaultState.value.vaultID);
+            const originalOrgs = app.organizations.organizationIDsByVaultIDs.get(vaultState.value.vaultID) ?? new Set();
             let addedOrgs: Organization[] = [];
             let removedOrgs: Organization[] = [];
 
-            if (originalOrgs)
+            for (let i = 0; i < selectedOrganizations.value.length; i++)
             {
-                for (let i = 0; i < selectedOrganizations.value.length; i++)
+                if (!originalOrgs.has((selectedOrganizations.value[i].backingObject as Organization).organizationID))
                 {
-                    if (!originalOrgs.has((selectedOrganizations.value[i].backingObject as Organization).organizationID))
-                    {
-                        addedOrgs.push(selectedOrganizations.value[i].backingObject);
-                    }
+                    addedOrgs.push(selectedOrganizations.value[i].backingObject);
                 }
+            }
                 
-                if (!props.creating)
+            if (!props.creating)
+            {
+                originalOrgs.forEach(v => 
                 {
-                    originalOrgs.forEach(v => 
+                    if (selectedOrganizations.value.findIndex(o => (o.backingObject as Organization).organizationID == v) == -1)
                     {
-                        if (selectedOrganizations.value.findIndex(o => (o.backingObject as Organization).organizationID == v) == -1)
+                        const organization = app.organizations.organizationsByID.get(v);
+                        if (organization)
                         {
-                            const organization = app.organizations.organizationsByID.get(v);
-                            if (organization)
-                            {
-                                removedOrgs.push(organization);
-                            }
+                            removedOrgs.push(organization);
                         }
-                    });
-                }
+                    }
+                });
             }
 
             const sharedIndividualsChanges: MemberChanges | undefined = memberTable.value?.getChanges()!;

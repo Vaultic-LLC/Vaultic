@@ -9,7 +9,7 @@ import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, C
 import { IAPI } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData, UserData, UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
-import { AllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
+import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 
@@ -40,7 +40,7 @@ const userController: ClientUserController =
     getDevices: () => ipcRenderer.invoke('userController:getDevices'),
     reportBug: () => ipcRenderer.invoke('userController:reportBug'),
     getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
-    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom),
+    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom),
     searchForUsers: (username: string) => ipcRenderer.invoke('userController:searchForUsers', username)
 
 };

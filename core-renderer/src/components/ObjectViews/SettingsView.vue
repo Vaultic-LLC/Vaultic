@@ -62,34 +62,39 @@
                     :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
             </div>
             <div></div>
-            <!-- TODO: show loading over this section until requests comes back with data -->
             <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
             <div v-if="isOnline" class="settingsView__inputSection">
-                <!-- // TODO: shold warn users that unchecking this will un share all vaults from them and to them -->
-                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly || failedToLoadSharedData"
+                // TODO: shold warn users that unchecking this will delete all vaults shared with them
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData"
                     :label="'Allow Shared Vaults From Others'" v-model="allowSharedVaultsFromOthers" />
             </div>
             <div v-if="isOnline && allowSharedVaultsFromOthers" class="settingsView__inputSection">
                 <TextInputField ref="usernameField" class="settingsView__maxLoginRecordsPerDay" :color="color"
                     :label="'Username'" v-model="username"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                    :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || failedToLoadSharedData" />
-                <!-- // Should warn user that changing this from everyone -> users will remove all vaults that aren't from 
-                // the people they pick -->
+                    :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || isLoadingSharedData || failedToLoadSharedData" />
+                // Should warn user that changing this from everyone -> users will remove all vaults that aren't from 
+                // the people they pick
                 <EnumInputField class="settingsView__autoLockTime" :label="'Allow Sharing From'" :color="color"
                     v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'" :maxWidth="'300px'"
-                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || failedToLoadSharedData" />
-                <!-- // TODO: show user member tsble if allowSharingFrom == users -->
+                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData" />
+            </div>
+            <div v-if="isOnline && allowSharedVaultsFromOthers && allowSharingFrom == AllowSharingFrom.SpecificUsers" 
+                class="settingsView__inputSection settingsView__memberContainer">
+                <MemberTable ref="memberTable" :id="'settingsView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
+                    :currentMembers="currentAllowUsersToShare" :hidePermissions="true" :tabOverride="'Users'" 
+                    :externalLoading="isLoadingSharedData" :hideEdit="true" :disable="readOnly || isLoadingSharedData || failedToLoadSharedData" />
             </div>
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, Ref, ref, onMounted } from 'vue';
+import { ComputedRef, defineComponent, computed, ref, onMounted, Ref } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
+import MemberTable from '../Table/MemberTable.vue';
 
 import { AutoLockTime } from '../../Types/App';
 import { GridDefinition } from '../../Types/Models';
@@ -97,10 +102,11 @@ import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import { VaultSettings } from "../../Objects/Stores/VaultStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
 import { FilterStatus } from '../../Types/DataTypes';
-import { AllowSharingFrom } from '@vaultic/shared/Types/ClientServerTypes';
+import { AllowSharingFrom, ServerAllowSharingFrom, ServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
-import { InputComponent } from '../../Types/Components';
+import { InputComponent, MemberChanges, MemberTableComponent } from '../../Types/Components';
+import { Member } from '@vaultic/shared/Types/DataTypes';
 
 export default defineComponent({
     name: "ValueView",
@@ -110,6 +116,7 @@ export default defineComponent({
         TextInputField,
         CheckboxInputField,
         EnumInputField,
+        MemberTable
     },
     props: ['creating', 'currentView'],
     setup(props)
@@ -117,6 +124,7 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
         const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
 
+        const memberTable: Ref<MemberTableComponent | null> = ref(null);
         const usernameField: Ref<InputComponent | null> = ref(null);
 
         // copy the objects so that we don't edit the original one. Also needed for change tracking
@@ -134,10 +142,13 @@ export default defineComponent({
         const originalUsername: Ref<string> = ref('');
         const originalAllowSharingFrom: Ref<AllowSharingFrom> = ref(AllowSharingFrom.Everyone);
         
+        const isLoadingSharedData: Ref<boolean> = ref(false);
         const failedToLoadSharedData: Ref<boolean> = ref(false);
         const allowSharedVaultsFromOthers: Ref<boolean> = ref(false);
         const username: Ref<string> = ref('');
         const allowSharingFrom: Ref<AllowSharingFrom> = ref(AllowSharingFrom.Everyone);
+        const currentAllowUsersToShare: Ref<Map<number, Member>> = ref(new Map());
+        const emptyMessage: Ref<string> = ref(`You haven't allowed anyone to share their Vaults with you. Click '+' to allow someone to share their data with you.`);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -197,7 +208,7 @@ export default defineComponent({
 
             let updatedAllowSharedVaultsFromOthers: boolean | undefined = undefined;
             let updatedUsername: string | undefined = undefined;
-            let updatedAllowSharingFrom: AllowSharingFrom | undefined = undefined;
+            let updatedAllowSharingFrom: ServerAllowSharingFrom | undefined = undefined;
 
             if (originalAllowSharedVaultsFromOthers.value != allowSharedVaultsFromOthers.value)
             {
@@ -213,13 +224,30 @@ export default defineComponent({
 
             if (originalAllowSharingFrom.value != allowSharingFrom.value)
             {
-                updatedAllowSharingFrom = allowSharingFrom.value;
+                switch (allowSharingFrom.value)
+                {
+                    case AllowSharingFrom.Everyone:
+                        updatedAllowSharingFrom = ServerAllowSharingFrom.Everyone;
+                        break;
+                    case AllowSharingFrom.SpecificUsers:
+                        updatedAllowSharingFrom = ServerAllowSharingFrom.SpecificUsers;
+                        break;
+                }
+
+                updateSettings = true;
+            }
+
+            const sharedIndividualsChanges: MemberChanges | undefined = memberTable.value?.getChanges()!;
+            if (sharedIndividualsChanges?.addedMembers.size > 0 || sharedIndividualsChanges?.removedMembers.size > 0)
+            {
                 updateSettings = true;
             }
 
             if (updateSettings)
             {
-                const response = await api.server.user.updateSharingSettings(updatedUsername, updatedAllowSharedVaultsFromOthers, updatedAllowSharingFrom);
+                const response = await api.server.user.updateSharingSettings(updatedUsername, updatedAllowSharedVaultsFromOthers, 
+                    updatedAllowSharingFrom, sharedIndividualsChanges?.addedMembers.map((k, v) => k), sharedIndividualsChanges?.removedMembers.map((k, v) => k));
+
                 if (!response.Success)
                 {
                     if (response.UsernameIsTaken)
@@ -324,9 +352,11 @@ export default defineComponent({
         {
             if (isOnline.value)
             {
+                isLoadingSharedData.value = true;
                 const response = await api.server.user.getSharingSettings();
                 if (!response.Success)
                 {
+                    isLoadingSharedData.value = false;
                     failedToLoadSharedData.value = true;
                     defaultHandleFailedResponse(response, true, "Unable to retrieve Sharing Settings", "We are unable to retrieve your sharing settings at the moment. Please try again later. If the issue persists");
                     return;
@@ -340,7 +370,7 @@ export default defineComponent({
 
                 if (response.AllowSharingFrom != undefined && response.AllowSharingFrom != null)
                 {
-                    if (response.AllowSharingFrom == 0)
+                    if (response.AllowSharingFrom == ServerAllowSharingFrom.Everyone)
                     {
                         originalAllowSharingFrom.value = AllowSharingFrom.Everyone;
                         allowSharingFrom.value = AllowSharingFrom.Everyone;       
@@ -351,14 +381,36 @@ export default defineComponent({
                         allowSharingFrom.value = AllowSharingFrom.SpecificUsers;
                     }
                 }
+
+                if (response.AllowSharingFromUsers && response.AllowSharingFromUsers.length > 0)
+                {
+                    for (let i = 0; i < response.AllowSharingFromUsers.length; i++)
+                    {
+                        const member: Member = 
+                        {
+                            userID: response.AllowSharingFromUsers[i].UserID,
+                            username: response.AllowSharingFromUsers[i].Username,
+                            firstName: response.AllowSharingFromUsers[i].FirstName,
+                            lastName: response.AllowSharingFromUsers[i].LastName,
+                            permission: ServerPermissions.View,
+                            icon: undefined,
+                            publicKey: undefined
+                        };
+
+                        currentAllowUsersToShare.value.set(member.userID, member);
+                    }
+                }
             }
-        })
+
+            isLoadingSharedData.value = false;
+        });
 
         return {
             isOnline,
             readOnly,
             color,
             usernameField,
+            memberTable,
             appSettings,
             vaultSettings,
             refreshKey,
@@ -371,6 +423,9 @@ export default defineComponent({
             allowSharingFrom,
             AllowSharingFrom,
             failedToLoadSharedData,
+            isLoadingSharedData,
+            emptyMessage,
+            currentAllowUsersToShare,
             onSave,
             onAuthenticationSuccessful,
             enforceLoginRecordsPerDay,
@@ -422,5 +477,18 @@ export default defineComponent({
 
 .settingsView__multipleFilterBehavior {
     z-index: 8;
+}
+
+.settingsView__memberContainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+#settingsView__memberTable {
+    position: relative;
+    min-height: 40vh;
+    width: 70%;
 }
 </style>

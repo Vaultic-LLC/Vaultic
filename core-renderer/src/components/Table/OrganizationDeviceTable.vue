@@ -199,8 +199,19 @@ export default defineComponent({
             app.popups.showOrganizationPopup(() => {}, organization);
         }
 
-        function onDeleteOrganization(organization: Field<Organization>)
-        {        
+        async function onDeleteOrganization(organization: Organization)
+        {
+            app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Deleting Organization");
+            if (await app.organizations.deleteOrganization(organization.organizationID))
+            {
+                app.popups.showToast(app.userPreferences.currentPrimaryColor.value, "Organization Deleted", true);
+            }
+            else
+            {
+                app.popups.showToast(app.userPreferences.currentPrimaryColor.value, "Delete Failed", false);
+            }
+
+            app.popups.hideLoadingIndicator();
         }
 
         watch(() => app.organizations.organizations.value.length, setTableRows);

@@ -2,7 +2,7 @@ import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSub
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
-import { AllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { ServerAllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 
 export interface UserController extends ClientUserController
 {
@@ -96,12 +96,15 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetSharingSettings');
     }
 
-    function updateSharingSettings(username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom): Promise<UpdateSharingSettingsResponse>
+    function updateSharingSettings(username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom,
+        addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]): Promise<UpdateSharingSettingsResponse>
     {
         return axiosHelper.api.post('User/UpdateSharingSettings', {
             Username: username,
             AllowSharedVaultsFromOthers: allowSharedVaultsFromOthers,
-            AllowSharingFrom: allowSharingFrom
+            AllowSharingFrom: allowSharingFrom,
+            AddedAllowSharingFromUsers: addedAllowSharingFrom,
+            RemovedAllowSharingFromUsers: removedAllowSharingFrom
         });
     }
 

@@ -5,6 +5,7 @@ import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 import { CreateOrganizationData, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
+import app from "./AppStore";
 
 export class OrganizationStore extends Store<StoreState>
 {
@@ -122,14 +123,6 @@ export class OrganizationStore extends Store<StoreState>
         }
 
         organization.organizationID = response.OrganizationID!;
-        addedVaults.forEach(v => 
-        {
-            if (!organization.vaultIDsByVaultID.has(v.vaultID))
-            {
-                organization.vaultIDsByVaultID.set(v.vaultID, v.vaultID);
-            }
-        });
-
         addedMembers.forEach(m =>
         {
             if (!organization.membersByUserID.has(m.userID))
@@ -209,12 +202,56 @@ export class OrganizationStore extends Store<StoreState>
             return;
         }
 
-        addedOrganizations.forEach(o => organizationsByUserVaultID.add(o.organizationID));
-        removedOrganizations.forEach(o => organizationsByUserVaultID.delete(o.organizationID));
+        addedOrganizations.forEach(o => 
+        {
+            organizationsByUserVaultID.add(o.organizationID);
+
+            const org = this.internalOrganizationsByID.value.get(o.organizationID);
+            if (org)
+            {
+                org.vaultIDsByVaultID.set(vaultID, vaultID);
+            }
+        });
+
+        removedOrganizations.forEach(o => 
+        {
+            organizationsByUserVaultID.delete(o.organizationID);
+
+            const org = this.internalOrganizationsByID.value.get(o.organizationID);
+            if (org)
+            {
+                org.vaultIDsByVaultID.delete(vaultID);
+            }
+        });
     }
 
-    async deleteOrganization(masterKey: string, id: number): Promise<boolean>
+    async deleteOrganization(id: number): Promise<boolean>
     {
+        const response = await api.server.organization.deleteOrganization(id);
+        if (!response.Success)
+        {
+            return false;
+        }
+
+        if (this.internalOrganizationsByID.value.has(id))
+        {
+            const org = this.internalOrganizationsByID.value.get(id);
+            if (!org)
+            {
+                return true;
+            }
+
+            org.vaultIDsByVaultID.forEach((v, k, map) =>
+            {
+                if (this.organizationIDsByVaultIDs.has(k))
+                {
+                    this.organizationIDsByVaultIDs.get(k)!.delete(id);
+                }
+            });
+
+            this.internalOrganizationsByID.value.delete(id);
+        }
+
         return true;
     }
 }

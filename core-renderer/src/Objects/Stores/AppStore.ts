@@ -312,7 +312,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.organizations.updateOrgsForVault(displayVault.userVaultID, addedOrganizations, removedOrganizations);
+        this.organizations.updateOrgsForVault(displayVault.vaultID, addedOrganizations, removedOrganizations);
 
         const index = this.userVaults.value.findIndex(uv => uv.userVaultID == displayVault.userVaultID);
         if (index == -1)

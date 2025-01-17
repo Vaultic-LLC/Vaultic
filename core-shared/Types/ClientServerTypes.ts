@@ -157,3 +157,9 @@ export enum AllowSharingFrom
     Everyone = "Everyone",
     SpecificUsers = "Specific Users"
 }
+
+export enum ServerAllowSharingFrom
+{
+    Everyone,
+    SpecificUsers
+}

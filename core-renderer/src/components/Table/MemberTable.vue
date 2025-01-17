@@ -1,9 +1,9 @@
 <template>
     <VaulticTable :id="id" :color="color" :columns="tableColumns" :loading="externalLoading"
         :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
-        :onEdit="onEditMember" :onDelete="onDeleteMember">
+        :onEdit="hideEdit === true || disable === true ? undefined : onEditMember" :onDelete="disable === true ? undefined : onDeleteMember">
         <template #tableControls>
-            <AddButton :color="color" @click="(e) => onOpenPopover(e, true)" />
+            <AddButton v-if="!disable" :color="color" @click="(e) => onOpenPopover(e, true)" />
         </template>
     </VaulticTable>
     <Popover ref="popover">
@@ -14,7 +14,7 @@
                     :emptyMessage="'Start typing to search for Users'" :noResultsMessage="'No Users found with this Username'"
                     @onSearch="onUserSearch" @update:model-value="onUserSelected"/>
             </VaulticFieldset>
-            <VaulticFieldset :centered="true">
+            <VaulticFieldset :centered="true" v-if="!doHidePermissions">
                 <EnumInputField :label="'Permission'" :disabled="!editingMember" :color="color" v-model="editingPermission" 
                     :optionsEnum="ViewableServerPermissions" :width="'100%'" :maxWidth="''" />
             </VaulticFieldset>
@@ -59,12 +59,13 @@ export default defineComponent({
         PopupButton,
         ObjectMultiSelect
     },
-    props: ['currentMembers', 'emptyMessage', 'color', 'externalLoading', 'id'],
+    props: ['tabOverride', 'currentMembers', 'emptyMessage', 'color', 'externalLoading', 'id', 'hidePermissions', 'hideEdit', 'disable'],
     setup(props)
     {
         const popover: Ref<any> = ref();
         const refreshKey: Ref<string> = ref("");
         const color: ComputedRef<string> = computed(() => props.color);
+        const doHidePermissions: ComputedRef<boolean> = computed(() => props.hidePermissions === true);
 
         const members: Ref<Map<number, Member>> = ref(props.currentMembers ?? new Map());
         
@@ -85,7 +86,7 @@ export default defineComponent({
 
         const userHeaderTab: HeaderTabModel[] = [
             {
-                name: 'Members',
+                name: props.tabOverride ?? 'Members',
                 active: computed(() => true),
                 color: color,
                 onClick: () => { }
@@ -96,7 +97,11 @@ export default defineComponent({
         {
             const models: TableColumnModel[] = []
             models.push({ header: "Username", field: "username", isFielded: false});
-            models.push({ header: "Permissions", field: "permission", isFielded: false, component: 'PermissionsCell' });
+
+            if (!doHidePermissions.value)
+            {
+                models.push({ header: "Permissions", field: "permission", isFielded: false, component: 'PermissionsCell' });
+            }
 
             return models;
         });
@@ -304,6 +309,7 @@ export default defineComponent({
             selectedUserDemographics,
             allSearchedUserDemographics,
             disableMemberSearch,
+            doHidePermissions,
             onOpenPopover,
             onDeleteMember,
             onSaveMember,

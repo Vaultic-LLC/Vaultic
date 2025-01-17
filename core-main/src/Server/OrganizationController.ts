@@ -91,7 +91,7 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
 
     function deleteOrganization(organizationID: number)
     {
-        return axiosHelper.sts.post('Organization/DeleteOrganization', {
+        return axiosHelper.api.post('Organization/DeleteOrganization', {
             OrganizationID: organizationID,
         });
     }

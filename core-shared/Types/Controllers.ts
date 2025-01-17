@@ -1,4 +1,4 @@
-import { AllowSharingFrom, ModifiedOrgMember } from "./ClientServerTypes";
+import { ServerAllowSharingFrom } from "./ClientServerTypes";
 import { Member } from "./DataTypes";
 import { UserVaultIDAndVaultID } from "./Entities";
 import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
@@ -25,7 +25,7 @@ export interface ClientUserController
     getDevices: () => Promise<GetDevicesResponse>;
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     getSharingSettings: () => Promise<GetSharingSettings>;
-    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => Promise<UpdateSharingSettingsResponse>;
+    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => Promise<UpdateSharingSettingsResponse>;
     searchForUsers: (username: string) => Promise<SearchForUsersResponse>
 }
 
