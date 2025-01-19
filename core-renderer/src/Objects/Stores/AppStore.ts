@@ -54,6 +54,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalActivePasswordValueTable: Ref<DataType> = ref(DataType.Passwords);
     private internalActiveFilterGroupTable: Ref<DataType> = ref(DataType.Filters);
+    private internalActiveDeviceOrganizationTable: Ref<DataType> = ref(DataType.Devices);
 
     private internalAutoLockNumberTime: ComputedRef<number>;
 
@@ -62,6 +63,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
 
     private internalUserVaults: Ref<DisplayVault[]>;
+    private internalUserVaultsByVaultID: ComputedRef<Map<number, DisplayVault>>;
+    private internalSortedUserVaultsIndexByVaultID: ComputedRef<Map<number, number>>;
     private internalSharedWithUserVaults: ComputedRef<DisplayVault[]>;
     private internalArchivedVaults: ComputedRef<DisplayVault[]>;
 
@@ -87,8 +90,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     set activePasswordValuesTable(value: DataType) { this.internalActivePasswordValueTable.value = value; }
     get activeFilterGroupsTable() { return this.internalActiveFilterGroupTable.value; }
     set activeFilterGroupsTable(value: DataType) { this.internalActiveFilterGroupTable.value = value; }
+    get activeDeviceOrganizationsTable() { return this.internalActiveDeviceOrganizationTable.value }
+    set activeDeviceOrganizationsTable(value: DataType) { this.internalActiveDeviceOrganizationTable.value = value }
     get colorPalettes() { return this.internalColorPalettes.value; }
     get userVaults() { return this.internalUserVaults; }
+    get userVaultsByVaultID() { return this.internalUserVaultsByVaultID.value }
+    get sortedUserVaultIndexByVaultID() { return this.internalSortedUserVaultsIndexByVaultID.value }
     get sharedWithUserVaults() { return this.internalSharedWithUserVaults; }
     get archivedVaults() { return this.internalArchivedVaults; }
     get privateVaults() { return this.internalPrivateVaults; }
@@ -113,6 +120,20 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalColorPalettes = computed(() => [...defaultColorPalettes.valueArray(), ...this.state.settings.value.userColorPalettes.value.valueArray()])
 
         this.internalUserVaults = ref([]);
+        this.internalUserVaultsByVaultID = computed(() => this.internalUserVaults.value.reduce((map: Map<number, DisplayVault>, dv: DisplayVault) =>
+        {
+            map.set(dv.vaultID, dv);
+            return map;
+        }, new Map()));
+
+        this.internalSortedUserVaultsIndexByVaultID = computed(() => this.internalUserVaults.value
+            .sort((a, b) => a.name >= b.name ? 1 : -1)
+            .reduce((map: Map<number, number>, dv: DisplayVault, idx: number) =>
+            {
+                map.set(dv.vaultID, idx);
+                return map;
+            }, new Map()));
+
         this.internalCurrentVault = new ReactiveVaultStore();
 
         this.internalPrivateVaults = computed(() => this.userVaults.value.filter(v => v.type == VaultType.Private));
@@ -121,7 +142,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalArchivedVaults = computed(() => this.internalUserVaults.value.filter(v => v.isArchived));
 
         // done after current vault so we can watch for userVaultID
-        this.internalUsersPreferencesStore = new UserPreferencesStore(this);
+        this.internalUsersPreferencesStore = new UserPreferencesStore();
 
         this.internalIsOnline = ref(false);
         this.internalActivePasswordValueTable = ref(DataType.Passwords);

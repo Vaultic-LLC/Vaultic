@@ -265,7 +265,6 @@ export default defineComponent({
         function initPasswords()
         {
             filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
-            pinnedPasswords.updateValues(app.currentVault.passwordStore.pinnedPasswords);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -274,7 +273,6 @@ export default defineComponent({
         function initValues()
         {
             filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
-            pinnedNameValuePairs.updateValues(app.currentVault.valueStore.pinnedValues);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -284,9 +282,6 @@ export default defineComponent({
         {
             filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
             filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
-
-            pinnedPasswords.updateValues(app.currentVault.passwordStore.pinnedPasswords);
-            pinnedNameValuePairs.updateValues(app.currentVault.valueStore.pinnedValues);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);

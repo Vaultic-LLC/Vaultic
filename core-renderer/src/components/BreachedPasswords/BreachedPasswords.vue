@@ -24,7 +24,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
 
 import WorldMap from './WorldMap.vue';
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
@@ -173,7 +173,8 @@ export default defineComponent({
             startScan
         }
     }
-})
+}) as any
+
 </script>
 <style>
 .breachedPasswordsContainer {

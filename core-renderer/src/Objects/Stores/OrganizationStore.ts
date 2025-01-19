@@ -31,10 +31,7 @@ export class OrganizationStore extends Store<StoreState>
         this.internalOrganizationIDsByVaultIDs = ref(new Map());
 
         this.internalOrganizations = computed(() => this.internalOrganizationsByID.value.valueArray());
-
-        // TODO: this may need to stay fielded since it will be saved in the user preferences store state =(
-        // this.internalPinnedOrganizations = computed(() => [new Field({ id: new Field(""), name: new Field(""), members: new Field(new Map()) })]);
-        this.internalPinnedOrganizations = computed(() => []);
+        this.internalPinnedOrganizations = computed(() => this.internalOrganizations.value.filter(o => app.userPreferences.pinnedOrganizations.value.has(o.organizationID)));
     }
 
     public resetToDefault(): void
@@ -160,6 +157,12 @@ export class OrganizationStore extends Store<StoreState>
             return false;
         }
 
+        const currentOrg = this.internalOrganizationsByID.value.get(organization.organizationID);
+        if (currentOrg)
+        {
+            currentOrg.name = organization.name;
+        }
+
         addedMembers.forEach(m => 
         {
             if (!organization.membersByUserID.has(m.userID))
@@ -192,11 +195,19 @@ export class OrganizationStore extends Store<StoreState>
 
     updateOrgsForVault(vaultID: number, addedOrganizations: Organization[], removedOrganizations: Organization[])
     {
-        const organizationsByUserVaultID: Set<number> | undefined = this.internalOrganizationIDsByVaultIDs.value.get(vaultID);
-        if (!organizationsByUserVaultID)
+        const organizationByVaultID: Set<number> | undefined = this.internalOrganizationIDsByVaultIDs.value.get(vaultID);
+        if (!organizationByVaultID)
         {
             const set: Set<number> = new Set();
-            addedOrganizations.forEach(o => set.add(o.organizationID));
+            addedOrganizations.forEach(o => 
+            {
+                set.add(o.organizationID);
+                const org = this.internalOrganizationsByID.value.get(o.organizationID);
+                if (org)
+                {
+                    org.vaultIDsByVaultID.set(vaultID, vaultID);
+                }
+            });
 
             this.internalOrganizationIDsByVaultIDs.value.set(vaultID, set);
             return;
@@ -204,7 +215,7 @@ export class OrganizationStore extends Store<StoreState>
 
         addedOrganizations.forEach(o => 
         {
-            organizationsByUserVaultID.add(o.organizationID);
+            organizationByVaultID.add(o.organizationID);
 
             const org = this.internalOrganizationsByID.value.get(o.organizationID);
             if (org)
@@ -215,7 +226,7 @@ export class OrganizationStore extends Store<StoreState>
 
         removedOrganizations.forEach(o => 
         {
-            organizationsByUserVaultID.delete(o.organizationID);
+            organizationByVaultID.delete(o.organizationID);
 
             const org = this.internalOrganizationsByID.value.get(o.organizationID);
             if (org)

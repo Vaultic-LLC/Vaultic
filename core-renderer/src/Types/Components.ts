@@ -38,3 +38,8 @@ export interface MemberTableComponent extends Component
 {
     getChanges: () => MemberChanges;
 }
+
+export interface ObjectViewComponent extends Component
+{
+    addWarning: (message: string) => void;
+}

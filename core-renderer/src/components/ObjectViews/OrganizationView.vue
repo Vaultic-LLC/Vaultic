@@ -29,7 +29,7 @@ import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import MemberTable from '../Table/MemberTable.vue';
 
-import { ObjectSelectOptionModel, TableRowModel } from '../../Types/Models';
+import { ObjectSelectOptionModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { defaultOrganization } from '../../Types/DataTypes';
 import { Member, Organization } from '@vaultic/shared/Types/DataTypes';

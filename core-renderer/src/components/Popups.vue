@@ -58,7 +58,7 @@
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="popupStore.organizationPopupIsShowing" :closePopup="popupStore.onOrganizationPopupClose"
-                    :width="'50%'" :minWidth="'600px'" :minHeight="'480px'" :colorSetOverride="DataType.NameValuePairs">
+                    :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
                     <OrganizationView :creating="popupStore.organizationModel == undefined" :model="popupStore.organizationModel" />
                 </ObjectPopup>
             </Transition>

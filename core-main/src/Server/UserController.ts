@@ -108,10 +108,12 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
-    function searchForUsers(username: string): Promise<SearchForUsersResponse>
+    function searchForUsers(username: string, excludedUserIDs: string): Promise<SearchForUsersResponse>
     {
+        const userIDs: number[] = JSON.vaulticParse(excludedUserIDs);
         return axiosHelper.api.post('User/SearchForUsers', {
             Username: username,
+            ExcludedUserIDs: userIDs
         });
     }
 

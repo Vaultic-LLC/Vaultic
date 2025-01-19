@@ -172,29 +172,34 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
 export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: string, addedVaults: number[], allMembers: Member[]):
     Promise<AddedVaultInfo>
 {
-    const users: Set<number> = new Set();
-    allMembers.forEach(m => 
+    let modifiedOrgMembers: [number[], ModifiedOrgMember[]] = [[], []];
+    if (allMembers.length > 0)
     {
-        users.add(m.userID);
-    });
+        const users: Set<number> = new Set();
+        allMembers.forEach(m => 
+        {
+            users.add(m.userID);
+        });
 
-    const allMembersArray = Array.from(users);
-    const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(allMembersArray);
-    if (!getPublicKeyResponse.Success)
-    {
-        return;
+        const allMembersArray = Array.from(users);
+        const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(allMembersArray);
+        if (!getPublicKeyResponse.Success)
+        {
+            return;
+        }
+
+        allMembers.forEach(m => 
+        {
+            const publicKey = getPublicKeyResponse.UsersAndPublicKeys[m.userID];
+            if (publicKey)
+            {
+                m.publicKey = publicKey;
+            }
+        });
+
+        modifiedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, addedVaults, allMembers);
     }
 
-    allMembers.forEach(m => 
-    {
-        const publicKey = getPublicKeyResponse.UsersAndPublicKeys[m.userID];
-        if (publicKey)
-        {
-            m.publicKey = publicKey;
-        }
-    });
-
-    const modifiedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, addedVaults, allMembers);
     return {
         AllVaults: addedVaults,
         ModifiedOrgMembers: modifiedOrgMembers[1]

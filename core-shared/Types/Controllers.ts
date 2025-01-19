@@ -26,7 +26,7 @@ export interface ClientUserController
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     getSharingSettings: () => Promise<GetSharingSettings>;
     updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => Promise<UpdateSharingSettingsResponse>;
-    searchForUsers: (username: string) => Promise<SearchForUsersResponse>
+    searchForUsers: (username: string, excludedUserIDs: string) => Promise<SearchForUsersResponse>
 }
 
 export interface ClientVaultController 

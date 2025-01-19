@@ -31,11 +31,11 @@ import { hideAll } from 'tippy.js';
 import app from "../../Objects/Stores/AppStore";
 import { popups } from "../../Objects/Stores/PopupStore";
 import { ClosePopupFuncctionKey } from '../../Constants/Keys';
+import { AppView } from '../../Types/App';
 
 export default defineComponent({
     name: "ObjectPopup",
-    props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing",
-        "colorSetOverride"],
+    props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing"],
     setup(props)
     {
         const popupInfo = popups.defaultObjectPopup;
@@ -73,8 +73,6 @@ export default defineComponent({
 
         const showDialog: Ref<boolean> = ref(true);
 
-        const colorSetOverride: ComputedRef<DataType | undefined> = computed(() => props.colorSetOverride);
-
         function transitionColors()
         {
             let startColorTransitionTime: number;
@@ -83,15 +81,13 @@ export default defineComponent({
             let currentSecondaryColorOne: string = '';
             let currentSecondaryColorTwo: string = '';
 
-            if ((colorSetOverride.value != undefined && colorSetOverride.value == DataType.Passwords) || 
-                (colorSetOverride.value == undefined && app.activePasswordValuesTable == DataType.Passwords))
+            if (usePasswordColor())
             {
                 currentPrimaryColor = app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
                 currentSecondaryColorOne = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
                 currentSecondaryColorTwo = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
             }
-            else if ((colorSetOverride.value != undefined && colorSetOverride.value == DataType.NameValuePairs) || 
-                (colorSetOverride.value == undefined && app.activePasswordValuesTable == DataType.NameValuePairs))
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
                 currentPrimaryColor = app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value;
                 currentSecondaryColorOne = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;
@@ -176,6 +172,12 @@ export default defineComponent({
             }
         }
 
+        function usePasswordColor()
+        {
+            return (app.activeAppView == AppView.Vault && app.activePasswordValuesTable == DataType.Passwords) || 
+                (app.activeAppView == AppView.User && app.activeDeviceOrganizationsTable == DataType.Devices);
+        }
+
         watch(() => app.activePasswordValuesTable, () =>
         {
             transitionColors();
@@ -198,7 +200,7 @@ export default defineComponent({
             previousPrimaryColor.value = app.userPreferences.currentPrimaryColor.value;
             primaryColor.value = app.userPreferences.currentPrimaryColor.value;
 
-            if (app.activePasswordValuesTable == DataType.Passwords)
+            if (usePasswordColor())
             {
                 previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
                 secondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
@@ -206,7 +208,7 @@ export default defineComponent({
                 previousSecondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
                 secondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
             }
-            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            else
             {
                 previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;
                 secondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;

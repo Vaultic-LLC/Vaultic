@@ -41,7 +41,7 @@ const userController: ClientUserController =
 	reportBug: () => ipcRenderer.invoke('userController:reportBug'),
 	getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
 	updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom),
-	searchForUsers: (username: string) => ipcRenderer.invoke('userController:searchForUsers', username)
+	searchForUsers: (username: string, excludedUserIDs: string) => ipcRenderer.invoke('userController:searchForUsers', username, excludedUserIDs)
 
 };
 

@@ -28,7 +28,9 @@ export enum DataType
     Passwords,
     NameValuePairs,
     Filters,
-    Groups
+    Groups,
+    Devices,
+    Organizations
 }
 
 export enum FilterStatus

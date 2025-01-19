@@ -1,17 +1,13 @@
-import { Store, StoreEvents } from "./Base";
+import { Store, StoreEvents, StoreState } from "./Base";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
 import { UserDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
 
-export interface UserDataBreachStoreState
-{
-    userBreaches: UserDataBreach[];
-}
-
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed";
 
-export class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBreachStoreEvent>
+export class UserDataBreachStore extends Store<StoreState, DataBreachStoreEvent>
 {
+    private internalVaultDataBreaches: VaultDataBreach[];
     get userDataBreaches() { return this.state.userBreaches; }
 
     constructor()
@@ -22,8 +18,12 @@ export class UserDataBreachStore extends Store<UserDataBreachStoreState, DataBre
     protected defaultState()
     {
         return {
-            userBreaches: []
         };
+    }
+
+    public resetToDefault(): void
+    {
+        this.internalVaultDataBreaches = [];
     }
 
     public addEvent(event: DataBreachStoreEvent, callback: () => void)

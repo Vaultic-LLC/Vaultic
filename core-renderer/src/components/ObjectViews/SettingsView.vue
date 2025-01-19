@@ -1,5 +1,5 @@
 <template>
-    <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
+    <ObjectView ref="objectView" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
             <div class="settingsView__sectionTitle settingsView__appSettings">App Settings</div>
             <div class="settingsView__inputSection">
@@ -64,7 +64,6 @@
             <div></div>
             <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
             <div v-if="isOnline" class="settingsView__inputSection">
-                // TODO: shold warn users that unchecking this will delete all vaults shared with them
                 <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData"
                     :label="'Allow Shared Vaults From Others'" v-model="allowSharedVaultsFromOthers" />
             </div>
@@ -73,8 +72,6 @@
                     :label="'Username'" v-model="username"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || isLoadingSharedData || failedToLoadSharedData" />
-                // Should warn user that changing this from everyone -> users will remove all vaults that aren't from 
-                // the people they pick
                 <EnumInputField class="settingsView__autoLockTime" :label="'Allow Sharing From'" :color="color"
                     v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'" :maxWidth="'300px'"
                     :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData" />
@@ -88,7 +85,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, ref, onMounted, Ref } from 'vue';
+import { ComputedRef, defineComponent, computed, ref, onMounted, Ref, watch } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -105,7 +102,7 @@ import { FilterStatus } from '../../Types/DataTypes';
 import { AllowSharingFrom, ServerAllowSharingFrom, ServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
-import { InputComponent, MemberChanges, MemberTableComponent } from '../../Types/Components';
+import { InputComponent, MemberChanges, MemberTableComponent, ObjectViewComponent } from '../../Types/Components';
 import { Member } from '@vaultic/shared/Types/DataTypes';
 
 export default defineComponent({
@@ -126,6 +123,7 @@ export default defineComponent({
 
         const memberTable: Ref<MemberTableComponent | null> = ref(null);
         const usernameField: Ref<InputComponent | null> = ref(null);
+        const objectView: Ref<ObjectViewComponent | null> = ref(null);
 
         // copy the objects so that we don't edit the original one. Also needed for change tracking
         const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
@@ -348,6 +346,32 @@ export default defineComponent({
             return [true, ""];
         }
 
+        watch(() => allowSharedVaultsFromOthers.value, (newValue, oldValue) =>
+        {
+            if (isLoadingSharedData.value)
+            {
+                return;
+            }
+
+            if (newValue === false && oldValue === true)
+            {
+                objectView.value?.addWarning("Disabling 'Allow Shared Vaults From Others' will remove all Vaults that are currently shared with you");          
+            }
+        });
+
+        watch(() => allowSharingFrom.value, (newValue, oldValue) =>
+        {
+            if (isLoadingSharedData.value)
+            {
+                return;
+            }
+
+            if (newValue != originalAllowSharingFrom.value && newValue == AllowSharingFrom.SpecificUsers)
+            {
+                objectView.value?.addWarning("Changing 'Allow Sharing From' to 'Specific Users' will remove all Vaults that are currently shared with you that aren't from Users you've selected");          
+            }
+        });
+
         onMounted(async () => 
         {
             if (isOnline.value)
@@ -409,6 +433,7 @@ export default defineComponent({
             isOnline,
             readOnly,
             color,
+            objectView,
             usernameField,
             memberTable,
             appSettings,

@@ -68,6 +68,7 @@ export default defineComponent({
         const doHidePermissions: ComputedRef<boolean> = computed(() => props.hidePermissions === true);
 
         const members: Ref<Map<number, Member>> = ref(props.currentMembers ?? new Map());
+        const currentMemberIDs: Ref<string> = ref('[]');
         
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
         const memberCollection: SortedCollection = new SortedCollection([]);
@@ -120,13 +121,10 @@ export default defineComponent({
 
         function setTableRows()
         {
-            const rows: TableRowModel[] = [];
+            const rows: TableRowModel<Member>[] = [];
             members.value.forEach(v =>
             {
-                rows.push({
-                    id: v.userID.toString(),
-                    backingObject: v
-                });
+                rows.push(new TableRowModel(v.userID.toString(), (obj: Member) => obj.userID, undefined, undefined, undefined, v));
             });
 
             memberCollection.updateValues(rows);
@@ -149,8 +147,7 @@ export default defineComponent({
             loading.value = true;
             searchTimeout = setTimeout(async() => 
             {
-                // TODO: this should exclude the current members in the table
-                const response = await api.server.user.searchForUsers(value);
+                const response = await api.server.user.searchForUsers(value, currentMemberIDs.value);
                 if (!response.Success)
                 {
                     loading.value = false;
@@ -251,6 +248,7 @@ export default defineComponent({
 
             popover.value.toggle();
             setTableRows();
+            setCurrentMemberIDs();
         }
 
         function onDeleteMember(member: Member)
@@ -272,6 +270,7 @@ export default defineComponent({
 
             members.value.delete(member.userID);
             setTableRows();
+            setCurrentMemberIDs();
         }
 
         function getChanges(): MemberChanges
@@ -283,15 +282,22 @@ export default defineComponent({
             }
         }
 
+        function setCurrentMemberIDs()
+        {
+            currentMemberIDs.value = JSON.stringify(members.value.map((k, v) => k));
+        }
+
         watch(() => props.currentMembers, (newValue, _) =>
         {
             members.value = newValue;
             setTableRows();
+            setCurrentMemberIDs();
         });
 
         onMounted(() =>
         {
             setTableRows();
+            setCurrentMemberIDs();
         });
 
         return {

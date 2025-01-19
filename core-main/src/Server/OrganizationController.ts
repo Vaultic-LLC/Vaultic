@@ -33,12 +33,11 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         let updatedModifiedOrgMembers: ModifiedOrgMember[] = [];
         let removedMemberIDs: number[] = [];
 
-        const addedUserVaultIDs = parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID);
-
         if (parsedUpdatedOrgData.addedVaults.length > 0)
         {
             const allMembers = [...parsedUpdatedOrgData.originalMembers, ...parsedUpdatedOrgData.addedMembers];
-            addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, addedUserVaultIDs, allMembers);
+            addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, parsedUpdatedOrgData.addedVaults.map(v => v.vaultID), allMembers);
+            console.log(`Added Vault Modified Org members: ${JSON.vaulticStringify(addedVaultModifiedOrgMembers)}`)
         }
 
         if (parsedUpdatedOrgData.removedVaults.length > 0)
@@ -48,8 +47,8 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
 
         if (parsedUpdatedOrgData.addedMembers.length > 0)
         {
-            addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, [...addedUserVaultIDs, ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)],
-                parsedUpdatedOrgData.addedMembers);
+            addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, [...parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID),
+            ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)], parsedUpdatedOrgData.addedMembers);
         }
 
         if (parsedUpdatedOrgData.updatedMembers.length > 0)

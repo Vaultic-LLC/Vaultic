@@ -88,7 +88,7 @@
                 <template #body="slotProps">
                     <!-- TODO Tooltip no longer works on group icons -->
                     <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
-                        <div v-for="model in (slotProps.data as TableRowModel).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
+                        <div v-for="model in (slotProps.data as TableRowModel<any>).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
                             :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
                             <span class="vaulticTableContainer__groupIconSpan">
                                 <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
@@ -96,13 +96,13 @@
                             </span>
                         </div>
                     </div>
-                    <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel).backingObject" 
-                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" :isFielded="column.isFielded" />
+                    <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel<any>).backingObject" 
+                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel<any>).state" :isFielded="column.isFielded" />
                     <template v-else-if="column.isFielded === false">
-                        {{ (slotProps.data as TableRowModel).backingObject?.[column.field] }}
+                        {{ (slotProps.data as TableRowModel<any>).backingObject?.[column.field] }}
                     </template>
                     <template v-else>
-                        {{ (slotProps.data as TableRowModel).backingObject?.value[column.field]?.value }}
+                        {{ (slotProps.data as TableRowModel<any>).backingObject?.value[column.field]?.value }}
                     </template>
                 </template>
             </Column>
@@ -119,18 +119,18 @@
                 </template>
                 <template #body="{ data }">
                     <div class="vaulticTableContainer__rowIconButtonsContainer">
-                        <div v-if="(data as TableRowModel).atRiskModel" class="vaulticTableContainer__rowIconButton" @click="(data as TableRowModel).atRiskModel?.onClick">
+                        <div v-if="(data as TableRowModel<any>).atRiskModel" class="vaulticTableContainer__rowIconButton" @click="(data as TableRowModel<any>).atRiskModel?.onClick">
                             <div class="tableRow__rowIconContainer">
-                                <AtRiskIndicator :color="color" :message="(data as TableRowModel).atRiskModel?.message" />
+                                <AtRiskIndicator :color="color" :message="(data as TableRowModel<any>).atRiskModel?.message" />
                             </div>
                         </div>
-                        <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel).isPinned === true, data)">
-                            <ion-icon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel).isPinned === true}" name="magnet-outline"></ion-icon>
+                        <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel<any>).isPinned === true, data)">
+                            <ion-icon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel<any>).isPinned === true}" name="magnet-outline"></ion-icon>
                         </div>
-                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit((data as TableRowModel).backingObject, e)">
+                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit((data as TableRowModel<any>).backingObject, e)">
                             <ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
                         </div>
-                        <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm((data as TableRowModel).backingObject)">
+                        <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm((data as TableRowModel<any>).backingObject)">
                             <ion-icon class="rowIcon delete" name="trash-outline"></ion-icon>
                         </div>
                     </div>
@@ -157,6 +157,7 @@ import EnumInputCell from './Rows/EnumInputCell.vue';
 import FilterValueSelectorCell from './Rows/FilterValueSelectorCell.vue';
 import EncryptedInputCell from "./Rows/EncryptedInputCell.vue";
 import PermissionsCell from './Rows/PermissionsCell.vue';
+import VaultListCell from "./Rows/VaultListCell.vue";
 
 import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
@@ -193,7 +194,8 @@ export default defineComponent({
         EnumInputCell,
         FilterValueSelectorCell,
         EncryptedInputCell,
-        PermissionsCell
+        PermissionsCell,
+        VaultListCell
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
         'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading'],
@@ -213,9 +215,9 @@ export default defineComponent({
         const showSearchBar: ComputedRef<boolean> = computed(() => props.allowSearching != undefined ? props.allowSearching : true);
         const tableDataSources: Ref<TableDataSources> = ref(props.dataSources);    
         const activeTableDataSource: ComputedRef<TableDataSouce> = computed(() => tableDataSources.value.dataSources[tableDataSources.value.activeIndex()]);
-        const rowValues: Ref<TableRowModel[]> = ref([]);
+        const rowValues: Ref<TableRowModel<any>[]> = ref([]);
 
-        const pinnedRowValues: Ref<TableRowModel[] | undefined> = ref(props.pinnedValues ?? []);
+        const pinnedRowValues: Ref<TableRowModel<any>[] | undefined> = ref(props.pinnedValues ?? []);
         const searchText: Ref<string | undefined > = ref();
 
         let tweenGroup: TWEEN.Group | undefined = undefined;
@@ -230,7 +232,7 @@ export default defineComponent({
 
         let currentColumnId = 0;
 
-        const allRows: Ref<TableRowModel[]> = ref([]);
+        const allRows: Ref<TableRowModel<any>[]> = ref([]);
         const totalRecords: Ref<number> = ref(0);
         const firstRow: Ref<number> = ref(0);
         const rowsToDisplay: Ref<number> = ref(15);
@@ -353,19 +355,19 @@ export default defineComponent({
         //     key.value = Date.now().toString();
         // });
 
-        function internalOnPin(isPinned: boolean, model: TableRowModel)
+        function internalOnPin(isPinned: boolean, model: TableRowModel<any>)
         {
             if (isPinned)
             {
                 model.isPinned = false;
-                activeTableDataSource.value.pinnedCollection?.remove(model.backingObject!.value.id.value);
+                activeTableDataSource.value.pinnedCollection?.remove(model.getBackingObjectIdentifier());
                 activeTableDataSource.value.collection.push(model);
             }
             else
             {
                 model.isPinned = true;
                 activeTableDataSource.value.pinnedCollection?.push(model);
-                activeTableDataSource.value.collection.remove(model.backingObject!.value.id.value);
+                activeTableDataSource.value.collection.remove(model.getBackingObjectIdentifier());
             }
 
             props.onPin?.(isPinned, model.backingObject);
