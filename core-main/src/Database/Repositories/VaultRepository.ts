@@ -11,7 +11,7 @@ import { PasswordStoreState } from "../Entities/States/PasswordStoreState";
 import { ValueStoreState } from "../Entities/States/ValueStoreState";
 import { FilterStoreState } from "../Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Entities/States/GroupStoreState";
-import { backupData } from "../../Helpers/RepositoryHelper";
+import { backupData, checkMergeMissingData, getUserDataSignatures } from "../../Helpers/RepositoryHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { User } from "../Entities/User";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
@@ -27,6 +27,7 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
+import { server } from "@serenity-kit/opaque";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -937,6 +938,42 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
 
             return TypedMethodResponse.success(returnStates);
+        }
+    }
+
+    public async syncVaults(masterKey: string): Promise<TypedMethodResponse<boolean | undefined>>
+    {
+        return await safetifyMethod(this, internalSyncVaults);
+
+        async function internalSyncVaults(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        {
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
+
+            const signatures = await getUserDataSignatures(masterKey, currentUser.email);
+            const result = await vaulticServer.vault.syncVaults(signatures.signatures);
+
+            if (!result.Success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            // no changes
+            if (!result.userDataPayload)
+            {
+                return TypedMethodResponse.success();
+            }
+
+            const success = await checkMergeMissingData(masterKey, currentUser.email, signatures.keys, signatures.signatures, result.userDataPayload);
+            if (!success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            return TypedMethodResponse.success();
         }
     }
 }

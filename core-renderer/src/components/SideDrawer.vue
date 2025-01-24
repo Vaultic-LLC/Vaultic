@@ -16,7 +16,11 @@
             <div class="sideDrawer__currentUserName">Tyler Wanta</div>
         </div>
         <div class="sideDrawer__vaultList">
-            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
+            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="syncVaults">
+                    <ion-icon name="sync-outline"></ion-icon>                
+                </VaulticButton>
+            </TreeList>
         </div>
         <div class="sideDrawer__currentView">
             <ToggleRadioButton :model="toggleButtonModel" :height="'clamp(30px, 4vh, 45px)'" />
@@ -30,6 +34,7 @@ import { computed, ComputedRef, defineComponent, Ref, ref, watch, onMounted, onU
 import TreeList from "./Tree/TreeList.vue";
 import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
 import ToggleRadioButton from './InputFields/ToggleRadioButton.vue';
+import VaulticButton from './InputFields/VaulticButton.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
@@ -44,7 +49,8 @@ export default defineComponent({
     components: {
         TreeList,
         PersonOutlineIcon,
-        ToggleRadioButton
+        ToggleRadioButton,
+        VaulticButton
     },
     setup()
     {
@@ -278,6 +284,25 @@ export default defineComponent({
             }
         }
 
+        function syncVaults()
+        {
+            app.popups.showRequestAuthentication(primaryColor.value, async (masterKey: string) => 
+            {
+                app.popups.showLoadingIndicator(primaryColor.value, "Syncing Vaults");
+                const success = await app.syncVaults(masterKey);
+                if (success)
+                {
+                    app.popups.showToast(primaryColor.value, "Sync Succeeded", true);
+                }
+                else
+                {
+                    app.popups.showToast(primaryColor.value, "Sync Failed", false);
+                }
+
+                app.popups.hideLoadingIndicator();             
+            }, () => {});
+        }
+
         watch(() => app.privateVaults.value, (newValue, oldValue) => 
         {
             addRemoveArchiveButton(newValue, oldValue);
@@ -347,7 +372,8 @@ export default defineComponent({
             text,
             toggleButtonModel,
             openCreateVaultPopup,
-            onLeafClicked
+            onLeafClicked,
+            syncVaults
         };
     }
 })

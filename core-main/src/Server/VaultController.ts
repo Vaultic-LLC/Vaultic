@@ -1,7 +1,7 @@
-import { CreateVaultResponse, GetVaultDataResponse, BaseResponse, GetVaultMembersResponse, GetVaultDataBreachesResponse } from "@vaultic/shared/Types/Responses";
+import { CreateVaultResponse, GetVaultDataResponse, BaseResponse, GetVaultMembersResponse, GetVaultDataBreachesResponse, SyncVaultsResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientVaultController } from "@vaultic/shared/Types/Controllers";
-import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 
 export interface VaultController extends ClientVaultController
@@ -10,6 +10,7 @@ export interface VaultController extends ClientVaultController
     updateVault: (userVaultID: number, userOrganizationID: number, shared: boolean, addedOrganizations: AddedOrgInfo, removedOrganizations: number[], addedMembers: AddedVaultMembersInfo, updatedMembers: ModifiedOrgMember[], removedMembers: number[]) => Promise<BaseResponse>;
     failedToSaveVault: (userOrganizationID: number, userVaultID: number) => Promise<BaseResponse>;
     deleteVault: (userOrganizationID: number, userVaultID: number) => Promise<BaseResponse>;
+    syncVaults: (userDataPayload: UserDataPayload) => Promise<SyncVaultsResponse>;
 }
 
 export function createVaultController(axiosHelper: AxiosHelper)
@@ -90,6 +91,13 @@ export function createVaultController(axiosHelper: AxiosHelper)
         });
     }
 
+    function syncVaults(userDataPayload: UserDataPayload): Promise<SyncVaultsResponse>
+    {
+        return axiosHelper.api.post("Vault/SyncVaults", {
+            UserDataPayload: userDataPayload
+        });
+    }
+
     return {
         create,
         deleteVault,
@@ -99,6 +107,7 @@ export function createVaultController(axiosHelper: AxiosHelper)
         getVaultDataBreaches,
         checkPasswordForBreach,
         dismissVaultDataBreach,
-        clearDataBreaches
+        clearDataBreaches,
+        syncVaults
     }
 }

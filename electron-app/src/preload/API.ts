@@ -139,7 +139,8 @@ const vaultRepository: ClientVaultRepository =
 	saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, newData, currentData),
 	createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, shared, setAsActive, addedOrganizations, addedMembers, doBackupData),
 	getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve),
-	deleteVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:deleteVault', masterKey, userVaultID)
+	deleteVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:deleteVault', masterKey, userVaultID),
+	syncVaults: (masterKey: string) => ipcRenderer.invoke('vaultRepository:syncVaults', masterKey),
 };
 
 const userVaultRepository: ClientUserVaultRepository =

@@ -9,6 +9,7 @@
                 <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="collapseAll">
                     <ion-icon name="chevron-collapse-outline"></ion-icon>
                 </VaulticButton>
+                <slot></slot>
                 <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="$emit('onAdd')" />
             </div>
         </div>

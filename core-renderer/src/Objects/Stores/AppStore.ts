@@ -247,21 +247,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const userData = await api.repositories.users.getCurrentUserData(masterKey);
-        if (!userData.success)
+        const success = await this.internalLoadUserData(masterKey);
+        if (!success)
         {
-            defaultHandleFailedResponse(userData);
             return false;
         }
 
-        const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
-
-        await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
-        await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
-
-        this.internalUserVaults.value = parsedUserData.displayVaults!;
-
-        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         this.internaLoadedUser.value = true;
         this.internalActiveAppView.value = AppView.Vault;
 
@@ -431,6 +422,17 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return true;
     }
 
+    async syncVaults(masterKey: string): Promise<boolean>
+    {
+        const result = await api.repositories.vaults.syncVaults(masterKey);
+        if (!result.success)
+        {
+            return false;
+        }
+
+        return await this.internalLoadUserData(masterKey);
+    }
+
     // TODO: post release
     public shareToVault<T>(value: T, toVault: number)
     {
@@ -456,6 +458,26 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         transaction.updateUserStore(this, pendingState);
         await transaction.commit(masterKey);
+    }
+
+    private async internalLoadUserData(masterKey: string): Promise<boolean>
+    {
+        const userData = await api.repositories.users.getCurrentUserData(masterKey);
+        if (!userData.success)
+        {
+            defaultHandleFailedResponse(userData);
+            return false;
+        }
+
+        const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
+
+        await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
+        await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
+
+        this.internalUserVaults.value = parsedUserData.displayVaults!;
+
+        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
+        return true;
     }
 }
 

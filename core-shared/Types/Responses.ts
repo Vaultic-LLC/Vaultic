@@ -229,3 +229,5 @@ export interface CreateOrganizationResponse extends BaseResponse
 {
     OrganizationID?: number;
 }
+
+export interface SyncVaultsResponse extends UserDataPayloadResponse, BaseResponse { }
