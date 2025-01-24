@@ -1,6 +1,6 @@
-import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject, KnownMappedFields, IFieldedObject } from "@vaultic/shared/Types/Fields";
 import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
-import { Permissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 
 export class DuplicateDataTypes extends FieldedObject
 {
@@ -28,7 +28,9 @@ export enum DataType
     Passwords,
     NameValuePairs,
     Filters,
-    Groups
+    Groups,
+    Devices,
+    Organizations
 }
 
 export enum FilterStatus
@@ -57,6 +59,7 @@ export interface Password extends IPrimaryDataObject, PasswordSecretProperty
     isWeakMessage: Field<string>;
     containsLogin: Field<boolean>;
     passwordLength: Field<number>;
+    checkedForBreach: Field<boolean>;
 }
 
 export interface SecurityQuestion extends IIdentifiable, IFieldObject
@@ -182,21 +185,11 @@ export class RelatedDataTypeChanges
     }
 }
 
-export interface Member extends IFieldObject, IIdentifiable
+export interface VaultAndBreachCount
 {
-    userID: Field<number>;
-    firstName: Field<string>;
-    lastName: Field<string>;
-    username: Field<string>;
-    permission: Field<Permissions>
-    icon: Field<string | undefined>;
-}
-
-export interface Organization extends IFieldObject, IIdentifiable
-{
-    organizationID: Field<number>;
-    name: Field<string>;
-    members: Field<Map<number, Field<Member>>>;
+    vaultID: number;
+    vault: string;
+    breachCount: number;
 }
 
 export function defaultPassword(): Password
@@ -219,6 +212,7 @@ export function defaultPassword(): Password
         containsLogin: new Field(false),
         filters: new Field(new Map()),
         groups: new Field(new Map()),
+        checkedForBreach: new Field(false)
     }
 }
 
@@ -272,9 +266,9 @@ export function defaultGroup(type: DataType): Group
 export function defaultOrganization(): Organization
 {
     return {
-        id: new Field(''),
-        organizationID: new Field(-1),
-        name: new Field(''),
-        members: new Field(new Map())
+        organizationID: -1,
+        name: '',
+        membersByUserID: new Map(),
+        vaultIDsByVaultID: new Map()
     }
 }

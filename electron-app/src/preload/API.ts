@@ -1,15 +1,17 @@
 import { ipcRenderer } from "electron";
 
 import { DeviceInfo } from "@vaultic/shared/Types/Device";
-import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController, ValueController } from "@vaultic/shared/Types/Controllers";
+import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
-import { ClientVaultHelper, RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
+import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
 import { IAPI } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
-import { AllowSharingFrom, UserIDAndPermission } from "@vaultic/shared/Types/ClientServerTypes";
+import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
+import { BreachRequestVault, Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { RandomValueType } from "@vaultic/shared/Types/Fields";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
 {
@@ -32,33 +34,29 @@ const userController: ClientUserController =
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
 	createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
 	getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),
-	getUserDataBreaches: (passwordStoreState: string) => ipcRenderer.invoke('userController:getUserDataBreaches', passwordStoreState),
-	dismissUserDataBreach: (breechID: number) => ipcRenderer.invoke('userController:dismissUserDataBreach', breechID),
 	deactivateUserSubscription: (email: string, deactivationKey: string) => ipcRenderer.invoke('userController:deactivateUserSubscription', email, deactivationKey),
 	getDevices: () => ipcRenderer.invoke('userController:getDevices'),
 	reportBug: () => ipcRenderer.invoke('userController:reportBug'),
 	getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
-	updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom),
-	searchForUsers: (username: string) => ipcRenderer.invoke('userController:searchForUsers', username)
-
-};
-
-const valueController: ValueController =
-{
-	generateRandomPhrase: (length: number) => ipcRenderer.invoke('valueController:generateRandomPhrase', length)
+	updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom),
+	searchForUsers: (username: string, excludedUserIDs: string) => ipcRenderer.invoke('userController:searchForUsers', username, excludedUserIDs)
 };
 
 const vaultController: ClientVaultController =
 {
-	deleteVault: (userVaultID: number) => ipcRenderer.invoke('vaultController:deleteVault', userVaultID)
+	getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID),
+	getVaultDataBreaches: (getVaultDataBreachesData: string) => ipcRenderer.invoke('vaultController:getVaultDataBreaches', getVaultDataBreachesData),
+	checkPasswordForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordForBreach', checkPasswordForBreachData),
+	dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => ipcRenderer.invoke('vaultController:dismissVaultDataBreach', userOrganizaitonID, vaultID, vaultDataBreachID),
+	clearDataBreaches: (vaults: BreachRequestVault[]) => ipcRenderer.invoke('vaultController:clearDataBreaches', vaults)
 }
 
 const organizationController: OrganizationController =
 {
 	getOrganizations: () => ipcRenderer.invoke('organizationController:getOrganizations'),
-	createOrganization: (name: string, userIDsAndPermissions: UserIDAndPermission[]) => ipcRenderer.invoke('organizationController:getOrganizations', name, userIDsAndPermissions),
-	updateOrganization: (organizationID: number, name?: string, addedUserIDsAndPermissions?: UserIDAndPermission[], removedUserIDsAndPermissions?: UserIDAndPermission[]) => ipcRenderer.invoke('organizationController:updateOrganizations', organizationID, name, addedUserIDsAndPermissions, removedUserIDsAndPermissions),
-	deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganizations', organizationID)
+	createOrganization: (masterKey: string, createOrganizationData: string) => ipcRenderer.invoke('organizationController:createOrganization', masterKey, createOrganizationData),
+	updateOrganization: (masterKey: string, updateOrganizationData: string) => ipcRenderer.invoke('organizationController:updateOrganization', masterKey, updateOrganizationData),
+	deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganization', organizationID)
 }
 
 const cryptUtility: ClientCryptUtility =
@@ -80,7 +78,7 @@ const generatorUtility: Promisify<ClientGeneratorUtility> =
 {
 	uniqueId: () => ipcRenderer.invoke('generatorUtility:uniqueId'),
 	randomValue: (length: number) => ipcRenderer.invoke('generatorUtility:randomValue', length),
-	randomPassword: (length: number) => ipcRenderer.invoke('generatorUtility:randomPassword', length),
+	generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => ipcRenderer.invoke('generatorUtility:generateRandomPasswordOrPassphrase', type, length, includeNumbers, includeSpecialCharacters, includeAbmiguousCharacters, passphraseSeperator),
 	ECKeys: () => ipcRenderer.invoke('generatorUtility:ECKeys')
 };
 
@@ -104,12 +102,6 @@ const serverHelper: ServerHelper =
 	registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
 	logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData)
 };
-
-const vaultHelper: ClientVaultHelper =
-{
-	loadArchivedVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultHelper:loadArchivedVault', masterKey, userVaultID),
-	unarchiveVault: (masterKey: string, userVaultID: number, select: boolean) => ipcRenderer.invoke('vaultHelper:unarchiveVault', masterKey, userVaultID, select)
-}
 
 const repositoryHelepr: RepositoryHelper =
 {
@@ -142,11 +134,13 @@ const userRepository: ClientUserRepository =
 
 const vaultRepository: ClientVaultRepository =
 {
+	updateVault: (masterKey: string, updateVaultData: string, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:updateVault', masterKey, updateVaultData, doBackup),
 	setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
-	saveVault: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVault', masterKey, userVaultID, newData, currentData),
-	createNewVaultForUser: (masterKey: string, name: string, setAsActive: boolean, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, setAsActive, doBackup),
-	archiveVault: (masterKey: string, userVaultID: number, backup: boolean) => ipcRenderer.invoke('vaultRepository:archiveVault', masterKey, userVaultID, backup),
-	getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve)
+	saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, newData, currentData),
+	createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, shared, setAsActive, addedOrganizations, addedMembers, doBackupData),
+	getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve),
+	deleteVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:deleteVault', masterKey, userVaultID),
+	syncVaults: (masterKey: string) => ipcRenderer.invoke('vaultRepository:syncVaults', masterKey),
 };
 
 const userVaultRepository: ClientUserVaultRepository =
@@ -170,7 +164,6 @@ const api: IAPI =
 		app: appController,
 		session: sessionController,
 		user: userController,
-		value: valueController,
 		vault: vaultController,
 		organization: organizationController
 	},
@@ -183,7 +176,6 @@ const api: IAPI =
 		validation: validationHelper,
 		vaultic: vaulticHelper,
 		server: serverHelper,
-		vault: vaultHelper,
 		repositories: repositoryHelepr
 	},
 	repositories: {

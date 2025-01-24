@@ -1,19 +1,25 @@
 <template>
-    <div class="objectViewContainer">
-        <div class="objectViewContainer__form">
-            <ScrollView :color="primaryColor">
-                <div class="objectViewContainer__formWrapper">
-                    <slot></slot>
-                </div>
-            </ScrollView>
+    <div class="objectView">
+        <div class="objectViewContainer__warnings">
+            <Message v-for="(message) in warnings" severity="warn" :closable="true" 
+                :icon="'pi pi-exclamation-triangle'" >{{ message }}</Message>
         </div>
-        <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
-            <PopupButton :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
-                :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" @onClick="onSave" />
-            <PopupButton v-if="creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
-                :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'"
-                :height="'2vw'" :isSubmit="true"
-                @onClick="onSaveAndClose" />
+        <div class="objectViewContainer">
+            <div class="objectViewContainer__form">
+                <ScrollView :color="primaryColor">
+                    <div class="objectViewContainer__formWrapper">
+                        <slot></slot>
+                    </div>
+                </ScrollView>
+            </div>
+            <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
+                <PopupButton :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
+                    :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" @onClick="onSave" />
+                <PopupButton v-if="creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
+                    :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'"
+                    :height="'2vw'" :isSubmit="true"
+                    @onClick="onSaveAndClose" />
+            </div>
         </div>
     </div>
 </template>
@@ -22,6 +28,7 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from './ScrollView.vue';
+import Message from 'primevue/message';
 
 import app from "../../Objects/Stores/AppStore";
 import { ClosePopupFuncctionKey, DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Constants/Keys';
@@ -31,9 +38,11 @@ export default defineComponent({
     components: 
     {
         ScrollView,
-        PopupButton
+        PopupButton,
+        Message
     },
-    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 'anchorButtonsDown'],
+    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 
+        'anchorButtonsDown'],
     setup(props)
     {
         const primaryColor: ComputedRef<string> = computed(() => props.color);
@@ -43,6 +52,8 @@ export default defineComponent({
         const disabled: Ref<boolean> = ref(false);
 
         const showAuthPopup: Ref<boolean> = ref(false);
+
+        const warnings: Ref<string[]> = ref([]);
 
         let validationFunctions: Ref<{ (): boolean; }[]> = ref([]);
         let decryptFunctions: Ref<{ (key: string): void; }[]> = ref([]);
@@ -126,6 +137,16 @@ export default defineComponent({
             showAuthPopup.value = false;
         }
 
+        function addWarning(message: string)
+        {
+            warnings.value.push(message);
+        }
+
+        function removeWarning(index: number)
+        {
+            warnings.value.splice(index, 1);
+        }
+
         watch(() => requestAuthorization.value, (newValue) =>
         {
             if (!newValue)
@@ -154,16 +175,35 @@ export default defineComponent({
             buttonText,
             showAuthPopup,
             disabled,
+            warnings,
             onAuthenticationSuccessful,
             authenticationCancelled,
             onSave,
-            onSaveAndClose
+            onSaveAndClose,
+            addWarning,
+            removeWarning
         };
     }
 })
 </script>
 
 <style>
+.objectView {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.objectViewContainer__warnings {
+    width: 80%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+}
+
 .objectViewContainer {
     position: relative;
     height: 93%;
@@ -173,6 +213,8 @@ export default defineComponent({
     margin-top: 3%;
     margin-left: 5%;
     margin-right: 5%;
+    flex-shrink: 1;
+    min-height: 0;
 }
 
 .objectViewContainer__form {

@@ -6,6 +6,7 @@
             }">
             <MultiSelect :fluid="true" :dt="inputStyle" :id="id" v-model="selectedItemsPlaceHolder" :options="options" optionLabel="label"
                 filter :virtualScrollerOptions="{ itemSize: 50 }" @selectall-change="onSelectAllChange($event)" @change="onChange($event)" :appendTo="'self'"
+                :emptyMessage="computedEmptyMessage" 
                 :pt="{
                     root: 'objectMultiSelectContainer__multiSelect',
                     virtualScroller: {
@@ -73,7 +74,7 @@ export default defineComponent({
     },
     emits: ["update:modelValue", "onOptionSelect"],
     props: ["modelValue", "options", "label", "color", "disabled", "detailsView", 
-        "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight'],
+        "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight', 'emptyMessage'],
     setup(props, ctx)
     {
         const popoverRefs: Ref<any[]> = ref([]);
@@ -91,6 +92,8 @@ export default defineComponent({
         const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
+
+        const computedEmptyMessage: ComputedRef<string> = computed(() => props.emptyMessage ? props.emptyMessage : "No available options");
 
         let floatLabelStyle = computed(() => {
             return {
@@ -173,6 +176,7 @@ export default defineComponent({
             computedHeight,
             computedMinHeight,
             computedMaxHeight,
+            computedEmptyMessage,
             onSelectAllChange,
             onChange,
             onViewHover,

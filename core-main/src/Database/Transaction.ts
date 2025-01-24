@@ -107,7 +107,7 @@ export default class Transaction
         {
             environment.databaseDataSouce.transaction(async (manager) =>
             {
-                manager.queryRunner?.startTransaction();
+                await manager.queryRunner?.startTransaction();
 
                 let succeeded = true;
                 try 
@@ -125,6 +125,8 @@ export default class Transaction
                             if (!(await pendingEntity.repository!().signAndInsert(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
+                                console.log(`inserting failed`);
+
                                 break;
                             }
                         }
@@ -133,6 +135,8 @@ export default class Transaction
                             if (!(await pendingEntity.repository!().insertExisting(manager, pendingEntity.entity!)))
                             {
                                 succeeded = false;
+                                console.log(`insert existing failed`);
+
                                 break;
                             }
                         }
@@ -141,6 +145,8 @@ export default class Transaction
                             if (!(await pendingEntity.repository!().signAndUpdate(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
+                                console.log(`update failed`);
+
                                 break;
                             }
                         }
@@ -149,6 +155,8 @@ export default class Transaction
                             if (!(await pendingEntity.repository!().override(manager, pendingEntity.findBy!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
+                                console.log(`override failed`);
+
                                 break;
                             }
                         }
@@ -157,6 +165,8 @@ export default class Transaction
                             if (!(await pendingEntity.repository!().resetTracking(manager, pendingEntity.signingKey!, pendingEntity.entity as VaulticEntity)))
                             {
                                 succeeded = false;
+                                console.log(`reset failed`);
+
                                 break;
                             }
                         }
@@ -165,6 +175,8 @@ export default class Transaction
                             if (!(await pendingEntity.repository!().delete(manager, pendingEntity.findBy!)))
                             {
                                 succeeded = false;
+                                console.log(`Delete failed`);
+
                                 break;
                             }
                         }
@@ -184,16 +196,15 @@ export default class Transaction
                 // the transaction will be rolled back if an error is thrown inside it
                 if (!succeeded)
                 {
-                    console.log('\ntransaction failed');
+                    console.log('throwing error');
                     // TODO: this actually causes the application to crash, find a better way to do transaction
                     throw new Error();
                 }
                 else 
                 {
-                    manager.queryRunner?.commitTransaction();
+                    await manager.queryRunner?.commitTransaction();
                 }
 
-                console.log('\ntransaction succeeded');
                 resolve(succeeded);
             });
         });

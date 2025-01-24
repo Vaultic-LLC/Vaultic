@@ -3,13 +3,17 @@
         <div class="treeList__controls">
             <SearchBar :modelValue="searchText" :color="primaryColor" :sizeModel="searchSize" />
             <div class="treeList__buttons">
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="expandAll">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Expand All'" 
+                    @click="expandAll">
                     <ion-icon name="chevron-expand-outline"></ion-icon>
                 </VaulticButton>
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="collapseAll">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Collapse All'" 
+                    @click="collapseAll">
                     <ion-icon name="chevron-collapse-outline"></ion-icon>
                 </VaulticButton>
-                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="$emit('onAdd')" />
+                <slot></slot>
+                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Add Vault'" 
+                    @click="$emit('onAdd')" />
             </div>
         </div>
         <div class="treeList__divider"></div>

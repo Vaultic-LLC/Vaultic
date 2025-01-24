@@ -5,7 +5,7 @@
         <SideDrawer />
         <div class="center">
             <ColorPaletteContainer />
-            <Transition name="fade">
+            <Transition name="fade" mode="out-in">
                 <BreachedPasswords v-if="isOnline && isVaultView" />
             </Transition>
             <Transition name="fade" mode="out-in">
@@ -13,7 +13,8 @@
                     <FilterGroupTable />
                     <PasswordValueTable />
                 </div>
-                <div id="tables" v-else>
+                <div v-else>
+                    <AccountInfoWidget />
                     <OrganizationDeviceTable />
                 </div>
             </Transition>
@@ -24,12 +25,12 @@
         <Transition name="fade">
             <FilterGroupGauges v-if="isVaultView" />
         </Transition>
-        <Transition name="fade">
+        <Transition name="fade" mode="out-in">
             <div v-if="isOnline && isVaultView" class="tempWidget secureProgressChartWidget">
                 <PasswordStrengthProgressChart />
             </div>
         </Transition>
-        <Transition  name="fade">
+        <Transition name="fade" mode="out-in">
             <div class="tempWidget loginHistoryCalendarWidget" v-if="isVaultView">
                 <LoginHistoryCalendar />
             </div>
@@ -58,8 +59,8 @@ import Popups from './components/Popups.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import SideDrawer from "./components/SideDrawer.vue"
 import OrganizationDeviceTable from './components/Table/OrganizationDeviceTable.vue';
-// import OrganizationsTable from './components/Table/OrganizationsTable.vue';
 import ConfirmDialog from "primevue/confirmdialog";
+import AccountInfoWidget from './components/Widgets/AccountInfoWidget.vue';
 
 import { AccountSetupView } from './Types/Models';
 import { ColorPalette } from './Types/Colors';
@@ -90,7 +91,8 @@ export default defineComponent({
         MenuWidget,
         SideDrawer,
         OrganizationDeviceTable,
-        ConfirmDialog
+        ConfirmDialog,
+        AccountInfoWidget
     },
     setup()
     {

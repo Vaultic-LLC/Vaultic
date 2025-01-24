@@ -9,7 +9,7 @@
                         <li class="breachedPasswordPopup__listRow">
                             <div class="breachedPasswordPopup__row">
                                 <div class="breachedPasswordPopup__rowTitle">Domain:</div>
-                                <div class="breachedPasswordPopup__rowValue">{{ password?.domain }}</div>
+                                <div class="breachedPasswordPopup__rowValue">{{ password?.value.domain.value }}</div>
                             </div>
                         </li>
                         <li class="breachedPasswordPopup__listRow">
@@ -21,15 +21,15 @@
                         <li class="breachedPasswordPopup__listRow">
                             <div class="breachedPasswordPopup__row">
                                 <div class="breachedPasswordPopup__rowTitle">Data:</div>
-                                <div class="breachedPasswordPopup__rowValue">{{ userDataBreach?.BreachedDataTypes }}
+                                <div class="breachedPasswordPopup__rowValue">{{ vaultDataBreach?.BreachedDataTypes }}
                                 </div>
                             </div>
                         </li>
                     </ul>
                 </div>
-                <ButtonLink :color="primaryColor" :text="'What to do after a data breach'"
+                <ButtonLink class="breachedPasswordPopup__link" :color="primaryColor" :text="'What to do after a data breach'"
                     :fontSize="'clamp(10px, 0.7vw, 20px)'" @onClick="whatToDoAfterADataBreach" />
-                <div class="breachedPasswordPopup__footer">
+                <div class="breachedPasswordPopup__footer" v-if="!readonly">
                     <div class="breachedPasswordPopup__dismissMessage">
                         Once all necessary precautions have been taken you can click 'Dismiss Breach'
                     </div>
@@ -52,7 +52,7 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { popups } from '../../Objects/Stores/PopupStore';
-import { UserDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
+import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
 import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
@@ -70,10 +70,12 @@ export default defineComponent({
         const popupInfo = popups.breachedPasswords;
 
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
-        const userDataBreach: Ref<UserDataBreach | undefined> = ref(undefined);
-        const password: Ref<ReactivePassword | undefined> = ref(undefined);
+        const vaultDataBreach: Ref<VaultDataBreach | undefined> = ref(undefined);
+        const password: Ref<Field<ReactivePassword>| undefined> = ref(undefined);
         const disabled: Ref<boolean> = ref(false);
         const dateString: Ref<string> = ref('');
+
+        const readonly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
         function closePopup()
         {
@@ -85,7 +87,7 @@ export default defineComponent({
             app.popups.showLoadingIndicator(primaryColor.value);
             disabled.value = true;
 
-            const succeeded = await app.userDataBreaches.dismissUserDataBreach(userDataBreach.value?.UserDataBreachID!);
+            const succeeded = await app.vaultDataBreaches.dismissVaultDataBreach(vaultDataBreach.value?.VaultDataBreachID!);
             app.popups.hideLoadingIndicator();
 
             if (succeeded)
@@ -104,18 +106,18 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            const dataBreach: UserDataBreach[] = app.userDataBreaches.userDataBreaches.filter(b => b.PasswordID == props.passwordID)
-            if (dataBreach.length == 1)
+            const dataBreach: VaultDataBreach | undefined = app.vaultDataBreaches.vaultBreachesByPasswordID.value.get(props.passwordID);
+            if (dataBreach)
             {
-                userDataBreach.value = dataBreach[0];
-                const dateBreached = new Date(userDataBreach.value.BreachedDate);
+                vaultDataBreach.value = dataBreach;
+                const dateBreached = new Date(vaultDataBreach.value.BreachedDate);
                 dateString.value = `${dateBreached.getUTCMonth() + 1}/${dateBreached.getUTCDay() + 1}/${dateBreached.getUTCFullYear()}`;
             }
 
             const foundPassword: Field<ReactivePassword> | undefined = app.currentVault.passwordStore.getState().passwordsByID.value.get(props.passwordID);
             if (foundPassword)
             {
-                password.value = foundPassword.value;
+                password.value = foundPassword;
             }
         });
 
@@ -129,11 +131,12 @@ export default defineComponent({
 
         return {
             primaryColor,
-            userDataBreach,
+            vaultDataBreach,
             password,
             disabled,
             dateString,
             zIndex: popupInfo.zIndex,
+            readonly,
             closePopup,
             onDismissBreach,
             whatToDoAfterADataBreach
@@ -159,7 +162,6 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     height: 95%;
-    justify-content: center;
     align-items: center;
     row-gap: clamp(5px, 0.5vw, 15px);
 }
@@ -211,10 +213,13 @@ export default defineComponent({
     font-weight: bold;
 }
 
+.breachedPasswordPopup__link {
+    flex-grow: 1;
+}
+
 .breachedPasswordPopup__footer {
     width: 95%;
     font-size: clamp(10px, 0.7vw, 20px);
-    flex-grow: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -222,6 +227,4 @@ export default defineComponent({
     margin-bottom: 5%;
     row-gap: clamp(7px, 0.4vw, 10px);
 }
-
-;
 </style>

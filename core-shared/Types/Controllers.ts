@@ -1,5 +1,7 @@
-import { AllowSharingFrom, UserIDAndPermission } from "./ClientServerTypes";
-import { BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { ServerAllowSharingFrom } from "./ClientServerTypes";
+import { BreachRequestVault, Member } from "./DataTypes";
+import { UserVaultIDAndVaultID } from "./Entities";
+import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -17,30 +19,47 @@ export interface ClientUserController
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
-    getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
-    dismissUserDataBreach: (breachID: number) => Promise<BaseResponse>;
     deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
     getDevices: () => Promise<GetDevicesResponse>;
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     getSharingSettings: () => Promise<GetSharingSettings>;
-    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom) => Promise<UpdateSharingSettingsResponse>;
-    searchForUsers: (username: string) => Promise<SearchForUsersResponse>
-}
-
-export interface ValueController
-{
-    generateRandomPhrase: (length: number) => Promise<GenerateRandomPhraseResponse>;
+    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => Promise<UpdateSharingSettingsResponse>;
+    searchForUsers: (username: string, excludedUserIDs: string) => Promise<SearchForUsersResponse>
 }
 
 export interface ClientVaultController 
 {
-    deleteVault: (userVaultID: number) => Promise<BaseResponse>;
+    getMembers: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultMembersResponse>;
+    getVaultDataBreaches: (getVaultDataBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    checkPasswordForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => Promise<BaseResponse>;
+    clearDataBreaches: (vaults: BreachRequestVault[]) => Promise<BaseResponse>;
+}
+
+export interface CreateOrganizationData
+{
+    name: string;
+    addedVaults: UserVaultIDAndVaultID[];
+    addedMembers: Member[];
+}
+
+export interface UpdateOrganizationData
+{
+    organizationID: number;
+    name: string;
+    unchangedVaults: UserVaultIDAndVaultID[];
+    addedVaults: UserVaultIDAndVaultID[];
+    removedVaults: UserVaultIDAndVaultID[];
+    originalMembers: Member[];
+    addedMembers: Member[];
+    updatedMembers: Member[];
+    removedMembers: Member[];
 }
 
 export interface OrganizationController
 {
     getOrganizations: () => Promise<GetOrganizationsResponse>;
-    createOrganization: (name: string, userIDsAndPermissions: UserIDAndPermission[]) => Promise<BaseResponse>;
-    updateOrganization: (organizationID: number, name?: string, addedUserIDsAndPermissions?: UserIDAndPermission[], removedUserIDsAndPermissions?: UserIDAndPermission[]) => Promise<BaseResponse>
+    createOrganization: (masterKey: string, createOrganizationData: string) => Promise<CreateOrganizationResponse>;
+    updateOrganization: (masterKey: string, updateOrganizationData: string) => Promise<BaseResponse>;
     deleteOrganization: (organizationID: number) => Promise<BaseResponse>
 }

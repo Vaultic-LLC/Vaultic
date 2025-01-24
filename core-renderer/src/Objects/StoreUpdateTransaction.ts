@@ -96,7 +96,7 @@ export default class StoreUpdateTransaction
                 response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.vaulticStringify(newStates), JSON.vaulticStringify(currentStates));
                 break;
             case Entity.Vault:
-                response = await api.repositories.vaults.saveVault(masterKey, this.userVaultID!, JSON.vaulticStringify(newStates), JSON.vaulticStringify(currentStates));
+                response = await api.repositories.vaults.saveVaultData(masterKey, this.userVaultID!, JSON.vaulticStringify(newStates), JSON.vaulticStringify(currentStates));
                 break;
         }
 

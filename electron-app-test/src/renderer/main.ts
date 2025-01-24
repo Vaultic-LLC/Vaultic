@@ -7,6 +7,9 @@ import app from './core/Objects/Stores/AppStore';
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
+import PrimeVue from 'primevue/config';
+import Aura from '@primevue/themes/aura';
+import ConfirmationService from 'primevue/confirmationservice';
 import runAllTests, { runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/index"
 
 api.setAPI(window.api);
@@ -34,15 +37,44 @@ Coloris({
     ]
 });
 
-// read userpreferences before any UI elements for themeing
-app.userPreferences.loadLastUsersPreferences().then(initApp).catch(initApp);
+api.environment.failedToInitalizeDatabase().then((failed: boolean) =>
+{
+    if (failed)
+    {
+        initApp();
+        app.popups.showAlert(
+            "Failed to load local data",
+            "We have detected that your local database has been tampered with and will need to be re created. All un backed up local data will be lost.", false,
+            {
+                text: "Ok",
+                onClick: async () =>
+                {
+                    await api.environment.recreateDatabase();
+                }
+            }
+        );
 
-async function initApp()
+        return;
+    }
+
+    app.userPreferences.loadLastUsersPreferences().then(initApp).catch(initApp);
+});
+
+function initApp()
 {
     const app = createApp(App);
+    app.config.performance = true;
 
     app.use(setupCalendar, {});
-    app.mount("#app");
+    app.use(PrimeVue, {
+        theme: {
+            preset: Aura,
+            options: {
+                darkModeSelector: '.darkMode',
+            }
+        }
+    });
 
-    runAllTests();
+    app.use(ConfirmationService);
+    app.mount("#app");
 }

@@ -3,11 +3,13 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { Store, StoreState } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
 import { GroupStore, ReactiveGroupStore } from "./GroupStore";
-import { PasswordStore, ReactivePasswordStore } from "./PasswordStore";
+import { PasswordStore, PasswordStoreState, ReactivePasswordStore } from "./PasswordStore";
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes";
 
 export interface VaultSettings extends IFieldedObject
 {
@@ -29,11 +31,18 @@ interface IVaultStoreState extends StoreState
 export type VaultStoreState = KnownMappedFields<IVaultStoreState>;
 
 export class BaseVaultStore<V extends PasswordStore,
-    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState> implements DisplayVault
+    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState>
 {
     protected internalName: string;
-
+    protected internalShared: boolean;
+    protected internalIsArchived: boolean;
+    protected internalIsOwner: boolean;
+    protected internalIsReadOnly: Ref<boolean>;
+    protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
+    protected internalVaultID: number;
+    protected internalPasswordsByDomain: Field<Map<string, Field<KnownMappedFields<PasswordsByDomainType>>>> | undefined;
+
     protected internalPasswordStore: V;
     protected internalValueStore: W;
     protected internalFilterStore: X;
@@ -41,7 +50,16 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalVaultPreferencesStore: VaultPreferencesStore;
 
     get name() { return this.internalName; }
+    get shared() { return this.internalShared; }
+    get isArchived() { return this.internalIsArchived; }
+    get isOwner() { return this.internalIsOwner; }
+    get isReadOnly() { return this.internalIsReadOnly; }
+    get userOrganizationID() { return this.internalUserOrganizationID; }
     get userVaultID() { return this.internalUserVaultID; }
+    get vaultID() { return this.internalVaultID; }
+    get passwordsByDomain() { return this.internalPasswordsByDomain; }
+    set passwordsByDomain(value) { this.internalPasswordsByDomain = value; }
+
     get settings() { return this.state.settings; }
 
     get passwordStore() { return this.internalPasswordStore; }
@@ -53,12 +71,21 @@ export class BaseVaultStore<V extends PasswordStore,
     constructor() 
     {
         super("vaultStoreState");
+        this.internalIsReadOnly = ref(false);
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
 
     protected async setBaseVaultStoreData(data: CondensedVaultData)
     {
+        this.internalUserOrganizationID = data.userOrganizationID;
         this.internalUserVaultID = data.userVaultID;
+        this.internalVaultID = data.vaultID;
+        this.internalIsOwner = data.isOwner;
+        this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
+        this.internalShared = data.shared;
+        this.internalIsArchived = data.isArchived;
+        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Field(new Map());
+
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
     }
@@ -77,6 +104,7 @@ export class BaseVaultStore<V extends PasswordStore,
     }
 }
 
+// Currently not used anymore with the change to store archived / shared vaults locally
 export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, FilterStore, GroupStore>
 {
     protected internalIsLoaded: boolean;
@@ -93,7 +121,10 @@ export class BasicVaultStore extends BaseVaultStore<PasswordStore, ValueStore, F
 
         this.internalIsLoaded = false;
         this.internalName = displayVault.name;
+        this.internalShared = displayVault.shared;
+        this.internalUserOrganizationID = displayVault.userOrganizationID;
         this.internalUserVaultID = displayVault.userVaultID;
+        this.internalVaultID = displayVault.vaultID;
     }
 
     public async setBasicVaultStoreData(data: CondensedVaultData)
@@ -112,17 +143,14 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     ReactiveValueStore, ReactiveFilterStore, ReactiveGroupStore>
 {
     protected internalReactiveUserVaultID: ComputedRef<number>;
-    protected internalIsReadOnly: Ref<boolean>;
 
     get reactiveUserVaultID() { return this.internalReactiveUserVaultID.value; }
-    get isReadOnly() { return this.internalIsReadOnly; }
     get loginHistory() { return this.state.loginHistory; }
 
     constructor()
     {
         super();
         this.internalReactiveUserVaultID = computed(() => this.userVaultID);
-        this.internalIsReadOnly = ref(false);
         this.internalPasswordStore = new ReactivePasswordStore(this);
         this.internalValueStore = new ReactiveValueStore(this);
         this.internalFilterStore = new ReactiveFilterStore(this);
@@ -132,8 +160,6 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData)
     {
         await super.setBaseVaultStoreData(data);
-
-        this.internalIsReadOnly.value = false;
 
         await this.internalPasswordStore.initalizeNewStateFromJSON(data.passwordStoreState);
         await this.internalValueStore.initalizeNewStateFromJSON(data.valueStoreState);
@@ -146,7 +172,10 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     public async setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)
     {
         this.internalIsReadOnly.value = readOnly;
+        this.internalUserOrganizationID = basicVault.userOrganizationID;
         this.internalUserVaultID = basicVault.userVaultID;
+        this.internalVaultID = basicVault.vaultID;
+        this.internalPasswordsByDomain = basicVault.passwordsByDomain;
         this.initalizeNewState(basicVault.getState());
         this.internalVaultPreferencesStore.initalizeNewState(basicVault.vaultPreferencesStore.getState());
 

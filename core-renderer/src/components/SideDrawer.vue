@@ -16,10 +16,15 @@
             <div class="sideDrawer__currentUserName">Tyler Wanta</div>
         </div>
         <div class="sideDrawer__vaultList">
-            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked" />
+            <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Sync all Vaults'" 
+                    @click="syncVaults">
+                    <ion-icon name="sync-outline"></ion-icon>                
+                </VaulticButton>
+            </TreeList>
         </div>
         <div class="sideDrawer__currentView">
-            <ToggleRadioButton :model="toggleButtonModel" :height="'clamp(30px, 4vh, 45px)'" @onButtonClicked="onAppViewChange" />
+            <ToggleRadioButton :model="toggleButtonModel" :height="'clamp(30px, 4vh, 45px)'" />
         </div>
     </div>
 </template>
@@ -30,6 +35,7 @@ import { computed, ComputedRef, defineComponent, Ref, ref, watch, onMounted, onU
 import TreeList from "./Tree/TreeList.vue";
 import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
 import ToggleRadioButton from './InputFields/ToggleRadioButton.vue';
+import VaulticButton from './InputFields/VaulticButton.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
@@ -37,13 +43,15 @@ import { ToggleRadioButtonModel, TreeNodeButton } from "../Types/Models";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
 import { DisplayVault, VaultType } from '@vaultic/shared/Types/Entities';
 import { AppView } from '../Types/App';
+import { useConfirm } from 'primevue/useconfirm';
 
 export default defineComponent({
     name: "SideDrawer",
     components: {
         TreeList,
         PersonOutlineIcon,
-        ToggleRadioButton
+        ToggleRadioButton,
+        VaulticButton
     },
     setup()
     {
@@ -53,16 +61,21 @@ export default defineComponent({
         const text: Ref<string> = ref(online.value ? "Online" : "Offline");
         let refreshKey: Ref<string> = ref('');
 
-        const toggleButtonModel: Ref<ToggleRadioButtonModel> = ref({
-            buttonOne: {
+        const toggleButtonModel: ToggleRadioButtonModel = 
+        {
+            buttonOne:
+            {
                 text: "Vault",
-                active: true
+                active: computed(() => app.isVaultView),
+                onClick: () => app.activeAppView = AppView.Vault
             },
-            buttonTwo: {
+            buttonTwo:
+            {
                 text: "User",
-                active: false
+                active: computed(() => !app.isVaultView),
+                onClick: () => app.activeAppView = AppView.User
             }
-        });
+        };
 
         const manager = new TreeNodeListManager();
 
@@ -113,25 +126,12 @@ export default defineComponent({
 
                 async function onKeySuccess(key: string)
                 {
-                    if (data['type'] == VaultType.Personal)
+                    if (!(await app.setActiveVault(key, data['userVaultID'])))
                     {
-                        if (!(await app.setActiveVault(key, data['userVaultID'])))
-                        {
-                            app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
-                            resolve(false);
+                        app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
+                        resolve(false);
 
-                            return;
-                        }
-                    }
-                    else if (data['type'] == VaultType.Archived)
-                    {
-                        if (!(await app.loadArchivedVault(key, data['userVaultID'])))
-                        {
-                            app.popups.showToast(primaryColor.value, 'Failed to load archived vault', false);
-                            resolve(false);
-
-                            return;
-                        }
+                        return;
                     }
 
                     resolve(true);
@@ -155,19 +155,12 @@ export default defineComponent({
         async function onLeafArchive(data: Dictionary<any>)
         {
             // can't delete our last vault
-            if (app.userVaults.value.length == 1)
+            if (app.privateVaults.value.length + app.sharedWithOthersVaults.value.length == 1)
             {
                 return true;
             }
 
-            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
-            async function onKeySuccess(key: string)
-            {
-                if (!(await app.archiveVault(key, data['userVaultID'])))
-                {
-                    app.popups.showToast(primaryColor.value, 'Failed to load archived vault', false);
-                }
-            }
+            confirmArchiveOrDelete(data, true);
         }
 
         async function onUnarchiveVault(data: Dictionary<any>)
@@ -175,7 +168,7 @@ export default defineComponent({
             app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
             async function onKeySuccess(key: string)
             {
-                if (!(await app.unarchiveVault(key, data['userVaultID'])))
+                if (!(await app.updateArchiveStatus(key, data['userVaultID'], false)))
                 {
                     app.popups.showToast(primaryColor.value, 'Failed to unarchive vault', false);
                 }
@@ -184,15 +177,52 @@ export default defineComponent({
 
         async function onLeafPermanantlyDelete(data: Dictionary<any>)
         {
-            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
-            async function onKeySuccess(key: string)
-            {
-                if (!(await app.permanentlyDeleteVault(key, data['userVaultID'])))
-                {
-                    app.popups.showToast(primaryColor.value, 'Failed to delete vault', false);
-                }
-            }
+            confirmArchiveOrDelete(data, false);
         }
+
+        const confirm = useConfirm();
+        const confirmArchiveOrDelete = (data: Dictionary<any>, archive: boolean) => 
+        {
+            confirm.require({
+                message: `Are you sure you want to ${archive ? 'archive' : 'delete'} this Vault?`,
+                header: `${archive ? 'Archive' : 'Delete'} Vault`,
+                icon: 'pi pi-info-circle',
+                rejectLabel: 'Cancel',
+                rejectProps: 
+                {
+                    label: 'Cancel',
+                    severity: 'secondary',
+                    outlined: true
+                },
+                acceptProps: 
+                {
+                    label: `${archive ? 'Archive' : 'Delete'}`,
+                    severity: 'danger'
+                },
+                accept: () => 
+                {
+                    app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+                    async function onKeySuccess(key: string)
+                    {
+                        if (archive)
+                        {
+                            if (!(await app.updateArchiveStatus(key, data['userVaultID'], true)))
+                            {
+                                app.popups.showToast(primaryColor.value, 'Failed to archived vault', false);
+                            }
+                        }
+                        else
+                        {
+                            if (!(await app.permanentlyDeleteVault(key, data['userVaultID'])))
+                            {
+                                app.popups.showToast(primaryColor.value, 'Failed to delete vault', false);
+                            }
+                        }
+                    }
+                },
+                reject: () => { }
+            });
+        };
 
         function onVaultUpdated(dv: DisplayVault)
         {
@@ -236,19 +266,7 @@ export default defineComponent({
             allNodes.value = manager.buildList();
         }
 
-        function onAppViewChange(index: number)
-        {
-            if (index == 0)
-            {
-                app.activeAppView = AppView.Vault;
-            }
-            else 
-            {
-                app.activeAppView = AppView.User;
-            }
-        }
-
-        watch(() => app.userVaults.value, (newValue, oldValue) => 
+        function addRemoveArchiveButton(newValue: DisplayVault[], oldValue: DisplayVault[])
         {
             // Add Archive button as we now have 2 vaults
             if (oldValue.length == 1)
@@ -265,19 +283,67 @@ export default defineComponent({
                     (node) => node.data["userVaultID"] == newValue[0].userVaultID,
                     (node) => node.buttons.splice(1, 1));
             }
+        }
+
+        function syncVaults()
+        {
+            app.popups.showRequestAuthentication(primaryColor.value, async (masterKey: string) => 
+            {
+                app.popups.showLoadingIndicator(primaryColor.value, "Syncing Vaults");
+                const success = await app.syncVaults(masterKey);
+                if (success)
+                {
+                    app.popups.showToast(primaryColor.value, "Sync Succeeded", true);
+                }
+                else
+                {
+                    app.popups.showToast(primaryColor.value, "Sync Failed", false);
+                }
+
+                app.popups.hideLoadingIndicator();             
+            }, () => {});
+        }
+
+        watch(() => app.privateVaults.value, (newValue, oldValue) => 
+        {
+            addRemoveArchiveButton(newValue, oldValue);
 
             const buttons = [treeNodeEditButton];
-            if (newValue.length > 1)
+            if (app.privateVaults.value.length + app.sharedWithOthersVaults.value.length > 1)
             {
                 buttons.push(treeNodeArchiveButton);
             }
 
-            updateNodeList(privateVaultsID, VaultType.Personal, buttons, newValue, oldValue);
+            updateNodeList(privateVaultsID, VaultType.Private, buttons, newValue, oldValue);
         });
 
-        watch(() => app.archivedVaults.value, (newValue, oldValue) => 
+        watch(() => app.sharedWithOthersVaults.value, (newValue, oldValue) => 
         {
-            updateNodeList(archivedVaultsID, VaultType.Archived, [treeNodeUndoButton, treeNodePermanentlyDeleteButton], newValue, oldValue);
+            addRemoveArchiveButton(newValue, oldValue);
+
+            const buttons = [treeNodeEditButton];
+            if (app.privateVaults.value.length + app.sharedWithOthersVaults.value.length > 1)
+            {
+                buttons.push(treeNodeArchiveButton);
+            }
+
+            updateNodeList(sharedWithOthersID, VaultType.SharedWithOthers, buttons, newValue, oldValue);
+        });
+
+        watch(() => app.sharedWithUserVaults.value, (newValue, oldValue) => 
+        {
+            updateNodeList(sharedWithMeID, VaultType.SharedWithUser, [], newValue, oldValue);
+        });
+
+        watch(() => app.archivedVaults.value, (newValue, oldValue) =>
+        {
+            const buttons = [treeNodeUndoButton];
+            if (app.isOnline)
+            {
+                buttons.push(treeNodePermanentlyDeleteButton);
+            }
+
+            updateNodeList(archivedVaultsID, VaultType.Archived, buttons, newValue, oldValue);
         });
 
         watch(() => app.isOnline, (newValue) =>
@@ -308,7 +374,7 @@ export default defineComponent({
             toggleButtonModel,
             openCreateVaultPopup,
             onLeafClicked,
-            onAppViewChange
+            syncVaults
         };
     }
 })

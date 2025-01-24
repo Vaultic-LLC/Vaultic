@@ -11,7 +11,7 @@ import { PasswordStoreState } from "../Entities/States/PasswordStoreState";
 import { ValueStoreState } from "../Entities/States/ValueStoreState";
 import { FilterStoreState } from "../Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Entities/States/GroupStoreState";
-import { backupData } from "../../Helpers/RepositoryHelper";
+import { backupData, checkMergeMissingData, getUserDataSignatures } from "../../Helpers/RepositoryHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { User } from "../Entities/User";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
@@ -23,12 +23,23 @@ import { IVaultRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { VaultsAndKeys } from "../../Types/Responses";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
+import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
+import { server } from "@serenity-kit/opaque";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
     protected getRepository(): Repository<Vault> | undefined
     {
         return environment.databaseDataSouce.getRepository(Vault);
+    }
+
+    public async getAllVaultIDs(): Promise<Set<number>>
+    {
+        const vaults = await this.repository.find();
+        return new Set(vaults.map(v => v.vaultID));
     }
 
     public async setLastUsedVault(user: User, userVaultID: number)
@@ -66,15 +77,28 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return await transaction.commit();
     }
 
-    public async createNewVault(name: string): Promise<boolean | [UserVault, Vault, string]>
+    public async createNewVault(name: string, shared: boolean, addedOrganizations: Organization[],
+        addedMembers: Member[]): Promise<boolean | [UserVault, Vault, string]>
     {
-        const response = await vaulticServer.vault.create();
+        const vaultKey = environment.utilities.generator.randomValue(60);
+
+        let orgsAndUserKeys: AddedOrgInfo;
+        if (addedOrganizations.length > 0)
+        {
+            orgsAndUserKeys = await vaultAddedOrgsToAddedOrgInfo(vaultKey, addedOrganizations);
+        }
+
+        let modifiedOrgMembers: AddedVaultMembersInfo;
+        if (addedMembers.length > 0)
+        {
+            modifiedOrgMembers = await vaultAddedMembersToOrgMembers(vaultKey, addedMembers);
+        }
+
+        const response = await vaulticServer.vault.create(name, shared, orgsAndUserKeys, modifiedOrgMembers);
         if (!response.Success)
         {
             return false;
         }
-
-        const vaultKey = environment.utilities.generator.randomValue(60);
 
         const userVault = new UserVault().makeReactive();
         userVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
@@ -82,6 +106,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const vault = new Vault().makeReactive();
         vault.lastUsed = true;
         vault.name = name;
+        vault.shared = shared;
+        vault.isArchived = false;
         vault.vaultStoreState = new VaultStoreState().makeReactive();
         vault.passwordStoreState = new PasswordStoreState().makeReactive();
         vault.valueStoreState = new ValueStoreState().makeReactive();
@@ -94,6 +120,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         userVault.userVaultID = response.UserVaultID!;
         userVault.userOrganizationID = response.UserOrganizationID!;
         userVault.vaultID = response.VaultID!;
+        userVault.isOwner = true;
         userVault.vaultPreferencesStoreState.userVaultID = response.UserVaultID!;
         userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = response.VaultPreferencesStoreStateID!;
         userVault.vaultPreferencesStoreState.state = "{}";
@@ -118,7 +145,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return [userVault, vault, vaultKey];
     }
 
-    public async createNewVaultForUser(masterKey: string, name: string, setAsActive: boolean, doBackupData: boolean): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
+    // TODO: why is doBackupData here? You can't create a vault unless you are online because we need to get the IDs from 
+    // the server
+    public async createNewVaultForUser(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
+        addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
     {
         return await safetifyMethod(this, internalCreateNewVaultForUser);
 
@@ -130,7 +160,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const vaultData = await this.createNewVault(name);
+            const vaultData = await this.createNewVault(name, shared, addedOrganizations, addedMembers);
             if (!vaultData)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "No Vault Data");
@@ -168,7 +198,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (!(await transaction.commit()))
             {
-                await vaulticServer.vault.failedToSaveVault(userVault.userVaultID);
+                await vaulticServer.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 
@@ -223,14 +253,126 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async saveVault(masterKey: string, userVaultID: number, newData: string, currentData?: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async updateVault(masterKey: string, updateVaultData: string, doBackup: boolean):
+        Promise<TypedMethodResponse<boolean | undefined>>
     {
-        return await safetifyMethod(this, internalSaveVault);
+        return await safetifyMethod(this, internalUpdateVault);
 
-        async function internalSaveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        async function internalUpdateVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        {
+            const parsedUpdateVaultData: UpdateVaultData = JSON.vaulticParse(updateVaultData);
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [parsedUpdateVaultData.userVaultID]);
+
+            if (userVaults[0].length != 1)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVault");
+            }
+
+            const oldVault = userVaults[0][0].vault.makeReactive();
+
+            let needToUpdateSharing = false;
+            let needsToUpdateVault = false;
+
+            let addedOrgInfo: AddedOrgInfo;
+            let removedOrgIDs: number[];
+
+            let addedVaultMemberInfo: AddedVaultMembersInfo;
+            let updatedModifiedOrgMembers: ModifiedOrgMember[];
+            let removedMemberIDs: number[];
+
+            console.log(`Update Vault: ${JSON.stringify(parsedUpdateVaultData)}`);
+            if (parsedUpdateVaultData.shared != undefined && parsedUpdateVaultData.shared != oldVault.shared)
+            {
+                oldVault.shared = parsedUpdateVaultData.shared;
+
+                needToUpdateSharing = true;
+                needsToUpdateVault = true;
+            }
+
+            if (parsedUpdateVaultData.isArchived != undefined && parsedUpdateVaultData.isArchived != oldVault.isArchived)
+            {
+                oldVault.isArchived = parsedUpdateVaultData.isArchived;
+                needsToUpdateVault = true;
+            }
+
+            if (parsedUpdateVaultData.addedOrganizations != undefined && parsedUpdateVaultData.addedOrganizations.length > 0)
+            {
+                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(userVaults[1][0], parsedUpdateVaultData.addedOrganizations);
+                needToUpdateSharing = true;
+            }
+
+            if (parsedUpdateVaultData.removedOrganizations != undefined && parsedUpdateVaultData.removedOrganizations.length > 0)
+            {
+                removedOrgIDs = organizationArrayToOrganizationIDArray(parsedUpdateVaultData.removedOrganizations);
+                needToUpdateSharing = true;
+            }
+
+            if (parsedUpdateVaultData.addedMembers != undefined && parsedUpdateVaultData.addedMembers.length > 0)
+            {
+                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(userVaults[1][0], parsedUpdateVaultData.addedMembers);
+                needToUpdateSharing = true;
+            }
+
+            if (parsedUpdateVaultData.updatedMembers != undefined && parsedUpdateVaultData.updatedMembers.length > 0)
+            {
+                updatedModifiedOrgMembers = memberArrayToModifiedOrgMemberWithoutVaultKey(parsedUpdateVaultData.updatedMembers);
+                needToUpdateSharing = true;
+            }
+
+            if (parsedUpdateVaultData.removedMembers != undefined && parsedUpdateVaultData.removedMembers.length > 0)
+            {
+                removedMemberIDs = memberArrayToUserIDArray(parsedUpdateVaultData.removedMembers);
+                needToUpdateSharing = true;
+            }
+
+            if (needToUpdateSharing)
+            {
+                const response = await vaulticServer.vault.updateVault(parsedUpdateVaultData.userVaultID, userVaults[0][0].userOrganizationID,
+                    parsedUpdateVaultData.shared, addedOrgInfo, removedOrgIDs, addedVaultMemberInfo, updatedModifiedOrgMembers, removedMemberIDs);
+
+                if (!response.Success)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed to update vault on server");
+                }
+            }
+
+            if (parsedUpdateVaultData.name != undefined && parsedUpdateVaultData.name != oldVault.name)
+            {
+                oldVault.name = parsedUpdateVaultData.name;
+                needsToUpdateVault = true;
+            }
+
+            if (needsToUpdateVault)
+            {
+                const transaction = new Transaction();
+
+                const vaultKey = userVaults[1][0];
+                transaction.updateEntity(oldVault, vaultKey, () => this);
+
+                const success = await transaction.commit();
+                if (!success)
+                {
+                    return TypedMethodResponse.fail();
+                }
+
+                if (doBackup)
+                {
+                    await backupData(masterKey);
+                }
+            }
+
+            return TypedMethodResponse.success();
+        }
+    }
+
+    public async saveVaultData(masterKey: string, userVaultID: number, newData: string, currentData?: string): Promise<TypedMethodResponse<boolean | undefined>>
+    {
+        return await safetifyMethod(this, internalSaveVaultData);
+
+        async function internalSaveVaultData(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
-            if (userVaults[0].length == 0)
+            if (userVaults[0].length != 1)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "No UserVault");
             }
@@ -244,17 +386,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
-                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVault");
+                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVaultData");
             }
 
             const transaction = new Transaction();
-
-            if (newVaultData.name)
-            {
-                oldVault.name = newVaultData.name;
-                transaction.updateEntity(oldVault, vaultKey, () => this);
-            }
-
             if (newVaultData.vaultStoreState)
             {
                 const currentVaultState = JSON.vaulticParse(currentVaultData.vaultStoreState);
@@ -330,38 +465,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async archiveVault(masterKey: string, userVaultID: number, backup: boolean): Promise<TypedMethodResponse<boolean | undefined>>
-    {
-        return await safetifyMethod(this, internalArchiveVault);
-
-        async function internalArchiveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
-        {
-            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
-            if (userVaults[0].length == 0)
-            {
-                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
-            }
-
-            const vault = userVaults[0][0].vault.makeReactive();
-            vault.entityState = EntityState.Deleted;
-
-            const transaction = new Transaction();
-            transaction.updateEntity(vault, userVaults[1][0], () => this);
-
-            if (!(await transaction.commit()))
-            {
-                return TypedMethodResponse.transactionFail();
-            }
-
-            if (backup && !(await backupData(masterKey)))
-            {
-                return TypedMethodResponse.backupFail();
-            }
-
-            return TypedMethodResponse.success(true);
-        }
-    }
-
     public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<VaultsAndKeys | undefined>>
     {
         const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
@@ -381,6 +484,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const partialVaultsToBackup: Partial<Vault>[] = [];
         const vaultKeys: string[] = [];
 
+        console.log(`\nUser Vaults with vaults to backup: ${JSON.stringify(userVaultsWithVaultsToBackup[0])}\n`)
         for (let i = 0; i < userVaultsWithVaultsToBackup[0].length; i++)
         {
             const vaultBackup = {};
@@ -442,6 +546,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 .leftJoinAndSelect("vault.filterStoreState", "filterStoreState")
                 .leftJoinAndSelect("vault.groupStoreState", "groupStoreState")
                 .where("userVaults.userID = :userID", { userID: currentUser?.userID })
+                .andWhere("(userVaults.isOwner = true OR userVaults.permissions = :permissions)", { permissions: ServerPermissions.ViewAndEdit })
                 .andWhere(`(
                     vault.entityState != :entityState OR 
                     vaultStoreState.entityState != :entityState OR 
@@ -552,6 +657,42 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
+    public async deleteVault(masterKey: string, userVaultID: number): Promise<TypedMethodResponse<boolean | undefined>>
+    {
+        return await safetifyMethod(this, internalArchiveVault);
+
+        async function internalArchiveVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        {
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
+            if (userVaults[0].length == 0)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
+            }
+
+            const userVault = userVaults[0][0];
+            if (!userVault.vault.isArchived)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "Can't delete unarchived vault");
+            }
+
+            const response = await vaulticServer.vault.deleteVault(userVault.userOrganizationID, userVault.userVaultID);
+            if (!response.Success)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "Failed to delete vault on server");
+            }
+
+            const transaction = new Transaction();
+            transaction.deleteEntity(userVault.vaultID, () => this);
+
+            if (!(await transaction.commit()))
+            {
+                return TypedMethodResponse.transactionFail();
+            }
+
+            return TypedMethodResponse.success(true);
+        }
+    }
+
     public addFromServer(vault: DeepPartial<Vault>, transaction: Transaction): boolean
     {
         if (!Vault.isValid(vault))
@@ -600,6 +741,18 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             updatedVault = true;
         }
 
+        if (newVault.shared)
+        {
+            partialVault[nameof<Vault>("shared")] = newVault.shared;
+            updatedVault = true;
+        }
+
+        if (newVault.isArchived)
+        {
+            partialVault[nameof<Vault>("isArchived")] = newVault.isArchived;
+            updatedVault = true;
+        }
+
         if (updatedVault)
         {
             transaction.overrideEntity(newVault.vaultID, partialVault, () => this);
@@ -622,7 +775,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             else
             {
                 const partialVaultStoreState: DeepPartial<VaultStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.vaultStoreState);
-                transaction.overrideEntity(newVault.vaultStoreState.vaultStoreStateID, partialVaultStoreState, () => environment.repositories.vaultStoreStates);
+                if (Object.keys(partialVaultStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newVault.vaultStoreState.vaultStoreStateID, partialVaultStoreState, () => environment.repositories.vaultStoreStates);
+                }
             }
         }
 
@@ -641,7 +797,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             else 
             {
                 const partialPasswordStoreState: DeepPartial<PasswordStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.passwordStoreState);
-                transaction.overrideEntity(newVault.passwordStoreState.passwordStoreStateID, partialPasswordStoreState, () => environment.repositories.passwordStoreStates);
+                if (Object.keys(partialPasswordStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newVault.passwordStoreState.passwordStoreStateID, partialPasswordStoreState, () => environment.repositories.passwordStoreStates);
+                }
             }
         }
 
@@ -660,7 +819,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             else 
             {
                 const partialValueStoreState: DeepPartial<ValueStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.valueStoreState);
-                transaction.overrideEntity(newVault.valueStoreState.valueStoreStateID, partialValueStoreState, () => environment.repositories.valueStoreStates);
+                if (Object.keys(partialValueStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newVault.valueStoreState.valueStoreStateID, partialValueStoreState, () => environment.repositories.valueStoreStates);
+                }
             }
         }
 
@@ -678,9 +840,11 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
             else 
             {
-                console.log('override filter store state');
                 const partialFilterStoreState: DeepPartial<FilterStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.filterStoreState);
-                transaction.overrideEntity(newVault.filterStoreState.filterStoreStateID, partialFilterStoreState, () => environment.repositories.filterStoreStates);
+                if (Object.keys(partialFilterStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newVault.filterStoreState.filterStoreStateID, partialFilterStoreState, () => environment.repositories.filterStoreStates);
+                }
             }
         }
 
@@ -699,27 +863,14 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             else 
             {
                 const partialGroupStoreState: DeepPartial<GroupStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.groupStoreState);
-                transaction.overrideEntity(newVault.groupStoreState.groupStoreStateID, partialGroupStoreState, () => environment.repositories.groupStoreStates);
+                if (Object.keys(partialGroupStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newVault.groupStoreState.groupStoreStateID, partialGroupStoreState, () => environment.repositories.groupStoreStates);
+                }
             }
         }
 
         return needsToRePushData;
-    }
-
-    public async deleteFromServer(vault: Partial<Vault>)
-    {
-        if (!vault.vaultID || vault.userVaults?.length == 0)
-        {
-            return;
-        }
-
-        const deleteVaultPromise = await this.repository.createQueryBuilder()
-            .delete()
-            .where("vaultID = :vaultID", { vaultID: vault.vaultID })
-            .execute();
-
-        const deleteUserVaultsPromise = environment.repositories.userVaults.deleteFromServerAndVault(vault.vaultID);
-        return Promise.all([deleteVaultPromise, deleteUserVaultsPromise]);
     }
 
     public async getStoreStates(masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>
@@ -787,6 +938,42 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
 
             return TypedMethodResponse.success(returnStates);
+        }
+    }
+
+    public async syncVaults(masterKey: string): Promise<TypedMethodResponse<boolean | undefined>>
+    {
+        return await safetifyMethod(this, internalSyncVaults);
+
+        async function internalSyncVaults(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        {
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
+
+            const signatures = await getUserDataSignatures(masterKey, currentUser.email);
+            const result = await vaulticServer.vault.syncVaults(signatures.signatures);
+
+            if (!result.Success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            // no changes
+            if (!result.userDataPayload)
+            {
+                return TypedMethodResponse.success();
+            }
+
+            const success = await checkMergeMissingData(masterKey, currentUser.email, signatures.keys, signatures.signatures, result.userDataPayload);
+            if (!success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            return TypedMethodResponse.success();
         }
     }
 }

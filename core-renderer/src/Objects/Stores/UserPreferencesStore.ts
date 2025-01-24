@@ -34,6 +34,7 @@ interface IUserPreferencesStoreState extends StoreState
     pinnedDataTypes: Field<Map<number, Field<KnownMappedFields<PinnedDataTypes>>>>; // keyed by userVaultID
     pinnedDesktopDevices: Field<Map<number, Field<number>>>;
     pinnedMobileDevices: Field<Map<number, Field<number>>>;
+    pinnedOrganizations: Field<Map<number, Field<number>>>;
 }
 
 export type UserPreferencesStoreState = KnownMappedFields<IUserPreferencesStoreState>;
@@ -53,16 +54,15 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     get pinnedValues() { return this.getPinnedDataTypes(DataType.NameValuePairs) ?? new Field(new Map()); }
     get pinnedDesktopDevices() { return this.state.pinnedDesktopDevices; }
     get pinnedMobileDevices() { return this.state.pinnedMobileDevices; }
+    get pinnedOrganizations() { return this.state.pinnedOrganizations; }
 
-    constructor(appStore: AppStore)
+    constructor()
     {
         super("userPreferencesStoreState");
 
         this.internalCurrentPrimaryColor = ref('');
         this.initalized = ref(false)
         this.setCurrentPrimaryColor(DataType.Passwords);
-
-        //this.init(appStore)
     }
 
     public updateState(state: UserPreferencesStoreState): void 
@@ -139,6 +139,11 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             this.setCurrentPrimaryColor(newValue);
         });
 
+        watch(() => appStore.activeDeviceOrganizationsTable, (newValue) =>
+        {
+            this.setCurrentPrimaryColor(newValue);
+        });
+
         watch(() => appStore.currentVault.reactiveUserVaultID, (newValue) => 
         {
             if (!newValue)
@@ -149,6 +154,18 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             if (!this.state.pinnedDataTypes.value.get(newValue))
             {
                 this.setDefaultPinnedDataTypes(newValue, this.state.pinnedDataTypes);
+            }
+        });
+
+        watch(() => appStore.isVaultView, (newValue, _) =>
+        {
+            if (newValue)
+            {
+                this.setCurrentPrimaryColor(appStore.activePasswordValuesTable);
+            }
+            else
+            {
+                this.setCurrentPrimaryColor(appStore.activeDeviceOrganizationsTable);
             }
         });
 
@@ -168,7 +185,8 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             currentColorPalette: defaultColorPalettes.entries().next().value![1],
             pinnedDataTypes: defaultPinnedDataTypes,
             pinnedDesktopDevices: new Field(new Map()),
-            pinnedMobileDevices: new Field(new Map())
+            pinnedMobileDevices: new Field(new Map()),
+            pinnedOrganizations: new Field(new Map())
         };
     }
 
@@ -226,9 +244,11 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         switch (dataType)
         {
             case DataType.NameValuePairs:
+            case DataType.Organizations:
                 this.currentPrimaryColor.value = this.state.currentColorPalette.value.valuesColor.value.primaryColor.value;
                 break;
             case DataType.Passwords:
+            case DataType.Devices:
             default:
                 this.currentPrimaryColor.value = this.state.currentColorPalette.value.passwordsColor.value.primaryColor.value;
         }
@@ -334,5 +354,23 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         }
 
         await this.update();
+    }
+
+    public async addPinnedOrganization(id: number)
+    {
+        if (!this.state.pinnedOrganizations.value.has(id))
+        {
+            this.state.pinnedOrganizations.value.set(id, new Field(id));
+            await this.update();
+        }
+    }
+
+    public async removePinnedOrganization(id: number)
+    {
+        if (this.state.pinnedOrganizations.value.has(id))
+        {
+            this.state.pinnedOrganizations.value.delete(id);
+            await this.update();
+        }
     }
 }

@@ -318,6 +318,8 @@ export default defineComponent({
             updateData(color.value, color.value);
         }
 
+        // TODO: I should cache the data instead of requesting it every time the table chanages. 
+        // only re request it if the data actually changes
         async function recalcData()
         {
             if (!app.isOnline)

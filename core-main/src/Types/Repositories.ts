@@ -8,6 +8,7 @@ import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { VaultsAndKeys } from "./Responses";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 
 export interface VaulticRepository<T extends VaulticEntity>
 {
@@ -35,6 +36,6 @@ export interface IUserVaultRepository extends ClientUserVaultRepository, Vaultic
 
 export interface IVaultRepository extends ClientVaultRepository, VaulticRepository<Vault>
 {
-    createNewVault: (name: string) => Promise<boolean | [UserVault, Vault, string]>;
+    createNewVault: (name: string, shared: boolean, addedOrganizations: Organization[], addedMembers: Member[]) => Promise<boolean | [UserVault, Vault, string]>;
     getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<VaultsAndKeys | undefined>>;
 }

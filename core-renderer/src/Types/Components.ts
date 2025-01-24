@@ -1,3 +1,5 @@
+import { Member } from "@vaultic/shared/Types/DataTypes";
+
 interface Component extends HTMLElement { }
 
 export interface InputComponent extends Component
@@ -23,4 +25,21 @@ export interface EncryptedInputFieldComponent extends InputComponent
 export interface TableTemplateComponent extends Component
 {
     calcScrollbarColor: () => void;
+}
+
+export interface MemberChanges
+{
+    addedMembers: Map<number, Member>;
+    updatedMembers: Map<number, Member>;
+    removedMembers: Map<number, Member>;
+}
+
+export interface MemberTableComponent extends Component 
+{
+    getChanges: () => MemberChanges;
+}
+
+export interface ObjectViewComponent extends Component
+{
+    addWarning: (message: string) => void;
 }

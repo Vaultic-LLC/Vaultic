@@ -2,7 +2,7 @@
     <div class="organizationDevicesTableContainer">
         <VaulticTable ref="tableRef" id="organizationDevicesTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
-            :onPin="onPin" :onEdit="activeTab == 1 ? onEditOrganization : undefined" :onDelete="activeTab == 1 ? onDeleteOrganization : undefined">
+            :onPin="onPin" :onEdit="devicesAreSelected ? undefined : onEditOrganization" :onDelete="devicesAreSelected ? undefined : onDeleteOrganization">
             <template #tableControls>
                 <AddButton :color="color" @click="onAddOrganization" />
             </template>
@@ -11,19 +11,19 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, reactive, ref } from 'vue';
+import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, reactive, ref, watch } from 'vue';
 
 import VaulticTable from './VaulticTable.vue';
 import AddButton from './Controls/AddButton.vue';
 
-import { HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { FieldedTableRowModel, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
 import { ClientDevice } from '@vaultic/shared/Types/Device';
-import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { Organization } from '../../Types/DataTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
+import { SortedCollection, VaultListSortedCollection } from '../../Objects/DataStructures/SortedCollections';
+import { Organization } from '@vaultic/shared/Types/DataTypes';
+import { DataType } from '../../Types/DataTypes';
 
 export default defineComponent({
     name: "OrganizationDeviceTable",
@@ -35,20 +35,19 @@ export default defineComponent({
     setup()
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
-        const color: ComputedRef<string> = computed(() => activeTab.value == 0 ? app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value :
-            app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const devices: SortedCollection = new SortedCollection([]);
         const pinnedDevices: SortedCollection = new SortedCollection([]);
 
-        const organizations: SortedCollection = new SortedCollection([]);
-        const pinnedOrganizations: SortedCollection = new SortedCollection([]);
+        const organizations: VaultListSortedCollection = new VaultListSortedCollection([]);
+        const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([]);
 
-        const activeTab: Ref<number> = ref(0);
+        const devicesAreSelected: ComputedRef<boolean> = computed(() => app.activeDeviceOrganizationsTable == DataType.Devices);
 
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
-            if (activeTab.value == 0)
+            if (devicesAreSelected.value)
             {
                 if (app.devices.failedToGetDevices)
                 {
@@ -66,31 +65,38 @@ export default defineComponent({
         const headerTabs: HeaderTabModel[] = [
             {
                 name: 'Devices',
-                active: computed(() => activeTab.value == 0),
+                active: devicesAreSelected,
                 color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
-                onClick: () => activeTab.value = 0
+                onClick: () => 
+                {
+                    app.activeDeviceOrganizationsTable = DataType.Devices;
+                }
             },
             {
                 name: 'Organizations',
-                active: computed(() => activeTab.value == 1),
+                active: computed(() => !devicesAreSelected.value),
                 color: computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value),
-                onClick: () => activeTab.value = 1
+                onClick: () => 
+                {
+                    app.activeDeviceOrganizationsTable = DataType.Organizations;
+                }
             }
         ];
 
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = []
-            if (activeTab.value == 0)
+            if (devicesAreSelected.value)
             {
-                models.push({ header: "Name", field: "name"});
+                models.push({ header: "Name", field: "name" });
                 models.push({ header: "Type", field: "type" });
                 models.push({ header: "Model", field: "model" });
                 models.push({ header: "Version", field: "version" });
             }
             else 
             {
-                models.push({ header: "Name", field: "name" });
+                models.push({ header: "Name", field: "name", isFielded: false });
+                models.push({ header: "Vaults", field: "vaultIDsByVaultID", component: "VaultListCell", isFielded: false});
             }
 
             return models;
@@ -98,7 +104,7 @@ export default defineComponent({
 
         const tableDataSources: Reactive<TableDataSources> = reactive(
         {
-            activeIndex: () => activeTab.value,
+            activeIndex: () => app.activeDeviceOrganizationsTable == DataType.Devices ? 0 : 1,
             dataSources: 
             [
                 {
@@ -114,79 +120,68 @@ export default defineComponent({
             ]
         });
 
-        async function setTableRows()
+        async function setTableRows(mounting: boolean)
         {
-            const deviceRows = app.devices.devices.map((d) =>
+            if (mounting || app.activeDeviceOrganizationsTable == DataType.Devices)
             {
-                const row: TableRowModel = 
+                const deviceRows = app.devices.devices.map((d) =>
                 {
-                    id: d.value.id.value,
-                    backingObject: d,
-                };
+                    return new FieldedTableRowModel(d.value.id.value, false, undefined, d);
+                });
+    
+                const pinnedDeviceRows = app.devices.pinnedDevices.map((d) => 
+                {
+                    return new FieldedTableRowModel(d.value.id.value, true, undefined, d);
+                });
+    
+                devices.updateValues(deviceRows);
+                pinnedDevices.updateValues(pinnedDeviceRows)             
+            }
 
-                return row;
-            });
-
-            const pinnedDeviceRows = app.devices.pinnedDevices.map((d) => 
+            if (mounting || app.activeDeviceOrganizationsTable == DataType.Organizations)
             {
-                const row: TableRowModel = 
+                const organizationRows = app.organizations.organizations.value.map(o => 
                 {
-                    id: d.value.id.value,
-                    backingObject: d,
-                };
-
-                return row;
-            });
-
-            devices.updateValues(deviceRows);
-            pinnedDevices.updateValues(pinnedDeviceRows)
-
-            const organizationRows = app.organizations.organizations.value.map(o => 
-            {
-                const row: TableRowModel = 
+                    return new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, false, undefined, o);
+                });
+    
+                const pinnedOrganizationRows = app.organizations.pinnedOrganizations.map(o => 
                 {
-                    id: o.value.id.value,
-                    backingObject: o,
-                };
-
-                return row;
-            });
-
-            const pinnedOrganizationRows = app.organizations.pinnedOrganizations.map(o => 
-            {
-                const row: TableRowModel = 
-                {
-                    id: o.value.id.value,
-                    backingObject: o,
-                };
-
-                return row;
-            });
-
-            organizations.updateValues(organizationRows);
-            pinnedOrganizations.updateValues(pinnedOrganizationRows);
+                    return new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, true, undefined, o);
+                });
+    
+                organizations.updateValues(organizationRows);
+                pinnedOrganizations.updateValues(pinnedOrganizationRows);
+            }
         }
 
-        function onPin(value: Field<any>)
+        function onPin(isPinned: boolean, value: any)
         {
-            if (activeTab.value == 0)
+            if (app.activeDeviceOrganizationsTable == DataType.Devices)
             {
-                onPinDevice(value);
+                onPinDevice(isPinned, value);
             }
             else 
             {
-                onPinOrganization(value);
+                onPinOrganization(isPinned, value);
             }
         }
 
-        function onPinDevice(device: Field<ClientDevice>)
+        function onPinDevice(isPinned: boolean, device: ClientDevice)
         {
 
         }
 
-        function onPinOrganization(org: Field<Organization>)
+        function onPinOrganization(isPinned: boolean, org: Organization)
         {
-
+            if (isPinned)
+            {
+                app.userPreferences.removePinnedOrganization(org.organizationID);
+            }
+            else 
+            {
+                app.userPreferences.addPinnedOrganization(org.organizationID);
+            }
         }
 
         function onAddOrganization()
@@ -194,20 +189,43 @@ export default defineComponent({
             app.popups.showOrganizationPopup(() => {});
         }
 
-        function onEditOrganization(organization: Field<Organization>)
+        function onEditOrganization(organization: Organization)
         {
-            
+            app.popups.showOrganizationPopup(() => {}, organization);
         }
 
-        function onDeleteOrganization(organization: Field<Organization>)
+        async function onDeleteOrganization(organization: Organization)
         {
-            
+            app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Deleting Organization");
+            if (await app.organizations.deleteOrganization(organization.organizationID))
+            {
+                app.popups.showToast(app.userPreferences.currentPrimaryColor.value, "Organization Deleted", true);
+            }
+            else
+            {
+                app.popups.showToast(app.userPreferences.currentPrimaryColor.value, "Delete Failed", false);
+            }
+
+            app.popups.hideLoadingIndicator();
         }
 
-        onMounted(setTableRows);
+        watch(() => app.organizations.organizations.value.length, (_, __) => 
+        {
+            setTableRows(false);
+        });
+
+        watch(() => app.activeDeviceOrganizationsTable, () => 
+        {
+            setTableRows(false);
+        });
+
+        onMounted(() => 
+        {
+            setTableRows(true);
+        });
 
         return {
-            activeTab,
+            devicesAreSelected,
             tableRef,
             color,
             tableColumns,
@@ -231,10 +249,4 @@ export default defineComponent({
     left: 38%;
     top: max(252px, 42%);
 }
-
-/* @media (max-width: 1300px) {
-    #organizationDevicesTable {
-        left: max(324px, 28.5%);
-    }
-} */
 </style>

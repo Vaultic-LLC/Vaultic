@@ -1,4 +1,4 @@
-import { AtRiskModel, GroupIconModel, TableRowModel } from "../Types/Models";
+import { AtRiskModel, FieldedTableRowModel, GroupIconModel, TableRowModel } from "../Types/Models";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
@@ -8,7 +8,7 @@ import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
 let filterGroupModelID = 0;
 export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[])
 {
-    let models: TableRowModel[] = [];
+    let models: FieldedTableRowModel<Field<T>>[] = [];
     if (groupFilterType == DataType.Groups && passwordValueType == DataType.Passwords && app.currentVault.groupStore.activeAtRiskPasswordGroupType != AtRiskType.None)
     {
         switch (app.currentVault.groupStore.activeAtRiskPasswordGroupType)
@@ -91,7 +91,7 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         models.push(buildModel(value as any as Field<T>, message));
     }
 
-    function buildModel(v: Field<T>, message?: string): TableRowModel
+    function buildModel(v: Field<T>, message?: string): FieldedTableRowModel<Field<T>>
     {
         filterGroupModelID += 1;
 
@@ -101,18 +101,14 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
             atRiskModel = { message: message }
         }
 
-        return {
-            id: filterGroupModelID.toString(),
-            atRiskModel,
-            backingObject: v
-        }
+        return new FieldedTableRowModel(filterGroupModelID.toString(), undefined, atRiskModel, v);
     }
 }
 
 let passwordValueModelID = 0;
 export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(color: string, dataType: DataType, allValues: Field<T>[])
 {
-    const newModels = [];
+    const newModels: FieldedTableRowModel<Field<T>>[] = [];
     if (dataType == DataType.Passwords && app.currentVault.passwordStore.activeAtRiskPasswordType != AtRiskType.None)
     {
         switch (app.currentVault.passwordStore.activeAtRiskPasswordType)
@@ -199,7 +195,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         newModels.push(buildModel(value as any as Field<T>, message, onClick))
     }
 
-    function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void): TableRowModel
+    function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void): FieldedTableRowModel<Field<T>>
     {
         passwordValueModelID += 1;
 
@@ -237,15 +233,9 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
             });
         }
 
-        return {
-            id: passwordValueModelID.toString(),
-            backingObject: v,
-            atRiskModel,
-            state:
-            {
-                groupModels: groupModels
-            }
-        }
+        return new FieldedTableRowModel(passwordValueModelID.toString(), undefined, atRiskModel, v, {
+            groupMOdels: groupModels
+        });
     }
 
     function addToModels(currentModels: GroupIconModel[], group: Field<Group>)

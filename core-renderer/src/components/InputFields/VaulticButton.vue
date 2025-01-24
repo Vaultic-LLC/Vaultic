@@ -1,5 +1,5 @@
 <template>
-    <div class="vaulticButtonContainer">
+    <div ref="container" class="vaulticButtonContainer">
         <div class="vaulticButtonContainer__button">
             <slot></slot>
         </div>
@@ -7,13 +7,15 @@
 </template>
 
 <script lang="ts">
+import tippy from 'tippy.js';
 import { computed, ComputedRef, defineComponent, Ref, ref, onMounted } from 'vue';
 
 export default defineComponent({
     name: "VaulticButton",
-    props: ['color', 'minSize', 'preferredSize', 'maxSize'],
+    props: ['color', 'minSize', 'preferredSize', 'maxSize', 'tooltipMessage'],
     setup(props)
     {
+        const container: Ref<HTMLElement | null> = ref(null);
         const computedMinSize: ComputedRef<string> = computed(() => props.minSize ?? '20px');
         const computedPreferredSize: ComputedRef<string> = computed(() => props.preferredSize ?? '1.8vw');
         const computedMaxSize: ComputedRef<string> = computed(() => props.maxSize ?? '35px');
@@ -23,9 +25,20 @@ export default defineComponent({
         {
             // used to fix bug where the icon will slowly grow when first rendered
             setTimeout(() => transition.value = '0.5s', 200);
+            if (props.tooltipMessage && container.value)
+            {
+                tippy(container.value, 
+                {
+					content: props.tooltipMessage,
+					inertia: true,
+					animation: 'scale',
+					theme: 'material',
+                });
+            }
         });
 
         return {
+            container,
             computedMinSize,
             computedPreferredSize,
             computedMaxSize,

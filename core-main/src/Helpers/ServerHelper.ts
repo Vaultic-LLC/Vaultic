@@ -72,6 +72,7 @@ async function logUserIn(masterKey: string, email: string,
 
     async function internalLogUserIn(): Promise<TypedMethodResponse<LogUserInResponse>>
     {
+        console.time("1");
         const passwordHash = environment.utilities.hash.insecureHash(masterKey);
         const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
             password: passwordHash,
@@ -95,6 +96,7 @@ async function logUserIn(masterKey: string, email: string,
         }
 
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
+        console.timeEnd("1");
 
         let currentSignatures: CurrentSignaturesVaultKeys;
         if (!firstLogin && !reloadAllData)
@@ -102,6 +104,7 @@ async function logUserIn(masterKey: string, email: string,
             currentSignatures = await getUserDataSignatures(masterKey, email);
         }
 
+        console.time("2");
         let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
         if (finishResponse.Success)
         {
@@ -109,11 +112,19 @@ async function logUserIn(masterKey: string, email: string,
 
             if (!firstLogin)
             {
+                console.timeEnd("2");
+                console.time("3");
+
+                // Don't have to worry about shared vaults not being e2e encrypted when they are first shared since only display
+                // vaults of them run through here
                 const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
                 if (!result.success)
                 {
                     return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
                 }
+
+                console.timeEnd("3");
+                console.time("4");
 
                 if (reloadAllData)
                 {
@@ -124,18 +135,23 @@ async function logUserIn(masterKey: string, email: string,
                     await checkMergeMissingData(masterKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
                 }
 
+                console.timeEnd("4");
+                console.time("5");
+
                 // This has to go after merging in the event that the user isn't in the local data yet
                 await environment.repositories.users.setCurrentUser(masterKey, email);
 
-                const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
-                if (!payload)
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
-                }
-                else 
-                {
-                    finishResponse.userDataPayload = payload as UserDataPayload;
-                }
+                // const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
+                // if (!payload)
+                // {
+                //     return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
+                // }
+                // else
+                // {
+                //     finishResponse.userDataPayload = payload as UserDataPayload;
+                // }
+
+                console.timeEnd("5");
             }
         }
 
@@ -143,34 +159,44 @@ async function logUserIn(masterKey: string, email: string,
     }
 }
 
-async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
-{
-    const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-    if (!currentUser)
-    {
-        return false;
-    }
+// TODO: this shouldn't be needed until I return displayVaults from the server again
+// async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
+// {
+//     const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+//     if (!currentUser)
+//     {
+//         return false;
+//     }
 
-    for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
-    {
-        const vault = payload!.archivedVaults![i];
-        const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!);
-        if (!vaultKey.success)
-        {
-            return false;
-        }
+//     for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
+//     {
+//         await decryptAndSetName(payload!.archivedVaults[i]);
+//     }
 
-        const decryptedName = await environment.utilities.crypt.decrypt(vaultKey.value!, vault.name!);
-        if (!decryptedName.success)
-        {
-            return false;
-        }
+//     for (let i = 0; i < (payload?.sharedVaults?.length ?? 0); i++)
+//     {
+//         await decryptAndSetName(payload!.sharedVaults[i]);
+//     }
 
-        payload!.archivedVaults![i].name = decryptedName.value;
-    }
+//     return payload;
 
-    return payload;
-}
+//     async function decryptAndSetName(vault: ServerDisplayVault)
+//     {
+//         const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!, vault.isSetup);
+//         if (!vaultKey.success)
+//         {
+//             return false;
+//         }
+
+//         const decryptedName = await environment.utilities.crypt.decrypt(vaultKey.value!, vault.name!);
+//         if (!decryptedName.success)
+//         {
+//             return false;
+//         }
+
+//         vault.name = decryptedName.value;
+//     }
+// }
 
 const serverHelper: ServerHelper =
 {

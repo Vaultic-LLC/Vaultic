@@ -107,4 +107,9 @@ export default defineComponent({
 :deep(.p-checkbox-checked .p-checkbox-box.checkboxInputContainer__box) {
     border-color: v-bind(color) !important;
 }
+
+:deep(.p-checkbox:not(.p-disabled):has(.p-checkbox-input:focus-visible) .checkboxInputContainer__box) {
+    outline: none !important;
+    box-shadow: 0 0 15px v-bind(color) !important;
+}
 </style>

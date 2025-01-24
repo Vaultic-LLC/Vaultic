@@ -56,7 +56,7 @@ import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { Password, SecurityQuestion, defaultPassword } from '../../Types/DataTypes';
-import { GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
+import { FieldedTableRowModel, GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
@@ -149,17 +149,13 @@ export default defineComponent({
 
         function setSecurityQuestionModels()
         {
-            const securityQuestionRows: TableRowModel[] = [];
+            const securityQuestionRows: FieldedTableRowModel<Field<SecurityQuestion>>[] = [];
             passwordState.value.securityQuestions.value.forEach((v, k) => 
             {
-                securityQuestionRows.push({
-                        id: k,
-                        backingObject: v,
-                        state: 
-                        {
-                            isInitiallyEncrypted: isInitiallyEncrypted.value
-                        }
-                    })
+                securityQuestionRows.push(new FieldedTableRowModel(k, false, undefined, v, 
+                {
+                    isInitiallyEncrypted: isInitiallyEncrypted.value
+                }));
             });
 
             securityQuestions.updateValues(securityQuestionRows);
@@ -252,14 +248,11 @@ export default defineComponent({
 
             passwordState.value.securityQuestions.value.set(id, securityQuestion);
 
-            const securityQuestionModel: TableRowModel = 
-            {
-                id: securityQuestion.id,
-                backingObject: securityQuestion,
-                state: {
+            const securityQuestionModel: FieldedTableRowModel<Field<SecurityQuestion>> = new FieldedTableRowModel(
+                securityQuestion.id, undefined, undefined, securityQuestion, 
+                {
                     isInitiallyEncrypted: false
-                }
-            };
+                });
 
             securityQuestions.push(securityQuestionModel);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);

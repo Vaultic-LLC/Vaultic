@@ -50,7 +50,7 @@
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="popupStore.vaultPopupIsShowing" :closePopup="popupStore.onVaultPopupClose"
-                    :minWidth="'800px'" :minHeight="'480px'">
+                    :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
                     <VaultView :creating="popupStore.vaultModel == undefined" :model="popupStore.vaultModel" />
                 </ObjectPopup>
             </Transition>
@@ -71,6 +71,22 @@
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'800px'" :minHeight="'480px'"
+					:closePopup="popupStore.hideEmergencyDeactivationPopup">
+					<EmergencyDeactivationView />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.clearDataBreachesIsShowing" :minWidth="'600px'" :minHeight="'480px'" :width="'50%'"
+					:closePopup="popupStore.hideClearDataBreachesPopup">
+					<ClearBreachesView />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -88,8 +104,11 @@ import ObjectPopup from "./ObjectPopups/ObjectPopup.vue";
 import VaultView from "./ObjectViews/VaultView.vue";
 import OrganizationView from './ObjectViews/OrganizationView.vue';
 import AddObjectPopup from './ObjectPopups/AddObjectPopup.vue';
+import EmergencyDeactivationView from './Account/EmergencyDeactivationView.vue';
+import ClearBreachesView from './BreachedPasswords/ClearBreachesView.vue';
 
 import app from "../Objects/Stores/AppStore";
+import { DataType } from '../Types/DataTypes';
 
 export default defineComponent({
     name: 'Popups',
@@ -105,12 +124,15 @@ export default defineComponent({
         ObjectPopup,
         VaultView,
         OrganizationView,
-        AddObjectPopup
+        AddObjectPopup,
+        EmergencyDeactivationView,
+        ClearBreachesView
     },
     setup()
     {
         return {
             popupStore: app.popups,
+            DataType
         }
     }
 });

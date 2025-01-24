@@ -5,6 +5,10 @@ import { VaulticEntity } from "./VaulticEntity"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData, IUserVault } from "@vaultic/shared/Types/Entities"
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
+import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
+import { PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes"
+import { Field, KnownMappedFields } from "@vaultic/shared/Types/Fields"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity implements IUserVault
@@ -33,6 +37,12 @@ export class UserVault extends VaulticEntity implements IUserVault
     @JoinColumn({ name: "vaultID" })
     vault: Vault;
 
+    @Column("boolean")
+    isOwner: boolean;
+
+    @Column("integer")
+    permissions?: ServerPermissions;
+
     // Encrypted by Users Private Key
     // Backed Up
     // In the format { publicKey: string, vaultkey: string }
@@ -57,6 +67,8 @@ export class UserVault extends VaulticEntity implements IUserVault
         return new UserVault();
     }
 
+    // Make sure this are included in repository.updateFromServer() so the signature can be re built properly when
+    // returning data from the server
     protected internalGetSignableProperties(): string[] 
     {
         return [
@@ -64,6 +76,7 @@ export class UserVault extends VaulticEntity implements IUserVault
             nameof<UserVault>("userOrganizationID"),
             nameof<UserVault>("userID"),
             nameof<UserVault>("vaultID"),
+            nameof<UserVault>("isOwner"),
             nameof<UserVault>("vaultKey")
         ];
     }
@@ -103,10 +116,17 @@ export class UserVault extends VaulticEntity implements IUserVault
     public condense(): CondensedVaultData
     {
         return {
+            userOrganizationID: this.userOrganizationID,
             userVaultID: this.userVaultID,
+            vaultID: this.vault.vaultID,
             vaultPreferencesStoreState: this.vaultPreferencesStoreState.state,
             name: this.vault.name,
+            shared: this.vault.shared,
+            isArchived: this.vault.isArchived,
+            isOwner: this.isOwner,
+            isReadOnly: this.vault.isArchived || (this.isOwner === false && this.permissions === ServerPermissions.View),
             lastUsed: this.vault.lastUsed,
+            permissions: this.permissions,
             vaultStoreState: this.vault.vaultStoreState.state,
             passwordStoreState: this.vault.passwordStoreState.state,
             valueStoreState: this.vault.valueStoreState.state,

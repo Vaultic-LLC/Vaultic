@@ -1,101 +1,66 @@
 <template>
-    <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
-        <TextInputField :label="'Name'" v-model="orgState.name.value" class="organizationView__nameInput" :color="color" />
-    </ObjectView>
+    <div class="organizationView__header">
+        <h2 v-if="creating">Create Organization</h2>
+        <h2 v-else>Edit Organization</h2>
+    </div>
+    <div class="organizationView__content">
+        <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
+            <VaulticFieldset :centered="true">
+                <TextInputField :label="'Name'" v-model="orgState.name" class="organizationView__nameInput" :color="color"
+                    :width="'50%'" :maxWidth="''" />
+            </VaulticFieldset :centered="true">
+            <VaulticFieldset :centered="true">
+                <ObjectMultiSelect :label="'Vaults'" :color="color" v-model="selectedVaults" :options="allVaults"
+                    :width="'50%'" :maxWidth="''" :emptyMessage="`No Vaults marked as 'Shared'`" />
+            </VaulticFieldset>
+            <VaulticFieldset :centered="true" :fill-space="true">
+                <MemberTable ref="memberTable" :id="'organizationView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
+                    :currentMembers="orgState.membersByUserID" />
+            </VaulticFieldset>
+        </ObjectView>
+    </div>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted } from 'vue';
 
 import ObjectView from "./ObjectView.vue";
 import TextInputField from '../InputFields/TextInputField.vue';
+import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
+import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
+import MemberTable from '../Table/MemberTable.vue';
 
-import { GridDefinition, HeaderTabModel } from '../../Types/Models';
+import { ObjectSelectOptionModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { defaultOrganization, Member, Organization } from '../../Types/DataTypes';
-import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
-import { HeaderDisplayField } from '../../Types/Fields';
-import { TableTemplateComponent } from '../../Types/Components';
-import { api } from '../../API';
-import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
+import { defaultOrganization } from '../../Types/DataTypes';
+import { Member, Organization } from '@vaultic/shared/Types/DataTypes';
+import { MemberTableComponent } from '../../Types/Components';
+import { UserVaultIDAndVaultID } from '@vaultic/shared/Types/Entities';
 
 export default defineComponent({
     name: "OrganizationView",
     components: {
         ObjectView,
         TextInputField,
+        VaulticFieldset,
+        ObjectMultiSelect,
+        MemberTable
     },
     props: ['creating', 'model'],
     setup(props)
     {
-        const tableRef: Ref<TableTemplateComponent | null> = ref(null);
+        const memberTable: Ref<MemberTableComponent | null> = ref(null);
+        const refreshKey: Ref<string> = ref('');
 
-        const refreshKey: Ref<string> = ref("");
-        const orgState: Ref<Organization> = ref(props.model ?? defaultOrganization());
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const orgState: Ref<Organization> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultOrganization());
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
         
-        const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
+        const emptyMessage: Ref<string> = ref(`You currently don't have any Members in this Organization. Click '+' to add one`);
 
-        const userSortedCollection: SortedCollection = new SortedCollection([], "lastName");
+        const allVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
-
-        const gridDefinition: GridDefinition =
-        {
-            rows: 13,
-            rowHeight: 'clamp(10px, 2vw, 50px)',
-            columns: 15,
-            columnWidth: 'clamp(20px, 4vw, 100px)'
-        };
-
-        const userHeaderTab: HeaderTabModel[] = [
-            {
-                name: 'Members',
-                active: computed(() => true),
-                color: color,
-                onClick: () => { }
-            }
-        ];
-
-        const activeUserHeader: Ref<number> = ref(1);
-        const userHeaderDisplayFields: HeaderDisplayField[] = [
-            {
-                backingProperty: "",
-                displayName: "  ",
-                width: 'clamp(50px, 4vw, 100px)',
-                clickable: false
-            },
-            // {
-            //     backingProperty: "firstName",
-            //     displayName: "First Name",
-            //     width: 'clamp(100px, 7vw, 200px)',
-            //     clickable: true
-            // },
-            // {
-            //     backingProperty: "lastName",
-            //     displayName: "Last Name",
-            //     width: 'clamp(100px, 7vw, 200px)',
-            //     clickable: true
-            // },
-            {
-                backingProperty: "username",
-                displayName: "Username",
-                width: 'clamp(100px, 7vw, 200px)',
-                clickable: true
-            },
-            {
-                backingProperty: "permission",
-                displayName: "Permissions",
-                width: 'clamp(20px, 3vw, 40px)',
-                clickable: true
-            },
-        ];
-
-        function setTableRows()
-        {
-
-        }
 
         function onSave()
         {
@@ -109,14 +74,66 @@ export default defineComponent({
 
         async function doSave(key: string)
         {
-            app.popups.showLoadingIndicator(color.value, "Saving Vault");
+            app.popups.showLoadingIndicator(color.value, "Saving Organization");
+
+            const unchangedVaults: UserVaultIDAndVaultID[] = [];
+            const addedVaults: UserVaultIDAndVaultID[] = [];
+            const removedVaults: UserVaultIDAndVaultID[] = [];
+
+            selectedVaults.value.forEach(v => 
+            {
+                if (!orgState.value.vaultIDsByVaultID.has(v.backingObject.vaultID))
+                {
+                    addedVaults.push(v.backingObject);
+                }
+            });
+
+            if (!props.creating)
+            {
+                orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
+                {
+                    const vault = selectedVaults.value.find(s => s.backingObject.vaultID == k);
+                    if (!vault)
+                    {
+                        const existingVault = app.userVaults.value.find(v => v.vaultID == k);
+                        if (existingVault)
+                        {
+                            removedVaults.push({
+                                userVaultID: existingVault.userVaultID,
+                                vaultID: existingVault.vaultID
+                            });                      
+                        }
+                    }
+                    else
+                    {
+                        const existingVault = app.userVaults.value.find(v => v.vaultID == k);
+                        if (existingVault)
+                        {
+                            unchangedVaults.push({
+                                userVaultID: existingVault.userVaultID,
+                                vaultID: existingVault.vaultID
+                            });                      
+                        } 
+                    }
+                });
+            }
+
+            const memberChanges = memberTable.value?.getChanges()!;
             if (props.creating)
             {
-                handleSaveResponse((await app.organizations.createOrganization(orgState.value)));
+                handleSaveResponse((await app.organizations.createOrganization(key, orgState.value, 
+                addedVaults, memberChanges.addedMembers.valueArray())));
             }
             else
             {
-                handleSaveResponse((await app.organizations.updateOrganization(orgState.value)));
+                handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value, unchangedVaults,
+                    addedVaults, removedVaults, orgState.value.membersByUserID.valueArray(), memberChanges.addedMembers.valueArray(), 
+                    memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray())));
+            }
+
+            if (props.creating)
+            {
+                refreshKey.value = Date.now().toString();
             }
         }
 
@@ -146,33 +163,51 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            userSortedCollection.updateValues(orgState.value.members.value.valueArray());
-        });
-
-        let lastSearchTime = 0;
-        watch(() => searchText.value.value, async (newValue) =>
-        {
-            if (Date.now() - lastSearchTime >= 200)
+            allVaults.value = app.userVaults.value.filter(v => v.shared).map(v => 
             {
-                lastSearchTime = Date.now();
-                const response = await api.server.user.searchForUsers(newValue);
-                if (!response.Success)
+                const ids: UserVaultIDAndVaultID = 
                 {
-                    defaultHandleFailedResponse(response);
-                    return;
-                }
+                    userVaultID: v.userVaultID,
+                    vaultID: v.vaultID
+                };
 
-                
-            }
+                const model: ObjectSelectOptionModel =
+                {
+                    label: v.name,
+                    backingObject: ids
+                };
+
+                return model;
+            });
+
+            orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
+            {
+                const vault = app.userVaults.value.find(v => v.vaultID == k);
+                if (vault)
+                {
+                    const currentVaultModel: ObjectSelectOptionModel = 
+                    {
+                        label: vault.name,
+                        backingObject: 
+                        {
+                            userVaultID: vault.userVaultID,
+                            vaultID: vault.vaultID
+                        }
+                    };
+                    
+                    selectedVaults.value.push(currentVaultModel)
+                }
+            });
         });
 
         return {
+            memberTable,
+            refreshKey,
             orgState,
             color,
-            refreshKey,
-            gridDefinition,
-            searchText,
-            userHeaderTab,
+            emptyMessage,
+            selectedVaults,
+            allVaults,
             onSave,
         };
     },
@@ -180,16 +215,27 @@ export default defineComponent({
 </script>
 
 <style>
-.organizationView__nameInput {
-    grid-row: 1 / span 2;
-    grid-column: 4 / span 2;
+.organizationView__header {
+    height: 5%;
+    display: flex;
+    justify-content: center;
+    color: white;
+    animation: fadeIn 1s linear forwards;
+    margin: 5%;
+    margin-bottom: 0;
+    font-size: clamp(15px, 1vw, 25px);
 }
 
-#organizationView__table {
+.organizationView__content {
+	position: absolute;
+	top: 15%;
+	width: 100%;
+	height: 85%;
+}
+
+#organizationView__memberTable {
     position: relative;
-    grid-row: 5 / span 8;
-    grid-column: 4 / span 9;
-    min-width: 410px;
-    min-height: 182px;
+    height: 90%;
+    width: 85%;
 }
 </style>

@@ -12,6 +12,9 @@
                             'dropDownContainer__select--invalid': isInvalid
                         }
                     },
+                    pcFilter: {
+                        root: 'dropDownContainer__searchBar'
+                    },
                     clearIcon: 'dropDownContainer__clearIcon',
                     dropdownIcon: 'dropDownContainer__dropDownicon',
                     label: 'dropDownContainer__selectLabel',
@@ -31,9 +34,10 @@
                             style
                         };
                     }
-                }" :invalid="isInvalid" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
-                showClear :inputId="id" :options="options" optionLabel="label" :fluid="true" :labelStyle="{'text-align': 'left'}" 
-                @update:model-value="onOptionClick">
+                }" :invalid="isInvalid" :filter="true" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
+                showClear :inputId="id" :options="options" optionLabel="label" :fluid="true" :labelStyle="{'text-align': 'left'}"
+                :loading="loading" :placeHolder="loading === true ? 'Loading...' : undefined" :appendTo="'self'" :emptyMessage="emptyMessage"
+                :emptyFilterMessage="noResultsMessage" @update:model-value="onOptionClick" @filter="(e) => $.emit('onSearch', e.value)">
                 <template #option="slotProps">
                     <div class="dropDownContainer__option">
                         <div v-if="slotProps.option.icon" class="dropDownContainer__iconContianer">
@@ -74,9 +78,9 @@ export default defineComponent({
         Select,
         Message
     },
-    emits: ["update:modelValue"],
+    emits: ["update:modelValue", "onSearch"],
     props: ["modelValue", "options", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth', 'required', 'disabled'],
+        'width', 'minWidth', 'maxWidth', 'required', 'disabled', 'loading', 'emptyMessage', 'noResultsMessage'],
     setup(props, ctx)
     {
         const id = ref(useId());
@@ -84,6 +88,9 @@ export default defineComponent({
 
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
         const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
+
+        const computedEmptyMessage: ComputedRef<string> = computed(() => props.emptyMessage ? props.emptyMessage : 'No available options');
+        const computedNoResultsMessage: ComputedRef<string> = computed(() => props.noResultsMessage ? props.noResultsMessage : 'No results found');
 
         const options: ComputedRef<ObjectSelectOptionModel[]> = computed(() => props.options)
 
@@ -188,6 +195,8 @@ export default defineComponent({
             computedHeight,
             computedMinHeight,
             computedMaxHeight,
+            computedEmptyMessage,
+            computedNoResultsMessage,
             onOptionClick,
         }
     }
@@ -276,5 +285,15 @@ export default defineComponent({
 
 .dropDownContainer__optionLabel {
     font-size: clamp(14px, 1vw, 16px);
+}
+
+:deep(.dropDownContainer__searchBar) {
+    background: v-bind(selectBackgroundColor) !important;
+    padding-block-start: 0.5rem !important;
+    font-size: var(--input-font-size) !important;
+}
+
+:deep(.dropDownContainer__searchBar:focus) {
+    border-color: v-bind(color) !important;
 }
 </style>

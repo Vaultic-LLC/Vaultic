@@ -1,5 +1,5 @@
 import { DeepPartial } from "../Helpers/TypeScriptHelper";
-import { IUser, IUserVault, IVault, ServerDisplayVault } from "./Entities";
+import { IUser, IUserVault, IVault, SharedClientUserVault } from "./Entities";
 
 export interface Session
 {
@@ -7,9 +7,10 @@ export interface Session
     Hash?: string;
 }
 
-export interface UserDataBreach
+export interface VaultDataBreach
 {
-    UserDataBreachID: number;
+    VaultDataBreachID: number;
+    VaultID: number;
     PasswordID: string;
     BreachedDate: number;
     PasswordsWereBreached: boolean;
@@ -44,48 +45,122 @@ export interface UserDataPayload
     user?: DeepPartial<IUser>;
     userVaults?: DeepPartial<IUserVault>[];
     vaults?: DeepPartial<IVault>[];
-    archivedVaults?: ServerDisplayVault[];
-    sharedVaults?: ServerDisplayVault[];
+    sharedUserVaults?: SharedClientUserVault[];
+    removedUserVaults?: DeepPartial<IUserVault>[];
+    removedVaults?: DeepPartial<IVault>[];
 };
 
-export enum Permissions
+export enum ServerPermissions
 {
-    Read,
-    Write
+    View,
+    ViewAndEdit
 }
 
-export interface UserIDAndPermission
+export enum ViewableServerPermissions
+{
+    View = "View",
+    ViewAndEdit = "View And Edit"
+}
+
+export function viewableServerPermissionsToServerPermissions(p: ViewableServerPermissions)
+{
+    switch (p)
+    {
+        case ViewableServerPermissions.View:
+            return ServerPermissions.View;
+        case ViewableServerPermissions.ViewAndEdit:
+            return ServerPermissions.ViewAndEdit;
+    }
+}
+
+export function serverPermissionToViewableServerPermission(p: ServerPermissions)
+{
+    switch (p)
+    {
+        case ServerPermissions.View:
+            return ViewableServerPermissions.View;
+        case ServerPermissions.ViewAndEdit:
+            return ViewableServerPermissions.ViewAndEdit;
+    }
+}
+
+export interface VaultIDAndKey
+{
+    VaultID: number;
+    VaultKey: string;
+}
+
+export interface UserIDAndKey
 {
     UserID: number;
-    Permission: Permissions;
+    VaultKey: string;
 }
 
-export interface UserOrgInfo
+export interface OrgAndUserKeys
+{
+    OrganizationID: number;
+    UserIDsAndKeys: UserIDAndKey[];
+}
+
+export interface AddedOrgInfo
+{
+    AllMembers: number[];
+    OrgsAndUsersKeys: { [key: number]: OrgAndUserKeys };
+}
+
+export interface AddedVaultMembersInfo
+{
+    AllMembers: number[];
+    ModifiedOrgMembers: ModifiedOrgMember[];
+}
+
+export interface AddedVaultInfo
+{
+    AllVaults: number[];
+    ModifiedOrgMembers: ModifiedOrgMember[];
+}
+
+export interface ModifiedOrgMember
+{
+    UserID: number;
+    Permissions: ServerPermissions;
+    VaultKeysByVaultID?: { [key: number]: string };
+}
+
+export interface UserInfo 
 {
     UserID: number;
     FirstName: string;
     LastName: string;
     Username: string;
-    Permissions: Permissions;
 }
 
-export interface OrganizationAndUsers
+export interface UserOrgInfo extends UserInfo
+{
+    Permissions: ServerPermissions;
+}
+
+export interface UserDemographics extends UserInfo
+{
+    PublicKey: string;
+}
+
+export interface OrganizationInfo
 {
     OrganizationID: number;
     Name: string;
     UserDemographics: UserOrgInfo[];
+    VaultIDs: number[];
 }
 
 export enum AllowSharingFrom
 {
-    Everyone,
-    SpecificUsers
+    Everyone = "Everyone",
+    SpecificUsers = "Specific Users"
 }
 
-export interface UserDemographics
+export enum ServerAllowSharingFrom
 {
-    UserID: number;
-    FirstName: string;
-    LastName: string;
-    Username: string;
+    Everyone,
+    SpecificUsers
 }

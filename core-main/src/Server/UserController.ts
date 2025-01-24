@@ -1,13 +1,14 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetSharingSettings, GetUserDataBreachesResponse, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetPublicKeysResponse, GetSharingSettings, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
-import { AllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { ServerAllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 
 export interface UserController extends ClientUserController
 {
     getUserIDs: () => Promise<GetUserIDResponse>;
     backupData: (postData: { userDataPayload: UserDataPayload }) => Promise<BackupResponse>;
+    getPublicKeys: (userIDs: number[]) => Promise<GetPublicKeysResponse>;
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -40,13 +41,16 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     async function backupData(postData: { userDataPayload: UserDataPayload }): Promise<BackupResponse>
     {
+        console.time("10");
         const e2eEncryptedData = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, postData);
         if (!e2eEncryptedData.success)
         {
             return { Success: false, message: e2eEncryptedData.errorMessage }
         }
-
+        console.timeEnd("10");
+        console.time("11");
         const response = await axiosHelper.api.post("User/BackupData", e2eEncryptedData.value);
+        console.timeEnd("11");
         return { ...response, message: `Post data: ${JSON.vaulticStringify(postData)}` }
     }
 
@@ -58,18 +62,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
     function getChartData(data: string): Promise<GetChartDataResponse>
     {
         return axiosHelper.api.post("User/GetChartData", data);
-    }
-
-    function getUserDataBreaches(passwordStoreState: string): Promise<GetUserDataBreachesResponse>
-    {
-        return axiosHelper.api.post("User/GetUserDataBreaches", passwordStoreState);
-    }
-
-    function dismissUserDataBreach(userDataBreachID: number): Promise<BaseResponse>
-    {
-        return axiosHelper.api.post("User/DismissUserDataBreach", {
-            UserDataBreachID: userDataBreachID
-        });
     }
 
     function deactivateUserSubscription(email: string, deactivationKey: string): Promise<DeactivateUserSubscriptionResponse>
@@ -92,19 +84,31 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetSharingSettings');
     }
 
-    function updateSharingSettings(username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: AllowSharingFrom): Promise<UpdateSharingSettingsResponse>
+    function updateSharingSettings(username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom,
+        addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]): Promise<UpdateSharingSettingsResponse>
     {
         return axiosHelper.api.post('User/UpdateSharingSettings', {
             Username: username,
             AllowSharedVaultsFromOthers: allowSharedVaultsFromOthers,
-            AllowSharingFrom: allowSharingFrom
+            AllowSharingFrom: allowSharingFrom,
+            AddedAllowSharingFromUsers: addedAllowSharingFrom,
+            RemovedAllowSharingFromUsers: removedAllowSharingFrom
         });
     }
 
-    function searchForUsers(username: string): Promise<SearchForUsersResponse>
+    function searchForUsers(username: string, excludedUserIDs: string): Promise<SearchForUsersResponse>
     {
+        const userIDs: number[] = JSON.vaulticParse(excludedUserIDs);
         return axiosHelper.api.post('User/SearchForUsers', {
             Username: username,
+            ExcludedUserIDs: userIDs
+        });
+    }
+
+    function getPublicKeys(userIDs: number[]): Promise<GetPublicKeysResponse>
+    {
+        return axiosHelper.api.post('User/GetPublicKeys', {
+            UserIDs: userIDs,
         });
     }
 
@@ -116,12 +120,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         backupData,
         createCheckout,
         getChartData,
-        getUserDataBreaches,
-        dismissUserDataBreach,
         deactivateUserSubscription,
         reportBug,
         getSharingSettings,
         updateSharingSettings,
-        searchForUsers
+        searchForUsers,
+        getPublicKeys
     }
 }

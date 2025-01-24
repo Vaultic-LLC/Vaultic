@@ -84,6 +84,7 @@ class AxiosWrapper
                 const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
                 const responseResult = await this.handleResponse<T>(response.data);
 
+                console.log(`Response: ${JSON.stringify(responseResult)}`);
                 if (responseResult.success)
                 {
                     return responseResult.value;
@@ -96,7 +97,7 @@ class AxiosWrapper
                     }
                     else 
                     {
-                        returnResponse = { Success: false, UnknownError: true, logID: responseResult.logID, message: `code: ${response.status}` };
+                        returnResponse = { Success: false, UnknownError: true, logID: responseResult.logID, message: `code: ${response.status} - ${responseResult.errorMessage}` };
                     }
                 }
             }
@@ -422,6 +423,7 @@ class APIAxiosWrapper extends AxiosWrapper
         try
         {
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
+            console.log(`Encrypted Response: ${JSON.stringify(encryptedResponse)}`);
             if (!encryptedResponse.Data)
             {
                 return TypedMethodResponse.fail(undefined, "handleResponse", "No Data");

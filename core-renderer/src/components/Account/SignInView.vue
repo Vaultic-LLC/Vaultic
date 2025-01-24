@@ -146,9 +146,10 @@ export default defineComponent({
                 if (response.success && response.value!.Success)
                 {
                     app.isOnline = true;
-                    await app.loadUserData(masterKey.value, response.value!.userDataPayload);
-        
-                    ctx.emit('onKeySuccess');
+                    if (await app.loadUserData(masterKey.value))
+                    {
+                        ctx.emit('onKeySuccess');                   
+                    }
                 }
                 else
                 {
@@ -168,8 +169,10 @@ export default defineComponent({
                         const setUserResponse = await api.repositories.users.setCurrentUser(masterKey.value, email.value);
                         if (setUserResponse.success)
                         {
-                            await app.loadUserData(masterKey.value);
-                            ctx.emit('onKeySuccess');
+                            if (await app.loadUserData(masterKey.value))
+                            {
+                                ctx.emit('onKeySuccess');
+                            }
                         }
                         else 
                         {
@@ -185,9 +188,9 @@ export default defineComponent({
                 {
                     app.popups.showAlert("Unable to verify master key", "We were unable to verify your master key, please make sure it was entered correctly. If the issue persists, try signing into online mode instead.", false);
                 }
-
-                app.popups.hideLoadingIndicator();
             }
+            
+            app.popups.hideLoadingIndicator();
         }
 
         function handleFailedResponse(response: any)

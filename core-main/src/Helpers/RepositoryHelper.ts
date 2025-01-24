@@ -4,8 +4,6 @@ import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
-import { EntityState } from "@vaultic/shared/Types/Entities";
-import { ChangeTracking } from "../Database/Entities/ChangeTracking";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>
@@ -84,6 +82,7 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
                 userVaultID: userVault.userVaultID,
                 currentSignature: userVault.currentSignature,
                 entityState: userVault.entityState,
+                permissions: userVault.permissions,
                 vaultPreferencesStoreState:
                 {
                     vaultPreferencesStoreStateID: userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
@@ -136,27 +135,27 @@ export async function getUserDataSignatures(masterKey: string, email: string): P
 // Only call within a method wrapped in safetifyMethod
 export async function backupData(masterKey: string)
 {
+    console.time("6");
     const userToBackup = await environment.repositories.users.getEntityThatNeedsToBeBackedUp(masterKey);
     if (!userToBackup.success)
     {
-        console.log('no user to backup');
         return false;
     }
 
     const userVaultsToBackup = await environment.repositories.userVaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!userVaultsToBackup.success)
     {
-        console.log('no user vaults to backup');
         return false;
     }
 
     const vaultsToBackup = await environment.repositories.vaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!vaultsToBackup.success)
     {
-        console.log('no vaults to backup');
         return false;
     }
 
+    console.timeEnd("6");
+    console.time("7");
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: {} };
     if (userToBackup.value)
     {
@@ -173,16 +172,18 @@ export async function backupData(masterKey: string)
         postData.userDataPayload["vaults"] = vaultsToBackup.value.vaults;
     }
 
-    console.log(`Backing up data: ${JSON.stringify(postData)}`);
     const backupResponse = await vaulticServer.user.backupData(postData);
+    console.timeEnd("7");
     if (!backupResponse.Success)
     {
-        console.log(`Backup Failed: ${JSON.stringify(backupResponse)}`);
-        return await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload)
+        console.time("8");
+        const s = await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload);
+        console.timeEnd("8");
+        return s;
     }
     else
     {
-        console.log('backup succeeded');
+        console.time("9");
         const transaction = new Transaction();
         if (userToBackup.value)
         {
@@ -206,6 +207,7 @@ export async function backupData(masterKey: string)
         {
             return false;
         }
+        console.timeEnd("9");
     }
 
     return true;
@@ -230,11 +232,11 @@ export async function safeBackupData(masterKey: string): Promise<TypedMethodResp
 // For any data in serverUserDataPayload, if the matching data entityState is unchanged or inserted in 
 // clientUserDataPayload, then just override it
 // If the entity state is updated, then I need to merge them by updatedTime
-
-// for each data in clientUserDataPayload with an entityState of Deleted and that isn't in
-// serverUserDataPayload, remove it
+//
+// any vaults / userVaults that are maked as 'removed' from the server will be deleted
 export async function checkMergeMissingData(masterKey: string, email: string, vaultKeys: string[], clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
 {
+    console.log(`Merging Data: ${JSON.stringify(serverUserDataPayload)}`);
     if (!serverUserDataPayload)
     {
         return false;
@@ -277,19 +279,11 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
     // Needs to be done before userVaults for when adding a new vault + userVault. Vault has to be saved before userVault.
     if (serverUserDataPayload.vaults)
     {
+        const allLocalVaults = await environment.repositories.vaults.getAllVaultIDs();
         for (let i = 0; i < serverUserDataPayload.vaults.length; i++)
         {
             const serverVault = serverUserDataPayload.vaults[i];
-            const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
-
-            if (vaultIndex >= 0)
-            {
-                if (await environment.repositories.vaults.updateFromServer(vaultKeys[vaultIndex], clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction))
-                {
-                    needsToRePushData = true;
-                }
-            }
-            else 
+            if (!allLocalVaults.has(serverVault.vaultID))
             {
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.vaults.addFromServer(serverVault, transaction))
@@ -297,11 +291,26 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                     await environment.repositories.logs.log(undefined, `Failed to add vault from server. VaultID: ${serverVault?.vaultID}`);
                 }
             }
+            else
+            {
+                // don't worry about updating vault that is from shared. If the vault is already on the client we can't update without the vault key, 
+                // which is in a userVault we probably don't have saved yet. Not updating shouldn't cause any issues and will just be less 
+                // performative since we'll have to do another run through here if the signatures don't match the servers for that vault
+                const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
+                if (vaultIndex >= 0)
+                {
+                    if (await environment.repositories.vaults.updateFromServer(vaultKeys[vaultIndex], clientUserDataPayload.vaults![vaultIndex], serverVault, changeTrackings, transaction))
+                    {
+                        needsToRePushData = true;
+                    }
+                }
+            }
         }
     }
 
     if (serverUserDataPayload.userVaults)
     {
+        console.log(`User Vaults: ${JSON.stringify(serverUserDataPayload.userVaults)}\n`)
         for (let i = 0; i < serverUserDataPayload.userVaults.length; i++)
         {
             const serverUserVault = serverUserDataPayload.userVaults[i];
@@ -314,7 +323,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                     needsToRePushData = true;
                 }
             }
-            else 
+            else
             {
                 // don't want to return if this fails since we could have others that succeed
                 if (!environment.repositories.userVaults.addFromServer(serverUserVault, transaction))
@@ -325,17 +334,65 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
         }
     }
 
-    // TODO: is this how deleted vaults on another device should be handled? Waht about in updateFromServer?
-    // Is this even necessary? I think what I intended with this is deleting vaults that were deleted on another device or
-    // something similar to the change tracking where anything left in the array isn't on this device or something
-    if (clientUserDataPayload.vaults)
+    if (serverUserDataPayload.sharedUserVaults)
     {
-        for (let i = 0; i < clientUserDataPayload.vaults.length; i++)
+        console.log(`Shared User Vaults: ${JSON.stringify(serverUserDataPayload.sharedUserVaults)}\n`)
+        for (let i = 0; i < serverUserDataPayload.sharedUserVaults.length; i++)
         {
-            if (clientUserDataPayload.vaults[i].entityState == EntityState.Deleted)
+            const serverUserVault = serverUserDataPayload.sharedUserVaults[i];
+            if (serverUserVault.isSetup === false)
             {
-                // TODO: implement
-                //await environment.repositories.vaults.deleteFromServer(clientUserDataPayload.vaults[i]);
+                // If we failed to backup after setting up the shared userVault before, well have the userVault locally but the server
+                // will still think it needs to be setup
+                const userVault = clientUserDataPayload.userVaults?.filter(uv => uv.userVaultID == serverUserVault.userVaultID);
+                if (!userVault || userVault.length == 0)
+                {
+                    await environment.repositories.userVaults.setupSharedUserVault(masterKey, serverUserVault, transaction);
+                }
+
+                needsToRePushData = true;
+            }
+            else
+            {
+                // These will be passed to the server within userVaults, not sharedUserVaults. sharedUserVaults is only for passed data back from the server
+                const userVaultIndex = clientUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID) ?? -1;
+                if (userVaultIndex >= 0)
+                {
+                    if (await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, changeTrackings, transaction))
+                    {
+                        needsToRePushData = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (serverUserDataPayload.removedUserVaults)
+    {
+        console.log(`Removed User Vaults: ${JSON.stringify(serverUserDataPayload.removedUserVaults)}`);
+        for (let i = 0; i < serverUserDataPayload.removedUserVaults.length; i++)
+        {
+            const serverUserVault = serverUserDataPayload.removedUserVaults[i];
+            const userVaultIndex = clientUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID) ?? -1;
+
+            if (userVaultIndex >= 0)
+            {
+                transaction.deleteEntity(serverUserVault.userVaultID, () => environment.repositories.userVaults);
+            }
+        }
+    }
+
+    if (serverUserDataPayload.removedVaults)
+    {
+        console.log(`Removed Vaults: ${JSON.stringify(serverUserDataPayload.removedVaults)}`);
+        for (let i = 0; i < serverUserDataPayload.removedVaults.length; i++)
+        {
+            const serverVault = serverUserDataPayload.removedVaults[i];
+            const vaultIndex = clientUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
+
+            if (vaultIndex >= 0)
+            {
+                transaction.deleteEntity(serverVault.vaultID, () => environment.repositories.vaults);
             }
         }
     }

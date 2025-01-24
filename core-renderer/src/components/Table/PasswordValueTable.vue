@@ -265,7 +265,6 @@ export default defineComponent({
         function initPasswords()
         {
             filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
-            pinnedPasswords.updateValues(app.currentVault.passwordStore.pinnedPasswords);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -274,7 +273,6 @@ export default defineComponent({
         function initValues()
         {
             filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
-            pinnedNameValuePairs.updateValues(app.currentVault.valueStore.pinnedValues);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -284,9 +282,6 @@ export default defineComponent({
         {
             filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
             filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
-
-            pinnedPasswords.updateValues(app.currentVault.passwordStore.pinnedPasswords);
-            pinnedNameValuePairs.updateValues(app.currentVault.valueStore.pinnedValues);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -334,9 +329,9 @@ export default defineComponent({
             showEditPasswordPopup.value = true;
         }
 
-        function onEditValue(value: ReactiveValue)
+        function onEditValue(value: Field<ReactiveValue>)
         {
-            currentEditingValueModel.value = value;
+            currentEditingValueModel.value = value.value;
             showEditValuePopup.value = true;
         }
 
@@ -360,11 +355,11 @@ export default defineComponent({
             }
         }
 
-        function onPasswordDeleteInitiated(password: ReactivePassword)
+        function onPasswordDeleteInitiated(password: Field<ReactivePassword>)
         {
             deletePassword.value = async (key: string) =>
             {
-                return await app.currentVault.passwordStore.deletePassword(key, password);
+                return await app.currentVault.passwordStore.deletePassword(key, password.value);
             };
 
             app.popups.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
@@ -386,11 +381,11 @@ export default defineComponent({
             }
         }
 
-        function onValueDeleteInitiated(value: ReactiveValue)
+        function onValueDeleteInitiated(value: Field<ReactiveValue>)
         {
             deleteValue.value = async (key: string) =>
             {
-                return await app.currentVault.valueStore.deleteNameValuePair(key, value);
+                return await app.currentVault.valueStore.deleteNameValuePair(key, value.value);
             };
 
             app.popups.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });
@@ -457,12 +452,12 @@ export default defineComponent({
         onMounted(() =>
         {
             init();
-            app.userDataBreaches.addEvent('onBreachDismissed', initPasswords);
+            app.vaultDataBreaches.addEvent('onBreachDismissed', initPasswords);
         });
 
         onUnmounted(() =>
         {
-            app.userDataBreaches.removeEvent('onBreachDismissed', initPasswords);
+            app.vaultDataBreaches.removeEvent('onBreachDismissed', initPasswords);
         });
 
         // watch(() => app.activePasswordValuesTable, () =>

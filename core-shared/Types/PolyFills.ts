@@ -1,4 +1,4 @@
-import { MapFields } from "./Fields";
+import { FieldedMapFields, UnfieldedMapFields } from "./Fields";
 
 declare global 
 {
@@ -91,9 +91,13 @@ JSON.vaulticParse = (text: string) =>
 {
     return JSON.parse(text, (key: string, value: any) => 
     {
-        if (MapFields.has(key as any))
+        if (FieldedMapFields.has(key as any))
         {
             return { ...value, value: new Map(value.value) }
+        }
+        else if (UnfieldedMapFields.has(key as any))
+        {
+            return new Map(value);
         }
 
         return value;
@@ -104,11 +108,15 @@ JSON.vaulticStringify = (value: any) =>
 {
     return JSON.stringify(value, (key: string, value: any) => 
     {
-        if (MapFields.has(key as any))
+        if (FieldedMapFields.has(key as any))
         {
             // return a new obj so we don't alter the existing one and cauese issue with 
             // it being used after serialization
             return { ...value, value: Array.from(value.value.entries()) };
+        }
+        else if (UnfieldedMapFields.has(key as any))
+        {
+            return Array.from(value.entries());
         }
 
         return value;

@@ -1,6 +1,9 @@
 <template>
     <div ref="button" class="popupButton">
-        <Button :label="text" :class="'popupButton__primeVueButton'" :fluid="true" :disabled="disabled" @click.stop="doOnClick" />
+        <Button :pt="{
+            root: 'popupButton__root'
+        }" 
+        :label="text" :class="'popupButton__primeVueButton'" :fluid="true" :disabled="disabled" @click.stop="doOnClick" />
     </div>
 </template>
 
@@ -88,6 +91,11 @@ export default defineComponent({
     min-height: v-bind(minHeight);
     transition: v-bind(transition);
     cursor: pointer;
+}
+
+.popupButton__root:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 25px v-bind(color) !important;
 }
 
 .popupButton.fadeIn {

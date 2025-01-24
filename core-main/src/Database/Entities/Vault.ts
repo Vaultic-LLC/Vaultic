@@ -24,6 +24,12 @@ export class Vault extends VaulticEntity implements IVault
     @Column("text")
     name: string
 
+    @Column("boolean")
+    shared: boolean
+
+    @Column("boolean")
+    isArchived: boolean;
+
     // Not backed up
     // Not encrypted
     @Column("boolean")
@@ -59,11 +65,15 @@ export class Vault extends VaulticEntity implements IVault
         return new Vault();
     }
 
+    // Make sure this are included in repository.updateFromServer() so the signature can be re built properly when
+    // returning data from the server
     protected internalGetSignableProperties(): string[] 
     {
         return [
             nameof<Vault>("vaultID"),
-            nameof<Vault>("name")
+            nameof<Vault>("name"),
+            nameof<Vault>("shared"),
+            nameof<Vault>("isArchived")
         ];
     }
 
@@ -79,6 +89,8 @@ export class Vault extends VaulticEntity implements IVault
         const properties = super.backupableProperties();
         properties.push("vaultID");
         properties.push("name");
+        properties.push("shared");
+        properties.push(nameof<Vault>("isArchived"));
 
         return properties;
     }
@@ -94,6 +106,8 @@ export class Vault extends VaulticEntity implements IVault
     {
         return [
             nameof<Vault>("name"),
+            nameof<Vault>("shared"),
+            nameof<Vault>("isArchived"),
             nameof<Vault>("vaultStoreState"),
             nameof<Vault>("passwordStoreState"),
             nameof<Vault>("valueStoreState"),
@@ -131,6 +145,8 @@ export class Vault extends VaulticEntity implements IVault
             !!vault.currentSignature &&
             !!vault.vaultID &&
             !!vault.name &&
+            (vault.shared === true || vault.shared === false) &&
+            (vault.isArchived === true || vault.isArchived === false) &&
             !!vault.vaultStoreState &&
             !!vault.passwordStoreState &&
             !!vault.valueStoreState &&

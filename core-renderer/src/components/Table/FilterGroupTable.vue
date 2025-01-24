@@ -61,16 +61,16 @@ export default defineComponent({
         const tabToOpenOnAdd: ComputedRef<number> = computed(() => app.activeFilterGroupsTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
-        const passwordFilters: SortedCollection = new SortedCollection(app.currentVault.filterStore.passwordFilters, "name");
+        const passwordFilters: SortedCollection = new SortedCollection([], "name");
         const pinnedPasswordFilters: SortedCollection = new SortedCollection([], "name");
 
-        const passwordGroups: SortedCollection = new SortedCollection(app.currentVault.groupStore.passwordGroups, "name");
+        const passwordGroups: SortedCollection = new SortedCollection([], "name");
         const pinnedPasswordGroups: SortedCollection = new SortedCollection([], "name");
 
-        const valueFilters: SortedCollection = new SortedCollection(app.currentVault.filterStore.nameValuePairFilters, "name");
+        const valueFilters: SortedCollection = new SortedCollection([], "name");
         const pinnedValueFilters: SortedCollection = new SortedCollection([], "name");
 
-        const valueGroups: SortedCollection = new SortedCollection(app.currentVault.groupStore.valuesGroups, "name");
+        const valueGroups: SortedCollection = new SortedCollection([], "name");
         const pinnedValueGroups: SortedCollection = new SortedCollection([], "name");
 
         const showEditGroupPopup: Ref<boolean> = ref(false);
@@ -226,12 +226,6 @@ export default defineComponent({
 
             if (saved)
             {
-                passwordGroups.updateValues(app.currentVault.groupStore.unpinnedPasswordGroups);
-                pinnedPasswordGroups.updateValues(app.currentVault.groupStore.pinnedPasswordGroups);
-
-                valueGroups.updateValues(app.currentVault.groupStore.unpinnedValueGroups);
-                pinnedValueGroups.updateValues(app.currentVault.groupStore.pinnedValueGroups);
-
                 setTableRowDatas();
             }
         }
@@ -248,12 +242,6 @@ export default defineComponent({
 
             if (saved)
             {
-                passwordFilters.updateValues(app.currentVault.filterStore.unpinnedPasswordFilters);
-                pinnedPasswordFilters.updateValues(app.currentVault.filterStore.pinnedPasswordFilters);
-
-                valueFilters.updateValues(app.currentVault.filterStore.unpinnedValueFitlers);
-                pinnedValueFilters.updateValues(app.currentVault.filterStore.pinnedValueFilters);
-
                 setTableRowDatas();
             }
         }
@@ -387,64 +375,48 @@ export default defineComponent({
 
         watch(() => app.currentVault.filterStore.passwordFilters.length, () =>
         {
-            passwordFilters.updateValues(app.currentVault.filterStore.unpinnedPasswordFilters);
-            pinnedPasswordFilters.updateValues(app.currentVault.filterStore.pinnedPasswordFilters)
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.filterStore.nameValuePairFilters.length, () =>
         {
-            valueFilters.updateValues(app.currentVault.filterStore.unpinnedValueFitlers);
-            pinnedValueFilters.updateValues(app.currentVault.filterStore.pinnedValueFilters)
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.groupStore.passwordGroups.length, () =>
         {
-            passwordGroups.updateValues(app.currentVault.groupStore.unpinnedPasswordGroups);
-            pinnedPasswordGroups.updateValues(app.currentVault.groupStore.pinnedPasswordGroups);
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.groupStore.valuesGroups.length, () =>
         {
-            valueGroups.updateValues(app.currentVault.groupStore.unpinnedValueGroups);
-            pinnedValueGroups.updateValues(app.currentVault.groupStore.pinnedValueGroups);
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.groupStore.activeAtRiskPasswordGroupType, () =>
         {
-            passwordGroups.updateValues(app.currentVault.groupStore.unpinnedPasswordGroups);
-            pinnedPasswordGroups.updateValues(app.currentVault.groupStore.pinnedPasswordGroups);
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.groupStore.activeAtRiskValueGroupType, () =>
         {
-            valueGroups.updateValues(app.currentVault.groupStore.unpinnedValueGroups);
-            pinnedValueGroups.updateValues(app.currentVault.groupStore.pinnedValueGroups);
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.filterStore.activeAtRiskPasswordFilterType, () =>
         {
-            passwordFilters.updateValues(app.currentVault.filterStore.unpinnedPasswordFilters);
-            pinnedPasswordFilters.updateValues(app.currentVault.filterStore.pinnedPasswordFilters);
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.filterStore.activeAtRiskValueFilterType, () =>
         {
-            valueFilters.updateValues(app.currentVault.filterStore.unpinnedValueFitlers);
-            pinnedValueFilters.updateValues(app.currentVault.filterStore.pinnedValueFilters);
             setTableRowDatas();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });

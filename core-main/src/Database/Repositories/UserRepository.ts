@@ -13,11 +13,14 @@ import { StoreState } from "../Entities/States/StoreState";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { EntityState, UserData } from "@vaultic/shared/Types/Entities";
+import { EntityState, getVaultType, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
+import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
+import { Field } from "@vaultic/shared/Types/Fields";
+import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 
 class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
@@ -147,11 +150,11 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
             userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
-            userPreferencesStoreState.userID = response.UserPreferencesStoreStateID!;
+            userPreferencesStoreState.userID = response.UserID!;
             userPreferencesStoreState.state = "{}"
             user.userPreferencesStoreState = userPreferencesStoreState;
 
-            const vaults = await environment.repositories.vaults.createNewVault("Personal");
+            const vaults = await environment.repositories.vaults.createNewVault("Personal", false, [], []);
             if (!vaults)
             {
                 return TypedMethodResponse.fail(errorCodes.FAILED_TO_CREATE_NEW_VAULT, undefined, "Create new Vault");
@@ -202,7 +205,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const succeeded = await transaction.commit();
             if (!succeeded)
             {
-                await vaulticServer.vault.failedToSaveVault(userVault.userVaultID);
+                await vaulticServer.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 
@@ -215,6 +218,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.backupFail();
             }
 
+            console.log('create user succeeded');
             return TypedMethodResponse.success();
         }
     }
@@ -346,7 +350,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             };
 
             const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey,
-                [nameof<Vault>("name")]);
+                [nameof<Vault>("name"), nameof<Vault>("passwordStoreState")]);
 
             if (!userVaults || userVaults.length == 0)
             {
@@ -355,7 +359,9 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             for (let i = 0; i < userVaults.length; i++)
             {
-                if (userVaults[i].lastUsed)
+                // we only want to set our last used vault for our vaults, not ones another user 
+                // may have accessed
+                if (userVaults[i].lastUsed && userVaults[i].isOwner)
                 {
                     if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
                     {
@@ -364,9 +370,17 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 }
 
                 userData.displayVaults!.push({
+                    userOrganizationID: userVaults[i].userOrganizationID,
                     userVaultID: userVaults[i].userVaultID,
+                    vaultID: userVaults[i].vaultID,
                     name: userVaults[i].name,
-                    lastUsed: userVaults[i].lastUsed
+                    shared: userVaults[i].shared,
+                    isOwner: userVaults[i].isOwner,
+                    isReadOnly: userVaults[i].isReadOnly,
+                    isArchived: userVaults[i].isArchived,
+                    lastUsed: userVaults[i].lastUsed,
+                    type: getVaultType(userVaults[i]),
+                    passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).passwordsByDomain ?? new Field(new Map())
                 });
             }
 
@@ -380,9 +394,20 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 userData.displayVaults![0].lastUsed = true;
             }
 
+            try
+            {
+                console.log(userData);
+                console.log(`finished getting data: ${JSON.vaulticStringify(userData)}`);
+            }
+            catch (e)
+            {
+                console.log(e);
+            }
+
             userData.success = true;
             return TypedMethodResponse.success(JSON.vaulticStringify(userData));
 
+            // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
             async function setCurrentVault(id: number, setAsLastUsed: boolean)
             {
                 const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [id]);
@@ -573,6 +598,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             return false;
         }
 
+        console.log(`User: \n${JSON.stringify(user)}`)
         transaction.insertExistingEntity(user, () => this);
         transaction.insertExistingEntity(user.appStoreState!, () => environment.repositories.appStoreStates);
         transaction.insertExistingEntity(user.userPreferencesStoreState!, () => environment.repositories.userPreferencesStoreStates);
@@ -638,10 +664,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
                 needsToRePushData = true;
             }
-            else 
+            else
             {
                 const partialAppStoreState: Partial<AppStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
-                transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
+                if (Object.keys(partialAppStoreState).length > 0)
+                {
+                    transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
+                }
             }
         }
 
@@ -660,11 +689,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             else 
             {
                 const partialUserPreferencesStoreState: Partial<UserPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.userPreferencesStoreState);
-
-                transaction.overrideEntity(
-                    newUser.userPreferencesStoreState.userPreferencesStoreStateID,
-                    partialUserPreferencesStoreState,
-                    () => environment.repositories.userPreferencesStoreStates);
+                if (Object.keys(partialUserPreferencesStoreState).length > 0)
+                {
+                    transaction.overrideEntity(
+                        newUser.userPreferencesStoreState.userPreferencesStoreStateID,
+                        partialUserPreferencesStoreState,
+                        () => environment.repositories.userPreferencesStoreStates);
+                }
             }
         }
 

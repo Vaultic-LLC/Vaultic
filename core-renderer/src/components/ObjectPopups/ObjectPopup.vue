@@ -2,10 +2,6 @@
     <div class="objectPopupContainer">
         <div class="objectPopupGlass" @click.stop="doClosePopup">
         </div>
-        <!-- <Dialog v-model:visible="showDialog">
-            <template #container>
-            </template>
-        </Dialog> -->
         <div ref="objectPopup" class="objectyPopup">
             <div v-if="!doPreventClose" class="closeIconContainer" @click.stop="doClosePopup">
                 <ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
@@ -27,8 +23,6 @@
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
-import Dialog from 'primevue/dialog';
-
 import { DataType } from '../../Types/DataTypes';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '../../Types/Colors';
@@ -37,13 +31,10 @@ import { hideAll } from 'tippy.js';
 import app from "../../Objects/Stores/AppStore";
 import { popups } from "../../Objects/Stores/PopupStore";
 import { ClosePopupFuncctionKey } from '../../Constants/Keys';
+import { AppView } from '../../Types/App';
 
 export default defineComponent({
     name: "ObjectPopup",
-    components:
-    {
-        Dialog
-    },
     props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing"],
     setup(props)
     {
@@ -90,7 +81,7 @@ export default defineComponent({
             let currentSecondaryColorOne: string = '';
             let currentSecondaryColorTwo: string = '';
 
-            if (app.activePasswordValuesTable == DataType.Passwords)
+            if (usePasswordColor())
             {
                 currentPrimaryColor = app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
                 currentSecondaryColorOne = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
@@ -181,6 +172,12 @@ export default defineComponent({
             }
         }
 
+        function usePasswordColor()
+        {
+            return (app.activeAppView == AppView.Vault && app.activePasswordValuesTable == DataType.Passwords) || 
+                (app.activeAppView == AppView.User && app.activeDeviceOrganizationsTable == DataType.Devices);
+        }
+
         watch(() => app.activePasswordValuesTable, () =>
         {
             transitionColors();
@@ -203,7 +200,7 @@ export default defineComponent({
             previousPrimaryColor.value = app.userPreferences.currentPrimaryColor.value;
             primaryColor.value = app.userPreferences.currentPrimaryColor.value;
 
-            if (app.activePasswordValuesTable == DataType.Passwords)
+            if (usePasswordColor())
             {
                 previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
                 secondaryColorOne.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorOne.value;
@@ -211,7 +208,7 @@ export default defineComponent({
                 previousSecondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
                 secondaryColorTwo.value = app.userPreferences.currentColorPalette.passwordsColor.value.secondaryColorTwo.value;
             }
-            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            else
             {
                 previousSecondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;
                 secondaryColorOne.value = app.userPreferences.currentColorPalette.valuesColor.value.secondaryColorOne.value;

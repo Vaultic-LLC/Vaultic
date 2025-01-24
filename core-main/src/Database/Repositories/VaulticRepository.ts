@@ -3,6 +3,7 @@ import { VaulticEntity } from "../Entities/VaulticEntity";
 import { StoreState } from "../Entities/States/StoreState";
 import { EntityState } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import logRepository from "./LogRepository";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -98,6 +99,7 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             console.log(`Filed to insert entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
+            await logRepository.log(undefined, `Failed to insert entity\n ${e}`);
             return false;
         }
 
@@ -118,6 +120,7 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             console.log(`Filed to insert existing entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
+            await logRepository.log(undefined, `Failed to insert existing entity\n ${e}`);
             return false;
         }
 
@@ -161,6 +164,7 @@ export class VaulticRepository<T extends VaulticEntity>
 
         try 
         {
+            console.log(`Updating. Old Entity: ${JSON.stringify(entity)}\n New Entity: ${JSON.stringify(mockEntity)}\n`);
             const result = await repo.update(entity.identifier(), mockEntity);
             return result.affected == 1;
         }
@@ -168,6 +172,7 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
+            await logRepository.log(undefined, `Failed to update entity\n ${e}`);
         }
 
         return false;
@@ -184,6 +189,7 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             console.log(`Filed to override entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
+            await logRepository.log(undefined, `Failed to override entity\n ${JSON.stringify(entity)}, \n${e}`);
             return false;
         }
 
@@ -216,8 +222,9 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to reset tracking entity: ${JSON.vaulticStringify(entity)}`)
             console.log(e);
+            await logRepository.log(undefined, `Failed to reset tracking\n ${e}`);
         }
 
         return false;
@@ -236,6 +243,7 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             console.log(`Filed to delete entity: ${JSON.vaulticStringify(findBy)}`)
             console.log(e);
+            await logRepository.log(undefined, `Failed to delete entity\n ${e}`);
         }
 
         return false;

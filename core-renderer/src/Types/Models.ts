@@ -20,19 +20,59 @@ export interface TableColumnModel
 {
     header: string;
     field: string;
+    isFielded?: boolean;
     startingWidth?: string;
     component?: string;
     isGroupIconCell?: boolean;
     data?: { [key: string]: any };
 }
 
-export interface TableRowModel
+export class TableRowModel<T extends { [key: string]: any }>
 {
     id: string;
     isPinned?: boolean;
     atRiskModel?: AtRiskModel;
-    backingObject?: Field<IIdentifiable & { [key: string]: any }>;
+    backingObject?: T;
     state?: any;
+    backingObjectIdentifier: (obj: T) => any;
+    backingObjectPropertyAccessor: (obj: T, prop: string) => any;
+
+    constructor(id: string, backingObjectIdentifier: (obj: T) => any, backingObjectPropertyAccessor?: (obj: T, prop: string) => any,
+        isPinned?: boolean, atRiskModel?: AtRiskModel, backingObject?: T, state?: any) 
+    {
+        this.id = id;
+        this.backingObjectIdentifier = backingObjectIdentifier;
+        this.backingObjectPropertyAccessor = backingObjectPropertyAccessor ?? ((obj: T, prop: string) => obj[prop]);
+        this.isPinned = isPinned;
+        this.atRiskModel = atRiskModel;
+        this.backingObject = backingObject;
+        this.state = state;
+    }
+
+    getBackingObjectIdentifier(): any
+    {
+        if (this.backingObject)
+        {
+            return this.backingObjectIdentifier(this.backingObject);
+        }
+    }
+
+    getBackingObjectProperty(prop: string): any
+    {
+        if (this.backingObject)
+        {
+            return this.backingObjectPropertyAccessor(this.backingObject, prop);
+        }
+    }
+}
+
+export class FieldedTableRowModel<T extends Field<IIdentifiable & { [key: string]: any }>> extends TableRowModel<T>
+{
+    constructor(id: string, isPinned?: boolean, atRiskModel?: AtRiskModel, backingObject?: T, state?: any)
+    {
+        super(id, (obj: T) => obj?.value.id.value, (obj: T, prop: string) => obj?.value[prop].value, isPinned,
+            atRiskModel, backingObject, state);
+    }
 }
 
 export interface SelectableBackingObject extends IIdentifiable
@@ -67,7 +107,7 @@ export interface ObjectSelectOptionModel
     icon?: string;
     color?: string;
     label: string;
-    backingObject?: Field<IIdentifiable>;
+    backingObject?: any;
 }
 
 export interface SmallMetricGaugeModel
@@ -178,7 +218,8 @@ export interface ButtonModel
 interface ToggleRadioButton
 {
     text: string;
-    active: boolean;
+    active: ComputedRef<boolean>;
+    onClick: () => void;
 }
 
 export interface ToggleRadioButtonModel

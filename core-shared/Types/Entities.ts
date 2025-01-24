@@ -1,3 +1,7 @@
+import { ServerPermissions } from "./ClientServerTypes"
+import { PasswordsByDomainType } from "./DataTypes";
+import { Field, KnownMappedFields } from "./Fields";
+
 export enum EntityState
 {
     Inserted,
@@ -32,13 +36,15 @@ export interface IUser extends IVaulticEntity
 
 export interface IUserVault extends IVaulticEntity 
 {
-    userVaultID: number
-    userID: number
-    userOrganizationID: number
-    user: IUser
-    vaultID: number
+    userVaultID: number;
+    userID: number;
+    userOrganizationID: number;
+    user: IUser;
+    vaultID: number;
     vault: IVault;
-    vaultKey: string
+    vaultKey: string;
+    isOwner: boolean;
+    permissions?: ServerPermissions;
     vaultPreferencesStoreState: IVaultPreferencesStoreState;
 };
 
@@ -112,8 +118,8 @@ export interface IFilterStoreState extends IStoreState
 
 export interface IGroupStoreState extends IStoreState
 {
-    groupStoreStateID: number
-    vaultID: number
+    groupStoreStateID: number;
+    vaultID: number;
     vault: IVault;
 }
 
@@ -121,19 +127,47 @@ export interface DisplayVault
 {
     name: string;
     userVaultID: number;
+    vaultID: number;
+    userOrganizationID: number;
+    shared: boolean;
+    isArchived: boolean;
+    isOwner: boolean;
+    isReadOnly: boolean;
     lastUsed?: boolean;
+    type?: VaultType;
+    passwordsByDomain?: Field<Map<string, Field<KnownMappedFields<PasswordsByDomainType>>>>;
+}
+
+export function getVaultType(vault: DisplayVault)
+{
+    if (vault.shared)
+    {
+        if (vault.isOwner)
+        {
+            return VaultType.SharedWithOthers;
+        }
+
+        return VaultType.SharedWithUser;
+    }
+    else if (vault.isArchived)
+    {
+        return VaultType.Archived;
+    }
+
+    return VaultType.Private;
 }
 
 export enum VaultType
 {
-    Personal,
-    Shared,
+    Private,
+    SharedWithOthers,
+    SharedWithUser,
     Archived
 };
 
-export interface ServerDisplayVault extends DisplayVault
+export interface SharedClientUserVault extends IUserVault
 {
-    vaultKey: string;
+    isSetup: boolean;
 }
 
 export interface UserData 
@@ -147,13 +181,26 @@ export interface UserData
 
 export interface CondensedVaultData
 {
+    userOrganizationID: number;
     userVaultID: number;
+    vaultID: number;
     vaultPreferencesStoreState: string;
     name: string;
+    shared: boolean;
+    isArchived: boolean;
+    isOwner: boolean;
+    isReadOnly: boolean;
     lastUsed: boolean;
+    permissions?: ServerPermissions;
     vaultStoreState: string;
     passwordStoreState: string;
     valueStoreState: string;
     filterStoreState: string;
     groupStoreState: string;
+}
+
+export interface UserVaultIDAndVaultID
+{
+    userVaultID: number;
+    vaultID: number;
 }

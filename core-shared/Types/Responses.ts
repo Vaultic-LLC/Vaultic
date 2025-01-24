@@ -1,5 +1,5 @@
 import { Device } from "./Device";
-import { AllowSharingFrom, ChartData, LicenseStatus, OrganizationAndUsers, Session, UserDataBreach, UserDataPayload, UserDemographics } from "./ClientServerTypes";
+import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataPayload, UserDemographics, UserOrgInfo, VaultDataBreach } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -114,9 +114,9 @@ export interface CreateCheckoutResponse extends UserSessionAndDeviceAuthenticati
     Url?: string;
 }
 
-export interface GetUserDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
+export interface GetVaultDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-    DataBreaches?: UserDataBreach[];
+    DataBreaches?: VaultDataBreach[];
 }
 
 export interface GetUserDeactivationKeyResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
@@ -194,14 +194,15 @@ export interface BackupResponse extends BaseResponse, UserDataPayloadResponse { 
 
 export interface GetOrganizationsResponse extends BaseResponse
 {
-    OrganizationsAndUsers?: OrganizationAndUsers[];
+    OrganizationInfo?: OrganizationInfo[];
 }
 
 export interface GetSharingSettings extends BaseResponse 
 {
     Username?: string;
     AllowSharedVaultsFromOthers?: boolean;
-    AllowSharingFrom?: AllowSharingFrom;
+    AllowSharingFrom?: ServerAllowSharingFrom;
+    AllowSharingFromUsers?: UserDemographics[];
 }
 
 export interface UpdateSharingSettingsResponse extends BaseResponse
@@ -213,3 +214,20 @@ export interface SearchForUsersResponse extends BaseResponse
 {
     Users?: UserDemographics[];
 }
+
+export interface GetVaultMembersResponse extends BaseResponse
+{
+    UserOrgInfo?: UserOrgInfo[];
+}
+
+export interface GetPublicKeysResponse extends BaseResponse
+{
+    UsersAndPublicKeys?: { [key: number]: string };
+}
+
+export interface CreateOrganizationResponse extends BaseResponse
+{
+    OrganizationID?: number;
+}
+
+export interface SyncVaultsResponse extends UserDataPayloadResponse, BaseResponse { }

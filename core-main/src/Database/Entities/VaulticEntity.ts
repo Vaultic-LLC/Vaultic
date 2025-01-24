@@ -258,7 +258,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         const secretResponse = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
         if (!secretResponse.success)
         {
-            console.log(`Key: ${key}, Secret: ${this.signatureSecret}`);
             return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
         }
 
@@ -296,6 +295,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
             if (!equalHashes)
             {
+                console.log(`Failed verify: ${JSON.stringify(this)}`);
                 return TypedMethodResponse.fail(errorCodes.HASHES_DONT_MATCH);
             }
 
@@ -316,7 +316,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         if (!selfVerification.success)
         {
             selfVerification.addToCallStack(`Verifying ${this.entityName()}`);
-            console.log(JSON.vaulticStringify(selfVerification));
             throw selfVerification;
         }
 
@@ -330,7 +329,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
                 {
                     response.addToCallStack(`Verifying ${nestedVaulticEntites[i]}`);
                     response.addToErrorMessage(`ID: ${this.identifier()}`);
-                    console.log(JSON.vaulticStringify(selfVerification));
 
                     throw response;
                 }
@@ -349,6 +347,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
+            await environment.repositories.logs.log(errorCodes.INVALID_PROPERTY_WHILE_ENCRYPTING, property);
             return false;
         }
 
@@ -369,6 +368,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         {
             if (!await this.encryptAndSet(key, properties[i]))
             {
+                console.log(`Failed to encrypt property: ${properties[i]}. Key: ${key}`)
                 return false;
             }
         }

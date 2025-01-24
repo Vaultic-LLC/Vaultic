@@ -8,9 +8,7 @@ class LogRepository
 {
     private repository: Repository<Log>;
 
-    constructor()
-    {
-    }
+    constructor() { }
 
     init()
     {

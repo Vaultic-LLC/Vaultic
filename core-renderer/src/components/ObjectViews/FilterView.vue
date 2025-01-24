@@ -5,7 +5,7 @@
             <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
-        <VaulticFieldset :centered="true" :end="true" :fill-space="true" :static="true">
+        <VaulticFieldset :centered="true" :end="true" :fill-space="true">
             <VaulticTable ref="tableRef" id="addFilterTable" :color="color" :columns="tableColumns" 
                 :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
                 :allowSearching="false" :onDelete="onDelete">
@@ -28,7 +28,7 @@ import VaulticTable from '../Table/VaulticTable.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { DataType, defaultFilter, Filter, FilterCondition, FilterConditionType } from '../../Types/DataTypes';
-import { GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { FieldedTableRowModel, GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
@@ -180,15 +180,11 @@ export default defineComponent({
 
             filterState.value.conditions.value.set(id, filterCondition);
 
-            const tableRowModel: TableRowModel = 
+            const tableRowModel = new FieldedTableRowModel(id, false, undefined, filterCondition, 
             {
-                id: id,
-                backingObject:filterCondition,
-                state: {
-                    filterConditionType: FilterConditionType,
-                    inputType: PropertyType.String
-                }
-            };
+                filterConditionType: FilterConditionType,
+                inputType: PropertyType.String
+            });
 
             filterConditionModels.push(tableRowModel);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -209,18 +205,14 @@ export default defineComponent({
             }
             else
             {
-                let models: TableRowModel[] = [];
+                let models: FieldedTableRowModel<Field<FilterCondition>>[] = [];
                 filterState.value.conditions.value.forEach((v, k, map) =>
                 {
-                    models.push({
-                        id: k,
-                        backingObject: v,
-                        state: 
-                        {
-                            filterConditionType: FilterConditionType,
-                            inputType: PropertyType.String
-                        }
-                    })
+                    models.push(new FieldedTableRowModel(k, false, undefined, v, 
+                    {
+                        filterConditionType: FilterConditionType,
+                        inputType: PropertyType.String
+                    }));
                 });
 
                 filterConditionModels.updateValues(models);
