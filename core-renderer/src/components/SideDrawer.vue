@@ -17,7 +17,8 @@
         </div>
         <div class="sideDrawer__vaultList">
             <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked">
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="syncVaults">
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Sync all Vaults'" 
+                    @click="syncVaults">
                     <ion-icon name="sync-outline"></ion-icon>                
                 </VaulticButton>
             </TreeList>
