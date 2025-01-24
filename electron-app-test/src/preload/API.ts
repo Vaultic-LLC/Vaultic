@@ -8,9 +8,9 @@ import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Env
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
 import { IAPI } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { CondensedVaultData, UserData, UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
+import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
-import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { Member, Organization, BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -46,7 +46,11 @@ const userController: ClientUserController =
 
 const vaultController: ClientVaultController =
 {
-    getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID)
+    getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID),
+    getVaultDataBreaches: (getVaultDataBreachesData: string) => ipcRenderer.invoke('vaultController:getVaultDataBreaches', getVaultDataBreachesData),
+    checkPasswordForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordForBreach', checkPasswordForBreachData),
+    dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => ipcRenderer.invoke('vaultController:dismissVaultDataBreach', userOrganizaitonID, vaultID, vaultDataBreachID),
+    clearDataBreaches: (vaults: BreachRequestVault[]) => ipcRenderer.invoke('vaultController:clearDataBreaches', vaults)
 }
 
 const organizationController: OrganizationController =

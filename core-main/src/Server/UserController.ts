@@ -1,4 +1,4 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetPublicKeysResponse, GetSharingSettings, GetUserDataBreachesResponse, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetPublicKeysResponse, GetSharingSettings, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
@@ -64,18 +64,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post("User/GetChartData", data);
     }
 
-    function getUserDataBreaches(passwordStoreState: string): Promise<GetUserDataBreachesResponse>
-    {
-        return axiosHelper.api.post("User/GetUserDataBreaches", passwordStoreState);
-    }
-
-    function dismissUserDataBreach(userDataBreachID: number): Promise<BaseResponse>
-    {
-        return axiosHelper.api.post("User/DismissUserDataBreach", {
-            UserDataBreachID: userDataBreachID
-        });
-    }
-
     function deactivateUserSubscription(email: string, deactivationKey: string): Promise<DeactivateUserSubscriptionResponse>
     {
         return axiosHelper.api.post("User/DeactivateUserSubscription", {
@@ -132,8 +120,6 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         backupData,
         createCheckout,
         getChartData,
-        getUserDataBreaches,
-        dismissUserDataBreach,
         deactivateUserSubscription,
         reportBug,
         getSharingSettings,

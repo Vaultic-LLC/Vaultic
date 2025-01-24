@@ -1,5 +1,5 @@
 import { ServerPermissions } from "./ClientServerTypes";
-import { Field, FieldedObject } from "./Fields";
+import { Field, FieldedObject, IFieldedObject } from "./Fields";
 
 export interface Organization
 {
@@ -26,4 +26,22 @@ export interface Member
     permission: ServerPermissions;
     icon: string | undefined;
     publicKey: string | undefined;
+}
+
+export class PasswordsByDomainType extends FieldedObject
+{
+    passwordsByDomain: Field<Map<string, Field<string>>>;
+
+    constructor()
+    {
+        super();
+        this.passwordsByDomain = new Field(new Map<string, Field<string>>());
+    }
+}
+
+export interface BreachRequestVault
+{
+    UserOrganizationID: number;
+    VaultID: number;
+    LimitedPasswords?: { id: string, domain: string }[];
 }

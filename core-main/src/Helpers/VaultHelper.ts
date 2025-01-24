@@ -1,17 +1,8 @@
 import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
-import { UserVault } from "../Database/Entities/UserVault";
 import { Vault } from "../Database/Entities/Vault";
-import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
-import axiosHelper from "../Server/AxiosHelper";
-import vaulticServer from "../Server/VaulticServer";
-import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { VaultKey } from "../Types/Properties";
-import { safetifyMethod } from "./RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
-import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
-import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 class VaultHelper 
 {

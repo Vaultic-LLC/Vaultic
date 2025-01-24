@@ -146,7 +146,7 @@ export default defineComponent({
                 if (response.success && response.value!.Success)
                 {
                     app.isOnline = true;
-                    if (await app.loadUserData(masterKey.value, response.value!.userDataPayload))
+                    if (await app.loadUserData(masterKey.value))
                     {
                         ctx.emit('onKeySuccess');                   
                     }

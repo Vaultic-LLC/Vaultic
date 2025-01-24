@@ -65,7 +65,7 @@ export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | Seconda
     "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "userColorPalettes" | "pinnedDataTypes" |
     "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
     "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" | "pinnedOrganizations";
+    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" | "pinnedOrganizations" | "passwordsByDomain";
 
 export type KnownUnfieldedMappedFieldsType = "membersByUserID" | "vaultIDsByVaultID";
 
@@ -73,7 +73,7 @@ export const FieldedMapFields: Set<KnownFieldedMappedFieldsType> = new Set(["pas
     "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "userColorPalettes", "pinnedDataTypes", "pinnedFilters",
     "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
     "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
-    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices", "pinnedOrganizations"
+    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices", "pinnedOrganizations", "passwordsByDomain"
 ]);
 
 export const UnfieldedMapFields: Set<KnownUnfieldedMappedFieldsType> = new Set(["membersByUserID", "vaultIDsByVaultID"])

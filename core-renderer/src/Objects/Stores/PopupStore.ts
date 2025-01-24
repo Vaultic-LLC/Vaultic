@@ -98,6 +98,8 @@ export function createPopupStore()
 
     const emergencyDeactivationIsShowing: Ref<boolean> = ref(false);
 
+    const clearDataBreachesIsShowing: Ref<boolean> = ref(false);
+
     function addOnEnterHandler(index: number, callback: () => void)
     {
         onEnterHandlers[index] = callback;
@@ -325,6 +327,16 @@ export function createPopupStore()
         emergencyDeactivationIsShowing.value = false;
     }
 
+    function showClearDataBreachesPopup()
+    {
+        clearDataBreachesIsShowing.value = true;
+    }
+
+    function hideClearDataBreachesPopup()
+    {
+        clearDataBreachesIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -363,6 +375,7 @@ export function createPopupStore()
         get addDataTypePopupIsShowing() { return addDataTypePopupIsShowing.value; },
         get initialAddDataTypePopupContent() { return initialAddDataTypePopupContent.value; },
         get emergencyDeactivationIsShowing() { return emergencyDeactivationIsShowing.value; },
+        get clearDataBreachesIsShowing() { return clearDataBreachesIsShowing.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -387,6 +400,8 @@ export function createPopupStore()
         showAddDataTypePopup,
         hideAddDataTypePopup,
         showEmergencyDeactivationPopup,
-        hideEmergencyDeactivationPopup
+        hideEmergencyDeactivationPopup,
+        showClearDataBreachesPopup,
+        hideClearDataBreachesPopup
     }
 }

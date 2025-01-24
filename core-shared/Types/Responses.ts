@@ -1,5 +1,5 @@
 import { Device } from "./Device";
-import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataBreach, UserDataPayload, UserDemographics, UserOrgInfo } from "./ClientServerTypes";
+import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataPayload, UserDemographics, UserOrgInfo, VaultDataBreach } from "./ClientServerTypes";
 
 export interface EncryptedResponse
 {
@@ -114,9 +114,9 @@ export interface CreateCheckoutResponse extends UserSessionAndDeviceAuthenticati
     Url?: string;
 }
 
-export interface GetUserDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
+export interface GetVaultDataBreachesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-    DataBreaches?: UserDataBreach[];
+    DataBreaches?: VaultDataBreach[];
 }
 
 export interface GetUserDeactivationKeyResponse extends UseSessionLicenseAndDeviceAuthenticationResponse

@@ -452,12 +452,12 @@ export default defineComponent({
         onMounted(() =>
         {
             init();
-            app.userDataBreaches.addEvent('onBreachDismissed', initPasswords);
+            app.vaultDataBreaches.addEvent('onBreachDismissed', initPasswords);
         });
 
         onUnmounted(() =>
         {
-            app.userDataBreaches.removeEvent('onBreachDismissed', initPasswords);
+            app.vaultDataBreaches.removeEvent('onBreachDismissed', initPasswords);
         });
 
         // watch(() => app.activePasswordValuesTable, () =>

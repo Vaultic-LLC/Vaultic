@@ -5,7 +5,10 @@ import { VaulticEntity } from "./VaulticEntity"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData, IUserVault } from "@vaultic/shared/Types/Entities"
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
-import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes"
+import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
+import { PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes"
+import { Field, KnownMappedFields } from "@vaultic/shared/Types/Fields"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity implements IUserVault
@@ -121,6 +124,7 @@ export class UserVault extends VaulticEntity implements IUserVault
             shared: this.vault.shared,
             isArchived: this.vault.isArchived,
             isOwner: this.isOwner,
+            isReadOnly: this.vault.isArchived || (this.isOwner === false && this.permissions === ServerPermissions.View),
             lastUsed: this.vault.lastUsed,
             permissions: this.permissions,
             vaultStoreState: this.vault.vaultStoreState.state,

@@ -1,7 +1,8 @@
-import { CreateVaultResponse, GetVaultDataResponse, BaseResponse, GetVaultMembersResponse } from "@vaultic/shared/Types/Responses";
+import { CreateVaultResponse, GetVaultDataResponse, BaseResponse, GetVaultMembersResponse, GetVaultDataBreachesResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientVaultController } from "@vaultic/shared/Types/Controllers";
 import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
+import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 
 export interface VaultController extends ClientVaultController
 {
@@ -63,11 +64,41 @@ export function createVaultController(axiosHelper: AxiosHelper)
         });
     }
 
+    function getVaultDataBreaches(getVaultDataBreachesData: string): Promise<GetVaultDataBreachesResponse>
+    {
+        return axiosHelper.api.post("Vault/GetVaultDataBreaches", getVaultDataBreachesData);
+    }
+
+    function checkPasswordForBreach(checkPasswordForBreachData: string): Promise<GetVaultDataBreachesResponse>
+    {
+        return axiosHelper.api.post("Vault/CheckPasswordForBreach", checkPasswordForBreachData);
+    }
+
+    function dismissVaultDataBreach(userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number): Promise<BaseResponse>
+    {
+        return axiosHelper.api.post("Vault/DismissVaultDataBreach", {
+            UserOrganizationID: userOrganizaitonID,
+            VaultID: vaultID,
+            VaultDataBreachID: vaultDataBreachID
+        });
+    }
+
+    function clearDataBreaches(vaults: BreachRequestVault[]): Promise<BaseResponse>
+    {
+        return axiosHelper.api.post("Vault/ClearDataBreaches", {
+            Vaults: vaults
+        });
+    }
+
     return {
         create,
         deleteVault,
         failedToSaveVault,
         getMembers,
-        updateVault
+        updateVault,
+        getVaultDataBreaches,
+        checkPasswordForBreach,
+        dismissVaultDataBreach,
+        clearDataBreaches
     }
 }

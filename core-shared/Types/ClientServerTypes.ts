@@ -7,9 +7,10 @@ export interface Session
     Hash?: string;
 }
 
-export interface UserDataBreach
+export interface VaultDataBreach
 {
-    UserDataBreachID: number;
+    VaultDataBreachID: number;
+    VaultID: number;
     PasswordID: string;
     BreachedDate: number;
     PasswordsWereBreached: boolean;

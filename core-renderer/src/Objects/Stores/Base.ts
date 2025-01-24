@@ -145,7 +145,7 @@ export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, U ext
     }
 }
 
-export class DataTypeStore<T extends KnownMappedFields<StoreState>> extends VaultContrainedStore<T>
+export class DataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents> extends VaultContrainedStore<T, U>
 {
     constructor(vault: VaultStoreParameter, stateName: string)
     {
@@ -226,7 +226,7 @@ export class DataTypeStore<T extends KnownMappedFields<StoreState>> extends Vaul
     }
 }
 
-export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>> extends DataTypeStore<T>
+export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents> extends DataTypeStore<T, U>
 {
     public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
     {

@@ -6,34 +6,47 @@
                 <span v-if="scanning">Scanning...</span>
                 <span v-else>Scan</span>
             </div>
+            <div class="breachedPasswordsContainer__clearButton" @click="clearBreaches">
+                <span>Clear</span>
+            </div>
             <div class="breachedPasswordsContainer__title">
                 <h2>
                     Data Breaches
                 </h2>
             </div>
-            <div class="breachedPasswordsContainer__items">
+            <div class="breachedPasswordsContainer__items" v-if="!failedToLoad">
+                <!-- // TODO: replace with list of vault + number of breaches in vault -->
                 <div class="breachedPasswordsContainer__map">
-                    <WorldMap :scan="scanning" />
+                    <!-- <WorldMap :scan="scanning" /> -->
+                    <VaulticTable id="breachPasswordsByVault" :color="color" :columns="tableColumns" 
+                        :dataSources="tableDataSources" :emptyMessage="'No Data Breaches for any Vaults'" :loading="scanning"
+                        :allowSearching="false" :hidePaginator="true" :allowPinning="false" :smallRows="true" />
                 </div>
                 <div class="breachedPasswordsContainer__metric">
                     <SmallMetricGauge :model="metricModel" />
                 </div>
+            </div>
+            <div class="breachedPasswordsContainer__items" v-else>
+                <WidgetErrorMessage :message="'Unable to load Breached Passwords at this time. Please try again later'" />
             </div>
         </div>
     </div>
 </template>
 
 <script lang="ts">
-import { ComputedRef, Ref, computed, defineComponent, ref, watch } from 'vue';
+import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 import WorldMap from './WorldMap.vue';
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
+import WidgetErrorMessage from '../Widgets/WidgetErrorMessage.vue';
+import VaulticTable from '../Table/VaulticTable.vue';
 
-import { SmallMetricGaugeModel } from '../../Types/Models';
+import { SmallMetricGaugeModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
-import { api } from '../../API';
-import { AtRiskType, DataType } from '../../Types/DataTypes';
+import { AtRiskType, DataType, VaultAndBreachCount } from '../../Types/DataTypes';
+import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
+import { Field } from '@vaultic/shared/Types/Fields';
+import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 
 export default defineComponent({
     name: "BreachedPasswords",
@@ -41,11 +54,36 @@ export default defineComponent({
     {
         WorldMap,
         SmallMetricGauge,
+        WidgetErrorMessage,
+        VaulticTable
     },
     setup()
     {
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const scanning: Ref<boolean> = ref(false);
+        const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
+        const vaultsAndBreachCount: SortedCollection = new SortedCollection([]);
+
+        const tableDataSources: Reactive<TableDataSources> = reactive(
+        {
+            activeIndex: () => 0,
+            dataSources: 
+            [
+                {
+                    friendlyDataTypeName: "Data Breaches",
+                    collection: vaultsAndBreachCount                
+                },
+            ]
+        });
+
+        const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
+        {
+            const models: TableColumnModel[] = []
+            models.push({ header: "Vault", field: "vault", isFielded: false });
+            models.push({ header: "Breaches", field: "breachCount", isFielded: false });
+
+            return models;
+        });
 
         const metricModel: ComputedRef<SmallMetricGaugeModel> = computed(() =>
         {
@@ -53,7 +91,7 @@ export default defineComponent({
             {
                 return {
                     key: `pbreached${0}${app.currentVault.passwordStore.passwords.length}`,
-                    title: 'Breached',
+                    title: 'This Vault',
                     filledAmount: 0,
                     totalAmount: app.currentVault.passwordStore.passwords.length,
                     color: color.value,
@@ -71,7 +109,7 @@ export default defineComponent({
                 const breachedCount: number = app.currentVault.passwordStore.breachedPasswords.length;
                 return {
                     key: `pbreached${breachedCount}${app.currentVault.passwordStore.passwords.length}`,
-                    title: 'Breached',
+                    title: 'This Vault',
                     filledAmount: breachedCount,
                     totalAmount: app.currentVault.passwordStore.passwords.length,
                     color: color.value,
@@ -86,24 +124,21 @@ export default defineComponent({
             }
         })
 
-        const minScanTime: number = 7000;
         async function startScan(notifyComplete: boolean)
         {
+            if (scanning.value)
+            {
+                return;
+            }
+            
             scanning.value = true;
 
-            const minScanPromise: Promise<void> = new Promise((resolve, _) =>
-            {
-                setTimeout(() => resolve(), minScanTime);
-            });
-
-            const getBreechesPromise: Promise<any> = getUserBreaches(notifyComplete);
-            const result = await Promise.all([minScanPromise, getBreechesPromise]);
-
+            const result: boolean = await app.vaultDataBreaches.getVaultDataBreaches();
             scanning.value = false;
 
             if (notifyComplete)
             {
-                if (result[1] === true)
+                if (result)
                 {
                     app.popups.showToast(color.value, "Scan Complete", true);
                 }
@@ -114,43 +149,41 @@ export default defineComponent({
             }
         }
 
-        async function getUserBreaches(notifyFailed: boolean): Promise<boolean>
+        async function checkPasswordForBreach(password: Field<ReactivePassword>)
         {
-            const requestData = 
-            {
-                LimitedPasswords: app.currentVault.passwordStore.passwords.map(p =>
-                {
-                    return {
-                        id: p.value.id.value,
-                        domain: p.value.domain.value
-                    }
-                })
-            };
-
-            const response = await api.server.user.getUserDataBreaches(JSON.vaulticStringify(requestData));
-            if (response.Success)
-            {
-                app.userDataBreaches.updateUserBreaches(response.DataBreaches!);
-                return true;
-            }
-            // don't be showing random popups when we were updating in the background
-            else if (notifyFailed)
-            {
-                defaultHandleFailedResponse(response);
-            }
-
-            return false;
+            scanning.value = true;
+            await app.vaultDataBreaches.checkPasswordForBreach(password);
+            scanning.value = false;          
         }
 
-        watch(() => app.currentVault.passwordStore.passwords.length, (newValue, oldValue) =>
+        function setRows()
         {
-            if (newValue > oldValue)
+            const rows: TableRowModel<VaultAndBreachCount>[] = [];               
+            app.vaultDataBreaches.vaultDataBreachCountByVaultID.forEach((v, k, map) => 
             {
-                startScan(false);
-            }
-        });
+                const vault = app.userVaultsByVaultID.get(k);
+                if (vault)
+                {
+                    const vaultAndBreachCount: VaultAndBreachCount = 
+                    {
+                        vaultID: k,
+                        vault: vault.name,
+                        breachCount: v
+                    }
 
-        watch(() => app.isOnline, (newValue) =>
+                    rows.push(new TableRowModel(k.toString(), (obj: VaultAndBreachCount) => obj.vaultID, undefined, false, undefined, vaultAndBreachCount));
+                }
+            });
+
+            vaultsAndBreachCount.updateValues(rows);
+        }
+
+        function clearBreaches()
+        {
+            app.popups.showClearDataBreachesPopup();
+        }
+
+        watch(() => app.loadedUser.value, (newValue) =>
         {
             if (!newValue)
             {
@@ -162,15 +195,33 @@ export default defineComponent({
                 return;
             }
 
-            // wait for the main global animation to finish before sending a request to help prevent it glitching
-            setTimeout(() => startScan(false), 3000);
+            startScan(false);
+        });
+
+        onMounted(() =>
+        {
+            app.vaultDataBreaches.addEvent("onBreachesUpdated", setRows);
+            app.vaultDataBreaches.addEvent("onBreachDismissed", setRows);
+            app.currentVault.passwordStore.addEvent("onCheckPasswordBreach", checkPasswordForBreach);
+        });
+
+        onUnmounted(() =>
+        {
+            app.vaultDataBreaches.removeEvent("onBreachesUpdated", setRows);
+            app.vaultDataBreaches.removeEvent("onBreachDismissed", setRows);
+            app.currentVault.passwordStore.removeEvent("onCheckPasswordBreach", checkPasswordForBreach);
         });
 
         return {
             color,
             scanning,
             metricModel,
-            startScan
+            failedToLoad,
+            vaultsAndBreachCount,
+            tableDataSources,
+            tableColumns,
+            startScan,
+            clearBreaches
         }
     }
 }) as any
@@ -209,6 +260,8 @@ export default defineComponent({
 .breachedPasswordsContainer__content {
     width: 100%;
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .breachedPasswordsContainer__title {
@@ -223,7 +276,8 @@ export default defineComponent({
     align-items: center;
     width: 100%;
     height: 82.5%;
-    margin-top: 0.3vw;
+    margin-top: 0.7vw;
+    flex-grow: 1;
 }
 
 .breeachedPasswordTable {
@@ -252,7 +306,7 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    margin-top: max(20px, 1vw);
+    /* margin-top: max(20px, 1vw); */
     transform: translateX(-2%);
 }
 
@@ -293,28 +347,32 @@ export default defineComponent({
     box-shadow: 0 0 25px v-bind(color);
 }
 
-/* .breachedPasswordsContainer__scanner {
-	position: absolute;
-	z-index: 2;
-	top: 0%;
-	width: 100%;
-	height: 5%;
-	filter: blur(10px);
-	background-color: v-bind(color);
-	animation: scan 5s infinite;
+.breachedPasswordsContainer__clearButton {
+    position: absolute;
+    top: 5%;
+    right: 2%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    width: 10%;
+    min-width: 35px;
+    height: 7%;
+    color: white;
+    border-radius: clamp(7px, 0.4vw, 0.425rem);
+    border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
+    transition: 0.3s;
+    font-size: clamp(10px, 0.8vw, 17px);
+    cursor: pointer;
 }
 
-@keyframes scan {
-	0% {
-		top: 0%;
-	}
+.breachedPasswordsContainer__clearButton:hover {
+    box-shadow: 0 0 25px v-bind(color);
+}
 
-	50% {
-		top: 100%;
-	}
-
-	100% {
-		top: 0%;
-	}
-} */
+#breachPasswordsByVault {
+    position: relative;
+    height: 100%;
+    width: 93%;
+}
 </style>

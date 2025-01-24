@@ -10,7 +10,7 @@ import { IAPI } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
-import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { BreachRequestVault, Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 
 export function getDeviceInfo(): Promise<DeviceInfo>
@@ -34,20 +34,21 @@ const userController: ClientUserController =
 	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
 	createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
 	getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),
-	getUserDataBreaches: (passwordStoreState: string) => ipcRenderer.invoke('userController:getUserDataBreaches', passwordStoreState),
-	dismissUserDataBreach: (breechID: number) => ipcRenderer.invoke('userController:dismissUserDataBreach', breechID),
 	deactivateUserSubscription: (email: string, deactivationKey: string) => ipcRenderer.invoke('userController:deactivateUserSubscription', email, deactivationKey),
 	getDevices: () => ipcRenderer.invoke('userController:getDevices'),
 	reportBug: () => ipcRenderer.invoke('userController:reportBug'),
 	getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
 	updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom),
 	searchForUsers: (username: string, excludedUserIDs: string) => ipcRenderer.invoke('userController:searchForUsers', username, excludedUserIDs)
-
 };
 
 const vaultController: ClientVaultController =
 {
-	getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID)
+	getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID),
+	getVaultDataBreaches: (getVaultDataBreachesData: string) => ipcRenderer.invoke('vaultController:getVaultDataBreaches', getVaultDataBreachesData),
+	checkPasswordForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordForBreach', checkPasswordForBreachData),
+	dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => ipcRenderer.invoke('vaultController:dismissVaultDataBreach', userOrganizaitonID, vaultID, vaultDataBreachID),
+	clearDataBreaches: (vaults: BreachRequestVault[]) => ipcRenderer.invoke('vaultController:clearDataBreaches', vaults)
 }
 
 const organizationController: OrganizationController =

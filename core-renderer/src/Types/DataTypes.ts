@@ -1,4 +1,4 @@
-import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject, KnownMappedFields, IFieldedObject } from "@vaultic/shared/Types/Fields";
 import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 
@@ -59,6 +59,7 @@ export interface Password extends IPrimaryDataObject, PasswordSecretProperty
     isWeakMessage: Field<string>;
     containsLogin: Field<boolean>;
     passwordLength: Field<number>;
+    checkedForBreach: Field<boolean>;
 }
 
 export interface SecurityQuestion extends IIdentifiable, IFieldObject
@@ -184,6 +185,13 @@ export class RelatedDataTypeChanges
     }
 }
 
+export interface VaultAndBreachCount
+{
+    vaultID: number;
+    vault: string;
+    breachCount: number;
+}
+
 export function defaultPassword(): Password
 {
     return {
@@ -204,6 +212,7 @@ export function defaultPassword(): Password
         containsLogin: new Field(false),
         filters: new Field(new Map()),
         groups: new Field(new Map()),
+        checkedForBreach: new Field(false)
     }
 }
 

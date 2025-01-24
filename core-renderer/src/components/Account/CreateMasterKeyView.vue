@@ -136,7 +136,7 @@ export default defineComponent({
                     }
 
                     app.isOnline = true;
-                    if (!(await app.loadUserData(key.value, loginResponse.value!.userDataPayload)))
+                    if (!(await app.loadUserData(key.value)))
                     {
                         app.popups.hideLoadingIndicator();
                         showAlertMessage("An unexpected error occured when trying to load data. Please try signing in. If the issue persists", "Unable to load data", true);

@@ -11,7 +11,7 @@ import serverHelper from "./Core/Helpers/ServerHelper";
 import { safeBackupData } from "./Core/Helpers/RepositoryHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
-import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { BreachRequestVault, Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 
 export default function setupIPC()
@@ -26,8 +26,6 @@ export default function setupIPC()
 	ipcMain.handle('userController:deleteDevice', (e, masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => validateSender(e, () => vaulticServer.user.deleteDevice(masterKey, desktopDeviceID, mobileDeviceID)));
 	ipcMain.handle('userController:createCheckout', (e) => validateSender(e, () => vaulticServer.user.createCheckout()));
 	ipcMain.handle('userController:getChartData', (e, data: string) => validateSender(e, () => vaulticServer.user.getChartData(data)));
-	ipcMain.handle('userController:getUserDataBreaches', (e, passwordStoreState: string) => validateSender(e, () => vaulticServer.user.getUserDataBreaches(passwordStoreState)));
-	ipcMain.handle('userController:dismissUserDataBreach', (e, breechID: number) => validateSender(e, () => vaulticServer.user.dismissUserDataBreach(breechID)));
 	ipcMain.handle('userController:deactivateUserSubscription', (e, email: string, deactivationKey: string) => validateSender(e, () => vaulticServer.user.deactivateUserSubscription(email, deactivationKey)));
 	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));
 	ipcMain.handle('userController:reportBug', (e, descrption: string) => validateSender(e, () => vaulticServer.user.reportBug(descrption)));
@@ -36,6 +34,10 @@ export default function setupIPC()
 	ipcMain.handle('userController:searchForUsers', (e, username: string, excludedUserIDs: string) => validateSender(e, () => vaulticServer.user.searchForUsers(username, excludedUserIDs)));
 
 	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, userVaultID)));
+	ipcMain.handle('vaultController:getVaultDataBreaches', (e, getVaultDataBreachesData: string) => validateSender(e, () => vaulticServer.vault.getVaultDataBreaches(getVaultDataBreachesData)));
+	ipcMain.handle('vaultController:checkPasswordForBreach', (e, checkPasswordForBreachData: string) => validateSender(e, () => vaulticServer.vault.checkPasswordForBreach(checkPasswordForBreachData)));
+	ipcMain.handle('vaultController:dismissVaultDataBreach', (e, userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => validateSender(e, () => vaulticServer.vault.dismissVaultDataBreach(userOrganizaitonID, vaultID, vaultDataBreachID)));
+	ipcMain.handle('vaultController:clearDataBreaches', (e, vaults: BreachRequestVault[]) => validateSender(e, () => vaulticServer.vault.clearDataBreaches(vaults)));
 
 	ipcMain.handle('organizationController:getOrganizations', (e) => validateSender(e, () => vaulticServer.organization.getOrganizations()));
 	ipcMain.handle('organizationController:createOrganization', (e, masterKey: string, createOrganizationData: string) => validateSender(e, () => vaulticServer.organization.createOrganization(masterKey, createOrganizationData)));

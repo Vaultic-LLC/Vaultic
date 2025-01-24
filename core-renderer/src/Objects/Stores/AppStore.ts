@@ -8,17 +8,17 @@ import { ColorPalette, defaultColorPalettes, emptyUserColorPalettes } from "../.
 import { AppView, AutoLockTime } from "../../Types/App";
 import { ReactiveVaultStore } from "./VaultStore";
 import { UserPreferencesStore } from "./UserPreferencesStore";
-import { UserDataBreachStore } from "./UserDataBreachStore";
+import { VaultDataBreachStore } from "./VaultDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
-import { DisplayVault, UserData, CondensedVaultData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
+import { DisplayVault, UserData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
 import { FilterStatus, DataType } from "../../Types/DataTypes";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
-import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { Member, Organization, PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
+import { PasswordStoreState } from "./PasswordStore";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -74,7 +74,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalCurrentVault: ReactiveVaultStore;
 
     private internalUsersPreferencesStore: UserPreferencesStore;
-    private internalUserDataBreachStore: UserDataBreachStore;
+    private internalVaultDataBreachStore: VaultDataBreachStore;
     private internalDeviceStore: DeviceStore;
     private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
@@ -102,7 +102,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get sharedWithOthersVaults() { return this.internalSharedWithOthersVaults; }
     get currentVault() { return this.internalCurrentVault; }
     get userPreferences() { return this.internalUsersPreferencesStore; }
-    get userDataBreaches() { return this.internalUserDataBreachStore; }
+    get vaultDataBreaches() { return this.internalVaultDataBreachStore; }
     get devices() { return this.internalDeviceStore; }
     get organizations() { return this.internalOrganizationStore; }
     get popups() { return this.internalPopupStore; }
@@ -112,7 +112,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         super("appStoreState");
 
         this.internaLoadedUser = ref(false);
-        this.internalUserDataBreachStore = new UserDataBreachStore();
+        this.internalVaultDataBreachStore = new VaultDataBreachStore();
         this.internalDeviceStore = new DeviceStore();
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
@@ -217,7 +217,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.currentVault.filterStore.resetToDefault();
         this.currentVault.groupStore.resetToDefault();
         this.currentVault.vaultPreferencesStore.resetToDefault();
-        this.internalUserDataBreachStore.resetToDefault();
+        this.internalVaultDataBreachStore.resetToDefault();
         this.internalDeviceStore.resetToDefault();
         this.internalOrganizationStore.resetToDefault();
 
@@ -240,7 +240,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }, this.internalAutoLockNumberTime.value);
     }
 
-    public async loadUserData(masterKey: string, payload?: UserDataPayload)
+    public async loadUserData(masterKey: string)
     {
         if (this.internaLoadedUser.value)
         {
@@ -265,7 +265,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internaLoadedUser.value = true;
         this.internalActiveAppView.value = AppView.Vault;
 
-        // don't bother waiting for this, just trigger it so they are there if we need them
+        // don't bother waiting for these, just trigger them so they are there if we need them
         app.devices.getDevices();
         app.organizations.getOrganizations();
 
@@ -303,8 +303,10 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             shared: vaultData.shared,
             isArchived: vaultData.isArchived,
             isOwner: vaultData.isOwner,
+            isReadOnly: vaultData.isReadOnly,
             lastUsed: setAsActive,
-            type: getVaultType(vaultData)
+            type: getVaultType(vaultData),
+            passwordsByDomain: (JSON.vaulticParse(vaultData.passwordStoreState) as PasswordStoreState).passwordsByDomain
         });
 
         this.internalUserVaults.value = temp;

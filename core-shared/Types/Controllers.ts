@@ -1,7 +1,7 @@
 import { ServerAllowSharingFrom } from "./ClientServerTypes";
-import { Member } from "./DataTypes";
+import { BreachRequestVault, Member } from "./DataTypes";
 import { UserVaultIDAndVaultID } from "./Entities";
-import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GenerateRandomPhraseResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetUserDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -19,8 +19,6 @@ export interface ClientUserController
     deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
-    getUserDataBreaches: (passwordStoreState: string) => Promise<GetUserDataBreachesResponse>;
-    dismissUserDataBreach: (breachID: number) => Promise<BaseResponse>;
     deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
     getDevices: () => Promise<GetDevicesResponse>;
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
@@ -32,6 +30,10 @@ export interface ClientUserController
 export interface ClientVaultController 
 {
     getMembers: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultMembersResponse>;
+    getVaultDataBreaches: (getVaultDataBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    checkPasswordForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => Promise<BaseResponse>;
+    clearDataBreaches: (vaults: BreachRequestVault[]) => Promise<BaseResponse>;
 }
 
 export interface CreateOrganizationData

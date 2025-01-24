@@ -1,23 +1,35 @@
 <template>
     <div class="vaulticTableContainer">
         <DataTable scrollable removableSort lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" 
-            :totalRecords="totalRecords" paginator :rowsPerPageOptions="[5, 15, 30, 50]" :loading="loading"
+            :totalRecords="totalRecords" :paginator="!hidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" :loading="loading"
             resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
             @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor" @page="onPage"
             :pt="{
                 thead: 'vaulticTableContainer__thead',
-                header: 'vaulticTableContainer__header',
-                columnResizeIndicator: 'vaulticTableContainer__columnResizeIndicator',
-                tableContainer: 
+                header: () =>
                 {
-                    id: tableContainerID,
-                    class: 'vaulticTableContainer__dataTableTableContainer'
+                    const display = headerTabs && headerTabs.length > 0 ? 'block': 'none';
+                    return {
+                        class: 'vaulticTableContainer__header',
+                        style: { 'display': display }
+                    }
+                },
+                columnResizeIndicator: 'vaulticTableContainer__columnResizeIndicator',
+                tableContainer: () =>
+                {
+                    const height = hidePaginator ? '100%' : 'calc(100% - 50px)';
+                    return {
+                        id: tableContainerID,
+                        class: 'vaulticTableContainer__dataTableTableContainer',
+                        style: { 'height': height }
+                    }
                 },
                 bodyRow: ({ context }) => 
                 {
+                    const height = smallRows ? 'clamp(30px, 2vw, 70px)' : 'clamp(40px, 3.5vw, 100px)';
                     return {
                         class: 'vaulticTableContainer__dataTableRow',
-                        style: { 'animation-delay': `${(Math.min(context.index, 10) / 8)}s` }
+                        style: { 'animation-delay': `${(Math.min(context.index, 10) / 8)}s`, 'height': height }
                     }
                 },
                 emptyMessage: 'vaulticTableContainer__emptyMessage',
@@ -69,7 +81,7 @@
                 }
             }">
             <template #header>
-                <div class="vaulticTableContainer__tabContainer">
+                <div class="vaulticTableContainer__tabContainer" v-if="headerTabs && headerTabs.length > 0">
                     <TableHeaderTab v-for="(model, index) in headerTabs" :key="index" :model="model" />
                 </div>
             </template>
@@ -198,7 +210,8 @@ export default defineComponent({
         VaultListCell
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
-        'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading'],
+        'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading', 'hidePaginator',
+        'smallRows'],
     setup(props)
     {
         const tableContainerID = ref(useId());
@@ -562,7 +575,7 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__dataTableTableContainer) {
-    height: calc(100% - 50px);
+    /* height: calc(100% - 50px); */
     overflow-x: hidden !important;
     overflow-y: scroll !important;
     background: v-bind(backgroundColor);
@@ -624,7 +637,7 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__dataTableRow) {
-    height: clamp(40px, 3.5vw, 100px);
+    /* height: clamp(40px, 3.5vw, 100px); */
     background: transparent;
     /* opacity: 0;
     animation: fadeIn 1s linear forwards; */

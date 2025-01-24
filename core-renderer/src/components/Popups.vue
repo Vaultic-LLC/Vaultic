@@ -79,6 +79,14 @@
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.clearDataBreachesIsShowing" :minWidth="'600px'" :minHeight="'480px'" :width="'50%'"
+					:closePopup="popupStore.hideClearDataBreachesPopup">
+					<ClearBreachesView />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -97,6 +105,7 @@ import VaultView from "./ObjectViews/VaultView.vue";
 import OrganizationView from './ObjectViews/OrganizationView.vue';
 import AddObjectPopup from './ObjectPopups/AddObjectPopup.vue';
 import EmergencyDeactivationView from './Account/EmergencyDeactivationView.vue';
+import ClearBreachesView from './BreachedPasswords/ClearBreachesView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -116,7 +125,8 @@ export default defineComponent({
         VaultView,
         OrganizationView,
         AddObjectPopup,
-        EmergencyDeactivationView
+        EmergencyDeactivationView,
+        ClearBreachesView
     },
     setup()
     {

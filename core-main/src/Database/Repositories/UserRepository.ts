@@ -13,11 +13,14 @@ import { StoreState } from "../Entities/States/StoreState";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { EntityState, getVaultType, UserData, VaultType } from "@vaultic/shared/Types/Entities";
+import { EntityState, getVaultType, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
+import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
+import { Field } from "@vaultic/shared/Types/Fields";
+import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 
 class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
@@ -347,7 +350,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             };
 
             const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey,
-                [nameof<Vault>("name")]);
+                [nameof<Vault>("name"), nameof<Vault>("passwordStoreState")]);
 
             if (!userVaults || userVaults.length == 0)
             {
@@ -373,9 +376,11 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     name: userVaults[i].name,
                     shared: userVaults[i].shared,
                     isOwner: userVaults[i].isOwner,
+                    isReadOnly: userVaults[i].isReadOnly,
                     isArchived: userVaults[i].isArchived,
                     lastUsed: userVaults[i].lastUsed,
-                    type: getVaultType(userVaults[i])
+                    type: getVaultType(userVaults[i]),
+                    passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).passwordsByDomain ?? new Field(new Map())
                 });
             }
 
@@ -389,11 +394,20 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 userData.displayVaults![0].lastUsed = true;
             }
 
-            console.log(`finished getting data: ${JSON.vaulticStringify(userData)}`);
+            try
+            {
+                console.log(userData);
+                console.log(`finished getting data: ${JSON.vaulticStringify(userData)}`);
+            }
+            catch (e)
+            {
+                console.log(e);
+            }
 
             userData.success = true;
             return TypedMethodResponse.success(JSON.vaulticStringify(userData));
 
+            // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
             async function setCurrentVault(id: number, setAsLastUsed: boolean)
             {
                 const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [id]);
