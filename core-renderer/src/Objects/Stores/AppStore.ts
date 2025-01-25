@@ -16,7 +16,7 @@ import { FilterStatus, DataType } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
-import { Member, Organization, PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes";
+import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 
@@ -30,7 +30,9 @@ export interface AppSettings extends IFieldedObject
     randomValueLength: Field<number>;
     randomPhraseLength: Field<number>;
     includeNumbersInRandomPassword: Field<boolean>;
+    includeNumbersInRandomPassphrase: Field<boolean>;
     includeSpecialCharactersInRandomPassword: Field<boolean>;
+    includeSpecialCharactersInRandomPassphrase: Field<boolean>;
     includeAmbiguousCharactersInRandomPassword: Field<boolean>;
     passphraseSeperator: Field<string>;
 }
@@ -170,7 +172,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 randomValueLength: new Field(25),
                 randomPhraseLength: new Field(7),
                 includeNumbersInRandomPassword: new Field(true),
+                includeNumbersInRandomPassphrase: new Field(true),
                 includeSpecialCharactersInRandomPassword: new Field(true),
+                includeSpecialCharactersInRandomPassphrase: new Field(true),
                 includeAmbiguousCharactersInRandomPassword: new Field(true),
                 passphraseSeperator: new Field('-')
             })

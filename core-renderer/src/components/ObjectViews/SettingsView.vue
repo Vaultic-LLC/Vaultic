@@ -55,15 +55,23 @@
             </div>
             <div class="settingsView__inputSection">
                 <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                    :label="'Include Numbers in Random Passwords'" v-model="appSettings.includeNumbersInRandomPassword.value" />
-            </div>
-            <div class="settingsView__inputSection">
-                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                    :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword.value" />
-            </div>
-            <div class="settingsView__inputSection">
-                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
                     :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.includeAmbiguousCharactersInRandomPassword.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                        :label="'Include Numbers in Random Passwords'" v-model="appSettings.includeNumbersInRandomPassword.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Include Numbers in Random Passphrase'" v-model="appSettings.includeNumbersInRandomPassphrase.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                        :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Include Special Characters in Random Passphrase'" v-model="appSettings.includeSpecialCharactersInRandomPassphrase.value" />
             </div>
             <div></div>
             <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
@@ -520,5 +528,13 @@ export default defineComponent({
     position: relative;
     min-height: 40vh;
     width: 70%;
+}
+
+.settingsView__checkboxGroup {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+    row-gap: 10px
 }
 </style>

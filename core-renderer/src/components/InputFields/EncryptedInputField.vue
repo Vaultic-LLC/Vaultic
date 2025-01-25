@@ -77,12 +77,12 @@
                         <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length.value" />
                     </VaulticFieldset>
                     <VaulticFieldset> 
-                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.value.includeNumbersInRandomPassword.value" 
+                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="includeNumbers.value" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset> 
                         <CheckboxInputField :color="colorModel.color" :label="'Special Characters'" 
-                            v-model="appSettings.value.includeSpecialCharactersInRandomPassword.value" :width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="includeSpecialCharacters.value" :width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
@@ -192,7 +192,10 @@ export default defineComponent({
         const randomPasswordPreview: Ref<string> = ref('');
         const randomValueType: Ref<RandomValueType> = ref(RandomValueType.Password);
         const appSettings: Ref<Field<AppSettings>> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+
         const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
+        const includeNumbers: ComputedRef<Field<boolean>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.includeNumbersInRandomPassword : appSettings.value.value.includeNumbersInRandomPassphrase);
+        const includeSpecialCharacters: ComputedRef<Field<boolean>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.includeSpecialCharactersInRandomPassword : appSettings.value.value.includeSpecialCharactersInRandomPassphrase);
 
         let floatLabelStyle = computed(() => {
             return {
@@ -325,7 +328,7 @@ export default defineComponent({
         async function onGenerateRandomPasswordOrPhrase()
         {
             randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value.value,
-                appSettings.value.value.includeNumbersInRandomPassword.value, appSettings.value.value.includeSpecialCharactersInRandomPassword.value, 
+                includeNumbers.value.value, includeSpecialCharacters.value.value, 
                 appSettings.value.value.includeAmbiguousCharactersInRandomPassword.value, appSettings.value.value.passphraseSeperator.value);
         }
 
@@ -405,6 +408,8 @@ export default defineComponent({
             colorModel,
             RandomValueType,
             randomValueType,
+            includeNumbers,
+            includeSpecialCharacters,
             appSettings,
             onAuthenticationSuccessful,
             onInput,

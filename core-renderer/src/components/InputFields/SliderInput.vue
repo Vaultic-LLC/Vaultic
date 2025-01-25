@@ -18,7 +18,7 @@
     </div>
 </template>
 <script lang="ts">
-import { computed, defineComponent, Ref, ref } from 'vue';
+import { computed, defineComponent, Ref, ref, watch } from 'vue';
 
 import Slider from 'primevue/slider';
 import InputText from 'primevue/inputtext';
@@ -68,6 +68,11 @@ export default defineComponent({
             valueHolder.value = value;
             ctx.emit('update:modelValue', value);
         }
+
+        watch(() => props.modelValue, () =>
+        {
+            valueHolder.value = props.modelValue;
+        });
 
 		return {
             valueHolder,
