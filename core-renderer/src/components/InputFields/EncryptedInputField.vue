@@ -61,35 +61,38 @@
                 }">
                 <div class="encryptedInputFieldContainer__randomPasswordPopover">
                     <VaulticFieldset>
-                        <TextInputField :color="colorModel.color" :label="'Value'" v-model="randomPasswordPreview"
+                        <TextInputField :color="colorModel.color" :label="'Temporary Value'" v-model="randomPasswordPreview"
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
                         <EnumInputField :color="colorModel.color" :label="'Type'" v-model="randomValueType" :optionsEnum="RandomValueType" 
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" @onFocus="onTypeFocus" @onBlur="typeDidBlur = true"
+                            :hideClear="true" />
+                    </VaulticFieldset>
+                    <VaulticFieldset v-if="randomValueType == RandomValueType.Passphrase">
+                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.value.passphraseSeperator.value" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
-                        <SliderInput :color="colorModel.color" />
+                        <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length.value" />
                     </VaulticFieldset>
                     <VaulticFieldset> 
-                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.includeNumbersInRandomPassword.value" 
-                            :width="'100%'" :maxWidth="''" :maxHeight="''" />
+                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.value.includeNumbersInRandomPassword.value" 
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset> 
                         <CheckboxInputField :color="colorModel.color" :label="'Special Characters'" 
-                            v-model="appSettings.includeSpecialCharactersInRandomPassword.value" :width="'100%'" :maxWidth="''" :maxHeight="''" />
+                            v-model="appSettings.value.includeSpecialCharactersInRandomPassword.value" :width="'100%'" :maxWidth="''" :maxHeight="''"
+                            :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Include Ambiguous Characters'"
-                            v-model="appSettings.includeAmbiguousCharactersInRandomPassword.value":width="'100%'" :maxWidth="''" :maxHeight="''" />
+                            v-model="appSettings.value.includeAmbiguousCharactersInRandomPassword.value":width="'100%'" :maxWidth="''" :maxHeight="''"
+                            :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
-                    <VaulticFieldset v-if="randomValueType == RandomValueType.Passphrase">
-                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.passphraseSeperator.value" 
-                            :width="'100%'" :maxWidth="''" :maxHeight="''" />
-                    </VaulticFieldset>
-                    <div>
-                        <PopupButton :color="colorModel.color" :label="'Generate'" @onClick="onGenerateRandomPasswordOrPhrase" />
-                        <PopupButton :color="colorModel.color" :label="'Confirm'" @onClick="confirmRandomPasswordOrPhrase" />
+                    <div class="encryptedInputFieldContainer__randomPasswordPopupButtons">
+                        <PopupButton :color="colorModel.color" :text="'Generate'" @onClick="onGenerateRandomPasswordOrPhrase" />
+                        <PopupButton :color="colorModel.color" :text="'Confirm'" @onClick="confirmRandomPasswordOrPhrase" />
                     </div>
                 </div>
             </Popover>
@@ -117,7 +120,7 @@ import { InputColorModel } from '../../Types/Models';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import cryptHelper from '../../Helpers/cryptHelper';
 import { ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Constants/Keys';
-import { RandomValueType } from '@vaultic/shared/Types/Fields';
+import { Field, RandomValueType } from '@vaultic/shared/Types/Fields';
 import { api } from '../../API';
 
 export default defineComponent({
@@ -154,8 +157,10 @@ export default defineComponent({
         const popoverHover: Ref<boolean> = ref(false);
         const isFocused: Ref<boolean> = ref(false);
         const popupIsShowing: Ref<boolean> = ref(false);
+        const typeIsFocused: Ref<boolean> = ref(false);
+        const typeDidBlur: Ref<boolean> = ref(false);
         const showPopup: ComputedRef<boolean> = computed(() => props.showRandom === true && isLocked.value === false && 
-            isDisabled.value === false && (hovering.value || isFocused.value || popoverHover.value));
+            isDisabled.value === false && (hovering.value || isFocused.value || popoverHover.value || typeIsFocused.value));
 
         const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
@@ -186,7 +191,8 @@ export default defineComponent({
 
         const randomPasswordPreview: Ref<string> = ref('');
         const randomValueType: Ref<RandomValueType> = ref(RandomValueType.Password);
-        const appSettings: Ref<AppSettings> = JSON.vaulticParse(JSON.vaulticStringify(app.settings));
+        const appSettings: Ref<Field<AppSettings>> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
 
         let floatLabelStyle = computed(() => {
             return {
@@ -310,19 +316,27 @@ export default defineComponent({
             }, 50);
         }
 
+        function onTypeFocus()
+        {
+            typeIsFocused.value = true;
+            typeDidBlur.value = false;
+        }
+
         async function onGenerateRandomPasswordOrPhrase()
         {
-            randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, 
-                randomValueType.value == RandomValueType.Password ? appSettings.value.randomValueLength.value : appSettings.value.randomPhraseLength.value,
-                appSettings.value.includeNumbersInRandomPassword.value, appSettings.value.includeSpecialCharactersInRandomPassword.value, 
-                appSettings.value.includeAmbiguousCharactersInRandomPassword.value, appSettings.value.passphraseSeperator.value);
+            randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value.value,
+                appSettings.value.value.includeNumbersInRandomPassword.value, appSettings.value.value.includeSpecialCharactersInRandomPassword.value, 
+                appSettings.value.value.includeAmbiguousCharactersInRandomPassword.value, appSettings.value.value.passphraseSeperator.value);
         }
 
         function confirmRandomPasswordOrPhrase()
         {
             onInput(randomPasswordPreview.value);
             randomPasswordPreview.value = "";
-            popover.value.toggle();
+
+            //popover.value.toggle();
+            popoverHover.value = false;
+            hovering.value = false;
         }
 
         onMounted(() =>
@@ -347,6 +361,15 @@ export default defineComponent({
             {
                 popover.value.toggle({currentTarget: container.value}); 
                 popupIsShowing.value = newValue;        
+            }
+        });
+
+        watch(() => [hovering.value, isFocused.value, popoverHover.value], () =>
+        {
+            if (typeDidBlur.value)
+            {
+                typeIsFocused.value = false;
+                typeDidBlur.value = false;
             }
         });
 
@@ -376,6 +399,9 @@ export default defineComponent({
             computedMaxWidth,
             backgroundColor,
             container,
+            length,
+            typeIsFocused,
+            typeDidBlur,
             colorModel,
             RandomValueType,
             randomValueType,
@@ -396,7 +422,8 @@ export default defineComponent({
             onContainerMouseLeave,
             onPopoverMouseLeave,
             onGenerateRandomPasswordOrPhrase,
-            confirmRandomPasswordOrPhrase
+            confirmRandomPasswordOrPhrase,
+            onTypeFocus
         }
     }
 })
@@ -505,5 +532,20 @@ export default defineComponent({
 
 :deep(.encryptedInputFieldContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+}
+
+.encryptedInputFieldContainer__randomPasswordPopover {
+    display: flex;
+    flex-direction: column;
+    row-gap: 5px;
+    width: 20vw;
+}
+
+.encryptedInputFieldContainer__randomPasswordPopupButtons {
+    display: flex;
+    column-gap: 10px;
+    justify-content: center;
+    align-items: flex-end;
+    margin-top: 10px;
 }
 </style>

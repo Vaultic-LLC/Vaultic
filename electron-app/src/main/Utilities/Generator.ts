@@ -88,10 +88,8 @@ export function generateRandomPasswordOrPassphrase(type: RandomValueType, length
 	{
 		for (let i = 0; i < length; i++)
 		{
-			let validWord = false;
 			let digits = "";
-
-			while (!validWord)
+			while (true)
 			{
 				digits = "";
 				for (let j = 0; j < 5; j++)
@@ -100,21 +98,23 @@ export function generateRandomPasswordOrPassphrase(type: RandomValueType, length
 					crypto.getRandomValues(randomBuffer);
 
 					let randomNumber = randomBuffer[0] / (0xffffffff + 1);
-					const digit = Math.floor(randomNumber * (6 - 0 + 1)) + 0;
+					const digit = Math.floor(randomNumber * (6 - 1 + 1)) + 1;
 
 					digits += digit;
 				}
 
 				const intDigits = parseInt(digits);
-				if (includeNumbers)
+				if (!includeNumbers && intDigits >= passphraseNumbersLow && intDigits < passphraseSpecialCharactersLow)
 				{
-					validWord = intDigits < passphraseNumbersLow;
+					continue;
 				}
 
-				if (includeSpecialCharacters)
+				if (!includeSpecialCharacters && intDigits >= passphraseSpecialCharactersLow)
 				{
-					validWord = intDigits < passphraseSpecialCharactersLow;
+					continue;
 				}
+
+				break;
 			}
 
 			if (i == 0)

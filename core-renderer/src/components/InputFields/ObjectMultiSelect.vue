@@ -280,8 +280,8 @@ export default defineComponent({
 }
 
 :deep(.objectMultiSelectContainer__multiSelectDropDownIcon) {
-    width: clamp(12px, 1.5vw, 16px) !important;
-    height: clamp(12px, 1.5vw, 16px) !important;
+    width: clamp(12px, 1vw, 16px) !important;
+    height: clamp(12px, 1vw, 16px) !important;
 }
 
 :deep(.objectMultiSelectContainer__filterIcon) {
