@@ -32,8 +32,9 @@
                         };
                     }
                 }" :invalid="isInvalid" :disabled="disabled" class="primeVueSelect" v-model="selectedValue" 
-                showClear :inputId="id" :options="options" optionLabel="name" :fluid="true" :labelStyle="{'text-align': 'left'}" 
-                @update:model-value="onOptionClick" />
+                :showClear="!hideClear" :inputId="id" :options="options" optionLabel="name" :fluid="true" 
+                :labelStyle="{'text-align': 'left'}" 
+                @update:model-value="onOptionClick" @focus="$.emit('onFocus')" @blur="$.emit('onBlur')" />
             <label class="dropDownContainer__label" :for="id">{{ label }}</label>
         </FloatLabel>
         <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
@@ -64,9 +65,9 @@ export default defineComponent({
         Select,
         Message
     },
-    emits: ["update:modelValue"],
+    emits: ["update:modelValue", "onFocus", "onBlur"],
     props: ["modelValue", "optionsEnum", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth', 'required', 'disabled'],
+        'width', 'minWidth', 'maxWidth', 'required', 'disabled', 'hideClear'],
     setup(props, ctx)
     {
         const id = ref(useId());
@@ -246,8 +247,8 @@ export default defineComponent({
 
 :deep(.dropDownContainer__clearIcon),
 :deep(.dropDownContainer__dropDownicon) {
-    width: clamp(12px, 1.5vw, 16px) !important;
-    height: clamp(12px, 1.5vw, 16px) !important;
+    width: clamp(12px, 1vw, 16px) !important;
+    height: clamp(12px, 1vw, 16px) !important;
 }
 
 .p-floatlabel-in:has(.p-inputwrapper-focus) .dropDownContainer__label, 

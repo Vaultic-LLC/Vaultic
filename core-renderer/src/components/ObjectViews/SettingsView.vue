@@ -50,16 +50,28 @@
                     :additionalValidationFunction="enforceMinRandomPassphraseLength" />
             </div>
             <div class="settingsView__inputSection">
-                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                    :label="'Include Numbers in Random Passwords'" v-model="appSettings.includeNumbersInRandomPassword.value" />
-                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                    :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword.value" />
+                <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.passphraseSeperator.value"
+                    :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
+            </div>
+            <div class="settingsView__inputSection">
                 <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
                     :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.includeAmbiguousCharactersInRandomPassword.value" />
             </div>
             <div class="settingsView__inputSection">
-                <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.passphraseSeperator.value"
-                    :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                        :label="'Include Numbers in Random Passwords'" v-model="appSettings.includeNumbersInRandomPassword.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Include Numbers in Random Passphrase'" v-model="appSettings.includeNumbersInRandomPassphrase.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                        :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Include Special Characters in Random Passphrase'" v-model="appSettings.includeSpecialCharactersInRandomPassphrase.value" />
             </div>
             <div></div>
             <div v-if="isOnline" class="settingsView__sectionTitle settingsView__appSettings">Sharing Settings</div>
@@ -74,7 +86,8 @@
                     :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || isLoadingSharedData || failedToLoadSharedData" />
                 <EnumInputField class="settingsView__autoLockTime" :label="'Allow Sharing From'" :color="color"
                     v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'" :maxWidth="'300px'"
-                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData" />
+                    :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :hideClear="true" 
+                    :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData" />
             </div>
             <div v-if="isOnline && allowSharedVaultsFromOthers && allowSharingFrom == AllowSharingFrom.SpecificUsers" 
                 class="settingsView__inputSection settingsView__memberContainer">
@@ -515,5 +528,13 @@ export default defineComponent({
     position: relative;
     min-height: 40vh;
     width: 70%;
+}
+
+.settingsView__checkboxGroup {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: start;
+    row-gap: 10px
 }
 </style>
