@@ -13,6 +13,7 @@ import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
 import { BreachRequestVault, Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
+import { RequireMFAOn } from "@vaultic/shared/Types/Device";
 
 export default function setupIPC()
 {
@@ -29,9 +30,10 @@ export default function setupIPC()
 	ipcMain.handle('userController:deactivateUserSubscription', (e, email: string, deactivationKey: string) => validateSender(e, () => vaulticServer.user.deactivateUserSubscription(email, deactivationKey)));
 	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));
 	ipcMain.handle('userController:reportBug', (e, descrption: string) => validateSender(e, () => vaulticServer.user.reportBug(descrption)));
-	ipcMain.handle('userController:getSharingSettings', (e) => validateSender(e, () => vaulticServer.user.getSharingSettings()));
-	ipcMain.handle('userController:updateSharingSettings', (e, username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => validateSender(e, () => vaulticServer.user.updateSharingSettings(username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom)));
+	ipcMain.handle('userController:getSettings', (e) => validateSender(e, () => vaulticServer.user.getSettings()));
+	ipcMain.handle('userController:updateSettings', (e, username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => validateSender(e, () => vaulticServer.user.updateSettings(username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom, requireMFAOn)));
 	ipcMain.handle('userController:searchForUsers', (e, username: string, excludedUserIDs: string) => validateSender(e, () => vaulticServer.user.searchForUsers(username, excludedUserIDs)));
+	ipcMain.handle('userController:getMFAKey', (e) => validateSender(e, () => vaulticServer.user.getMFAKey()));
 
 	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, userVaultID)));
 	ipcMain.handle('vaultController:getVaultDataBreaches', (e, getVaultDataBreachesData: string) => validateSender(e, () => vaulticServer.vault.getVaultDataBreaches(getVaultDataBreachesData)));
@@ -68,10 +70,8 @@ export default function setupIPC()
 	ipcMain.handle('vaulticHelper:readCSV', (e) => validateSender(e, () => vaulticHelper.readCSV()));
 	ipcMain.handle('vaulticHelper:writeCSV', (e, fileName: string, data: string) => validateSender(e, () => vaulticHelper.writeCSV(fileName, data)));
 
-	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, email: string, firstName: string, lastName: string) =>
-		validateSender(e, () => serverHelper.registerUser(masterKey, email, firstName, lastName)));
-	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) =>
-		validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData)));
+	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, email: string, firstName: string, lastName: string) => validateSender(e, () => serverHelper.registerUser(masterKey, email, firstName, lastName)));
+	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData, mfaCode)));
 
 	ipcMain.handle('repositoryHelper:backupData', (e, masterKey: string) => validateSender(e, () => safeBackupData(masterKey)));
 

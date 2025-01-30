@@ -214,9 +214,14 @@ class STSAxiosWrapper extends AxiosWrapper
 
         try
         {
+            if (!response)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No Response");
+            }
+
             if (!('Key' in response) || !('Data' in response))
             {
-                return TypedMethodResponse.fail();
+                return TypedMethodResponse.fail(undefined, undefined, "No Key or Data");
             }
 
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;

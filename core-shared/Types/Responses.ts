@@ -1,4 +1,4 @@
-import { Device } from "./Device";
+import { Device, RequireMFAOn } from "./Device";
 import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataPayload, UserDemographics, UserOrgInfo, VaultDataBreach } from "./ClientServerTypes";
 
 export interface EncryptedResponse
@@ -147,7 +147,7 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 
 export interface FinishRegistrationResponse extends BaseResponse
 {
-    VaulticPassword?: any;
+    MFASecret?: string;
     PublicKey?: string;
     PrivateKey?: string;
 }
@@ -155,6 +155,7 @@ export interface FinishRegistrationResponse extends BaseResponse
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
 {
     StartServerLoginResponse?: string;
+    FailedMFA?: boolean;
 }
 
 export interface UserDataPayloadResponse
@@ -197,9 +198,10 @@ export interface GetOrganizationsResponse extends BaseResponse
     OrganizationInfo?: OrganizationInfo[];
 }
 
-export interface GetSharingSettings extends BaseResponse 
+export interface GetSettings extends BaseResponse 
 {
     Username?: string;
+    RequireMFAOn?: RequireMFAOn;
     AllowSharedVaultsFromOthers?: boolean;
     AllowSharingFrom?: ServerAllowSharingFrom;
     AllowSharingFromUsers?: UserDemographics[];
@@ -231,3 +233,8 @@ export interface CreateOrganizationResponse extends BaseResponse
 }
 
 export interface SyncVaultsResponse extends UserDataPayloadResponse, BaseResponse { }
+
+export interface GetMFAKeyResponse extends BaseResponse
+{
+    MFAKey?: string;
+}

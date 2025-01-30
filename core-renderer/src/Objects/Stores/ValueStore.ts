@@ -34,6 +34,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
     protected defaultState()
     {
         return {
+            version: new Field(0),
             valuesByID: new Field(new Map<string, Field<ReactiveValue>>()),
             duplicateValues: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
             currentAndSafeValues: new Field(new CurrentAndSafeStructure()),

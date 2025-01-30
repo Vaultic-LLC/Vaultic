@@ -504,6 +504,7 @@ export default defineComponent({
     transform: translateY(-50%);
     margin: 0;
     transition: 0.3s;
+    cursor: pointer;
 }
 
 .encryptedInputFieldContainer__icon:hover {

@@ -1,7 +1,8 @@
 import { ServerAllowSharingFrom } from "./ClientServerTypes";
 import { BreachRequestVault, Member } from "./DataTypes";
+import { RequireMFAOn } from "./Device";
 import { UserVaultIDAndVaultID } from "./Entities";
-import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetOrganizationsResponse, GetSharingSettings, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetOrganizationsResponse, GetSettings, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -22,9 +23,10 @@ export interface ClientUserController
     deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
     getDevices: () => Promise<GetDevicesResponse>;
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
-    getSharingSettings: () => Promise<GetSharingSettings>;
-    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => Promise<UpdateSharingSettingsResponse>;
-    searchForUsers: (username: string, excludedUserIDs: string) => Promise<SearchForUsersResponse>
+    getSettings: () => Promise<GetSettings>;
+    updateSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => Promise<UpdateSharingSettingsResponse>;
+    searchForUsers: (username: string, excludedUserIDs: string) => Promise<SearchForUsersResponse>;
+    getMFAKey: () => Promise<GetMFAKeyResponse>;
 }
 
 export interface ClientVaultController 

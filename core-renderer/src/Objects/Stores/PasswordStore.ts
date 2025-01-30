@@ -37,6 +37,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
     protected defaultState()
     {
         return {
+            version: new Field(0),
             passwordsByID: new Field(new Map<string, Field<ReactivePassword>>()),
             passwordsByDomain: new Field(new Map<string, Field<KnownMappedFields<PasswordsByDomainType>>>()),
             duplicatePasswords: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),

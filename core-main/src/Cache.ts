@@ -1,4 +1,3 @@
-import { ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { environment } from "./Environment";
 
 export class VaulticCache
@@ -7,9 +6,17 @@ export class VaulticCache
     private internalSessionKey: string | undefined;
     private internalExportKey: string | undefined;
 
+    private internalStartLoginRequest: string | undefined;
+    private internalPasswordHash: string | undefined;
+    private internalClientLoginState: string | undefined;
+
     get currentUserID() { return this.internalCurrentUserID; }
     get sessionKey() { return this.internalSessionKey; }
     get exportKey() { return this.internalExportKey; }
+
+    get startLoginRequest() { return this.internalStartLoginRequest; }
+    get passwordHash() { return this.internalPasswordHash; }
+    get clientLoginState() { return this.internalClientLoginState; }
 
     constructor()
     {
@@ -21,6 +28,23 @@ export class VaulticCache
         this.internalCurrentUserID = undefined;
         this.internalSessionKey = undefined;
         this.internalExportKey = undefined;
+
+        this.clearLoginData();
+    }
+
+    setLoginData(startLoginRequest: string, passwordHash: string, clientLoginState: string)
+    {
+        this.internalStartLoginRequest = startLoginRequest;
+        this.internalPasswordHash = passwordHash;
+        this.internalClientLoginState = clientLoginState;
+    }
+
+    clearLoginData()
+    {
+        console.log('Clearing login data');
+        this.internalStartLoginRequest = undefined;
+        this.internalPasswordHash = undefined;
+        this.internalClientLoginState = undefined;
     }
 
     setCurrentUserID(currentUserID: number)

@@ -32,6 +32,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     protected defaultState()
     {
         return {
+            version: new Field(0),
             passwordFiltersByID: new Field(new Map<string, Field<Filter>>()),
             valueFiltersByID: new Field(new Map<string, Field<Filter>>()),
             emptyPasswordFilters: new Field(new Map<string, Field<string>>()),

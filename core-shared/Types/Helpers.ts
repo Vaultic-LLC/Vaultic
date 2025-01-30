@@ -1,4 +1,3 @@
-import { CondensedVaultData } from "./Entities";
 import { TypedMethodResponse } from "./MethodResponse";
 import { FinishRegistrationResponse, GetUserDeactivationKeyResponse, LogUserInResponse } from "./Responses";
 
@@ -20,7 +19,7 @@ export interface VaulticHelper
 export interface ServerHelper
 {
     registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
-    logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
+    logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
 };
 
 export interface RepositoryHelper 

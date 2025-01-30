@@ -182,6 +182,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         }
 
         return {
+            version: new Field(0),
             currentColorPalette: defaultColorPalettes.entries().next().value![1],
             pinnedDataTypes: defaultPinnedDataTypes,
             pinnedDesktopDevices: new Field(new Map()),

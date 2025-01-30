@@ -3,17 +3,18 @@ import { AxiosHelper } from "./AxiosHelper";
 
 export interface LoginController
 {
-    start: (startClientLoginRequest: string, email: string) => Promise<StartLoginResponse>;
+    start: (startClientLoginRequest: string, email: string, mfaCode: string) => Promise<StartLoginResponse>;
     finish: (firstLogin: boolean, token: string, finishClientLoginRequest: string, userDataPayload: any) => Promise<FinishLoginResponse>;
 }
 
 export function createLoginController(axiosHelper: AxiosHelper)
 {
-    function start(startClientLoginRequest: string, email: string): Promise<StartLoginResponse>
+    function start(startClientLoginRequest: string, email: string, mfaCode: string): Promise<StartLoginResponse>
     {
         return axiosHelper.sts.post('Login/Start', {
             StartClientLoginRequest: startClientLoginRequest,
-            Email: email
+            Email: email,
+            MFACode: mfaCode
         });
     }
 

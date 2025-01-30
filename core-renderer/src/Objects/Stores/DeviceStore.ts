@@ -38,6 +38,7 @@ export class DeviceStore extends Store<DeviceStoreState>
     protected defaultState()
     {
         return {
+            version: new Field(0),
             devices: new Field(new Map<string, Field<ClientDevice>>()),
             failedToGetDevices: new Field(false)
         }
@@ -84,7 +85,8 @@ export class DeviceStore extends Store<DeviceStoreState>
                 name: new Field(devices[i].Name),
                 model: new Field(devices[i].Model),
                 version: new Field(devices[i].Version),
-                type: new Field(desktop ? "Desktop" : "Mobile")
+                type: new Field(desktop ? "Desktop" : "Mobile"),
+                requiresMFA: new Field(devices[i].RequiresMFA)
             };
 
             this.state.devices.value.set(deviceId, new Field(clientDevice))

@@ -93,6 +93,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected defaultState(): VaultStoreState 
     {
         return {
+            version: new Field(0),
             settings: new Field(
                 {
                     id: new Field(""),

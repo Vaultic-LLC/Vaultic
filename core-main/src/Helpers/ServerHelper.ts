@@ -4,10 +4,8 @@ import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
-import vaultHelper from "./VaultHelper";
 import { FinishRegistrationResponse, LogUserInResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
@@ -65,29 +63,38 @@ async function registerUser(masterKey: string, email: string, firstName: string,
 }
 
 async function logUserIn(masterKey: string, email: string,
-    firstLogin: boolean = false, reloadAllData: boolean = false): Promise<TypedMethodResponse<LogUserInResponse | undefined>>
+    firstLogin: boolean = false, reloadAllData: boolean = false, mfaCode?: string): Promise<TypedMethodResponse<LogUserInResponse | undefined>>
 {
     // clear the cache if we fail in case we failed after setting the current user
     return await safetifyMethod(this, internalLogUserIn, async () => environment.cache.clear());
 
     async function internalLogUserIn(): Promise<TypedMethodResponse<LogUserInResponse>>
     {
-        console.time("1");
-        const passwordHash = environment.utilities.hash.insecureHash(masterKey);
-        const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
-            password: passwordHash,
-        });
+        if (!environment.cache.passwordHash || !environment.cache.clientLoginState || !environment.cache.startLoginRequest)
+        {
+            const passwordHash = environment.utilities.hash.insecureHash(masterKey);
+            const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
+                password: passwordHash,
+            });
 
-        const startResponse = await stsServer.login.start(startLoginRequest, email);
+            environment.cache.setLoginData(startLoginRequest, passwordHash, clientLoginState);
+        }
+
+        const startResponse = await stsServer.login.start(environment.cache.startLoginRequest, email, mfaCode);
         if (!startResponse.Success)
         {
+            if (startResponse.FailedMFA)
+            {
+                return TypedMethodResponse.success(startResponse);
+            }
+
             return TypedMethodResponse.failWithValue(startResponse);
         }
 
         const loginResult = opaque.client.finishLogin({
-            clientLoginState,
-            loginResponse: startResponse.StartServerLoginResponse!,
-            password: passwordHash,
+            clientLoginState: environment.cache.clientLoginState,
+            loginResponse: startResponse.StartServerLoginResponse,
+            password: environment.cache.passwordHash,
         });
 
         if (!loginResult)
@@ -96,7 +103,6 @@ async function logUserIn(masterKey: string, email: string,
         }
 
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
-        console.timeEnd("1");
 
         let currentSignatures: CurrentSignaturesVaultKeys;
         if (!firstLogin && !reloadAllData)
@@ -104,7 +110,6 @@ async function logUserIn(masterKey: string, email: string,
             currentSignatures = await getUserDataSignatures(masterKey, email);
         }
 
-        console.time("2");
         let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
         if (finishResponse.Success)
         {
@@ -112,9 +117,6 @@ async function logUserIn(masterKey: string, email: string,
 
             if (!firstLogin)
             {
-                console.timeEnd("2");
-                console.time("3");
-
                 // Don't have to worry about shared vaults not being e2e encrypted when they are first shared since only display
                 // vaults of them run through here
                 const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
@@ -122,9 +124,6 @@ async function logUserIn(masterKey: string, email: string,
                 {
                     return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
                 }
-
-                console.timeEnd("3");
-                console.time("4");
 
                 if (reloadAllData)
                 {
@@ -134,9 +133,6 @@ async function logUserIn(masterKey: string, email: string,
                 {
                     await checkMergeMissingData(masterKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
                 }
-
-                console.timeEnd("4");
-                console.time("5");
 
                 // This has to go after merging in the event that the user isn't in the local data yet
                 await environment.repositories.users.setCurrentUser(masterKey, email);
@@ -150,11 +146,10 @@ async function logUserIn(masterKey: string, email: string,
                 // {
                 //     finishResponse.userDataPayload = payload as UserDataPayload;
                 // }
-
-                console.timeEnd("5");
             }
         }
 
+        environment.cache.clearLoginData();
         return TypedMethodResponse.success(finishResponse);
     }
 }
@@ -201,7 +196,7 @@ async function logUserIn(masterKey: string, email: string,
 const serverHelper: ServerHelper =
 {
     registerUser,
-    logUserIn
+    logUserIn,
 };
 
 export default serverHelper;

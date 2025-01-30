@@ -6,6 +6,7 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 import { CreateOrganizationData, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 import app from "./AppStore";
+import { Field } from "@vaultic/shared/Types/Fields";
 
 export class OrganizationStore extends Store<StoreState>
 {
@@ -43,7 +44,9 @@ export class OrganizationStore extends Store<StoreState>
 
     protected defaultState()
     {
-        return {}
+        return {
+            version: new Field(0)
+        }
     }
 
     async getOrganizations(): Promise<boolean>

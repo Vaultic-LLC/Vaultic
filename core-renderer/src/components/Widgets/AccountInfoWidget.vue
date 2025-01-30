@@ -30,6 +30,13 @@
                     :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
                     :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="openDeactivationPopup" />
         </div>
+        <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
+        <div class="accountInfoWidget__section accountInfoWidget__centered">
+            <div class="accountInfoWidget__sectionHeader">MFA Key</div>
+            <PopupButton :color="currentPrimaryColor" :text="'Show Key'"
+                    :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+                    :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="onShowMFAKey" />
+        </div>
     </div>
 </template>
 
@@ -79,11 +86,17 @@ export default defineComponent({
             app.popups.showEmergencyDeactivationPopup();
         }
 
+        function onShowMFAKey()
+        {
+            app.popups.showMFAKeyPopup();
+        }
+
         return {
             currentPrimaryColor,
             openPaymentInfoLink,
             downloadDeactivationKey,
-            openDeactivationPopup
+            openDeactivationPopup,
+            onShowMFAKey
         }
     }
 })

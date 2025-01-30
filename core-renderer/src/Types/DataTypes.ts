@@ -59,7 +59,6 @@ export interface Password extends IPrimaryDataObject, PasswordSecretProperty
     isWeakMessage: Field<string>;
     containsLogin: Field<boolean>;
     passwordLength: Field<number>;
-    checkedForBreach: Field<boolean>;
 }
 
 export interface SecurityQuestion extends IIdentifiable, IFieldObject

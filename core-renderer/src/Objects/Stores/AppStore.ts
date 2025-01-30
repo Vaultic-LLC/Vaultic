@@ -162,6 +162,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     {
         return {
             id: new Field(""),
+            version: new Field(0),
             settings: new Field({
                 id: new Field(""),
                 userColorPalettes: new Field(emptyUserColorPalettes),
