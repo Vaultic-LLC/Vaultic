@@ -207,6 +207,7 @@ export interface AccountSetupModel
     devices?: Device[];
     infoMessage?: string;
     reloadAllDataIsToggled?: boolean;
+    clearAllDataOnLoad?: boolean;
 }
 
 export interface ButtonModel

@@ -12,8 +12,10 @@
                 <SignInView v-if="accountSetupModel.currentView == AccountSetupView.SignIn" :color="primaryColor"
                     :infoMessage="accountSetupModel.infoMessage"
                     :reloadAllDataIsToggled="accountSetupModel.reloadAllDataIsToggled"
+                    :clearAllDataOnLoad="accountSetupModel.clearAllDataOnLoad"
                     @onKeySuccess="closeWithAnimation" @onMoveToCreateAccount="moveToCreateAccount"
-                    @onMoveToLimitedMode="close" @onMoveToSetupPayment="moveToCreatePayment" />
+                    @onMoveToLimitedMode="close" @onMoveToSetupPayment="moveToCreatePayment"
+                    @onNotClearedData="() => accountSetupModel.clearAllDataOnLoad = true" />
                 <CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
                     :color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
                 <CreateMasterKeyView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateMasterKey"

@@ -211,14 +211,19 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         if (redirect)
         {
-            this.internalPopupStore.showAccountSetup(AccountSetupView.SignIn);
+            this.internalPopupStore.showAccountSetup(AccountSetupView.SignIn, undefined, undefined, false);
         }
 
         if (expireSession && this.isOnline === true)
         {
-            api.server.session.expire();
+            await api.server.session.expire();
         }
 
+        await this.clearAllData();
+    }
+
+    async clearAllData()
+    {
         this.currentVault.passwordStore.resetToDefault();
         this.currentVault.valueStore.resetToDefault();
         this.currentVault.filterStore.resetToDefault();
@@ -243,7 +248,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         clearTimeout(this.autoLockTimeoutID);
         this.autoLockTimeoutID = setTimeout(() =>
         {
-            console.log('auto lock app');
             this.lock();
         }, this.internalAutoLockNumberTime.value);
     }

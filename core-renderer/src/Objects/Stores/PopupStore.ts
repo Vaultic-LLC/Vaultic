@@ -213,10 +213,10 @@ export function createPopupStore()
     function showSessionExpired()
     {
         app.lock(false, false);
-        showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'");
+        showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'", undefined, false);
     }
 
-    function showAccountSetup(view: AccountSetupView, message?: string, reloadAllDataIsToggled: boolean = false)
+    function showAccountSetup(view: AccountSetupView, message?: string, reloadAllDataIsToggled: boolean = false, clearAllData: boolean = true)
     {
         // TODO: not needed? I think this was to prevent being redirected when on the payment or download activation key screen when session expires
         // might not be needed after redoing the log flow?
@@ -229,6 +229,7 @@ export function createPopupStore()
         accountSetupModel.value.reloadAllDataIsToggled = reloadAllDataIsToggled;
         accountSetupModel.value.infoMessage = message;
         accountSetupModel.value.currentView = view;
+        accountSetupModel.value.clearAllDataOnLoad = clearAllData;
         accountSetupIsShowing.value = true;
     }
 

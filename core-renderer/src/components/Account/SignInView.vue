@@ -105,8 +105,8 @@ export default defineComponent({
         ToolTip,
         EnterMFACodePopup,
     },
-    emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToSetupPayment'],
-    props: ['color', 'infoMessage', 'reloadAllDataIsToggled'],
+    emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToSetupPayment', 'onNotClearedData'],
+    props: ['color', 'infoMessage', 'reloadAllDataIsToggled', 'clearAllDataOnLoad'],
     setup(props, ctx)
     {
         const refreshKey: Ref<string> = ref('');
@@ -310,8 +310,19 @@ export default defineComponent({
             reloadAllData.value = newValue;
         });
 
-        onMounted(() =>
+        onMounted(async() =>
         {
+            // Make sure we clear the cache in case the user was set when creating the master key, but the 
+            // request failed and we navivated back to the sign in page
+            if (props.clearAllDataOnLoad !== false)
+            {
+                await app.clearAllData();
+            }
+            else
+            {
+                ctx.emit("onNotClearedData");
+            }
+
             api.repositories.users.getLastUsedUserEmail().then((lastUsedEmail) =>
             {
                 if (lastUsedEmail)
