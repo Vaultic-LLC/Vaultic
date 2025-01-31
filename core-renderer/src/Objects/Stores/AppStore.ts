@@ -19,6 +19,12 @@ import { OrganizationStore } from "./OrganizationStore";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
+import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
+
+export interface UserInfo
+{
+    license: LicenseStatus;
+}
 
 export interface AppSettings extends IFieldedObject
 {
@@ -82,6 +88,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
 
+    private internalUserInfo: Ref<UserInfo>;
+
     get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.settings; }
     get isOnline() { return this.internalIsOnline.value; }
@@ -109,6 +117,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get devices() { return this.internalDeviceStore; }
     get organizations() { return this.internalOrganizationStore; }
     get popups() { return this.internalPopupStore; }
+    get userInfo() { return this.internalUserInfo.value }
 
     constructor()
     {
@@ -150,6 +159,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalIsOnline = ref(false);
         this.internalActivePasswordValueTable = ref(DataType.Passwords);
         this.internalActiveFilterGroupTable = ref(DataType.Filters);
+
+        this.internalUserInfo = ref({ license: LicenseStatus.Unknown });
 
         this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.value.autoLockTime.value));
 
@@ -271,6 +282,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         // don't bother waiting for these, just trigger them so they are there if we need them
         app.devices.getDevices();
         app.organizations.getOrganizations();
+        this.getUserInfo();
 
         if (this.state.settings.value.temporarilyStoreMasterKey.value)
         {
@@ -495,6 +507,17 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
         return true;
+    }
+
+    private async getUserInfo()
+    {
+        const response = await api.server.user.getUserInfo();
+        if (!response.success)
+        {
+            return false;
+        }
+
+        this.internalUserInfo.value.license = response.LicenseStatus;
     }
 }
 
