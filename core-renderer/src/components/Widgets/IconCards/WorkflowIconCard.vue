@@ -12,11 +12,12 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref } from 'vue';
+import { Ref, defineComponent, ref, watch } from 'vue';
 
 import IconCard from "../../IconCard.vue"
 import ObjectPopup from "../../ObjectPopups/ObjectPopup.vue"
 import WorkflowPopup from "../../ObjectPopups/WorkflowPopup.vue"
+import app from '../../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "WorkflowIconCard",
@@ -33,6 +34,11 @@ export default defineComponent({
         {
             showWorkflowPopup.value = false;
         }
+
+        watch(() => app.loadedUser.value, () =>
+        {
+            showWorkflowPopup.value = false;
+        });
 
         return {
             showWorkflowPopup,

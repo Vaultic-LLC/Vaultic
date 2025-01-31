@@ -460,10 +460,11 @@ export default defineComponent({
             app.vaultDataBreaches.removeEvent('onBreachDismissed', initPasswords);
         });
 
-        // watch(() => app.activePasswordValuesTable, () =>
-        // {
-        //     setModels();
-        // });
+        watch(() => app.loadedUser.value, () =>
+        {
+            showEditPasswordPopup.value = false;
+            showEditValuePopup.value = false;
+        });
 
         watch(() => app.currentVault.filterStore.activePasswordFilters, (newValue, oldValue) =>
         {

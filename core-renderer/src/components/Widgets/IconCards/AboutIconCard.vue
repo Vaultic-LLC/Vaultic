@@ -13,11 +13,12 @@
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, ref } from 'vue';
+import { Ref, defineComponent, ref, watch } from 'vue';
 
 import IconCard from "../../IconCard.vue"
 import ObjectPopup from '../../../components/ObjectPopups/ObjectPopup.vue';
 import AboutPopup from '../../../components/ObjectPopups/AboutPopup.vue';
+import app from '../../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "AboutIconCard",
@@ -35,6 +36,11 @@ export default defineComponent({
         {
             showAboutPopup.value = false;
         }
+
+        watch(() => app.loadedUser.value, () =>
+        {
+            showAboutPopup.value = false;
+        });
 
         return {
             showAboutPopup,

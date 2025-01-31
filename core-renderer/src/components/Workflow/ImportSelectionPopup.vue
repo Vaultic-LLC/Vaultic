@@ -46,7 +46,7 @@ import { popups } from "../../Objects/Stores/PopupStore";
 import { ImportableDisplayField } from '../../Types/Fields';
 
 export default defineComponent({
-    name: "WorkflowPopup",
+    name: "ImportSelectionPopup",
     components:
     {
         TableSelector,

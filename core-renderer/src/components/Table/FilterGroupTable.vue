@@ -363,6 +363,12 @@ export default defineComponent({
             setTableRowDatas();
         });
 
+        watch(() => app.loadedUser.value, () =>
+        {
+            showEditFilterPopup.value = false;
+            showEditGroupPopup.value = false;
+        });
+
         watch(() => app.activeFilterGroupsTable, () =>
         {
             setTableRowDatas();
