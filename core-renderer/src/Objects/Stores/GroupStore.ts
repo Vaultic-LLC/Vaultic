@@ -38,6 +38,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
     protected defaultState()
     {
         return {
+            version: new Field(0),
             passwordGroupsByID: new Field(new Map<string, Field<Group>>()),
             valueGroupsByID: new Field(new Map<string, Field<Group>>()),
             emptyPasswordGroups: new Field(new Map<string, Field<string>>()),

@@ -14,9 +14,9 @@
             </div>
             <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
                 <PopupButton :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
-                    :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'" :height="'2vw'" @onClick="onSave" />
+                    :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="computedMinButtonHeight" :height="'2vw'" @onClick="onSave" />
                 <PopupButton v-if="creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
-                    :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="'25px'"
+                    :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="computedMinButtonHeight"
                     :height="'2vw'" :isSubmit="true"
                     @onClick="onSaveAndClose" />
             </div>
@@ -42,7 +42,7 @@ export default defineComponent({
         Message
     },
     props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 
-        'anchorButtonsDown'],
+        'anchorButtonsDown', 'minButtonHeight'],
     setup(props)
     {
         const primaryColor: ComputedRef<string> = computed(() => props.color);
@@ -50,6 +50,8 @@ export default defineComponent({
         const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
         const onSaveFunc: ComputedRef<() => Promise<boolean>> = computed(() => props.defaultSave);
         const disabled: Ref<boolean> = ref(false);
+
+        const computedMinButtonHeight: ComputedRef<string> = computed(() => props.minButtonHeight ? props.minButtonHeight : '25px');
 
         const showAuthPopup: Ref<boolean> = ref(false);
 
@@ -108,6 +110,11 @@ export default defineComponent({
             {
                 onSaveFunc.value().then(() =>
                 {
+                    if (props.skipOnSaveFunctionality)
+                    {
+                        return;
+                    }
+
                     if (closePopupFunction?.value)
                     {
                         closePopupFunction.value(true);
@@ -176,6 +183,7 @@ export default defineComponent({
             showAuthPopup,
             disabled,
             warnings,
+            computedMinButtonHeight,
             onAuthenticationSuccessful,
             authenticationCancelled,
             onSave,

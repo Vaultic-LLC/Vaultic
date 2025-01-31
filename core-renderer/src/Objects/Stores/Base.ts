@@ -14,6 +14,7 @@ type StoreStateProperty = Field<NonArrayType<Primitive>> | FieldMap | Field<NonA
 export interface StoreState
 {
     [key: string]: StoreStateProperty;
+    version: Field<number>;
 }
 
 export type StoreEvents = "onChanged";

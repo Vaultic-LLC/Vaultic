@@ -7,6 +7,7 @@ import { BaseResponse } from "@vaultic/shared/Types/Responses";
 import { ImportableDisplayField } from "../../Types/Fields";
 import { DataType } from "../../Types/DataTypes";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
+import { ClientDevice } from "@vaultic/shared/Types/Device";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -15,6 +16,7 @@ type PopupName = "loading" |
     "devicePopup" |
     "globalAuth" |
     "requestAuth" |
+    "enterMFACode" |
     "accountSetup" |
     "breachedPasswords" |
     "toast" |
@@ -36,6 +38,7 @@ export const popups: Popups =
     "loading": { zIndex: 2000 },
     "alert": { zIndex: 1990, enterOrder: 0 },
     "devicePopup": { zIndex: 161 },
+    "enterMFACode": { zIndex: 1600, enterOrder: 1 },
     "accountSetup": { zIndex: 1500, enterOrder: 2 },
     "globalAuth": { zIndex: 100, enterOrder: 3 },
     "requestAuth": { zIndex: 90, enterOrder: 4 },
@@ -99,6 +102,11 @@ export function createPopupStore()
     const emergencyDeactivationIsShowing: Ref<boolean> = ref(false);
 
     const clearDataBreachesIsShowing: Ref<boolean> = ref(false);
+
+    const showMFAKeyIsShowing: Ref<boolean> = ref(false);
+
+    const devicePopupIsShowing: Ref<boolean> = ref(false);
+    const deviceModel: Ref<ClientDevice | undefined> = ref(undefined);
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -337,6 +345,28 @@ export function createPopupStore()
         clearDataBreachesIsShowing.value = false;
     }
 
+    function showMFAKeyPopup()
+    {
+        showMFAKeyIsShowing.value = true;
+    }
+
+    function hideMFAKeyPopup()
+    {
+        showMFAKeyIsShowing.value = false;
+    }
+
+    function showDevicePopup(device?: ClientDevice)
+    {
+        deviceModel.value = device;
+        devicePopupIsShowing.value = true;
+    }
+
+    function hideDevicePopup()
+    {
+        deviceModel.value = undefined;
+        devicePopupIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -376,6 +406,9 @@ export function createPopupStore()
         get initialAddDataTypePopupContent() { return initialAddDataTypePopupContent.value; },
         get emergencyDeactivationIsShowing() { return emergencyDeactivationIsShowing.value; },
         get clearDataBreachesIsShowing() { return clearDataBreachesIsShowing.value; },
+        get showMFAKeyIsShowing() { return showMFAKeyIsShowing.value },
+        get devicePopupIsShowing() { return devicePopupIsShowing.value; },
+        get deviceModel() { return deviceModel.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -402,6 +435,10 @@ export function createPopupStore()
         showEmergencyDeactivationPopup,
         hideEmergencyDeactivationPopup,
         showClearDataBreachesPopup,
-        hideClearDataBreachesPopup
+        hideClearDataBreachesPopup,
+        showMFAKeyPopup,
+        hideMFAKeyPopup,
+        showDevicePopup,
+        hideDevicePopup
     }
 }

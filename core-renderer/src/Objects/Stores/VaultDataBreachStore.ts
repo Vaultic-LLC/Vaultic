@@ -34,7 +34,9 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     protected defaultState()
     {
-        return {};
+        return {
+            version: new Field(0)
+        };
     }
 
     public resetToDefault(): void

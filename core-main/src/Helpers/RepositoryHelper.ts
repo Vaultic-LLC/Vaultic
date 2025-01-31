@@ -6,7 +6,7 @@ import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 
-export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>
+export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>, onSucceed?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>
 {
     try
     {
@@ -16,6 +16,10 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
             response.addToCallStack(method.name);
             await environment.repositories.logs.logMethodResponse(response);
             await onFail?.();
+        }
+        else
+        {
+            await onSucceed?.();
         }
 
         return response;

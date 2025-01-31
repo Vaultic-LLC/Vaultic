@@ -54,6 +54,7 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 import { Field } from '@vaultic/shared/Types/Fields';
+import { defaultPassword, Password } from '../../Types/DataTypes';
 
 export default defineComponent({
     name: "CreateMasterKeyView",
@@ -120,6 +121,7 @@ export default defineComponent({
             {
                 app.popups.showLoadingIndicator(props.color, "Signing In");
 
+                // Don't have to take into account MFA since the user is creating their account and MFA is disabled by default
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
                 if (loginResponse.success && loginResponse.value!.Success)
                 {
@@ -145,17 +147,16 @@ export default defineComponent({
                         return;
                     }
 
-                    response.VaulticPassword.password = key.value;
+                    const password: Password = defaultPassword();
+                    password.isVaultic.value = true;
+                    password.password.value = key.value;
+                    password.login.value = account.value.email;
+                    password.domain.value = "Vaultic.org"; // TODO: switch to actual website
+                    password.email.value = account.value.email;
+                    password.passwordFor.value = "Vaultic Password Manager";
+                    password.additionalInformation.value = "Email used to log into your Vaultic Password Manager account.";
 
-                    // these get messed up in the serialization process since they wern't setup property 
-                    // to begin with
-                    response.VaulticPassword.groups = new Map();
-                    response.VaulticPassword.filters = new Map();
-                    response.VaulticPassword.securityQuestions = new Map();
-
-                    const vaulticPassword = fieldifyObject(response.VaulticPassword);
-
-                    await app.currentVault.passwordStore.addPassword(key.value, vaulticPassword);
+                    await app.currentVault.passwordStore.addPassword(key.value, password);
                     ctx.emit('onSuccess');
 
                     return;
@@ -181,17 +182,6 @@ export default defineComponent({
                     defaultHandleFailedResponse(response);
                 }
             }
-        }
-
-        function fieldifyObject(obj: any)
-        {
-            const keys = Object.keys(obj);
-            for (let i = 0; i < keys.length; i++)
-            {
-                obj[keys[i]] = new Field(obj[keys[i]]);
-            }
-
-            return obj;
         }
 
         function openCreateStrongAndMemorablePasswords()

@@ -68,6 +68,11 @@
                 </div>
             </template>
         </AccountSetupView>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<EnterMFACodePopup ref="mfaView" v-if="mfaIsShowing" @onConfirm="onSubmit" @onClose="onMFAClose" />
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -80,6 +85,7 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from "../InputFields/CheckboxInputField.vue";
 import ButtonLink from '../InputFields/ButtonLink.vue';
 import ToolTip from "../ToolTip.vue";
+import EnterMFACodePopup from './EnterMFACodePopup.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { EncryptedInputFieldComponent, InputComponent } from '../../Types/Components';
@@ -96,7 +102,8 @@ export default defineComponent({
         AccountSetupView,
         ButtonLink,
         CheckboxInputField,
-        ToolTip
+        ToolTip,
+        EnterMFACodePopup,
     },
     emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToSetupPayment'],
     props: ['color', 'infoMessage', 'reloadAllDataIsToggled'],
@@ -120,6 +127,9 @@ export default defineComponent({
         const contentBottomRowGap: Ref<string> = ref(showEmailField.value ? "min(1.5vh, 25px)" : "min(2.5vh, 20px)");
         const contentBottomMargin: ComputedRef<string> = computed(() => showEmailField.value ? "15px" : "130px");
 
+        const mfaView: Ref<any> = ref();
+        const mfaIsShowing: Ref<boolean> = ref(false);
+
         function moveToCreateAccount()
         {
             ctx.emit('onMoveToCreateAccount');
@@ -135,21 +145,27 @@ export default defineComponent({
             ctx.emit('onMoveToLimitedMode');
         }
 
-        async function onSubmit()
+        async function onSubmit(mfaCode?: string)
         {
             masterKeyField.value?.toggleMask(true);
             app.popups.showLoadingIndicator(props.color, "Signing In");
 
             if (onlineMode.value)
-            {
-                const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value);
+            {          
+                const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value, mfaCode);
                 if (response.success && response.value!.Success)
                 {
+                    mfaIsShowing.value = false;
                     app.isOnline = true;
+                    
                     if (await app.loadUserData(masterKey.value))
                     {
                         ctx.emit('onKeySuccess');                   
-                    }
+                    }            
+                }
+                else if (response.value?.FailedMFA)
+                {
+                    handleMFAFailed();
                 }
                 else
                 {
@@ -193,9 +209,22 @@ export default defineComponent({
             app.popups.hideLoadingIndicator();
         }
 
+        function handleMFAFailed()
+        {
+            if (mfaIsShowing.value)
+            {
+                mfaView.value.invalidate('Incorrect code, please try again');
+                return;
+            }
+
+            mfaIsShowing.value = true;
+        }
+
         function handleFailedResponse(response: any)
         {
+            mfaIsShowing.value = false;
             app.popups.hideLoadingIndicator();
+
             if (response.value?.UnknownEmail)
             {
                 app.popups.hideLoadingIndicator();
@@ -270,6 +299,12 @@ export default defineComponent({
             }
         }
 
+        async function onMFAClose()
+        {
+            await api.cache.clear();
+            mfaIsShowing.value = false;
+        }
+
         watch(() => props.reloadAllDataIsToggled, (newValue) => 
         {
             reloadAllData.value = newValue;
@@ -311,11 +346,14 @@ export default defineComponent({
             showEmailField,
             contentBottomRowGap,
             contentBottomMargin,
+            mfaView,
+            mfaIsShowing,
             moveToCreateAccount,
             moveToLimitedMode,
             onSubmit,
             navigateLeft,
-            navigateRight
+            navigateRight,
+            onMFAClose
         };
     }
 })

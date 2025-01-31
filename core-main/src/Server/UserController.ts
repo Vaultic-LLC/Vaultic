@@ -1,8 +1,9 @@
-import { BackupResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetPublicKeysResponse, GetSharingSettings, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
 import { ServerAllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 
 export interface UserController extends ClientUserController
 {
@@ -25,18 +26,35 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post("User/GetUserIDs");
     }
 
-    function deleteDevice(masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
-    {
-        return axiosHelper.api.post('User/DeleteDevice', {
-            MasterKey: masterKey,
-            UserDesktopDeviceID: desktopDeviceID,
-            UserMobileDeviceID: mobileDeviceID
-        });
-    }
-
     function getDevices(): Promise<GetDevicesResponse>
     {
         return axiosHelper.api.post('User/GetDevices');
+    }
+
+    function registerDevice(name: string, requiresMFA: RequiresMFA): Promise<RegisterDeviceResponse>
+    {
+        return axiosHelper.api.post('User/RegisterDevice', {
+            Name: name,
+            RequiresMFA: requiresMFA
+        });
+    }
+
+    function updateDevice(name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number): Promise<BaseResponse>
+    {
+        return axiosHelper.api.post('User/UpdateDevice', {
+            UserDesktopDeviceID: desktopDeviceID,
+            UserMobileDeviceID: mobileDeviceID,
+            Name: name,
+            RequiresMFA: requiresMFA
+        });
+    }
+
+    function deleteDevice(desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
+    {
+        return axiosHelper.api.post('User/DeleteDevice', {
+            UserDesktopDeviceID: desktopDeviceID,
+            UserMobileDeviceID: mobileDeviceID
+        });
     }
 
     async function backupData(postData: { userDataPayload: UserDataPayload }): Promise<BackupResponse>
@@ -79,20 +97,21 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
-    function getSharingSettings(): Promise<GetSharingSettings>
+    function getSettings(): Promise<GetSettings>
     {
-        return axiosHelper.api.post('User/GetSharingSettings');
+        return axiosHelper.api.post('User/GetSettings');
     }
 
-    function updateSharingSettings(username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom,
-        addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]): Promise<UpdateSharingSettingsResponse>
+    function updateSettings(username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom,
+        addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn): Promise<UpdateSharingSettingsResponse>
     {
-        return axiosHelper.api.post('User/UpdateSharingSettings', {
+        return axiosHelper.api.post('User/UpdateSettings', {
             Username: username,
             AllowSharedVaultsFromOthers: allowSharedVaultsFromOthers,
             AllowSharingFrom: allowSharingFrom,
             AddedAllowSharingFromUsers: addedAllowSharingFrom,
-            RemovedAllowSharingFromUsers: removedAllowSharingFrom
+            RemovedAllowSharingFromUsers: removedAllowSharingFrom,
+            RequireMFAOn: requireMFAOn
         });
     }
 
@@ -112,19 +131,27 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
+    function getMFAKey(): Promise<GetMFAKeyResponse>
+    {
+        return axiosHelper.api.post('User/GetMFAKey');
+    }
+
     return {
         validateEmail,
         getUserIDs,
-        deleteDevice,
         getDevices,
+        registerDevice,
+        updateDevice,
+        deleteDevice,
         backupData,
         createCheckout,
         getChartData,
         deactivateUserSubscription,
         reportBug,
-        getSharingSettings,
-        updateSharingSettings,
+        getSettings,
+        updateSettings,
         searchForUsers,
-        getPublicKeys
+        getPublicKeys,
+        getMFAKey
     }
 }

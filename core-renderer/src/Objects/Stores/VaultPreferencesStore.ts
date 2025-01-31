@@ -1,7 +1,7 @@
-import { VaultContrainedStore } from "./Base";
+import { StoreState, VaultContrainedStore } from "./Base";
 import { VaultStoreParameter } from "./VaultStore";
 
-export interface VaultPreferencesState
+export interface VaultPreferencesState extends StoreState
 {
 }
 

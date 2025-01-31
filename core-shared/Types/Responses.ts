@@ -1,4 +1,4 @@
-import { Device } from "./Device";
+import { Device, RequireMFAOn } from "./Device";
 import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataPayload, UserDemographics, UserOrgInfo, VaultDataBreach } from "./ClientServerTypes";
 
 export interface EncryptedResponse
@@ -32,15 +32,8 @@ export interface InvalidSessionResponse extends BaseResponse
 
 export interface DeviceResponse extends BaseResponse
 {
-    DesktopDeviceUpdatesLeft?: number;
-    MobileDeviceUpdatesLeft?: number;
     DesktopDevices?: Device[];
     MobileDevices?: Device[];
-}
-
-export interface IncorrectDeviceResponse extends DeviceResponse
-{
-    IncorrectDevice?: boolean;
 }
 
 interface EmailIsTakenResposne
@@ -63,7 +56,7 @@ export interface OpaqueResponse extends BaseResponse
     RestartOpaqueProtocol?: boolean;
 }
 
-export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse, IncorrectDeviceResponse
+export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse
 {
 }
 
@@ -81,7 +74,7 @@ export interface ValidateEmailResponse extends BaseResponse
     EmailIsTaken?: boolean;
 }
 
-export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
+export interface ValidateUserResponse extends InvalidLicenseResponse, CreateSessionResponse
 {
     InvalidMasterKey?: boolean;
     UnknownEmail?: boolean;
@@ -95,7 +88,8 @@ export interface DeleteDeviceResponse extends InvalidSessionResponse, InvalidLic
 
 export interface GetDevicesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-
+    RegisteredCurrentDesktopDeviceID?: number;
+    RegisteredCurrentMobileDeviceID?: number;
 }
 
 export interface LogResponse extends BaseResponse
@@ -147,7 +141,7 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 
 export interface FinishRegistrationResponse extends BaseResponse
 {
-    VaulticPassword?: any;
+    MFASecret?: string;
     PublicKey?: string;
     PrivateKey?: string;
 }
@@ -155,6 +149,7 @@ export interface FinishRegistrationResponse extends BaseResponse
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
 {
     StartServerLoginResponse?: string;
+    FailedMFA?: boolean;
 }
 
 export interface UserDataPayloadResponse
@@ -197,9 +192,10 @@ export interface GetOrganizationsResponse extends BaseResponse
     OrganizationInfo?: OrganizationInfo[];
 }
 
-export interface GetSharingSettings extends BaseResponse 
+export interface GetSettings extends BaseResponse 
 {
     Username?: string;
+    RequireMFAOn?: RequireMFAOn;
     AllowSharedVaultsFromOthers?: boolean;
     AllowSharingFrom?: ServerAllowSharingFrom;
     AllowSharingFromUsers?: UserDemographics[];
@@ -231,3 +227,14 @@ export interface CreateOrganizationResponse extends BaseResponse
 }
 
 export interface SyncVaultsResponse extends UserDataPayloadResponse, BaseResponse { }
+
+export interface GetMFAKeyResponse extends BaseResponse
+{
+    MFAKey?: string;
+}
+
+export interface RegisterDeviceResponse extends BaseResponse
+{
+    UserDesktopDeviceID?: number;
+    UserMobileDeviceID?: number;
+}

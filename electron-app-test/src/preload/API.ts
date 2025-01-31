@@ -1,6 +1,6 @@
 import { ipcRenderer } from "electron";
 
-import { DeviceInfo } from "@vaultic/shared/Types/Device";
+import { DeviceInfo, RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
@@ -31,17 +31,20 @@ const sessionController: SessionController =
 const userController: ClientUserController =
 {
     validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
-    deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
+    getDevices: () => ipcRenderer.invoke('userController:getDevices'),
+    registerDevice: (name: string, requiresMFA: RequiresMFA) => ipcRenderer.invoke('userController:registerDevice', name, requiresMFA),
+    updateDevice: (name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:updateDevice', name, requiresMFA, desktopDeviceID, mobileDeviceID),
+    deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', desktopDeviceID, mobileDeviceID),
     createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
     getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),
     getUserDataBreaches: (passwordStoreState: string) => ipcRenderer.invoke('userController:getUserDataBreaches', passwordStoreState),
     dismissUserDataBreach: (breechID: number) => ipcRenderer.invoke('userController:dismissUserDataBreach', breechID),
     deactivateUserSubscription: (email: string, deactivationKey: string) => ipcRenderer.invoke('userController:deactivateUserSubscription', email, deactivationKey),
-    getDevices: () => ipcRenderer.invoke('userController:getDevices'),
     reportBug: () => ipcRenderer.invoke('userController:reportBug'),
-    getSharingSettings: () => ipcRenderer.invoke('userController:getSharingSettings'),
-    updateSharingSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[]) => ipcRenderer.invoke('userController:updateSharingSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom),
-    searchForUsers: (username: string, excludedUserIDs: string) => ipcRenderer.invoke('userController:searchForUsers', username, excludedUserIDs)
+    getSettings: () => ipcRenderer.invoke('userController:getSettings'),
+    updateSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => ipcRenderer.invoke('userController:updateSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom, requireMFAOn),
+    searchForUsers: (username: string, excludedUserIDs: string) => ipcRenderer.invoke('userController:searchForUsers', username, excludedUserIDs),
+    getMFAKey: () => ipcRenderer.invoke('userController:getMFAKey')
 };
 
 const vaultController: ClientVaultController =
@@ -102,7 +105,7 @@ const vaulticHelper: VaulticHelper =
 const serverHelper: ServerHelper =
 {
     registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
-    logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData)
+    logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData, mfaCode),
 };
 
 const repositoryHelepr: RepositoryHelper =

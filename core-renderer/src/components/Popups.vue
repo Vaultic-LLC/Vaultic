@@ -73,7 +73,7 @@
 		</Teleport>
         <Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'800px'" :minHeight="'480px'"
+				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'800px'" :minHeight="'480px'" :width="'50%'"
 					:closePopup="popupStore.hideEmergencyDeactivationPopup">
 					<EmergencyDeactivationView />
 				</ObjectPopup>
@@ -84,6 +84,22 @@
 				<ObjectPopup v-if="popupStore.clearDataBreachesIsShowing" :minWidth="'600px'" :minHeight="'480px'" :width="'50%'"
 					:closePopup="popupStore.hideClearDataBreachesPopup">
 					<ClearBreachesView />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.showMFAKeyIsShowing" :minWidth="'450px'" :minHeight="'350px'" :width="'30%'" :height="'30%'"
+					:closePopup="popupStore.hideMFAKeyPopup">
+					<ShowMFAKeyView />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.devicePopupIsShowing" :width="'50%'" :minWidth="'600px'" :minHeight="'480px'"
+					:closePopup="popupStore.hideDevicePopup">
+					<DeviceView :creating="popupStore.deviceModel == undefined" :model="popupStore.deviceModel" />
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
@@ -106,6 +122,8 @@ import OrganizationView from './ObjectViews/OrganizationView.vue';
 import AddObjectPopup from './ObjectPopups/AddObjectPopup.vue';
 import EmergencyDeactivationView from './Account/EmergencyDeactivationView.vue';
 import ClearBreachesView from './BreachedPasswords/ClearBreachesView.vue';
+import ShowMFAKeyView from './Account/ShowMFAKeyView.vue';
+import DeviceView from './ObjectViews/DeviceView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -126,7 +144,9 @@ export default defineComponent({
         OrganizationView,
         AddObjectPopup,
         EmergencyDeactivationView,
-        ClearBreachesView
+        ClearBreachesView,
+        ShowMFAKeyView,
+        DeviceView
     },
     setup()
     {

@@ -25,10 +25,16 @@
             </div>
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
             <div class="settingsView__inputSection">
+                <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
+                    :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
+                    fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
+                    :disabled="readOnly || !isOnline || isLoadingSharedData" />
                 <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
                     v-model.number="appSettings.oldPasswordDays.value" :inputType="'number'" :width="'10vw'"
                     :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceOldPasswordDays" />
+            </div>
+            <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
                     :label="'% Filled Metric for Pulse'" v-model.number="appSettings.percentMetricForPulse.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
@@ -36,20 +42,18 @@
                     :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
                     :toolTipSize="'clamp(15px, 1vw, 28px)'"
                     :toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
-            </div>
-            <div class="settingsView__inputSection">
                 <TextInputField :color="color"
                     :label="'Random Password Length'" v-model.number="appSettings.randomValueLength.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceMinRandomPasswordLength" />
+            </div>
+            <div class="settingsView__inputSection">
                 <TextInputField class="settingsView__randomPassphraseLength" :color="color"
                     :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength.value"
                     :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                     :minHeight="'35px'" :disabled="readOnly"
                     :additionalValidationFunction="enforceMinRandomPassphraseLength" />
-            </div>
-            <div class="settingsView__inputSection">
                 <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.passphraseSeperator.value"
                     :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
             </div>
@@ -117,6 +121,7 @@ import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { InputComponent, MemberChanges, MemberTableComponent, ObjectViewComponent } from '../../Types/Components';
 import { Member } from '@vaultic/shared/Types/DataTypes';
+import { DisplayRequireMFAOn, displayRequireMFAOnToRequireMFAOn, RequireMFAOn, reuireMFAOnToDisplay } from '@vaultic/shared/Types/Device';
 
 export default defineComponent({
     name: "ValueView",
@@ -160,6 +165,9 @@ export default defineComponent({
         const allowSharingFrom: Ref<AllowSharingFrom> = ref(AllowSharingFrom.Everyone);
         const currentAllowUsersToShare: Ref<Map<number, Member>> = ref(new Map());
         const emptyMessage: Ref<string> = ref(`You haven't allowed anyone to share their Vaults with you. Click '+' to allow someone to share their data with you.`);
+
+        const originalRequireMFAOnSetting: Ref<DisplayRequireMFAOn> = ref(DisplayRequireMFAOn.NoDevices);
+        const requireMFAOn: Ref<DisplayRequireMFAOn> = ref(DisplayRequireMFAOn.NoDevices);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -220,6 +228,7 @@ export default defineComponent({
             let updatedAllowSharedVaultsFromOthers: boolean | undefined = undefined;
             let updatedUsername: string | undefined = undefined;
             let updatedAllowSharingFrom: ServerAllowSharingFrom | undefined = undefined;
+            let updatedRequireMFAOn: RequireMFAOn | undefined = undefined;
 
             if (originalAllowSharedVaultsFromOthers.value != allowSharedVaultsFromOthers.value)
             {
@@ -248,6 +257,12 @@ export default defineComponent({
                 updateSettings = true;
             }
 
+            if (originalRequireMFAOnSetting.value != requireMFAOn.value)
+            {
+                updatedRequireMFAOn = displayRequireMFAOnToRequireMFAOn(requireMFAOn.value);
+                updateSettings = true;
+            }
+
             const sharedIndividualsChanges: MemberChanges | undefined = memberTable.value?.getChanges()!;
             if (sharedIndividualsChanges?.addedMembers.size > 0 || sharedIndividualsChanges?.removedMembers.size > 0)
             {
@@ -256,8 +271,8 @@ export default defineComponent({
 
             if (updateSettings)
             {
-                const response = await api.server.user.updateSharingSettings(updatedUsername, updatedAllowSharedVaultsFromOthers, 
-                    updatedAllowSharingFrom, sharedIndividualsChanges?.addedMembers.map((k, v) => k), sharedIndividualsChanges?.removedMembers.map((k, v) => k));
+                const response = await api.server.user.updateSettings(updatedUsername, updatedAllowSharedVaultsFromOthers, updatedAllowSharingFrom, 
+                sharedIndividualsChanges?.addedMembers.map((k, v) => k), sharedIndividualsChanges?.removedMembers.map((k, v) => k), updatedRequireMFAOn);
 
                 if (!response.Success)
                 {
@@ -390,7 +405,7 @@ export default defineComponent({
             if (isOnline.value)
             {
                 isLoadingSharedData.value = true;
-                const response = await api.server.user.getSharingSettings();
+                const response = await api.server.user.getSettings();
                 if (!response.Success)
                 {
                     isLoadingSharedData.value = false;
@@ -437,6 +452,12 @@ export default defineComponent({
                         currentAllowUsersToShare.value.set(member.userID, member);
                     }
                 }
+
+                if (response.RequireMFAOn != undefined && response.RequireMFAOn != null)
+                {
+                    originalRequireMFAOnSetting.value = reuireMFAOnToDisplay(response.RequireMFAOn!);
+                    requireMFAOn.value = originalRequireMFAOnSetting.value;
+                }
             }
 
             isLoadingSharedData.value = false;
@@ -464,6 +485,8 @@ export default defineComponent({
             isLoadingSharedData,
             emptyMessage,
             currentAllowUsersToShare,
+            requireMFAOn,
+            DisplayRequireMFAOn,
             onSave,
             onAuthenticationSuccessful,
             enforceLoginRecordsPerDay,

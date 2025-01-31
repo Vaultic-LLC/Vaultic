@@ -1,10 +1,11 @@
 <template>
     <div class="organizationDevicesTableContainer">
         <VaulticTable ref="tableRef" id="organizationDevicesTable" :color="color" :columns="tableColumns" 
-            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
-            :onPin="onPin" :onEdit="devicesAreSelected ? undefined : onEditOrganization" :onDelete="devicesAreSelected ? undefined : onDeleteOrganization">
+            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" :allowPinning="!devicesAreSelected"
+            :onPin="onPinOrganization" :onEdit="devicesAreSelected ? onEditDevice : onEditOrganization" 
+            :onDelete="devicesAreSelected ? onDeleteDevice : onDeleteOrganization">
             <template #tableControls>
-                <AddButton :color="color" @click="onAddOrganization" />
+                <AddButton v-if="showAdd" :color="color" @click="onAdd" />
             </template>
         </VaulticTable>
     </div>
@@ -16,7 +17,7 @@ import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, react
 import VaulticTable from './VaulticTable.vue';
 import AddButton from './Controls/AddButton.vue';
 
-import { FieldedTableRowModel, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
@@ -38,12 +39,12 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const devices: SortedCollection = new SortedCollection([]);
-        const pinnedDevices: SortedCollection = new SortedCollection([]);
-
+        
         const organizations: VaultListSortedCollection = new VaultListSortedCollection([]);
         const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([]);
-
+            
         const devicesAreSelected: ComputedRef<boolean> = computed(() => app.activeDeviceOrganizationsTable == DataType.Devices);
+        const showAdd: ComputedRef<boolean> = computed(() => !devicesAreSelected.value || (devicesAreSelected.value && !app.devices.hasRegisteredCurrentDevice));
 
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
@@ -51,20 +52,25 @@ export default defineComponent({
             {
                 if (app.devices.failedToGetDevices)
                 {
-                    return "Unable to retrieve devices at this moment. Please try again or contact support if the issue persists";
+                    return "Unable to retrieve Registered Devices at this moment. Please try again or contact support if the issue persists";
                 }
 
-                return getEmptyTableMessage("Registered Devices")
+                return "You currently don't have any Registered Devices. Click '+' to register this device";
             }
             else 
             {
+                if (app.organizations.failedToRetrieveOrganizations)
+                {
+                    return "Unable to retrieve Organizations at this moment. Please try again or contact support if the issue persists";
+                }
+
                 return getEmptyTableMessage("Organizations")
             }
         });
 
         const headerTabs: HeaderTabModel[] = [
             {
-                name: 'Devices',
+                name: 'Registered Devices',
                 active: devicesAreSelected,
                 color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
                 onClick: () => 
@@ -88,10 +94,10 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (devicesAreSelected.value)
             {
-                models.push({ header: "Name", field: "name" });
-                models.push({ header: "Type", field: "type" });
-                models.push({ header: "Model", field: "model" });
-                models.push({ header: "Version", field: "version" });
+                models.push({ header: "Name", field: "Name", isFielded: false });
+                models.push({ header: "Type", field: "type", isFielded: false });
+                models.push({ header: "Model", field: "Model", isFielded: false });
+                models.push({ header: "Version", field: "Version", isFielded: false });
             }
             else 
             {
@@ -109,8 +115,7 @@ export default defineComponent({
             [
                 {
                     friendlyDataTypeName: "Device",
-                    collection: devices,
-                    pinnedCollection: pinnedDevices
+                    collection: devices
                 },
                 {
                     friendlyDataTypeName: "Organization",
@@ -126,16 +131,10 @@ export default defineComponent({
             {
                 const deviceRows = app.devices.devices.map((d) =>
                 {
-                    return new FieldedTableRowModel(d.value.id.value, false, undefined, d);
-                });
-    
-                const pinnedDeviceRows = app.devices.pinnedDevices.map((d) => 
-                {
-                    return new FieldedTableRowModel(d.value.id.value, true, undefined, d);
+                    return new TableRowModel(d.id, (obj: ClientDevice) => obj.id, undefined, false, undefined, d);
                 });
     
                 devices.updateValues(deviceRows);
-                pinnedDevices.updateValues(pinnedDeviceRows)             
             }
 
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Organizations)
@@ -155,21 +154,31 @@ export default defineComponent({
             }
         }
 
-        function onPin(isPinned: boolean, value: any)
+        function onAdd()
         {
-            if (app.activeDeviceOrganizationsTable == DataType.Devices)
+            if (devicesAreSelected.value)
             {
-                onPinDevice(isPinned, value);
+                onRegisterDevice();
             }
-            else 
+            else
             {
-                onPinOrganization(isPinned, value);
+                onAddOrganization();
             }
         }
 
-        function onPinDevice(isPinned: boolean, device: ClientDevice)
+        function onRegisterDevice()
         {
+            app.popups.showDevicePopup();
+        }
 
+        function onEditDevice(device: ClientDevice)
+        {
+            app.popups.showDevicePopup(device);
+        }
+
+        function onDeleteDevice(device: ClientDevice)
+        {
+            app.devices.deleteDevice(device.id);
         }
 
         function onPinOrganization(isPinned: boolean, org: Organization)
@@ -209,6 +218,11 @@ export default defineComponent({
             app.popups.hideLoadingIndicator();
         }
 
+        watch(() => app.devices.devices.length, (_, __) => 
+        {
+            setTableRows(false);
+        });
+
         watch(() => app.organizations.organizations.value.length, (_, __) => 
         {
             setTableRows(false);
@@ -232,8 +246,11 @@ export default defineComponent({
             headerTabs,
             emptyTableMessage,
             tableDataSources,
-            onPin,
-            onAddOrganization,
+            showAdd,
+            onAdd,
+            onEditDevice,
+            onPinOrganization,
+            onDeleteDevice,
             onEditOrganization,
             onDeleteOrganization
         }
