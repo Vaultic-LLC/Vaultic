@@ -143,6 +143,11 @@ export default defineComponent({
             requestAnimationFrame(animate);
         });
 
+        watch(() => app.loadedUser.value, () =>
+        {
+            showEditColorPalettePopup.value = false;
+        });
+
         return {
             editButton,
             selectorButtonModel,

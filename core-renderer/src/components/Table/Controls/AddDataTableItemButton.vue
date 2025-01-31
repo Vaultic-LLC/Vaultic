@@ -8,16 +8,12 @@
 import { defineComponent, ComputedRef, computed } from 'vue';
 
 import AddButton from './AddButton.vue';
-import ObjectPopup from '../../../components/ObjectPopups/ObjectPopup.vue';
-import AddObjectPopup from "../../../components/ObjectPopups/AddObjectPopup.vue"
 import app from '../../../Objects/Stores/AppStore';
 
 export default defineComponent({
 	name: "AddDataTableItemButton",
 	components:
 	{
-		ObjectPopup,
-		AddObjectPopup,
 		AddButton
 	},
 	props: ['initalActiveContentOnClick', 'color', 'minButtonSize'],

@@ -134,6 +134,23 @@ export function createPopupStore()
         }
     });
 
+    // all the popups that are user specific that should be closed if the user locks the app in case a 
+    // different user logs in after
+    function closeAllPopupsOnLock()
+    {
+        alertIsShowing.value = false;
+        requestAuthenticationIsShowing.value = false;
+        breachedPasswordIsShowing.value = false;
+        importPopupIsShowing.value = false;
+        vaultPopupIsShowing.value = false;
+        organizationPopupIsShowing.value = false;
+        addDataTypePopupIsShowing.value = false;
+        emergencyDeactivationIsShowing.value = false;
+        clearDataBreachesIsShowing.value = false;
+        showMFAKeyIsShowing.value = false;
+        devicePopupIsShowing.value = false;
+    }
+
     function showLoadingIndicator(clr: string, text?: string, opacity?: number)
     {
         color.value = clr;
@@ -417,6 +434,7 @@ export function createPopupStore()
         get showMFAKeyIsShowing() { return showMFAKeyIsShowing.value },
         get devicePopupIsShowing() { return devicePopupIsShowing.value; },
         get deviceModel() { return deviceModel.value; },
+        closeAllPopupsOnLock,
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,

@@ -233,6 +233,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         await api.cache.clear();
 
+        this.popups.closeAllPopupsOnLock();
         this.isOnline = false;
         this.internaLoadedUser.value = false;
     }
