@@ -35,6 +35,7 @@ export interface AppSettings extends IFieldedObject
     includeSpecialCharactersInRandomPassphrase: Field<boolean>;
     includeAmbiguousCharactersInRandomPassword: Field<boolean>;
     passphraseSeperator: Field<string>;
+    temporarilyStoreMasterKey: Field<boolean>;
 }
 
 export interface IAppStoreState extends StoreState
@@ -177,7 +178,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 includeSpecialCharactersInRandomPassword: new Field(true),
                 includeSpecialCharactersInRandomPassphrase: new Field(true),
                 includeAmbiguousCharactersInRandomPassword: new Field(true),
-                passphraseSeperator: new Field('-')
+                passphraseSeperator: new Field('-'),
+                temporarilyStoreMasterKey: new Field(true)
             })
         };
     }
@@ -264,6 +266,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         // don't bother waiting for these, just trigger them so they are there if we need them
         app.devices.getDevices();
         app.organizations.getOrganizations();
+
+        if (this.state.settings.value.temporarilyStoreMasterKey.value)
+        {
+            await api.cache.setMasterKey(masterKey);
+        }
 
         return true;
     }

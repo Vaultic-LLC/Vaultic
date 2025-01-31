@@ -8,4 +8,6 @@ export interface ClientEnvironment
 export interface ClientVaulticCache 
 {
     clear: () => void;
+    setMasterKey: (masterKey: string) => void;
+    clearMasterKey: () => void;
 }

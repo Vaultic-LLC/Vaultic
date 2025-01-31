@@ -120,7 +120,9 @@ const environment: ClientEnvironment =
 
 const cache: Promisify<ClientVaulticCache> =
 {
-	clear: () => ipcRenderer.invoke('cache:clear')
+	clear: () => ipcRenderer.invoke('cache:clear'),
+	setMasterKey: (masterKey: string) => ipcRenderer.invoke('cache:setMasterKey', masterKey),
+	clearMasterKey: () => ipcRenderer.invoke('cache:clearMasterKey')
 }
 
 const userRepository: ClientUserRepository =
@@ -132,7 +134,8 @@ const userRepository: ClientUserRepository =
 	getCurrentUserData: (masterKey: string) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey),
 	verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
 	saveUser: (masterKey: string, newData: string, currentData: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, newData, currentData),
-	getStoreStates: (masterKey: string, storeStatesToRetrieve: UserData) => ipcRenderer.invoke('userRepository:getStoreStates', masterKey, storeStatesToRetrieve)
+	getStoreStates: (masterKey: string, storeStatesToRetrieve: UserData) => ipcRenderer.invoke('userRepository:getStoreStates', masterKey, storeStatesToRetrieve),
+	getValidMasterKey: () => ipcRenderer.invoke('userRepository:getValidMasterKey'),
 };
 
 const vaultRepository: ClientVaultRepository =

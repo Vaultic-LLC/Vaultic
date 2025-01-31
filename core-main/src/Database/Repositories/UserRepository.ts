@@ -120,6 +120,22 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         return lastUsedUser?.userPreferencesStoreState?.state ?? null;
     }
 
+    public async getValidMasterKey(): Promise<string | undefined>
+    {
+        if (!environment.cache.masterKey)
+        {
+            return undefined;
+        }
+
+        const response = await this.verifyUserMasterKey(environment.cache.masterKey);
+        if (response.success && response.value)
+        {
+            return environment.cache.masterKey;
+        }
+
+        return undefined;
+    }
+
     public async createUser(masterKey: string, email: string, publicKey: string, privateKey: string, transaction?: Transaction): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalCreateUser);
