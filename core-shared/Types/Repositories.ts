@@ -13,6 +13,7 @@ export interface ClientUserRepository
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     saveUser: (masterKey: string, newData: string, currentData: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     getStoreStates: (masterKey: string, storesToRetrieve: UserData) => Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>;
+    getValidMasterKey: () => Promise<string | undefined>;
 }
 
 export interface UpdateVaultData

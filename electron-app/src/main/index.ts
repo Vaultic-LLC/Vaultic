@@ -159,10 +159,10 @@ async function setupEnvironment(isTest: boolean)
 	});
 }
 
-async function setSession(sessionKey: string): Promise<void>
+async function setSession(tokenHash: string): Promise<void>
 {
-	const sessionKeyCookie = { url: 'http://www.vaultic.co', name: 'SessionKey', value: sessionKey }
-	await session.defaultSession.cookies.set(sessionKeyCookie);
+	const tokenHashCookie = { url: 'http://www.vaultic.co', name: 'TokenHash', value: tokenHash }
+	await session.defaultSession.cookies.set(tokenHashCookie);
 }
 
 async function getSession(): Promise<string>

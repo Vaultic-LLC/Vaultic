@@ -59,6 +59,10 @@
             </div>
             <div class="settingsView__inputSection">
                 <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                    :label="'Remember Master Key While Logged In'" v-model="appSettings.temporarilyStoreMasterKey.value" />
+            </div>
+            <div class="settingsView__inputSection">
+                <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
                     :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.includeAmbiguousCharactersInRandomPassword.value" />
             </div>
             <div class="settingsView__inputSection">
@@ -192,6 +196,7 @@ export default defineComponent({
         async function onAuthenticationSuccessful(masterKey: string)
         {
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
+            const originalTemporarilyStoreMasterKey = app.settings.value.temporarilyStoreMasterKey.value;
             
             //check / save shared settinsg first in case username is already taken
             if (!await checkUpdateSettings())
@@ -217,6 +222,19 @@ export default defineComponent({
             }
 
             const succeeded = await transaction.commit(masterKey, app.isOnline);
+            if (succeeded && 
+                originalTemporarilyStoreMasterKey != app.settings.value.temporarilyStoreMasterKey.value)
+            {
+                if (app.settings.value.temporarilyStoreMasterKey.value)
+                {
+                    await api.cache.setMasterKey(masterKey);
+                }
+                else
+                {
+                    await api.cache.clearMasterKey();
+                }
+            }
+
             app.popups.hideLoadingIndicator();
             saveSucceeded(succeeded);
         }

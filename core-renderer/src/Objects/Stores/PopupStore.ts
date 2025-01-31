@@ -8,6 +8,7 @@ import { ImportableDisplayField } from "../../Types/Fields";
 import { DataType } from "../../Types/DataTypes";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
 import { ClientDevice } from "@vaultic/shared/Types/Device";
+import { api } from "../../API";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -227,19 +228,26 @@ export function createPopupStore()
         accountSetupIsShowing.value = false;
     }
 
-    async function showRequestAuthentication(clr: string, onSucess: (key: string) => void, onCancl: () => void)
+    async function showRequestAuthentication(clr: string, doOnSucess: (key: string) => void, doOnCancl: () => void)
     {
+        const key: string | undefined = await api.repositories.users.getValidMasterKey();
+        if (key)
+        {
+            doOnSucess(key);
+            return;
+        }
+
         color.value = clr;
         onSuccess.value = (key: string) =>
         {
             requestAuthenticationIsShowing.value = false;
-            onSucess(key);
+            doOnSucess(key);
         };
 
         onCancel.value = () =>
         {
             requestAuthenticationIsShowing.value = false;
-            onCancl();
+            doOnCancl();
         }
 
         requestAuthenticationIsShowing.value = true;

@@ -85,6 +85,7 @@ export default function setupIPC()
 	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email)));
 	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, newData: string, currentData: string) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, newData, currentData)));
 	ipcMain.handle('userRepository:getStoreStates', (e, masterKey: string, storeStatesToRetrive: UserData) => validateSender(e, () => environment.repositories.users.getStoreStates(masterKey, storeStatesToRetrive)));
+	ipcMain.handle('userRepository:getValidMasterKey', (e) => validateSender(e, () => environment.repositories.users.getValidMasterKey()));
 
 	ipcMain.handle('vaultRepository:updateVault', (e, masterKey: string, updateVaultData: string, doBackup: boolean) => validateSender(e, () => environment.repositories.vaults.updateVault(masterKey, updateVaultData, doBackup)));
 	ipcMain.handle('vaultRepository:setActiveVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.setActiveVault(masterKey, userVaultID)));
@@ -105,6 +106,8 @@ export default function setupIPC()
 	ipcMain.handle('environment:recreateDatabase', (e) => validateSender(e, () => environment.recreateDatabase()));
 
 	ipcMain.handle('cache:clear', (e) => validateSender(e, () => environment.cache.clear()));
+	ipcMain.handle('cache:setMasterKey', (e, masterKey: string) => validateSender(e, () => environment.cache.setMasterKey(masterKey)));
+	ipcMain.handle('cache:clearMasterKey', (e) => validateSender(e, () => environment.cache.clearMasterKey()));
 }
 
 function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): any

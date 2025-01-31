@@ -5,6 +5,7 @@ export class VaulticCache
     private internalCurrentUserID: number | undefined;
     private internalSessionKey: string | undefined;
     private internalExportKey: string | undefined;
+    private internalMasterKey: string | undefined;
 
     private internalStartLoginRequest: string | undefined;
     private internalPasswordHash: string | undefined;
@@ -13,6 +14,7 @@ export class VaulticCache
     get currentUserID() { return this.internalCurrentUserID; }
     get sessionKey() { return this.internalSessionKey; }
     get exportKey() { return this.internalExportKey; }
+    get masterKey() { return this.internalMasterKey; }
 
     get startLoginRequest() { return this.internalStartLoginRequest; }
     get passwordHash() { return this.internalPasswordHash; }
@@ -28,6 +30,7 @@ export class VaulticCache
         this.internalCurrentUserID = undefined;
         this.internalSessionKey = undefined;
         this.internalExportKey = undefined;
+        this.internalMasterKey = undefined;
 
         this.clearLoginData();
     }
@@ -57,5 +60,15 @@ export class VaulticCache
         this.internalExportKey = exportKey;
 
         await environment.sessionHandler.setSession(tokenHash);
+    }
+
+    setMasterKey(masterKey: string)
+    {
+        this.internalMasterKey = masterKey;
+    }
+
+    clearMasterKey()
+    {
+        this.internalMasterKey = undefined;
     }
 }
