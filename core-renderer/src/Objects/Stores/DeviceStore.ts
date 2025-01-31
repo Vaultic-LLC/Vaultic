@@ -126,7 +126,6 @@ export class DeviceStore extends Store<StoreState>
             currentDevice.RequiresMFA = device.RequiresMFA;
         }
 
-        //this.internalDevicesByID.value.set(device.id, device);
         return true;
     }
 

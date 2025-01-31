@@ -41,7 +41,6 @@ export class VaulticCache
 
     clearLoginData()
     {
-        console.log('Clearing login data');
         this.internalStartLoginRequest = undefined;
         this.internalPasswordHash = undefined;
         this.internalClientLoginState = undefined;

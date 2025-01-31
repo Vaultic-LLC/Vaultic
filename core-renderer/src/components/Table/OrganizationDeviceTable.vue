@@ -2,7 +2,7 @@
     <div class="organizationDevicesTableContainer">
         <VaulticTable ref="tableRef" id="organizationDevicesTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" :allowPinning="!devicesAreSelected"
-            :onPin="devicesAreSelected ? undefined : onPin" :onEdit="devicesAreSelected ? onEditDevice : onEditOrganization" 
+            :onPin="onPinOrganization" :onEdit="devicesAreSelected ? onEditDevice : onEditOrganization" 
             :onDelete="devicesAreSelected ? onDeleteDevice : onDeleteOrganization">
             <template #tableControls>
                 <AddButton v-if="showAdd" :color="color" @click="onAdd" />
@@ -39,7 +39,6 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const devices: SortedCollection = new SortedCollection([]);
-        const pinnedDevices: SortedCollection = new SortedCollection([]);
         
         const organizations: VaultListSortedCollection = new VaultListSortedCollection([]);
         const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([]);
@@ -135,13 +134,7 @@ export default defineComponent({
                     return new TableRowModel(d.id, (obj: ClientDevice) => obj.id, undefined, false, undefined, d);
                 });
     
-                // const pinnedDeviceRows = app.devices.pinnedDevices.map((d) => 
-                // {
-                //     return new TableRowModel(d.id, (obj: ClientDevice) => obj.id, undefined, true, undefined, d);
-                // });
-    
                 devices.updateValues(deviceRows);
-                // pinnedDevices.updateValues(pinnedDeviceRows)             
             }
 
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Organizations)
@@ -161,18 +154,6 @@ export default defineComponent({
             }
         }
 
-        function onPin(isPinned: boolean, value: any)
-        {
-            if (app.activeDeviceOrganizationsTable == DataType.Devices)
-            {
-                onPinDevice(isPinned, value);
-            }
-            else 
-            {
-                onPinOrganization(isPinned, value);
-            }
-        }
-
         function onAdd()
         {
             if (devicesAreSelected.value)
@@ -183,11 +164,6 @@ export default defineComponent({
             {
                 onAddOrganization();
             }
-        }
-
-        function onPinDevice(isPinned: boolean, device: ClientDevice)
-        {
-
         }
 
         function onRegisterDevice()
@@ -271,9 +247,9 @@ export default defineComponent({
             emptyTableMessage,
             tableDataSources,
             showAdd,
-            onPin,
             onAdd,
             onEditDevice,
+            onPinOrganization,
             onDeleteDevice,
             onEditOrganization,
             onDeleteOrganization
