@@ -17,7 +17,7 @@ export class OrganizationStore extends Store<StoreState>
     private internalOrganizations: ComputedRef<Organization[]>;
     private internalPinnedOrganizations: ComputedRef<Organization[]>;
 
-    get failedToRetrieveOrganizations() { return this.state.failedToRetrieveOrganizations.value; }
+    get failedToRetrieveOrganizations() { return this.internalFailedToRetrieveOrganizations.value; }
     get organizations() { return this.internalOrganizations; }
     get organizationsByID() { return this.internalOrganizationsByID.value; }
     get organizationIDsByVaultIDs() { return this.internalOrganizationIDsByVaultIDs.value; }

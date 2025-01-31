@@ -1,72 +1,68 @@
 import { Store, StoreState } from "./Base";
-import { ClientDevice, Device } from "@vaultic/shared/Types/Device";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { ClientDevice, Device, DeviceInfo } from "@vaultic/shared/Types/Device";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
-import { ComputedRef, computed } from "vue";
-import app from "./AppStore";
+import { ComputedRef, Ref, computed, ref } from "vue";
 
-export interface DeviceStoreState extends StoreState
+export class DeviceStore extends Store<StoreState>
 {
-    devices: Field<Map<string, Field<ClientDevice>>>;
-    failedToGetDevices: Field<boolean>;
-}
+    private internalCurrentDeviceInfo: Ref<DeviceInfo | undefined>;
+    private internalRegisteredCurrentDevice: Ref<ClientDevice | undefined>;
+    private internalFailedToGetDevices: Ref<boolean>;
+    private internalDevicesByID: Ref<Map<string, ClientDevice>>;
+    private internalDevices: ComputedRef<ClientDevice[]>;
 
-export class DeviceStore extends Store<DeviceStoreState>
-{
-    private internalDevices: ComputedRef<Field<ClientDevice>[]>;
-    private internalPinnedDeviceIDs: ComputedRef<Set<number>>;
-    private internalPinnedDevices: ComputedRef<Field<ClientDevice>[]>;
+    private internalHasRegisteredCurrentDevice: ComputedRef<boolean>;
 
+    get currentDeviceInfo() { return this.internalCurrentDeviceInfo.value; }
     get devices() { return this.internalDevices.value; }
-    get failedToGetDevices() { return this.state.failedToGetDevices.value; }
-    get pinnedDevices() { return this.internalPinnedDevices.value; }
+    get failedToGetDevices() { return this.internalFailedToGetDevices.value; }
+    get hasRegisteredCurrentDevice() { return this.internalHasRegisteredCurrentDevice.value; }
 
     constructor()
     {
         super('deviceStore');
 
-        this.internalDevices = computed(() => this.state.devices.value.valueArray());
-        this.internalPinnedDeviceIDs = computed(() => new Set([...app.userPreferences.pinnedDesktopDevices.value.keyArray(), ...app.userPreferences.pinnedMobileDevices.value.keyArray()]));
+        this.internalCurrentDeviceInfo = ref(undefined);
+        this.internalRegisteredCurrentDevice = ref(undefined);
+        this.internalFailedToGetDevices = ref(false);
+        this.internalDevicesByID = ref(new Map());
+        this.internalDevices = computed(() => this.internalDevicesByID.value.valueArray());
 
-        this.internalPinnedDevices = computed(() =>
-            this.state.devices.value.mapWhere((k, v) => v.value.userDesktopDeviceID.value ? this.internalPinnedDeviceIDs.value.has(v.value.userDesktopDeviceID.value) :
-                this.internalPinnedDeviceIDs.value.has(v.value.userMobileDeviceID.value!),
-                (k, v) => v));
+        this.internalHasRegisteredCurrentDevice = computed(() => this.internalRegisteredCurrentDevice.value != undefined)
     }
 
-    protected defaultState()
+    public resetToDefault(): void
     {
-        return {
-            version: new Field(0),
-            devices: new Field(new Map<string, Field<ClientDevice>>()),
-            failedToGetDevices: new Field(false)
-        }
+        this.internalFailedToGetDevices.value = false;
+        this.internalDevicesByID.value = new Map();
+        this.internalCurrentDeviceInfo.value = undefined;
+        this.internalRegisteredCurrentDevice.value = undefined;
     }
 
     async getDevices(): Promise<boolean>
     {
         // reset so we don't have any duplicates
-        this.updateState(this.defaultState());
+        this.resetToDefault();
 
         const response = await api.server.user.getDevices();
         if (response.Success)
         {
+            await this.setDevices(response.DesktopDevices, true, response.RegisteredCurrentDesktopDeviceID);
+            await this.setDevices(response.MobileDevices, false, response.RegisteredCurrentMobileDeviceID);
 
-            await this.setDevices(response.DesktopDevices, true);
-            await this.setDevices(response.MobileDevices, false);
-
+            this.internalCurrentDeviceInfo.value = await api.getDeviceInfo();
             return true;
         }
         else 
         {
-            this.state.failedToGetDevices.value = true;
+            this.internalFailedToGetDevices.value = true;
         }
 
         return false;
     }
 
-    private async setDevices(devices: Device[] | undefined, desktop: boolean): Promise<void>
+    private async setDevices(devices: Device[] | undefined, desktop: boolean, currentRegisteredID?: number): Promise<void>
     {
         if (!devices)
         {
@@ -79,32 +75,78 @@ export class DeviceStore extends Store<DeviceStoreState>
             const clientDevice: ClientDevice =
             {
                 ...devices[i],
-                id: new Field(deviceId),
-                userDesktopDeviceID: new Field(devices[i].UserDesktopDeviceID),
-                userMobileDeviceID: new Field(devices[i].UserMobileDeviceID),
-                name: new Field(devices[i].Name),
-                model: new Field(devices[i].Model),
-                version: new Field(devices[i].Version),
-                type: new Field(desktop ? "Desktop" : "Mobile"),
-                requiresMFA: new Field(devices[i].RequiresMFA)
+                id: deviceId,
+                type: desktop ? "Desktop" : "Mobile",
             };
 
-            this.state.devices.value.set(deviceId, new Field(clientDevice))
+            if (!this.internalRegisteredCurrentDevice.value &&
+                (desktop && devices[i].UserDesktopDeviceID == currentRegisteredID) || (!desktop && devices[i].UserMobileDeviceID == currentRegisteredID))
+            {
+                this.internalRegisteredCurrentDevice.value = clientDevice;
+            }
+
+            this.internalDevicesByID.value.set(deviceId, clientDevice);
         }
     }
 
-    async deleteDevice(masterKey: string, id: string): Promise<boolean>
+    async addDevice(device: ClientDevice): Promise<boolean>
     {
-        const device = this.state.devices.value.get(id);
+        const result = await api.server.user.registerDevice(device.Name, device.RequiresMFA);
+        if (!result.Success)
+        {
+            return false;
+        }
+
+        device.UserDesktopDeviceID = result.UserDesktopDeviceID;
+        device.UserMobileDeviceID = result.UserMobileDeviceID;
+
+        const deviceId = await api.utilities.generator.uniqueId();
+        device.id = deviceId;
+
+        this.internalDevicesByID.value.set(deviceId, device);
+        this.internalRegisteredCurrentDevice.value = device;
+
+        return true;
+    }
+
+    async updateDevice(device: ClientDevice): Promise<boolean>
+    {
+        const result = await api.server.user.updateDevice(device.Name, device.RequiresMFA,
+            device.UserDesktopDeviceID, device.UserMobileDeviceID);
+
+        if (!result.Success)
+        {
+            return false;
+        }
+
+        const currentDevice = this.internalDevicesByID.value.get(device.id);
+        if (currentDevice)
+        {
+            currentDevice.Name = device.Name;
+            currentDevice.RequiresMFA = device.RequiresMFA;
+        }
+
+        //this.internalDevicesByID.value.set(device.id, device);
+        return true;
+    }
+
+    async deleteDevice(id: string): Promise<boolean>
+    {
+        const device = this.internalDevicesByID.value.get(id);
         if (!device)
         {
             return true;
         }
 
-        const response = await api.server.user.deleteDevice(masterKey, device.value.userDesktopDeviceID.value, device.value.userMobileDeviceID.value);
+        const response = await api.server.user.deleteDevice(device.UserDesktopDeviceID, device.UserMobileDeviceID);
         if (response)
         {
-            this.state.devices.value.delete(id);
+            this.internalDevicesByID.value.delete(id);
+            if (this.internalRegisteredCurrentDevice.value?.id == id)
+            {
+                this.internalRegisteredCurrentDevice.value = undefined;
+            }
+
             return true;
         }
         else 

@@ -1,9 +1,9 @@
-import { BackupResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
 import { ServerAllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
-import { RequireMFAOn } from "@vaultic/shared/Types/Device";
+import { RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 
 export interface UserController extends ClientUserController
 {
@@ -26,18 +26,35 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post("User/GetUserIDs");
     }
 
-    function deleteDevice(masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
-    {
-        return axiosHelper.api.post('User/DeleteDevice', {
-            MasterKey: masterKey,
-            UserDesktopDeviceID: desktopDeviceID,
-            UserMobileDeviceID: mobileDeviceID
-        });
-    }
-
     function getDevices(): Promise<GetDevicesResponse>
     {
         return axiosHelper.api.post('User/GetDevices');
+    }
+
+    function registerDevice(name: string, requiresMFA: RequiresMFA): Promise<RegisterDeviceResponse>
+    {
+        return axiosHelper.api.post('User/RegisterDevice', {
+            Name: name,
+            RequiresMFA: requiresMFA
+        });
+    }
+
+    function updateDevice(name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number): Promise<BaseResponse>
+    {
+        return axiosHelper.api.post('User/UpdateDevice', {
+            UserDesktopDeviceID: desktopDeviceID,
+            UserMobileDeviceID: mobileDeviceID,
+            Name: name,
+            RequiresMFA: requiresMFA
+        });
+    }
+
+    function deleteDevice(desktopDeviceID?: number, mobileDeviceID?: number): Promise<DeleteDeviceResponse>
+    {
+        return axiosHelper.api.post('User/DeleteDevice', {
+            UserDesktopDeviceID: desktopDeviceID,
+            UserMobileDeviceID: mobileDeviceID
+        });
     }
 
     async function backupData(postData: { userDataPayload: UserDataPayload }): Promise<BackupResponse>
@@ -122,8 +139,10 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
     return {
         validateEmail,
         getUserIDs,
-        deleteDevice,
         getDevices,
+        registerDevice,
+        updateDevice,
+        deleteDevice,
         backupData,
         createCheckout,
         getChartData,

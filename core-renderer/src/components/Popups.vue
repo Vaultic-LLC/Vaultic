@@ -95,6 +95,14 @@
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+				<ObjectPopup v-if="popupStore.devicePopupIsShowing" :width="'50%'" :minWidth="'600px'" :minHeight="'480px'"
+					:closePopup="popupStore.hideDevicePopup">
+					<DeviceView :creating="popupStore.deviceModel == undefined" :model="popupStore.deviceModel" />
+				</ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -115,6 +123,7 @@ import AddObjectPopup from './ObjectPopups/AddObjectPopup.vue';
 import EmergencyDeactivationView from './Account/EmergencyDeactivationView.vue';
 import ClearBreachesView from './BreachedPasswords/ClearBreachesView.vue';
 import ShowMFAKeyView from './Account/ShowMFAKeyView.vue';
+import DeviceView from './ObjectViews/DeviceView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -136,7 +145,8 @@ export default defineComponent({
         AddObjectPopup,
         EmergencyDeactivationView,
         ClearBreachesView,
-        ShowMFAKeyView
+        ShowMFAKeyView,
+        DeviceView
     },
     setup()
     {

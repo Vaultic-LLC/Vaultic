@@ -49,7 +49,7 @@ export enum RequiresMFA
 
 export enum DisplayRequiresMFA
 {
-    FollowGlobalSettings = "Follow Global Settings",
+    FollowGlobalSettings = "Follow Global Setting",
     True = "True",
     False = "False"
 }
@@ -93,15 +93,10 @@ export interface Device
 
 type DeviceType = "Desktop" | "Mobile";
 
-export interface ClientDevice extends IIdentifiable
+export interface ClientDevice extends Device
 {
-    userDesktopDeviceID: Field<number | undefined>;
-    userMobileDeviceID: Field<number | undefined>;
-    name: Field<string>;
-    model: Field<string>;
-    version: Field<string>;
-    type: Field<DeviceType>;
-    requiresMFA: Field<RequiresMFA>;
+    id: string;
+    type: DeviceType;
 }
 
 export interface DeviceInfo
@@ -111,4 +106,16 @@ export interface DeviceInfo
     version: string;
     platform: string;
     mac: string;
+}
+
+export function defaultClientDevice(): ClientDevice
+{
+    return {
+        id: '',
+        Name: '',
+        Model: '',
+        Version: '',
+        RequiresMFA: RequiresMFA.FollowGlobalSettings,
+        type: "Desktop" // TODO: switch to check once mobile is released
+    }
 }

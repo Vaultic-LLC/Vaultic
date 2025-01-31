@@ -26,7 +26,7 @@
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
             <div class="settingsView__inputSection">
                 <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
-                    :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn"
+                    :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
                     fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                     :disabled="readOnly || !isOnline || isLoadingSharedData" />
                 <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"

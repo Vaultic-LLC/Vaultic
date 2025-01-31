@@ -13,7 +13,7 @@ import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
 import { BreachRequestVault, Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
-import { RequireMFAOn } from "@vaultic/shared/Types/Device";
+import { RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 
 export default function setupIPC()
 {
@@ -24,11 +24,13 @@ export default function setupIPC()
 	ipcMain.handle('sessionController:expire', (e) => validateSender(e, () => vaulticServer.session.expire()));
 
 	ipcMain.handle('userController:validateEmail', (e, email: string) => validateSender(e, () => vaulticServer.user.validateEmail(email)));
-	ipcMain.handle('userController:deleteDevice', (e, masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => validateSender(e, () => vaulticServer.user.deleteDevice(masterKey, desktopDeviceID, mobileDeviceID)));
+	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));
+	ipcMain.handle('userController:registerDevice', (e, name: string, requiresMFA: RequiresMFA) => validateSender(e, () => vaulticServer.user.registerDevice(name, requiresMFA)));
+	ipcMain.handle('userController:updateDevice', (e, name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => validateSender(e, () => vaulticServer.user.updateDevice(name, requiresMFA, desktopDeviceID, mobileDeviceID)));
+	ipcMain.handle('userController:deleteDevice', (e, desktopDeviceID?: number, mobileDeviceID?: number) => validateSender(e, () => vaulticServer.user.deleteDevice(desktopDeviceID, mobileDeviceID)));
 	ipcMain.handle('userController:createCheckout', (e) => validateSender(e, () => vaulticServer.user.createCheckout()));
 	ipcMain.handle('userController:getChartData', (e, data: string) => validateSender(e, () => vaulticServer.user.getChartData(data)));
 	ipcMain.handle('userController:deactivateUserSubscription', (e, email: string, deactivationKey: string) => validateSender(e, () => vaulticServer.user.deactivateUserSubscription(email, deactivationKey)));
-	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));
 	ipcMain.handle('userController:reportBug', (e, descrption: string) => validateSender(e, () => vaulticServer.user.reportBug(descrption)));
 	ipcMain.handle('userController:getSettings', (e) => validateSender(e, () => vaulticServer.user.getSettings()));
 	ipcMain.handle('userController:updateSettings', (e, username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => validateSender(e, () => vaulticServer.user.updateSettings(username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom, requireMFAOn)));

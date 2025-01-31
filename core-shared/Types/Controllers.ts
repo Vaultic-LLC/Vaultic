@@ -1,8 +1,8 @@
 import { ServerAllowSharingFrom } from "./ClientServerTypes";
 import { BreachRequestVault, Member } from "./DataTypes";
-import { RequireMFAOn } from "./Device";
+import { RequireMFAOn, RequiresMFA } from "./Device";
 import { UserVaultIDAndVaultID } from "./Entities";
-import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetOrganizationsResponse, GetSettings, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetOrganizationsResponse, GetSettings, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -17,11 +17,13 @@ export interface SessionController
 export interface ClientUserController
 {
     validateEmail(email: string): Promise<ValidateEmailResponse>;
-    deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
+    getDevices: () => Promise<GetDevicesResponse>;
+    registerDevice: (name: string, requiresMFA: RequiresMFA) => Promise<RegisterDeviceResponse>;
+    updateDevice: (name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<BaseResponse>;
+    deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
     createCheckout: () => Promise<CreateCheckoutResponse>;
     getChartData: (data: string) => Promise<GetChartDataResponse>;
     deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
-    getDevices: () => Promise<GetDevicesResponse>;
     reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
     getSettings: () => Promise<GetSettings>;
     updateSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => Promise<UpdateSharingSettingsResponse>;

@@ -1,6 +1,6 @@
 import { ipcRenderer } from "electron";
 
-import { DeviceInfo, RequireMFAOn } from "@vaultic/shared/Types/Device";
+import { DeviceInfo, RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
 import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
@@ -31,11 +31,13 @@ const sessionController: SessionController =
 const userController: ClientUserController =
 {
 	validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
-	deleteDevice: (masterKey: string, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', masterKey, desktopDeviceID, mobileDeviceID),
+	getDevices: () => ipcRenderer.invoke('userController:getDevices'),
+	registerDevice: (name: string, requiresMFA: RequiresMFA) => ipcRenderer.invoke('userController:registerDevice', name, requiresMFA),
+	updateDevice: (name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:updateDevice', name, requiresMFA, desktopDeviceID, mobileDeviceID),
+	deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:deleteDevice', desktopDeviceID, mobileDeviceID),
 	createCheckout: () => ipcRenderer.invoke('userController:createCheckout'),
 	getChartData: (data: string) => ipcRenderer.invoke('userController:getChartData', data),
 	deactivateUserSubscription: (email: string, deactivationKey: string) => ipcRenderer.invoke('userController:deactivateUserSubscription', email, deactivationKey),
-	getDevices: () => ipcRenderer.invoke('userController:getDevices'),
 	reportBug: () => ipcRenderer.invoke('userController:reportBug'),
 	getSettings: () => ipcRenderer.invoke('userController:getSettings'),
 	updateSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => ipcRenderer.invoke('userController:updateSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom, requireMFAOn),

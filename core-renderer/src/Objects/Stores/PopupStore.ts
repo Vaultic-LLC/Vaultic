@@ -7,6 +7,7 @@ import { BaseResponse } from "@vaultic/shared/Types/Responses";
 import { ImportableDisplayField } from "../../Types/Fields";
 import { DataType } from "../../Types/DataTypes";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
+import { ClientDevice } from "@vaultic/shared/Types/Device";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -103,6 +104,9 @@ export function createPopupStore()
     const clearDataBreachesIsShowing: Ref<boolean> = ref(false);
 
     const showMFAKeyIsShowing: Ref<boolean> = ref(false);
+
+    const devicePopupIsShowing: Ref<boolean> = ref(false);
+    const deviceModel: Ref<ClientDevice | undefined> = ref(undefined);
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -351,6 +355,18 @@ export function createPopupStore()
         showMFAKeyIsShowing.value = false;
     }
 
+    function showDevicePopup(device?: ClientDevice)
+    {
+        deviceModel.value = device;
+        devicePopupIsShowing.value = true;
+    }
+
+    function hideDevicePopup()
+    {
+        deviceModel.value = undefined;
+        devicePopupIsShowing.value = false;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -391,6 +407,8 @@ export function createPopupStore()
         get emergencyDeactivationIsShowing() { return emergencyDeactivationIsShowing.value; },
         get clearDataBreachesIsShowing() { return clearDataBreachesIsShowing.value; },
         get showMFAKeyIsShowing() { return showMFAKeyIsShowing.value },
+        get devicePopupIsShowing() { return devicePopupIsShowing.value; },
+        get deviceModel() { return deviceModel.value; },
         addOnEnterHandler,
         removeOnEnterHandler,
         showLoadingIndicator,
@@ -419,6 +437,8 @@ export function createPopupStore()
         showClearDataBreachesPopup,
         hideClearDataBreachesPopup,
         showMFAKeyPopup,
-        hideMFAKeyPopup
+        hideMFAKeyPopup,
+        showDevicePopup,
+        hideDevicePopup
     }
 }

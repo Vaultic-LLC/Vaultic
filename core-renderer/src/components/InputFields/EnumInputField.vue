@@ -141,22 +141,31 @@ export default defineComponent({
             invalidMessage.value = message;
         }
 
-        watch(() => props.modelValue, (newValue) =>
-        {
-            if (newValue === undefined)
-            {
-                onOptionClick('');
-                refreshKey.value = Date.now().toString();
-            }
-        });
-
-        onMounted(() =>
+        function setSelectedValue(val: any)
         {
             const initialValue = options.value.filter(v => v.name == props.modelValue);
             if (initialValue.length > 0)
             {
                 selectedValue.value = initialValue[0];
             }
+        }
+
+        watch(() => props.modelValue, (newValue) =>
+        {
+            if (newValue === undefined)
+            {
+                onOptionClick('');
+                refreshKey.value = Date.now().toString();
+
+                return;
+            }
+
+            setSelectedValue(props.modelValue);
+        });
+
+        onMounted(() =>
+        {
+            setSelectedValue(props.modelValue);
 
             validationFunction?.value.push(validate);
             for (let _ in props.optionsEnum)

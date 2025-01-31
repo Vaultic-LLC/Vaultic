@@ -32,15 +32,8 @@ export interface InvalidSessionResponse extends BaseResponse
 
 export interface DeviceResponse extends BaseResponse
 {
-    DesktopDeviceUpdatesLeft?: number;
-    MobileDeviceUpdatesLeft?: number;
     DesktopDevices?: Device[];
     MobileDevices?: Device[];
-}
-
-export interface IncorrectDeviceResponse extends DeviceResponse
-{
-    IncorrectDevice?: boolean;
 }
 
 interface EmailIsTakenResposne
@@ -63,7 +56,7 @@ export interface OpaqueResponse extends BaseResponse
     RestartOpaqueProtocol?: boolean;
 }
 
-export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse, IncorrectDeviceResponse
+export interface UserSessionAndDeviceAuthenticationRespons extends BaseResponse, InvalidSessionResponse
 {
 }
 
@@ -81,7 +74,7 @@ export interface ValidateEmailResponse extends BaseResponse
     EmailIsTaken?: boolean;
 }
 
-export interface ValidateUserResponse extends InvalidLicenseResponse, IncorrectDeviceResponse, CreateSessionResponse
+export interface ValidateUserResponse extends InvalidLicenseResponse, CreateSessionResponse
 {
     InvalidMasterKey?: boolean;
     UnknownEmail?: boolean;
@@ -95,7 +88,8 @@ export interface DeleteDeviceResponse extends InvalidSessionResponse, InvalidLic
 
 export interface GetDevicesResponse extends UseSessionLicenseAndDeviceAuthenticationResponse
 {
-
+    RegisteredCurrentDesktopDeviceID?: number;
+    RegisteredCurrentMobileDeviceID?: number;
 }
 
 export interface LogResponse extends BaseResponse
@@ -237,4 +231,10 @@ export interface SyncVaultsResponse extends UserDataPayloadResponse, BaseRespons
 export interface GetMFAKeyResponse extends BaseResponse
 {
     MFAKey?: string;
+}
+
+export interface RegisterDeviceResponse extends BaseResponse
+{
+    UserDesktopDeviceID?: number;
+    UserMobileDeviceID?: number;
 }
