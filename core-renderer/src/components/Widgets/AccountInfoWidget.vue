@@ -10,9 +10,9 @@
         <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
         <div class="accountInfoWidget__section accountInfoWidget__centered">
             <div class="accountInfoWidget__sectionHeader">
-                Subscription: None
+                Subscription: {{ subscriptionStatus }}
             </div>
-            <PopupButton :color="currentPrimaryColor" :text="'View'"
+            <PopupButton :color="currentPrimaryColor" :text="buttonText"
                 :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
                 :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="openPaymentInfoLink" />
         </div>
@@ -49,6 +49,7 @@ import PersonOutlineIcon from '../Icons/PersonOutlineIcon.vue';
 import app from '../../Objects/Stores/AppStore';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
+import { LicenseStatus } from '@vaultic/shared/Types/ClientServerTypes';
 
 export default defineComponent({
     name: "AccountInfoWidget",
@@ -60,10 +61,45 @@ export default defineComponent({
     setup()
     {
         const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const subscriptionStatus: ComputedRef<string> = computed(() => {
+            switch (app.userInfo.license)
+            {
+                case LicenseStatus.Active:
+                    return "Active";
+                case LicenseStatus.Inactive:
+                    return "Inactive";
+                case LicenseStatus.Cancelled:
+                    return "Cancelled";
+                case LicenseStatus.NotActivated:
+                    return "Not Activate";
+                case LicenseStatus.Unknown:
+                    return "Unknown";
+            }
+        });
 
-        function openPaymentInfoLink()
+        const hasLicense: ComputedRef<boolean> = computed(() => app.userInfo.license == LicenseStatus.Active || 
+            app.userInfo.license == LicenseStatus.Cancelled || app.userInfo.license == LicenseStatus.Inactive);
+        
+        const buttonText: ComputedRef<string> = computed(() => hasLicense.value ? "View" : "Subscribe");
+
+        async function openPaymentInfoLink()
         {
-            window.open('https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk');
+            if (hasLicense.value)
+            {
+                window.open('https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk');         
+            }
+            else
+            {
+                const response = await api.server.user.createCheckout();
+                if (response.Success && !response.AlreadyCreated)
+                {
+                    window.open(response.Url);
+                }
+                else if (response.AlreadyCreated)
+                {
+                    window.open('https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk');         
+                }
+            }
         }
 
         async function downloadDeactivationKey()
@@ -92,7 +128,9 @@ export default defineComponent({
         }
 
         return {
+            buttonText,
             currentPrimaryColor,
+            subscriptionStatus,
             openPaymentInfoLink,
             downloadDeactivationKey,
             openDeactivationPopup,

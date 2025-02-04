@@ -1,4 +1,4 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, GetUserInfoResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
@@ -136,6 +136,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetMFAKey');
     }
 
+    function getUserInfo(): Promise<GetUserInfoResponse>
+    {
+        return axiosHelper.api.post('User/GetUserInfo');
+    }
+
     return {
         validateEmail,
         getUserIDs,
@@ -152,6 +157,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         updateSettings,
         searchForUsers,
         getPublicKeys,
-        getMFAKey
+        getMFAKey,
+        getUserInfo
     }
 }

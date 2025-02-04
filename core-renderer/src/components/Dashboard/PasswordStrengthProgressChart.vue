@@ -1,14 +1,17 @@
 <template>
     <div class="strengthGraphContainer">
         <div class="strengthGraphContainer__header">
-            <div class="strengthGraphContainer__resetButton" @click="reset">
+            <div v-if="canLoadWidget" class="strengthGraphContainer__resetButton" @click="reset">
                 Reset
             </div>
             <div class="strengthGraphContainer__title">
                 <h2>Security Over Time</h2>
             </div>
         </div>
-        <div ref="chartContainer" class="strengthGraphContainer__chart">
+        <div v-if="!canLoadWidget" class="strengthGraphContainer__chart">
+            <WidgetSubscriptionMessage />
+        </div>
+        <div v-else-if="!failedToLoad" ref="chartContainer" class="strengthGraphContainer__chart">
             <Transition name="fade" mode="out-in">
                 <div :key="key" v-if="showStatusMessage" class="strengthGraphContainer__noData">
                     {{ statusMessage }}
@@ -24,13 +27,18 @@
                 :options="options">
             </Line>
         </div>
+        <div v-else class="strengthGraphContainer__chart">
+            <WidgetErrorMessage :message="'Unable to load Chart Data at this time. Please try again later'" />
+        </div>
     </div>
 </template>
 
 <script lang="ts">
-import { Ref, defineComponent, onMounted, ref, watch, toRaw, onUnmounted } from 'vue';
+import { Ref, defineComponent, onMounted, ref, watch, toRaw, onUnmounted, ComputedRef, computed } from 'vue';
 
 import LoadingIndicator from '../Loading/LoadingIndicator.vue';
+import WidgetSubscriptionMessage from '../Widgets/WidgetSubscriptionMessage.vue'; 
+import WidgetErrorMessage from '../Widgets/WidgetErrorMessage.vue';
 
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
@@ -49,10 +57,15 @@ export default defineComponent({
     components:
     {
         Line,
-        LoadingIndicator
+        LoadingIndicator,
+        WidgetErrorMessage,
+        WidgetSubscriptionMessage
     },
     setup()
     {
+        const failedToLoad: Ref<boolean> = ref(false);
+        const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
+
         const loading: Ref<boolean> = ref(false);
         const refreshKey: Ref<string> = ref('');
         const key: Ref<string> = ref('');
@@ -378,6 +391,7 @@ export default defineComponent({
 
             if (response.Success)
             {
+                failedToLoad.value = false;
                 showStatusMessage.value = false;
                 statusMessage.value = "";
 
@@ -388,15 +402,7 @@ export default defineComponent({
             }
             else
             {
-                showStatusMessage.value = true;
-                if (response.InvalidSession)
-                {
-                    statusMessage.value = "Session has expired. Please sign back in"
-                }
-                else
-                {
-                    statusMessage.value = "Unable to load data";
-                }
+                failedToLoad.value = true;
 
                 chartOneArray.value = [];
                 updateData();
@@ -471,6 +477,7 @@ export default defineComponent({
         setOptions(1000);
 
         return {
+            canLoadWidget,
             lineChart,
             chartContainer,
             key,
@@ -485,7 +492,7 @@ export default defineComponent({
             reset
         }
     }
-})
+}) as any;
 </script>
 
 <style>
@@ -533,7 +540,7 @@ export default defineComponent({
 
 .strengthGraphContainer__chart {
     position: relative;
-    height: 80%;
+    height: 84%;
     width: 100%;
     display: flex;
     justify-content: center;
