@@ -42,7 +42,8 @@ const userController: ClientUserController =
 	getSettings: () => ipcRenderer.invoke('userController:getSettings'),
 	updateSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => ipcRenderer.invoke('userController:updateSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom, requireMFAOn),
 	searchForUsers: (username: string, excludedUserIDs: string) => ipcRenderer.invoke('userController:searchForUsers', username, excludedUserIDs),
-	getMFAKey: () => ipcRenderer.invoke('userController:getMFAKey')
+	getMFAKey: () => ipcRenderer.invoke('userController:getMFAKey'),
+	getUserInfo: () => ipcRenderer.invoke('userController:getUserInfo')
 };
 
 const vaultController: ClientVaultController =

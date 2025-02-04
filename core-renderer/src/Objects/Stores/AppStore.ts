@@ -88,6 +88,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
 
+    private internalCanShowSubscriptionWidgets: ComputedRef<boolean>;
     private internalUserInfo: Ref<UserInfo>;
 
     get loadedUser() { return this.internaLoadedUser; }
@@ -117,6 +118,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get devices() { return this.internalDeviceStore; }
     get organizations() { return this.internalOrganizationStore; }
     get popups() { return this.internalPopupStore; }
+    get canShowSubscriptionWidgets() { return this.internalCanShowSubscriptionWidgets; }
     get userInfo() { return this.internalUserInfo.value }
 
     constructor()
@@ -160,6 +162,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalActivePasswordValueTable = ref(DataType.Passwords);
         this.internalActiveFilterGroupTable = ref(DataType.Filters);
 
+        this.internalCanShowSubscriptionWidgets = computed(() => this.isOnline && this.internalUserInfo.value.license == LicenseStatus.Active);
         this.internalUserInfo = ref({ license: LicenseStatus.Unknown });
 
         this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.value.autoLockTime.value));
@@ -509,7 +512,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return true;
     }
 
-    private async getUserInfo()
+    public async getUserInfo()
     {
         const response = await api.server.user.getUserInfo();
         if (!response.success)
@@ -517,7 +520,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.internalUserInfo.value.license = response.LicenseStatus;
+        this.internalUserInfo.value.license = response.LicenseStatus!;
     }
 }
 

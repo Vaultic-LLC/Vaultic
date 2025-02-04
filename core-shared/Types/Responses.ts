@@ -238,3 +238,8 @@ export interface RegisterDeviceResponse extends BaseResponse
     UserDesktopDeviceID?: number;
     UserMobileDeviceID?: number;
 }
+
+export interface GetUserInfoResponse extends BaseResponse
+{
+    LicenseStatus?: LicenseStatus;
+}

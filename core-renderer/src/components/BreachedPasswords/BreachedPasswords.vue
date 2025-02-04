@@ -1,12 +1,12 @@
 <template>
     <div class="breachedPasswordsContainer">
         <div class="breachedPasswordsContainer__content">
-            <div class="breachedPasswordsContainer__scanButton" :class="{ scanning: scanning }"
+            <div v-if="canLoadWidget" class="breachedPasswordsContainer__scanButton" :class="{ scanning: scanning }"
                 @click="startScan(true)">
                 <span v-if="scanning">Scanning...</span>
                 <span v-else>Scan</span>
             </div>
-            <div class="breachedPasswordsContainer__clearButton" @click="clearBreaches">
+            <div v-if="canLoadWidget" class="breachedPasswordsContainer__clearButton" @click="clearBreaches">
                 <span>Clear</span>
             </div>
             <div class="breachedPasswordsContainer__title">
@@ -14,7 +14,10 @@
                     Data Breaches
                 </h2>
             </div>
-            <div class="breachedPasswordsContainer__items" v-if="!failedToLoad">
+            <div class="breachedPasswordsContainer__items" v-if="!canLoadWidget">
+                <WidgetSubscriptionMessage />
+            </div>
+            <div class="breachedPasswordsContainer__items" v-else-if="!failedToLoad">
                 <!-- // TODO: replace with list of vault + number of breaches in vault -->
                 <div class="breachedPasswordsContainer__map">
                     <!-- <WorldMap :scan="scanning" /> -->
@@ -36,10 +39,10 @@
 <script lang="ts">
 import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
-import WorldMap from './WorldMap.vue';
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
 import WidgetErrorMessage from '../Widgets/WidgetErrorMessage.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
+import WidgetSubscriptionMessage from '../Widgets/WidgetSubscriptionMessage.vue';
 
 import { SmallMetricGaugeModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
@@ -52,13 +55,14 @@ export default defineComponent({
     name: "BreachedPasswords",
     components:
     {
-        WorldMap,
         SmallMetricGauge,
         WidgetErrorMessage,
-        VaulticTable
+        VaulticTable,
+        WidgetSubscriptionMessage
     },
     setup()
     {
+        const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const scanning: Ref<boolean> = ref(false);
         const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
@@ -126,6 +130,11 @@ export default defineComponent({
 
         async function startScan(notifyComplete: boolean)
         {
+            if (!canLoadWidget.value)
+            {
+                return;
+            }
+
             if (scanning.value)
             {
                 return;
@@ -151,6 +160,11 @@ export default defineComponent({
 
         async function checkPasswordForBreach(password: Field<ReactivePassword>)
         {
+            if (!canLoadWidget.value)
+            {
+                return;
+            }
+
             scanning.value = true;
             await app.vaultDataBreaches.checkPasswordForBreach(password);
             scanning.value = false;          
@@ -213,6 +227,7 @@ export default defineComponent({
         });
 
         return {
+            canLoadWidget,
             color,
             scanning,
             metricModel,
@@ -224,7 +239,7 @@ export default defineComponent({
             clearBreaches
         }
     }
-}) as any
+})
 
 </script>
 <style>

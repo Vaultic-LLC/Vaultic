@@ -6,7 +6,7 @@
         <div class="center">
             <ColorPaletteContainer />
             <Transition name="fade" mode="out-in">
-                <BreachedPasswords v-if="isOnline && isVaultView" />
+                <BreachedPasswords v-if="isVaultView" />
             </Transition>
             <Transition name="fade" mode="out-in">
                 <div id="tables" v-if="isVaultView">
@@ -26,7 +26,7 @@
             <FilterGroupGauges v-if="isVaultView" />
         </Transition>
         <Transition name="fade" mode="out-in">
-            <div v-if="isOnline && isVaultView" class="tempWidget secureProgressChartWidget">
+            <div v-if="isVaultView" class="tempWidget secureProgressChartWidget">
                 <PasswordStrengthProgressChart />
             </div>
         </Transition>
