@@ -84,6 +84,12 @@ export default defineComponent({
 
         async function openPaymentInfoLink()
         {
+            if (!app.isOnline)
+            {
+                showNotOnlinePopup();
+                return;
+            }
+
             if (hasLicense.value)
             {
                 window.open('https://billing.stripe.com/p/login/28ocOR6vqa0Yeli5kk');         
@@ -104,6 +110,12 @@ export default defineComponent({
 
         async function downloadDeactivationKey()
         {
+            if (!app.isOnline)
+            {
+                showNotOnlinePopup();
+                return;
+            }
+
             app.popups.showLoadingIndicator(currentPrimaryColor.value, "Downloading");
 
             const result = await api.helpers.vaultic.downloadDeactivationKey();
@@ -119,12 +131,29 @@ export default defineComponent({
 
         function openDeactivationPopup()
         {
+            if (!app.isOnline)
+            {
+                showNotOnlinePopup();
+                return;
+            }
+
             app.popups.showEmergencyDeactivationPopup();
         }
 
         function onShowMFAKey()
         {
+            if (!app.isOnline)
+            {
+                showNotOnlinePopup();
+                return;
+            }
+
             app.popups.showMFAKeyPopup();
+        }
+
+        function showNotOnlinePopup()
+        {
+            app.popups.showAlert("Unable to Access", "Please sign in to Online Mode in order to access this resource", false);
         }
 
         return {

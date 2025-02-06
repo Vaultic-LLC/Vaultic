@@ -1,9 +1,9 @@
 <template>
     <VaulticTable :id="id" :color="color" :columns="tableColumns" :loading="externalLoading"
-        :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
+        :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :allowSearching="isOnline"
         :onEdit="hideEdit === true || disable === true ? undefined : onEditMember" :onDelete="disable === true ? undefined : onDeleteMember">
         <template #tableControls>
-            <AddButton v-if="!disable" :color="color" @click="(e) => onOpenPopover(e, true)" />
+            <AddButton v-if="!disable && isOnline" :color="color" @click="(e) => onOpenPopover(e, true)" />
         </template>
     </VaulticTable>
     <Popover ref="popover">
@@ -44,6 +44,7 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { ServerPermissions, serverPermissionToViewableServerPermission, UserDemographics, ViewableServerPermissions, viewableServerPermissionsToServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
 import { Member } from '@vaultic/shared/Types/DataTypes';
 import { MemberChanges } from '../../Types/Components';
+import app from '../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "MemberTable",
@@ -84,6 +85,8 @@ export default defineComponent({
         const addedMembers: Map<number, Member> = new Map();
         const updatedMembers: Map<number, Member> = new Map();
         const removedMembers: Map<number, Member> = new Map();
+
+        const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
 
         const userHeaderTab: HeaderTabModel[] = [
             {
@@ -133,6 +136,11 @@ export default defineComponent({
         let searchTimeout: any = undefined;
         async function onUserSearch(value: string)
         {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
             if (searchTimeout != undefined)
             {
                 clearTimeout(searchTimeout);
@@ -316,6 +324,7 @@ export default defineComponent({
             allSearchedUserDemographics,
             disableMemberSearch,
             doHidePermissions,
+            isOnline,
             onOpenPopover,
             onDeleteMember,
             onSaveMember,

@@ -14,7 +14,7 @@
                     :reloadAllDataIsToggled="accountSetupModel.reloadAllDataIsToggled"
                     :clearAllDataOnLoad="accountSetupModel.clearAllDataOnLoad"
                     @onKeySuccess="closeWithAnimation" @onMoveToCreateAccount="moveToCreateAccount"
-                    @onMoveToLimitedMode="close" @onMoveToSetupPayment="moveToCreatePayment"
+                    @onMoveToSetupPayment="moveToCreatePayment"
                     @onNotClearedData="() => accountSetupModel.clearAllDataOnLoad = true" />
                 <CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
                     :color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />

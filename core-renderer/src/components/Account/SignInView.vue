@@ -59,9 +59,6 @@
                         <div class="signInViewContainer__divider__text">Or</div>
                         <div class="signInViewContainer__divider__line"></div>
                     </div>
-                    <!-- <div class="signInViewContainer__limitedMode">
-                        <ButtonLink :color="color" :text="'Continue in Offline Mode'" @onClick="moveToLimitedMode" />
-                    </div> -->
                     <div class="signInViewContainer__createAccountLink">Don't have an account?
                         <ButtonLink :color="color" :text="'Create One'" :fontSize="'clamp(15px, 1vw, 20px)'" @onClick="moveToCreateAccount" />
                     </div>
@@ -105,7 +102,7 @@ export default defineComponent({
         ToolTip,
         EnterMFACodePopup,
     },
-    emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToLimitedMode', 'onMoveToSetupPayment', 'onNotClearedData'],
+    emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToSetupPayment', 'onNotClearedData'],
     props: ['color', 'infoMessage', 'reloadAllDataIsToggled', 'clearAllDataOnLoad'],
     setup(props, ctx)
     {
@@ -133,16 +130,6 @@ export default defineComponent({
         function moveToCreateAccount()
         {
             ctx.emit('onMoveToCreateAccount');
-        }
-
-        // TODO: should only show this after the user has signed up 
-        // otherwise the user, userVault, and vault won't be created
-        // Instead just show a toggle for online / offline? Something simplier
-        // than than going to a new popup. Either way, a user shouldn't be 
-        // able to use the app without signing up and having data
-        async function moveToLimitedMode()
-        {
-            ctx.emit('onMoveToLimitedMode');
         }
 
         async function onSubmit(mfaCode?: string)
@@ -323,6 +310,11 @@ export default defineComponent({
                 ctx.emit("onNotClearedData");
             }
 
+            api.environment.hasConnection().then((result: boolean) =>
+            {
+                onlineMode.value = result;
+            });
+
             api.repositories.users.getLastUsedUserEmail().then((lastUsedEmail) =>
             {
                 if (lastUsedEmail)
@@ -360,7 +352,6 @@ export default defineComponent({
             mfaView,
             mfaIsShowing,
             moveToCreateAccount,
-            moveToLimitedMode,
             onSubmit,
             navigateLeft,
             navigateRight,

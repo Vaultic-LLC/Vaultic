@@ -192,29 +192,36 @@ export default defineComponent({
                 return model;
             });
 
-            const response = await api.server.vault.getMembers(
-                vaultState.value.userOrganizationID, vaultState.value.userVaultID);
-
-            if (response.Success)
+            if (app.isOnline)
             {
-                const tempMembers: Map<number, Member> = new Map();
-                response.UserOrgInfo?.forEach(u => 
+                const response = await api.server.vault.getMembers(
+                    vaultState.value.userOrganizationID, vaultState.value.userVaultID);
+    
+                if (response.Success)
                 {
-                    const member: Member =
+                    const tempMembers: Map<number, Member> = new Map();
+                    response.UserOrgInfo?.forEach(u => 
                     {
-                        userID: u.UserID,
-                        firstName: u.FirstName,
-                        lastName: u.LastName,
-                        username: u.Username,
-                        permission: u.Permissions,
-                        icon: undefined,
-                        publicKey: undefined
-                    };
-
-                    tempMembers.set(u.UserID, member);
-                });
-
-                vaultMembers.value = tempMembers;
+                        const member: Member =
+                        {
+                            userID: u.UserID,
+                            firstName: u.FirstName,
+                            lastName: u.LastName,
+                            username: u.Username,
+                            permission: u.Permissions,
+                            icon: undefined,
+                            publicKey: undefined
+                        };
+    
+                        tempMembers.set(u.UserID, member);
+                    });
+    
+                    vaultMembers.value = tempMembers;
+                }
+            }
+            else
+            {
+                emptyMessage.value = "Please log in to Online Mode to view and edit Members."
             }
 
             loadingIndividuals.value = false;

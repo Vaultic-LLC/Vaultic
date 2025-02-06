@@ -51,6 +51,11 @@ export class OrganizationStore extends Store<StoreState>
 
     async getOrganizations(): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         // reset so we don't have any duplicates
         this.resetToDefault();
 
@@ -108,6 +113,11 @@ export class OrganizationStore extends Store<StoreState>
 
     async createOrganization(masterKey: string, organization: Organization, addedVaults: UserVaultIDAndVaultID[], addedMembers: Member[]): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const data: CreateOrganizationData =
         {
             name: organization.name,
@@ -140,6 +150,11 @@ export class OrganizationStore extends Store<StoreState>
     async updateOrganization(masterKey: string, organization: Organization, unchangedVaults: UserVaultIDAndVaultID[], addedVaults: UserVaultIDAndVaultID[],
         removedVaults: UserVaultIDAndVaultID[], originalMembers: Member[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const updateOrganizationData: UpdateOrganizationData =
         {
             organizationID: organization.organizationID,
@@ -241,6 +256,11 @@ export class OrganizationStore extends Store<StoreState>
 
     async deleteOrganization(id: number): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const response = await api.server.organization.deleteOrganization(id);
         if (!response.Success)
         {

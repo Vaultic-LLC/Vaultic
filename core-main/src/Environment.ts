@@ -30,6 +30,7 @@ export interface InternalEnvironment
         deleteDatabase: (isTest: boolean) => Promise<boolean>
     };
     getDeviceInfo: () => DeviceInfo;
+    hasConnection: () => Promise<boolean>;
 }
 
 class Environment
@@ -95,6 +96,11 @@ class Environment
     getDeviceInfo()
     {
         return this.internalEnvironment.getDeviceInfo();
+    }
+
+    hasConnection()
+    {
+        return this.internalEnvironment.hasConnection();
     }
 }
 

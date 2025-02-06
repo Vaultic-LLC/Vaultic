@@ -44,12 +44,17 @@ export default defineComponent({
         const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([]);
             
         const devicesAreSelected: ComputedRef<boolean> = computed(() => app.activeDeviceOrganizationsTable == DataType.Devices);
-        const showAdd: ComputedRef<boolean> = computed(() => !devicesAreSelected.value || (devicesAreSelected.value && !app.devices.hasRegisteredCurrentDevice));
+        const showAdd: ComputedRef<boolean> = computed(() => app.isOnline && (!devicesAreSelected.value || (devicesAreSelected.value && !app.devices.hasRegisteredCurrentDevice)));
 
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
             if (devicesAreSelected.value)
             {
+                if (!app.isOnline)
+                {
+                    return "Please log in to Online Mode to view and edit your Organizations";
+                }
+
                 if (app.devices.failedToGetDevices)
                 {
                     return "Unable to retrieve Registered Devices at this moment. Please try again or contact support if the issue persists";
@@ -59,6 +64,11 @@ export default defineComponent({
             }
             else 
             {
+                if (!app.isOnline)
+                {
+                    return "Please log in to Online Mode to view and edit your Registered Devices";
+                }
+
                 if (app.organizations.failedToRetrieveOrganizations)
                 {
                     return "Unable to retrieve Organizations at this moment. Please try again or contact support if the issue persists";

@@ -119,6 +119,7 @@ const environment: ClientEnvironment =
     isTest: () => ipcRenderer.invoke('environment:isTest'),
     failedToInitalizeDatabase: () => ipcRenderer.invoke('environment:failedToInitalizeDatabase'),
     recreateDatabase: () => ipcRenderer.invoke('environment:recreateDatabase'),
+    hasConnection: () => ipcRenderer.invoke('environment:hasConnection'),
     createNewDatabase: (renameCurrentTo: string) => ipcRenderer.invoke('environment:createNewDatabase', renameCurrentTo),
     setDatabaseAsCurrent: (name: string) => ipcRenderer.invoke('environment:setDatabaseAsCurrent', name)
 };
@@ -145,10 +146,10 @@ const userRepository: ClientUserRepository =
 
 const vaultRepository: ClientVaultRepository =
 {
-    updateVault: (masterKey: string, updateVaultData: string, doBackup: boolean) => ipcRenderer.invoke('vaultRepository:updateVault', masterKey, updateVaultData, doBackup),
+    updateVault: (masterKey: string, updateVaultData: string) => ipcRenderer.invoke('vaultRepository:updateVault', masterKey, updateVaultData),
     setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
     saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, newData, currentData),
-    createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, shared, setAsActive, addedOrganizations, addedMembers, doBackupData),
+    createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[]) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, name, shared, setAsActive, addedOrganizations, addedMembers),
     getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve),
     deleteVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:deleteVault', masterKey, userVaultID),
     syncVaults: (masterKey: string) => ipcRenderer.invoke('vaultRepository:syncVaults', masterKey),

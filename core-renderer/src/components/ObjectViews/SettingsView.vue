@@ -25,7 +25,8 @@
             </div>
             <div class="settingsView__sectionTitle settingsView__securitySettings">Security Settings</div>
             <div class="settingsView__inputSection">
-                <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
+                // TODO: should re arrange the settings view so this doesn't look weird when offline
+                <EnumInputField v-if="isOnline" class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
                     :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
                     fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                     :disabled="readOnly || !isOnline || isLoadingSharedData" />
@@ -241,6 +242,11 @@ export default defineComponent({
 
         async function checkUpdateSettings(): Promise<boolean>
         {
+            if (!isOnline.value)
+            {
+                return true;
+            }
+
             let updateSettings: boolean = false;
 
             let updatedAllowSharedVaultsFromOthers: boolean | undefined = undefined;
