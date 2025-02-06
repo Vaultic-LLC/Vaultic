@@ -84,7 +84,7 @@
                 <div>
                     Copywrite
                 </div>
-                <div class="aboutPopupContainer__section">
+                <div v-if="isOnline" class="aboutPopupContainer__section">
                     <h2 class="aboutPopupContainer__section__header">Report a Bug</h2>
                     <div class="aboutPopupContainer__reportBugSection">
                         <TextAreaInputField :colorModel="colorModel" :label="'Description'" v-model="bugDescription"
@@ -138,6 +138,7 @@ export default defineComponent({
         const colorModel: Ref<InputColorModel> = ref(defaultInputColorModel(primaryColor.value));
 
         const disableButtons: Ref<boolean> = ref(false);
+        const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
 
         const featuresTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
@@ -161,6 +162,11 @@ export default defineComponent({
 
         async function reportBug()
         {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
             app.popups.showLoadingIndicator(primaryColor.value, "Reporting Bug");
             const response = await api.server.user.reportBug(bugDescription.value);
             app.popups.hideLoadingIndicator();
@@ -186,6 +192,7 @@ export default defineComponent({
             bugDescription,
             colorModel,
             disableButtons,
+            isOnline,
             reportBug
         }
     }

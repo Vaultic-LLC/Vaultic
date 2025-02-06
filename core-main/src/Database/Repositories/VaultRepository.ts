@@ -145,10 +145,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return [userVault, vault, vaultKey];
     }
 
-    // TODO: why is doBackupData here? You can't create a vault unless you are online because we need to get the IDs from 
-    // the server
     public async createNewVaultForUser(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
-        addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
+        addedOrganizations: Organization[], addedMembers: Member[]): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
     {
         return await safetifyMethod(this, internalCreateNewVaultForUser);
 
@@ -202,13 +200,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.transactionFail();
             }
 
-            if (doBackupData)
+            const backupResponse = await backupData(masterKey);
+            if (!backupResponse)
             {
-                const backupResponse = await backupData(masterKey);
-                if (!backupResponse)
-                {
-                    return TypedMethodResponse.backupFail();
-                }
+                return TypedMethodResponse.backupFail();
             }
 
             if (setAsActive)
@@ -253,8 +248,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async updateVault(masterKey: string, updateVaultData: string, doBackup: boolean):
-        Promise<TypedMethodResponse<boolean | undefined>>
+    public async updateVault(masterKey: string, updateVaultData: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalUpdateVault);
 
@@ -280,7 +274,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             let updatedModifiedOrgMembers: ModifiedOrgMember[];
             let removedMemberIDs: number[];
 
-            console.log(`Update Vault: ${JSON.stringify(parsedUpdateVaultData)}`);
             if (parsedUpdateVaultData.shared != undefined && parsedUpdateVaultData.shared != oldVault.shared)
             {
                 oldVault.shared = parsedUpdateVaultData.shared;
@@ -355,10 +348,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     return TypedMethodResponse.fail();
                 }
 
-                if (doBackup)
-                {
-                    await backupData(masterKey);
-                }
+                await backupData(masterKey);
             }
 
             return TypedMethodResponse.success();

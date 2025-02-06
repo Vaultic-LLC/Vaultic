@@ -5,6 +5,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import setupIPC from './ipcSetup';
+import http2 from "http2";
 
 import { environment } from "./Core/Environment"
 import cryptUtility from './Utilities/CryptUtility';
@@ -140,7 +141,8 @@ async function setupEnvironment(isTest: boolean)
 {
 	await environment.init({
 		isTest,
-		sessionHandler: {
+		sessionHandler:
+		{
 			setSession,
 			getSession
 		},
@@ -156,6 +158,7 @@ async function setupEnvironment(isTest: boolean)
 			deleteDatabase
 		},
 		getDeviceInfo,
+		hasConnection
 	});
 }
 
@@ -174,4 +177,29 @@ async function getSession(): Promise<string>
 	}
 
 	return cookies[0].value ?? "";
+}
+
+function hasConnection(): Promise<boolean>
+{
+	return new Promise((resolve) =>
+	{
+		const client = http2.connect('https://www.google.com');
+		client.setTimeout(5000, () =>
+		{
+			resolve(false);
+			client.destroy();
+		});
+
+		client.on('connect', () =>
+		{
+			resolve(true);
+			client.destroy();
+		});
+
+		client.on('error', () =>
+		{
+			resolve(false);
+			client.destroy();
+		});
+	});
 }

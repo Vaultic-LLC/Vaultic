@@ -410,16 +410,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 userData.displayVaults![0].lastUsed = true;
             }
 
-            try
-            {
-                console.log(userData);
-                console.log(`finished getting data: ${JSON.vaulticStringify(userData)}`);
-            }
-            catch (e)
-            {
-                console.log(e);
-            }
-
             userData.success = true;
             return TypedMethodResponse.success(JSON.vaulticStringify(userData));
 

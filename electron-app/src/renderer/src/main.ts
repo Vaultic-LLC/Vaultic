@@ -44,6 +44,11 @@ window.addEventListener('error', (e: ErrorEvent) =>
 
 		try
 		{
+			if (!app.isOnline)
+			{
+				return;
+			}
+
 			window.api.server.app.log(error.message, error.stack ?? "ErrorHandler");
 		}
 		catch { }
@@ -58,6 +63,11 @@ window.addEventListener('unhandledrejection', (e) =>
 
 		try
 		{
+			if (!app.isOnline)
+			{
+				return;
+			}
+
 			window.api.server.app.log(error.message, error.stack ?? "UnhandlerRejectionHandler");
 		}
 		catch { }

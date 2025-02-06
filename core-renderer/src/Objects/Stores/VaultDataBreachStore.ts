@@ -48,6 +48,11 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     public async getVaultDataBreaches(): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         this.resetToDefault();
 
         const postData: { [key: string]: any } =
@@ -104,6 +109,11 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     public async checkPasswordForBreach(password: Field<ReactivePassword>)
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const checkPasswordForBreachData =
         {
             UserOrganizationID: app.currentVault.userOrganizationID,
@@ -132,6 +142,11 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     public async dismissVaultDataBreach(vaultDataBreachID: number): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const response = await api.server.vault.dismissVaultDataBreach(app.currentVault.userOrganizationID, app.currentVault.vaultID, vaultDataBreachID);
         if (response.Success)
         {
@@ -164,6 +179,11 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     public async clearDataBreaches(vaultIDs: number[]): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const breachRequetVaults: BreachRequestVault[] = [];
         vaultIDs.forEach(v => 
         {

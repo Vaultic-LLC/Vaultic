@@ -12,6 +12,7 @@ import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
 import database, { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 import fs from "fs";
+import http2 from "http2";
 
 async function createWindow(): Promise<void>
 {
@@ -156,6 +157,7 @@ async function setupEnvironment(isTest: boolean)
             deleteDatabase
         },
         getDeviceInfo,
+        hasConnection
     });
 }
 
@@ -174,6 +176,31 @@ async function getSession(): Promise<string>
     }
 
     return cookies[0].value ?? "";
+}
+
+function hasConnection(): Promise<boolean>
+{
+    return new Promise((resolve) =>
+    {
+        const client = http2.connect('https://www.google.com');
+        client.setTimeout(5000, () =>
+        {
+            resolve(false);
+            client.destroy();
+        });
+
+        client.on('connect', () =>
+        {
+            resolve(true);
+            client.destroy();
+        });
+
+        client.on('error', () =>
+        {
+            resolve(false);
+            client.destroy();
+        });
+    });
 }
 
 let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");

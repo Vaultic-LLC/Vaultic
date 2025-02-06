@@ -88,10 +88,10 @@ export default function setupIPC()
 	ipcMain.handle('userRepository:getStoreStates', (e, masterKey: string, storeStatesToRetrive: UserData) => validateSender(e, () => environment.repositories.users.getStoreStates(masterKey, storeStatesToRetrive)));
 	ipcMain.handle('userRepository:getValidMasterKey', (e) => validateSender(e, () => environment.repositories.users.getValidMasterKey()));
 
-	ipcMain.handle('vaultRepository:updateVault', (e, masterKey: string, updateVaultData: string, doBackup: boolean) => validateSender(e, () => environment.repositories.vaults.updateVault(masterKey, updateVaultData, doBackup)));
+	ipcMain.handle('vaultRepository:updateVault', (e, masterKey: string, updateVaultData: string) => validateSender(e, () => environment.repositories.vaults.updateVault(masterKey, updateVaultData)));
 	ipcMain.handle('vaultRepository:setActiveVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.setActiveVault(masterKey, userVaultID)));
 	ipcMain.handle('vaultRepository:saveVaultData', (e, masterKey: string, userVaultID: number, newData: string, currentData?: string) => validateSender(e, () => environment.repositories.vaults.saveVaultData(masterKey, userVaultID, newData, currentData)));
-	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[], doBackupData: boolean) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, name, shared, setAsActive, addedOrganizations, addedMembers, doBackupData)));
+	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[]) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, name, shared, setAsActive, addedOrganizations, addedMembers)));
 	ipcMain.handle('vaultRepository:getStoreStates', (e, masterKey: string, userVaultID: number, storeStatesToRetrive: CondensedVaultData) => validateSender(e, () => environment.repositories.vaults.getStoreStates(masterKey, userVaultID, storeStatesToRetrive)));
 	ipcMain.handle('vaultRepository:deleteVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.deleteVault(masterKey, userVaultID)));
 	ipcMain.handle('vaultRepository:syncVaults', (e, masterKey: string) => validateSender(e, () => environment.repositories.vaults.syncVaults(masterKey)));
@@ -105,6 +105,7 @@ export default function setupIPC()
 	ipcMain.handle('environment:isTest', (e) => validateSender(e, () => environment.isTest));
 	ipcMain.handle('environment:failedToInitalizeDatabase', (e) => validateSender(e, () => environment.failedToInitalizeDatabase));
 	ipcMain.handle('environment:recreateDatabase', (e) => validateSender(e, () => environment.recreateDatabase()));
+	ipcMain.handle('environment:hasConnection', (e) => validateSender(e, () => environment.hasConnection()));
 
 	ipcMain.handle('cache:clear', (e) => validateSender(e, () => environment.cache.clear()));
 	ipcMain.handle('cache:setMasterKey', (e, masterKey: string) => validateSender(e, () => environment.cache.setMasterKey(masterKey)));

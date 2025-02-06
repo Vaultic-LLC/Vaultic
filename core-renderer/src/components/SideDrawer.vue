@@ -268,6 +268,11 @@ export default defineComponent({
 
         function addRemoveArchiveButton(newValue: DisplayVault[], oldValue: DisplayVault[])
         {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
             // Add Archive button as we now have 2 vaults
             if (oldValue.length == 1)
             {
@@ -308,10 +313,14 @@ export default defineComponent({
         {
             addRemoveArchiveButton(newValue, oldValue);
 
-            const buttons = [treeNodeEditButton];
-            if (app.privateVaults.value.length + app.sharedWithOthersVaults.value.length > 1)
+            const buttons: TreeNodeButton[] = [];
+            if (app.isOnline)
             {
-                buttons.push(treeNodeArchiveButton);
+                buttons.push(treeNodeEditButton);
+                if (app.privateVaults.value.length + app.sharedWithOthersVaults.value.length > 1)
+                {
+                    buttons.push(treeNodeArchiveButton);
+                }
             }
 
             updateNodeList(privateVaultsID, VaultType.Private, buttons, newValue, oldValue);
@@ -321,10 +330,14 @@ export default defineComponent({
         {
             addRemoveArchiveButton(newValue, oldValue);
 
-            const buttons = [treeNodeEditButton];
-            if (app.privateVaults.value.length + app.sharedWithOthersVaults.value.length > 1)
+            const buttons: TreeNodeButton[] = [];
+            if (app.isOnline)
             {
-                buttons.push(treeNodeArchiveButton);
+                buttons.push(treeNodeEditButton);
+                if (app.privateVaults.value.length + app.sharedWithOthersVaults.value.length > 1)
+                {
+                    buttons.push(treeNodeArchiveButton);
+                }
             }
 
             updateNodeList(sharedWithOthersID, VaultType.SharedWithOthers, buttons, newValue, oldValue);
@@ -337,9 +350,10 @@ export default defineComponent({
 
         watch(() => app.archivedVaults.value, (newValue, oldValue) =>
         {
-            const buttons = [treeNodeUndoButton];
+            const buttons: TreeNodeButton[] = [];
             if (app.isOnline)
             {
+                buttons.push(treeNodeUndoButton);
                 buttons.push(treeNodePermanentlyDeleteButton);
             }
 

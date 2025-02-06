@@ -12,8 +12,8 @@
                     {{ message }}
                 </div>
                 <div class="widgetSubscriptionMessage__buttons" v-if="isOnline">
-                    <PopupButton :color="color" :text="'Subscribe'" :width="'5vw'" :minWidth="'75px'" @onClick="subscribe" />
-                    <PopupButton :color="color" :text="'Refresh'" :width="'5vw'" :minWidth="'75px'" @onClick="refresh" />                              
+                    <PopupButton :color="color" :text="'Subscribe'" :width="'5vw'" :minWidth="'75px'" :minHeight="'23px'" @onClick="subscribe" />
+                    <PopupButton :color="color" :text="'Refresh'" :width="'5vw'" :minWidth="'75px'" :minHeight="'23px'" @onClick="refresh" />                              
                 </div>
             </div>
         </div>
@@ -44,7 +44,7 @@ export default defineComponent({
         const isLoading: Ref<boolean> = ref(false);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
-        const message: ComputedRef<string> = computed(() => !isOnline ? "Please sign into Online Mode to view this Widget" 
+        const message: ComputedRef<string> = computed(() => !isOnline.value ? "Please sign into Online Mode to view this Widget" 
             : app.userInfo.license != LicenseStatus.Active ? "Please subscribe to view this Widget" : "");
 
         async function refresh()
@@ -56,6 +56,11 @@ export default defineComponent({
 
         async function subscribe()
         {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
             isLoading.value = true;
             const response = await api.server.user.createCheckout();
 
@@ -117,11 +122,12 @@ export default defineComponent({
     flex-direction: column;
     width: 100%;
     height: 100%;
-    row-gap: 10px
+    row-gap: clamp(15px, 1vw, 30px);
+    position: relative;
 }
 
 .widgetSubscriptionMessage__iconContainer {
-    margin-top: 4%;
+    margin-top: 1.5vw;
 }
 
 .widgetSubscriptionMessage__icon {
@@ -137,7 +143,8 @@ export default defineComponent({
 }
 
 .widgetSubscriptionMessage__message {
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: clamp(10px, 0.7vw, 16px);
 }
 </style>

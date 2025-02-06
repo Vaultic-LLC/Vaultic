@@ -3,6 +3,7 @@ import { ClientDevice, Device, DeviceInfo } from "@vaultic/shared/Types/Device";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { ComputedRef, Ref, computed, ref } from "vue";
+import app from "./AppStore";
 
 export class DeviceStore extends Store<StoreState>
 {
@@ -42,6 +43,11 @@ export class DeviceStore extends Store<StoreState>
 
     async getDevices(): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         // reset so we don't have any duplicates
         this.resetToDefault();
 
@@ -91,6 +97,11 @@ export class DeviceStore extends Store<StoreState>
 
     async addDevice(device: ClientDevice): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const result = await api.server.user.registerDevice(device.Name, device.RequiresMFA);
         if (!result.Success)
         {
@@ -111,6 +122,11 @@ export class DeviceStore extends Store<StoreState>
 
     async updateDevice(device: ClientDevice): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const result = await api.server.user.updateDevice(device.Name, device.RequiresMFA,
             device.UserDesktopDeviceID, device.UserMobileDeviceID);
 
@@ -131,6 +147,11 @@ export class DeviceStore extends Store<StoreState>
 
     async deleteDevice(id: string): Promise<boolean>
     {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
         const device = this.internalDevicesByID.value.get(id);
         if (!device)
         {

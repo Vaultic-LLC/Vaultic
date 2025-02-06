@@ -282,10 +282,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internaLoadedUser.value = true;
         this.internalActiveAppView.value = AppView.Vault;
 
-        // don't bother waiting for these, just trigger them so they are there if we need them
-        app.devices.getDevices();
-        app.organizations.getOrganizations();
-        this.getUserInfo();
+        if (this.isOnline)
+        {
+            // don't bother waiting for these, just trigger them so they are there if we need them
+            app.devices.getDevices();
+            app.organizations.getOrganizations();
+            this.getUserInfo();
+        }
 
         if (this.state.settings.value.temporarilyStoreMasterKey.value)
         {
@@ -298,8 +301,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     async createNewVault(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
         addedOrganizations: Organization[], addedMembers: Member[])
     {
+        if (!this.isOnline)
+        {
+            return false;
+        }
+
         const result = await api.repositories.vaults.createNewVaultForUser(masterKey, name, shared, setAsActive,
-            addedOrganizations, addedMembers, this.isOnline);
+            addedOrganizations, addedMembers);
 
         if (!result.success)
         {
@@ -340,6 +348,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         removedOrganizations: Organization[], addedMembers: Member[], updatedMembers: Member[], removedMembers: Member[]):
         Promise<boolean>
     {
+        if (!this.isOnline)
+        {
+            return false;
+        }
+
         const updateVaultData: UpdateVaultData =
         {
             userVaultID: displayVault.userVaultID!,
@@ -352,7 +365,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             removedMembers: removedMembers,
         };
 
-        const success = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData), this.isOnline);
+        const success = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
         if (!success)
         {
             return false;
@@ -380,13 +393,18 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async updateArchiveStatus(masterKey: string, userVaultID: number, isArchived: boolean): Promise<boolean>
     {
+        if (!this.isOnline)
+        {
+            return false;
+        }
+
         const updateVaultData: UpdateVaultData =
         {
             userVaultID: userVaultID,
             isArchived: isArchived
         };
 
-        const response = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData), app.isOnline);
+        const response = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
         if (!response.success)
         {
             defaultHandleFailedResponse(response);
@@ -407,6 +425,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async permanentlyDeleteVault(masterKey: string, userVaultID: number): Promise<boolean>
     {
+        if (!this.isOnline)
+        {
+            return false;
+        }
+
         const index = this.userVaults.value.findIndex(v => v.userVaultID == userVaultID);
         if (index == -1)
         {
@@ -456,6 +479,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     async syncVaults(masterKey: string): Promise<boolean>
     {
+        if (!this.isOnline)
+        {
+            return false;
+        }
+
         const result = await api.repositories.vaults.syncVaults(masterKey);
         if (!result.success)
         {
@@ -514,6 +542,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     public async getUserInfo()
     {
+        if (!app.isOnline)
+        {
+            return true;
+        }
+
         const response = await api.server.user.getUserInfo();
         if (!response.success)
         {
