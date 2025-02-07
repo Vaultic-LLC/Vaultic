@@ -24,10 +24,7 @@
                 <CreateSubscriptionView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
                     accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
                     accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor"
-                    :creating="creatingAccount" @onSubscriptionCreated="onSubscriptionCreated" />
-                <DownloadDeactivationKeyView :color="primaryColor"
-                    v-else-if="accountSetupModel.currentView == AccountSetupView.DownloadDeactivationKey"
-                    @onDownloaded="closeWithAnimation" @onFailed="onDownloadFailed" />
+                    :creating="creatingAccount" @onFinish="onFinish" />
             </Transition>
         </ObjectPopup>
     </div>
@@ -41,7 +38,6 @@ import CreateAccountView from './CreateAccountView.vue';
 import SignInView from './SignInView.vue';
 import CreateSubscriptionView from './CreateSubscriptionView.vue';
 import CreateMasterKeyView from './CreateMasterKeyView.vue';
-import DownloadDeactivationKeyView from "./DownloadDeactivationKeyView.vue"
 
 import { Account, AccountSetupModel, AccountSetupView } from '../../Types/Models';
 import { popups } from '../../Objects/Stores/PopupStore';
@@ -57,7 +53,6 @@ export default defineComponent({
         SignInView,
         CreateSubscriptionView,
         CreateMasterKeyView,
-        DownloadDeactivationKeyView
     },
     emits: ['onClose'],
     props: ['model'],
@@ -124,16 +119,10 @@ export default defineComponent({
             accountSetupModel.value.currentView = AccountSetupView.SignIn;
         }
 
-        function onSubscriptionCreated()
+        function onFinish()
         {
-            // clear the navigation stack so the user can't go back without downloading their deactivation key
             navigationStack.value = [];
-            accountSetupModel.value.currentView = AccountSetupView.DownloadDeactivationKey;
-        }
-
-        function onDownloadFailed()
-        {
-            navigationStack.value.push(AccountSetupView.SignIn);
+            closeWithAnimation();
         }
 
         function navigateBack()
@@ -177,7 +166,6 @@ export default defineComponent({
         function checkSetBackNavigation()
         {
             if (accountSetupModel.value.currentView != AccountSetupView.SignIn &&
-                accountSetupModel.value.currentView != AccountSetupView.DownloadDeactivationKey &&
                 navigationStack.value.length == 0)
             {
                 navigationStack.value.push(AccountSetupView.SignIn);
@@ -217,9 +205,8 @@ export default defineComponent({
             close,
             closeWithAnimation,
             onCreateMasterKeySuccess,
-            onSubscriptionCreated,
+            onFinish,
             onLoginFailedAfterRegistration,
-            onDownloadFailed
         }
     }
 })
