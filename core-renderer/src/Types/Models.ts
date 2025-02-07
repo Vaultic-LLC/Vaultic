@@ -196,8 +196,7 @@ export enum AccountSetupView
     SetupPayment,
     UpdatePayment,
     ReActivate,
-    CreateMasterKey,
-    DownloadDeactivationKey
+    CreateMasterKey
 }
 
 export interface AccountSetupModel
