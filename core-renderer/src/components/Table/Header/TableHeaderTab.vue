@@ -56,7 +56,6 @@ export default defineComponent({
                 tween({ ...tweenFrom!, x: 30 }, { ...tweenTo!, x: 0 }, 500, updateToWidgetColor);
             }
 
-
             function updateToWidgetColor(clr: any)
             {
                 backgroundGradient.value = getLinearGradientFromColorAndPercent(

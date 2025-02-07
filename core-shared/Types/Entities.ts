@@ -24,6 +24,8 @@ export interface IUser extends IVaulticEntity
 {
     userID: number;
     email: string;
+    firstName: string;
+    lastName: string;
     lastUsed: boolean;
     masterKeyHash: string;
     masterKeySalt: string;
@@ -173,6 +175,7 @@ export interface SharedClientUserVault extends IUserVault
 export interface UserData 
 {
     success: boolean;
+    userInfo?: Partial<IUser>;
     appStoreState?: any;
     userPreferencesStoreState?: any;
     displayVaults?: DisplayVault[];

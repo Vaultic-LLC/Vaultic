@@ -11,9 +11,9 @@
         </div>
         <div class="sideDrawer__currentUser">
             <div class="sideDrawer__currentUserIcon">
-                <PersonOutlineIcon :fontSize="'clamp(25px, 2vw, 35px)'" />
+                <UserProfilePic :user="currentUser" :size="'clamp(20px, 2vw, 35px)'" :fontSize="'clamp(10px, 0.8vw, 17px)'"  />
             </div>
-            <div class="sideDrawer__currentUserName">Tyler Wanta</div>
+            <div class="sideDrawer__currentUserName">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</div>
         </div>
         <div class="sideDrawer__vaultList">
             <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked">
@@ -33,15 +33,15 @@
 import { computed, ComputedRef, defineComponent, Ref, ref, watch, onMounted, onUnmounted } from 'vue';
 
 import TreeList from "./Tree/TreeList.vue";
-import PersonOutlineIcon from "./Icons/PersonOutlineIcon.vue";
 import ToggleRadioButton from './InputFields/ToggleRadioButton.vue';
 import VaulticButton from './InputFields/VaulticButton.vue';
+import UserProfilePic from './Account/UserProfilePic.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
 import { ToggleRadioButtonModel, TreeNodeButton } from "../Types/Models";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
-import { DisplayVault, VaultType } from '@vaultic/shared/Types/Entities';
+import { DisplayVault, IUser, VaultType } from '@vaultic/shared/Types/Entities';
 import { AppView } from '../Types/App';
 import { useConfirm } from 'primevue/useconfirm';
 
@@ -49,15 +49,16 @@ export default defineComponent({
     name: "SideDrawer",
     components: {
         TreeList,
-        PersonOutlineIcon,
         ToggleRadioButton,
-        VaulticButton
+        VaulticButton,
+        UserProfilePic
     },
     setup()
     {
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
-
         const online: Ref<boolean> = ref(app.isOnline);
+        const currentUser: ComputedRef<Partial<IUser | undefined>> = computed(() => app.userInfo);
+
         const text: Ref<string> = ref(online.value ? "Online" : "Offline");
         let refreshKey: Ref<string> = ref('');
 
@@ -381,6 +382,7 @@ export default defineComponent({
 
         return {
             primaryColor,
+            currentUser,
             allNodes,
             refreshKey,
             online,
@@ -475,7 +477,7 @@ export default defineComponent({
 }
 
 .sideDrawer__currentUserName {
-    font-size: clamp(7px, 1vw, 18px);
+    font-size: clamp(7px, 0.8vw, 16px);
     text-align: left;
     overflow: hidden;
     text-overflow: ellipsis;

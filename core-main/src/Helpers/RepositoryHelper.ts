@@ -240,7 +240,6 @@ export async function safeBackupData(masterKey: string): Promise<TypedMethodResp
 // any vaults / userVaults that are maked as 'removed' from the server will be deleted
 export async function checkMergeMissingData(masterKey: string, email: string, vaultKeys: string[], clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
 {
-    console.log(`Merging Data: ${JSON.stringify(serverUserDataPayload)}`);
     if (!serverUserDataPayload)
     {
         return false;
@@ -263,7 +262,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                     return false;
                 }
 
-                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.publicKey!, serverUserDataPayload.user.privateKey!, transaction)).success;
+                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, serverUserDataPayload.user.publicKey!, serverUserDataPayload.user.privateKey!, transaction)).success;
             }
 
             if (!(await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction)))

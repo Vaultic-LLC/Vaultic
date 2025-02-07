@@ -13,7 +13,7 @@ import { StoreState } from "../Entities/States/StoreState";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { EntityState, getVaultType, UserData } from "@vaultic/shared/Types/Entities";
+import { EntityState, getVaultType, IUser, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
@@ -108,10 +108,19 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         return user;
     }
 
-    public async getLastUsedUserEmail(): Promise<string | null>
+    public async getLastUsedUserInfo(): Promise<Partial<IUser> | null>
     {
         const lastUsedUser = await this.getLastUsedUser();
-        return lastUsedUser?.email ?? null;
+        if (!lastUsedUser)
+        {
+            return null;
+        }
+
+        return {
+            email: lastUsedUser.email,
+            firstName: lastUsedUser.firstName,
+            lastName: lastUsedUser.lastName
+        }
     }
 
     public async getLastUsedUserPreferences(): Promise<string | null>
@@ -136,7 +145,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         return undefined;
     }
 
-    public async createUser(masterKey: string, email: string, publicKey: string, privateKey: string, transaction?: Transaction): Promise<TypedMethodResponse<boolean | undefined>>
+    public async createUser(masterKey: string, email: string, firstName: string, lastName: string, publicKey: string, privateKey: string, transaction?: Transaction): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalCreateUser);
 
@@ -151,6 +160,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const user = new User().makeReactive();
             user.userID = response.UserID!;
             user.email = email;
+            user.firstName = firstName;
+            user.lastName = lastName;
             user.lastUsed = true;
             user.publicKey = publicKey;
             user.privateKey = privateKey;
@@ -359,6 +370,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const userData: UserData =
             {
                 success: false,
+                userInfo:
+                {
+                    email: currentUser.email,
+                    firstName: currentUser.firstName,
+                    lastName: currentUser.lastName
+                },
                 appStoreState: decryptedAppStoreState.value!,
                 userPreferencesStoreState: currentUser.userPreferencesStoreState.state,
                 displayVaults: [],

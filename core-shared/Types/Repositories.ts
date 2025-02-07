@@ -1,13 +1,13 @@
 import { DeepPartial } from "../Helpers/TypeScriptHelper";
 import { Organization, Member } from "./DataTypes";
-import { CondensedVaultData, UserData } from "./Entities";
+import { CondensedVaultData, IUser, UserData } from "./Entities";
 import { TypedMethodResponse } from "./MethodResponse";
 
 export interface ClientUserRepository 
 {
-    getLastUsedUserEmail: () => Promise<string | null>;
+    getLastUsedUserInfo: () => Promise<Partial<IUser> | null>;
     getLastUsedUserPreferences: () => Promise<string | null>;
-    createUser: (masterKey: string, email: string, publicKey: string, privateKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    createUser: (masterKey: string, email: string, firstName: string, lastName: string, publicKey: string, privateKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<undefined>>;
     getCurrentUserData: (masterKey: string) => Promise<TypedMethodResponse<string | undefined>>;
     verifyUserMasterKey: (masterKey: string, email?: string) => Promise<TypedMethodResponse<boolean | undefined>>;

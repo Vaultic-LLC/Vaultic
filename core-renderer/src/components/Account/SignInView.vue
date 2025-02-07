@@ -83,12 +83,14 @@ import CheckboxInputField from "../InputFields/CheckboxInputField.vue";
 import ButtonLink from '../InputFields/ButtonLink.vue';
 import ToolTip from "../ToolTip.vue";
 import EnterMFACodePopup from './EnterMFACodePopup.vue';
+import UserProfilePic from './UserProfilePic.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { EncryptedInputFieldComponent, InputComponent } from '../../Types/Components';
 import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
+import { IUser } from '@vaultic/shared/Types/Entities';
 
 export default defineComponent({
     name: "SignInView",
@@ -101,6 +103,7 @@ export default defineComponent({
         CheckboxInputField,
         ToolTip,
         EnterMFACodePopup,
+        UserProfilePic
     },
     emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToSetupPayment', 'onNotClearedData'],
     props: ['color', 'infoMessage', 'reloadAllDataIsToggled', 'clearAllDataOnLoad'],
@@ -315,13 +318,14 @@ export default defineComponent({
                 onlineMode.value = result;
             });
 
-            api.repositories.users.getLastUsedUserEmail().then((lastUsedEmail) =>
+            api.repositories.users.getLastUsedUserInfo().then((user) =>
             {
-                if (lastUsedEmail)
+                if (!user)
                 {
-                    email.value = lastUsedEmail;
-                    // TODO: set user profile pic
+                    return;
                 }
+
+                email.value = user.email!;
             });
 
             if (props.infoMessage)
