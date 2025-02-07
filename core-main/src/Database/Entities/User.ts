@@ -16,7 +16,17 @@ export class User extends VaulticEntity implements IUser
     // Backed Up
     // Not Encrypted
     @Column("text")
-    email: string
+    email: string;
+
+    // Backed Up
+    // Not Encrypted
+    @Column("text")
+    firstName: string;
+
+    // Backed Up
+    // Not Encrypted
+    @Column("text")
+    lastName: string;
 
     // Not backed up
     // Not encrypted
@@ -76,6 +86,8 @@ export class User extends VaulticEntity implements IUser
         return [
             nameof<User>("userID"),
             nameof<User>("email"),
+            nameof<User>("firstName"),
+            nameof<User>("lastName"),
             nameof<User>("publicKey"),
             nameof<User>("privateKey")
         ];
@@ -91,8 +103,10 @@ export class User extends VaulticEntity implements IUser
     public backupableProperties(): string[]
     {
         const properties = super.backupableProperties();
-        properties.push("userID");
-        properties.push("email");
+        properties.push(nameof<User>("userID"));
+        properties.push(nameof<User>("email"));
+        properties.push(nameof<User>("firstName"));
+        properties.push(nameof<User>("lastName"));
 
         return properties;
     }
@@ -126,6 +140,8 @@ export class User extends VaulticEntity implements IUser
             !!user.currentSignature &&
             !!user.userID &&
             !!user.email &&
+            !!user.firstName &&
+            !!user.lastName &&
             !!user.publicKey &&
             !!user.privateKey &&
             !!user.appStoreState &&

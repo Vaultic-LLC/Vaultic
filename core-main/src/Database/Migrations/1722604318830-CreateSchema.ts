@@ -48,6 +48,14 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "text"
                 },
                 {
+                    name: "firstName",
+                    type: "text"
+                },
+                {
+                    name: "lastName",
+                    type: "text"
+                },
+                {
                     name: "lastUsed",
                     type: "boolean"
                 },

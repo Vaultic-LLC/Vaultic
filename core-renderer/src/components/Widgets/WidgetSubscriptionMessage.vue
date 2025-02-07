@@ -45,7 +45,7 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
         const message: ComputedRef<string> = computed(() => !isOnline.value ? "Please sign into Online Mode to view this Widget" 
-            : app.userInfo.license != LicenseStatus.Active ? "Please subscribe to view this Widget" : "");
+            : app.userLicense != LicenseStatus.Active ? "Please subscribe to view this Widget" : "");
 
         async function refresh()
         {

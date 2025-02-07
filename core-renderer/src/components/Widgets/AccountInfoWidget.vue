@@ -1,10 +1,10 @@
 <template>
     <div class="accountInfoWidget">
         <div class="accountInfoWidget__userInfo accountInfoWidget__centered">
-            <PersonOutlineIcon :fontSize="'clamp(80px, 5vw, 125px)'" />
+            <UserProfilePic :user="currentUser" :size="'clamp(50px, 5vw, 125px)'" :fontSize="'clamp(20px, 2vw, 50px)'" />
             <div class="accountInfoWidget__userTextInfo">
-                <div>Tyler Wanta</div>
-                <div>tylerwanta123@gmail.com</div>
+                <div>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</div>
+                <div>{{ currentUser?.email }}</div>
             </div>
         </div>
         <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
@@ -33,7 +33,7 @@
         <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
         <div class="accountInfoWidget__section accountInfoWidget__centered">
             <div class="accountInfoWidget__sectionHeader">MFA Key</div>
-            <PopupButton :color="currentPrimaryColor" :text="'Show Key'"
+            <PopupButton :color="currentPrimaryColor" :text="'Show'"
                     :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
                     :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="onShowMFAKey" />
         </div>
@@ -44,25 +44,27 @@
 import { ComputedRef, computed, defineComponent } from 'vue';
 
 import PopupButton from '../InputFields/PopupButton.vue';
-import PersonOutlineIcon from '../Icons/PersonOutlineIcon.vue';
+import UserProfilePic from '../Account/UserProfilePic.vue';
 
 import app from '../../Objects/Stores/AppStore';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { LicenseStatus } from '@vaultic/shared/Types/ClientServerTypes';
+import { IUser } from '@vaultic/shared/Types/Entities';
 
 export default defineComponent({
     name: "AccountInfoWidget",
     components: 
     {
         PopupButton,
-        PersonOutlineIcon
+        UserProfilePic
     },
     setup()
     {
+        const currentUser: ComputedRef<Partial<IUser | undefined>> = computed(() => app.userInfo);
         const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const subscriptionStatus: ComputedRef<string> = computed(() => {
-            switch (app.userInfo.license)
+            switch (app.userLicense)
             {
                 case LicenseStatus.Active:
                     return "Active";
@@ -77,8 +79,8 @@ export default defineComponent({
             }
         });
 
-        const hasLicense: ComputedRef<boolean> = computed(() => app.userInfo.license == LicenseStatus.Active || 
-            app.userInfo.license == LicenseStatus.Cancelled || app.userInfo.license == LicenseStatus.Inactive);
+        const hasLicense: ComputedRef<boolean> = computed(() => app.userLicense == LicenseStatus.Active || 
+            app.userLicense == LicenseStatus.Cancelled || app.userLicense == LicenseStatus.Inactive);
         
         const buttonText: ComputedRef<string> = computed(() => hasLicense.value ? "View" : "Subscribe");
 
@@ -157,6 +159,7 @@ export default defineComponent({
         }
 
         return {
+            currentUser,
             buttonText,
             currentPrimaryColor,
             subscriptionStatus,

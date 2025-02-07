@@ -11,7 +11,7 @@ import { UserPreferencesStore } from "./UserPreferencesStore";
 import { VaultDataBreachStore } from "./VaultDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
-import { DisplayVault, UserData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
+import { DisplayVault, IUser, UserData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
 import { FilterStatus, DataType } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
@@ -20,11 +20,6 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
-
-export interface UserInfo
-{
-    license: LicenseStatus;
-}
 
 export interface AppSettings extends IFieldedObject
 {
@@ -88,8 +83,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalOrganizationStore: OrganizationStore;
     private internalPopupStore: PopupStore;
 
+    private internalUserInfo: Ref<Partial<IUser> | undefined>;
     private internalCanShowSubscriptionWidgets: ComputedRef<boolean>;
-    private internalUserInfo: Ref<UserInfo>;
+    private internalUserLicense: Ref<LicenseStatus>;
 
     get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.settings; }
@@ -118,8 +114,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get devices() { return this.internalDeviceStore; }
     get organizations() { return this.internalOrganizationStore; }
     get popups() { return this.internalPopupStore; }
+    get userInfo() { return this.internalUserInfo.value; }
     get canShowSubscriptionWidgets() { return this.internalCanShowSubscriptionWidgets; }
-    get userInfo() { return this.internalUserInfo.value }
+    get userLicense() { return this.internalUserLicense.value; }
 
     constructor()
     {
@@ -162,8 +159,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalActivePasswordValueTable = ref(DataType.Passwords);
         this.internalActiveFilterGroupTable = ref(DataType.Filters);
 
-        this.internalCanShowSubscriptionWidgets = computed(() => this.isOnline && this.internalUserInfo.value.license == LicenseStatus.Active);
-        this.internalUserInfo = ref({ license: LicenseStatus.Unknown });
+        this.internalUserInfo = ref(undefined);
+        this.internalCanShowSubscriptionWidgets = computed(() => this.isOnline && this.internalUserLicense.value == LicenseStatus.Active);
+        this.internalUserLicense = ref(LicenseStatus.Unknown);
 
         this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.value.autoLockTime.value));
 
@@ -255,6 +253,9 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.popups.closeAllPopupsOnLock();
         this.isOnline = false;
         this.internaLoadedUser.value = false;
+
+        this.internalUserInfo.value = undefined;
+        this.internalUserLicense.value = LicenseStatus.Unknown;
     }
 
     public resetSessionTime()
@@ -531,6 +532,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
 
+        this.internalUserInfo.value = parsedUserData.userInfo;
         await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
         await this.internalUsersPreferencesStore.initalizeNewStateFromJSON(parsedUserData.userPreferencesStoreState);
 
@@ -553,7 +555,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.internalUserInfo.value.license = response.LicenseStatus!;
+        this.internalUserLicense.value = response.LicenseStatus!;
     }
 }
 

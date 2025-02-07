@@ -125,7 +125,7 @@ export default defineComponent({
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
                 if (loginResponse.success && loginResponse.value!.Success)
                 {
-                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email, response.PublicKey!, response.PrivateKey!);
+                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email, account.value.firstName, account.value.lastName, response.PublicKey!, response.PrivateKey!);
                     if (!createUserResult.success)
                     {
                         app.popups.hideLoadingIndicator();
