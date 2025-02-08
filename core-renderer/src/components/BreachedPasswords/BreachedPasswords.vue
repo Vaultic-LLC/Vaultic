@@ -149,11 +149,11 @@ export default defineComponent({
             {
                 if (result)
                 {
-                    app.popups.showToast(color.value, "Scan Complete", true);
+                    app.popups.showToast("Scan Complete", true);
                 }
                 else
                 {
-                    app.popups.showToast(color.value, "Scan Failed", false);
+                    app.popups.showToast("Scan Failed", false);
                 }
             }
         }

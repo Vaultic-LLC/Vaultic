@@ -373,11 +373,11 @@ export default defineComponent({
 
             if (succeeded)
             {
-                app.popups.showToast(color.value, "Password Deleted", true);
+                app.popups.showToast("Password Deleted", true);
             }
             else
             {
-                app.popups.showToast(color.value, "Delete Failed", false);
+                app.popups.showToast("Delete Failed", false);
             }
         }
 
@@ -399,11 +399,11 @@ export default defineComponent({
 
             if (succeeded)
             {
-                app.popups.showToast(color.value, "Value Deleted", true);
+                app.popups.showToast("Value Deleted", true);
             }
             else
             {
-                app.popups.showToast(color.value, "Delete Failed", false);
+                app.popups.showToast("Delete Failed", false);
             }
         }
 

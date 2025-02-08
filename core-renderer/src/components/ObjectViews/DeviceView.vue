@@ -77,12 +77,12 @@ export default defineComponent({
 
             if (succeeded)
             {
-                app.popups.showToast(color.value, props.creating ? 'Registered' : 'Saved Successfully', true);
+                app.popups.showToast(props.creating ? 'Registered' : 'Saved Successfully', true);
                 closePopupFunction?.value?.(true);
             }
             else
             {
-                app.popups.showToast(color.value, props.creating ? 'Register Failed' : 'Saved Failed', false);
+                app.popups.showToast(props.creating ? 'Register Failed' : 'Saved Failed', false);
                 closePopupFunction?.value?.(false);
             }
 

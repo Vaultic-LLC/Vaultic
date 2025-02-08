@@ -2,18 +2,19 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
+            <ColorPickerInputField :label="'Error Color'" :color="color"
+                v-model="colorPaletteState.errorColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                :minWidth="'125px'" />
+            <ColorPickerInputField :label="'Success Color'" :color="color"
+                v-model="colorPaletteState.successColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                :minWidth="'125px'" />
+        </VaulticFieldset>
+        <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Sub Color One'" :color="color"
                 v-model="colorPaletteState.filtersColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
-        </VaulticFieldset>
-        <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Sub Color Two'" :color="color"
                 v-model="colorPaletteState.groupsColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
-                :minWidth="'125px'" />
-        </VaulticFieldset>
-        <VaulticFieldset :centered="true">
-            <ColorPickerInputField :label="'Error Color'" :color="color"
-                v-model="colorPaletteState.errorColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">

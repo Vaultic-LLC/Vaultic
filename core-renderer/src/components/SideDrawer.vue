@@ -130,7 +130,7 @@ export default defineComponent({
                 {
                     if (!(await app.setActiveVault(key, data['userVaultID'])))
                     {
-                        app.popups.showToast(primaryColor.value, 'Failed to select Vault', false);
+                        app.popups.showToast('Failed to select Vault', false);
                         resolve(false);
 
                         return;
@@ -172,7 +172,7 @@ export default defineComponent({
             {
                 if (!(await app.updateArchiveStatus(key, data['userVaultID'], false)))
                 {
-                    app.popups.showToast(primaryColor.value, 'Failed to unarchive vault', false);
+                    app.popups.showToast('Failed to unarchive vault', false);
                 }
             }
         }
@@ -210,14 +210,14 @@ export default defineComponent({
                         {
                             if (!(await app.updateArchiveStatus(key, data['userVaultID'], true)))
                             {
-                                app.popups.showToast(primaryColor.value, 'Failed to archived vault', false);
+                                app.popups.showToast('Failed to archived vault', false);
                             }
                         }
                         else
                         {
                             if (!(await app.permanentlyDeleteVault(key, data['userVaultID'])))
                             {
-                                app.popups.showToast(primaryColor.value, 'Failed to delete vault', false);
+                                app.popups.showToast('Failed to delete vault', false);
                             }
                         }
                     }
@@ -300,11 +300,11 @@ export default defineComponent({
                 const success = await app.syncVaults(masterKey);
                 if (success)
                 {
-                    app.popups.showToast(primaryColor.value, "Sync Succeeded", true);
+                    app.popups.showToast("Sync Succeeded", true);
                 }
                 else
                 {
-                    app.popups.showToast(primaryColor.value, "Sync Failed", false);
+                    app.popups.showToast("Sync Failed", false);
                 }
 
                 app.popups.hideLoadingIndicator();             

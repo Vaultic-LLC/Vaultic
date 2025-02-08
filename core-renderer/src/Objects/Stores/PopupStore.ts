@@ -278,9 +278,8 @@ export function createPopupStore()
         requestAuthenticationIsShowing.value = false;
     }
 
-    function showToast(clr: string, text: string, success: boolean)
+    function showToast(text: string, success: boolean)
     {
-        color.value = clr;
         toastText.value = text;
         toastSuccess.value = success;
         toastIsShowing.value = true;

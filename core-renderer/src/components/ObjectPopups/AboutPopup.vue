@@ -173,7 +173,7 @@ export default defineComponent({
 
             if (response.Success)
             {
-                app.popups.showToast(primaryColor.value, "Reported Bug", true);
+                app.popups.showToast("Reported Bug", true);
                 bugDescription.value = "";
             }
             else

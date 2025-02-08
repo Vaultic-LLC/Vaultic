@@ -267,7 +267,7 @@ export default defineComponent({
         function copyValue()
         {
             clipboard.write(inputText.value);
-            app.popups.showToast(colorModel.value.color, "Copied", true);
+            app.popups.showToast("Copied", true);
         }
 
         function focus()

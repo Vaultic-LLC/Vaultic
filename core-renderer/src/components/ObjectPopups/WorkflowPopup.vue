@@ -131,11 +131,11 @@ export default defineComponent({
             const success = await api.helpers.vaultic.writeCSV(fileName, formattedData);
             if (success)
             {
-                app.popups.showToast(primaryColor.value, "Export Succeeded", true);
+                app.popups.showToast("Export Succeeded", true);
             }
             else 
             {
-                app.popups.showToast(primaryColor.value, "Export Failed", false);
+                app.popups.showToast("Export Failed", false);
             }
 
             app.popups.hideLoadingIndicator();

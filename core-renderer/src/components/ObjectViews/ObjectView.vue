@@ -86,12 +86,12 @@ export default defineComponent({
                         closePopupFunction.value(true);
                     }
 
-                    app.popups.showToast(primaryColor.value, "Saved Successfully", true);
+                    app.popups.showToast("Saved Successfully", true);
                 }).catch((triedSaved: boolean) =>
                 {
                     if (triedSaved && !props.skipOnSaveFunctionality)
                     {
-                        app.popups.showToast(primaryColor.value, "Save Failed", false);
+                        app.popups.showToast("Save Failed", false);
                     }
                 });
             }
@@ -120,12 +120,12 @@ export default defineComponent({
                         closePopupFunction.value(true);
                     }
 
-                    app.popups.showToast(primaryColor.value, "Saved Successfully", true);
+                    app.popups.showToast("Saved Successfully", true);
                 }).catch((triedSaved: boolean) =>
                 {
                     if (triedSaved)
                     {
-                        app.popups.showToast(primaryColor.value, "Save Failed", false);
+                        app.popups.showToast("Save Failed", false);
                     }
                 });
             }

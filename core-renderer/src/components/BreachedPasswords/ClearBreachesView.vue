@@ -46,11 +46,11 @@ export default defineComponent({
 
             if (success)
             {
-                app.popups.showToast(color.value, "Clear Succeeded", true);
+                app.popups.showToast("Clear Succeeded", true);
             }
             else
             {
-                app.popups.showToast(color.value, "Clear Failed", false);
+                app.popups.showToast("Clear Failed", false);
             }
 
             app.popups.hideLoadingIndicator();

@@ -16,6 +16,7 @@ import { ComputedRef, computed, defineComponent } from 'vue';
 import IonIcon from './Icons/IonIcon.vue';
 
 import { popups } from '../Objects/Stores/PopupStore';
+import app from '../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: 'ToastPopup',
@@ -23,18 +24,20 @@ export default defineComponent({
     {
         IonIcon
     },
-    props: ['color', 'text', 'success'],
+    props: ['text', 'success'],
     setup(props)
     {
         const popupInfo = popups.toast;
-        const primaryColor: ComputedRef<string> = computed(() => props.color);
+        const colorToUse: ComputedRef<string> = computed(() => 
+            props.success ? app.userPreferences.currentColorPalette.successColor.value : app.userPreferences.currentColorPalette.errorColor.value);
+
         const toastText: ComputedRef<string> = computed(() => props.text);
         const isSuccess: ComputedRef<boolean> = computed(() => props.success);
 
         return {
             toastText,
             isSuccess,
-            primaryColor,
+            colorToUse,
             zIndex: popupInfo.zIndex
         }
     }
@@ -52,13 +55,13 @@ export default defineComponent({
     bottom: 5%;
     left: 50%;
     transform: translateX(-50%);
-    border: 2px solid v-bind('primaryColor');
+    border: 2px solid v-bind('colorToUse');
     border-radius: min(1vw, 1rem);
-    background-color: var(--app-color);
+    background-color: color-mix(in srgb, v-bind(colorToUse), #000 75%);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 25px v-bind('primaryColor');
+    box-shadow: 0 0 25px v-bind('colorToUse');
     z-index: v-bind(zIndex);
 }
 
@@ -68,14 +71,7 @@ export default defineComponent({
     align-items: center;
     font-size: clamp(30px, 2vw, 40px);
     width: 20%;
-}
-
-.toastContainerIcons .toastIcon.success {
-    color: v-bind('primaryColor');
-}
-
-.toastContainerIcons .toastIcon.error {
-    color: v-bind('primaryColor');
+    color: v-bind('colorToUse');
 }
 
 .toastContainer .toastContainterText {
