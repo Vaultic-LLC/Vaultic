@@ -25,7 +25,8 @@ const appController: AppController =
 
 const sessionController: SessionController =
 {
-	expire: () => ipcRenderer.invoke('sessionController:expire')
+	expire: () => ipcRenderer.invoke('sessionController:expire'),
+	extend: () => ipcRenderer.invoke('sessionController:extend')
 };
 
 const userController: ClientUserController =

@@ -22,6 +22,7 @@ export default function setupIPC()
 	ipcMain.handle('appController:log', (e, exception: string, message: string) => validateSender(e, () => vaulticServer.app.log(exception, message)));
 
 	ipcMain.handle('sessionController:expire', (e) => validateSender(e, () => vaulticServer.session.expire()));
+	ipcMain.handle('sessionController:extend', (e) => validateSender(e, () => vaulticServer.session.extend()));
 
 	ipcMain.handle('userController:validateEmail', (e, email: string) => validateSender(e, () => vaulticServer.user.validateEmail(email)));
 	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));

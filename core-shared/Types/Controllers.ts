@@ -12,6 +12,7 @@ export interface AppController
 export interface SessionController
 {
     expire: () => Promise<BaseResponse>;
+    extend: () => Promise<BaseResponse>;
 }
 
 export interface ClientUserController
