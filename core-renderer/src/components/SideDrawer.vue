@@ -17,9 +17,8 @@
         </div>
         <div class="sideDrawer__vaultList">
             <TreeList :nodes="allNodes" @onAdd="openCreateVaultPopup" :onLeafClicked="onLeafClicked">
-                <VaulticButton v-if="online" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Sync all Vaults'" 
-                    @click="syncVaults">
-                    <ion-icon name="sync-outline"></ion-icon>                
+                <VaulticButton v-if="online" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="syncVaults">
+                    <IonIcon :name="'sync-outline'" />               
                 </VaulticButton>
             </TreeList>
         </div>
@@ -36,6 +35,7 @@ import TreeList from "./Tree/TreeList.vue";
 import ToggleRadioButton from './InputFields/ToggleRadioButton.vue';
 import VaulticButton from './InputFields/VaulticButton.vue';
 import UserProfilePic from './Account/UserProfilePic.vue';
+import IonIcon from './Icons/IonIcon.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
@@ -51,7 +51,8 @@ export default defineComponent({
         TreeList,
         ToggleRadioButton,
         VaulticButton,
-        UserProfilePic
+        UserProfilePic,
+        IonIcon
     },
     setup()
     {

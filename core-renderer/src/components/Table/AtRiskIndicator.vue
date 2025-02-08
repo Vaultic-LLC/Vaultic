@@ -1,7 +1,7 @@
 <template>
     <div class="atRiskContainer">
         <div class="atRiskIcon" ref="atRiskIcon">
-            <ion-icon name="alert-circle-outline"></ion-icon>
+            <IonIcon :name="'alert-circle-outline'" />
         </div>
     </div>
 </template>
@@ -9,12 +9,18 @@
 <script lang="ts">
 import { defineComponent, onMounted, Ref, ref } from 'vue';
 
+import IonIcon from '../Icons/IonIcon.vue';
+
 import tippy from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import 'tippy.js/animations/scale.css';
 
 export default defineComponent({
     name: "AtRiskIndicator",
+    components:
+    {
+        IonIcon
+    },
     props: ["message", 'color'],
     setup(props)
     {

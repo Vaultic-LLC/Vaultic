@@ -1,6 +1,6 @@
 <template>
     <VaulticIcon :fontSize="fontSize">
-        <ion-icon name="folder-outline"></ion-icon>
+        <IonIcon :name="'folder-outline'" />
     </VaulticIcon>
 </template>
 
@@ -8,11 +8,13 @@
 import { defineComponent } from 'vue';
 
 import VaulticIcon from "./VaulticIcon.vue"
+import IonIcon from './IonIcon.vue';
 
 export default defineComponent({
     name: "FolderIcon",
     components: {
-        VaulticIcon
+        VaulticIcon,
+        IonIcon
     },
     props: ["fontSize"],
     setup()

@@ -33,11 +33,11 @@
                     :fluid="true" name="password" v-model="inputText" :inputId="id" :disabled="isDisabled" toggleMask :feedback="computedFeedback" 
                     :invalid="isInvalid" @update:model-value="onInput">
                     <template #maskicon="slotProps">
-                        <ion-icon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" name="eye-off-outline" @click="toggleMask(true)"></ion-icon>
+                        <IonIcon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-off-outline'" @click="toggleMask(true)"></IonIcon>
                     </template>
                     <template #unmaskicon="slotProps">
-                        <ion-icon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" name="lock-open-outline" @click="unlock"></ion-icon>
-                        <ion-icon v-else class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" name="eye-outline" @click="toggleMask(false)"></ion-icon>
+                        <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock"></IonIcon>
+                        <IonIcon v-else class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
                     </template>
                     <template #content>
                         <div></div>
@@ -112,6 +112,7 @@ import EnumInputField from './EnumInputField.vue';
 import CheckboxInputField from './CheckboxInputField.vue';
 import PopupButton from './PopupButton.vue';
 import SliderInput from './SliderInput.vue';
+import IonIcon from '../Icons/IonIcon.vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import clipboard from 'clipboardy';
@@ -136,7 +137,8 @@ export default defineComponent({
         EnumInputField,
         CheckboxInputField,
         PopupButton,
-        SliderInput
+        SliderInput,
+        IonIcon
     },
     emits: ["update:modelValue", "onDirty"],
     props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",

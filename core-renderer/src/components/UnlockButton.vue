@@ -1,7 +1,7 @@
 <template>
     <div class="unlockButtonContainer" @click.stop="onClick">
         <div class="unlockButtonContainer__button">
-            <ion-icon name="lock-open-outline"></ion-icon>
+            <IonIcon :name="'lock-open-outline'" />
         </div>
     </div>
 </template>
@@ -9,10 +9,16 @@
 <script lang="ts">
 import { Ref, defineComponent, inject, onMounted, onUnmounted, ref } from 'vue';
 
+import IonIcon from './Icons/IonIcon.vue';
+
 import { RequestAuthorizationKey, DecryptFunctionsKey } from '../Constants/Keys';
 
 export default defineComponent({
     name: "UnlockButton",
+    components:
+    {
+        IonIcon
+    },
     props: ['color'],
     emits: ['onAuthSuccessful'],
     setup(_, ctx)

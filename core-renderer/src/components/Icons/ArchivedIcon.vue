@@ -1,6 +1,6 @@
 <template>
     <VaulticIcon :fontSize="fontSize">
-        <ion-icon name="trash-bin-outline"></ion-icon>
+        <IonIcon :name="'trash-bin-outline'" />
     </VaulticIcon>
 </template>
 
@@ -8,11 +8,13 @@
 import { defineComponent } from 'vue';
 
 import VaulticIcon from "./VaulticIcon.vue"
+import IonIcon from './IonIcon.vue';
 
 export default defineComponent({
     name: "ArchivedIcon",
     components: {
-        VaulticIcon
+        VaulticIcon,
+        IonIcon
     },
     props: ["fontSize"],
     setup()

@@ -24,31 +24,6 @@
                             <ToolTip :message="'Restore last backup from the server. Will override all local data'"
                                 :size="'20px'" :color="color" />
                         </div>
-                        <!-- <div v-else class="signInViewContainer__inputs">
-                            <EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
-                                v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
-                                :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'"
-                                :height="'4vh'" :minHeight="'35px'" />
-                    </div> -->
-                        <!-- <div class="signInViewContainer__navigation">
-                            <div v-if="showEmailField" class="signInViewContainer__arrow signInViewContainer__arrowLeft"
-                                @click="navigateLeft">
-                                <ion-icon name="chevron-back-outline"></ion-icon>
-                            </div>
-                            <div class="signInViewContainer__dots">
-                                <div class="signInViewContainer__dot"
-                                    :class="{ 'signInViewContainer__dot--active': !showEmailField }">
-                                </div>
-                                <div class="signInViewContainer__dot"
-                                    :class="{ 'signInViewContainer__dot--active': showEmailField }">
-                                </div>
-                            </div>
-                            <div v-if="!showEmailField"
-                                class="signInViewContainer__arrow signInViewContainer__arrowRight"
-                                @click="navigateRight">
-                                <ion-icon name="chevron-forward-outline"></ion-icon>
-                            </div>
-                        </div> -->
                     </div>
                 </div>
             </Transition>

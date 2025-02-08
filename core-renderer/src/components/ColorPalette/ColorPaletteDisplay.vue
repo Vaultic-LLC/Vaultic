@@ -4,7 +4,7 @@
             @mouseleave="hoveringDisplay = false">
             <div ref="editButton" class="editButton" :class="{ hoverDisplay: hoveringDisplay }" @click.stop="onEdit"
                 @mouseenter="hoveringIcon = true" @mouseleave="hoveringIcon = false">
-                <ion-icon class="editIcon" name="create-outline"></ion-icon>
+                <IonIcon class="editIcon" :name="'create-outline'" />
             </div>
         </div>
         <div class="colorPaletteContainer" @click.stop="onPaletteSelected" @mouseenter="hoveringDisplay = true"
@@ -12,7 +12,7 @@
             :class="{ notCreated: !created, hover: hoveringDisplay || hoveringIcon }">
             <SelectorButton v-if="created" :selectorButtonModel="selectorButtonModel" class="selectorButton" />
             <div v-else class="addColorIconContainer">
-                <ion-icon class="addColorIcon" name="add-outline"></ion-icon>
+                <IonIcon :name="'add-outline'" />
             </div>
             <div class="colorPaletteColorContainer">
                 <div class="colorPaletteColor passwordColor">
@@ -35,11 +35,12 @@
 import { defineComponent, ComputedRef, computed, Ref, ref, watch } from "vue";
 
 import SelectorButton from "../InputFields/SelectorButton.vue";
+import IonIcon from "../Icons/IonIcon.vue";
+import EditColorPalettePopup from "../ObjectPopups/EditPopups/EditColorPalettePopup.vue";
 
 import { ColorPalette } from "../../Types/Colors";
 import { SelectorButtonModel } from "../../Types/Models";
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
-import EditColorPalettePopup from "../ObjectPopups/EditPopups/EditColorPalettePopup.vue";
 import { getLinearGradientFromColor } from "../../Helpers/ColorHelper";
 import * as TWEEN from '@tweenjs/tween.js';
 import { RGBColor } from '../../Types/Colors';
@@ -52,7 +53,8 @@ export default defineComponent({
     {
         SelectorButton,
         ObjectPopup,
-        EditColorPalettePopup
+        EditColorPalettePopup,
+        IonIcon
     },
     props: ['colorPalette', 'index'],
     setup(props)
@@ -295,11 +297,10 @@ export default defineComponent({
     background: v-bind(editIconBackgroundColor);
     border-radius: 50%;
     transition: 0.3s;
-    padding: 10%;
     opacity: 0;
     z-index: 1;
-    height: clamp(5px, 1vw, 25px);
-    width: clamp(5px, 1vw, 25px);
+    height: clamp(25px, 2vw, 40px);
+    width: clamp(25px, 2vw, 40px);
 }
 
 .colorPaletteOuterContainer .editButton .editIcon {

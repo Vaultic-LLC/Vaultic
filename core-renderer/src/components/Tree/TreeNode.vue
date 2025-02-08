@@ -1,8 +1,8 @@
 <template>
     <div class="treeNode" @click="onClick" @mouseenter="hovering = true" @mouseleave="hovering = false">
         <div class="treeNode__parentRow">
-            <ion-icon class="treeNode__arrowIcon" v-if="treeNodeModel.isParent"
-                :class="{ selected: treeNodeModel.selected }" name="chevron-forward-outline"></ion-icon>
+            <IonIcon class="treeNode__arrowIcon" v-if="treeNodeModel.isParent"
+                :class="{ selected: treeNodeModel.selected }" :name="'chevron-forward-outline'" />
             <component :is="treeNodeModel.icon" :fontSize="'clamp(12px, 0.6vw, 17px)'" />
             <div class="treeNode__selectIcon" v-if="!treeNodeModel.isParent">
                 <SelectorButton :selectorButtonModel="selectorButtonModel" :width="'clamp(8px, 0.7vw, 20px)'"
@@ -14,7 +14,7 @@
                     <div class="treeNode__button" v-for="(button, idx) in treeNodeModel.buttons" :key="idx"
                         @click.stop="button.onClick(treeNodeModel.data)">
                         <VaulticIcon :fontSize="'clamp(15px, 1vw, 23px)'">
-                            <ion-icon :name="button.icon"></ion-icon>
+                            <IonIcon :name="button.icon" />
                         </VaulticIcon>
                     </div>
                 </div>
@@ -33,6 +33,7 @@ import CloudImportIcon from "../Icons/CloudImportIcon.vue";
 import FolderIcon from "../Icons/FolderIcon.vue";
 import PersonOutlineIcon from "../Icons/PersonOutlineIcon.vue";
 import VaulticIcon from "../Icons/VaulticIcon.vue"
+import IonIcon from '../Icons/IonIcon.vue';
 
 import { SelectorButtonModel, TreeNodeModel } from "../../Types/Models";
 
@@ -45,7 +46,8 @@ export default defineComponent({
         CloudImportIcon,
         FolderIcon,
         PersonOutlineIcon,
-        VaulticIcon
+        VaulticIcon,
+        IonIcon
     },
     props: ['model', 'color'],
     setup(props)

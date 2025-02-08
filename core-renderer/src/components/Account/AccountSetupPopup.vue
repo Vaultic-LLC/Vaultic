@@ -5,7 +5,7 @@
             <Transition name="fade" mode="out-in">
                 <div v-if="navigationStack.length > 0 && !disableBack" class="accountSetupPopupContainer__backButton"
                     @click="navigateBack">
-                    <ion-icon name="arrow-back-outline"></ion-icon>
+                    <IonIcon :name="'arrow-back-outline'" />
                 </div>
             </Transition>
             <Transition name="fade" mode="out-in">
@@ -38,6 +38,7 @@ import CreateAccountView from './CreateAccountView.vue';
 import SignInView from './SignInView.vue';
 import CreateSubscriptionView from './CreateSubscriptionView.vue';
 import CreateMasterKeyView from './CreateMasterKeyView.vue';
+import IonIcon from '../Icons/IonIcon.vue';
 
 import { Account, AccountSetupModel, AccountSetupView } from '../../Types/Models';
 import { popups } from '../../Objects/Stores/PopupStore';
@@ -53,6 +54,7 @@ export default defineComponent({
         SignInView,
         CreateSubscriptionView,
         CreateMasterKeyView,
+        IonIcon
     },
     emits: ['onClose'],
     props: ['model'],
