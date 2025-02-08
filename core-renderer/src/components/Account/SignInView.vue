@@ -336,11 +336,11 @@ export default defineComponent({
 
         function onHelpUnfocus()
         {
-            // if (helpPopupIsOpen.value)
-            // {
-            //     popover.value.toggle({currentTarget: helpButton.value}); 
-            //     helpPopupIsOpen.value = false;
-            // }
+            if (helpPopupIsOpen.value)
+            {
+                popover.value.toggle({currentTarget: helpButton.value}); 
+                helpPopupIsOpen.value = false;
+            }
         }
 
         function openDeactivationPopup()
