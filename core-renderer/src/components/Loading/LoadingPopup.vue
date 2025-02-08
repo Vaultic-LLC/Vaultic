@@ -24,7 +24,7 @@ export default defineComponent({
     setup(props)
     {
         const primaryColor: ComputedRef<string> = computed(() => props.color ? props.color : "#bb29ff");
-        const textToUse: ComputedRef<string> = computed(() => props.text ? props.text : "Loading...");
+        const textToUse: ComputedRef<string> = computed(() => props.text ? `${props.text}...` : "Loading...");
         const computedGlassOpacity: ComputedRef<number> = computed(() => props.glassOpacity ? props.glassOpacity : 0.92);
 
         const zIndex: number = popups.loading.zIndex;
