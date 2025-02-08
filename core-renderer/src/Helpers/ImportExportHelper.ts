@@ -20,11 +20,11 @@ export async function exportLogs(color: string)
     const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);
     if (success)
     {
-        app.popups.showToast(color, "Export Succeeded", true);
+        app.popups.showToast("Export Succeeded", true);
     }
     else 
     {
-        app.popups.showToast(color, "Export Failed", false);
+        app.popups.showToast("Export Failed", false);
     }
 
     app.popups.hideLoadingIndicator();
@@ -346,7 +346,7 @@ class CSVImporter<T extends IPrimaryDataObject>
         }
 
         app.popups.hideLoadingIndicator();
-        app.popups.showToast(color, "Import Complete", true);
+        app.popups.showToast("Import Complete", true);
     }
 
     protected async customSetProperty(value: T, property: ImportableDisplayField, cellValue: string)

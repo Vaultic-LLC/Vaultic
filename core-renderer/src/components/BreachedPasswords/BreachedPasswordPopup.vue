@@ -92,7 +92,7 @@ export default defineComponent({
 
             if (succeeded)
             {
-                app.popups.showToast(primaryColor.value, "Dismissed Breach", true);
+                app.popups.showToast("Dismissed Breach", true);
                 ctx.emit('onClose');
             }
 

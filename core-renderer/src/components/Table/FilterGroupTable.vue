@@ -264,11 +264,11 @@ export default defineComponent({
 
             if (succeeded)
             {
-                app.popups.showToast(color.value, "Filter Deleted", true);
+                app.popups.showToast("Filter Deleted", true);
             }
             else
             {
-                app.popups.showToast(color.value, "Delete Failed", false);
+                app.popups.showToast("Delete Failed", false);
             }
         }
 
@@ -290,11 +290,11 @@ export default defineComponent({
 
             if (succeeded)
             {
-                app.popups.showToast(color.value, "Group Deleted", true);
+                app.popups.showToast("Group Deleted", true);
             }
             else
             {
-                app.popups.showToast(color.value, "Delete Failed", false);
+                app.popups.showToast("Delete Failed", false);
             }
         }
 

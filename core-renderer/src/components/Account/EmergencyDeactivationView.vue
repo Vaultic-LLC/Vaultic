@@ -83,7 +83,7 @@ export default defineComponent({
 
             email.value = "";
             deactivationKey.value = "";
-            app.popups.showToast(currentPrimaryColor.value, "Deactivated", true);
+            app.popups.showToast("Deactivated", true);
             app.popups.hideEmergencyDeactivationPopup();
         }
 

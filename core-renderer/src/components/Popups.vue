@@ -36,8 +36,7 @@
         </Teleport>
         <Teleport to="#body">
             <Transition name="fade" mode="out-in">
-                <ToastPopup v-if="popupStore.toastIsShowing" :color="popupStore.color" :text="popupStore.toastText"
-                    :success="popupStore.toastSuccess" />
+                <ToastPopup v-if="popupStore.toastIsShowing" :text="popupStore.toastText" :success="popupStore.toastSuccess" />
             </Transition>
         </Teleport>
         <Teleport to="#body">
