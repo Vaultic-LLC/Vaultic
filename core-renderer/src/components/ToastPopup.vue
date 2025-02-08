@@ -1,8 +1,8 @@
 <template>
     <div class="toastContainer">
         <div class="toastContainerIcons">
-            <ion-icon v-if="isSuccess" class="toastIcon success" name="checkmark-outline"></ion-icon>
-            <ion-icon v-else class="toastIcon error" name="close-circle-outline"></ion-icon>
+            <IonIcon v-if="isSuccess" class="toastIcon success" :name="'checkmark-outline'" />
+            <IonIcon v-else class="toastIcon error" :name="'close-circle-outline'" />
         </div>
         <div class="toastContainterText">
             {{ toastText }}
@@ -13,10 +13,16 @@
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from 'vue';
 
+import IonIcon from './Icons/IonIcon.vue';
+
 import { popups } from '../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: 'ToastPopup',
+    components:
+    {
+        IonIcon
+    },
     props: ['color', 'text', 'success'],
     setup(props)
     {

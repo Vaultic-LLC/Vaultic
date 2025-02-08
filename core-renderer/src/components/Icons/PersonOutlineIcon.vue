@@ -1,6 +1,6 @@
 <template>
     <VaulticIcon :fontSize="fontSize">
-        <ion-icon name="person-circle-outline"></ion-icon>
+        <IonIcon :name="'person-circle-outline'" />
     </VaulticIcon>
 </template>
 
@@ -8,11 +8,13 @@
 import { defineComponent } from 'vue';
 
 import VaulticIcon from "./VaulticIcon.vue"
+import IonIcon from './IonIcon.vue';
 
 export default defineComponent({
-    name: "CloudExportIcon",
+    name: "PersonOutlineIcon",
     components: {
-        VaulticIcon
+        VaulticIcon,
+        IonIcon
     },
     props: ["fontSize"],
     setup()

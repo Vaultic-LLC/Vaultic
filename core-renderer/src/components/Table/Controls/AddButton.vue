@@ -1,6 +1,6 @@
 <template>
     <VaulticButton :color="color" :minSize="minSize" :preferredSize="preferredSize" :maxSize="maxSize" :tooltipMessage="tooltipMessage" >
-        <ion-icon class="addTableItemButtonIcon" name="add-outline"></ion-icon>
+        <IonIcon class="addTableItemButtonIcon" :name="'add-outline'" />
     </VaulticButton>
 </template>
 
@@ -8,13 +8,15 @@
 import { defineComponent } from 'vue';
 
 import VaulticButton from "../../InputFields/VaulticButton.vue"
+import IonIcon from '../../Icons/IonIcon.vue';
 
 export default defineComponent({
     name: "AddButton",
     props: ['color', 'minSize', 'preferredSize', 'maxSize', 'tooltipMessage'],
     components:
     {
-        VaulticButton
+        VaulticButton,
+        IonIcon
     },
     setup()
     {

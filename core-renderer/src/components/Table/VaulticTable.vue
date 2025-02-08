@@ -137,13 +137,13 @@
                             </div>
                         </div>
                         <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel<any>).isPinned === true, data)">
-                            <ion-icon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel<any>).isPinned === true}" name="magnet-outline"></ion-icon>
+                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel<any>).isPinned === true}" :name="'magnet-outline'" />
                         </div>
                         <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit((data as TableRowModel<any>).backingObject, e)">
-                            <ion-icon class="rowIcon edit" name="create-outline"></ion-icon>
+                            <IonIcon class="rowIcon edit" :name="'create-outline'" />
                         </div>
                         <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm((data as TableRowModel<any>).backingObject)">
-                            <ion-icon class="rowIcon delete" name="trash-outline"></ion-icon>
+                            <IonIcon class="rowIcon delete" :name="'trash-outline'" />
                         </div>
                     </div>
                 </template>
@@ -170,6 +170,7 @@ import FilterValueSelectorCell from './Rows/FilterValueSelectorCell.vue';
 import EncryptedInputCell from "./Rows/EncryptedInputCell.vue";
 import PermissionsCell from './Rows/PermissionsCell.vue';
 import VaultListCell from "./Rows/VaultListCell.vue";
+import IonIcon from '../Icons/IonIcon.vue';
 
 import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
@@ -179,7 +180,6 @@ import { tween } from '../../Helpers/TweenHelper';
 import * as TWEEN from '@tweenjs/tween.js';
 import { useConfirm } from "primevue/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
-
 
 // Base Component for all Tables.
 // --- Scrollbar Color Usage ---
@@ -207,7 +207,8 @@ export default defineComponent({
         FilterValueSelectorCell,
         EncryptedInputCell,
         PermissionsCell,
-        VaultListCell
+        VaultListCell,
+        IonIcon
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
         'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading', 'hidePaginator',

@@ -1,7 +1,7 @@
 <template>
 	<div class="toolTipContainer" :class="{ fadeIn: fadeIn }">
 		<div class="toolTipIcon" ref="toolTipIcon">
-			<ion-icon name="alert-circle-outline"></ion-icon>
+			<IonIcon name="alert-circle-outline" />
 		</div>
 	</div>
 </template>
@@ -9,12 +9,18 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
 
+import IonIcon from './Icons/IonIcon.vue';
+
 import tippy, { Placement } from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import 'tippy.js/animations/scale.css';
 
 export default defineComponent({
 	name: "ToolTip",
+    components:
+    {
+        IonIcon
+    },
 	props: ["message", "placement", "color", "size", "fadeIn", 'iconColor'],
 	setup(props)
 	{

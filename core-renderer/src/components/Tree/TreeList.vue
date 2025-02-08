@@ -3,17 +3,14 @@
         <div class="treeList__controls">
             <SearchBar :modelValue="searchText" :color="primaryColor" :sizeModel="searchSize" />
             <div class="treeList__buttons">
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Expand All'" 
-                    @click="expandAll">
-                    <ion-icon name="chevron-expand-outline"></ion-icon>
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="expandAll">
+                    <IonIcon :name="'chevron-expand-outline'" />
                 </VaulticButton>
-                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Collapse All'" 
-                    @click="collapseAll">
-                    <ion-icon name="chevron-collapse-outline"></ion-icon>
+                <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="collapseAll">
+                    <IonIcon :name="'chevron-collapse-outline'" />
                 </VaulticButton>
                 <slot></slot>
-                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" :tooltipMessage="'Add Vault'" 
-                    @click="$emit('onAdd')" />
+                <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="$emit('onAdd')" />
             </div>
         </div>
         <div class="treeList__divider"></div>
@@ -35,6 +32,7 @@ import AddButton from "../Table/Controls/AddButton.vue";
 import TreeNode from "./TreeNode.vue";
 import VaulticButton from "../InputFields/VaulticButton.vue";
 import ScrollView from '../ObjectViews/ScrollView.vue';
+import IonIcon from '../Icons/IonIcon.vue';
 
 import app from "../../Objects/Stores/AppStore";
 import { ComponentSizeModel, TreeNodeModel } from "../../Types/Models";
@@ -48,7 +46,8 @@ export default defineComponent({
         AddButton,
         TreeNode,
         VaulticButton,
-        ScrollView
+        ScrollView,
+        IonIcon
     },
     props: ['nodes', 'onLeafClicked'],
     emits: ['onAdd'],

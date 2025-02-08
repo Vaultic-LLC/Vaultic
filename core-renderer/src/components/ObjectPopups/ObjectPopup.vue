@@ -4,7 +4,7 @@
         </div>
         <div ref="objectPopup" class="objectyPopup">
             <div v-if="!doPreventClose" class="closeIconContainer" @click.stop="doClosePopup">
-                <ion-icon class="closeIcon" name="close-circle-outline"></ion-icon>
+                <IonIcon class="closeIcon" :name="'close-circle-outline'" />
             </div>
             <div class="objectyPopupContent">
                 <slot></slot>
@@ -23,6 +23,8 @@
 <script lang="ts">
 import { defineComponent, ComputedRef, computed, provide, watch, Ref, ref, onMounted } from 'vue';
 
+import IonIcon from '../Icons/IonIcon.vue';
+
 import { DataType } from '../../Types/DataTypes';
 import * as TWEEN from '@tweenjs/tween.js'
 import { RGBColor } from '../../Types/Colors';
@@ -35,6 +37,10 @@ import { AppView } from '../../Types/App';
 
 export default defineComponent({
     name: "ObjectPopup",
+    components:
+    {
+        IonIcon
+    },
     props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing",
         "popupInfoOverride"],
     setup(props)

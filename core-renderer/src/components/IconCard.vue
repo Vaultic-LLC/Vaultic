@@ -1,7 +1,7 @@
 <template>
     <div class="iconCardContainer">
         <div class="iconCardContainer__items">
-            <ion-icon class="iconCardContainer__icon" :name="icon"></ion-icon>
+            <IonIcon class="iconCardContainer__icon" :name="icon" />
             <div class="iconCardContainer__text">{{ text }}</div>
         </div>
     </div>
@@ -10,11 +10,17 @@
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from 'vue';
 
+import IonIcon from './Icons/IonIcon.vue';
+
 import { getLinearGradientFromColor, mixHexes } from '../Helpers/ColorHelper';
 import app from "../Objects/Stores/AppStore";
 
 export default defineComponent({
     name: "IconCard",
+    components:
+    {
+        IonIcon
+    },
     props: ['icon', 'text'],
     setup()
     {
