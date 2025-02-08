@@ -9,6 +9,7 @@
                 <div class="unknownResponsePopup__body">
                     <div>
                         {{ computedMessage }}
+                        // TODO: this isn't setup to work
                         <ButtonLink v-if="showContactSupport" :color="primaryColor" :text="'Contact Support'" />
                     </div>
                     <div v-if="statusCode">

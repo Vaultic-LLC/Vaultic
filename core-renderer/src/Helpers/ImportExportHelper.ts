@@ -10,6 +10,26 @@ import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion,
 import { ImportableDisplayField } from "../Types/Fields";
 import { Field } from "@vaultic/shared/Types/Fields";
 
+export async function exportLogs(color: string)
+{
+    app.popups.showLoadingIndicator(color, "Exporting Logs");
+
+    const data = JSON.vaulticParse(await api.repositories.logs.getExportableLogData());
+    const formattedData = await exportData(data);
+
+    const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);
+    if (success)
+    {
+        app.popups.showToast(color, "Export Succeeded", true);
+    }
+    else 
+    {
+        app.popups.showToast(color, "Export Failed", false);
+    }
+
+    app.popups.hideLoadingIndicator();
+}
+
 export function buildCSVPropertyMappers(models: CSVHeaderPropertyMapperModel[]): Dictionary<ImportableDisplayField[]>
 {
     let csvHeadersToPropertiesDict: Dictionary<ImportableDisplayField[]> = {};

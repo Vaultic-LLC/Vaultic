@@ -22,7 +22,8 @@ type PopupName = "loading" |
     "breachedPasswords" |
     "toast" |
     "importSelection" |
-    "defaultObjectPopup";
+    "defaultObjectPopup" |
+    "emergencyDeactivation";
 
 interface PopupInfo
 {
@@ -30,7 +31,7 @@ interface PopupInfo
     enterOrder?: number;
 }
 
-type Popups = {
+export type Popups = {
     [key in PopupName]: PopupInfo;
 }
 
@@ -40,11 +41,12 @@ export const popups: Popups =
     "alert": { zIndex: 1990, enterOrder: 0 },
     "devicePopup": { zIndex: 161 },
     "enterMFACode": { zIndex: 1600, enterOrder: 1 },
+    "toast": { zIndex: 1700 },
+    "emergencyDeactivation": { zIndex: 1550 },
     "accountSetup": { zIndex: 1500, enterOrder: 2 },
     "globalAuth": { zIndex: 100, enterOrder: 3 },
     "requestAuth": { zIndex: 90, enterOrder: 4 },
     "breachedPasswords": { zIndex: 50 },
-    "toast": { zIndex: 20 },
     "importSelection": { zIndex: 10 },
     "defaultObjectPopup": { zIndex: 7 }
 }

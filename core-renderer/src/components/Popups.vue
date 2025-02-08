@@ -73,8 +73,8 @@
 		</Teleport>
         <Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'800px'" :minHeight="'480px'" :width="'50%'"
-					:closePopup="popupStore.hideEmergencyDeactivationPopup">
+				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'600px'" :minHeight="'480px'" :width="'40%'"
+					:height="'60%'" :popupInfoOverride="popupInfo.emergencyDeactivation" :closePopup="popupStore.hideEmergencyDeactivationPopup">
 					<EmergencyDeactivationView />
 				</ObjectPopup>
 			</Transition>
@@ -127,6 +127,7 @@ import DeviceView from './ObjectViews/DeviceView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
+import { Popups, popups } from '../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: 'Popups',
@@ -150,9 +151,11 @@ export default defineComponent({
     },
     setup()
     {
+        const popupInfo: Popups = JSON.vaulticParse(JSON.vaulticStringify(popups));
         return {
             popupStore: app.popups,
-            DataType
+            popupInfo,
+            DataType,
         }
     }
 });
