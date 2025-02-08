@@ -37,7 +37,7 @@
                 <div class="workflowPopupContainer__section__buttons">
                     <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Export'" :width="'8vw'"
                         :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportLogs" />
+                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doExportLogs" />
                 </div>
             </div>
         </ScrollView>
@@ -53,7 +53,7 @@ import ScrollView from "../ObjectViews/ScrollView.vue"
 
 import { defaultInputTextColor } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
-import { importPasswords, importValues, getExportableValues, getExportablePasswords, exportData } from "../../Helpers/ImportExportHelper";
+import { importPasswords, importValues, getExportableValues, getExportablePasswords, exportLogs } from "../../Helpers/ImportExportHelper";
 import { api } from "../../API";
 import { SingleSelectorItemModel } from '../../Types/Models';
 
@@ -141,24 +141,9 @@ export default defineComponent({
             app.popups.hideLoadingIndicator();
         }
 
-        async function exportLogs()
+        async function doExportLogs()
         {
-            app.popups.showLoadingIndicator(primaryColor.value, "Exporting Logs");
-
-            const data = JSON.vaulticParse(await api.repositories.logs.getExportableLogData());
-            const formattedData = await exportData(data);
-
-            const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);
-            if (success)
-            {
-                app.popups.showToast(primaryColor.value, "Export Succeeded", true);
-            }
-            else 
-            {
-                app.popups.showToast(primaryColor.value, "Export Failed", false);
-            }
-
-            app.popups.hideLoadingIndicator();
+            await exportLogs(primaryColor.value);
         }
 
         return {
@@ -171,7 +156,7 @@ export default defineComponent({
             doImportValues,
             exportPasswords,
             exportValues,
-            exportLogs
+            doExportLogs
         }
     }
 })

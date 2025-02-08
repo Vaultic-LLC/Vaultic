@@ -63,6 +63,7 @@
                         <ButtonLink :color="color" :text="'Create One'" :fontSize="'clamp(15px, 1vw, 20px)'" @onClick="moveToCreateAccount" />
                     </div>
                 </div>
+                <div tabindex="0" ref="helpButton" class="signInViewContainer__help" @click="onHelpClick" @blur="onHelpUnfocus">Help</div>
             </template>
         </AccountSetupView>
         <Teleport to="#body">
@@ -70,6 +71,30 @@
 				<EnterMFACodePopup ref="mfaView" v-if="mfaIsShowing" @onConfirm="onSubmit" @onClose="onMFAClose" />
 			</Transition>
 		</Teleport>
+        <Popover ref="popover"
+                :pt="{
+                    root: ({state}) =>
+                    {
+                        helpPopupIsOpen = state.visible;
+                        return 'signInViewContainer__helpPopover';
+                    }
+                }">
+                <div class="signInViewContainer__helpPopoverContent">
+                    <div class="signInViewContainer__helpPopoverSection">
+                        <div class="signInViewContainer__helpPopoverSectionTitle">Deactivate Subscription</div>
+                        <PopupButton :color="color" :text="'Deactivate'"
+                            :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" @onClick="openDeactivationPopup" />
+                    </div>
+                    <div class="signInViewContainer__helpPopoverSectionSeperator"></div>
+                    <div class="signInViewContainer__helpPopoverSection">
+                        <div class="signInViewContainer__helpPopoverSectionTitle">Export Logs</div>
+                        <PopupButton :color="color" :text="'Export'"
+                            :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" @onClick="doExportLogs" />
+                    </div>
+                </div>
+            </Popover>
     </div>
 </template>
 
@@ -84,13 +109,15 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 import ToolTip from "../ToolTip.vue";
 import EnterMFACodePopup from './EnterMFACodePopup.vue';
 import UserProfilePic from './UserProfilePic.vue';
+import Popover from 'primevue/popover';
+import PopupButton from '../InputFields/PopupButton.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { EncryptedInputFieldComponent, InputComponent } from '../../Types/Components';
 import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
-import { IUser } from '@vaultic/shared/Types/Entities';
+import { exportLogs } from '../../Helpers/ImportExportHelper';
 
 export default defineComponent({
     name: "SignInView",
@@ -103,7 +130,9 @@ export default defineComponent({
         CheckboxInputField,
         ToolTip,
         EnterMFACodePopup,
-        UserProfilePic
+        UserProfilePic,
+        Popover,
+        PopupButton
     },
     emits: ['onMoveToCreateAccount', 'onKeySuccess', 'onUsernamePasswordSuccess', 'onMoveToSetupPayment', 'onNotClearedData'],
     props: ['color', 'infoMessage', 'reloadAllDataIsToggled', 'clearAllDataOnLoad'],
@@ -111,6 +140,7 @@ export default defineComponent({
     {
         const refreshKey: Ref<string> = ref('');
         const container: Ref<HTMLElement | null> = ref(null);
+        const helpButton: Ref<HTMLElement | null> = ref(null);
         const resizeHandler: ResizeObserver = new ResizeObserver(checkWidthHeightRatio);
         const onlineMode: Ref<boolean> = ref(true);
         const reloadAllData: Ref<boolean> = ref(props.reloadAllDataIsToggled != undefined ? props.reloadAllDataIsToggled : false);
@@ -129,6 +159,9 @@ export default defineComponent({
 
         const mfaView: Ref<any> = ref();
         const mfaIsShowing: Ref<boolean> = ref(false);
+
+        const popover: Ref<any> = ref();
+        const helpPopupIsOpen: Ref<boolean> = ref(false);
 
         function moveToCreateAccount()
         {
@@ -295,6 +328,31 @@ export default defineComponent({
             mfaIsShowing.value = false;
         }
 
+        function onHelpClick()
+        {
+            popover.value.toggle({currentTarget: helpButton.value}); 
+            helpPopupIsOpen.value = !helpPopupIsOpen.value;
+        }
+
+        function onHelpUnfocus()
+        {
+            // if (helpPopupIsOpen.value)
+            // {
+            //     popover.value.toggle({currentTarget: helpButton.value}); 
+            //     helpPopupIsOpen.value = false;
+            // }
+        }
+
+        function openDeactivationPopup()
+        {
+            app.popups.showEmergencyDeactivationPopup();
+        }
+
+        async function doExportLogs()
+        {
+            await exportLogs(props.color);
+        }
+
         watch(() => props.reloadAllDataIsToggled, (newValue) => 
         {
             reloadAllData.value = newValue;
@@ -341,8 +399,10 @@ export default defineComponent({
         });
 
         return {
+            popover,
             refreshKey,
             container,
+            helpButton,
             onlineMode,
             reloadAllData,
             masterKeyField,
@@ -355,11 +415,16 @@ export default defineComponent({
             contentBottomMargin,
             mfaView,
             mfaIsShowing,
+            helpPopupIsOpen,
             moveToCreateAccount,
             onSubmit,
             navigateLeft,
             navigateRight,
-            onMFAClose
+            onMFAClose,
+            onHelpUnfocus,
+            onHelpClick,
+            openDeactivationPopup,
+            doExportLogs
         };
     }
 })
@@ -496,5 +561,35 @@ export default defineComponent({
     justify-content: center;
     align-items: center;
     column-gap: 10px;
+}
+
+.signInViewContainer__help {
+    cursor: pointer;
+    position: absolute;
+    right: 5%;
+    transition: 0.3s;
+}
+
+.signInViewContainer__help:hover {
+    color: gray;
+}
+
+.signInViewContainer__helpPopover {
+    z-index: 1501 !important;
+    position: relative;
+}
+
+.signInViewContainer__helpPopoverSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    column-gap: 20px;
+}
+
+.signInViewContainer__helpPopoverSectionSeperator {
+    height: 1px;
+    background: #80808059;
+    margin-top: 15px;
+    margin-bottom: 15px;
 }
 </style>

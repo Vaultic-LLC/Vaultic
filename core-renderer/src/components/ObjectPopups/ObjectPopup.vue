@@ -35,10 +35,11 @@ import { AppView } from '../../Types/App';
 
 export default defineComponent({
     name: "ObjectPopup",
-    props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing"],
+    props: ["show", "closePopup", "height", "width", 'minHeight', 'minWidth', 'preventClose', 'glassOpacity', "showPulsing",
+        "popupInfoOverride"],
     setup(props)
     {
-        const popupInfo = popups.defaultObjectPopup;
+        const popupInfo = props.popupInfoOverride ?? popups.defaultObjectPopup;
 
         const objectPopup: Ref<HTMLElement | null> = ref(null);
         const resizeObserver: ResizeObserver = new ResizeObserver(() => checkWidthToHeightRatio());
