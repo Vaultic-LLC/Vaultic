@@ -270,6 +270,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.lock();
         }, this.internalAutoLockNumberTime.value);
 
+        // Extend session every 10 minutes
         if (this.loadedUser && this.isOnline && (Date.now() - this.lastSessionExtendTime) > 600000)
         {
             this.lastSessionExtendTime = Date.now();
