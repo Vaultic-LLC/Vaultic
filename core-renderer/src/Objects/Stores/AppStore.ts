@@ -87,6 +87,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalCanShowSubscriptionWidgets: ComputedRef<boolean>;
     private internalUserLicense: Ref<LicenseStatus>;
 
+    private lastSessionExtendTime: number;
+
     get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.settings; }
     get isOnline() { return this.internalIsOnline.value; }
@@ -169,6 +171,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         {
             this.resetSessionTime();
         });
+
+        this.lastSessionExtendTime = Date.now();
     }
 
     protected defaultState()
@@ -265,6 +269,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         {
             this.lock();
         }, this.internalAutoLockNumberTime.value);
+
+        // Extend session every 10 minutes
+        if (this.loadedUser && this.isOnline && (Date.now() - this.lastSessionExtendTime) > 600000)
+        {
+            this.lastSessionExtendTime = Date.now();
+            api.server.session.extend();
+        }
     }
 
     public async loadUserData(masterKey: string)
@@ -280,6 +291,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
+        this.lastSessionExtendTime = Date.now();
         this.internaLoadedUser.value = true;
         this.internalActiveAppView.value = AppView.Vault;
 

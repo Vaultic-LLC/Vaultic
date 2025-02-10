@@ -301,6 +301,7 @@ export default defineComponent({
     z-index: 1;
     height: clamp(25px, 2vw, 40px);
     width: clamp(25px, 2vw, 40px);
+    cursor: pointer;
 }
 
 .colorPaletteOuterContainer .editButton .editIcon {
