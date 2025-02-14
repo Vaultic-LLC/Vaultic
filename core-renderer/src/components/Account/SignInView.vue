@@ -20,7 +20,7 @@
                         <div v-if="reloadAllDataIsToggled" class="signInContainer__restoreLastBackup">
                             <CheckboxInputField :label="'Restore Last Backup'"
                                 :color="color" v-model="reloadAllData" :width="'100%'" :height="'1.25vh'"
-                                :minHeight="'15px'" :fontSize="'clamp(11px, 1vw, 20px)'" />
+                                :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                             <ToolTip :message="'Restore last backup from the server. Will override all local data'"
                                 :size="'20px'" :color="color" />
                         </div>

@@ -37,7 +37,6 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         {
             const allMembers = [...parsedUpdatedOrgData.originalMembers, ...parsedUpdatedOrgData.addedMembers];
             addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, parsedUpdatedOrgData.addedVaults.map(v => v.vaultID), allMembers);
-            console.log(`Added Vault Modified Org members: ${JSON.vaulticStringify(addedVaultModifiedOrgMembers)}`)
         }
 
         if (parsedUpdatedOrgData.removedVaults.length > 0)

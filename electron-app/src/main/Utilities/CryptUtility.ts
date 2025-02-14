@@ -1,79 +1,12 @@
 import crypto from "crypto";
-import hashUtility from "./HashUtility";
 import generatorUtility from "./Generator";
-import { CryptUtility } from "../Core/Types/Utilities";
-import coreCrypt from "../Core/Utilities/CoreCryptUtility";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { EncryptedResponse } from "@vaultic/shared/Types/Responses";
 import { environment } from "../Core/Environment";
+import { CCryptUtility } from "../Core/Utilities/CoreCryptUtility";
 
 const vaulticPublicKey = "-----BEGIN RSA PUBLIC KEY-----\nMIICCgKCAgEAoHTMLCg0A3Mr3GIxF/xcPhCDDcp/4OG5wox8bUsWIXExtFKJmLew\nswVRFUxRhUtgyz4O+auJmiDvEgaFHVw4KQ3Fve3K9wjbQ0N51tqTipyj/DMrrJHu\nlUx2cB6JZhgHRiUQb3o+Bhu4CQ6HZd/8QDILAHMtH7eTcx0h6cA4azAWy/1xnc+G\nv71imLyGhRg/FnR3YoegkIuOSRSK9rjBsrw7k7M8Asp0A3FZSRL/Cs82SkadVcEA\nc8VcWEnf9Bdc/exArIgV0H6jA0exPteJK+mts4u8/L0drxMSnXaRYJf8vPckz8M2\n1BuaugZ8uY7ZAVtqB4QQ3C9kZ/0kuYSNE7Dg/oaTWnylOqPQX5Yr/xwU1/QaK7nA\nyrXlVajJhUB+b5QK0L4invuMWarq6bddOldaC4yqMmum+SCLZzEkiYE0CSFX5XIB\nGVI9O3RDdZrt0wx1fsIGCGNBWhinsqxtPw96P9MC1KMGgNIdw/Fc2nFV4NbuwmDM\n3/1X0MJXNt1y22YkFJfXXDmJJuC9naxeK/etasy5uDEpCDxOG6Kww+L54UJmr0o3\neZw7aRcDXrvrDXaalWFHV/JMSxzivTpBeD1MdcBK53JMrZEOuslvWYqo8MapdKfl\na76OBNLXIv4t3E4ARbw7oqkXN9wbn0JZ0PkEjoSKp0aDq/fiNObO3vkCAwEAAQ==\n-----END RSA PUBLIC KEY-----";
-
-const ivLength: number = 12;
-const authTagLength: number = 16;
-const encryptionMethod: crypto.CipherGCMTypes = 'aes-256-gcm';
-
-async function encrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
-{
-	let logID: number | undefined;
-	try
-	{
-		const hashedKey: string = hashUtility.insecureHash(key);
-		const keyBytes = Buffer.from(hashedKey, 'base64')
-
-		const iv = crypto.randomBytes(ivLength);
-		const cipher = crypto.createCipheriv(encryptionMethod, keyBytes, iv,
-			{ 'authTagLength': authTagLength });
-
-		const encryptedValue = Buffer.concat([cipher.update(Buffer.from(value).toString("base64"), "base64"), cipher.final()]);
-		return TypedMethodResponse.success(Buffer.concat([iv, encryptedValue, cipher.getAuthTag()]).toString("base64"));
-	}
-	catch (e: any)
-	{
-		if (e?.error instanceof Error)
-		{
-			const error: Error = e?.error as Error;
-			await environment.repositories.logs.log(undefined, error.message, "CryptUtility.Encrypt");
-		}
-
-		return TypedMethodResponse.fail(undefined, undefined, `Encryption Error: ${JSON.vaulticStringify(e)}`, logID);
-	}
-}
-
-async function decrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
-{
-	let errorMessage: string = "";
-	try
-	{
-		const cipher: Buffer = Buffer.from(value, "base64");
-		const iv = Uint8Array.prototype.slice.call(cipher, 0, ivLength);
-		const authTag = Uint8Array.prototype.slice.call(cipher, -authTagLength);
-		const encryptedValue = Uint8Array.prototype.slice.call(cipher, ivLength, -authTagLength);
-		const hashedKey: string = hashUtility.insecureHash(key);
-		const keyBytes = Buffer.from(hashedKey, 'base64')
-
-		const decipher = crypto.createDecipheriv(encryptionMethod, keyBytes, iv,
-			{ 'authTagLength': authTagLength });
-
-		decipher.setAuthTag(authTag);
-
-		let decryptedValue = decipher.update(encryptedValue);
-		decryptedValue = Buffer.concat([decryptedValue, decipher.final()]);
-
-		return TypedMethodResponse.success(Buffer.from(decryptedValue).toString("ascii"));
-	}
-	catch (e: any)
-	{
-		// don't want to log here since everytime a user enters the wrong key an exception is thrown
-		if (e?.error instanceof Error)
-		{
-			const error: Error = e?.error as Error;
-			errorMessage = error.message;
-		}
-	}
-
-	return TypedMethodResponse.fail(undefined, undefined, errorMessage);
-}
+const cryptUtility = new CCryptUtility();
 
 async function hybridEncrypt(value: string): Promise<TypedMethodResponse<EncryptedResponse>>
 {
@@ -82,7 +15,7 @@ async function hybridEncrypt(value: string): Promise<TypedMethodResponse<Encrypt
 	try
 	{
 		const aesKey = generatorUtility.randomValueOfByteLength(32);
-		const aesResult = await encrypt(aesKey, value);
+		const aesResult = await cryptUtility.symmetricEncrypt(aesKey, value);
 		if (!aesResult.success)
 		{
 			return TypedMethodResponse.fail();
@@ -105,7 +38,7 @@ async function hybridEncrypt(value: string): Promise<TypedMethodResponse<Encrypt
 	return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
 }
 
-async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<TypedMethodResponse<string>>
+async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<TypedMethodResponse<string | undefined>>
 {
 	let logID: number | undefined;
 
@@ -117,7 +50,7 @@ async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedRes
 			padding: crypto.constants.RSA_PKCS1_OAEP_PADDING
 		}, encryptedSymmetricKey).toString("ascii");
 
-		const response = await decrypt(symmetricKey, encryptedResponse.Data!);
+		const response = await cryptUtility.symmetricDecrypt(symmetricKey, encryptedResponse.Data!);
 		if (!response.success)
 		{
 			await environment.repositories.logs.log(undefined, response.errorMessage, "CryptUtility.HybridDecrypt");
@@ -137,13 +70,7 @@ async function hybridDecrypt(privateKey: string, encryptedResponse: EncryptedRes
 	return TypedMethodResponse.fail(undefined, undefined, undefined, logID);
 }
 
-const cryptUtility: CryptUtility =
-{
-	...coreCrypt,
-	encrypt,
-	decrypt,
-	hybridEncrypt,
-	hybridDecrypt,
-};
+cryptUtility.hybridEncrypt = hybridEncrypt;
+cryptUtility.hybridDecrypt = hybridDecrypt;
 
 export default cryptUtility;

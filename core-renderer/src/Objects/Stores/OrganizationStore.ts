@@ -99,7 +99,7 @@ export class OrganizationStore extends Store<StoreState>
                     username: u.Username,
                     permission: u.Permissions,
                     icon: undefined,
-                    publicKey: undefined
+                    publicEncryptingKey: undefined
                 };
 
                 org.membersByUserID.set(u.UserID, member)

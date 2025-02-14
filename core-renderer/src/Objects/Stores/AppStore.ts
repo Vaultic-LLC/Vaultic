@@ -305,7 +305,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         if (this.state.settings.value.temporarilyStoreMasterKey.value)
         {
-            await api.cache.setMasterKey(masterKey);
+            const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
+            if (!setMasterKeyResponse.success)
+            {
+                defaultHandleFailedResponse(setMasterKeyResponse);
+            }
         }
 
         return true;

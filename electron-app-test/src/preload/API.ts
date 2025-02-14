@@ -68,8 +68,8 @@ const organizationController: OrganizationController =
 
 const cryptUtility: ClientCryptUtility =
 {
-    encrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:encrypt', key, value),
-    decrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:decrypt', key, value),
+    symmetricEncrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:symmetricEncrypt', key, value),
+    symmetricDecrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:symmetricDecrypt', key, value),
     ECEncrypt: (recipientPublicKey: string, value: string) => ipcRenderer.invoke('cryptUtility:ECEncrypt', recipientPublicKey, value),
     ECDecrypt: (tempPublicKey: string, userPrivateKey: string, value: string) => ipcRenderer.invoke('cryptUtility:ECDecrypt', tempPublicKey, userPrivateKey, value)
 };
@@ -136,7 +136,7 @@ const userRepository: ClientUserRepository =
 {
     getLastUsedUserInfo: () => ipcRenderer.invoke('userRepository:getLastUsedUserInfo'),
     getLastUsedUserPreferences: () => ipcRenderer.invoke('userRepository:getLastUsedUserPreferences'),
-    createUser: (masterKey: string, email: string, firstName: string, lastName: string, publicKey: string, privateKey: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email, firstName, lastName, publicKey, privateKey),
+    createUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email, firstName, lastName),
     setCurrentUser: (masterKey: string, email: string) => ipcRenderer.invoke("userRepository:setCurrentUser", masterKey, email),
     getCurrentUserData: (masterKey: string) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey),
     verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),

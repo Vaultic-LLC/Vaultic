@@ -79,12 +79,6 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             return [[], []];
         }
 
-        const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, user.privateKey);
-        if (!decryptedPrivateKey.success)
-        {
-            return [[], []];
-        }
-
         const vaultKeys: string[] = [];
         for (let i = 0; i < userVaults.length; i++)
         {
@@ -94,7 +88,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                 return [[], []];
             }
 
-            const decryptedVaultKey = await vaultHelper.decryptVaultKey(masterKey, decryptedPrivateKey.value!, false, userVaults[i].vaultKey);
+            const decryptedVaultKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
                 return [[], []];
@@ -313,12 +307,6 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         const partialUserVault = {};
         let updatedUserVault = false;
 
-        if (newUserVault.signatureSecret)
-        {
-            partialUserVault[nameof<UserVault>("signatureSecret")] = newUserVault.signatureSecret;
-            updatedUserVault = true;
-        }
-
         if (newUserVault.currentSignature)
         {
             partialUserVault[nameof<UserVault>("currentSignature")] = newUserVault.currentSignature;
@@ -404,6 +392,11 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         newUserVault.userOrganizationID = userVault.userOrganizationID;
         newUserVault.isOwner = false;
         newUserVault.permissions = userVault.permissions;
+
+        // TODO: Should get users public key.
+        // TODO: should also pass in private key since it may not be saved locally yet if we are also adding the user
+        // TODO: userVault.vaultKey should check to see if this is the first time loading it. If so, it needs to be verifying, using the 
+        // senders publicSigningKey, decrypted using this users privateEncryptingKey, and then re encrypted using AES256 with their masterKey
         newUserVault.vaultKey = userVault.vaultKey;
 
         newUserVault.vaultPreferencesStoreState.userVaultID = userVault.userVaultID;

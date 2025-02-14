@@ -34,11 +34,6 @@ const VaulticHandler =
 
 export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 {
-    // Encrypted in sign
-    // Backed Up
-    @Column("text")
-    signatureSecret: string
-
     // Not Encrypted
     // Backed Up
     @Column("text")
@@ -112,7 +107,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 
     public getSignableProperties(): string[]
     {
-        return [nameof<VaulticEntity>("signatureSecret"), ...this.internalGetSignableProperties()];
+        return [...this.internalGetSignableProperties()];
     }
 
     protected getUserUpdatableProperties(): string[]
@@ -138,7 +133,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     public backupableProperties(): string[]
     {
         return [
-            nameof<VaulticEntity>("signatureSecret"),
             nameof<VaulticEntity>("currentSignature"),
             nameof<VaulticEntity>("entityState")
         ];
@@ -202,30 +196,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 
     async sign(key: string): Promise<boolean>
     {
-        let signatureSecret = "";
-        if (!this.signatureSecret)
-        {
-            signatureSecret = environment.utilities.hash.insecureHash(environment.utilities.generator.randomValue(40));
-
-            const response = await environment.utilities.crypt.encrypt(key, signatureSecret);
-            if (!response.success)
-            {
-                return false;
-            }
-
-            this.signatureSecret = response.value!;
-        }
-        else 
-        {
-            const response = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
-            if (!response.success)
-            {
-                return false;
-            }
-
-            signatureSecret = response.value!;
-        }
-
         let signatureMakeup = this.getSignatureMakeup();
         if (!signatureMakeup)
         {
@@ -234,31 +204,26 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 
         const seriazliedMakeup = JSON.vaulticStringify(signatureMakeup);
         const hashedEntity = environment.utilities.hash.insecureHash(seriazliedMakeup);
-        const secretBytes = new TextEncoder().encode(signatureSecret);
+        const keyBytes = jose.base64url.decode(environment.utilities.hash.insecureHash(key));
 
-        const jwt = await new jose.SignJWT({ entity: hashedEntity })
-            .setProtectedHeader({ alg: 'HS256' })
+        const jwt = await new jose.EncryptJWT({ entity: hashedEntity })
+            .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
             .setIssuedAt()
             .setIssuer('vaultic')
             .setAudience('vaulticUser')
             .setExpirationTime('999y')
-            .sign(secretBytes);
+            .encrypt(keyBytes);
 
+        console.log(jwt);
         this.currentSignature = jwt;
         return true;
     }
 
     protected async internalVerify(key: string): Promise<TypedMethodResponse<any>>
     {
-        if (!this.signatureSecret || !this.currentSignature)
+        if (!this.currentSignature)
         {
-            return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_SECRET_OR_SIGNATURE);
-        }
-
-        const secretResponse = await environment.utilities.crypt.decrypt(key, this.signatureSecret);
-        if (!secretResponse.success)
-        {
-            return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
+            return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE);
         }
 
         let signatureMakeup = this.getSignatureMakeup();
@@ -269,20 +234,22 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 
         const serializedMakeup = JSON.vaulticStringify(signatureMakeup);
         const hashedEntity = environment.utilities.hash.insecureHash(serializedMakeup);
-        const secretBytes = new TextEncoder().encode(secretResponse.value!);
+        const keyBytes = jose.base64url.decode(environment.utilities.hash.insecureHash(key));
 
         try
         {
-            const response = await jose.jwtVerify(this.currentSignature, secretBytes, {
+            const response = await jose.jwtDecrypt(this.currentSignature, keyBytes, {
                 issuer: 'vaultic',
                 audience: 'vaulticUser',
+                contentEncryptionAlgorithms: ['A256GCM']
             });
 
             if (nameof<StoreState>('previousSignature') in this)
             {
-                await jose.jwtVerify(this[nameof<StoreState>("previousSignature")], secretBytes, {
+                await jose.jwtDecrypt(this[nameof<StoreState>("previousSignature")], keyBytes, {
                     issuer: 'vaultic',
                     audience: 'vaulticUser',
+                    contentEncryptionAlgorithms: ['A256GCM']
                 });
             }
 
@@ -351,7 +318,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return false;
         }
 
-        const result = await environment.utilities.crypt.encrypt(key, this[property] as string);
+        const result = await environment.utilities.crypt.symmetricEncrypt(key, this[property] as string);
         if (!result)
         {
             return false;
@@ -368,7 +335,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         {
             if (!await this.encryptAndSet(key, properties[i]))
             {
-                console.log(`Failed to encrypt property: ${properties[i]}. Key: ${key}`)
                 return false;
             }
         }
@@ -396,7 +362,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             }
             else if (typeof obj[properties[i]] === 'string')
             {
-                const result = await environment.utilities.crypt.encrypt(key, obj[properties[i]] as string);
+                const result = await environment.utilities.crypt.symmetricEncrypt(key, obj[properties[i]] as string);
                 if (!result)
                 {
                     return false;
@@ -409,14 +375,14 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         return true;
     }
 
-    private async decryptAndGet(masterKey: string, property: keyof this, runningObject: { [key: string]: any }): Promise<boolean>
+    private async decryptAndGet(key: string, property: keyof this, runningObject: { [key: string]: any }): Promise<boolean>
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
             return false;
         }
 
-        const result = await environment.utilities.crypt.decrypt(masterKey, this[property] as string);
+        const result = await environment.utilities.crypt.symmetricDecrypt(key, this[property] as string);
         if (!result)
         {
             return false;
@@ -427,12 +393,12 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         return true;
     }
 
-    public async decryptAndGetEach(masterKey: string, properties: (keyof this)[]): Promise<[boolean, VaulticEntity]>
+    public async decryptAndGetEach(key: string, properties: (keyof this)[]): Promise<[boolean, VaulticEntity]>
     {
         let runningObject = this.createNew();
         for (let i = 0; i < properties.length; i++)
         {
-            if (!await this.decryptAndGet(masterKey, properties[i], runningObject))
+            if (!await this.decryptAndGet(key, properties[i], runningObject))
             {
                 return [false, {} as VaulticEntity];
             }

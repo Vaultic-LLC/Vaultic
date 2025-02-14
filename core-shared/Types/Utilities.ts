@@ -1,4 +1,5 @@
 import { RandomValueType } from "./Fields";
+import { PublicPrivateKey } from "./Keys";
 import { ECEncryptionResult, TypedMethodResponse } from "./MethodResponse";
 
 export interface CoreCryptUtility
@@ -9,19 +10,13 @@ export interface CoreCryptUtility
 
 export interface ClientCryptUtility extends CoreCryptUtility
 {
-    encrypt: (key: string, value: string) => Promise<TypedMethodResponse<string>>;
-    decrypt: (key: string, value: string) => Promise<TypedMethodResponse<string>>;
-}
-
-export interface PublicPrivateKey
-{
-    public: string;
-    private: string;
+    symmetricEncrypt: (key: string, value: string) => Promise<TypedMethodResponse<string | undefined>>;
+    symmetricDecrypt: (key: string, value: string) => Promise<TypedMethodResponse<string | undefined>>;
 }
 
 export interface CoreGeneratorUtility
 {
-    ECKeys: () => Promise<PublicPrivateKey>;
+    ECKeys: () => Promise<PublicPrivateKey<string>>;
 }
 
 export interface ClientGeneratorUtility extends CoreGeneratorUtility

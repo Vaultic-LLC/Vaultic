@@ -1,38 +1,58 @@
 import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { Vault } from "../Database/Entities/Vault";
 import { environment } from "../Environment";
-import { VaultKey } from "../Types/Properties";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { MLKEM1024KeyResult, PublicKeyType, SignedVaultKey, SignedVaultKeyMessage } from "@vaultic/shared/Types/Keys";
+import vaulticServer from "../Server/VaulticServer";
 
 class VaultHelper 
 {
-    public async decryptVaultKey(masterKey: string, privateKey: string, decryptPrivateKey: boolean, vaultKey: string, decryptVaultKey: boolean = true): Promise<TypedMethodResponse<string>>
+    public async prepareVaultKeyForRecipient(senderUserID: number, sendingPrivateSigningKey: string,
+        recipientPublicEncryptingKey: string, vaultKey: string): Promise<TypedMethodResponse<string | undefined>>
     {
-        if (decryptPrivateKey)
+        const asymmetricEncryptResult = await environment.utilities.crypt.asymmeticEncrypt(recipientPublicEncryptingKey, vaultKey);
+        if (!asymmetricEncryptResult.success)
         {
-            const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, privateKey);
-            if (!decryptedPrivateKey.success)
-            {
-                return decryptedPrivateKey;
-            }
-
-            privateKey = decryptedPrivateKey.value!;
+            return asymmetricEncryptResult as TypedMethodResponse<string | undefined>;
         }
 
-        let vaultKeyToUse = vaultKey;
-        if (decryptVaultKey)
+        const keyResult: MLKEM1024KeyResult = asymmetricEncryptResult.value as MLKEM1024KeyResult;
+        const message: SignedVaultKeyMessage =
         {
-            const decryptedVaultKeys = await environment.utilities.crypt.decrypt(masterKey, vaultKey);
-            if (!decryptedVaultKeys.success)
-            {
-                return decryptedVaultKeys;
-            }
+            senderUserID,
+            cipherText: keyResult.cipherText,
+            vaultKey: keyResult.value
+        };
 
-            vaultKeyToUse = decryptedVaultKeys.value!;
+        const signature = environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.vaulticStringify(message));
+        return TypedMethodResponse.success(JSON.stringify({
+            signature: signature,
+            message
+        }));
+    }
+
+    public async evaluateVaultKeyFromSender(recipientPrivateEncryptingKey: string, signedVaultKey: string)
+        : Promise<TypedMethodResponse<string | undefined>>
+    {
+        const parsedVaultKey: SignedVaultKey = JSON.vaulticParse(signedVaultKey);
+        const publicKeyResponse = await vaulticServer.user.getPublicKeys(PublicKeyType.Signing, [parsedVaultKey.message.senderUserID]);
+        if (!publicKeyResponse.Success)
+        {
+            return TypedMethodResponse.fail();
         }
 
-        const keys: VaultKey = JSON.vaulticParse(vaultKeyToUse);
-        return await environment.utilities.crypt.ECDecrypt(keys.publicKey, privateKey, keys.vaultKey);
+        if (!publicKeyResponse.UsersAndPublicKeys?.[parsedVaultKey.message.senderUserID]?.PublicSigningKey)
+        {
+            return TypedMethodResponse.fail();
+        }
+
+        const verifyResult = await environment.utilities.crypt.verify(publicKeyResponse.UsersAndPublicKeys[parsedVaultKey.message.senderUserID].PublicSigningKey, parsedVaultKey);
+        if (!verifyResult.success || !verifyResult.value)
+        {
+            return TypedMethodResponse.fail();
+        }
+
+        return await environment.utilities.crypt.asymmetricDecrypt(recipientPrivateEncryptingKey, parsedVaultKey.message.vaultKey, parsedVaultKey.message.cipherText);
     }
 
     public async decryptCondensedUserVault(vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[])
@@ -40,7 +60,7 @@ class VaultHelper
         const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
         for (let j = 0; j < decryptableProperties.length; j++)
         {
-            const response = await environment.utilities.crypt.decrypt(vaultKey, condensedVault[decryptableProperties[j]]);
+            const response = await environment.utilities.crypt.symmetricDecrypt(vaultKey, condensedVault[decryptableProperties[j]]);
             if (!response.success)
             {
                 return null;

@@ -256,13 +256,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
             // The user was never successfully created
             if (!User.isValid(serverUserDataPayload.user))
             {
-                if (!serverUserDataPayload.user.publicKey || !serverUserDataPayload.user.privateKey)
-                {
-                    await environment.repositories.logs.log(undefined, "No Public or Private Key for User", "checkMergeMissingData")
-                    return false;
-                }
-
-                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, serverUserDataPayload.user.publicKey!, serverUserDataPayload.user.privateKey!, transaction)).success;
+                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, transaction)).success;
             }
 
             if (!(await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction)))

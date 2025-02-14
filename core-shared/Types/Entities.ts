@@ -12,7 +12,6 @@ export enum EntityState
 
 export interface IVaulticEntity 
 {
-    signatureSecret: string;
     currentSignature: string;
     entityState: EntityState;
     serializedPropertiesToSync: string;
@@ -29,8 +28,10 @@ export interface IUser extends IVaulticEntity
     lastUsed: boolean;
     masterKeyHash: string;
     masterKeySalt: string;
-    publicKey: string;
-    privateKey: string;
+    publicSigningKey: string;
+    privateSigningKey: string;
+    publicEncryptingKey: string;
+    privateEncryptingKey: string;
     appStoreState: IAppStoreState;
     userPreferencesStoreState: IUserPreferencesStoreState;
     userVaults: IUserVault[]

@@ -56,8 +56,7 @@ export class AppStoreState extends StoreState implements IAppStoreState
 
     public static isValid(appStoreState: DeepPartial<AppStoreState>): boolean
     {
-        return !!appStoreState.signatureSecret &&
-            !!appStoreState.currentSignature &&
+        return !!appStoreState.currentSignature &&
             !!appStoreState.previousSignature &&
             !!appStoreState.state &&
             !!appStoreState.appStoreStateID &&

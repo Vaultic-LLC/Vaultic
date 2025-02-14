@@ -48,6 +48,8 @@ import app from "../../Objects/Stores/AppStore";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
+import { VerifyUserMasterKeyResponse } from '@vaultic/shared/Types/Repositories';
+import { VaulticKey } from '@vaultic/shared/Types/Keys';
 
 export default defineComponent({
     name: "AuthenticationPopup",
@@ -110,7 +112,7 @@ export default defineComponent({
 
             lastAuthAttempt = Date.now();
 
-            api.repositories.users.verifyUserMasterKey(key.value).then((response: TypedMethodResponse<boolean | undefined>) =>
+            api.repositories.users.verifyUserMasterKey(key.value).then((response: TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>) =>
             {
                 if (response.success)
                 {
@@ -118,15 +120,15 @@ export default defineComponent({
                     return;
                 }
 
-                handleKeyIsValid(false);
+                handleKeyIsValid({isValid: false, keyAlgorithm: 0});
                 defaultHandleFailedResponse(response, false);
             });
         }
         
-        async function handleKeyIsValid(isValid: boolean)
+        async function handleKeyIsValid(response: VerifyUserMasterKeyResponse)
         {
             app.popups.hideLoadingIndicator();
-            if (!isValid)
+            if (!response.isValid)
             {
                 disabled.value = false;
                 jiggleContainer();
@@ -138,7 +140,14 @@ export default defineComponent({
             }
             else
             {
-                ctx.emit("onAuthenticationSuccessful", key.value);
+                // the encrypting / decrypting framework expects a VaulticKey
+                const vaulticKey: VaulticKey =
+                {
+                    algorithm: response.keyAlgorithm,
+                    key: key.value
+                };
+
+                ctx.emit("onAuthenticationSuccessful", JSON.vaulticStringify(vaulticKey));
             }
         }
 

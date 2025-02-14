@@ -6,10 +6,6 @@ export class CreateSchema1722604318830 implements MigrationInterface
     {
         const vaulticEntityProperties: TableColumnOptions[] = [
             {
-                name: "signatureSecret",
-                type: "text"
-            },
-            {
                 name: "currentSignature",
                 type: "text"
             },
@@ -68,11 +64,23 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "text"
                 },
                 {
-                    name: "publicKey",
+                    name: "masterKeyEncryptionAlgorithm",
+                    type: "integer"
+                },
+                {
+                    name: "publicSigningKey",
                     type: "text"
                 },
                 {
-                    name: "privateKey",
+                    name: "privateSigningKey",
+                    type: "text"
+                },
+                {
+                    name: "publicEncryptingKey",
+                    type: "text"
+                },
+                {
+                    name: "privateEncryptingKey",
                     type: "text"
                 }
             ]

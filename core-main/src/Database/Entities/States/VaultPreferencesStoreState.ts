@@ -59,8 +59,7 @@ export class VaultPreferencesStoreState extends StoreState implements IVaultPref
 
     public static isValid(vaultPreferncesStoreState: DeepPartial<VaultPreferencesStoreState>): boolean
     {
-        return !!vaultPreferncesStoreState.signatureSecret &&
-            !!vaultPreferncesStoreState.currentSignature &&
+        return !!vaultPreferncesStoreState.currentSignature &&
             !!vaultPreferncesStoreState.previousSignature &&
             !!vaultPreferncesStoreState.state &&
             !!vaultPreferncesStoreState.vaultPreferencesStoreStateID &&

@@ -2,9 +2,9 @@ import { randomBytes, generateKeyPairSync } from "crypto"
 import crypto from "crypto";
 import { GeneratorUtility } from "../Core/Types/Utilities";
 import coreGenerator from "../Core/Utilities/CoreGeneratorUtility";
-import { PublicPrivateKey } from "@vaultic/shared/Types/Utilities";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 import validationHelper from "../Core/Helpers/ValidationHelper";
+import { PublicPrivateKey } from "@vaultic/shared/Types/Keys";
 
 function uniqueId(): string
 {
@@ -136,7 +136,7 @@ function randomValueOfByteLength(bytes: number)
 	return randomBytes(bytes).toString('hex');
 }
 
-function publicPrivateKey(): PublicPrivateKey
+function publicPrivateKey(): PublicPrivateKey<string>
 {
 	const keys = generateKeyPairSync('rsa', {
 		modulusLength: 4096,

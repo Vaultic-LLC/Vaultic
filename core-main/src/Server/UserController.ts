@@ -4,12 +4,13 @@ import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
 import { ServerAllowSharingFrom, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
+import { PublicKeyType } from "@vaultic/shared/Types/Keys";
 
 export interface UserController extends ClientUserController
 {
     getUserIDs: () => Promise<GetUserIDResponse>;
     backupData: (postData: { userDataPayload: UserDataPayload }) => Promise<BackupResponse>;
-    getPublicKeys: (userIDs: number[]) => Promise<GetPublicKeysResponse>;
+    getPublicKeys: (publicKeyType: PublicKeyType, userIDs: number[]) => Promise<GetPublicKeysResponse>;
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -124,9 +125,10 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
-    function getPublicKeys(userIDs: number[]): Promise<GetPublicKeysResponse>
+    function getPublicKeys(publicKeyType: PublicKeyType, userIDs: number[]): Promise<GetPublicKeysResponse>
     {
         return axiosHelper.api.post('User/GetPublicKeys', {
+            PublicKeyType: publicKeyType,
             UserIDs: userIDs,
         });
     }

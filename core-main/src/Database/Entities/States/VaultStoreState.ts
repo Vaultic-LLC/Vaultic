@@ -55,8 +55,7 @@ export class VaultStoreState extends StoreState implements IVaultStoreState
 
     public static isValid(vaultStoreState: DeepPartial<VaultStoreState>): boolean
     {
-        return !!vaultStoreState.signatureSecret &&
-            !!vaultStoreState.currentSignature &&
+        return !!vaultStoreState.currentSignature &&
             !!vaultStoreState.previousSignature &&
             !!vaultStoreState.state &&
             !!vaultStoreState.vaultStoreStateID &&

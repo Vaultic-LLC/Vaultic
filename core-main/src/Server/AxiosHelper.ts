@@ -3,9 +3,9 @@ import vaulticServer from './VaulticServer';
 import { environment } from '../Environment';
 import { FieldTree } from '../Types/FieldTree';
 import { DeviceInfo } from '@vaultic/shared/Types/Device';
-import { PublicPrivateKey } from '@vaultic/shared/Types/Utilities';
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaultic/shared/Types/Responses';
+import { PublicPrivateKey } from '@vaultic/shared/Types/Keys';
 
 const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
@@ -14,7 +14,7 @@ let deviceInfo: DeviceInfo;
 let axiosInstance: AxiosInstance;
 
 // Don't move in cache so I don't have to worry about changing keys while requests may still be in transit
-let responseKeys: PublicPrivateKey;
+let responseKeys: PublicPrivateKey<string>;
 
 // can't access environment before it has been initalized
 function init()
@@ -66,7 +66,7 @@ class AxiosWrapper
         const date = new Date();
         const string = `${apiKeyPrefix}${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
 
-        const encrypt = await environment.utilities.crypt.encrypt(APIKeyEncryptionKey, string);
+        const encrypt = await environment.utilities.crypt.symmetricEncrypt(APIKeyEncryptionKey, string);
         return encrypt.value ?? "";
     }
 
@@ -265,7 +265,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     continue;
                 }
 
-                const response = await environment.utilities.crypt.encrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
+                const response = await environment.utilities.crypt.symmetricEncrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
                     response.addToErrorMessage(`Prop: ${fieldTree.properties[i]}`);
@@ -336,7 +336,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     continue;
                 }
 
-                const response = await environment.utilities.crypt.decrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
+                const response = await environment.utilities.crypt.symmetricEncrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
                     return response;
@@ -410,7 +410,7 @@ class APIAxiosWrapper extends AxiosWrapper
             return TypedMethodResponse.fail(undefined, undefined, undefined, undefined, true);
         }
 
-        const requestData = await environment.utilities.crypt.encrypt(environment.cache.sessionKey!, JSON.vaulticStringify(data));
+        const requestData = await environment.utilities.crypt.symmetricEncrypt(environment.cache.sessionKey!, JSON.vaulticStringify(data));
         if (!requestData.success)
         {
             return TypedMethodResponse.fail(undefined, undefined, requestData.errorMessage, requestData.logID);
@@ -434,7 +434,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 return TypedMethodResponse.fail(undefined, "handleResponse", "No Data");
             }
 
-            const decryptedResponse = await environment.utilities.crypt.decrypt(environment.cache.sessionKey!, encryptedResponse.Data);
+            const decryptedResponse = await environment.utilities.crypt.symmetricDecrypt(environment.cache.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
                 return TypedMethodResponse.propagateFail(decryptedResponse, "handleResponse");

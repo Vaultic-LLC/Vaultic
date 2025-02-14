@@ -1,4 +1,7 @@
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { environment } from "./Environment";
+import { VaulticKey } from "@vaultic/shared/Types/Keys";
+import { safetifyMethod } from "./Helpers/RepositoryHelper";
 
 export class VaulticCache
 {
@@ -62,9 +65,28 @@ export class VaulticCache
         await environment.sessionHandler.setSession(tokenHash);
     }
 
-    setMasterKey(masterKey: string)
+    async setMasterKey(masterKey: string): Promise<TypedMethodResponse<undefined>>
     {
-        this.internalMasterKey = masterKey;
+        return safetifyMethod(this, internalSetMasterKey);
+
+        async function internalSetMasterKey(): Promise<TypedMethodResponse<undefined>>
+        {
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            // the encrypting / decrypting framework expects a VaulticKey
+            const masterKeyVaulticKey: VaulticKey =
+            {
+                algorithm: currentUser.masterKeyEncryptionAlgorithm,
+                key: masterKey
+            };
+
+            this.internalMasterKey = JSON.vaulticStringify(masterKeyVaulticKey);
+            return TypedMethodResponse.success();
+        }
     }
 
     clearMasterKey()

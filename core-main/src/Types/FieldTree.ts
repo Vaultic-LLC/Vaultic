@@ -2,7 +2,6 @@ import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { StoreState } from "../Database/Entities/States/StoreState";
 import { User } from "../Database/Entities/User";
 import { UserVault } from "../Database/Entities/UserVault";
-import { VaulticEntity } from "../Database/Entities/VaulticEntity";
 
 export interface FieldTree
 {
@@ -10,12 +9,7 @@ export interface FieldTree
     nestedProperties?: { [key: string]: FieldTree };
 }
 
-const vaulticEntityE2EEncryptableProperties = [
-    nameof<VaulticEntity>("signatureSecret")
-];
-
 const storeStateE2EEncryptableProperties = [
-    ...vaulticEntityE2EEncryptableProperties,
     nameof<StoreState>("state")
 ];
 
@@ -27,7 +21,7 @@ export const userDataE2EEncryptedFieldTree: FieldTree =
             properties: [],
             nestedProperties: {
                 user: {
-                    properties: [...vaulticEntityE2EEncryptableProperties, nameof<User>("privateKey")],
+                    properties: [nameof<User>("privateSigningKey"), nameof<User>("privateEncryptingKey")],
                     nestedProperties: {
                         appStoreState: {
                             properties: storeStateE2EEncryptableProperties,
@@ -38,7 +32,7 @@ export const userDataE2EEncryptedFieldTree: FieldTree =
                     }
                 },
                 userVaults: {
-                    properties: [...vaulticEntityE2EEncryptableProperties, nameof<UserVault>("vaultKey")],
+                    properties: [nameof<UserVault>("vaultKey")],
                     nestedProperties: {
                         vaultPreferencesStoreState: {
                             properties: storeStateE2EEncryptableProperties

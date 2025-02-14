@@ -1,5 +1,6 @@
 import { Device, RequireMFAOn } from "./Device";
 import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataPayload, UserDemographics, UserOrgInfo, VaultDataBreach } from "./ClientServerTypes";
+import { PublicKeys } from "./Keys";
 
 export interface EncryptedResponse
 {
@@ -142,8 +143,6 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 export interface FinishRegistrationResponse extends BaseResponse
 {
     MFASecret?: string;
-    PublicKey?: string;
-    PrivateKey?: string;
 }
 
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
@@ -218,7 +217,7 @@ export interface GetVaultMembersResponse extends BaseResponse
 
 export interface GetPublicKeysResponse extends BaseResponse
 {
-    UsersAndPublicKeys?: { [key: number]: string };
+    UsersAndPublicKeys?: { [key: number]: PublicKeys };
 }
 
 export interface CreateOrganizationResponse extends BaseResponse

@@ -27,7 +27,6 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
-import { server } from "@serenity-kit/opaque";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -80,7 +79,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
     public async createNewVault(name: string, shared: boolean, addedOrganizations: Organization[],
         addedMembers: Member[]): Promise<boolean | [UserVault, Vault, string]>
     {
-        const vaultKey = environment.utilities.generator.randomValue(60);
+        const vaultKey = environment.utilities.crypt.generateSymmetricKey();
 
         let orgsAndUserKeys: AddedOrgInfo;
         if (addedOrganizations.length > 0)
@@ -168,7 +167,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const vault: Vault = vaultData[1];
             const vaultKey: string = vaultData[2];
 
-            const encryptedVaultKey = await environment.utilities.crypt.ECEncrypt(currentUser.publicKey, vaultKey);
+            const encryptedVaultKey = await environment.utilities.crypt.symmetricEncrypt(masterKey, vaultKey);
             if (!encryptedVaultKey.success)
             {
                 return TypedMethodResponse.fail(errorCodes.EC_ENCRYPTION_FAILED);
@@ -176,10 +175,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             userVault.userID = currentUser.userID;
             userVault.user = currentUser;
-            userVault.vaultKey = JSON.vaulticStringify({
-                vaultKey: encryptedVaultKey.value.data,
-                publicKey: encryptedVaultKey.value.publicKey
-            });
+            userVault.vaultKey = encryptedVaultKey.value;
 
             const transaction = new Transaction();
 
@@ -712,12 +708,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         const partialVault = {}
         let updatedVault = false;
-
-        if (newVault.signatureSecret)
-        {
-            partialVault[nameof<Vault>("signatureSecret")] = newVault.signatureSecret;
-            updatedVault = true;
-        }
 
         if (newVault.currentSignature)
         {

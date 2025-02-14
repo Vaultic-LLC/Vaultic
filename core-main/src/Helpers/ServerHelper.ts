@@ -6,7 +6,6 @@ import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
-import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 
@@ -31,35 +30,7 @@ async function registerUser(masterKey: string, email: string, firstName: string,
         password: passwordHash,
     });
 
-    const keys = await environment.utilities.generator.ECKeys();
-
-    // wrap private key in masterKey encryption and exportKey encryption for future use
-    const masterKeyEncryptedPrivateKey = await environment.utilities.crypt.encrypt(masterKey, keys.private);
-    if (!masterKeyEncryptedPrivateKey.success)
-    {
-        await environment.repositories.logs.log(errorCodes.ENCRYPTION_FAILED, "Private Key Master Key Encryption");
-        return { Success: false }
-    }
-
-    const exportKeyEncryptedPrivateKey = await environment.utilities.crypt.encrypt(exportKey, masterKeyEncryptedPrivateKey.value!);
-    if (!exportKeyEncryptedPrivateKey.success)
-    {
-        await environment.repositories.logs.log(errorCodes.ENCRYPTION_FAILED, "Private Key Export Key Encryption");
-        return { Success: false }
-    }
-
-    const response = await stsServer.registration.finish(startResponse.PendingUserToken!,
-        registrationRecord, firstName, lastName, keys.public, exportKeyEncryptedPrivateKey.value!);
-
-    if (response.Success)
-    {
-        response.PublicKey = keys.public;
-
-        // only return the masterKey encrypted private key since we're already local
-        response.PrivateKey = masterKeyEncryptedPrivateKey.value!;
-    }
-
-    return response;
+    return await stsServer.registration.finish(startResponse.PendingUserToken!, registrationRecord, firstName, lastName);
 }
 
 async function logUserIn(masterKey: string, email: string,
@@ -177,6 +148,7 @@ async function logUserIn(masterKey: string, email: string,
 
 //     async function decryptAndSetName(vault: ServerDisplayVault)
 //     {
+//         Not correct anymore
 //         const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!, vault.isSetup);
 //         if (!vaultKey.success)
 //         {

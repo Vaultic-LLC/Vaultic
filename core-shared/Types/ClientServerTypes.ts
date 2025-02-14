@@ -142,7 +142,7 @@ export interface UserOrgInfo extends UserInfo
 
 export interface UserDemographics extends UserInfo
 {
-    PublicKey: string;
+    PublicEncryptingKey: string;
 }
 
 export interface OrganizationInfo

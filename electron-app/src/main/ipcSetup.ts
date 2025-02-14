@@ -50,8 +50,8 @@ export default function setupIPC()
 	ipcMain.handle('organizationController:updateOrganization', (e, masterKey: string, updateOrganizationData: string) => validateSender(e, () => vaulticServer.organization.updateOrganization(masterKey, updateOrganizationData)));
 	ipcMain.handle('organizationController:deleteOrganization', (e, organizationID: number) => validateSender(e, () => vaulticServer.organization.deleteOrganization(organizationID)));
 
-	ipcMain.handle('cryptUtility:encrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.encrypt(key, value)));
-	ipcMain.handle('cryptUtility:decrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.decrypt(key, value)));
+	ipcMain.handle('cryptUtility:symmetricEncrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.symmetricEncrypt(key, value)));
+	ipcMain.handle('cryptUtility:symmetricDecrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.symmetricDecrypt(key, value)));
 	ipcMain.handle('cryptUtility:ECEncrypt', (e, recipientPublicKey: string, value: string) => validateSender(e, () => cryptUtility.ECEncrypt(recipientPublicKey, value)));
 	ipcMain.handle('cryptUtility:ECDecrypt', (e, tempPublicKey: string, usersPrivateKey: string, value: string) =>
 		validateSender(e, () => cryptUtility.ECDecrypt(tempPublicKey, usersPrivateKey, value)));
@@ -81,7 +81,7 @@ export default function setupIPC()
 
 	ipcMain.handle('userRepository:getLastUsedUserInfo', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserInfo()));
 	ipcMain.handle('userRepository:getLastUsedUserPreferences', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserPreferences()));
-	ipcMain.handle('userRepository:createUser', (e, masterKey: string, email: string, firstName: string, lastName: string, publicKey: string, privateKey: string) => validateSender(e, () => environment.repositories.users.createUser(masterKey, email, firstName, lastName, publicKey, privateKey)));
+	ipcMain.handle('userRepository:createUser', (e, masterKey: string, email: string, firstName: string, lastName: string) => validateSender(e, () => environment.repositories.users.createUser(masterKey, email, firstName, lastName)));
 	ipcMain.handle('userRepository:setCurrentUser', (e, masterKey: string, email: string) => validateSender(e, () => environment.repositories.users.setCurrentUser(masterKey, email)));
 	ipcMain.handle('userRepository:getCurrentUserData', (e, masterKey: string) => validateSender(e, () => environment.repositories.users.getCurrentUserData(masterKey)));
 	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email)));

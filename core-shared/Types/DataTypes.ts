@@ -25,7 +25,7 @@ export interface Member
     username: string;
     permission: ServerPermissions;
     icon: string | undefined;
-    publicKey: string | undefined;
+    publicEncryptingKey: string | undefined;
 }
 
 export class PasswordsByDomainType extends FieldedObject

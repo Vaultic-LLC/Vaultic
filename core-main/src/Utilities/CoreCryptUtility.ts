@@ -1,34 +1,218 @@
 import { x25519 } from '@noble/curves/ed25519';
-import { bytesToHex } from '@noble/curves/abstract/utils';
+import { bytesToHex, hexToBytes } from '@noble/curves/abstract/utils';
 import coreGenerator from './CoreGeneratorUtility';
 import { environment } from '../Environment';
 import { ECEncryptionResult, TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
-import { CoreCryptUtility } from '@vaultic/shared/Types/Utilities';
+import { randomBytes } from '@noble/post-quantum/utils';
+import { ml_kem1024 } from '@noble/post-quantum/ml-kem';
+import { ml_dsa87 } from '@noble/post-quantum/ml-dsa';
+import { PublicPrivateKey, Algorithm, VaulticKey, MLKEM1024KeyResult, SignedVaultKey } from '@vaultic/shared/Types/Keys';
+import { xchacha20poly1305 } from '@noble/ciphers/chacha';
+import { utf8ToBytes } from '@noble/ciphers/utils';
+import { EncryptedResponse } from '@vaultic/shared/Types/Responses';
+import { ClientCryptUtility } from '@vaultic/shared/Types/Utilities';
 
-async function ECEncrypt(recipientPublicKey: string, value: string): Promise<TypedMethodResponse<ECEncryptionResult>>
+export class CryptUtility implements ClientCryptUtility
 {
-    const tempKeys = await coreGenerator.ECKeys();
-    const sharedKey = x25519.getSharedSecret(tempKeys.private, recipientPublicKey);
+    constructor() { }
 
-    const response = await environment.utilities.crypt.encrypt(bytesToHex(sharedKey), value);
-    if (!response)
+    public generatePublicPrivateKeys(alg: Algorithm): PublicPrivateKey<string> | undefined
     {
-        return TypedMethodResponse.propagateFail(response);
+        switch (alg)
+        {
+            case Algorithm.ML_KEM_1024:
+                const encSeed = randomBytes(64);
+                const encKeys = ml_kem1024.keygen(encSeed);
+
+                return {
+                    public: JSON.vaulticStringify(
+                        {
+                            algorithm: Algorithm.ML_KEM_1024,
+                            key: bytesToHex(encKeys.publicKey)
+                        }),
+                    private: JSON.vaulticStringify(
+                        {
+                            algorithm: Algorithm.ML_KEM_1024,
+                            key: bytesToHex(encKeys.secretKey)
+                        })
+                };
+            case Algorithm.ML_DSA_87:
+                const sigSeed = randomBytes(32);
+                const sigKeys = ml_dsa87.keygen(sigSeed);
+
+                return {
+                    public: JSON.vaulticStringify(
+                        {
+                            algorithm: Algorithm.ML_DSA_87,
+                            key: bytesToHex(sigKeys.publicKey)
+                        }),
+                    private: JSON.vaulticStringify(
+                        {
+                            algorithm: Algorithm.ML_DSA_87,
+                            key: bytesToHex(sigKeys.secretKey)
+                        })
+                };
+        }
     }
 
-    return TypedMethodResponse.success({ data: response.value, publicKey: tempKeys.public });
+    public generateSymmetricKey(): VaulticKey 
+    {
+        const key = bytesToHex(randomBytes(32));
+        return {
+            algorithm: Algorithm.XCHACHA20_POLY1305,
+            key: key
+        };
+    }
+
+    public async ECEncrypt(recipientPublicKey: string, value: string): Promise<TypedMethodResponse<ECEncryptionResult>>
+    {
+        const tempKeys = await coreGenerator.ECKeys();
+        const sharedKey = x25519.getSharedSecret(tempKeys.private, recipientPublicKey);
+
+        const response = await this.symmetricEncrypt(bytesToHex(sharedKey), value);
+        if (!response)
+        {
+            return TypedMethodResponse.propagateFail(response);
+        }
+
+        return TypedMethodResponse.success({ data: response.value, publicKey: tempKeys.public });
+    }
+
+    public async ECDecrypt(tempPublicKey: string, usersPrivateKey: string, value: string): Promise<TypedMethodResponse<string>>
+    {
+        const sharedKey = x25519.getSharedSecret(usersPrivateKey, tempPublicKey);
+        return await this.symmetricDecrypt(bytesToHex(sharedKey), value);
+    }
+
+    public async symmetricEncrypt(key: string, value: string): Promise<TypedMethodResponse<string | undefined>>
+    {
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.vaulticParse(key);
+            switch (vaulticKey.algorithm)
+            {
+                case Algorithm.XCHACHA20_POLY1305:
+                    const nonce = randomBytes(24);
+                    const cipher = xchacha20poly1305(utf8ToBytes(environment.utilities.hash.insecureHash(vaulticKey.key)), nonce).encrypt(utf8ToBytes(value));
+                    return TypedMethodResponse.success(bytesToHex(new Uint8Array([...nonce, ...cipher])));
+            }
+        }
+        catch (e)
+        {
+        }
+
+        return TypedMethodResponse.fail();
+    }
+
+    public async symmetricDecrypt(key: string, value: string): Promise<TypedMethodResponse<string | undefined>>
+    {
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.vaulticParse(key);
+            switch (vaulticKey.algorithm)
+            {
+                case Algorithm.XCHACHA20_POLY1305:
+                    const cipherBytes = hexToBytes(value);
+                    const chacha = xchacha20poly1305(hexToBytes(environment.utilities.hash.insecureHash(vaulticKey.key)), cipherBytes.slice(0, 24));
+                    return TypedMethodResponse.success(bytesToHex(chacha.decrypt(cipherBytes.slice(24))));
+            }
+        }
+        catch (e)
+        {
+        }
+
+        return TypedMethodResponse.fail();
+    }
+
+    public async asymmeticEncrypt(recipientsPublicEncryptingKey: string, value: string): Promise<TypedMethodResponse<MLKEM1024KeyResult | string | undefined>>
+    {
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.vaulticParse(recipientsPublicEncryptingKey);
+            switch (vaulticKey.algorithm)
+            {
+                case Algorithm.ML_KEM_1024:
+                    const { cipherText, sharedSecret } = ml_kem1024.encapsulate(hexToBytes(vaulticKey.key));
+                    const encryptedVaultKey = await this.symmetricEncrypt(bytesToHex(sharedSecret), value);
+
+                    if (!encryptedVaultKey.success)
+                    {
+                        return encryptedVaultKey;
+                    }
+
+                    return TypedMethodResponse.success({ cipherText: bytesToHex(cipherText), value: encryptedVaultKey.value });
+            }
+        }
+        catch (e)
+        {
+        }
+
+        return TypedMethodResponse.fail();
+    }
+
+    public async asymmetricDecrypt(recipientsPrivateEncryptingKey: string, value: string, cipherText: string): Promise<TypedMethodResponse<string | undefined>>
+    {
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.vaulticParse(recipientsPrivateEncryptingKey);
+            switch (vaulticKey.algorithm)
+            {
+                case Algorithm.ML_KEM_1024:
+                    const sharedSecret = ml_kem1024.decapsulate(hexToBytes(cipherText), hexToBytes(vaulticKey.key));
+                    return environment.utilities.crypt.symmetricDecrypt(bytesToHex(sharedSecret), value);
+            }
+        }
+        catch (e)
+        {
+        }
+
+        return TypedMethodResponse.fail();
+    }
+
+    public async sign(sendersPrivateSigningKey: string, message: string): Promise<TypedMethodResponse<string | undefined>>
+    {
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.vaulticParse(sendersPrivateSigningKey);
+            switch (vaulticKey.algorithm)
+            {
+                case Algorithm.ML_DSA_87:
+                    return TypedMethodResponse.success(bytesToHex(ml_dsa87.sign(hexToBytes(vaulticKey.key), new TextEncoder().encode(message))));
+            }
+        }
+        catch (e)
+        {
+        }
+
+        return TypedMethodResponse.fail();
+    }
+
+    public async verify(sendersPublicSigningKey: string, signedVaultKey: SignedVaultKey): Promise<TypedMethodResponse<boolean | undefined>>
+    {
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.vaulticParse(sendersPublicSigningKey);
+            switch (vaulticKey.algorithm)
+            {
+                case Algorithm.ML_DSA_87:
+                    return new TypedMethodResponse(ml_dsa87.verify(hexToBytes(sendersPublicSigningKey), new TextEncoder().encode(JSON.vaulticStringify(signedVaultKey.message)),
+                        hexToBytes(signedVaultKey.signature)));
+            }
+        }
+        catch (e)
+        {
+        }
+
+        return TypedMethodResponse.fail();
+    }
+
+    public async hybridEncrypt(value: string): Promise<TypedMethodResponse<EncryptedResponse>>
+    {
+        return TypedMethodResponse.fail();
+    }
+
+    public async hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<TypedMethodResponse<string | undefined>>
+    {
+        return TypedMethodResponse.fail();
+    }
 }
-
-async function ECDecrypt(tempPublicKey: string, usersPrivateKey: string, value: string): Promise<TypedMethodResponse<string>>
-{
-    const sharedKey = x25519.getSharedSecret(usersPrivateKey, tempPublicKey);
-    return await environment.utilities.crypt.decrypt(bytesToHex(sharedKey), value);
-}
-
-const coreCrypt: CoreCryptUtility =
-{
-    ECEncrypt,
-    ECDecrypt
-};
-
-export default coreCrypt;

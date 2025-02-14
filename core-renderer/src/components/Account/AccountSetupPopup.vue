@@ -172,6 +172,10 @@ export default defineComponent({
             {
                 navigationStack.value.push(AccountSetupView.SignIn);
             }
+            else if (accountSetupModel.value.currentView == AccountSetupView.SignIn)
+            {
+                navigationStack.value = [];
+            }
         }
 
         watch(() => props.model.currentView, () =>
