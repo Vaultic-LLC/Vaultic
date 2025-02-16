@@ -158,9 +158,12 @@ export interface UserDataPayloadResponse
 
 export interface FinishLoginResponse extends UserDataPayloadResponse, OpaqueResponse, CreateSessionResponse
 {
+    masterKey?: string;
 }
 
-export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse { }
+export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse 
+{
+}
 
 export interface CreateVaultResponse extends BaseResponse
 {

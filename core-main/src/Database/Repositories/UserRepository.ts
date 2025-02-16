@@ -20,7 +20,7 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
 import { Field } from "@vaultic/shared/Types/Fields";
-import { Algorithm } from "@vaultic/shared/Types/Keys";
+import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
 
 class UserRepository extends VaulticRepository<User> implements IUserRepository
@@ -32,8 +32,15 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
     private async setMasterKey(masterKey: string, user: User | DeepPartial<User>, encrypt: boolean): Promise<boolean>
     {
-        const salt = environment.utilities.generator.randomValue(40);
-        const hash = await environment.utilities.hash.hash(masterKey, salt);
+        console.log('setting master key');
+        const salt = environment.utilities.crypt.randomStrongValue(40);
+
+        // TODO: switch to Argon2id
+        const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey, salt);
+        if (!hash.success)
+        {
+            return false;
+        }
 
         if (encrypt)
         {
@@ -43,7 +50,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return false;
             }
 
-            const encryptedHash = await environment.utilities.crypt.symmetricEncrypt(masterKey, hash);
+            const encryptedHash = await environment.utilities.crypt.symmetricEncrypt(masterKey, hash.value);
             if (!encryptedHash.success)
             {
                 return false;
@@ -51,13 +58,15 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             user.masterKeyHash = encryptedHash.value!;
             user.masterKeySalt = encryptedSalt.value!;
+            console.log(`set master key: ${hash.value}, salt: ${salt}`)
 
             return true;
         }
 
-        user.masterKeyHash = hash;
+        user.masterKeyHash = hash.value;
         user.masterKeySalt = salt;
 
+        console.log(`set master key: ${hash.value}, salt: ${salt}`)
         return true;
     }
 
@@ -74,10 +83,27 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }));
     }
 
-    public async getVerifiedCurrentUser(masterKey: string)
+    public async getVerifiedCurrentUser(masterKey: string, alreadyVaulticKey: boolean = true)
     {
         const user = await this.getCurrentUser();
-        if (user && await user.verify(masterKey))
+        if (!user)
+        {
+            return null;
+        }
+
+        let masterKeyToUse = masterKey;
+        if (!alreadyVaulticKey)
+        {
+            const vaulticKey: VaulticKey =
+            {
+                algorithm: user.masterKeyEncryptionAlgorithm,
+                key: masterKey
+            };
+
+            masterKeyToUse = JSON.vaulticStringify(vaulticKey);
+        }
+
+        if (await user.verify(masterKeyToUse))
         {
             return user;
         }
@@ -85,13 +111,30 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         return null;
     }
 
-    public async findByEmail(masterKey: string, email: string) 
+    public async findByEmail(masterKey: string, email: string, alreadyVaulticKey: boolean = true) 
     {
         const user = await this.retrieveReactive((repository) => repository.findOneBy({
             email: email
         }));
 
-        if (user && await user.verify(masterKey))
+        if (!user)
+        {
+            return null;
+        }
+
+        let masterKeyToUse = masterKey;
+        if (!alreadyVaulticKey)
+        {
+            const vaulticKey: VaulticKey =
+            {
+                algorithm: user.masterKeyEncryptionAlgorithm,
+                key: masterKey
+            };
+
+            masterKeyToUse = JSON.vaulticStringify(vaulticKey);
+        }
+
+        if (await user.verify(masterKeyToUse))
         {
             return user;
         }
@@ -152,6 +195,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalCreateUser(this: UserRepository): Promise<TypedMethodResponse<boolean>>
         {
+            console.log(`Creating User: ${masterKey}`);
             const response = await vaulticServer.user.getUserIDs();
             if (!response.Success)
             {
@@ -188,7 +232,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             userPreferencesStoreState.state = "{}"
             user.userPreferencesStoreState = userPreferencesStoreState;
 
-            const vaults = await environment.repositories.vaults.createNewVault("Personal", false, [], []);
+            const vaults = await environment.repositories.vaults.createNewVault("Personal", false);
             if (!vaults)
             {
                 return TypedMethodResponse.fail(errorCodes.FAILED_TO_CREATE_NEW_VAULT, undefined, "Create new Vault");
@@ -196,19 +240,11 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             const userVault: UserVault = vaults[0];
             const vault: Vault = vaults[1];
-            const vaultKey: string = vaults[2];
-
-            const encryptedVaultKey = await environment.utilities.crypt.symmetricEncrypt(masterKey, vaultKey);
-            if (!encryptedVaultKey.success)
-            {
-                return TypedMethodResponse.fail(errorCodes.EC_ENCRYPTION_FAILED);
-            }
 
             vault.lastUsed = true;
 
             userVault.userID = user.userID;
             userVault.user = user;
-            userVault.vaultKey = encryptedVaultKey.value;
 
             // Order matters here
             transaction = transaction ?? new Transaction();
@@ -216,12 +252,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             transaction.insertEntity(user.appStoreState, masterKey, () => environment.repositories.appStoreStates);
             transaction.insertEntity(user.userPreferencesStoreState, "", () => environment.repositories.userPreferencesStoreStates);
 
-            transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
-            transaction.insertEntity(vault.vaultStoreState, vaultKey, () => environment.repositories.vaultStoreStates);
-            transaction.insertEntity(vault.passwordStoreState, vaultKey, () => environment.repositories.passwordStoreStates);
-            transaction.insertEntity(vault.valueStoreState, vaultKey, () => environment.repositories.valueStoreStates);
-            transaction.insertEntity(vault.filterStoreState, vaultKey, () => environment.repositories.filterStoreStates);
-            transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
+            transaction.insertEntity(vault, userVault.vaultKey, () => environment.repositories.vaults);
+            transaction.insertEntity(vault.vaultStoreState, userVault.vaultKey, () => environment.repositories.vaultStoreStates);
+            transaction.insertEntity(vault.passwordStoreState, userVault.vaultKey, () => environment.repositories.passwordStoreStates);
+            transaction.insertEntity(vault.valueStoreState, userVault.vaultKey, () => environment.repositories.valueStoreStates);
+            transaction.insertEntity(vault.filterStoreState, userVault.vaultKey, () => environment.repositories.filterStoreStates);
+            transaction.insertEntity(vault.groupStoreState, userVault.vaultKey, () => environment.repositories.groupStoreStates);
 
             transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
             transaction.insertEntity(userVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
@@ -253,7 +289,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
     }
 
-    public async verifyUserMasterKey(masterKey: string, email?: string): Promise<TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>>
+    public async verifyUserMasterKey(masterKey: string, email?: string, isVaulticKey: boolean = true): Promise<TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>>
     {
         return await safetifyMethod(this, internalVerifyUserMasterKey);
 
@@ -278,22 +314,40 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const decryptedHashResponse = await environment.utilities.crypt.symmetricDecrypt(masterKey, user.masterKeyHash);
+            let keyToUse = masterKey;
+            if (!isVaulticKey)
+            {
+                const vaulticKey: VaulticKey =
+                {
+                    algorithm: user.masterKeyEncryptionAlgorithm,
+                    key: masterKey
+                };
+
+                keyToUse = JSON.vaulticStringify(vaulticKey);
+            }
+
+            const decryptedHashResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeyHash);
             if (!decryptedHashResponse.success)
             {
                 return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "Hash");
             }
 
-            const decryptedSaltResponse = await environment.utilities.crypt.symmetricDecrypt(masterKey, user.masterKeySalt);
+            const decryptedSaltResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeySalt);
             if (!decryptedSaltResponse.success)
             {
                 return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "Salt");
             }
 
-            const hash = await environment.utilities.hash.hash(masterKey, decryptedSaltResponse.value!);
+            // TODO: switch to Argon2id
+            const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, decryptedSaltResponse.value!);
+            if (!hash.success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
             const response: VerifyUserMasterKeyResponse =
             {
-                isValid: environment.utilities.hash.compareHashes(decryptedHashResponse.value!, hash),
+                isValid: environment.utilities.hash.compareHashes(decryptedHashResponse.value!, hash.value),
                 keyAlgorithm: user.masterKeyEncryptionAlgorithm
             };
 
@@ -651,6 +705,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         if (newUser.email)
         {
             partialUser[nameof<User>("email")] = newUser.email;
+            updatedUser = true;
+        }
+
+        if (newUser.masterKeyEncryptionAlgorithm)
+        {
+            partialUser[nameof<User>("masterKeyEncryptionAlgorithm")] = newUser.masterKeyEncryptionAlgorithm;
             updatedUser = true;
         }
 

@@ -8,13 +8,33 @@ import { ml_kem1024 } from '@noble/post-quantum/ml-kem';
 import { ml_dsa87 } from '@noble/post-quantum/ml-dsa';
 import { PublicPrivateKey, Algorithm, VaulticKey, MLKEM1024KeyResult, SignedVaultKey } from '@vaultic/shared/Types/Keys';
 import { xchacha20poly1305 } from '@noble/ciphers/chacha';
-import { utf8ToBytes } from '@noble/ciphers/utils';
 import { EncryptedResponse } from '@vaultic/shared/Types/Responses';
 import { ClientCryptUtility } from '@vaultic/shared/Types/Utilities';
 
 export class CryptUtility implements ClientCryptUtility
 {
     constructor() { }
+
+    public randomStrongValue(length: number): string
+    {
+        let validRandomPassword: boolean = false;
+        let validPasswordTest = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?])[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/;
+        let randomPassword: string = "";
+
+        const possibleCharacters: string = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+\\-=[\\]{};':\"\\|,.<>/?"
+        const possibleCharactersLength: number = possibleCharacters.length;
+
+        while (!validRandomPassword)
+        {
+            randomPassword = "";
+
+            let randomValues: Uint8Array = randomBytes(length);
+            randomValues.forEach(v => randomPassword += possibleCharacters[v % possibleCharactersLength]);
+            validRandomPassword = validPasswordTest.test(randomPassword);
+        }
+
+        return randomPassword;
+    }
 
     public generatePublicPrivateKeys(alg: Algorithm): PublicPrivateKey<string> | undefined
     {
@@ -57,7 +77,7 @@ export class CryptUtility implements ClientCryptUtility
 
     public generateSymmetricKey(): VaulticKey 
     {
-        const key = bytesToHex(randomBytes(32));
+        const key = this.randomStrongValue(60);
         return {
             algorithm: Algorithm.XCHACHA20_POLY1305,
             key: key
@@ -92,13 +112,20 @@ export class CryptUtility implements ClientCryptUtility
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.XCHACHA20_POLY1305:
+                    const keyHash = await environment.utilities.hash.hash(Algorithm.SHA_256, vaulticKey.key);
+                    if (!keyHash.success)
+                    {
+                        return TypedMethodResponse.fail();
+                    }
+
                     const nonce = randomBytes(24);
-                    const cipher = xchacha20poly1305(utf8ToBytes(environment.utilities.hash.insecureHash(vaulticKey.key)), nonce).encrypt(utf8ToBytes(value));
+                    const cipher = xchacha20poly1305(hexToBytes(keyHash.value), nonce).encrypt(new TextEncoder().encode(value));
                     return TypedMethodResponse.success(bytesToHex(new Uint8Array([...nonce, ...cipher])));
             }
         }
-        catch (e)
+        catch (e: any)
         {
+            await environment.repositories.logs.log(undefined, e.toString());
         }
 
         return TypedMethodResponse.fail();
@@ -112,13 +139,20 @@ export class CryptUtility implements ClientCryptUtility
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.XCHACHA20_POLY1305:
+                    const keyHash = await environment.utilities.hash.hash(Algorithm.SHA_256, vaulticKey.key);
+                    if (!keyHash.success)
+                    {
+                        return TypedMethodResponse.fail();
+                    }
+
                     const cipherBytes = hexToBytes(value);
-                    const chacha = xchacha20poly1305(hexToBytes(environment.utilities.hash.insecureHash(vaulticKey.key)), cipherBytes.slice(0, 24));
-                    return TypedMethodResponse.success(bytesToHex(chacha.decrypt(cipherBytes.slice(24))));
+                    const chacha = xchacha20poly1305(hexToBytes(keyHash.value), cipherBytes.slice(0, 24));
+                    return TypedMethodResponse.success(new TextDecoder().decode(chacha.decrypt(cipherBytes.slice(24))));
             }
         }
-        catch (e)
+        catch (e: any)
         {
+            await environment.repositories.logs.log(undefined, e.toString());
         }
 
         return TypedMethodResponse.fail();

@@ -3,8 +3,5 @@ import { ClientGeneratorUtility } from "@vaultic/shared/Types/Utilities";
 
 export interface GeneratorUtility extends ClientGeneratorUtility
 {
-    uniqueId: () => string;
-    randomValue: (length: number) => string;
-    randomValueOfByteLength: (byteLength: number) => string;
     publicPrivateKey: () => PublicPrivateKey<string>;
 }

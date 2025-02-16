@@ -9,10 +9,10 @@ import http2 from "http2";
 
 import { environment } from "./Core/Environment"
 import cryptUtility from './Utilities/CryptUtility';
-import hashUtility from './Utilities/HashUtility';
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
 import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
+import coreHashUtility from "./Core/Utilities/CoreHashUtility";
 
 async function createWindow(): Promise<void>
 {
@@ -149,7 +149,7 @@ async function setupEnvironment(isTest: boolean)
 		utilities:
 		{
 			crypt: cryptUtility,
-			hash: hashUtility,
+			hash: coreHashUtility,
 			generator: generatorUtility
 		},
 		database:

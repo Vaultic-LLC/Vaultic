@@ -11,7 +11,7 @@ export interface ClientUserRepository
     createUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<undefined>>;
     getCurrentUserData: (masterKey: string) => Promise<TypedMethodResponse<string | undefined>>;
-    verifyUserMasterKey: (masterKey: string, email?: string) => Promise<TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>>;
+    verifyUserMasterKey: (masterKey: string, email?: string, isVaulticKey?: boolean) => Promise<TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>>;
     saveUser: (masterKey: string, newData: string, currentData: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     getStoreStates: (masterKey: string, storesToRetrieve: UserData) => Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>;
     getValidMasterKey: () => Promise<string | undefined>;

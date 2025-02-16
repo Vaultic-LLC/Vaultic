@@ -1,9 +1,3 @@
-export interface VaultKey
-{
-    publicKey: string;
-    vaultKey: string;
-};
-
 export class ObjectPropertyManager<T>
 {
     keys(obj: T)

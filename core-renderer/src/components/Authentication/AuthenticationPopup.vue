@@ -49,7 +49,7 @@ import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { VerifyUserMasterKeyResponse } from '@vaultic/shared/Types/Repositories';
-import { VaulticKey } from '@vaultic/shared/Types/Keys';
+import { Algorithm, VaulticKey } from '@vaultic/shared/Types/Keys';
 
 export default defineComponent({
     name: "AuthenticationPopup",
@@ -112,7 +112,7 @@ export default defineComponent({
 
             lastAuthAttempt = Date.now();
 
-            api.repositories.users.verifyUserMasterKey(key.value).then((response: TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>) =>
+            api.repositories.users.verifyUserMasterKey(key.value, undefined, false).then((response: TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>) =>
             {
                 if (response.success)
                 {
@@ -120,7 +120,7 @@ export default defineComponent({
                     return;
                 }
 
-                handleKeyIsValid({isValid: false, keyAlgorithm: 0});
+                handleKeyIsValid({isValid: false, keyAlgorithm: Algorithm.XCHACHA20_POLY1305 });
                 defaultHandleFailedResponse(response, false);
             });
         }

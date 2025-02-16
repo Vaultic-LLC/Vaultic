@@ -65,7 +65,7 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 },
                 {
                     name: "masterKeyEncryptionAlgorithm",
-                    type: "integer"
+                    type: "text"
                 },
                 {
                     name: "publicSigningKey",

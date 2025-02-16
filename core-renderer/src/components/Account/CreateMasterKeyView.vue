@@ -55,6 +55,7 @@ import { api } from '../../API';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 import { Field } from '@vaultic/shared/Types/Fields';
 import { defaultPassword, Password } from '../../Types/DataTypes';
+import { Algorithm, VaulticKey } from '@vaultic/shared/Types/Keys';
 
 export default defineComponent({
     name: "CreateMasterKeyView",
@@ -125,7 +126,7 @@ export default defineComponent({
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
                 if (loginResponse.success && loginResponse.value!.Success)
                 {
-                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email, account.value.firstName, account.value.lastName);
+                    const createUserResult = await api.repositories.users.createUser(loginResponse.value?.masterKey!, account.value.email, account.value.firstName, account.value.lastName);
                     if (!createUserResult.success)
                     {
                         app.popups.hideLoadingIndicator();
@@ -138,7 +139,7 @@ export default defineComponent({
                     }
 
                     app.isOnline = true;
-                    if (!(await app.loadUserData(key.value)))
+                    if (!(await app.loadUserData(loginResponse.value?.masterKey!)))
                     {
                         app.popups.hideLoadingIndicator();
                         showAlertMessage("An unexpected error occured when trying to load data. Please try signing in. If the issue persists", "Unable to load data", true);
@@ -156,7 +157,7 @@ export default defineComponent({
                     password.passwordFor.value = "Vaultic Password Manager";
                     password.additionalInformation.value = "Email used to log into your Vaultic Password Manager account.";
 
-                    await app.currentVault.passwordStore.addPassword(key.value, password);
+                    await app.currentVault.passwordStore.addPassword(loginResponse.value?.masterKey!, password);
                     ctx.emit('onSuccess');
 
                     return;

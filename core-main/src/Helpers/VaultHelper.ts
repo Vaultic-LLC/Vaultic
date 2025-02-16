@@ -2,8 +2,7 @@ import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { Vault } from "../Database/Entities/Vault";
 import { environment } from "../Environment";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
-import { MLKEM1024KeyResult, PublicKeyType, SignedVaultKey, SignedVaultKeyMessage } from "@vaultic/shared/Types/Keys";
-import vaulticServer from "../Server/VaulticServer";
+import { Algorithm, MLKEM1024KeyResult, SignedVaultKey, SignedVaultKeyMessage } from "@vaultic/shared/Types/Keys";
 
 class VaultHelper 
 {
@@ -24,35 +23,32 @@ class VaultHelper
             vaultKey: keyResult.value
         };
 
-        const signature = environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.vaulticStringify(message));
-        return TypedMethodResponse.success(JSON.stringify({
-            signature: signature,
+        const signature = await environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.vaulticStringify(message));
+        if (!signature.success)
+        {
+            return TypedMethodResponse.fail();
+        }
+
+        const signedVaultKey: SignedVaultKey =
+        {
+            algorithm: Algorithm.Vaultic_Key_Share,
+            signature: signature.value,
             message
-        }));
+        };
+
+        return TypedMethodResponse.success(JSON.stringify(signedVaultKey));
     }
 
-    public async evaluateVaultKeyFromSender(recipientPrivateEncryptingKey: string, signedVaultKey: string)
+    public async evaluateVaultKeyFromSender(senderPublicSigningKey: string, recipientPrivateEncryptingKey: string, signedVaultKey: SignedVaultKey)
         : Promise<TypedMethodResponse<string | undefined>>
     {
-        const parsedVaultKey: SignedVaultKey = JSON.vaulticParse(signedVaultKey);
-        const publicKeyResponse = await vaulticServer.user.getPublicKeys(PublicKeyType.Signing, [parsedVaultKey.message.senderUserID]);
-        if (!publicKeyResponse.Success)
-        {
-            return TypedMethodResponse.fail();
-        }
-
-        if (!publicKeyResponse.UsersAndPublicKeys?.[parsedVaultKey.message.senderUserID]?.PublicSigningKey)
-        {
-            return TypedMethodResponse.fail();
-        }
-
-        const verifyResult = await environment.utilities.crypt.verify(publicKeyResponse.UsersAndPublicKeys[parsedVaultKey.message.senderUserID].PublicSigningKey, parsedVaultKey);
+        const verifyResult = await environment.utilities.crypt.verify(senderPublicSigningKey, signedVaultKey);
         if (!verifyResult.success || !verifyResult.value)
         {
             return TypedMethodResponse.fail();
         }
 
-        return await environment.utilities.crypt.asymmetricDecrypt(recipientPrivateEncryptingKey, parsedVaultKey.message.vaultKey, parsedVaultKey.message.cipherText);
+        return await environment.utilities.crypt.asymmetricDecrypt(recipientPrivateEncryptingKey, signedVaultKey.message.vaultKey, signedVaultKey.message.cipherText);
     }
 
     public async decryptCondensedUserVault(vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[])

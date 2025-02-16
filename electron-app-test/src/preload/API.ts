@@ -2,7 +2,7 @@ import { ipcRenderer } from "electron";
 
 import { DeviceInfo, RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
-import { ClientCryptUtility, ClientGeneratorUtility, HashUtility } from "@vaultic/shared/Types/Utilities";
+import { ClientCryptUtility, ClientGeneratorUtility } from "@vaultic/shared/Types/Utilities";
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
@@ -66,7 +66,7 @@ const organizationController: OrganizationController =
     deleteOrganization: (organizationID: number) => ipcRenderer.invoke('organizationController:deleteOrganization', organizationID)
 }
 
-const cryptUtility: ClientCryptUtility =
+const cryptUtility: Promisify<ClientCryptUtility> =
 {
     symmetricEncrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:symmetricEncrypt', key, value),
     symmetricDecrypt: (key: string, value: string) => ipcRenderer.invoke('cryptUtility:symmetricDecrypt', key, value),
@@ -74,17 +74,9 @@ const cryptUtility: ClientCryptUtility =
     ECDecrypt: (tempPublicKey: string, userPrivateKey: string, value: string) => ipcRenderer.invoke('cryptUtility:ECDecrypt', tempPublicKey, userPrivateKey, value)
 };
 
-const hashUtility: Promisify<HashUtility> =
-{
-    hash: (value: string, salt: string) => ipcRenderer.invoke('hashUtility:hash', value, salt),
-    insecureHash: (value: string) => ipcRenderer.invoke('hashUtility:insecureHash', value),
-    compareHashes: (a: string, b: string) => ipcRenderer.invoke('hashUtility:compareHashes', a, b)
-};
-
 const generatorUtility: Promisify<ClientGeneratorUtility> =
 {
     uniqueId: () => ipcRenderer.invoke('generatorUtility:uniqueId'),
-    randomValue: (length: number) => ipcRenderer.invoke('generatorUtility:randomValue', length),
     generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => ipcRenderer.invoke('generatorUtility:generateRandomPasswordOrPassphrase', type, length, includeNumbers, includeSpecialCharacters, includeAbmiguousCharacters, passphraseSeperator),
     ECKeys: () => ipcRenderer.invoke('generatorUtility:ECKeys')
 };
@@ -139,7 +131,7 @@ const userRepository: ClientUserRepository =
     createUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('userRepository:createUser', masterKey, email, firstName, lastName),
     setCurrentUser: (masterKey: string, email: string) => ipcRenderer.invoke("userRepository:setCurrentUser", masterKey, email),
     getCurrentUserData: (masterKey: string) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey),
-    verifyUserMasterKey: (masterKey: string, email?: string) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email),
+    verifyUserMasterKey: (masterKey: string, email?: string, isVaulticKey?: boolean) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email, isVaulticKey),
     saveUser: (masterKey: string, newData: string, currentData: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, newData, currentData),
     getStoreStates: (masterKey: string, storeStatesToRetrieve: UserData) => ipcRenderer.invoke('userRepository:getStoreStates', masterKey, storeStatesToRetrieve),
     getValidMasterKey: () => ipcRenderer.invoke('userRepository:getValidMasterKey'),
@@ -182,7 +174,6 @@ const api: IAPI =
     },
     utilities: {
         crypt: cryptUtility,
-        hash: hashUtility,
         generator: generatorUtility,
     },
     helpers: {

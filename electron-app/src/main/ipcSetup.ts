@@ -1,5 +1,4 @@
 import { ipcMain } from "electron";
-import hashUtility from "./Utilities/HashUtility";
 import { getDeviceInfo } from "./Objects/DeviceInfo";
 import vaulticServer from "./Core/Server/VaulticServer";
 import cryptUtility from "./Utilities/CryptUtility";
@@ -56,12 +55,7 @@ export default function setupIPC()
 	ipcMain.handle('cryptUtility:ECDecrypt', (e, tempPublicKey: string, usersPrivateKey: string, value: string) =>
 		validateSender(e, () => cryptUtility.ECDecrypt(tempPublicKey, usersPrivateKey, value)));
 
-	ipcMain.handle('hashUtility:hash', (e, value, salt) => validateSender(e, () => hashUtility.hash(value, salt)));
-	ipcMain.handle('hashUtility:insecureHash', (e, value) => validateSender(e, () => hashUtility.insecureHash(value)));
-	ipcMain.handle('hashUtility:compareHashes', (e, a, b) => validateSender(e, () => hashUtility.compareHashes(a, b)));
-
 	ipcMain.handle('generatorUtility:uniqueId', (e) => validateSender(e, () => generatorUtility.uniqueId()));
-	ipcMain.handle('generatorUtility:randomValue', (e, length: number) => validateSender(e, () => generatorUtility.randomValue(length)));
 	ipcMain.handle('generatorUtility:generateRandomPasswordOrPassphrase', (e, type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => validateSender(e, () => generatorUtility.generateRandomPasswordOrPassphrase(type, length, includeNumbers, includeSpecialCharacters, includeAbmiguousCharacters, passphraseSeperator)));
 	ipcMain.handle('generatorUtility:ECKeys', (e) => validateSender(e, () => generatorUtility.ECKeys()));
 
@@ -84,7 +78,7 @@ export default function setupIPC()
 	ipcMain.handle('userRepository:createUser', (e, masterKey: string, email: string, firstName: string, lastName: string) => validateSender(e, () => environment.repositories.users.createUser(masterKey, email, firstName, lastName)));
 	ipcMain.handle('userRepository:setCurrentUser', (e, masterKey: string, email: string) => validateSender(e, () => environment.repositories.users.setCurrentUser(masterKey, email)));
 	ipcMain.handle('userRepository:getCurrentUserData', (e, masterKey: string) => validateSender(e, () => environment.repositories.users.getCurrentUserData(masterKey)));
-	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email)));
+	ipcMain.handle('userRepository:verifyUserMasterKey', (e, masterKey: string, email?: string, isVaulticKey?: boolean) => validateSender(e, () => environment.repositories.users.verifyUserMasterKey(masterKey, email, isVaulticKey)));
 	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, newData: string, currentData: string) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, newData, currentData)));
 	ipcMain.handle('userRepository:getStoreStates', (e, masterKey: string, storeStatesToRetrive: UserData) => validateSender(e, () => environment.repositories.users.getStoreStates(masterKey, storeStatesToRetrive)));
 	ipcMain.handle('userRepository:getValidMasterKey', (e) => validateSender(e, () => environment.repositories.users.getValidMasterKey()));

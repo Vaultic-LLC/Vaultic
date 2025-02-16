@@ -6,6 +6,8 @@ import { EntityState, IVaulticEntity } from "@vaultic/shared/Types/Entities";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
+import { Algorithm } from "@vaultic/shared/Types/Keys";
+import { hexToBytes } from "@noble/hashes/utils";
 
 const VaulticHandler =
 {
@@ -203,10 +205,20 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         }
 
         const seriazliedMakeup = JSON.vaulticStringify(signatureMakeup);
-        const hashedEntity = environment.utilities.hash.insecureHash(seriazliedMakeup);
-        const keyBytes = jose.base64url.decode(environment.utilities.hash.insecureHash(key));
+        const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, seriazliedMakeup);
+        if (!hashedEntity.success)
+        {
+            return false;
+        }
 
-        const jwt = await new jose.EncryptJWT({ entity: hashedEntity })
+        const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, key);
+        if (!hashedKey.success)
+        {
+            return false;
+        }
+
+        const keyBytes = hexToBytes(hashedKey.value);
+        const jwt = await new jose.EncryptJWT({ entity: hashedEntity.value })
             .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
             .setIssuedAt()
             .setIssuer('vaultic')
@@ -214,7 +226,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             .setExpirationTime('999y')
             .encrypt(keyBytes);
 
-        console.log(jwt);
         this.currentSignature = jwt;
         return true;
     }
@@ -233,8 +244,19 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         }
 
         const serializedMakeup = JSON.vaulticStringify(signatureMakeup);
-        const hashedEntity = environment.utilities.hash.insecureHash(serializedMakeup);
-        const keyBytes = jose.base64url.decode(environment.utilities.hash.insecureHash(key));
+        const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);
+        if (!hashedEntity.success)
+        {
+            return TypedMethodResponse.fail();
+        }
+
+        const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, key);
+        if (!hashedKey.success)
+        {
+            return TypedMethodResponse.fail();
+        }
+
+        const keyBytes = hexToBytes(hashedKey.value);
 
         try
         {
@@ -259,7 +281,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
                 return TypedMethodResponse.fail(errorCodes.NO_RETRIEVED_ENTITY);
             }
 
-            const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity);
+            const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity.value);
             if (!equalHashes)
             {
                 console.log(`Failed verify: ${JSON.stringify(this)}`);
@@ -279,6 +301,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     // at the highest level to catch the thrown error
     async verify(key: string): Promise<boolean>
     {
+        console.log(`Verifying: ${key}`);
         const selfVerification = await this.internalVerify(key);
         if (!selfVerification.success)
         {

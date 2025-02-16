@@ -5,9 +5,9 @@ import { FieldTree } from '../Types/FieldTree';
 import { DeviceInfo } from '@vaultic/shared/Types/Device';
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaultic/shared/Types/Responses';
-import { PublicPrivateKey } from '@vaultic/shared/Types/Keys';
+import { Algorithm, PublicPrivateKey } from '@vaultic/shared/Types/Keys';
 
-const APIKeyEncryptionKey = "12fasjkdF2owsnFvkwnvwe23dFSDfio2"
+const APIKeyEncryptionKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: "12fasjkdF2owsnFvkwnvwe23dFSDfio2" });
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
 
 let deviceInfo: DeviceInfo;
@@ -84,7 +84,6 @@ class AxiosWrapper
                 const response = await axiosInstance.post(`${this.url}${serverPath}`, requestData.value);
                 const responseResult = await this.handleResponse<T>(response.data);
 
-                console.log(`Response: ${JSON.stringify(responseResult)}`);
                 if (responseResult.success)
                 {
                     return responseResult.value;
@@ -109,7 +108,7 @@ class AxiosWrapper
                 }
                 else
                 {
-                    returnResponse = { Success: false, UnknownError: true, logID: requestData[0].logID };
+                    returnResponse = { Success: false, UnknownError: true, logID: requestData.logID };
                 }
             }
         }
@@ -256,6 +255,11 @@ class APIAxiosWrapper extends AxiosWrapper
             return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
         }
 
+        if (fieldTree.canCrypt && !fieldTree.canCrypt(data))
+        {
+            return;
+        }
+
         if (fieldTree.properties)
         {
             for (let i = 0; i < fieldTree.properties.length; i++)
@@ -325,6 +329,11 @@ class APIAxiosWrapper extends AxiosWrapper
         if (!environment.cache.exportKey)
         {
             return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
+        }
+
+        if (fieldTree.canCrypt && !fieldTree.canCrypt(data))
+        {
+            return;
         }
 
         if (fieldTree.properties)
@@ -428,7 +437,6 @@ class APIAxiosWrapper extends AxiosWrapper
         try
         {
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
-            console.log(`Encrypted Response: ${JSON.stringify(encryptedResponse)}`);
             if (!encryptedResponse.Data)
             {
                 return TypedMethodResponse.fail(undefined, "handleResponse", "No Data");

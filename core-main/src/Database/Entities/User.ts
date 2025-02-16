@@ -138,7 +138,6 @@ export class User extends VaulticEntity implements IUser
         return [
             nameof<User>("masterKeyHash"),
             nameof<User>("masterKeySalt"),
-            nameof<User>("masterKeyEncryptionAlgorithm"),
             nameof<User>("privateSigningKey"),
             nameof<User>("privateEncryptingKey")
         ];

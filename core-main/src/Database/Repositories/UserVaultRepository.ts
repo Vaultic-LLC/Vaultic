@@ -8,13 +8,15 @@ import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
-import { CondensedVaultData, EntityState, SharedClientUserVault } from "@vaultic/shared/Types/Entities";
+import { CondensedVaultData, EntityState, UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserVaultRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
+import { Algorithm, PublicKeyType } from "@vaultic/shared/Types/Keys";
+import vaulticServer from "../../Server/VaulticServer";
 
 class UserVaultRepository extends VaulticRepository<UserVault> implements IUserVaultRepository
 {
@@ -381,30 +383,66 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         }
     }
 
-    public async setupSharedUserVault(masterKey: string, userVault: SharedClientUserVault, transaction: Transaction): Promise<void>
+    public async setupSharedUserVaults(masterKey: string, recipientsPrivateEncryptingKey: string, senderUserIDs: number[],
+        unsetupUserVaults: UnsetupSharedClientUserVault[], transaction: Transaction): Promise<void>
     {
-        const newUserVault = new UserVault().makeReactive();
-        newUserVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
+        const senderPublicSigningKeys = await vaulticServer.user.getPublicKeys(PublicKeyType.Signing, senderUserIDs);
+        if (!senderPublicSigningKeys.Success)
+        {
+            return;
+        }
 
-        newUserVault.userVaultID = userVault.userVaultID;
-        newUserVault.userID = userVault.userID;
-        newUserVault.vaultID = userVault.vaultID;
-        newUserVault.userOrganizationID = userVault.userOrganizationID;
-        newUserVault.isOwner = false;
-        newUserVault.permissions = userVault.permissions;
+        for (let i = 0; i < unsetupUserVaults.length; i++)
+        {
+            const unsetupUserVault = unsetupUserVaults[i].userVault;
+            const senderPublicSigningKey = senderPublicSigningKeys?.UsersAndPublicKeys?.[unsetupUserVaults[i].vaultKey.message.senderUserID];
+            if (!senderPublicSigningKey || !senderPublicSigningKey.PublicSigningKey)
+            {
+                continue;
+            }
 
-        // TODO: Should get users public key.
-        // TODO: should also pass in private key since it may not be saved locally yet if we are also adding the user
-        // TODO: userVault.vaultKey should check to see if this is the first time loading it. If so, it needs to be verifying, using the 
-        // senders publicSigningKey, decrypted using this users privateEncryptingKey, and then re encrypted using AES256 with their masterKey
-        newUserVault.vaultKey = userVault.vaultKey;
+            const newUserVault = new UserVault().makeReactive();
+            newUserVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
 
-        newUserVault.vaultPreferencesStoreState.userVaultID = userVault.userVaultID;
-        newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID;
-        newUserVault.vaultPreferencesStoreState.state = "{}";
+            newUserVault.userVaultID = unsetupUserVault.userVaultID;
+            newUserVault.userID = unsetupUserVault.userID;
+            newUserVault.vaultID = unsetupUserVault.vaultID;
+            newUserVault.userOrganizationID = unsetupUserVault.userOrganizationID;
+            newUserVault.isOwner = false;
+            newUserVault.permissions = unsetupUserVault.permissions;
 
-        transaction.insertEntity(newUserVault, masterKey, () => this);
-        transaction.insertEntity(newUserVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+            try
+            {
+                // first time loading this vaultKey from a shared vault, switch the key to use symmetric encryption
+                // for faster subsequent decryption and better security
+                if (unsetupUserVaults[i].vaultKey.algorithm == Algorithm.Vaultic_Key_Share)
+                {
+                    const result = await vaultHelper.evaluateVaultKeyFromSender(senderPublicSigningKey.PublicSigningKey, recipientsPrivateEncryptingKey, unsetupUserVaults[i].vaultKey);
+                    if (!result.success)
+                    {
+                        continue;
+                    }
+
+                    newUserVault.vaultKey = result.value;
+                }
+                // this shouldn't ever happen since the userVault is already setup i.e. we shouldn't be in this method
+                else
+                {
+                    newUserVault.vaultKey = unsetupUserVault.vaultKey;
+                }
+            }
+            catch (e)
+            {
+                await environment.repositories.logs.log(undefined, e.toString());
+            }
+
+            newUserVault.vaultPreferencesStoreState.userVaultID = unsetupUserVault.userVaultID;
+            newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = unsetupUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID;
+            newUserVault.vaultPreferencesStoreState.state = "{}";
+
+            transaction.insertEntity(newUserVault, masterKey, () => this);
+            transaction.insertEntity(newUserVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+        }
     }
 }
 

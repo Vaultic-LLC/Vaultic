@@ -22,13 +22,5 @@ export interface CoreGeneratorUtility
 export interface ClientGeneratorUtility extends CoreGeneratorUtility
 {
     uniqueId: () => string;
-    randomValue: (length: number) => string;
     generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => string;
-}
-
-export interface HashUtility
-{
-    hash: (value: string, salt: string) => Promise<string>;
-    insecureHash: (value: string) => string;
-    compareHashes: (a: string, b: string) => boolean;
 }

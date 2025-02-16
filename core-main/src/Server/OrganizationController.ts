@@ -1,8 +1,11 @@
-import { BaseResponse, GetOrganizationsResponse } from "@vaultic/shared/Types/Responses";
+import { BaseResponse, CreateOrganizationResponse, GetOrganizationsResponse } from "@vaultic/shared/Types/Responses";
 import { AxiosHelper } from "./AxiosHelper";
 import { CreateOrganizationData, OrganizationController, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 import { organizationUpdateAddedMembersToAddedOrgMembers, organizationUpdateAddedVaultsToAddedOrgMembers } from "../Helpers/MemberHelper";
 import { AddedVaultInfo, ModifiedOrgMember } from "@vaultic/shared/Types/ClientServerTypes";
+import { environment } from "../Environment";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { safetifyMethod } from "../Helpers/RepositoryHelper";
 
 export function createOrganizationController(axiosHelper: AxiosHelper): OrganizationController
 {
@@ -11,80 +14,96 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         return axiosHelper.api.post('Organization/GetOrganizations');
     }
 
-    async function createOrganization(masterKey: string, createOrganizationData: string): Promise<BaseResponse>
+    async function createOrganization(masterKey: string, createOrganizationData: string): Promise<TypedMethodResponse<CreateOrganizationResponse | undefined>>
     {
-        const orgData: CreateOrganizationData = JSON.vaulticParse(createOrganizationData);
-        const addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, orgData.addedVaults.map(v => v.userVaultID), orgData.addedMembers);
+        return safetifyMethod(this, internalCreateOrganization);
+        async function internalCreateOrganization(this: OrganizationController): Promise<TypedMethodResponse<CreateOrganizationResponse | undefined>>
+        {
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail();
+            }
 
-        return axiosHelper.api.post('Organization/CreateOrganization', {
-            Name: orgData.name,
-            AddedVaults: addedOrgMembers[0],
-            AddedMembers: addedOrgMembers[1]
-        });
+            const orgData: CreateOrganizationData = JSON.vaulticParse(createOrganizationData);
+            const addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, currentUser.userID, currentUser.privateSigningKey,
+                orgData.addedVaults.map(v => v.userVaultID), orgData.addedMembers);
+
+            return TypedMethodResponse.success(await axiosHelper.api.post('Organization/CreateOrganization', {
+                Name: orgData.name,
+                AddedVaults: addedOrgMembers[0],
+                AddedMembers: addedOrgMembers[1]
+            }));
+        }
     }
 
-    async function updateOrganization(masterKey: string, updateOrganizationData: string): Promise<BaseResponse>
+    async function updateOrganization(masterKey: string, updateOrganizationData: string): Promise<TypedMethodResponse<BaseResponse | undefined>>
     {
-        const parsedUpdatedOrgData: UpdateOrganizationData = JSON.vaulticParse(updateOrganizationData);
-
-        let addedVaultModifiedOrgMembers: AddedVaultInfo;
-        let removedVaultIDs: number[] = [];
-        let addedOrgMembers: [number[], ModifiedOrgMember[]] = [[], []];
-        let updatedModifiedOrgMembers: ModifiedOrgMember[] = [];
-        let removedMemberIDs: number[] = [];
-
-        if (parsedUpdatedOrgData.addedVaults.length > 0)
+        return safetifyMethod(this, internalUpdateOrganization);
+        async function internalUpdateOrganization(this: OrganizationController): Promise<TypedMethodResponse<BaseResponse | undefined>>
         {
-            const allMembers = [...parsedUpdatedOrgData.originalMembers, ...parsedUpdatedOrgData.addedMembers];
-            addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, parsedUpdatedOrgData.addedVaults.map(v => v.vaultID), allMembers);
-        }
-
-        if (parsedUpdatedOrgData.removedVaults.length > 0)
-        {
-            removedVaultIDs = parsedUpdatedOrgData.removedVaults.map(v => v.vaultID);
-        }
-
-        if (parsedUpdatedOrgData.addedMembers.length > 0)
-        {
-            addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, [...parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID),
-            ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)], parsedUpdatedOrgData.addedMembers);
-        }
-
-        if (parsedUpdatedOrgData.updatedMembers.length > 0)
-        {
-            updatedModifiedOrgMembers = parsedUpdatedOrgData.updatedMembers.map(m =>
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
             {
-                const modifiedOrgMember: ModifiedOrgMember =
+                return TypedMethodResponse.fail();
+            }
+
+            const parsedUpdatedOrgData: UpdateOrganizationData = JSON.vaulticParse(updateOrganizationData);
+
+            let addedVaultModifiedOrgMembers: AddedVaultInfo;
+            let removedVaultIDs: number[] = [];
+            let addedOrgMembers: [number[], ModifiedOrgMember[]] = [[], []];
+            let updatedModifiedOrgMembers: ModifiedOrgMember[] = [];
+            let removedMemberIDs: number[] = [];
+
+            if (parsedUpdatedOrgData.addedVaults.length > 0)
+            {
+                const allMembers = [...parsedUpdatedOrgData.originalMembers, ...parsedUpdatedOrgData.addedMembers];
+                addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, currentUser.userID, currentUser.privateSigningKey,
+                    parsedUpdatedOrgData.addedVaults.map(v => v.vaultID), allMembers);
+            }
+
+            if (parsedUpdatedOrgData.removedVaults.length > 0)
+            {
+                removedVaultIDs = parsedUpdatedOrgData.removedVaults.map(v => v.vaultID);
+            }
+
+            if (parsedUpdatedOrgData.addedMembers.length > 0)
+            {
+                addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, currentUser.userID, currentUser.privateSigningKey,
+                    [...parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID), ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)],
+                    parsedUpdatedOrgData.addedMembers);
+            }
+
+            if (parsedUpdatedOrgData.updatedMembers.length > 0)
+            {
+                updatedModifiedOrgMembers = parsedUpdatedOrgData.updatedMembers.map(m =>
                 {
-                    UserID: m.userID,
-                    Permissions: m.permission
-                }
+                    const modifiedOrgMember: ModifiedOrgMember =
+                    {
+                        UserID: m.userID,
+                        Permissions: m.permission
+                    }
 
-                return modifiedOrgMember;
-            });
+                    return modifiedOrgMember;
+                });
+            }
+
+            if (parsedUpdatedOrgData.removedMembers.length > 0)
+            {
+                removedMemberIDs = parsedUpdatedOrgData.removedMembers.map(m => m.userID);
+            }
+
+            return TypedMethodResponse.success(await axiosHelper.api.post('Organization/UpdateOrganizaiton', {
+                OrganizationID: parsedUpdatedOrgData.organizationID,
+                Name: parsedUpdatedOrgData.name,
+                AddedVaults: addedVaultModifiedOrgMembers,
+                RemovedVaults: removedVaultIDs,
+                AddedMembers: addedOrgMembers[1],
+                UpdatedMembers: updatedModifiedOrgMembers,
+                RemovedMembers: removedMemberIDs
+            }));
         }
-
-        if (parsedUpdatedOrgData.removedMembers.length > 0)
-        {
-            removedMemberIDs = parsedUpdatedOrgData.removedMembers.map(m => m.userID);
-        }
-        // addedMembers have public keys so those are good
-        // if there are any addedVautls, we need to get public keys for everyone in the org in order to add those vaults
-        // to them
-        // updatedMembers just needs to be turned into ModifiedOrgMembers with id and permissions
-        // removed can just be sent as IDs
-
-        // should only have to fetch public keys if there is an added vault
-
-        return axiosHelper.api.post('Organization/UpdateOrganizaiton', {
-            OrganizationID: parsedUpdatedOrgData.organizationID,
-            Name: parsedUpdatedOrgData.name,
-            AddedVaults: addedVaultModifiedOrgMembers,
-            RemovedVaults: removedVaultIDs,
-            AddedMembers: addedOrgMembers[1],
-            UpdatedMembers: updatedModifiedOrgMembers,
-            RemovedMembers: removedMemberIDs
-        });
     }
 
     function deleteOrganization(organizationID: number)

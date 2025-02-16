@@ -3,10 +3,10 @@ import axiosHelper from "./Server/AxiosHelper";
 import { initRepositories, VaulticRepositories } from "./Database/Repositories";
 import { VaulticCache } from "./Cache";
 import { DeviceInfo } from "@vaultic/shared/Types/Device";
-import { HashUtility } from "@vaultic/shared/Types/Utilities";
 import { GeneratorUtility } from "./Types/Utilities";
 import * as PolyFills from "@vaultic/shared/Types/PolyFills";
 import { CryptUtility } from "./Utilities/CoreCryptUtility";
+import { ICoreHashUtility } from "./Utilities/CoreHashUtility";
 PolyFills.a;
 
 export interface SessionHandler
@@ -22,7 +22,7 @@ export interface InternalEnvironment
     utilities:
     {
         crypt: CryptUtility;
-        hash: HashUtility;
+        hash: ICoreHashUtility;
         generator: GeneratorUtility;
     };
     database:

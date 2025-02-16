@@ -27,6 +27,7 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
+import { VaulticKey } from "@vaultic/shared/Types/Keys";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -76,21 +77,21 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return await transaction.commit();
     }
 
-    public async createNewVault(name: string, shared: boolean, addedOrganizations: Organization[],
-        addedMembers: Member[]): Promise<boolean | [UserVault, Vault, string]>
+    public async createNewVault(name: string, shared: boolean, currentUser?: User, addedOrganizations?: Organization[],
+        addedMembers?: Member[]): Promise<boolean | [UserVault, Vault]>
     {
-        const vaultKey = environment.utilities.crypt.generateSymmetricKey();
+        const vaultKey: string = JSON.vaulticStringify(environment.utilities.crypt.generateSymmetricKey());
 
         let orgsAndUserKeys: AddedOrgInfo;
-        if (addedOrganizations.length > 0)
+        if (currentUser && addedOrganizations && addedOrganizations.length > 0)
         {
-            orgsAndUserKeys = await vaultAddedOrgsToAddedOrgInfo(vaultKey, addedOrganizations);
+            orgsAndUserKeys = await vaultAddedOrgsToAddedOrgInfo(currentUser.userID, currentUser.privateSigningKey, vaultKey, addedOrganizations);
         }
 
         let modifiedOrgMembers: AddedVaultMembersInfo;
-        if (addedMembers.length > 0)
+        if (currentUser && addedMembers && addedMembers.length > 0)
         {
-            modifiedOrgMembers = await vaultAddedMembersToOrgMembers(vaultKey, addedMembers);
+            modifiedOrgMembers = await vaultAddedMembersToOrgMembers(currentUser.userID, currentUser.privateSigningKey, vaultKey, addedMembers);
         }
 
         const response = await vaulticServer.vault.create(name, shared, orgsAndUserKeys, modifiedOrgMembers);
@@ -123,6 +124,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         userVault.vaultPreferencesStoreState.userVaultID = response.UserVaultID!;
         userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = response.VaultPreferencesStoreStateID!;
         userVault.vaultPreferencesStoreState.state = "{}";
+        userVault.vaultKey = vaultKey;
 
         vault.vaultID = response.VaultID!;
         vault.vaultStoreState.vaultID = response.VaultID!;
@@ -141,7 +143,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         vault.groupStoreState.groupStoreStateID = response.GroupStoreStateID!;
         vault.groupStoreState.state = "{}";
 
-        return [userVault, vault, vaultKey];
+        return [userVault, vault];
     }
 
     public async createNewVaultForUser(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
@@ -157,7 +159,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const vaultData = await this.createNewVault(name, shared, addedOrganizations, addedMembers);
+            const vaultData = await this.createNewVault(name, shared, currentUser, addedOrganizations, addedMembers);
             if (!vaultData)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "No Vault Data");
@@ -165,27 +167,19 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             const userVault: UserVault = vaultData[0];
             const vault: Vault = vaultData[1];
-            const vaultKey: string = vaultData[2];
-
-            const encryptedVaultKey = await environment.utilities.crypt.symmetricEncrypt(masterKey, vaultKey);
-            if (!encryptedVaultKey.success)
-            {
-                return TypedMethodResponse.fail(errorCodes.EC_ENCRYPTION_FAILED);
-            }
 
             userVault.userID = currentUser.userID;
             userVault.user = currentUser;
-            userVault.vaultKey = encryptedVaultKey.value;
 
             const transaction = new Transaction();
 
             // Order matters here
-            transaction.insertEntity(vault, vaultKey, () => environment.repositories.vaults);
-            transaction.insertEntity(vault.vaultStoreState, vaultKey, () => environment.repositories.vaultStoreStates);
-            transaction.insertEntity(vault.passwordStoreState, vaultKey, () => environment.repositories.passwordStoreStates);
-            transaction.insertEntity(vault.valueStoreState, vaultKey, () => environment.repositories.valueStoreStates);
-            transaction.insertEntity(vault.filterStoreState, vaultKey, () => environment.repositories.filterStoreStates);
-            transaction.insertEntity(vault.groupStoreState, vaultKey, () => environment.repositories.groupStoreStates);
+            transaction.insertEntity(vault, userVault.vaultKey, () => environment.repositories.vaults);
+            transaction.insertEntity(vault.vaultStoreState, userVault.vaultKey, () => environment.repositories.vaultStoreStates);
+            transaction.insertEntity(vault.passwordStoreState, userVault.vaultKey, () => environment.repositories.passwordStoreStates);
+            transaction.insertEntity(vault.valueStoreState, userVault.vaultKey, () => environment.repositories.valueStoreStates);
+            transaction.insertEntity(vault.filterStoreState, userVault.vaultKey, () => environment.repositories.filterStoreStates);
+            transaction.insertEntity(vault.groupStoreState, userVault.vaultKey, () => environment.repositories.groupStoreStates);
 
             transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
             transaction.insertEntity(userVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
@@ -250,6 +244,12 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalUpdateVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
+            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.failWithValue(false);
+            }
+
             const parsedUpdateVaultData: UpdateVaultData = JSON.vaulticParse(updateVaultData);
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [parsedUpdateVaultData.userVaultID]);
 
@@ -286,7 +286,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (parsedUpdateVaultData.addedOrganizations != undefined && parsedUpdateVaultData.addedOrganizations.length > 0)
             {
-                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(userVaults[1][0], parsedUpdateVaultData.addedOrganizations);
+                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(currentUser.userID, currentUser.privateSigningKey, userVaults[1][0], parsedUpdateVaultData.addedOrganizations);
                 needToUpdateSharing = true;
             }
 
@@ -298,7 +298,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (parsedUpdateVaultData.addedMembers != undefined && parsedUpdateVaultData.addedMembers.length > 0)
             {
-                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(userVaults[1][0], parsedUpdateVaultData.addedMembers);
+                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(currentUser.userID, currentUser.privateSigningKey, userVaults[1][0], parsedUpdateVaultData.addedMembers);
                 needToUpdateSharing = true;
             }
 
@@ -933,7 +933,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const signatures = await getUserDataSignatures(masterKey, currentUser.email);
+            const signatures = await getUserDataSignatures(masterKey, currentUser);
             const result = await vaulticServer.vault.syncVaults(signatures.signatures);
 
             if (!result.Success)
