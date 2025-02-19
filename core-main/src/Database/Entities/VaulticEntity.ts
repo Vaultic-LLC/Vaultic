@@ -301,7 +301,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     // at the highest level to catch the thrown error
     async verify(key: string): Promise<boolean>
     {
-        console.log(`Verifying: ${key}`);
         const selfVerification = await this.internalVerify(key);
         if (!selfVerification.success)
         {

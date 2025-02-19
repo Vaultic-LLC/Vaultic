@@ -58,3 +58,8 @@ export interface VaulticKey extends AlgorithmDependentData
 {
     key: string;
 }
+
+export interface AsymmetricVaulticKey extends VaulticKey
+{
+    symmetricAlgorithm: Algorithm;
+}

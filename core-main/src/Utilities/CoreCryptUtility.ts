@@ -6,7 +6,7 @@ import { ECEncryptionResult, TypedMethodResponse } from '@vaultic/shared/Types/M
 import { randomBytes } from '@noble/post-quantum/utils';
 import { ml_kem1024 } from '@noble/post-quantum/ml-kem';
 import { ml_dsa87 } from '@noble/post-quantum/ml-dsa';
-import { PublicPrivateKey, Algorithm, VaulticKey, MLKEM1024KeyResult, SignedVaultKey } from '@vaultic/shared/Types/Keys';
+import { PublicPrivateKey, Algorithm, VaulticKey, MLKEM1024KeyResult, SignedVaultKey, AsymmetricVaulticKey } from '@vaultic/shared/Types/Keys';
 import { xchacha20poly1305 } from '@noble/ciphers/chacha';
 import { EncryptedResponse } from '@vaultic/shared/Types/Responses';
 import { ClientCryptUtility } from '@vaultic/shared/Types/Utilities';
@@ -48,11 +48,13 @@ export class CryptUtility implements ClientCryptUtility
                     public: JSON.vaulticStringify(
                         {
                             algorithm: Algorithm.ML_KEM_1024,
+                            symmetricAlgorithm: Algorithm.XCHACHA20_POLY1305,
                             key: bytesToHex(encKeys.publicKey)
                         }),
                     private: JSON.vaulticStringify(
                         {
                             algorithm: Algorithm.ML_KEM_1024,
+                            symmetricAlgorithm: Algorithm.XCHACHA20_POLY1305,
                             key: bytesToHex(encKeys.secretKey)
                         })
                 };
@@ -162,13 +164,18 @@ export class CryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(recipientsPublicEncryptingKey);
+            const vaulticKey: AsymmetricVaulticKey = JSON.vaulticParse(recipientsPublicEncryptingKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_KEM_1024:
                     const { cipherText, sharedSecret } = ml_kem1024.encapsulate(hexToBytes(vaulticKey.key));
-                    const encryptedVaultKey = await this.symmetricEncrypt(bytesToHex(sharedSecret), value);
+                    const symmetricVaulticKey: VaulticKey =
+                    {
+                        key: bytesToHex(sharedSecret),
+                        algorithm: vaulticKey.symmetricAlgorithm
+                    };
 
+                    const encryptedVaultKey = await this.symmetricEncrypt(JSON.vaulticStringify(symmetricVaulticKey), value);
                     if (!encryptedVaultKey.success)
                     {
                         return encryptedVaultKey;
@@ -188,12 +195,18 @@ export class CryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(recipientsPrivateEncryptingKey);
+            const vaulticKey: AsymmetricVaulticKey = JSON.vaulticParse(recipientsPrivateEncryptingKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_KEM_1024:
                     const sharedSecret = ml_kem1024.decapsulate(hexToBytes(cipherText), hexToBytes(vaulticKey.key));
-                    return environment.utilities.crypt.symmetricDecrypt(bytesToHex(sharedSecret), value);
+                    const symmetricVaulticKey: VaulticKey =
+                    {
+                        algorithm: vaulticKey.symmetricAlgorithm,
+                        key: bytesToHex(sharedSecret)
+                    };
+
+                    return environment.utilities.crypt.symmetricDecrypt(JSON.vaulticStringify(symmetricVaulticKey), value);
             }
         }
         catch (e)

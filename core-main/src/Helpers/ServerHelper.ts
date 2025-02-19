@@ -10,6 +10,7 @@ import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { EntityRepository } from "typeorm";
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
 {
@@ -112,6 +113,7 @@ async function logUserIn(masterKey: string, email: string,
             {
                 // Don't have to worry about shared vaults not being e2e encrypted when they are first shared since only display
                 // vaults of them run through here
+                console.log(`Finish Resopnse: ${JSON.stringify(finishResponse)}\n`);
                 const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
                 if (!result.success)
                 {
@@ -133,6 +135,8 @@ async function logUserIn(masterKey: string, email: string,
                     masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
                 }
 
+                console.log(masterKeyVaulticKey);
+                console.log(result.value.userDataPayload);
                 if (reloadAllData)
                 {
                     await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);

@@ -4,8 +4,8 @@ import { PublicKeys } from "./Keys";
 
 export interface EncryptedResponse
 {
-    Key?: string;
-    Data?: string;
+    CipherText: string;
+    Data: string;
 }
 
 export interface BaseResponse
@@ -19,6 +19,7 @@ export interface BaseResponse
     axiosCode?: string;
     message?: string;
     vaulticCode?: number;
+    Salt?: string;
 }
 
 interface InvalidLicenseResponse

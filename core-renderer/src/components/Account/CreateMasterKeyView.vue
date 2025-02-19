@@ -53,9 +53,7 @@ import { Account, InputColorModel, defaultInputColorModel } from '../../Types/Mo
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { defaultPassword, Password } from '../../Types/DataTypes';
-import { Algorithm, VaulticKey } from '@vaultic/shared/Types/Keys';
 
 export default defineComponent({
     name: "CreateMasterKeyView",

@@ -195,7 +195,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalCreateUser(this: UserRepository): Promise<TypedMethodResponse<boolean>>
         {
-            console.log(`Creating User: ${masterKey}`);
             const response = await vaulticServer.user.getUserIDs();
             if (!response.Success)
             {
