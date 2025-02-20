@@ -11,7 +11,7 @@
                             :maxWidth="'300px'" />
                         <TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email" :width="'80%'"
                             :maxWidth="'300px'" :isEmailField="true" />
-                        <TextInputField ref="emailField" :color="color" :label="'Confirm Email'" v-model="reEnterEmail"
+                        <TextInputField :color="color" :label="'Confirm Email'" v-model="reEnterEmail"
                             :width="'80%'" :maxWidth="'300px'" :isEmailField="true"
                             :additionalValidationFunction="emailsMatch" />
                     </div>
@@ -70,7 +70,7 @@ export default defineComponent({
             {
                 if (response.EmailIsTaken)
                 {
-                    emailField.value?.invalidate("Email is already in use. Please use a different one");
+                    emailField.value?.invalidate("Email is already in use");
                 }
                 else
                 {

@@ -55,8 +55,7 @@ export class GroupStoreState extends StoreState implements IGroupStoreState
 
     public static isValid(groupStoreState: DeepPartial<GroupStoreState>): boolean
     {
-        return !!groupStoreState.signatureSecret &&
-            !!groupStoreState.currentSignature &&
+        return !!groupStoreState.currentSignature &&
             !!groupStoreState.previousSignature &&
             !!groupStoreState.state &&
             !!groupStoreState.groupStoreStateID &&

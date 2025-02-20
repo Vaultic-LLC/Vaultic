@@ -62,8 +62,7 @@ export class UserPreferencesStoreState extends StoreState implements IUserPrefer
 
     public static isValid(userPreferncesStoreState: DeepPartial<UserPreferencesStoreState>): boolean
     {
-        return !!userPreferncesStoreState.signatureSecret &&
-            !!userPreferncesStoreState.currentSignature &&
+        return !!userPreferncesStoreState.currentSignature &&
             !!userPreferncesStoreState.previousSignature &&
             !!userPreferncesStoreState.state &&
             !!userPreferncesStoreState.userPreferencesStoreStateID &&

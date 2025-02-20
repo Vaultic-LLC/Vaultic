@@ -55,8 +55,7 @@ export class FilterStoreState extends StoreState implements IFilterStoreState
 
     public static isValid(filterStoreState: DeepPartial<FilterStoreState>): boolean
     {
-        return !!filterStoreState.signatureSecret &&
-            !!filterStoreState.currentSignature &&
+        return !!filterStoreState.currentSignature &&
             !!filterStoreState.previousSignature &&
             !!filterStoreState.state &&
             !!filterStoreState.filterStoreStateID &&

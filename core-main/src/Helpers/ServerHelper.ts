@@ -6,17 +6,24 @@ import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
-import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
+import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { EntityRepository } from "typeorm";
 
 async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
 {
     // TODO: switch to argon2 hash
-    const passwordHash = environment.utilities.hash.insecureHash(masterKey);
+    const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
+    if (!passwordHash.success)
+    {
+        return { Success: false };
+    }
+
     const { clientRegistrationState, registrationRequest } =
         opaque.client.startRegistration({
-            password: passwordHash
+            password: passwordHash.value
         });
 
     const startResponse = await stsServer.registration.start(registrationRequest, email);
@@ -25,41 +32,13 @@ async function registerUser(masterKey: string, email: string, firstName: string,
         return startResponse;
     }
 
-    const { registrationRecord, exportKey } = opaque.client.finishRegistration({
+    const { registrationRecord } = opaque.client.finishRegistration({
         clientRegistrationState,
         registrationResponse: startResponse.ServerRegistrationResponse!,
-        password: passwordHash,
+        password: passwordHash.value,
     });
 
-    const keys = await environment.utilities.generator.ECKeys();
-
-    // wrap private key in masterKey encryption and exportKey encryption for future use
-    const masterKeyEncryptedPrivateKey = await environment.utilities.crypt.encrypt(masterKey, keys.private);
-    if (!masterKeyEncryptedPrivateKey.success)
-    {
-        await environment.repositories.logs.log(errorCodes.ENCRYPTION_FAILED, "Private Key Master Key Encryption");
-        return { Success: false }
-    }
-
-    const exportKeyEncryptedPrivateKey = await environment.utilities.crypt.encrypt(exportKey, masterKeyEncryptedPrivateKey.value!);
-    if (!exportKeyEncryptedPrivateKey.success)
-    {
-        await environment.repositories.logs.log(errorCodes.ENCRYPTION_FAILED, "Private Key Export Key Encryption");
-        return { Success: false }
-    }
-
-    const response = await stsServer.registration.finish(startResponse.PendingUserToken!,
-        registrationRecord, firstName, lastName, keys.public, exportKeyEncryptedPrivateKey.value!);
-
-    if (response.Success)
-    {
-        response.PublicKey = keys.public;
-
-        // only return the masterKey encrypted private key since we're already local
-        response.PrivateKey = masterKeyEncryptedPrivateKey.value!;
-    }
-
-    return response;
+    return await stsServer.registration.finish(startResponse.PendingUserToken!, registrationRecord, firstName, lastName);
 }
 
 async function logUserIn(masterKey: string, email: string,
@@ -72,12 +51,17 @@ async function logUserIn(masterKey: string, email: string,
     {
         if (!environment.cache.passwordHash || !environment.cache.clientLoginState || !environment.cache.startLoginRequest)
         {
-            const passwordHash = environment.utilities.hash.insecureHash(masterKey);
+            const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
+            if (!passwordHash.success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
             const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
-                password: passwordHash,
+                password: passwordHash.value,
             });
 
-            environment.cache.setLoginData(startLoginRequest, passwordHash, clientLoginState);
+            environment.cache.setLoginData(startLoginRequest, passwordHash.value, clientLoginState);
         }
 
         const startResponse = await stsServer.login.start(environment.cache.startLoginRequest, email, mfaCode);
@@ -104,10 +88,20 @@ async function logUserIn(masterKey: string, email: string,
 
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
-        let currentSignatures: CurrentSignaturesVaultKeys;
-        if (!firstLogin && !reloadAllData)
+        const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
+        let currentSignatures: CurrentSignaturesVaultKeys = { signatures: {}, keys: [] }
+        let masterKeyVaulticKey: string | undefined;
+
+        if (!firstLogin && !reloadAllData && currentUser)
         {
-            currentSignatures = await getUserDataSignatures(masterKey, email);
+            const vaulticKey: VaulticKey =
+            {
+                algorithm: currentUser.masterKeyEncryptionAlgorithm,
+                key: masterKey
+            };
+
+            masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+            currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
         }
 
         let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
@@ -125,17 +119,33 @@ async function logUserIn(masterKey: string, email: string,
                     return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
                 }
 
+                if (!masterKeyVaulticKey)
+                {
+                    const masterKeyEncryptedAlgorithm =
+                        (result.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
+                        Algorithm.XCHACHA20_POLY1305;
+
+                    const vaulticKey: VaulticKey =
+                    {
+                        algorithm: masterKeyEncryptedAlgorithm,
+                        key: masterKey
+                    };
+
+                    masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+                }
+
                 if (reloadAllData)
                 {
-                    await reloadAllUserData(masterKey, email, result.value.userDataPayload);
+                    await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);
                 }
-                else 
+                else
                 {
-                    await checkMergeMissingData(masterKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
+                    await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
                 }
 
                 // This has to go after merging in the event that the user isn't in the local data yet
-                await environment.repositories.users.setCurrentUser(masterKey, email);
+                await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
+
 
                 // const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
                 // if (!payload)
@@ -150,6 +160,7 @@ async function logUserIn(masterKey: string, email: string,
         }
 
         environment.cache.clearLoginData();
+        finishResponse.masterKey = masterKeyVaulticKey ?? JSON.vaulticStringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: masterKey });
         return TypedMethodResponse.success(finishResponse);
     }
 }
@@ -177,6 +188,7 @@ async function logUserIn(masterKey: string, email: string,
 
 //     async function decryptAndSetName(vault: ServerDisplayVault)
 //     {
+//         Not correct anymore
 //         const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!, vault.isSetup);
 //         if (!vaultKey.success)
 //         {

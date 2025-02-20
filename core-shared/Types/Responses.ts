@@ -1,10 +1,11 @@
 import { Device, RequireMFAOn } from "./Device";
 import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataPayload, UserDemographics, UserOrgInfo, VaultDataBreach } from "./ClientServerTypes";
+import { PublicKeys } from "./Keys";
 
 export interface EncryptedResponse
 {
-    Key?: string;
-    Data?: string;
+    CipherText: string;
+    Data: string;
 }
 
 export interface BaseResponse
@@ -18,6 +19,7 @@ export interface BaseResponse
     axiosCode?: string;
     message?: string;
     vaulticCode?: number;
+    Salt?: string;
 }
 
 interface InvalidLicenseResponse
@@ -142,8 +144,6 @@ export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenRes
 export interface FinishRegistrationResponse extends BaseResponse
 {
     MFASecret?: string;
-    PublicKey?: string;
-    PrivateKey?: string;
 }
 
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
@@ -159,9 +159,12 @@ export interface UserDataPayloadResponse
 
 export interface FinishLoginResponse extends UserDataPayloadResponse, OpaqueResponse, CreateSessionResponse
 {
+    masterKey?: string;
 }
 
-export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse { }
+export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse 
+{
+}
 
 export interface CreateVaultResponse extends BaseResponse
 {
@@ -218,7 +221,7 @@ export interface GetVaultMembersResponse extends BaseResponse
 
 export interface GetPublicKeysResponse extends BaseResponse
 {
-    UsersAndPublicKeys?: { [key: number]: string };
+    UsersAndPublicKeys?: { [key: number]: PublicKeys };
 }
 
 export interface CreateOrganizationResponse extends BaseResponse

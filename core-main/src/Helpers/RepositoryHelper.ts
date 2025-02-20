@@ -5,6 +5,8 @@ import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
+import { UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
+import { Algorithm, SignedVaultKey } from "@vaultic/shared/Types/Keys";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>, onSucceed?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>
 {
@@ -45,15 +47,9 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
     return TypedMethodResponse.fail();
 }
 
-export async function getUserDataSignatures(masterKey: string, email: string): Promise<CurrentSignaturesVaultKeys>
+export async function getUserDataSignatures(masterKey: string, user: User): Promise<CurrentSignaturesVaultKeys>
 {
     let userData = {}
-    const user = await environment.repositories.users.findByEmail(masterKey, email);
-    if (!user)
-    {
-        return { signatures: userData, keys: [] };
-    }
-
     userData["user"] =
     {
         userID: user.userID,
@@ -256,13 +252,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
             // The user was never successfully created
             if (!User.isValid(serverUserDataPayload.user))
             {
-                if (!serverUserDataPayload.user.publicKey || !serverUserDataPayload.user.privateKey)
-                {
-                    await environment.repositories.logs.log(undefined, "No Public or Private Key for User", "checkMergeMissingData")
-                    return false;
-                }
-
-                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, serverUserDataPayload.user.publicKey!, serverUserDataPayload.user.privateKey!, transaction)).success;
+                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, transaction)).success;
             }
 
             if (!(await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction)))
@@ -313,7 +303,6 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
     if (serverUserDataPayload.userVaults)
     {
-        console.log(`User Vaults: ${JSON.stringify(serverUserDataPayload.userVaults)}\n`)
         for (let i = 0; i < serverUserDataPayload.userVaults.length; i++)
         {
             const serverUserVault = serverUserDataPayload.userVaults[i];
@@ -339,7 +328,9 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
     if (serverUserDataPayload.sharedUserVaults)
     {
-        console.log(`Shared User Vaults: ${JSON.stringify(serverUserDataPayload.sharedUserVaults)}\n`)
+        const serverVaultsToSetup: UnsetupSharedClientUserVault[] = [];
+        const allSenderUserIDs: number[] = [];
+
         for (let i = 0; i < serverUserDataPayload.sharedUserVaults.length; i++)
         {
             const serverUserVault = serverUserDataPayload.sharedUserVaults[i];
@@ -350,7 +341,24 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                 const userVault = clientUserDataPayload.userVaults?.filter(uv => uv.userVaultID == serverUserVault.userVaultID);
                 if (!userVault || userVault.length == 0)
                 {
-                    await environment.repositories.userVaults.setupSharedUserVault(masterKey, serverUserVault, transaction);
+                    const parsedVaultKey: SignedVaultKey = JSON.vaulticParse(serverUserVault.vaultKey);
+
+                    // something went wrong
+                    if (parsedVaultKey.algorithm != Algorithm.Vaultic_Key_Share)
+                    {
+                        await environment.repositories.logs.log(undefined, "Unseutp UserVault algorithm isn't correct");
+                        continue;
+                    }
+
+                    allSenderUserIDs.push(parsedVaultKey.message.senderUserID);
+
+                    const unsetupSUV: UnsetupSharedClientUserVault =
+                    {
+                        userVault: serverUserVault,
+                        vaultKey: parsedVaultKey
+                    };
+
+                    serverVaultsToSetup.push(unsetupSUV);
                 }
 
                 needsToRePushData = true;
@@ -365,6 +373,28 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                     {
                         needsToRePushData = true;
                     }
+                }
+            }
+        }
+
+        if (serverVaultsToSetup.length > 0)
+        {
+            const privateEncryptingKey = serverUserDataPayload.user.privateEncryptingKey ?? (await environment.repositories.users.findByEmail(masterKey, email))?.privateEncryptingKey;
+
+            // This should never happen
+            if (privateEncryptingKey == null)
+            {
+                await environment.repositories.logs.log(undefined, "Unable to find Users Private Encrypting Key");
+
+                // return or else saving Vaults later will throw a Foreign Key Exception
+                return;
+            }
+            else
+            {
+                const decryptedPrivateEncryptingKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, privateEncryptingKey);
+                if (decryptedPrivateEncryptingKey.success)
+                {
+                    await environment.repositories.userVaults.setupSharedUserVaults(masterKey, decryptedPrivateEncryptingKey.value, allSenderUserIDs, serverVaultsToSetup, transaction);
                 }
             }
         }

@@ -200,7 +200,7 @@ export default defineComponent({
                     username: '',
                     permission: ServerPermissions.View,
                     icon: undefined,
-                    publicKey: undefined
+                    publicEncryptingKey: undefined
                 };
             }
             else 
@@ -226,7 +226,7 @@ export default defineComponent({
             editingMember.value!.firstName = userDemographics.FirstName;
             editingMember.value!.lastName = userDemographics.LastName;
             editingMember.value!.username = userDemographics.Username;
-            editingMember.value!.publicKey = userDemographics.PublicKey;        
+            editingMember.value!.publicEncryptingKey = userDemographics.PublicEncryptingKey;        
         }
 
         function onEditMember(member: Member, e: any)

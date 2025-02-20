@@ -48,13 +48,13 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
         if (decrypt)
         {
-            const decryptedCurrentState = await environment.utilities.crypt.decrypt(key, currentStateToUse);
+            const decryptedCurrentState = await environment.utilities.crypt.symmetricDecrypt(key, currentStateToUse);
             if (!decryptedCurrentState.success)
             {
                 return false;
             }
 
-            const decyptedNewState = await environment.utilities.crypt.decrypt(key, newStateToUse);
+            const decyptedNewState = await environment.utilities.crypt.symmetricDecrypt(key, newStateToUse);
             if (!decyptedNewState.success)
             {
                 return false;

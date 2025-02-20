@@ -1,6 +1,7 @@
 import { ServerPermissions } from "./ClientServerTypes"
 import { PasswordsByDomainType } from "./DataTypes";
 import { Field, KnownMappedFields } from "./Fields";
+import { Algorithm, SignedVaultKey } from "./Keys";
 
 export enum EntityState
 {
@@ -12,7 +13,6 @@ export enum EntityState
 
 export interface IVaulticEntity 
 {
-    signatureSecret: string;
     currentSignature: string;
     entityState: EntityState;
     serializedPropertiesToSync: string;
@@ -27,10 +27,13 @@ export interface IUser extends IVaulticEntity
     firstName: string;
     lastName: string;
     lastUsed: boolean;
+    masterKeyEncryptionAlgorithm: Algorithm;
     masterKeyHash: string;
     masterKeySalt: string;
-    publicKey: string;
-    privateKey: string;
+    publicSigningKey: string;
+    privateSigningKey: string;
+    publicEncryptingKey: string;
+    privateEncryptingKey: string;
     appStoreState: IAppStoreState;
     userPreferencesStoreState: IUserPreferencesStoreState;
     userVaults: IUserVault[]
@@ -170,6 +173,12 @@ export enum VaultType
 export interface SharedClientUserVault extends IUserVault
 {
     isSetup: boolean;
+}
+
+export interface UnsetupSharedClientUserVault
+{
+    userVault: IUserVault;
+    vaultKey: SignedVaultKey;
 }
 
 export interface UserData 

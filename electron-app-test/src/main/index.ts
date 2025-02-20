@@ -7,7 +7,7 @@ import { electronAPI } from "@electron-toolkit/preload";
 
 import { environment } from "./Core/Environment"
 import cryptUtility from './Utilities/CryptUtility';
-import hashUtility from './Utilities/HashUtility';
+import coreHashUtility from "./Core/Utilities/CoreHashUtility";
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
 import database, { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
@@ -148,7 +148,7 @@ async function setupEnvironment(isTest: boolean)
         utilities:
         {
             crypt: cryptUtility,
-            hash: hashUtility,
+            hash: coreHashUtility,
             generator: generatorUtility
         },
         database:

@@ -9,14 +9,18 @@
     "author": "",
     "license": "ISC",
     "devDependencies": {
-        "@vaultic/shared": "../core-shared",
         "@noble/curves": "^1.4.2",
         "@serenity-kit/opaque": "^0.8.4",
+        "@vaultic/shared": "../core-shared",
         "axios": "^1.6.7",
+        "jose": "^5.6.3",
         "reflect-metadata": "^0.2.2",
         "sqlite3": "^5.1.7",
-        "typeorm": "^0.3.20",
-        "jose": "^5.6.3"
+        "typeorm": "^0.3.20"
     },
-    "dependencies": {}
+    "dependencies": {
+        "@noble/ciphers": "^1.2.1",
+        "@noble/hashes": "^1.7.1",
+        "@noble/post-quantum": "^0.4.0"
+    }
 }

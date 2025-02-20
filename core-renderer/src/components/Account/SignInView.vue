@@ -20,7 +20,7 @@
                         <div v-if="reloadAllDataIsToggled" class="signInContainer__restoreLastBackup">
                             <CheckboxInputField :label="'Restore Last Backup'"
                                 :color="color" v-model="reloadAllData" :width="'100%'" :height="'1.25vh'"
-                                :minHeight="'15px'" :fontSize="'clamp(11px, 1vw, 20px)'" />
+                                :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                             <ToolTip :message="'Restore last backup from the server. Will override all local data'"
                                 :size="'20px'" :color="color" />
                         </div>
@@ -93,6 +93,7 @@ import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import { exportLogs } from '../../Helpers/ImportExportHelper';
+import { VaulticKey } from '@vaultic/shared/Types/Keys';
 
 export default defineComponent({
     name: "SignInView",
@@ -156,10 +157,10 @@ export default defineComponent({
                     mfaIsShowing.value = false;
                     app.isOnline = true;
                     
-                    if (await app.loadUserData(masterKey.value))
+                    if (await app.loadUserData(response.value?.masterKey!))
                     {
-                        ctx.emit('onKeySuccess');                   
-                    }            
+                        ctx.emit('onKeySuccess');
+                    }
                 }
                 else if (response.value?.FailedMFA)
                 {
@@ -172,18 +173,25 @@ export default defineComponent({
             }
             else 
             {
-                const response = await api.repositories.users.verifyUserMasterKey(masterKey.value, email.value);
+                const response = await api.repositories.users.verifyUserMasterKey(masterKey.value, email.value, false);
 
                 // check if the method call succeeded
                 if (response.success)
                 {
+                    const vaulticKey: VaulticKey =
+                    {
+                        algorithm: response.value?.keyAlgorithm!,
+                        key: masterKey.value
+                    };
+
+                    const vaulticMasterKey = JSON.vaulticStringify(vaulticKey);
                     // check if key is correct
                     if (response.value)
                     {
-                        const setUserResponse = await api.repositories.users.setCurrentUser(masterKey.value, email.value);
+                        const setUserResponse = await api.repositories.users.setCurrentUser(vaulticMasterKey, email.value);
                         if (setUserResponse.success)
                         {
-                            if (await app.loadUserData(masterKey.value))
+                            if (await app.loadUserData(vaulticMasterKey))
                             {
                                 ctx.emit('onKeySuccess');
                             }

@@ -1,8 +1,8 @@
 import { UserController, createUserController } from "./UserController";
 import { createAppController } from "./AppController";
-import { AppController, OrganizationController } from "@vaultic/shared/Types/Controllers";
+import { AppController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
 import axiosHelper from "./AxiosHelper";
-import { SessionController, createSessionController } from "./SessionController";
+import { createSessionController } from "./SessionController";
 import { LoginController, createLoginController } from "./LoginController";
 import { RegistrationController, createRegistrationController } from "./RegistrationController";
 import { createVaultController, VaultController } from "./VaultController";

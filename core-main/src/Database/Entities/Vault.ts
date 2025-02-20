@@ -141,8 +141,7 @@ export class Vault extends VaulticEntity implements IVault
 
     public static isValid(vault: DeepPartial<Vault>): boolean
     {
-        return !!vault.signatureSecret &&
-            !!vault.currentSignature &&
+        return !!vault.currentSignature &&
             !!vault.vaultID &&
             !!vault.name &&
             (vault.shared === true || vault.shared === false) &&

@@ -8,13 +8,15 @@ import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
-import { CondensedVaultData, EntityState, SharedClientUserVault } from "@vaultic/shared/Types/Entities";
+import { CondensedVaultData, EntityState, UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserVaultRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
+import { Algorithm, PublicKeyType } from "@vaultic/shared/Types/Keys";
+import vaulticServer from "../../Server/VaulticServer";
 
 class UserVaultRepository extends VaulticRepository<UserVault> implements IUserVaultRepository
 {
@@ -79,12 +81,6 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             return [[], []];
         }
 
-        const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, user.privateKey);
-        if (!decryptedPrivateKey.success)
-        {
-            return [[], []];
-        }
-
         const vaultKeys: string[] = [];
         for (let i = 0; i < userVaults.length; i++)
         {
@@ -94,7 +90,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                 return [[], []];
             }
 
-            const decryptedVaultKey = await vaultHelper.decryptVaultKey(masterKey, decryptedPrivateKey.value!, false, userVaults[i].vaultKey);
+            const decryptedVaultKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
                 return [[], []];
@@ -313,12 +309,6 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         const partialUserVault = {};
         let updatedUserVault = false;
 
-        if (newUserVault.signatureSecret)
-        {
-            partialUserVault[nameof<UserVault>("signatureSecret")] = newUserVault.signatureSecret;
-            updatedUserVault = true;
-        }
-
         if (newUserVault.currentSignature)
         {
             partialUserVault[nameof<UserVault>("currentSignature")] = newUserVault.currentSignature;
@@ -393,25 +383,69 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         }
     }
 
-    public async setupSharedUserVault(masterKey: string, userVault: SharedClientUserVault, transaction: Transaction): Promise<void>
+    public async setupSharedUserVaults(masterKey: string, recipientsPrivateEncryptingKey: string, senderUserIDs: number[],
+        unsetupUserVaults: UnsetupSharedClientUserVault[], transaction: Transaction): Promise<void>
     {
-        const newUserVault = new UserVault().makeReactive();
-        newUserVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
+        const senderPublicSigningKeys = await vaulticServer.user.getPublicKeys(PublicKeyType.Signing, senderUserIDs);
+        if (!senderPublicSigningKeys.Success)
+        {
+            await environment.repositories.logs.log(undefined, "Failed to get public keys");
+            return;
+        }
 
-        newUserVault.userVaultID = userVault.userVaultID;
-        newUserVault.userID = userVault.userID;
-        newUserVault.vaultID = userVault.vaultID;
-        newUserVault.userOrganizationID = userVault.userOrganizationID;
-        newUserVault.isOwner = false;
-        newUserVault.permissions = userVault.permissions;
-        newUserVault.vaultKey = userVault.vaultKey;
+        for (let i = 0; i < unsetupUserVaults.length; i++)
+        {
+            const unsetupUserVault = unsetupUserVaults[i].userVault;
+            const senderPublicSigningKey = senderPublicSigningKeys?.UsersAndPublicKeys?.[unsetupUserVaults[i].vaultKey.message.senderUserID];
+            if (!senderPublicSigningKey || !senderPublicSigningKey.PublicSigningKey)
+            {
+                await environment.repositories.logs.log(undefined, "No public key for user");
+                continue;
+            }
 
-        newUserVault.vaultPreferencesStoreState.userVaultID = userVault.userVaultID;
-        newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID;
-        newUserVault.vaultPreferencesStoreState.state = "{}";
+            const newUserVault = new UserVault().makeReactive();
+            newUserVault.vaultPreferencesStoreState = new VaultPreferencesStoreState().makeReactive();
 
-        transaction.insertEntity(newUserVault, masterKey, () => this);
-        transaction.insertEntity(newUserVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+            newUserVault.userVaultID = unsetupUserVault.userVaultID;
+            newUserVault.userID = unsetupUserVault.userID;
+            newUserVault.vaultID = unsetupUserVault.vaultID;
+            newUserVault.userOrganizationID = unsetupUserVault.userOrganizationID;
+            newUserVault.isOwner = false;
+            newUserVault.permissions = unsetupUserVault.permissions;
+
+            try
+            {
+                // first time loading this vaultKey from a shared vault, switch the key to use symmetric encryption
+                // for faster subsequent decryption and better security
+                if (unsetupUserVaults[i].vaultKey.algorithm == Algorithm.Vaultic_Key_Share)
+                {
+                    const result = await vaultHelper.evaluateVaultKeyFromSender(senderPublicSigningKey.PublicSigningKey, recipientsPrivateEncryptingKey, unsetupUserVaults[i].vaultKey);
+                    if (!result.success)
+                    {
+                        await environment.repositories.logs.log(undefined, "Failed to evaluate vault key from sender");
+                        continue;
+                    }
+
+                    newUserVault.vaultKey = result.value;
+                }
+                // this shouldn't ever happen since the userVault is already setup i.e. we shouldn't be in this method
+                else
+                {
+                    newUserVault.vaultKey = unsetupUserVault.vaultKey;
+                }
+            }
+            catch (e)
+            {
+                await environment.repositories.logs.log(undefined, e.toString());
+            }
+
+            newUserVault.vaultPreferencesStoreState.userVaultID = unsetupUserVault.userVaultID;
+            newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = unsetupUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID;
+            newUserVault.vaultPreferencesStoreState.state = "{}";
+
+            transaction.insertEntity(newUserVault, masterKey, () => this);
+            transaction.insertEntity(newUserVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+        }
     }
 }
 

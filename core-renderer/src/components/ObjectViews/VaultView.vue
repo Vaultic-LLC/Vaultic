@@ -210,7 +210,7 @@ export default defineComponent({
                             username: u.Username,
                             permission: u.Permissions,
                             icon: undefined,
-                            publicKey: undefined
+                            publicEncryptingKey: undefined
                         };
     
                         tempMembers.set(u.UserID, member);

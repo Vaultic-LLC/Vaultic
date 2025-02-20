@@ -54,11 +54,6 @@ export class StoreState extends VaulticEntity implements IStoreState
     public static getUpdatedPropertiesFromObject(store: any)
     {
         const properties = {};
-        if (store[nameof<StoreState>("signatureSecret")])
-        {
-            properties[nameof<StoreState>("signatureSecret")] = store.signatureSecret;
-        }
-
         if (store[nameof<StoreState>("currentSignature")])
         {
             properties[nameof<StoreState>("currentSignature")] = store.currentSignature;

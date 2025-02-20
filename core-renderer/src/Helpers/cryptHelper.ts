@@ -4,14 +4,14 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 
 export interface CryptHelper
 {
-    encrypt: (key: string, value: string) => Promise<TypedMethodResponse<string>>;
-    decrypt: (key: string, value: string) => Promise<TypedMethodResponse<string>>;
+    encrypt: (key: string, value: string) => Promise<TypedMethodResponse<string | undefined>>;
+    decrypt: (key: string, value: string) => Promise<TypedMethodResponse<string | undefined>>;
 }
 
 // TODO: is this actually needed?
-async function encrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
+async function encrypt(key: string, value: string): Promise<TypedMethodResponse<string | undefined>>
 {
-    const result = await api.utilities.crypt.encrypt(key, value);
+    const result = await api.utilities.crypt.symmetricEncrypt(key, value);
     if (!result.success)
     {
         app.popups.showErrorAlert(result.logID);
@@ -20,10 +20,10 @@ async function encrypt(key: string, value: string): Promise<TypedMethodResponse<
     return result;
 }
 
-async function decrypt(key: string, value: string): Promise<TypedMethodResponse<string>>
+async function decrypt(key: string, value: string): Promise<TypedMethodResponse<string | undefined>>
 {
     // This is expected to fail if the user enters the wrong key, don't show the error popup
-    return await api.utilities.crypt.decrypt(key, value);
+    return await api.utilities.crypt.symmetricDecrypt(key, value);
 }
 
 const cryptHelper: CryptHelper =

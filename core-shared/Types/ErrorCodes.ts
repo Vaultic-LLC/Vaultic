@@ -12,7 +12,7 @@ class ErrorCodes
     get INVALID_PROPERTY_WHILE_ENCRYPTING() { return 10008; }
 
     // Entity Verification Errors
-    get NO_SIGNATURE_SECRET_OR_SIGNATURE() { return 11000; }
+    get NO_SIGNATURE() { return 11000; }
     get NO_SIGNATURE_MAKEUP() { return 11001; }
     get NO_RETRIEVED_ENTITY() { return 11002; }
     get VERIFICATION_FAILED() { return 11003; }
@@ -27,7 +27,7 @@ class ErrorCodes
 
     verificationFailed(errorCode: number): boolean
     {
-        return errorCode >= this.NO_SIGNATURE_SECRET_OR_SIGNATURE &&
+        return errorCode >= this.NO_SIGNATURE &&
             errorCode <= this.NESTED_OBJECT_DOES_NOT_EXIST;
     }
 

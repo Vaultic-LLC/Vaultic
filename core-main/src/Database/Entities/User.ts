@@ -5,6 +5,7 @@ import { AppStoreState } from "./States/AppStoreState"
 import { UserPreferencesStoreState } from "./States/UserPreferencesStoreState"
 import { IUser } from "@vaultic/shared/Types/Entities"
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
+import { Algorithm } from "@vaultic/shared/Types/Keys"
 
 @Entity({ name: "users" })
 export class User extends VaulticEntity implements IUser
@@ -45,15 +46,28 @@ export class User extends VaulticEntity implements IUser
     @Column("text")
     masterKeySalt: string
 
+    @Column("text")
+    masterKeyEncryptionAlgorithm: Algorithm;
+
     // Backed Up
     // Not Encrypted
     @Column("text")
-    publicKey: string
+    publicSigningKey: string
 
     // Backed Up
     // Encrypted By Users Master Key
     @Column("text")
-    privateKey: string
+    privateSigningKey: string
+
+    // Backed Up
+    // Not Encrypted
+    @Column("text")
+    publicEncryptingKey: string
+
+    // Backed Up
+    // Encrypted By Users Master Key
+    @Column("text")
+    privateEncryptingKey: string
 
     @OneToOne(() => AppStoreState, (state: AppStoreState) => state.user, { eager: true })
     appStoreState: AppStoreState;
@@ -88,8 +102,11 @@ export class User extends VaulticEntity implements IUser
             nameof<User>("email"),
             nameof<User>("firstName"),
             nameof<User>("lastName"),
-            nameof<User>("publicKey"),
-            nameof<User>("privateKey")
+            nameof<User>("masterKeyEncryptionAlgorithm"),
+            nameof<User>("publicSigningKey"),
+            nameof<User>("privateSigningKey"),
+            nameof<User>("publicEncryptingKey"),
+            nameof<User>("privateEncryptingKey")
         ];
     }
 
@@ -107,6 +124,11 @@ export class User extends VaulticEntity implements IUser
         properties.push(nameof<User>("email"));
         properties.push(nameof<User>("firstName"));
         properties.push(nameof<User>("lastName"));
+        properties.push(nameof<User>("masterKeyEncryptionAlgorithm"));
+        properties.push(nameof<User>("publicSigningKey"));
+        properties.push(nameof<User>("privateSigningKey"));
+        properties.push(nameof<User>("publicEncryptingKey"));
+        properties.push(nameof<User>("privateEncryptingKey"));
 
         return properties;
     }
@@ -115,7 +137,9 @@ export class User extends VaulticEntity implements IUser
     {
         return [
             nameof<User>("masterKeyHash"),
-            nameof<User>("masterKeySalt")
+            nameof<User>("masterKeySalt"),
+            nameof<User>("privateSigningKey"),
+            nameof<User>("privateEncryptingKey")
         ];
     }
 
@@ -136,14 +160,16 @@ export class User extends VaulticEntity implements IUser
 
     public static isValid(user: DeepPartial<User>): boolean
     {
-        return !!user.signatureSecret &&
-            !!user.currentSignature &&
+        return !!user.currentSignature &&
             !!user.userID &&
             !!user.email &&
             !!user.firstName &&
             !!user.lastName &&
-            !!user.publicKey &&
-            !!user.privateKey &&
+            user.masterKeyEncryptionAlgorithm !== undefined && user.masterKeyEncryptionAlgorithm !== null &&
+            !!user.publicSigningKey &&
+            !!user.privateSigningKey &&
+            !!user.publicEncryptingKey &&
+            !!user.privateEncryptingKey &&
             !!user.appStoreState &&
             !!user.userPreferencesStoreState &&
             AppStoreState.isValid(user.appStoreState) &&

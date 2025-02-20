@@ -470,7 +470,7 @@ export default defineComponent({
                             lastName: response.AllowSharingFromUsers[i].LastName,
                             permission: ServerPermissions.View,
                             icon: undefined,
-                            publicKey: undefined
+                            publicEncryptingKey: undefined
                         };
 
                         currentAllowUsersToShare.value.set(member.userID, member);

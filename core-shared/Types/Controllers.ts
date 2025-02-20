@@ -2,6 +2,7 @@ import { ServerAllowSharingFrom } from "./ClientServerTypes";
 import { BreachRequestVault, Member } from "./DataTypes";
 import { RequireMFAOn, RequiresMFA } from "./Device";
 import { UserVaultIDAndVaultID } from "./Entities";
+import { TypedMethodResponse } from "./MethodResponse";
 import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetOrganizationsResponse, GetSettings, GetUserInfoResponse, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
 
 export interface AppController
@@ -65,7 +66,7 @@ export interface UpdateOrganizationData
 export interface OrganizationController
 {
     getOrganizations: () => Promise<GetOrganizationsResponse>;
-    createOrganization: (masterKey: string, createOrganizationData: string) => Promise<CreateOrganizationResponse>;
-    updateOrganization: (masterKey: string, updateOrganizationData: string) => Promise<BaseResponse>;
+    createOrganization: (masterKey: string, createOrganizationData: string) => Promise<TypedMethodResponse<CreateOrganizationResponse | undefined>>;
+    updateOrganization: (masterKey: string, updateOrganizationData: string) => Promise<TypedMethodResponse<BaseResponse | undefined>>;
     deleteOrganization: (organizationID: number) => Promise<BaseResponse>
 }

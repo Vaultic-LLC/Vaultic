@@ -1,8 +1,9 @@
 import { x25519 } from '@noble/curves/ed25519';
 import { bytesToHex } from '@noble/curves/abstract/utils';
-import { PublicPrivateKey, CoreGeneratorUtility } from '@vaultic/shared/Types/Utilities';
+import { CoreGeneratorUtility } from '@vaultic/shared/Types/Utilities';
+import { PublicPrivateKey } from '@vaultic/shared/Types/Keys';
 
-async function ECKeys(): Promise<PublicPrivateKey>
+async function ECKeys(): Promise<PublicPrivateKey<string>>
 {
     const priv = x25519.utils.randomPrivateKey();
     const pub = x25519.getPublicKey(priv);

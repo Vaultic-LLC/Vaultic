@@ -6,9 +6,6 @@ import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData, IUserVault } from "@vaultic/shared/Types/Entities"
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
-import { PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes"
-import { Field, KnownMappedFields } from "@vaultic/shared/Types/Fields"
 
 @Entity({ name: "userVaults" })
 export class UserVault extends VaulticEntity implements IUserVault
@@ -45,7 +42,6 @@ export class UserVault extends VaulticEntity implements IUserVault
 
     // Encrypted by Users Private Key
     // Backed Up
-    // In the format { publicKey: string, vaultkey: string }
     @Column("text")
     vaultKey: string
 
@@ -137,8 +133,7 @@ export class UserVault extends VaulticEntity implements IUserVault
 
     public static isValid(userVault: DeepPartial<UserVault>): boolean
     {
-        return !!userVault.signatureSecret &&
-            !!userVault.currentSignature &&
+        return !!userVault.currentSignature &&
             !!userVault.userID &&
             !!userVault.userVaultID &&
             !!userVault.userOrganizationID &&

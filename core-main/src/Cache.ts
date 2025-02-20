@@ -1,4 +1,6 @@
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { environment } from "./Environment";
+import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 
 export class VaulticCache
 {
@@ -56,15 +58,29 @@ export class VaulticCache
 
     async setSessionInfo(sessionKey: string, exportKey: string, tokenHash: string)
     {
-        this.internalSessionKey = sessionKey;
-        this.internalExportKey = exportKey;
+        const sessionVaulticKey: VaulticKey =
+        {
+            algorithm: Algorithm.XCHACHA20_POLY1305,
+            key: sessionKey
+        };
+
+        this.internalSessionKey = JSON.stringify(sessionVaulticKey);
+
+        const exportVaulticKey: VaulticKey =
+        {
+            algorithm: Algorithm.XCHACHA20_POLY1305,
+            key: exportKey
+        };
+
+        this.internalExportKey = JSON.stringify(exportVaulticKey);
 
         await environment.sessionHandler.setSession(tokenHash);
     }
 
-    setMasterKey(masterKey: string)
+    async setMasterKey(masterKey: string): Promise<TypedMethodResponse<undefined>>
     {
         this.internalMasterKey = masterKey;
+        return TypedMethodResponse.success();
     }
 
     clearMasterKey()

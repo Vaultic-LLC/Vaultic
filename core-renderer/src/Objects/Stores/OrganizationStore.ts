@@ -99,7 +99,7 @@ export class OrganizationStore extends Store<StoreState>
                     username: u.Username,
                     permission: u.Permissions,
                     icon: undefined,
-                    publicKey: undefined
+                    publicEncryptingKey: undefined
                 };
 
                 org.membersByUserID.set(u.UserID, member)
@@ -126,13 +126,20 @@ export class OrganizationStore extends Store<StoreState>
         };
 
         const response = await api.server.organization.createOrganization(masterKey, JSON.vaulticStringify(data));
-        if (!response.Success)
+        if (!response.success || !response.value?.Success)
         {
             defaultHandleFailedResponse(response);
+
+            // make sure error wasn't in ajax resposne
+            if (response.value)
+            {
+                defaultHandleFailedResponse(response.value);
+            }
+
             return false;
         }
 
-        organization.organizationID = response.OrganizationID!;
+        organization.organizationID = response.value.OrganizationID!;
         addedMembers.forEach(m =>
         {
             if (!organization.membersByUserID.has(m.userID))
@@ -169,9 +176,16 @@ export class OrganizationStore extends Store<StoreState>
         };
 
         const response = await api.server.organization.updateOrganization(masterKey, JSON.vaulticStringify(updateOrganizationData));
-        if (!response.Success)
+        if (!response.success || !response.value?.Success)
         {
             defaultHandleFailedResponse(response);
+
+            // make sure error wasn't in ajax resposne
+            if (response.value)
+            {
+                defaultHandleFailedResponse(response.value);
+            }
+
             return false;
         }
 

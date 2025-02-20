@@ -1,38 +1,54 @@
 import { CondensedVaultData } from "@vaultic/shared/Types/Entities";
 import { Vault } from "../Database/Entities/Vault";
 import { environment } from "../Environment";
-import { VaultKey } from "../Types/Properties";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { Algorithm, MLKEM1024KeyResult, SignedVaultKey, SignedVaultKeyMessage } from "@vaultic/shared/Types/Keys";
 
 class VaultHelper 
 {
-    public async decryptVaultKey(masterKey: string, privateKey: string, decryptPrivateKey: boolean, vaultKey: string, decryptVaultKey: boolean = true): Promise<TypedMethodResponse<string>>
+    public async prepareVaultKeyForRecipient(senderUserID: number, sendingPrivateSigningKey: string,
+        recipientPublicEncryptingKey: string, vaultKey: string): Promise<TypedMethodResponse<string | undefined>>
     {
-        if (decryptPrivateKey)
+        const asymmetricEncryptResult = await environment.utilities.crypt.asymmeticEncrypt(recipientPublicEncryptingKey, vaultKey);
+        if (!asymmetricEncryptResult.success)
         {
-            const decryptedPrivateKey = await environment.utilities.crypt.decrypt(masterKey, privateKey);
-            if (!decryptedPrivateKey.success)
-            {
-                return decryptedPrivateKey;
-            }
-
-            privateKey = decryptedPrivateKey.value!;
+            return asymmetricEncryptResult as TypedMethodResponse<string | undefined>;
         }
 
-        let vaultKeyToUse = vaultKey;
-        if (decryptVaultKey)
+        const keyResult: MLKEM1024KeyResult = asymmetricEncryptResult.value as MLKEM1024KeyResult;
+        const message: SignedVaultKeyMessage =
         {
-            const decryptedVaultKeys = await environment.utilities.crypt.decrypt(masterKey, vaultKey);
-            if (!decryptedVaultKeys.success)
-            {
-                return decryptedVaultKeys;
-            }
+            senderUserID,
+            cipherText: keyResult.cipherText,
+            vaultKey: keyResult.value
+        };
 
-            vaultKeyToUse = decryptedVaultKeys.value!;
+        const signature = await environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.vaulticStringify(message));
+        if (!signature.success)
+        {
+            return TypedMethodResponse.propagateFail(signature);
         }
 
-        const keys: VaultKey = JSON.vaulticParse(vaultKeyToUse);
-        return await environment.utilities.crypt.ECDecrypt(keys.publicKey, privateKey, keys.vaultKey);
+        const signedVaultKey: SignedVaultKey =
+        {
+            algorithm: Algorithm.Vaultic_Key_Share,
+            signature: signature.value,
+            message
+        };
+
+        return TypedMethodResponse.success(JSON.stringify(signedVaultKey));
+    }
+
+    public async evaluateVaultKeyFromSender(senderPublicSigningKey: string, recipientPrivateEncryptingKey: string, signedVaultKey: SignedVaultKey)
+        : Promise<TypedMethodResponse<string | undefined>>
+    {
+        const verifyResult = await environment.utilities.crypt.verify(senderPublicSigningKey, signedVaultKey);
+        if (!verifyResult.success)
+        {
+            return TypedMethodResponse.propagateFail(verifyResult);
+        }
+
+        return await environment.utilities.crypt.asymmetricDecrypt(recipientPrivateEncryptingKey, signedVaultKey.message.vaultKey, signedVaultKey.message.cipherText);
     }
 
     public async decryptCondensedUserVault(vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[])
@@ -40,7 +56,7 @@ class VaultHelper
         const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
         for (let j = 0; j < decryptableProperties.length; j++)
         {
-            const response = await environment.utilities.crypt.decrypt(vaultKey, condensedVault[decryptableProperties[j]]);
+            const response = await environment.utilities.crypt.symmetricDecrypt(vaultKey, condensedVault[decryptableProperties[j]]);
             if (!response.success)
             {
                 return null;

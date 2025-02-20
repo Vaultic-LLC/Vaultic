@@ -55,8 +55,7 @@ export class PasswordStoreState extends StoreState implements IPasswordStoreStat
 
     public static isValid(passwordStoreState: DeepPartial<PasswordStoreState>): boolean
     {
-        return !!passwordStoreState.signatureSecret &&
-            !!passwordStoreState.currentSignature &&
+        return !!passwordStoreState.currentSignature &&
             !!passwordStoreState.previousSignature &&
             !!passwordStoreState.state &&
             !!passwordStoreState.passwordStoreStateID &&
