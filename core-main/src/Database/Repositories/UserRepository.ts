@@ -32,7 +32,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
     private async setMasterKey(masterKey: string, user: User | DeepPartial<User>, encrypt: boolean): Promise<boolean>
     {
-        console.log('setting master key');
         const salt = environment.utilities.crypt.randomStrongValue(40);
 
         // TODO: switch to Argon2id
@@ -58,7 +57,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             user.masterKeyHash = encryptedHash.value!;
             user.masterKeySalt = encryptedSalt.value!;
-            console.log(`set master key: ${hash.value}, salt: ${salt}`)
 
             return true;
         }
@@ -66,7 +64,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         user.masterKeyHash = hash.value;
         user.masterKeySalt = salt;
 
-        console.log(`set master key: ${hash.value}, salt: ${salt}`)
         return true;
     }
 

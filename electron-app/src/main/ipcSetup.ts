@@ -1,7 +1,6 @@
 import { ipcMain } from "electron";
 import { getDeviceInfo } from "./Objects/DeviceInfo";
 import vaulticServer from "./Core/Server/VaulticServer";
-import cryptUtility from "./Utilities/CryptUtility";
 import generatorUtility from "./Utilities/Generator";
 import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
@@ -10,7 +9,7 @@ import serverHelper from "./Core/Helpers/ServerHelper";
 import { safeBackupData } from "./Core/Helpers/RepositoryHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
-import { BreachRequestVault, Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 import { RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 
@@ -49,11 +48,11 @@ export default function setupIPC()
 	ipcMain.handle('organizationController:updateOrganization', (e, masterKey: string, updateOrganizationData: string) => validateSender(e, () => vaulticServer.organization.updateOrganization(masterKey, updateOrganizationData)));
 	ipcMain.handle('organizationController:deleteOrganization', (e, organizationID: number) => validateSender(e, () => vaulticServer.organization.deleteOrganization(organizationID)));
 
-	ipcMain.handle('cryptUtility:symmetricEncrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.symmetricEncrypt(key, value)));
-	ipcMain.handle('cryptUtility:symmetricDecrypt', (e, key: string, value: string) => validateSender(e, () => cryptUtility.symmetricDecrypt(key, value)));
-	ipcMain.handle('cryptUtility:ECEncrypt', (e, recipientPublicKey: string, value: string) => validateSender(e, () => cryptUtility.ECEncrypt(recipientPublicKey, value)));
+	ipcMain.handle('cryptUtility:symmetricEncrypt', (e, key: string, value: string) => validateSender(e, () => environment.utilities.crypt.symmetricEncrypt(key, value)));
+	ipcMain.handle('cryptUtility:symmetricDecrypt', (e, key: string, value: string) => validateSender(e, () => environment.utilities.crypt.symmetricDecrypt(key, value)));
+	ipcMain.handle('cryptUtility:ECEncrypt', (e, recipientPublicKey: string, value: string) => validateSender(e, () => environment.utilities.crypt.ECEncrypt(recipientPublicKey, value)));
 	ipcMain.handle('cryptUtility:ECDecrypt', (e, tempPublicKey: string, usersPrivateKey: string, value: string) =>
-		validateSender(e, () => cryptUtility.ECDecrypt(tempPublicKey, usersPrivateKey, value)));
+		validateSender(e, () => environment.utilities.crypt.ECDecrypt(tempPublicKey, usersPrivateKey, value)));
 
 	ipcMain.handle('generatorUtility:uniqueId', (e) => validateSender(e, () => generatorUtility.uniqueId()));
 	ipcMain.handle('generatorUtility:generateRandomPasswordOrPassphrase', (e, type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => validateSender(e, () => generatorUtility.generateRandomPasswordOrPassphrase(type, length, includeNumbers, includeSpecialCharacters, includeAbmiguousCharacters, passphraseSeperator)));

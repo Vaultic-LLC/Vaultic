@@ -8,7 +8,6 @@ import { ml_kem1024 } from '@noble/post-quantum/ml-kem';
 import { ml_dsa87 } from '@noble/post-quantum/ml-dsa';
 import { PublicPrivateKey, Algorithm, VaulticKey, MLKEM1024KeyResult, SignedVaultKey, AsymmetricVaulticKey } from '@vaultic/shared/Types/Keys';
 import { xchacha20poly1305 } from '@noble/ciphers/chacha';
-import { EncryptedResponse } from '@vaultic/shared/Types/Responses';
 import { ClientCryptUtility } from '@vaultic/shared/Types/Utilities';
 
 export class CryptUtility implements ClientCryptUtility
@@ -253,14 +252,7 @@ export class CryptUtility implements ClientCryptUtility
 
         return TypedMethodResponse.fail();
     }
-
-    public async hybridEncrypt(value: string): Promise<TypedMethodResponse<EncryptedResponse>>
-    {
-        return TypedMethodResponse.fail();
-    }
-
-    public async hybridDecrypt(privateKey: string, encryptedResponse: EncryptedResponse): Promise<TypedMethodResponse<string | undefined>>
-    {
-        return TypedMethodResponse.fail();
-    }
 }
+
+const cryptUtility = new CryptUtility();
+export default cryptUtility;

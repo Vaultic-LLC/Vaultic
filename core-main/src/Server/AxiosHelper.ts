@@ -281,7 +281,6 @@ class APIAxiosWrapper extends AxiosWrapper
 
     async endToEndEncryptPostData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
-        console.log(`Encrypting E2E with Key: ${environment.cache.exportKey}`);
         if (!environment.cache.exportKey)
         {
             return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
@@ -364,7 +363,6 @@ class APIAxiosWrapper extends AxiosWrapper
 
     async decryptEndToEndData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
-        console.log(`Decrypting E2E with Key: ${environment.cache.exportKey}`);
         if (!environment.cache.exportKey)
         {
             return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
