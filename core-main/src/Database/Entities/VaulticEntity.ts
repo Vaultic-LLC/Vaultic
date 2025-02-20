@@ -397,37 +397,20 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         return true;
     }
 
-    private async decryptAndGet(key: string, property: keyof this, runningObject: { [key: string]: any }): Promise<boolean>
+    async decryptAndGet(key: string, property: keyof this): Promise<TypedMethodResponse<string | undefined>>
     {
         if (this[property] === undefined || typeof this[property] != 'string')
         {
-            return false;
+            return TypedMethodResponse.fail(undefined, undefined, "Invalid property to decrypt");
         }
 
         const result = await environment.utilities.crypt.symmetricDecrypt(key, this[property] as string);
         if (!result)
         {
-            return false;
+            return TypedMethodResponse.propagateFail(result);
         }
 
-        // @ts-ignore
-        runningObject[property] = result.value!;
-        return true;
-    }
-
-    public async decryptAndGetEach(key: string, properties: (keyof this)[]): Promise<[boolean, VaulticEntity]>
-    {
-        let runningObject = this.createNew();
-        for (let i = 0; i < properties.length; i++)
-        {
-            if (!await this.decryptAndGet(key, properties[i], runningObject))
-            {
-                return [false, {} as VaulticEntity];
-            }
-        }
-
-        runningObject = runningObject.makeReactive();
-        return [true, runningObject];
+        return TypedMethodResponse.success(result.value);
     }
 
     public preInsert()

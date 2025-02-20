@@ -26,7 +26,7 @@ class VaultHelper
         const signature = await environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.vaulticStringify(message));
         if (!signature.success)
         {
-            return TypedMethodResponse.fail();
+            return TypedMethodResponse.propagateFail(signature);
         }
 
         const signedVaultKey: SignedVaultKey =
@@ -43,9 +43,9 @@ class VaultHelper
         : Promise<TypedMethodResponse<string | undefined>>
     {
         const verifyResult = await environment.utilities.crypt.verify(senderPublicSigningKey, signedVaultKey);
-        if (!verifyResult.success || !verifyResult.value)
+        if (!verifyResult.success)
         {
-            return TypedMethodResponse.fail();
+            return TypedMethodResponse.propagateFail(verifyResult);
         }
 
         return await environment.utilities.crypt.asymmetricDecrypt(recipientPrivateEncryptingKey, signedVaultKey.message.vaultKey, signedVaultKey.message.cipherText);

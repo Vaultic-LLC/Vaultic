@@ -114,40 +114,47 @@ async function logUserIn(masterKey: string, email: string,
                 // Don't have to worry about shared vaults not being e2e encrypted when they are first shared since only display
                 // vaults of them run through here
                 console.log(`Finish Resopnse: ${JSON.stringify(finishResponse)}\n`);
-                const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
-                if (!result.success)
+                try
                 {
-                    return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
-                }
-
-                if (!masterKeyVaulticKey)
-                {
-                    const masterKeyEncryptedAlgorithm =
-                        (result.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
-                        Algorithm.XCHACHA20_POLY1305;
-
-                    const vaulticKey: VaulticKey =
+                    const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
+                    if (!result.success)
                     {
-                        algorithm: masterKeyEncryptedAlgorithm,
-                        key: masterKey
-                    };
+                        return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
+                    }
 
-                    masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+                    if (!masterKeyVaulticKey)
+                    {
+                        const masterKeyEncryptedAlgorithm =
+                            (result.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
+                            Algorithm.XCHACHA20_POLY1305;
+
+                        const vaulticKey: VaulticKey =
+                        {
+                            algorithm: masterKeyEncryptedAlgorithm,
+                            key: masterKey
+                        };
+
+                        masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+                    }
+
+                    console.log(masterKeyVaulticKey);
+                    console.log(result.value.userDataPayload);
+                    if (reloadAllData)
+                    {
+                        await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);
+                    }
+                    else
+                    {
+                        await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
+                    }
+
+                    // This has to go after merging in the event that the user isn't in the local data yet
+                    await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
                 }
-
-                console.log(masterKeyVaulticKey);
-                console.log(result.value.userDataPayload);
-                if (reloadAllData)
+                catch (e)
                 {
-                    await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);
+                    console.log(e);
                 }
-                else
-                {
-                    await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
-                }
-
-                // This has to go after merging in the event that the user isn't in the local data yet
-                await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
 
                 // const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
                 // if (!payload)

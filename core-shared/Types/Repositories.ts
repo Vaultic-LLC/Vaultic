@@ -25,9 +25,10 @@ export interface VerifyUserMasterKeyResponse
 
 export interface UpdateVaultData
 {
-    userVaultID: number;
+    userVaultID?: number;
     name?: string;
     shared?: boolean;
+    setAsActive?: boolean;
     isArchived?: boolean;
     addedOrganizations?: Organization[];
     removedOrganizations?: Organization[];
@@ -41,7 +42,7 @@ export interface ClientVaultRepository
     updateVault: (masterKey: string, updateVaultData: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => Promise<TypedMethodResponse<boolean | undefined>>;
-    createNewVaultForUser: (masterKey: string, name: string, shared: boolean, setAsActive: boolean, addedOrganizations: Organization[], addedMembers: Member[]) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
+    createNewVaultForUser: (masterKey: string, updateVaultData: string) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     getStoreStates: (masterKey: string, userVaultID: number, storesToRetrieve: CondensedVaultData) => Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>;
     deleteVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<boolean | undefined>>;
     syncVaults: (masterKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;

@@ -289,7 +289,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
         if (fieldTree.canCrypt && !fieldTree.canCrypt(data))
         {
-            return;
+            return TypedMethodResponse.success(data);
         }
 
         if (fieldTree.properties)
@@ -299,11 +299,6 @@ class APIAxiosWrapper extends AxiosWrapper
                 if (data[fieldTree.properties[i]] == undefined)
                 {
                     continue;
-                }
-
-                if (fieldTree.properties[i] == nameof<User>("masterKeyEncryptionAlgorithm"))
-                {
-                    console.log(`Encrypted Master Key Algorithm: ${data[fieldTree.properties[i]]}`);
                 }
 
                 const response = await environment.utilities.crypt.symmetricEncrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
@@ -340,7 +335,10 @@ class APIAxiosWrapper extends AxiosWrapper
                             return innerObject;
                         }
 
-                        encryptedValues.push(innerObject.value!);
+                        if (innerObject.value)
+                        {
+                            encryptedValues.push(innerObject.value!);
+                        }
                     }
 
                     data[keys[i]] = encryptedValues;
@@ -353,7 +351,10 @@ class APIAxiosWrapper extends AxiosWrapper
                         return innerObject;
                     }
 
-                    data[keys[i]] = innerObject.value!;
+                    if (innerObject.value)
+                    {
+                        data[keys[i]] = innerObject.value!;
+                    }
                 }
             }
         }
@@ -371,7 +372,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
         if (fieldTree.canCrypt && !fieldTree.canCrypt(data))
         {
-            return;
+            return TypedMethodResponse.success(data);
         }
 
         if (fieldTree.properties)
@@ -383,7 +384,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     continue;
                 }
 
-                const response = await environment.utilities.crypt.symmetricEncrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
+                const response = await environment.utilities.crypt.symmetricDecrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
                     return response;
@@ -416,7 +417,10 @@ class APIAxiosWrapper extends AxiosWrapper
                             return innerObject;
                         }
 
-                        decryptedValues.push(innerObject.value!);
+                        if (innerObject.value)
+                        {
+                            decryptedValues.push(innerObject.value!);
+                        }
                     }
 
                     data[keys[i]] = decryptedValues;
@@ -429,7 +433,10 @@ class APIAxiosWrapper extends AxiosWrapper
                         return nestedObject;
                     }
 
-                    data[keys[i]] = nestedObject.value;
+                    if (nestedObject.value)
+                    {
+                        data[keys[i]] = nestedObject.value;
+                    }
                 }
             }
         }

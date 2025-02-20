@@ -229,6 +229,7 @@ export class CryptUtility implements ClientCryptUtility
         }
         catch (e)
         {
+            console.log(e);
         }
 
         return TypedMethodResponse.fail();
@@ -242,7 +243,7 @@ export class CryptUtility implements ClientCryptUtility
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_DSA_87:
-                    return new TypedMethodResponse(ml_dsa87.verify(hexToBytes(sendersPublicSigningKey), new TextEncoder().encode(JSON.vaulticStringify(signedVaultKey.message)),
+                    return new TypedMethodResponse(ml_dsa87.verify(hexToBytes(vaulticKey.key), new TextEncoder().encode(JSON.vaulticStringify(signedVaultKey.message)),
                         hexToBytes(signedVaultKey.signature)));
             }
         }

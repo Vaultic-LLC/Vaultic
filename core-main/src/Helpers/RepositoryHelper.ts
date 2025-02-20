@@ -391,7 +391,11 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
             }
             else
             {
-                await environment.repositories.userVaults.setupSharedUserVaults(masterKey, privateEncryptingKey, allSenderUserIDs, serverVaultsToSetup, transaction);
+                const decryptedPrivateEncryptingKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, privateEncryptingKey);
+                if (decryptedPrivateEncryptingKey.success)
+                {
+                    await environment.repositories.userVaults.setupSharedUserVaults(masterKey, decryptedPrivateEncryptingKey.value, allSenderUserIDs, serverVaultsToSetup, transaction);
+                }
             }
         }
     }

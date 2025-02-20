@@ -36,6 +36,6 @@ export interface IUserVaultRepository extends ClientUserVaultRepository, Vaultic
 
 export interface IVaultRepository extends ClientVaultRepository, VaulticRepository<Vault>
 {
-    createNewVault: (name: string, shared: boolean, currentUser?: User, addedOrganizations?: Organization[], addedMembers?: Member[]) => Promise<boolean | [UserVault, Vault]>;
+    createNewVault: (masterKey: string, name: string, shared: boolean, currentUser?: User, addedOrganizations?: Organization[], addedMembers?: Member[]) => Promise<boolean | [UserVault, Vault]>;
     getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<VaultsAndKeys | undefined>>;
 }

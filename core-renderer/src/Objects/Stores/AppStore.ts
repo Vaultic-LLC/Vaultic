@@ -323,9 +323,16 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, name, shared, setAsActive,
-            addedOrganizations, addedMembers);
+        const updateVaultData: UpdateVaultData =
+        {
+            name,
+            shared,
+            setAsActive,
+            addedOrganizations,
+            addedMembers
+        };
 
+        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.vaulticStringify(updateVaultData));
         if (!result.success)
         {
             defaultHandleFailedResponse(result);

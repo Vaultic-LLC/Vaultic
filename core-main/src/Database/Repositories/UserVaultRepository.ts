@@ -389,6 +389,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         const senderPublicSigningKeys = await vaulticServer.user.getPublicKeys(PublicKeyType.Signing, senderUserIDs);
         if (!senderPublicSigningKeys.Success)
         {
+            await environment.repositories.logs.log(undefined, "Failed to get public keys");
             return;
         }
 
@@ -398,6 +399,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const senderPublicSigningKey = senderPublicSigningKeys?.UsersAndPublicKeys?.[unsetupUserVaults[i].vaultKey.message.senderUserID];
             if (!senderPublicSigningKey || !senderPublicSigningKey.PublicSigningKey)
             {
+                await environment.repositories.logs.log(undefined, "No public key for user");
                 continue;
             }
 
@@ -420,6 +422,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                     const result = await vaultHelper.evaluateVaultKeyFromSender(senderPublicSigningKey.PublicSigningKey, recipientsPrivateEncryptingKey, unsetupUserVaults[i].vaultKey);
                     if (!result.success)
                     {
+                        await environment.repositories.logs.log(undefined, "Failed to evaluate vault key from sender");
                         continue;
                     }
 

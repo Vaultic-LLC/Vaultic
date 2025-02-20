@@ -231,7 +231,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             userPreferencesStoreState.state = "{}"
             user.userPreferencesStoreState = userPreferencesStoreState;
 
-            const vaults = await environment.repositories.vaults.createNewVault("Personal", false);
+            const vaults = await environment.repositories.vaults.createNewVault(masterKey, "Personal", false);
             if (!vaults)
             {
                 return TypedMethodResponse.fail(errorCodes.FAILED_TO_CREATE_NEW_VAULT, undefined, "Create new Vault");
