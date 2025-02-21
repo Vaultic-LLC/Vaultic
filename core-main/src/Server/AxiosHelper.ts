@@ -5,9 +5,7 @@ import { FieldTree } from '../Types/FieldTree';
 import { DeviceInfo } from '@vaultic/shared/Types/Device';
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaultic/shared/Types/Responses';
-import { Algorithm, AsymmetricVaulticKey, MLKEM1024KeyResult, PublicPrivateKey, VaulticKey } from '@vaultic/shared/Types/Keys';
-import { nameof } from '@vaultic/shared/Helpers/TypeScriptHelper';
-import { User } from '../Database/Entities/User';
+import { Algorithm, AsymmetricVaulticKey, MLKEM1024KeyResult, PublicPrivateKey } from '@vaultic/shared/Types/Keys';
 
 const APIKeyEncryptionKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: "12fasjkdF2owsnFvkwnvwe23dFSDfio2" });
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";

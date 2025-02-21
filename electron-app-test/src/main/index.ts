@@ -6,7 +6,7 @@ import setupIPC from './ipcSetup';
 import { electronAPI } from "@electron-toolkit/preload";
 
 import { environment } from "./Core/Environment"
-import cryptUtility from './Utilities/CryptUtility';
+import cryptUtility from "./Core/Utilities/CoreCryptUtility";
 import coreHashUtility from "./Core/Utilities/CoreHashUtility";
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
