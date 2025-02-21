@@ -3,8 +3,7 @@
         <IconCard :icon="'settings-outline'" :text="'Settings'" @click="showEditSettingsPopup = true" />
         <Teleport to="#body">
             <Transition name="fade">
-                <ObjectPopup v-if="showEditSettingsPopup" :closePopup="closeSettings" :minWidth="'800px'"
-                    :minHeight="'480px'">
+                <ObjectPopup v-if="showEditSettingsPopup" :closePopup="closeSettings" :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
                     <EditSettingsPopup />
                 </ObjectPopup>
             </Transition>

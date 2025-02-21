@@ -3,7 +3,7 @@
         <IconCard :icon="'build-outline'" :text="'Workflows'" @click="showWorkflowPopup = true" />
         <Teleport to="#body">
             <Transition name="fade">
-                <ObjectPopup v-if="showWorkflowPopup" :closePopup="closePopup" :minWidth="'800px'" :minHeight="'480px'">
+                <ObjectPopup v-if="showWorkflowPopup" :closePopup="closePopup" :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
                     <WorkflowPopup />
                 </ObjectPopup>
             </Transition>
