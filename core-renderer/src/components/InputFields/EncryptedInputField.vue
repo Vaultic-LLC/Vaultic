@@ -1,6 +1,5 @@
 <template>
-    <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @mouseenter="hovering = true" 
-        @mouseleave="onContainerMouseLeave">
+    <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
         <div class="textInuptContainer">
             <FloatLabel variant="in" :dt="floatLabelStyle"
                 :pt="{
@@ -155,14 +154,13 @@ export default defineComponent({
         const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
 
-        const hovering: Ref<boolean> = ref(false);
         const popoverHover: Ref<boolean> = ref(false);
         const isFocused: Ref<boolean> = ref(false);
         const popupIsShowing: Ref<boolean> = ref(false);
         const typeIsFocused: Ref<boolean> = ref(false);
         const typeDidBlur: Ref<boolean> = ref(false);
         const showPopup: ComputedRef<boolean> = computed(() => props.showRandom === true && isLocked.value === false && 
-            isDisabled.value === false && (hovering.value || isFocused.value || popoverHover.value || typeIsFocused.value));
+            isDisabled.value === false && (isFocused.value || popoverHover.value || typeIsFocused.value));
 
         const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
@@ -303,16 +301,6 @@ export default defineComponent({
 
         // delay it so that there isn't any jitter when moving from hovering over the container to the 
         // popover
-        function onContainerMouseLeave()
-        {
-            setTimeout(() => 
-            {
-                hovering.value = false;
-            }, 50);
-        }
-
-        // delay it so that there isn't any jitter when moving from hovering over the container to the 
-        // popover
         function onPopoverMouseLeave()
         {
             setTimeout(() =>
@@ -341,7 +329,6 @@ export default defineComponent({
 
             //popover.value.toggle();
             popoverHover.value = false;
-            hovering.value = false;
         }
 
         onMounted(() =>
@@ -369,7 +356,7 @@ export default defineComponent({
             }
         });
 
-        watch(() => [hovering.value, isFocused.value, popoverHover.value], () =>
+        watch(() => [isFocused.value, popoverHover.value], () =>
         {
             if (typeDidBlur.value)
             {
@@ -384,7 +371,6 @@ export default defineComponent({
             textFieldInstance,
             popover,
             isDisabled,
-            hovering,
             popoverHover,
             popupIsShowing,
             isFocused,
@@ -426,7 +412,6 @@ export default defineComponent({
             randomPasswordPreview,
             isUnmasked,
             toggleMask,
-            onContainerMouseLeave,
             onPopoverMouseLeave,
             onGenerateRandomPasswordOrPhrase,
             confirmRandomPasswordOrPhrase,
