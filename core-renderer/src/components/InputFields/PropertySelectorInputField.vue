@@ -13,7 +13,16 @@
                         }
                     },
                     clearIcon: 'dropDownContainer__clearIcon',
-                    dropdownIcon: 'dropDownContainer__dropDownicon',
+                    // @ts-ignore
+                    dropDownIcon: ({ state }) => {
+                        let className = 'dropDownContainer__dropDownicon';
+                        if (state.overlayVisible)
+                        {
+                            className += ' dropDownContainer__dropDownicon--overlayVisible';
+                        }
+
+                        return className;
+                    },                    
                     label: 'dropDownContainer__selectLabel',
                     option: ({ context }) => {
                         const style: { [key: string]: any} = 
@@ -241,8 +250,13 @@ export default defineComponent({
 
 :deep(.dropDownContainer__clearIcon),
 :deep(.dropDownContainer__dropDownicon) {
+    transition: 0.3s;
     width: clamp(12px, 1vw, 16px) !important;
     height: clamp(12px, 1vw, 16px) !important;
+}
+
+:deep(.dropDownContainer__dropDownicon--overlayVisible) {
+    transform: rotate(180deg);
 }
 
 .p-floatlabel-in:has(.p-inputwrapper-focus) .dropDownContainer__label, 

@@ -15,7 +15,16 @@
                     },
                     labelContainer: 'objectMultiSelectContainer__multiSelectLabelContainer',
                     label: 'objectMultiSelectContainer__multiSelectLabel',
-                    dropdownIcon: 'objectMultiSelectContainer__multiSelectDropDownIcon',
+                    // @ts-ignore
+                    dropDownIcon: ({ state }) => {
+                        let className = 'objectMultiSelectContainer__multiSelectDropDownIcon';
+                        if (state.overlayVisible)
+                        {
+                            className += ' objectMultiSelectContainer__multiSelectDropDownIcon--overlayVisible';
+                        }
+
+                        return className;
+                    },   
                     pcFilter: {
                         root:  'objectMultiSelectContainer__searchBar',
                     },
@@ -56,7 +65,7 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 import FloatLabel from "primevue/floatlabel";
 import InputText from 'primevue/inputtext';
 import Popover from 'primevue/popover';
-import MultiSelect, { MultiSelectAllChangeEvent, MultiSelectChangeEvent } from 'primevue/multiselect';
+import MultiSelect, { MultiSelectAllChangeEvent, MultiSelectChangeEvent, MultiSelectState } from 'primevue/multiselect';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { widgetBackgroundHexString } from '../../Constants/Colors';
@@ -280,8 +289,13 @@ export default defineComponent({
 }
 
 :deep(.objectMultiSelectContainer__multiSelectDropDownIcon) {
+    transition: 0.3s;
     width: clamp(12px, 1vw, 16px) !important;
     height: clamp(12px, 1vw, 16px) !important;
+}
+
+:deep(.objectMultiSelectContainer__multiSelectDropDownIcon--overlayVisible) {
+    transform: rotate(180deg);
 }
 
 :deep(.objectMultiSelectContainer__filterIcon) {
