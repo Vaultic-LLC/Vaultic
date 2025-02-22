@@ -9,8 +9,8 @@
         </VaulticFieldset>
         <VaulticFieldset>
             <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
-                :label="'Password'" v-model="passwordState.password.value" :initialLength="initalLength"
-                :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true" :required="true"
+                :label="'Password'" v-model="passwordState.password.value" :isInitiallyEncrypted="isInitiallyEncrypted" 
+                :showRandom="true" :showUnlock="true" :required="true"
                 showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
             <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain.value"
                 :showToolTip="true"
@@ -89,7 +89,6 @@ export default defineComponent({
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
         const securityQuestions: SortedCollection = new SortedCollection([]);
-        const initalLength: Ref<number> = ref(passwordState.value.passwordLength.value ?? 0);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
 
         const passwordIsDirty: Ref<boolean> = ref(false);
@@ -128,9 +127,9 @@ export default defineComponent({
         {
             const models: TableColumnModel[] = [];
             models.push({ header: "Question", field: "question", component: "EncryptedInputCell", 
-                data: { color: color.value, initalLengthField: 'questionLength', label: 'Question', onDirty: onQuestionDirty } });
+                data: { color: color.value, label: 'Question', onDirty: onQuestionDirty } });
             models.push({ header: "Answer", field: "answer", component: "EncryptedInputCell", 
-                data: { color: color.value, initalLengthField: 'answerLength', label: 'Answer', onDirty: onAnswerDirty } });  
+                data: { color: color.value, label: 'Answer', onDirty: onAnswerDirty } });  
         
             return models;
         });
@@ -241,9 +240,7 @@ export default defineComponent({
             const securityQuestion: Field<SecurityQuestion> = new Field({
                 id: new Field(id),
                 question: new Field(''),
-                questionLength: new Field(0),
                 answer: new Field(''),
-                answerLength: new Field(0)
             });
 
             passwordState.value.securityQuestions.value.set(id, securityQuestion);
@@ -329,7 +326,6 @@ export default defineComponent({
             color,
             passwordState,
             refreshKey,
-            initalLength,
             isInitiallyEncrypted,
             passwordIsDirty,
             gridDefinition,

@@ -1,6 +1,6 @@
 <template>
     <div class="encryptedInputCellContainer">
-        <EncryptedInputField :label="label" v-model="modelField.value" :initialLength="initialLengthField.value" :fadeIn="false" :showRandom="false"
+        <EncryptedInputField :label="label" v-model="modelField.value" :fadeIn="false" :showRandom="false"
             :showUnlock="false" :required="true" :colorModel="colorModel" :isInitiallyEncrypted="isInitiallyEncrypted"
             :width="''" :maxWidth="''" :minWidth="''" :height="'4vh'" @onDirty="onDirty" />
     </div>
@@ -23,7 +23,6 @@ export default defineComponent({
 	setup(props)
 	{
         const modelField: Ref<Field<any>> = ref(props.model.value[props.field]);
-        const initialLengthField: Ref<Field<any>> = ref(props.model.value[props.data['initalLengthField']]);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.data["color"]));
         const label: ComputedRef<string> = computed(() => props.data["label"]);
         const onDirty: ComputedRef<() => void> = computed(() => () => props.data["onDirty"](props.model));
@@ -31,7 +30,6 @@ export default defineComponent({
 
 		return {
             modelField,
-            initialLengthField,
             label,
             colorModel,
             onDirty,

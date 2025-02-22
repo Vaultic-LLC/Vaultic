@@ -140,7 +140,7 @@ export default defineComponent({
         IonIcon
     },
     emits: ["update:modelValue", "onDirty"],
-    props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
+    props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isInitiallyEncrypted",
         "showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
         "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback'],
     setup(props, ctx)
@@ -179,7 +179,7 @@ export default defineComponent({
 
         let isDisabled: Ref<boolean> = ref(!!props.isInitiallyEncrypted || !!props.disabled);
         let isLocked: Ref<boolean> = ref(!!props.isInitiallyEncrypted);
-        let inputText: Ref<string> = ref(props.initialLength > 0 ? "*".repeat(props.initialLength) : props.modelValue);
+        let inputText: Ref<string> = ref(props.isInitiallyEncrypted ? "*".repeat(5) : props.modelValue);
 
         const isUnmasked: Ref<boolean> = ref(false);
 

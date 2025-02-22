@@ -9,7 +9,7 @@
                             <TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
                                 :width="'70%'" :maxWidth="'300px'" :isEmailField="true" />
                             <EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
-                                v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
+                                v-model="masterKey" :isInitiallyEncrypted="false" :showRandom="false"
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'" />
                         </div>
                         <div class="signInContainer__offlineMode">

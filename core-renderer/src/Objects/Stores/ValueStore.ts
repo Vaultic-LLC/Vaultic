@@ -155,7 +155,6 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
 
     private async setValueProperties(masterKey: string, value: NameValuePair): Promise<boolean>
     {
-        value.valueLength.value = value.value.value.length;
         value.lastModifiedTime.value = new Date().getTime().toString();
         this.checkIfValueIsWeak(value.value.value, value);
 

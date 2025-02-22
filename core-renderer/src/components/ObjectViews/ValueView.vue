@@ -23,7 +23,7 @@
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
-                v-model="valuesState.value.value" :initialLength="initalLength" :isInitiallyEncrypted="isInitiallyEncrypted"
+                v-model="valuesState.value.value" :isInitiallyEncrypted="isInitiallyEncrypted"
                 :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
                 :required="true" :width="'50%'" :maxWidth="''" :minWidth="'150px'" @onDirty="valueIsDirty = true"  />
         </VaulticFieldset>
@@ -80,7 +80,6 @@ export default defineComponent({
 
         const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
         const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
-        const initalLength: Ref<number> = ref(valuesState.value.valueLength?.value ?? 0);
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
 
@@ -213,7 +212,6 @@ export default defineComponent({
 
         return {
             valueInputField,
-            initalLength,
             isInitiallyEncrypted,
             valueIsDirty,
             color,

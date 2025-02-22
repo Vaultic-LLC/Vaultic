@@ -28,7 +28,6 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
     return {
         get id() { return nameValuePairState.id; },
         get name() { return nameValuePairState.name; },
-        //set name(value: string) { nameValuePairState.name = value; },
         get value() { return nameValuePairState.value; },
         get valueType() { return nameValuePairState.valueType; },
         get notifyIfWeak() { return nameValuePairState.notifyIfWeak; },
@@ -38,7 +37,6 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
         get groups() { return nameValuePairState.groups; },
         get isWeak() { return nameValuePairState.isWeak; },
         get isWeakMessage() { return nameValuePairState.isWeakMessage; },
-        get valueLength() { return nameValuePairState.valueLength; },
         get key() { return nameValuePairState.key; },
         isOld() { return isOld.value; },
     };

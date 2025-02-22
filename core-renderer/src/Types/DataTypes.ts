@@ -58,15 +58,12 @@ export interface Password extends IPrimaryDataObject, PasswordSecretProperty
     isWeak: Field<boolean>;
     isWeakMessage: Field<string>;
     containsLogin: Field<boolean>;
-    passwordLength: Field<number>;
 }
 
 export interface SecurityQuestion extends IIdentifiable, IFieldObject
 {
     question: Field<string>,
-    questionLength: Field<number>,
     answer: Field<string>
-    answerLength: Field<number>
 }
 
 export enum NameValuePairType
@@ -91,7 +88,6 @@ export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
     lastModifiedTime: Field<string>;
     isWeak: Field<boolean>;
     isWeakMessage: Field<string>;
-    valueLength: Field<number>;
 }
 
 export class CurrentAndSafeStructure extends FieldedObject
@@ -202,7 +198,6 @@ export function defaultPassword(): Password
         domain: new Field(''),
         email: new Field(''),
         password: new Field(''),
-        passwordLength: new Field(0),
         securityQuestions: new Field(new Map<string, Field<SecurityQuestion>>()),
         additionalInformation: new Field(''),
         lastModifiedTime: new Field(''),
@@ -230,7 +225,6 @@ export function defaultValue(): NameValuePair
         groups: new Field(new Map()),
         isWeak: new Field(false),
         isWeakMessage: new Field(''),
-        valueLength: new Field(0)
     }
 }
 

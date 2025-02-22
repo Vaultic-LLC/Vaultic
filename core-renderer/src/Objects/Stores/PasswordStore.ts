@@ -277,8 +277,6 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             password.containsLogin.value = password.password.value.includes(password.login.value);
         }
 
-        password.passwordLength.value = password.password.value.length;
-
         const response = await cryptHelper.encrypt(masterKey, password.password.value);
         if (!response)
         {
@@ -331,13 +329,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         async function updateSecurityQuestionQuestion(masterKey: string, securityQuestion: Field<SecurityQuestion>)
         {
-            securityQuestion.value.questionLength.value = securityQuestion.value.question.value.length;
             securityQuestion.value.question.value = (await cryptHelper.encrypt(masterKey, securityQuestion.value.question.value)).value ?? "";
         }
 
         async function updateSecurityQuestionnAnswer(masterKey: string, securityQuestion: Field<SecurityQuestion>)
         {
-            securityQuestion.value.answerLength.value = securityQuestion.value.answer.value.length;
             securityQuestion.value.answer.value = ((await cryptHelper.encrypt(masterKey, securityQuestion.value.answer.value)).value ?? "");
         }
     }

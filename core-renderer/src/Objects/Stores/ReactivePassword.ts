@@ -38,7 +38,6 @@ export default function createReactivePassword(password: Password): ReactivePass
         get isWeak() { return passwordState.isWeak; },
         get isWeakMessage() { return passwordState.isWeakMessage; },
         get containsLogin() { return passwordState.containsLogin; },
-        get passwordLength() { return passwordState.passwordLength; },
         get isVaultic() { return passwordState.isVaultic; },
         isOld() { return isOld.value },
     }

@@ -390,9 +390,7 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                     this.temporarySecurityQuestions.set(id, new Field({
                         id: new Field(id),
                         question: new Field(questions[i]),
-                        questionLength: new Field(questions[i].length),
-                        answer: new Field(''),
-                        answerLength: new Field(0)
+                        answer: new Field('')
                     }));
                 }
             }
@@ -403,8 +401,6 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
                     value.value.question.value = questions[count];
-                    value.value.questionLength.value = questions[count].length;
-
                     count += 1;
                 }
 
@@ -427,9 +423,7 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                     this.temporarySecurityQuestions.set(id, new Field({
                         id: new Field(id),
                         question: new Field(''),
-                        questionLength: new Field(0),
                         answer: new Field(answers[i]),
-                        answerLength: new Field(answers[i].length)
                     }));
                 }
             }
@@ -440,8 +434,6 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
                     value.value.answer.value = answers[count];
-                    value.value.answerLength.value = answers[count].length;
-
                     count += 1;
                 }
 
