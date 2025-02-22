@@ -55,13 +55,12 @@ export default defineComponent({
     bottom: 5%;
     left: 50%;
     transform: translateX(-50%);
-    border: 2px solid v-bind('colorToUse');
+    border: 1.5px solid color-mix(in srgb, v-bind(colorToUse), #101010  50%);
     border-radius: min(1vw, 1rem);
-    background-color: color-mix(in srgb, v-bind(colorToUse), #000 75%);
+    background-color: color-mix(in srgb, v-bind(colorToUse), #101010  85%);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 0 25px v-bind('colorToUse');
     z-index: v-bind(zIndex);
 }
 
