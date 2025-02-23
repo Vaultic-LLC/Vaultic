@@ -175,11 +175,10 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
     {
         if (nameValuePair.valueType?.value == NameValuePairType.Passphrase)
         {
-            const wordCount = value.split(' ').length;
-            if (wordCount < 5)
+            if (value.length < 16)
             {
                 nameValuePair.isWeak.value = true;
-                nameValuePair.isWeakMessage.value = "Passphrase has less than 5 words in it. For best security, create a Passphrase that is longer than 5 words";
+                nameValuePair.isWeakMessage.value = `Passphrase is less than 16 characters. For best security, create Passphrases that are at least 16 characters long.`;
 
                 return;
             }
