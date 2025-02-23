@@ -16,7 +16,7 @@ export class SortedCollection
 
     constructor(values: TableRowModel<any>[], property?: string, descending?: boolean)
     {
-        this.descending = descending;
+        this.descending = descending !== undefined ? descending : true;
         this.property = property;
         this.values = [...values];
         this.calculatedValues = [...values];

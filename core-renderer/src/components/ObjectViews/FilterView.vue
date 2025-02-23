@@ -84,11 +84,11 @@ export default defineComponent({
         {
             const tableColumnsModels: TableColumnModel[] = [];
             tableColumnsModels.push({ header: "Property", field: "property", component: "PropertySelectorCell",
-                data: { color: color.value, properties: displayFieldOptions.value, label: "Property" } });
+                data: { color: color.value, properties: displayFieldOptions.value, label: "Property" }, sortable: false });
             tableColumnsModels.push({ header: "Condition", field: "filterType", component: "EnumInputCell", 
-                data: { color: color.value, label: "Condition" } });
+                data: { color: color.value, label: "Condition" }, sortable: false });
             tableColumnsModels.push({ header: "Value", field: "value", component: "FilterValueSelectorCell", 
-                data: { color: color.value } });
+                data: { color: color.value }, sortable: false });
 
             return tableColumnsModels;
         });

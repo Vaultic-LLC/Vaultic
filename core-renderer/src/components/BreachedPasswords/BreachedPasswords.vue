@@ -66,7 +66,7 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const scanning: Ref<boolean> = ref(false);
         const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
-        const vaultsAndBreachCount: SortedCollection = new SortedCollection([]);
+        const vaultsAndBreachCount: SortedCollection = new SortedCollection([], "vault");
 
         const tableDataSources: Reactive<TableDataSources> = reactive(
         {

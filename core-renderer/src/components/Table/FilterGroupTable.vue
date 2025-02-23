@@ -42,7 +42,7 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { getEmptyTableMessage, getFilterGroupTableRowModels } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
-import { Filter, DataType, Group, ISecondaryDataObject } from '../../Types/DataTypes';
+import { Filter, DataType, Group } from '../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({

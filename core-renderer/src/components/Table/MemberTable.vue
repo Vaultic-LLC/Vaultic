@@ -72,7 +72,7 @@ export default defineComponent({
         const currentMemberIDs: Ref<string> = ref('[]');
         
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-        const memberCollection: SortedCollection = new SortedCollection([]);
+        const memberCollection: SortedCollection = new SortedCollection([], "username");
 
         const disableMemberSearch: Ref<boolean> = ref(false);
         const selectedUserDemographics: Ref<ObjectSelectOptionModel | undefined> = ref();

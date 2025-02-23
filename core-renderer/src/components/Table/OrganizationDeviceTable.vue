@@ -38,10 +38,10 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
-        const devices: SortedCollection = new SortedCollection([]);
+        const devices: SortedCollection = new SortedCollection([], "Name");
         
-        const organizations: VaultListSortedCollection = new VaultListSortedCollection([]);
-        const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([]);
+        const organizations: VaultListSortedCollection = new VaultListSortedCollection([], "name");
+        const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([], "name");
             
         const devicesAreSelected: ComputedRef<boolean> = computed(() => app.activeDeviceOrganizationsTable == DataType.Devices);
         const showAdd: ComputedRef<boolean> = computed(() => app.isOnline && (!devicesAreSelected.value || (devicesAreSelected.value && !app.devices.hasRegisteredCurrentDevice)));

@@ -1,8 +1,8 @@
 <template>
     <div class="vaulticTableContainer">
-        <DataTable scrollable removableSort lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" 
-            :totalRecords="totalRecords" :paginator="!hidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" :loading="loading"
-            resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
+        <DataTable scrollable lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" :sortField="defaultSortField"
+            :sortOrder="defaultSortOrder" :totalRecords="totalRecords" :paginator="!hidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" 
+            :loading="loading" resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
             @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor" @page="onPage"
             :pt="{
                 thead: 'vaulticTableContainer__thead',
@@ -88,7 +88,7 @@
             <template #empty>
                 {{ emptyMessage }}
             </template>
-            <Column v-for="(column) in columns" :key="column.field" :field="column.field" :header="column.header" :columnKey="getColumnID()" sortable 
+            <Column v-for="(column) in columns" :key="column.field" :field="column.field" :header="column.header" :columnKey="getColumnID()" :sortable="column.sortable !== false" 
                 class="vaulticTableContainer__column" :headerStyle="{'width': `${column.startingWidth ?? 'auto'} !important`}"
                 :pt="{
                     headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__headerCell--reOrderable']
@@ -234,6 +234,9 @@ export default defineComponent({
         const pinnedRowValues: Ref<TableRowModel<any>[] | undefined> = ref(props.pinnedValues ?? []);
         const searchText: Ref<string | undefined > = ref();
 
+        const defaultSortField: ComputedRef<string | undefined> = computed(() => activeTableDataSource.value.collection.property);
+        const defaultSortOrder: ComputedRef<number> = computed(() => activeTableDataSource.value.collection.descending ? -1 : 1);
+
         let tweenGroup: TWEEN.Group | undefined = undefined;
         let scrollbarColor: Ref<string> = ref(primaryColor.value);
         let thumbColor: Ref<string> = ref(primaryColor.value);
@@ -363,11 +366,6 @@ export default defineComponent({
                 tableContainer.value.scrollTop = 0;
             }
         }
-
-        // watch(() => props.emptyMessage, () =>
-        // {
-        //     key.value = Date.now().toString();
-        // });
 
         function internalOnPin(isPinned: boolean, model: TableRowModel<any>)
         {
@@ -527,6 +525,8 @@ export default defineComponent({
             thumbColor,
             applyBorder,
             backgroundColor,
+            defaultSortField,
+            defaultSortOrder,
             scrollbarClass,
             checkScrollHeight,
             scrollToTop,
@@ -620,12 +620,12 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__sortIcon) {
+    transition: 0.3s;
     font-size: clamp(12px, 0.8vw, 16px);
 }
 
 :deep(.vaulticTableContainer__column--no-sort) {
     opacity: 0;
-    transition: 0.3s;
 }
 
 :deep(.vaulticTableContainer__column):hover .vaulticTableContainer__column--no-sort {
@@ -633,7 +633,6 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__column--sort-rotate) {
-    transition: 0.3s;
     transform: rotate(180deg);
 }
 

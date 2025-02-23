@@ -127,9 +127,9 @@ export default defineComponent({
         {
             const models: TableColumnModel[] = [];
             models.push({ header: "Question", field: "question", component: "EncryptedInputCell", 
-                data: { color: color.value, label: 'Question', onDirty: onQuestionDirty } });
+                data: { color: color.value, label: 'Question', onDirty: onQuestionDirty }, sortable: false });
             models.push({ header: "Answer", field: "answer", component: "EncryptedInputCell", 
-                data: { color: color.value, label: 'Answer', onDirty: onAnswerDirty } });  
+                data: { color: color.value, label: 'Answer', onDirty: onAnswerDirty }, sortable: false });  
         
             return models;
         });

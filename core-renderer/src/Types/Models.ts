@@ -25,6 +25,7 @@ export interface TableColumnModel
     component?: string;
     isGroupIconCell?: boolean;
     data?: { [key: string]: any };
+    sortable?: boolean;
 }
 
 export class TableRowModel<T extends { [key: string]: any }>
