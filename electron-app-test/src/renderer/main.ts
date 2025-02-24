@@ -37,6 +37,53 @@ Coloris({
     ]
 });
 
+function onError()
+{
+    // hide the loading indicator in case it was showing when the error occured.
+    app.popups.hideLoadingIndicator();
+    app.popups.showAlert("Error", "An error has occured, please try again. If the issue persists, try restarting the app or", true);
+}
+
+window.addEventListener('error', (e: ErrorEvent) =>
+{
+    if (e?.error instanceof Error)
+    {
+        const error: Error = e.error as Error
+
+        try
+        {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
+        }
+        catch { }
+    }
+
+    onError();
+});
+
+window.addEventListener('unhandledrejection', (e) =>
+{
+    if (e?.reason instanceof Error)
+    {
+        const error: Error = e.reason as Error
+
+        try
+        {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
+        }
+        catch { }
+    }
+
+    onError();
+});
+
 api.environment.failedToInitalizeDatabase().then((failed: boolean) =>
 {
     if (failed)
