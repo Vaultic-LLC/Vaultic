@@ -49,6 +49,7 @@ import { RGBColor } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
 import { api } from '../../API';
 import { DataType } from '../../Types/DataTypes';
+import { LicenseStatus } from '@vaultic/shared/Types/ClientServerTypes';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler, zoomPlugin)
 
@@ -335,7 +336,7 @@ export default defineComponent({
         // only re request it if the data actually changes
         async function recalcData()
         {
-            if (!app.isOnline)
+            if (!app.isOnline || app.userLicense != LicenseStatus.Active)
             {
                 return;
             }
