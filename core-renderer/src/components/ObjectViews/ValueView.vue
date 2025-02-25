@@ -54,7 +54,7 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent } from '../../Types/Components';
 import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
+import { Field, RandomValueType } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "ValueView",
@@ -86,7 +86,8 @@ export default defineComponent({
         const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.valueType?.value == NameValuePairType.Passcode);
         const showRandom: ComputedRef<boolean> = computed(() => valuesState.value.valueType?.value == NameValuePairType.Passphrase ||
             valuesState.value.valueType?.value == NameValuePairType.Passcode || valuesState.value.valueType?.value == NameValuePairType.Other);
-        const randomValueType: ComputedRef<number> = computed(() => valuesState.value.valueType?.value == NameValuePairType.Passphrase ? 0 : 1);
+        const randomValueType: ComputedRef<string> = computed(() => 
+            valuesState.value.valueType?.value == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
 
         const gridDefinition: GridDefinition = 
         {

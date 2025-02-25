@@ -58,6 +58,9 @@
                     root: ({state}) =>
                     {
                         popupIsShowing = state.visible;
+                        return {
+                            style: {'z-index': '2001 !important'}
+                        }
                     }
                 }">
                 <div class="encryptedInputFieldContainer__randomPasswordPopover">
@@ -192,7 +195,7 @@ export default defineComponent({
         const inputBackgroundColor: ComputedRef<string> = computed(() => widgetBackgroundHexString());
 
         const randomPasswordPreview: Ref<string> = ref('');
-        const randomValueType: Ref<RandomValueType> = ref(RandomValueType.Password);
+        const randomValueType: Ref<RandomValueType> = ref(props.randomValueType);
         const appSettings: Ref<Field<AppSettings>> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
 
         const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
@@ -335,6 +338,7 @@ export default defineComponent({
 
         onMounted(() =>
         {
+            isFocused.value = true;
             validationFunction?.value.push(validate);
             decryptFunctions?.value.push(onAuthenticationSuccessful);
         });

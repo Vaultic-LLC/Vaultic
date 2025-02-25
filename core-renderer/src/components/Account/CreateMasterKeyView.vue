@@ -7,7 +7,7 @@
                     <div class="createMasterKeyViewContainer__inputs">
                         <EncryptedInputField ref="encryptedInputField"
                             :label="'Master Key'" :colorModel="colorModel" v-model="key" :required="true"
-                            :width="'70%'" :maxWidth="''"/>
+                            :width="'70%'" :maxWidth="''" :showRandom="true" :randomValueType="RandomValueType.Passphrase" />
                         <div class="createMasterKeyViewContainer__keyRequirements">
                             <CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
                                 :color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
@@ -54,6 +54,7 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 import { defaultPassword, Password } from '../../Types/DataTypes';
+import { RandomValueType } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "CreateMasterKeyView",
@@ -212,6 +213,7 @@ export default defineComponent({
         });
 
         return {
+            RandomValueType,
             refreshKey,
             key,
             reEnterKey,
