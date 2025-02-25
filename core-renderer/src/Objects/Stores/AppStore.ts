@@ -31,9 +31,7 @@ export interface AppSettings extends IFieldedObject
     randomValueLength: Field<number>;
     randomPhraseLength: Field<number>;
     includeNumbersInRandomPassword: Field<boolean>;
-    includeNumbersInRandomPassphrase: Field<boolean>;
     includeSpecialCharactersInRandomPassword: Field<boolean>;
-    includeSpecialCharactersInRandomPassphrase: Field<boolean>;
     includeAmbiguousCharactersInRandomPassword: Field<boolean>;
     passphraseSeperator: Field<string>;
     temporarilyStoreMasterKey: Field<boolean>;
@@ -190,9 +188,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
                 randomValueLength: new Field(25),
                 randomPhraseLength: new Field(7),
                 includeNumbersInRandomPassword: new Field(true),
-                includeNumbersInRandomPassphrase: new Field(true),
                 includeSpecialCharactersInRandomPassword: new Field(true),
-                includeSpecialCharactersInRandomPassphrase: new Field(true),
                 includeAmbiguousCharactersInRandomPassword: new Field(true),
                 passphraseSeperator: new Field('-'),
                 temporarilyStoreMasterKey: new Field(true)

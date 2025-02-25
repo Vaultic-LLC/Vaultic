@@ -58,9 +58,7 @@
                     root: ({state}) =>
                     {
                         popupIsShowing = state.visible;
-                        return {
-                            style: {'z-index': '2001 !important'}
-                        }
+                        return popoverClass;
                     }
                 }">
                 <div class="encryptedInputFieldContainer__randomPasswordPopover">
@@ -69,7 +67,7 @@
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
-                        <EnumInputField :color="colorModel.color" :label="'Type'" v-model="randomValueType" :optionsEnum="RandomValueType" 
+                        <EnumInputField v-if="canChangeRandomType !== false" :color="colorModel.color" :label="'Type'" v-model="randomValueType" :optionsEnum="RandomValueType" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" @onFocus="onTypeFocus" @onBlur="typeDidBlur = true"
                             :hideClear="true" />
                     </VaulticFieldset>
@@ -80,13 +78,13 @@
                     <VaulticFieldset>
                         <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length.value" />
                     </VaulticFieldset>
-                    <VaulticFieldset> 
-                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="includeNumbers.value" 
+                    <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
+                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.value.includeNumbersInRandomPassword.value" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
-                    <VaulticFieldset> 
+                    <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Special Characters'" 
-                            v-model="includeSpecialCharacters.value" :width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="appSettings.value.includeSpecialCharactersInRandomPassword.value" :width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
@@ -147,7 +145,7 @@ export default defineComponent({
     emits: ["update:modelValue", "onDirty"],
     props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isInitiallyEncrypted",
         "showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
-        "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback'],
+        "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback', 'popoverClass', 'canChangeRandomType'],
     setup(props, ctx)
     {        
         const id = ref(useId());
@@ -195,12 +193,10 @@ export default defineComponent({
         const inputBackgroundColor: ComputedRef<string> = computed(() => widgetBackgroundHexString());
 
         const randomPasswordPreview: Ref<string> = ref('');
-        const randomValueType: Ref<RandomValueType> = ref(props.randomValueType);
+        const randomValueType: Ref<RandomValueType> = ref(props.randomValueType ?? RandomValueType.Password);
         const appSettings: Ref<Field<AppSettings>> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
 
         const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
-        const includeNumbers: ComputedRef<Field<boolean>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.includeNumbersInRandomPassword : appSettings.value.value.includeNumbersInRandomPassphrase);
-        const includeSpecialCharacters: ComputedRef<Field<boolean>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.includeSpecialCharactersInRandomPassword : appSettings.value.value.includeSpecialCharactersInRandomPassphrase);
 
         let floatLabelStyle = computed(() => {
             return {
@@ -323,7 +319,7 @@ export default defineComponent({
         async function onGenerateRandomPasswordOrPhrase()
         {
             randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value.value,
-                includeNumbers.value.value, includeSpecialCharacters.value.value, 
+                appSettings.value.value.includeNumbersInRandomPassword.value, appSettings.value.value.includeSpecialCharactersInRandomPassword.value, 
                 appSettings.value.value.includeAmbiguousCharactersInRandomPassword.value, appSettings.value.value.passphraseSeperator.value);
         }
 
@@ -338,7 +334,6 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            isFocused.value = true;
             validationFunction?.value.push(validate);
             decryptFunctions?.value.push(onAuthenticationSuccessful);
         });
@@ -402,8 +397,6 @@ export default defineComponent({
             colorModel,
             RandomValueType,
             randomValueType,
-            includeNumbers,
-            includeSpecialCharacters,
             appSettings,
             onAuthenticationSuccessful,
             onInput,

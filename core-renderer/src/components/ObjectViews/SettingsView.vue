@@ -97,17 +97,8 @@
                         </div>
                         <div class="settingsView__inputSection">
                             <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Numbers in Random Passphrase'" v-model="appSettings.includeNumbersInRandomPassphrase.value" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
                                     :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword.value" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Special Characters in Random Passphrase'" v-model="appSettings.includeSpecialCharactersInRandomPassphrase.value" />
-                        </div>
-                        
+                        </div>               
                     </AccordionContent>
                 </AccordionPanel>
                 <AccordionPanel value="2" 

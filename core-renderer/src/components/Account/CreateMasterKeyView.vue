@@ -7,7 +7,8 @@
                     <div class="createMasterKeyViewContainer__inputs">
                         <EncryptedInputField ref="encryptedInputField"
                             :label="'Master Key'" :colorModel="colorModel" v-model="key" :required="true"
-                            :width="'70%'" :maxWidth="''" :showRandom="true" :randomValueType="RandomValueType.Passphrase" />
+                            :width="'70%'" :maxWidth="''" :showRandom="true" :randomValueType="RandomValueType.Passphrase" 
+                            :canChangeRandomType="false" :popoverClass="'createMasterKeyViewContainer__keyPopover'" />
                         <div class="createMasterKeyViewContainer__keyRequirements">
                             <CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
                                 :color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
@@ -276,5 +277,9 @@ export default defineComponent({
 
 .createMasterKeyViewContainer__matchesKey {
     transform: translateX(10px);
+}
+
+.createMasterKeyViewContainer__keyPopover {
+    z-index: 2001 !important;
 }
 </style>
