@@ -154,13 +154,18 @@ export default defineComponent({
             }
         ];
 
+        function toggleFilter(f: Field<Filter>)
+        {
+            app.currentVault.filterStore.toggleFilter(f.value.id.value);
+        }
+
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() =>
         {
-            const models: TableColumnModel[] = []
+            const models: TableColumnModel[] = [];
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
                 models.push({ header: "Active", field: "isActive", component: 'SelectorButtonTableRowCell', 
-                    data: { 'color': color, onClick: (f: Field<Filter>) => app.currentVault.filterStore.toggleFilter(f.value.id.value) }, startingWidth: '105px' });
+                    data: { 'color': color, onClick: toggleFilter, startingWidth: '105px' }, onClick: toggleFilter });
                 models.push({ header: "Name", field: "name" });
             }
             else

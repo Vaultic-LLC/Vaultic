@@ -98,24 +98,29 @@
                     <i v-else class="pi pi-arrow-up vaulticTableContainer__sortIcon" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
                 <template #body="slotProps">
-                    <!-- TODO Tooltip no longer works on group icons -->
-                    <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
-                        <div v-for="model in (slotProps.data as TableRowModel<any>).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
-                            :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
-                            <span class="vaulticTableContainer__groupIconSpan">
-                                <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
-                                <template v-else class="vaulticTableContainer__groupIcon" :style="{color: model.color}">{{ model.toolTipText[0] }}</template>
-                            </span>
+                    <!-- Click handler needs its own div since cellWrapper has padding, which isn't clickable -->
+                    <div class="vaulticTableContainer__cellClickable" @click="() => column.onClick?.((slotProps.data as TableRowModel<any>).backingObject)">
+                        <div class="vaulticTableContainer__cellWrapper">
+                            <!-- TODO Tooltip no longer works on group icons -->
+                            <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
+                                <div v-for="model in (slotProps.data as TableRowModel<any>).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
+                                    :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
+                                    <span class="vaulticTableContainer__groupIconSpan">
+                                        <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
+                                        <template v-else class="vaulticTableContainer__groupIcon" :style="{color: model.color}">{{ model.toolTipText[0] }}</template>
+                                    </span>
+                                </div>
+                            </div>
+                            <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel<any>).backingObject" 
+                                :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel<any>).state" :isFielded="column.isFielded" />
+                            <template v-else-if="column.isFielded === false">
+                                {{ (slotProps.data as TableRowModel<any>).backingObject?.[column.field] }}
+                            </template>
+                            <template v-else>
+                                {{ (slotProps.data as TableRowModel<any>).backingObject?.value[column.field]?.value }}
+                            </template>
                         </div>
                     </div>
-                    <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel<any>).backingObject" 
-                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel<any>).state" :isFielded="column.isFielded" />
-                    <template v-else-if="column.isFielded === false">
-                        {{ (slotProps.data as TableRowModel<any>).backingObject?.[column.field] }}
-                    </template>
-                    <template v-else>
-                        {{ (slotProps.data as TableRowModel<any>).backingObject?.value[column.field]?.value }}
-                    </template>
                 </template>
             </Column>
             <Column :columnKey="'tableControls'" class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false"
@@ -588,6 +593,10 @@ export default defineComponent({
     font-size: clamp(11px, 1vw, 16px) !important;
 }
 
+:deep(.vaulticTableContainer__column.vaulticTableContainer__headerCell) {
+    padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
+}
+
 :deep(.vaulticTableContainer__headerCell:focus-visible){
     outline: 1px solid v-bind(primaryColor) !important;
 }
@@ -616,7 +625,8 @@ export default defineComponent({
     background: transparent !important;
     transition: 0.3s;
     font-size: clamp(12px, 1vw, 16px);
-    padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
+    padding: 0 !important;
+    height: inherit;
 }
 
 :deep(.vaulticTableContainer__sortIcon) {
@@ -634,6 +644,20 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__column--sort-rotate) {
     transform: rotate(180deg);
+}
+
+:deep(.vaulticTableContainer__cellClickable) {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+:deep(.vaulticTableContainer__cellWrapper) {
+    width: 100%;
+    height: 100%;
+    padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
+    display: flex;
+    align-items: center;
 }
 
 :deep(.vaulticTableContainer__dataTableRow) {

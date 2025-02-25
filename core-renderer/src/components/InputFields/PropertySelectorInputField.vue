@@ -75,7 +75,7 @@ export default defineComponent({
         Message
     },
     emits: ["update:modelValue", "propertyTypeChanged"],
-    props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
+    props: ["modelValue", "defaultType", "displayFieldOptions", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
         'width', 'minWidth', 'maxWidth'],
     setup(props, ctx)
     {
@@ -93,7 +93,7 @@ export default defineComponent({
         const invalidMessage: Ref<string> = ref('');
         
         let selectedValue: Ref<any> = ref();
-        let selectedPropertyType: PropertyType = PropertyType.String;
+        let selectedPropertyType: PropertyType = props.defaultType ?? PropertyType.String;
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
@@ -113,7 +113,7 @@ export default defineComponent({
             selectedValue.value = option;
             ctx.emit('update:modelValue', option?.df?.backingProperty ?? null);
 
-            if (option?.df?.type && option?.df?.type != selectedPropertyType)
+            if (option?.df?.type !== undefined && option?.df?.type != selectedPropertyType)
             {
                 selectedPropertyType = option.df.type;
                 if (selectedPropertyType == PropertyType.Enum)

@@ -1,7 +1,7 @@
 <template>
     <div class="enumInputCellContainer">
         <EnumInputField v-model="modelField.value" :label="label" :color="color" :optionsEnum="state['filterConditionType']"
-            :width="''" :minWidth="''"/>
+            :width="''" :minWidth="''" @update:modelValue="onUpdate"/>
     </div>
 </template>
 
@@ -26,15 +26,23 @@ export default defineComponent({
         const state: ComputedRef<any> = computed(() => props.state);
         const label: ComputedRef<string> = computed(() => props.data["label"]);
 
+        function onUpdate(val: string)
+        {
+            state.value.filterType = val;
+        }
+
 		return {
             color,
             modelField,
             state,
-            label
+            label,
+            onUpdate
 		};
 	},
 })
 </script>
 <style scoped>
-
+.enumInputCellContainer {
+    width: 100%;
+}
 </style>

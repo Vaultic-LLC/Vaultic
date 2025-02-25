@@ -27,13 +27,13 @@ import AddButton from '../Table/Controls/AddButton.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
-import { DataType, defaultFilter, Filter, FilterCondition, FilterConditionType } from '../../Types/DataTypes';
+import { DataType, defaultFilter, EqualFilterConditionType, Filter, FilterCondition, FilterConditionType, NameValuePairType } from '../../Types/DataTypes';
 import { FieldedTableRowModel, GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DisplayField, FilterablePasswordProperties, FilterableValueProperties, PropertyType } from '../../Types/Fields';
+import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 
@@ -53,7 +53,7 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
         const filterState: Ref<Filter> = ref(props.model);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
-        const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
+        const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
         const filterConditionModels: SortedCollection = new SortedCollection([]);
@@ -208,10 +208,13 @@ export default defineComponent({
                 let models: FieldedTableRowModel<Field<FilterCondition>>[] = [];
                 filterState.value.conditions.value.forEach((v, k, map) =>
                 {
+                    const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.value.property.value)?.type ?? PropertyType.String;
                     models.push(new FieldedTableRowModel(k, false, undefined, v, 
                     {
-                        filterConditionType: FilterConditionType,
-                        inputType: PropertyType.String
+                        filterConditionType: propertyType == PropertyType.String ? FilterConditionType : EqualFilterConditionType,
+                        inputType: propertyType,
+                        filterType: v.value.filterType.value,
+                        inputEnumType: propertyType == PropertyType.Enum ? NameValuePairType : undefined    // Passwords don't have an emum selectable type
                     }));
                 });
 

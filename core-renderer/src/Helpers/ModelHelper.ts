@@ -4,6 +4,7 @@ import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject, Group } from "../Types/DataTypes";
 import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
+import { PropertyType } from "../Types/Fields";
 
 let filterGroupModelID = 0;
 export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[])

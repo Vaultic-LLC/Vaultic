@@ -1,6 +1,6 @@
 <template>
     <div class="propertySelectorCellContainer">
-        <PropertySelectorInputField v-model="modelField.value" :label="label" :color="color" :displayFieldOptions="displayFieldOptions" 
+        <PropertySelectorInputField v-model="modelField.value" :defaultType="inputType" :label="label" :color="color" :displayFieldOptions="displayFieldOptions" 
             :width="''" :minWidth="''" @propertyTypeChanged="onPropertyTypeChanged"  />
     </div>
 </template>
@@ -27,6 +27,7 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => props.data["color"]);
         const state: ComputedRef<any> = computed(() => props.state);
         const label: ComputedRef<string> = computed(() => props.data["label"]);
+        const inputType: ComputedRef<PropertyType> = computed(() => state.value.inputType);
 
         function onPropertyTypeChanged(type: PropertyType, typeEnum?: { [key: string]: string | number })
         {
@@ -61,11 +62,14 @@ export default defineComponent({
             modelField,
             displayFieldOptions,
             label,
+            inputType,
             onPropertyTypeChanged
 		};
 	},
 })
 </script>
 <style scoped>
-
+.propertySelectorCellContainer {
+    width: 100%;
+}
 </style>

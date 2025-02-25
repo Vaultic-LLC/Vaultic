@@ -39,5 +39,7 @@ export default defineComponent({
 })
 </script>
 <style scoped>
-
+.encryptedInputCellContainer {
+    width: 100%;
+}
 </style>

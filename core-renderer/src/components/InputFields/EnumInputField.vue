@@ -88,7 +88,12 @@ export default defineComponent({
 
         const options: ComputedRef<any[]> = computed(() => 
         {
-            return Object.values(props.optionsEnum).map((k, i) => { return { name: k, code: i } });
+            if (!props.optionsEnum)
+            {
+                return [];
+            }
+
+            return Object.values(props.optionsEnum).map((k, i) => { return { name: k, code: k } });
         });
 
         let selectedValue: Ref<any> = ref();

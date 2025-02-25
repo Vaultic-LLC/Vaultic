@@ -2,10 +2,10 @@
     <div class="filterValueSelectorCell">
         <TextInputField v-if="inputType == 0" :label="'Value'" :color="color"
             v-model="modelField.value" :fadeIn="false" :isOnWidget="true" :width="''"
-            :minWidth="'100px'" />
+            :minWidth="'100px'" :maxWidth="''" />
         <EnumInputField v-if="inputType == 1" :label="'Value'" :color="color"
             v-model="modelField.value" :optionsEnum="inputEnumType" :fadeIn="false" :isOnWidget="true"
-            :width="''" :minWidth="'100px'" />
+            :width="''" :minWidth="'100px'" :maxWidth="''" />
     </div>
 </template>
 
@@ -39,7 +39,7 @@ export default defineComponent({
         watch(() => inputType.value, () =>
         {
             modelField.value.value = "";
-        })
+        });
 
 		return {
             color,
@@ -53,5 +53,7 @@ export default defineComponent({
 })
 </script>
 <style scoped>
-
+.filterValueSelectorCell {
+    width: 100%;
+}
 </style>

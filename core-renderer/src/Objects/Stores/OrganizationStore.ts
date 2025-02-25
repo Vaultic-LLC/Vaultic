@@ -140,6 +140,10 @@ export class OrganizationStore extends Store<StoreState>
         }
 
         organization.organizationID = response.value.OrganizationID!;
+
+        // needs to be set before calling updateOrgsForVault
+        this.organizationsByID.set(organization.organizationID, organization);
+
         addedMembers.forEach(m =>
         {
             if (!organization.membersByUserID.has(m.userID))
@@ -149,8 +153,6 @@ export class OrganizationStore extends Store<StoreState>
         });
 
         addedVaults.forEach(v => this.updateOrgsForVault(v.vaultID, [organization], []));
-        this.organizationsByID.set(organization.organizationID, organization);
-
         return true;
     }
 

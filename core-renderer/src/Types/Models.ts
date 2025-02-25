@@ -26,6 +26,7 @@ export interface TableColumnModel
     isGroupIconCell?: boolean;
     data?: { [key: string]: any };
     sortable?: boolean;
+    onClick?: (obj: any) => void;
 }
 
 export class TableRowModel<T extends { [key: string]: any }>
