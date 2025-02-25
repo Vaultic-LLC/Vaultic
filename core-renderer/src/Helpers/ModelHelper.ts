@@ -235,7 +235,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
 
         return new FieldedTableRowModel(passwordValueModelID.toString(), undefined, atRiskModel, v, {
-            groupMOdels: groupModels
+            groupModels: groupModels
         });
     }
 

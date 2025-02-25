@@ -144,7 +144,7 @@ export default defineComponent({
 
         function onIconSelected(model: ObjectSelectOptionModel)
         {
-            groupState.value.icon.value = model.icon!;
+            groupState.value.icon.value = model?.icon ?? "";
         }
 
         onMounted(() =>
