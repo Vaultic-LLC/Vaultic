@@ -8,25 +8,19 @@
                         <EncryptedInputField ref="encryptedInputField"
                             :label="'Master Key'" :colorModel="colorModel" v-model="key" :required="true"
                             :width="'70%'" :maxWidth="''" :showRandom="true" :randomValueType="RandomValueType.Passphrase" 
-                            :canChangeRandomType="false" :popoverClass="'createMasterKeyViewContainer__keyPopover'" />
+                            :popoverClass="'createMasterKeyViewContainer__keyPopover'" @onInvalid="() => masterKeyInvalid = true" 
+                            @update:model-value="() => masterKeyInvalid = false" />
                         <div class="createMasterKeyViewContainer__keyRequirements">
-                            <CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
+                            <CheckboxInputField class="createMasterKeyViewContainer__isTwentyCharacters" 
+                                :class="{ 'createMasterKeyViewContainer__isTwentyCharacters--shift': masterKeyInvalid}" :label="'20 Characters'"
                                 :color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
-                                :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
-                            <CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Upper and Lower Case'"
-                                :color="color" v-model="containesUpperAndLowerCase" :fadeIn="true" :width="'100%'"
-                                :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
-                            <CheckboxInputField class="containsNumber" :label="'Number'" :color="color"
-                                v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
-                                :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
-                            <CheckboxInputField class="containsSpecialCharacter" :label="'Special Character'"
-                                :color="color" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
                                 :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                         </div>
                         <EncryptedInputField ref="confirmEncryptedInputField"
-                            :label="'Confirm Key'"
-                            :colorModel="colorModel" v-model="reEnterKey" :width="'70%'" :maxWidth="''" />
-                        <CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'"
+                            :label="'Confirm Key'" :colorModel="colorModel" v-model="reEnterKey" :width="'70%'" :maxWidth="''" 
+                             @onInvalid="() => confirmKeyInvalid = true" @update:model-value="() => confirmKeyInvalid = false" />
+                        <CheckboxInputField class="createMasterKeyViewContainer__matchesKey" 
+                            :class="{ 'createMasterKeyViewContainer__matchesKey--shift': confirmKeyInvalid}" :label="'Matches Key'"
                             :color="color" v-model="matchesKey" :fadeIn="true" :width="'70%'" :height="'1.25vh'"
                             :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                     </div>
@@ -81,14 +75,14 @@ export default defineComponent({
         const confirmEncryptedInputField: Ref<InputComponent | null> = ref(null);
 
         const greaterThanTwentyCharacters: Ref<boolean> = ref(false);
-        const containesUpperAndLowerCase: Ref<boolean> = ref(false);
-        const hasNumber: Ref<boolean> = ref(false);
-        const hasSpecialCharacter: Ref<boolean> = ref(false);
         const matchesKey: Ref<boolean> = ref(false);
 
         const alertMessage: Ref<string> = ref('');
 
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
+
+        const masterKeyInvalid: Ref<boolean> = ref(false);
+        const confirmKeyInvalid: Ref<boolean> = ref(false);
 
         async function showAlertMessage(message: string, title: string = 'Unable to create master key', showContactSupport: boolean = false)
         {
@@ -100,12 +94,9 @@ export default defineComponent({
 
         async function onSubmit()
         {
-            if (!greaterThanTwentyCharacters.value ||
-                !containesUpperAndLowerCase.value ||
-                !hasNumber.value ||
-                !hasSpecialCharacter.value)
+            if (!greaterThanTwentyCharacters.value)
             {
-                encryptedInputField.value?.invalidate("Please meet all the requirements below");
+                encryptedInputField.value?.invalidate("Please create a key at least 20 characters long");
                 return;
             }
             else if (!matchesKey.value)
@@ -193,19 +184,12 @@ export default defineComponent({
         watch(() => key.value, async (newValue) =>
         {
             greaterThanTwentyCharacters.value = newValue.length >= 20;
-            containesUpperAndLowerCase.value = await api.helpers.validation.containsUppercaseAndLowercaseNumber(newValue);
-            hasNumber.value = await api.helpers.validation.containsNumber(newValue);
-            hasSpecialCharacter.value = await api.helpers.validation.containsSpecialCharacter(newValue);
-
             matchesKey.value = newValue == reEnterKey.value;
         });
 
         watch(() => reEnterKey.value, (newValue) =>
         {
-            if (!greaterThanTwentyCharacters.value ||
-                !containesUpperAndLowerCase.value ||
-                !hasNumber.value ||
-                !hasSpecialCharacter.value)
+            if (!greaterThanTwentyCharacters.value)
             {
                 return;
             }
@@ -221,14 +205,13 @@ export default defineComponent({
             encryptedInputField,
             confirmEncryptedInputField,
             greaterThanTwentyCharacters,
-            containesUpperAndLowerCase,
-            hasNumber,
-            hasSpecialCharacter,
             matchesKey,
             colorModel,
             alertMessage,
+            masterKeyInvalid,
+            confirmKeyInvalid,
             onSubmit,
-            openCreateStrongAndMemorablePasswords
+            openCreateStrongAndMemorablePasswords,
         }
     }
 })
@@ -255,6 +238,7 @@ export default defineComponent({
     align-items: center;
     height: 100%;
     width: 100%;
+    margin-top: 10px;
 }
 
 .createMasterKeyViewContainer__inputs {
@@ -277,9 +261,22 @@ export default defineComponent({
 
 .createMasterKeyViewContainer__matchesKey {
     transform: translateX(10px);
+    transition: 0.3s;
+}
+
+.createMasterKeyViewContainer__matchesKey--shift {
+    margin-top: 10px;
 }
 
 .createMasterKeyViewContainer__keyPopover {
     z-index: 2001 !important;
+}
+
+.createMasterKeyViewContainer__isTwentyCharacters {
+    transition: 0.3s;
+}
+
+.createMasterKeyViewContainer__isTwentyCharacters--shift {
+    margin-top: 10px;
 }
 </style>

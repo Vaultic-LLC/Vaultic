@@ -10,9 +10,7 @@
                     { 
                         root: ({state}) => 
                         {
-                            isFocused = state.focused;
                             state.unmasked = isUnmasked;
-
                             return 'encryptedInputFieldContainer__password'
                         }, 
                         pcInputText:
@@ -23,7 +21,8 @@
                                 return {
                                     class: {
                                         'encryptedInputFieldContainer__input': true,
-                                        'encryptedInputFieldContainer__input--invalid': isInvalid 
+                                        'encryptedInputFieldContainer__input--invalid': isInvalid,
+                                        'encryptedInputFieldContainer__input--extendedPadding': showRandom
                                     }
                                 }
                             }
@@ -32,13 +31,19 @@
                     :fluid="true" name="password" v-model="inputText" :inputId="id" :disabled="isDisabled" toggleMask :feedback="computedFeedback" 
                     :invalid="isInvalid" @update:model-value="onInput">
                     <template #maskicon="slotProps">
-                        <IonIcon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-off-outline'" @click="toggleMask(true)"></IonIcon>
+                        <div class="encryptedInputFieldContainer__icons">
+                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover"></IonIcon>
+                            <IonIcon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-off-outline'" @click="toggleMask(true)"></IonIcon>
+                        </div>
                     </template>
                     <template #unmaskicon="slotProps">
-                        <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock"></IonIcon>
-                        <IonIcon v-else-if="!isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
-                        <!-- Prime vue requires something to be here otherwise it'll render its own icon -->
-                        <span v-else></span>
+                        <div class="encryptedInputFieldContainer__icons">
+                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover"></IonIcon>
+                            <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock"></IonIcon>
+                            <IonIcon v-else-if="!isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
+                            <!-- Prime vue requires something to be here otherwise it'll render its own icon -->
+                            <span v-else></span>
+                        </div>
                     </template>
                     <template #content>
                         <div></div>
@@ -53,7 +58,7 @@
                 }">
                 {{ invalidMessage }}
             </Message>
-            <Popover ref="popover" @mouseenter="popoverHover = true" @mouseleave="onPopoverMouseLeave"
+            <Popover ref="popover"
                 :pt="{
                     root: ({state}) =>
                     {
@@ -68,8 +73,7 @@
                     </VaulticFieldset>
                     <VaulticFieldset>
                         <EnumInputField v-if="canChangeRandomType !== false" :color="colorModel.color" :label="'Type'" v-model="randomValueType" :optionsEnum="RandomValueType" 
-                            :width="'100%'" :maxWidth="''" :maxHeight="''" @onFocus="onTypeFocus" @onBlur="typeDidBlur = true"
-                            :hideClear="true" />
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" :hideClear="true" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Passphrase">
                         <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.value.passphraseSeperator.value" 
@@ -142,7 +146,7 @@ export default defineComponent({
         SliderInput,
         IonIcon
     },
-    emits: ["update:modelValue", "onDirty"],
+    emits: ["update:modelValue", "onDirty", "onInvalid"],
     props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isInitiallyEncrypted",
         "showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
         "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback', 'popoverClass', 'canChangeRandomType'],
@@ -157,13 +161,7 @@ export default defineComponent({
         const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
 
-        const popoverHover: Ref<boolean> = ref(false);
-        const isFocused: Ref<boolean> = ref(false);
         const popupIsShowing: Ref<boolean> = ref(false);
-        const typeIsFocused: Ref<boolean> = ref(false);
-        const typeDidBlur: Ref<boolean> = ref(false);
-        const showPopup: ComputedRef<boolean> = computed(() => props.showRandom === true && isLocked.value === false && 
-            isDisabled.value === false && (isFocused.value || popoverHover.value || typeIsFocused.value));
 
         const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
@@ -284,6 +282,8 @@ export default defineComponent({
         {
             isInvalid.value = true;
             invalidMessage.value = message;
+
+            ctx.emit('onInvalid');
         }
 
         function toggleMask(mask: boolean)
@@ -300,22 +300,6 @@ export default defineComponent({
             }
         }
 
-        // delay it so that there isn't any jitter when moving from hovering over the container to the 
-        // popover
-        function onPopoverMouseLeave()
-        {
-            setTimeout(() =>
-            {
-                popoverHover.value = false;
-            }, 50);
-        }
-
-        function onTypeFocus()
-        {
-            typeIsFocused.value = true;
-            typeDidBlur.value = false;
-        }
-
         async function onGenerateRandomPasswordOrPhrase()
         {
             randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value.value,
@@ -328,8 +312,13 @@ export default defineComponent({
             onInput(randomPasswordPreview.value);
             randomPasswordPreview.value = "";
 
-            //popover.value.toggle();
-            popoverHover.value = false;
+            togglePopover();
+        }
+
+        function togglePopover()
+        {
+            popover.value.toggle({currentTarget: container.value}); 
+            popupIsShowing.value = !popupIsShowing.value;  
         }
 
         onMounted(() =>
@@ -348,33 +337,13 @@ export default defineComponent({
             inputText.value = newValue;
         });
 
-        watch(() => showPopup.value, (newValue) => 
-        {
-            if (newValue != popupIsShowing.value)
-            {
-                popover.value.toggle({currentTarget: container.value}); 
-                popupIsShowing.value = newValue;        
-            }
-        });
-
-        watch(() => [isFocused.value, popoverHover.value], () =>
-        {
-            if (typeDidBlur.value)
-            {
-                typeIsFocused.value = false;
-                typeDidBlur.value = false;
-            }
-        });
-
         return {
             id,
             errorColor,
             textFieldInstance,
             popover,
             isDisabled,
-            popoverHover,
             popupIsShowing,
-            isFocused,
             isLocked,
             inputType,
             inputText,
@@ -392,8 +361,6 @@ export default defineComponent({
             backgroundColor,
             container,
             length,
-            typeIsFocused,
-            typeDidBlur,
             colorModel,
             RandomValueType,
             randomValueType,
@@ -411,10 +378,9 @@ export default defineComponent({
             randomPasswordPreview,
             isUnmasked,
             toggleMask,
-            onPopoverMouseLeave,
             onGenerateRandomPasswordOrPhrase,
             confirmRandomPasswordOrPhrase,
-            onTypeFocus
+            togglePopover
         }
     }
 })
@@ -484,18 +450,19 @@ export default defineComponent({
 }
 
 .encryptedInputFieldContainer__icon {
+    position: relative;
     width: clamp(15px, 1.5vw, 25px) !important;
     height: clamp(15px, 1.5vw, 25px) !important;
-    top: 50%;
-    transform: translateY(-50%);
-    margin: 0;
+    margin: 0 !important;
     transition: 0.3s;
     cursor: pointer;
+    top: unset !important;
+    inset-inline-end: 0;
 }
 
 .encryptedInputFieldContainer__icon:hover {
     color: v-bind('colorModel.activeBorderColor');
-    transform: translateY(-50%) scale(1.05);
+    transform: scale(1.05);
 }
 
 :deep(.encryptedInputFieldContainer__message) {
@@ -539,5 +506,20 @@ export default defineComponent({
     justify-content: center;
     align-items: flex-end;
     margin-top: 10px;
+}
+
+:deep(.encryptedInputFieldContainer__icons) {
+    position: absolute;
+    right: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    column-gap: clamp(5px, 0.2vw, 10px);
+}
+
+/* increase the padding so the extra button disn't overlap the input text. The 10px comes from right: 10px on the icon container */
+:deep(.encryptedInputFieldContainer__input--extendedPadding) {
+    padding-inline-end: calc(clamp(15px, 1.5vw, 25px) * 2.5 + 10px) !important
 }
 </style>
