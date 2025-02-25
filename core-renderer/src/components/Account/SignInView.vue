@@ -347,7 +347,7 @@ export default defineComponent({
             // request failed and we navivated back to the sign in page
             if (props.clearAllDataOnLoad !== false)
             {
-                await app.clearAllData();
+                await app.lock(false);
             }
             else
             {

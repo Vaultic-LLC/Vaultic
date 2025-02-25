@@ -36,7 +36,9 @@
                     </template>
                     <template #unmaskicon="slotProps">
                         <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock"></IonIcon>
-                        <IonIcon v-else class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
+                        <IonIcon v-else-if="!isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
+                        <!-- Prime vue requires something to be here otherwise it'll render its own icon -->
+                        <span v-else></span>
                     </template>
                     <template #content>
                         <div></div>
