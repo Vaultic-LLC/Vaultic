@@ -347,9 +347,6 @@ export class ReactivePasswordStore extends PasswordStore
     private internalWeakPasswords: ComputedRef<string[]>;
     private internalContainsLoginPasswords: ComputedRef<string[]>;
 
-    private internalPinnedPasswords: ComputedRef<Field<ReactivePassword>[]>;
-    private internalUnpinnedPasswords: ComputedRef<Field<ReactivePassword>[]>;
-
     private internalCurrentAndSafePasswordsCurrent: ComputedRef<number[]>;
     private internalCurrentAndSafePasswordsSafe: ComputedRef<number[]>;
 
@@ -359,8 +356,6 @@ export class ReactivePasswordStore extends PasswordStore
 
     get passwords() { return this.internalPasswords.value; }
     get passwordsByID() { return this.state.passwordsByID; }
-    get pinnedPasswords() { return this.internalPinnedPasswords.value; }
-    get unpinnedPasswords() { return this.internalUnpinnedPasswords.value; }
     get oldPasswords() { return this.internalOldPasswords }
     get weakPasswords() { return this.internalWeakPasswords }
     get containsLoginPasswords() { return this.internalContainsLoginPasswords }
@@ -379,9 +374,6 @@ export class ReactivePasswordStore extends PasswordStore
         this.internalOldPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.isOld(), (k, v) => v.value.id.value));
         this.internalWeakPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.isWeak.value, (k, v) => v.value.id.value));
         this.internalContainsLoginPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.containsLogin.value, (k, v) => v.value.id.value));
-
-        this.internalPinnedPasswords = computed(() => this.passwords.filter(p => app.userPreferences.pinnedPasswords.value.has(p.value.id.value)));
-        this.internalUnpinnedPasswords = computed(() => this.passwords.filter(p => !app.userPreferences.pinnedPasswords.value.has(p.value.id.value)));
 
         this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.currentAndSafePasswords.value.current.value.map((k, v) => v.value));
         this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.currentAndSafePasswords.value.safe.value.map((k, v) => v.value));

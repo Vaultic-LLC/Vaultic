@@ -336,12 +336,6 @@ export class ReactiveGroupStore extends GroupStore
     private internalActiveAtRiskPasswordGroupType: Ref<AtRiskType>;
     private internalActiveAtRiskValueGroupType: Ref<AtRiskType>;
 
-    private internalPinnedPasswordGroups: ComputedRef<Field<Group>[]>;
-    private internalUnpinnedPasswordGroups: ComputedRef<Field<Group>[]>;
-
-    private internalPinnedValueGroups: ComputedRef<Field<Group>[]>;
-    private internalUnpinnedValueGroups: ComputedRef<Field<Group>[]>;
-
     get passwordGroupsByID() { return this.state.passwordGroupsByID; }
     get valueGroupsByID() { return this.state.valueGroupsByID; }
 
@@ -357,12 +351,6 @@ export class ReactiveGroupStore extends GroupStore
     get sortedPasswordsGroups() { return this.internalSortedPasswordsGroups.value; }
     get sortedValuesGroups() { return this.internalSortedValuesGroups.value }
 
-    get pinnedPasswordGroups() { return this.internalPinnedPasswordGroups.value; }
-    get unpinnedPasswordGroups() { return this.internalUnpinnedPasswordGroups.value; }
-
-    get pinnedValueGroups() { return this.internalPinnedValueGroups.value; }
-    get unpinnedValueGroups() { return this.internalUnpinnedValueGroups.value; }
-
     constructor(vault: any)
     {
         super(vault);
@@ -372,12 +360,6 @@ export class ReactiveGroupStore extends GroupStore
 
         this.internalActiveAtRiskPasswordGroupType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueGroupType = ref(AtRiskType.None);
-
-        this.internalPinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => app.userPreferences.pinnedGroups.value.has(f.value.id.value)));
-        this.internalUnpinnedPasswordGroups = computed(() => this.internalPasswordGroups.value.filter(f => !app.userPreferences.pinnedGroups.value.has(f.value.id.value)));
-
-        this.internalPinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => app.userPreferences.pinnedGroups.value.has(f.value.id.value)));
-        this.internalUnpinnedValueGroups = computed(() => this.internalValueGroups.value.filter(f => !app.userPreferences.pinnedGroups.value.has(f.value.id.value)));
     }
 
     protected getPasswordAtRiskType(): Ref<AtRiskType>

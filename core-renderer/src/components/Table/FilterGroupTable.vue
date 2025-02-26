@@ -192,10 +192,14 @@ export default defineComponent({
                     switch (app.activePasswordValuesTable)
                     {
                         case DataType.Passwords:
-                            passwordGroups.updateValues(getFilterGroupTableRowModels(DataType.Groups, DataType.Passwords, app.currentVault.groupStore.passwordGroups));
+                            const [pgModels, pgPinnedModels] = getFilterGroupTableRowModels(DataType.Groups, DataType.Passwords, app.currentVault.groupStore.passwordGroups);
+                            passwordGroups.updateValues(pgModels);
+                            pinnedPasswordGroups.updateValues(pgPinnedModels);
                             break;
                         case DataType.NameValuePairs:
-                            valueGroups.updateValues(getFilterGroupTableRowModels(DataType.Groups, DataType.NameValuePairs, app.currentVault.groupStore.valuesGroups));
+                            const [vgModels, vgPinnedModels] = getFilterGroupTableRowModels(DataType.Groups, DataType.NameValuePairs, app.currentVault.groupStore.valuesGroups);
+                            valueGroups.updateValues(vgModels);
+                            pinnedValueGroups.updateValues(vgPinnedModels);
                             break;
                     }
                     break;
@@ -203,10 +207,14 @@ export default defineComponent({
                     switch (app.activePasswordValuesTable)
                     {
                         case DataType.Passwords:
-                            passwordFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.Passwords, app.currentVault.filterStore.passwordFilters));
+                            const [pfModels, pfPinnedModels] = getFilterGroupTableRowModels(DataType.Filters, DataType.Passwords, app.currentVault.filterStore.passwordFilters);
+                            passwordFilters.updateValues(pfModels);
+                            pinnedPasswordFilters.updateValues(pfPinnedModels);
                             break;
                         case DataType.NameValuePairs:
-                            valueFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.NameValuePairs, app.currentVault.filterStore.nameValuePairFilters));
+                            const [vfModels, vfPinnedModels] = getFilterGroupTableRowModels(DataType.Filters, DataType.NameValuePairs, app.currentVault.filterStore.nameValuePairFilters);
+                            valueFilters.updateValues(vfModels);
+                            pinnedValueFilters.updateValues(vfPinnedModels);
                             break;
                     }
                 default:

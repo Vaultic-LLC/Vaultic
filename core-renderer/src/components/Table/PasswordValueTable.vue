@@ -171,7 +171,8 @@ export default defineComponent({
             // no active filters
             if (newValue.length == 0)
             {
-                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, originalVariable));
+                const [models, _] = getPasswordValueTableRowModels(color.value, dataType, originalVariable);
+                localVariable.updateValues(models);
             }
             // adding first filter
             else if (oldValue.length == 0)
@@ -182,7 +183,8 @@ export default defineComponent({
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.value.filters.value.has(f.value.id.value)));
                 });
 
-                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, temp));
+                const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
+                localVariable.updateValues(models);            
             }
             // Activated filter
             else if (newValue.length > oldValue.length)
@@ -203,7 +205,8 @@ export default defineComponent({
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
                 }
 
-                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, temp));
+                const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
+                localVariable.updateValues(models);
             }
             // removed filter
             else if (newValue.length < oldValue.length)
@@ -235,7 +238,8 @@ export default defineComponent({
                     temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
                 }
 
-                localVariable.updateValues(getPasswordValueTableRowModels(color.value, dataType, temp));
+                const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
+                localVariable.updateValues(models);
             }
         }
 
@@ -244,11 +248,15 @@ export default defineComponent({
             switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
-                    nameValuePairs.updateValues(getPasswordValueTableRowModels(color.value, DataType.NameValuePairs, app.currentVault.valueStore.unpinnedValues));
+                    const [valueModels, valuePinnedModels] = getPasswordValueTableRowModels(color.value, DataType.NameValuePairs, app.currentVault.valueStore.nameValuePairs);
+                    nameValuePairs.updateValues(valueModels);
+                    pinnedNameValuePairs.updateValues(valuePinnedModels);
                     break;
                 case DataType.Passwords:
                 default:
-                    passwords.updateValues(getPasswordValueTableRowModels(color.value, DataType.Passwords, app.currentVault.passwordStore.unpinnedPasswords));
+                    const [passwordModels, passwordPinnedModels] = getPasswordValueTableRowModels(color.value, DataType.Passwords, app.currentVault.passwordStore.passwords);
+                    passwords.updateValues(passwordModels);
+                    pinnedPasswords.updateValues(passwordPinnedModels);
             }
 
             if (tableRef.value)
@@ -264,7 +272,7 @@ export default defineComponent({
 
         function initPasswords()
         {
-            filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
+            filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.passwords);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -272,7 +280,7 @@ export default defineComponent({
 
         function initValues()
         {
-            filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
+            filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.nameValuePairs);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -280,8 +288,8 @@ export default defineComponent({
 
         function init()
         {
-            filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.unpinnedPasswords);
-            filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.unpinnedValues);
+            filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.passwords);
+            filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.nameValuePairs);
 
             setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
@@ -468,13 +476,13 @@ export default defineComponent({
 
         watch(() => app.currentVault.filterStore.activePasswordFilters, (newValue, oldValue) =>
         {
-            filter(DataType.Passwords, newValue, oldValue, passwords, app.currentVault.passwordStore.unpinnedPasswords);
+            filter(DataType.Passwords, newValue, oldValue, passwords, app.currentVault.passwordStore.passwords);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.filterStore.activeNameValuePairFilters, (newValue, oldValue) =>
         {
-            filter(DataType.NameValuePairs, newValue, oldValue, nameValuePairs, app.currentVault.valueStore.unpinnedValues);
+            filter(DataType.NameValuePairs, newValue, oldValue, nameValuePairs, app.currentVault.valueStore.nameValuePairs);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 

@@ -149,18 +149,23 @@ export default defineComponent({
 
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Organizations)
             {
-                const organizationRows = app.organizations.organizations.value.map(o => 
+                const newOrganizationModels: TableRowModel<Organization>[] = [];
+                const newPinnedOrganizationModels: TableRowModel<Organization>[] = [];
+                    
+                app.organizations.organizations.value.forEach(o =>
                 {
-                    return new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, false, undefined, o);
+                    if (app.userPreferences.pinnedOrganizations.value.has(o.organizationID))
+                    {
+                        newPinnedOrganizationModels.push(new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, true, undefined, o));
+                    }
+                    else
+                    {
+                        newOrganizationModels.push(new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, false, undefined, o));
+                    }
                 });
     
-                const pinnedOrganizationRows = app.organizations.pinnedOrganizations.map(o => 
-                {
-                    return new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, true, undefined, o);
-                });
-    
-                organizations.updateValues(organizationRows);
-                pinnedOrganizations.updateValues(pinnedOrganizationRows);
+                organizations.updateValues(newOrganizationModels);
+                pinnedOrganizations.updateValues(newPinnedOrganizationModels);
             }
         }
 

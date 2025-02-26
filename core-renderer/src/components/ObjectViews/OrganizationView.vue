@@ -134,6 +134,7 @@ export default defineComponent({
             if (props.creating)
             {
                 refreshKey.value = Date.now().toString();
+                orgState.value = defaultOrganization();
             }
         }
 

@@ -367,12 +367,6 @@ export class ReactiveFilterStore extends FilterStore
     private internalActiveAtRiskPasswordFilterType: Ref<AtRiskType>;
     private internalActiveAtRiskValueFilterType: Ref<AtRiskType>;
 
-    private internalPinnedPasswordFilters: ComputedRef<Field<Filter>[]>;
-    private internalUnpinnedPasswordFilters: ComputedRef<Field<Filter>[]>;
-
-    private internalPinnedValueFilters: ComputedRef<Field<Filter>[]>;
-    private internalUnpinnedValueFilters: ComputedRef<Field<Filter>[]>;
-
     get passwordFilters() { return this.internalPasswordFilters.value; }
     get passwordFiltersByID() { return this.state.passwordFiltersByID; }
     get activePasswordFilters() { return this.internalActivePasswordFilters.value; }
@@ -390,12 +384,6 @@ export class ReactiveFilterStore extends FilterStore
     get duplicatePasswordFilters() { return this.state.duplicatePasswordFilters; }
     get duplicateValueFilters() { return this.state.duplicateValueFilters; }
 
-    get pinnedPasswordFilters() { return this.internalPinnedPasswordFilters.value; }
-    get unpinnedPasswordFilters() { return this.internalUnpinnedPasswordFilters.value; }
-
-    get pinnedValueFilters() { return this.internalPinnedValueFilters.value; }
-    get unpinnedValueFitlers() { return this.internalUnpinnedValueFilters.value; }
-
     constructor(vault: VaultStoreParameter)
     {
         super(vault);
@@ -408,12 +396,6 @@ export class ReactiveFilterStore extends FilterStore
 
         this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);
-
-        this.internalPinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => app.userPreferences.pinnedFilters.value.has(f.value.id.value)));
-        this.internalUnpinnedPasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => !app.userPreferences.pinnedFilters.value.has(f.value.id.value)));
-
-        this.internalPinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => app.userPreferences.pinnedFilters.value.has(f.value.id.value)));
-        this.internalUnpinnedValueFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => !app.userPreferences.pinnedFilters.value.has(f.value.id.value)));
     }
 
     protected getPasswordAtRiskType(): Ref<AtRiskType>

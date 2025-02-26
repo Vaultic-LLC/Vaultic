@@ -87,6 +87,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalUserLicense: Ref<LicenseStatus>;
 
     private lastSessionExtendTime: number;
+    private internalActiveDataType: ComputedRef<DataType>;
 
     get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.settings; }
@@ -118,6 +119,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get userInfo() { return this.internalUserInfo.value; }
     get canShowSubscriptionWidgets() { return this.internalCanShowSubscriptionWidgets; }
     get userLicense() { return this.internalUserLicense.value; }
+    get activeDataType() { return this.internalActiveDataType.value; }
 
     constructor()
     {
@@ -172,6 +174,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         });
 
         this.lastSessionExtendTime = Date.now();
+        this.internalActiveDataType = computed(() => app.isVaultView ? app.activePasswordValuesTable : app.activeDeviceOrganizationsTable);
     }
 
     protected defaultState()

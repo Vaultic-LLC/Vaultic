@@ -219,9 +219,6 @@ export class ReactiveValueStore extends ValueStore
     private internalWeakPassphraseValues: ComputedRef<string[]>;
     private internalWeakPasscodeValues: ComputedRef<string[]>;
 
-    private internalPinnedValues: ComputedRef<Field<ReactiveValue>[]>;
-    private internalUnpinnedValues: ComputedRef<Field<ReactiveValue>[]>;
-
     private internalActiveAtRiskValueType: Ref<AtRiskType>;
 
     private internalCurrentAndSafeValuesCurrent: ComputedRef<number[]>;
@@ -229,8 +226,6 @@ export class ReactiveValueStore extends ValueStore
 
     get nameValuePairs() { return this.internalNameValuePairs.value; }
     get nameValuePairsByID() { return this.state.valuesByID; }
-    get pinnedValues() { return this.internalPinnedValues.value }
-    get unpinnedValues() { return this.internalUnpinnedValues.value; }
     get oldNameValuePairs() { return this.internalOldNameValuePairs }
     get duplicateNameValuePairs() { return this.state.duplicateValues }
     get weakPassphraseValues() { return this.internalWeakPassphraseValues }
@@ -252,9 +247,6 @@ export class ReactiveValueStore extends ValueStore
 
         this.internalWeakPasscodeValues = computed(() =>
             this.state.valuesByID.value.mapWhere((k, v) => v.value.valueType?.value == NameValuePairType.Passcode && v.value.isWeak.value, (k, v) => v.value.id.value));
-
-        this.internalPinnedValues = computed(() => this.nameValuePairs.filter(nvp => app.userPreferences.pinnedValues.value.has(nvp.value.id.value)));
-        this.internalUnpinnedValues = computed(() => this.nameValuePairs.filter(nvp => !app.userPreferences.pinnedValues.value.has(nvp.value.id.value)));
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 

@@ -131,7 +131,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     {
         watch(() => this.state.currentColorPalette, () =>
         {
-            this.setCurrentPrimaryColor(appStore.activePasswordValuesTable);
+            this.setCurrentPrimaryColor(appStore.activeDataType);
         });
 
         watch(() => appStore.activePasswordValuesTable, (newValue) =>
@@ -267,16 +267,16 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     {
         // Update the state right away so there is no potential delay for themeing
         this.state.currentColorPalette.value = colorPalette;
-        this.setCurrentPrimaryColor(app.activePasswordValuesTable);
+        this.setCurrentPrimaryColor(app.activeDataType);
 
         const pendingState = this.cloneState();
-        transaction.updateUserStore(this, pendingState, () => this.setCurrentPrimaryColor(app.activePasswordValuesTable))
+        transaction.updateUserStore(this, pendingState, () => this.setCurrentPrimaryColor(app.activeDataType))
     }
 
     private async update()
     {
         const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-        transaction.updateUserVaultStore(this, this.state);
+        transaction.updateUserStore(this, this.state);
 
         await transaction.commit('');
     }

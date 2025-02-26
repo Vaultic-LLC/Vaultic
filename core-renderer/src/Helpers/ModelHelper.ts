@@ -1,15 +1,17 @@
-import { AtRiskModel, FieldedTableRowModel, GroupIconModel, TableRowModel } from "../Types/Models";
+import { AtRiskModel, FieldedTableRowModel, GroupIconModel } from "../Types/Models";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject, Group } from "../Types/DataTypes";
 import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
-import { PropertyType } from "../Types/Fields";
 
 let filterGroupModelID = 0;
 export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[])
+    : [FieldedTableRowModel<Field<T>>[], FieldedTableRowModel<Field<T>>[]]
 {
     let models: FieldedTableRowModel<Field<T>>[] = [];
+    let pinnedModels: FieldedTableRowModel<Field<T>>[] = [];
+
     if (groupFilterType == DataType.Groups && passwordValueType == DataType.Passwords && app.currentVault.groupStore.activeAtRiskPasswordGroupType != AtRiskType.None)
     {
         switch (app.currentVault.groupStore.activeAtRiskPasswordGroupType)
@@ -82,17 +84,18 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
     }
     else
     {
-        models = allValues.map(v => buildModel(v));
+        allValues.map(v => buildModel(v));
+
     }
 
-    return models;
+    return [models, pinnedModels];
 
     function addAtRiskValues<U extends IIdentifiable>(message: string, value: Field<U>)
     {
-        models.push(buildModel(value as any as Field<T>, message));
+        buildModel(value as any as Field<T>, message);
     }
 
-    function buildModel(v: Field<T>, message?: string): FieldedTableRowModel<Field<T>>
+    function buildModel(v: Field<T>, message?: string)
     {
         filterGroupModelID += 1;
 
@@ -102,14 +105,38 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
             atRiskModel = { message: message }
         }
 
-        return new FieldedTableRowModel(filterGroupModelID.toString(), undefined, atRiskModel, v);
+        if (groupFilterType == DataType.Filters)
+        {
+            if (app.userPreferences.pinnedFilters.value.has(v.value.id.value))
+            {
+                pinnedModels.push(new FieldedTableRowModel(filterGroupModelID.toString(), true, atRiskModel, v))
+            }
+            else
+            {
+                models.push(new FieldedTableRowModel(filterGroupModelID.toString(), false, atRiskModel, v));
+            }
+        }
+        else if (groupFilterType == DataType.Groups)
+        {
+            if (app.userPreferences.pinnedGroups.value.has(v.value.id.value))
+            {
+                pinnedModels.push(new FieldedTableRowModel(filterGroupModelID.toString(), true, atRiskModel, v))
+            }
+            else
+            {
+                models.push(new FieldedTableRowModel(filterGroupModelID.toString(), false, atRiskModel, v));
+            }
+        }
     }
 }
 
 let passwordValueModelID = 0;
 export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(color: string, dataType: DataType, allValues: Field<T>[])
+    : [FieldedTableRowModel<Field<T>>[], FieldedTableRowModel<Field<T>>[]]
 {
     const newModels: FieldedTableRowModel<Field<T>>[] = [];
+    const pinnedModels: FieldedTableRowModel<Field<T>>[] = [];
+
     if (dataType == DataType.Passwords && app.currentVault.passwordStore.activeAtRiskPasswordType != AtRiskType.None)
     {
         switch (app.currentVault.passwordStore.activeAtRiskPasswordType)
@@ -186,17 +213,17 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
     }
     else
     {
-        newModels.push(...allValues.map(v => buildModel(v)));
+        allValues.map(v => buildModel(v));
     }
 
-    return newModels;
+    return [newModels, pinnedModels];
 
     function addAtRiskValues<U extends IIdentifiable>(message: string, value: Field<U>, onClick?: () => void)
     {
-        newModels.push(buildModel(value as any as Field<T>, message, onClick))
+        buildModel(value as any as Field<T>, message, onClick);
     }
 
-    function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void): FieldedTableRowModel<Field<T>>
+    function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void)
     {
         passwordValueModelID += 1;
 
@@ -219,6 +246,19 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
 
                 addToModels(groupModels, group);
             });
+
+            if (app.userPreferences.pinnedPasswords.value.has(v.value.id.value))
+            {
+                pinnedModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), true, atRiskModel, v, {
+                    groupModels: groupModels
+                }));
+            }
+            else
+            {
+                newModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), false, atRiskModel, v, {
+                    groupModels: groupModels
+                }));
+            }
         }
         else 
         {
@@ -232,11 +272,20 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
 
                 addToModels(groupModels, group);
             });
-        }
 
-        return new FieldedTableRowModel(passwordValueModelID.toString(), undefined, atRiskModel, v, {
-            groupModels: groupModels
-        });
+            if (app.userPreferences.pinnedValues.value.has(v.value.id.value))
+            {
+                pinnedModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), true, atRiskModel, v, {
+                    groupModels: groupModels
+                }));
+            }
+            else
+            {
+                newModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), false, atRiskModel, v, {
+                    groupModels: groupModels
+                }));
+            }
+        }
     }
 
     function addToModels(currentModels: GroupIconModel[], group: Field<Group>)
