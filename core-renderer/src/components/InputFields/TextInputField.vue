@@ -1,6 +1,6 @@
 <template>
-    <div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
-        <InputGroup 
+    <div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @click.right.stop="copyValue">
+        <InputGroup
             :pt="{
                 root: 'textInputFieldContainer__inputGroup'
             }">
@@ -177,6 +177,11 @@ export default defineComponent({
             ctx.emit("update:modelValue", value);
         }
 
+        function copyValue()
+        {
+            app.copyToClipboard(valuePlaceHolder.value);
+        }
+
         watch(() => props.modelValue, (newValue) =>
         {
             valuePlaceHolder.value = newValue;
@@ -223,7 +228,8 @@ export default defineComponent({
             labelBackgroundColor,
             inputIcon,
             onInput,
-            invalidate
+            invalidate,
+            copyValue
         };
     }
 })

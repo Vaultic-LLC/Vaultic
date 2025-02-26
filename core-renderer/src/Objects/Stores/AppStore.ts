@@ -20,6 +20,7 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
+import clipboard from "clipboardy";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -575,6 +576,34 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         this.internalUserLicense.value = response.LicenseStatus!;
+    }
+
+    public async copyToClipboard(value: string)
+    {
+        // writing to the clipboard will fail if the dom isn't focused
+        try
+        {
+            await navigator.clipboard.writeText(value);
+            app.popups.showToast("Copied", true);
+            setTimeout(function () 
+            {
+                try 
+                {
+                    const tempElement = document.createElement("input");
+                    tempElement.style.cssText = "width:0!important;padding:0!important;border:0!important;margin:0!important;outline:none!important;boxShadow:none!important;";
+                    document.body.appendChild(tempElement);
+                    tempElement.value = ' ' // Empty string won't work!
+                    tempElement.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(tempElement)
+                }
+                catch (e)  
+                {
+                    console.log(e);
+                }
+            }, 15000);
+        }
+        catch { }
     }
 }
 

@@ -469,11 +469,13 @@ export default defineComponent({
         watch(() => app.currentVault.filterStore.activePasswordFilters, (newValue, oldValue) =>
         {
             filter(DataType.Passwords, newValue, oldValue, passwords, app.currentVault.passwordStore.unpinnedPasswords);
+            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.filterStore.activeNameValuePairFilters, (newValue, oldValue) =>
         {
             filter(DataType.NameValuePairs, newValue, oldValue, nameValuePairs, app.currentVault.valueStore.unpinnedValues);
+            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.passwordStore.passwords.length, () =>

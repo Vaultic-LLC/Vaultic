@@ -1,5 +1,5 @@
 <template>
-    <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
+    <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @click.right.stop="copyValue">
         <div class="textInuptContainer">
             <FloatLabel variant="in" :dt="floatLabelStyle"
                 :pt="{
@@ -121,7 +121,6 @@ import SliderInput from './SliderInput.vue';
 import IonIcon from '../Icons/IonIcon.vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
-import clipboard from 'clipboardy';
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { InputColorModel } from '../../Types/Models';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
@@ -263,8 +262,12 @@ export default defineComponent({
 
         function copyValue()
         {
-            clipboard.write(inputText.value);
-            app.popups.showToast("Copied", true);
+            if (isLocked.value)
+            {
+                return;
+            }
+
+            app.copyToClipboard(inputText.value);
         }
 
         function focus()

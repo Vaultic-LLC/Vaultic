@@ -99,8 +99,11 @@
                 </template>
                 <template #body="slotProps">
                     <!-- Click handler needs its own div since cellWrapper has padding, which isn't clickable -->
-                    <div class="vaulticTableContainer__cellClickable" @click="() => column.onClick?.((slotProps.data as TableRowModel<any>).backingObject)">
-                        <div class="vaulticTableContainer__cellWrapper">
+                    <div class="vaulticTableContainer__cellWrapper" :class="{'vaulticTableContainer__cellWrapper--clickable': !!column.onClick}"
+                            @click="() => column.onClick?.((slotProps.data as TableRowModel<any>).backingObject)"
+                            @click.right.stop="!column.isGroupIconCell && !column.component ? 
+                                onTextClick(column, (slotProps.data as TableRowModel<any>).backingObject) : undefined">
+                        <div class="vaulticTableContainer__cell">
                             <!-- TODO Tooltip no longer works on group icons -->
                             <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
                                 <div v-for="model in (slotProps.data as TableRowModel<any>).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
@@ -185,6 +188,7 @@ import { tween } from '../../Helpers/TweenHelper';
 import * as TWEEN from '@tweenjs/tween.js';
 import { useConfirm } from "primevue/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
+import app from '../../Objects/Stores/AppStore';
 
 // Base Component for all Tables.
 // --- Scrollbar Color Usage ---
@@ -463,6 +467,18 @@ export default defineComponent({
             rowValues.value.push(...allRows.value.slice(start, start + rowsToLoad));
         }
 
+        function onTextClick(column: TableColumnModel, object: any)
+        {
+            if (column.isFielded === false)
+            {
+                app.copyToClipboard(object?.[column.field])
+            }
+            else
+            {
+                app.copyToClipboard(object?.value[column.field]?.value)
+            }
+        }
+
         watch(() => activeTableDataSource.value, () => 
         {
             reSetRowValues();
@@ -533,6 +549,7 @@ export default defineComponent({
             defaultSortField,
             defaultSortOrder,
             scrollbarClass,
+            onTextClick,
             checkScrollHeight,
             scrollToTop,
             calcScrollbarColor,
@@ -646,13 +663,16 @@ export default defineComponent({
     transform: rotate(180deg);
 }
 
-:deep(.vaulticTableContainer__cellClickable) {
+:deep(.vaulticTableContainer__cellWrapper) {
     width: 100%;
     height: 100%;
+}
+
+:deep(.vaulticTableContainer__cellWrapper--clickable) {
     cursor: pointer;
 }
 
-:deep(.vaulticTableContainer__cellWrapper) {
+:deep(.vaulticTableContainer__cell) {
     width: 100%;
     height: 100%;
     padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
