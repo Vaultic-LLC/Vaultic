@@ -56,7 +56,7 @@ export default defineComponent({
     column-gap: 10%;
     row-gap: 10%;
     z-index: 1;
-    grid-template-rows: repeat(3, clamp(30px, 7vh, 68px));
+    grid-template-rows: repeat(3, clamp(25px, 6vh, 68px));
     grid-template-columns: repeat(2, clamp(91px, 9vw, 205px));
     transition: 0.3s;
 }

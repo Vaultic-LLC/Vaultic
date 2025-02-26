@@ -10,7 +10,8 @@
         <div class="colorPaletteContainer" @click.stop="onPaletteSelected" @mouseenter="hoveringDisplay = true"
             @mouseleave="hoveringDisplay = false"
             :class="{ notCreated: !created, hover: hoveringDisplay || hoveringIcon }">
-            <SelectorButton v-if="created" :selectorButtonModel="selectorButtonModel" class="selectorButton" />
+            <SelectorButton v-if="created" :selectorButtonModel="selectorButtonModel" class="selectorButton" 
+                :width="'clamp(14px, 1.4vw, 30px)'" />
             <div v-else class="addColorIconContainer">
                 <IonIcon :name="'add-outline'" />
             </div>
@@ -188,7 +189,7 @@ export default defineComponent({
     height: 100%;
     width: 100%;
     min-width: 91.2px;
-    min-height: 30.2px;
+    min-height: 25px;
     margin: 10px;
 }
 
@@ -251,7 +252,7 @@ export default defineComponent({
 
 .colorPaletteContainer .passwordColor {
     background: v-bind(editIconBackgroundColor);
-    width: clamp(12px, 1.2vw, 30px);
+    width: clamp(12px, 1.4vw, 30px);
     aspect-ratio: 1/ 1;
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
@@ -259,7 +260,7 @@ export default defineComponent({
 
 .colorPaletteContainer .valuesColor {
     background: v-bind(valueBackgroundColor);
-    width: clamp(12px, 1.2vw, 30px);
+    width: clamp(12px, 1.4vw, 30px);
     aspect-ratio: 1/ 1;
     border-top-right-radius: 20px;
     border-bottom-right-radius: 20px;
