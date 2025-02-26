@@ -136,7 +136,7 @@ export const defaultColorPalettes: Map<string, Field<ColorPalette>> = new Map([
         tableColor: new Field("#161e29"),
         widgetColor: new Field("#2c2c3329"),
         errorColor: new Field("#FFFFFF"),
-        successColor: new Field("#45d741")
+        successColor: new Field("#FFFFFF")
     })]
 ]);
 

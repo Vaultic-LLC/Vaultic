@@ -80,7 +80,6 @@ export default defineComponent({
 .cloneFromColorPalettesContainer {
     position: absolute;
     right: 15%;
-    width: max(12vw, 150px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -103,9 +102,9 @@ export default defineComponent({
 }
 
 .cloneFromColorPalettesContainer .existingColorPalettes {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-rows: repeat(2, auto);
+    grid-template-columns: repeat(3, auto);
+    padding: 5px;
 }
 </style>

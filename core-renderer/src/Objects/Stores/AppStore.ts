@@ -587,6 +587,8 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             app.popups.showToast("Copied", true);
             setTimeout(function () 
             {
+                // You can't write to cilpboard if the document doesn't have focus, i.e. the user is on another app
+                // This is a workaround in order to clear the clipboard
                 try 
                 {
                     const tempElement = document.createElement("input");
