@@ -35,11 +35,13 @@
                         return className;
                     },                     
                     label: 'objectSingleSelectContainer__selectLabel',
+                    emptyMessage: 'objectSingleSelectContainer__emptyMessage',
                     option: ({ context }) => {
                         const style: { [key: string]: any} = 
                         {
                             'font-size': 'var(--input-font-size)',
-                            padding: 'clamp(3px, 0.5vw, 8px) 12px'
+                            padding: 'clamp(3px, 0.5vw, 8px) 12px',
+                            height: 'unset !important'  // sometimes the option has a height of 50px, override that
                         };
 
                         if (context.selected)
@@ -216,6 +218,7 @@ export default defineComponent({
             computedEmptyMessage,
             computedNoResultsMessage,
             onOptionClick,
+            invalidate
         }
     }
 })
@@ -315,5 +318,9 @@ export default defineComponent({
 
 .objectSingleSelectContainer__searchBar:focus {
     border-color: var(--objectSingleSelectContainer__searchBarColor) !important;
+}
+
+.objectSingleSelectContainer__emptyMessage {
+    font-size: clamp(14px, 1vw, 16px);
 }
 </style>

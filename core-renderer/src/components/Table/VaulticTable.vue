@@ -577,7 +577,7 @@ export default defineComponent({
 :deep(.vaulticTableContainer__header) {
     background: transparent;
     padding: 0;
-    height: clamp(30px, 5vh, 50px);
+    height: clamp(30px, 2.5vw, 50px);
 
     /* so that there isn't a little bit of border over the scrollbar on the right */
     width: calc(100% - clamp(7px, 0.7vw, 10px));

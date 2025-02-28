@@ -1,6 +1,6 @@
 <template>
     <div class="accountSetupPopupContainer">
-        <ObjectPopup ref="objectPopup" :height="'40%'" :width="'30%'" :minHeight="'450px'" :minWidth="'550px'"
+        <ObjectPopup ref="objectPopup" :height="'40%'" :width="'30%'" :minHeight="'400px'" :minWidth="'550px'"
             :preventClose="true" :glassOpacity="1" :showPulsing="true">
             <Transition name="fade" mode="out-in">
                 <div v-if="navigationStack.length > 0 && !disableBack" class="accountSetupPopupContainer__backButton"
@@ -229,7 +229,7 @@ export default defineComponent({
 
 .accountSetupPopupContainer__backButton {
     color: v-bind(primaryColor);
-    font-size: clamp(15px, 2vw, 25px);
+    font-size: clamp(20px, 1.5vw, 25px);
     position: absolute;
     top: 5%;
     left: 5%;
@@ -238,11 +238,9 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: v-bind(primaryColor);
-    width: clamp(20px, 2vw, 30px);
-    /* height: 30px; */
     aspect-ratio: 1 /1;
     cursor: pointer;
+    border: 1.5px solid v-bind(primaryColor);
 }
 
 .accountSetupPopupContainer__backButton::before {

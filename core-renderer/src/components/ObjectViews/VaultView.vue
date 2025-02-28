@@ -36,7 +36,6 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
-import VaulticTable from '../Table/VaulticTable.vue';
 import MemberTable from '../Table/MemberTable.vue';
 
 import app from "../../Objects/Stores/AppStore";
@@ -54,7 +53,6 @@ export default defineComponent({
         VaulticFieldset,
         CheckboxInputField,
         ObjectMultiSelect,
-        VaulticTable,
         MemberTable
     },
     props: ['creating', 'model'],

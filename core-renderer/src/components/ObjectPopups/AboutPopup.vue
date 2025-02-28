@@ -5,74 +5,69 @@
     </div>
     <div class="aboutPopupContainer">
         <Transition name="fade" mode="out-in">
-            <ScrollView v-if="activeSection == 0" class="aboutPopupContainer__sections" :color="primaryColor">
-                <div class="aboutPopupContainer__section aboutPopupContainer__storingMultifactorAuthKeysSection">
-                    <h2 class="aboutPopupContainer__section__header">Storing Multi Factor Authentication Keys</h2>
-                    <div class="aboutPopupContainer__section__text">
-                        It seems like almost everyone is using Multi Factor Authentication these days. Luckily, you can
-                        easily store your MFA Key in case you ever need to re set it up. Simply creat a Value with Type
-                        set to MFA Key and you'll be able to see the original QR Code in the Value Row
-                    </div>
-                    <div>
-                        <img class="aboutPopupContainer__image aboutPopupContainer__pickMFAKeyImage"
-                            src="../../assets/Files/pickMFAKey.png" />
-                        <img class="aboutPopupContainer__image aboutPopupContainer__selectRowImage"
-                            src="../../assets/Files/selectRow.png" />
-                        <img class="aboutPopupContainer__image aboutPopupContainer__qrCodeImage"
-                            src="../../assets/Files/qrCode.png" />
-                    </div>
-                </div>
-                <div class="aboutPopupContainer__section aboutPopupContainer__sectionHalfHeight">
-                    <h2 class="aboutPopupContainer__section__header">Metrics</h2>
-                    <div class="aboutPopupContainer__section__text">
-                        The Metric Gauges track important information about your data. But that's not all! Upon
-                        clicking them, the data
-                        that needs updating will be pinned to the top of the relevant table, allowing you to easily
-                        identify
-                        and fix it
-                    </div>
-                    <img class="aboutPopupContainer__image aboutPopupContainer__metricsImage"
-                        src="../../assets/Files/metrics.png" />
-                    <img class="aboutPopupContainer__image aboutPopupContainer__hoverAtRiskIconImage"
-                        src="../../assets/Files/hoverAtRiskIcon.png" />
-                </div>
-                <div class="aboutPopupContainer__section aboutPopupContainer__sectionHalfHeight">
-                    <h2 class="aboutPopupContainer__section__header">Searching</h2>
-                    <div class="aboutPopupContainer__section__text">
-                        Searching allows you to quickly find a record by one of its values. The one thing to remember
-                        about
-                        searching, though,
-                        is that ony the current sorted header column will be searched. If you want to search for a value
-                        in
-                        a different column,
-                        you'll have to sort on it first
-                    </div>
-                    <div>
-                        <img class="aboutPopupContainer__image aboutPopupContainer__clickingOnHeaderImage"
-                            src="../../assets/Files/clickingOnHeader.png" />
-                        <img class="aboutPopupContainer__image aboutPopupContainer__searchingImage"
-                            src="../../assets/Files/searching.png" />
-                        <img class="aboutPopupContainer__image aboutPopupContainer__searchedValueImage"
-                            src="../../assets/Files/searchedValue.png" />
-                    </div>
-                </div>
-                <div class="aboutPopupContainer__section">
-                    <h2 class="aboutPopupContainer__section__header">Graph Target</h2>
-                    <div class="aboutPopupContainer__section__text">
-                        Knowing how secure all your Passwords / Values should be is important. By default, the target
-                        line on
-                        the Password / Value Graph is turned off but, you can toggle
-                        it on by clicking on the Target Legend Icon.
-                    </div>
-                    <div>
-                        <img class="aboutPopupContainer__image aboutPopupContainer__graphHideTargetImage"
-                            src="../../assets/Files/graphHideTarget.png" />
-                        <img class="aboutPopupContainer__image aboutPopupContainer__graphShowTargetImage"
-                            src="../../assets/Files/graphShowTarget.png" />
-                    </div>
-                </div>
-            </ScrollView>
-            <ScrollView v-else class="aboutPopupContainer__sections" :color="primaryColor">
+            <ObjectView v-if="activeSection == 0" :color="primaryColor" :hideButtons="true">
+                <VaulticAccordion :value="'0'">
+                    <VaulticAccordionPanel :value="'0'">
+                        <VaulticAccordionHeader :title="'Shortcuts'" />
+                        <VaulticAccordionContent>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Right Click</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    Right click on any text table cell or input field to copy the value to your clip board
+                                </div>
+                            </div>
+                        </VaulticAccordionContent>
+                    </VaulticAccordionPanel>
+                    <VaulticAccordionPanel :value="'1'">
+                        <VaulticAccordionHeader :title="'Widgets'" />
+                        <VaulticAccordionContent>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Metrics</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    The Metric Gauges track important information about your data, but they also act as Filters. Upon clicking one,
+                                    only those specific records will be shown in its respective table allowing you to easily identify and fix them
+                                </div>
+                            </div>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Searching</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    Searching allows you to quickly find a record by one of its values. Searching is only done on the field that is currently being
+                                    sorted on. If you want to search on another field, you'll first have to change which field you are sorting on.
+                                </div>
+                            </div>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Graph Target</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    Knowing how secure all your Passwords and Values should be is important. By default, the target
+                                    line on
+                                    the Password or Value Graph is turned off but, you can toggle
+                                    it on by clicking on the Target Legend Icon.
+                                </div>
+                            </div>
+                        </VaulticAccordionContent>
+                    </VaulticAccordionPanel>
+                    <VaulticAccordionPanel :value="'2'" :final="true">
+                        <VaulticAccordionHeader :title="'Sharing'" />
+                        <VaulticAccordionContent>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Icons</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    There are two different sharing Icons, <IonIcon :name="'cloud-upload-outline'" /> and <IonIcon :name="'cloud-download-outline'" />. The former 
+                                    one denotes Vaults that you are sharing with other Users, while the latter one denotes Vaults that other Users are sharing with you.
+                                </div>
+                            </div>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Username</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    To keep your email hidden, a Username is used for sharing Vaults between Users. You can set your Username by going to the 
+                                    Sharing section in your Settings. You must set a Username in order for other Users to be able to share data with you.
+                                </div>
+                            </div>
+                        </VaulticAccordionContent>
+                    </VaulticAccordionPanel>
+                </VaulticAccordion>
+            </ObjectView>
+            <ObjectView v-else :color="primaryColor" :hideButtons="true">
                 <div class="aboutPopupContainer__section">
                     <h2>Terms and Conditions</h2>
                     // link to terms and conditions on website
@@ -101,7 +96,7 @@
                         vaultic.help@outlook.com
                     </div>
                 </div>
-            </ScrollView>
+            </ObjectView>
         </Transition>
     </div>
 </template>
@@ -111,7 +106,12 @@ import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 import TableSelector from '../TableSelector.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
-import ScrollView from "../ObjectViews/ScrollView.vue"
+import ObjectView from '../ObjectViews/ObjectView.vue';
+import VaulticAccordion from '../Accordion/VaulticAccordion.vue';
+import VaulticAccordionPanel from '../Accordion/VaulticAccordionPanel.vue';
+import VaulticAccordionHeader from '../Accordion/VaulticAccordionHeader.vue';
+import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
+import IonIcon from '../Icons/IonIcon.vue';
 
 import { InputColorModel, SingleSelectorItemModel, defaultInputColorModel } from '../../Types/Models';
 import { defaultInputTextColor } from '../../Types/Colors';
@@ -126,7 +126,12 @@ export default defineComponent({
         TableSelector,
         TextAreaInputField,
         PopupButton,
-        ScrollView
+        ObjectView,
+        VaulticAccordion,
+        VaulticAccordionPanel,
+        VaulticAccordionHeader,
+        VaulticAccordionContent,
+        IonIcon
     },
     setup()
     {
@@ -232,11 +237,7 @@ export default defineComponent({
 }
 
 .aboutPopupContainer__section {
-    direction: ltr;
-}
-
-.aboutPopupContainer__sectionHalfHeight {
-    height: 50%;
+    margin-bottom: clamp(30px, 3vw, 50px);
 }
 
 .aboutPopupContainer__section__header {

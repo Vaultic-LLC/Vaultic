@@ -2,6 +2,7 @@
     <div class="organizationDevicesTableContainer">
         <VaulticTable ref="tableRef" id="organizationDevicesTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" :allowPinning="!devicesAreSelected"
+            :searchBarSizeModel="searchBarSizeModel"
             :onPin="onPinOrganization" :onEdit="devicesAreSelected ? onEditDevice : onEditOrganization" 
             :onDelete="devicesAreSelected ? onDeleteDevice : onDeleteOrganization">
             <template #tableControls>
@@ -17,7 +18,7 @@ import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, react
 import VaulticTable from './VaulticTable.vue';
 import AddButton from './Controls/AddButton.vue';
 
-import { HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { ComponentSizeModel, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
@@ -135,6 +136,11 @@ export default defineComponent({
             ]
         });
 
+        const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
+            width: '9vw',
+            minWidth: '110px',
+        });
+
         async function setTableRows(mounting: boolean)
         {
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Devices)
@@ -151,7 +157,7 @@ export default defineComponent({
             {
                 const newOrganizationModels: TableRowModel<Organization>[] = [];
                 const newPinnedOrganizationModels: TableRowModel<Organization>[] = [];
-                    
+
                 app.organizations.organizations.value.forEach(o =>
                 {
                     if (app.userPreferences.pinnedOrganizations.value.has(o.organizationID))
@@ -262,6 +268,7 @@ export default defineComponent({
             emptyTableMessage,
             tableDataSources,
             showAdd,
+            searchBarSizeModel,
             onAdd,
             onEditDevice,
             onPinOrganization,

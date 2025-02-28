@@ -15,6 +15,7 @@
                     },
                     labelContainer: 'objectMultiSelectContainer__multiSelectLabelContainer',
                     label: 'objectMultiSelectContainer__multiSelectLabel',
+                    emptyMessage: 'objectMultiSelectContainer__emptyMessage',
                     // @ts-ignore
                     dropDownIcon: ({ state }) => {
                         let className = 'objectMultiSelectContainer__multiSelectDropDownIcon';
@@ -304,6 +305,10 @@ export default defineComponent({
 }
 
 .objectMultiSelectContainer__optionLabel {
+    font-size: clamp(14px, 1vw, 16px);
+}
+
+.objectMultiSelectContainer__emptyMessage {
     font-size: clamp(14px, 1vw, 16px);
 }
 </style>

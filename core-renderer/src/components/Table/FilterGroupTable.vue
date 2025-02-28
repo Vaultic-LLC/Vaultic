@@ -178,7 +178,7 @@ export default defineComponent({
         });
 
         const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
-            width: '9vw',
+            width: '8vw',
             maxWidth: '250px',
             minWidth: '85px',
             minHeight: '25px'

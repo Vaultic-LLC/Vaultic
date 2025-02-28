@@ -1,5 +1,5 @@
 <template>
-    <VaulticTable :id="id" :color="color" :columns="tableColumns" :loading="externalLoading"
+    <VaulticTable :id="id" :color="color" :columns="tableColumns" :loading="externalLoading" :searchBarSizeModel="searchBarSizeModel"
         :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :allowSearching="isOnline"
         :onEdit="hideEdit === true || disable === true ? undefined : onEditMember" :onDelete="disable === true ? undefined : onDeleteMember">
         <template #tableControls>
@@ -9,7 +9,7 @@
     <Popover ref="popover">
         <div class="memberTable__addMemberPopupContainer">
             <VaulticFieldset :centered="true">
-                <ObjectSingleSelect :label="'Member'" :color="color" :loading="loading" v-model="selectedUserDemographics"
+                <ObjectSingleSelect ref="memberSelector" :label="'Username'" :color="color" :loading="loading" v-model="selectedUserDemographics"
                     :options="allSearchedUserDemographics" :disabled="disableMemberSearch" :width="'100%'" :maxWidth="''"
                     :emptyMessage="'Start typing to search for Users'" :noResultsMessage="'No Users found with this Username'"
                     @onSearch="onUserSearch" @update:model-value="onUserSelected"/>
@@ -37,7 +37,7 @@ import EnumInputField from '../InputFields/EnumInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 
-import { HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { ComponentSizeModel, HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -64,6 +64,7 @@ export default defineComponent({
     setup(props)
     {
         const popover: Ref<any> = ref();
+        const memberSelector: Ref<any> = ref();
         const refreshKey: Ref<string> = ref("");
         const color: ComputedRef<string> = computed(() => props.color);
         const doHidePermissions: ComputedRef<boolean> = computed(() => props.hidePermissions === true);
@@ -120,6 +121,13 @@ export default defineComponent({
                     collection: memberCollection
                 }
             ]
+        });
+
+        const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
+            width: '8vw',
+            maxWidth: '250px',
+            minWidth: '85px',
+            minHeight: '25px'
         });
 
         function setTableRows()
@@ -221,6 +229,22 @@ export default defineComponent({
 
         function onUserSelected(model: ObjectSelectOptionModel)
         {
+            if (!model || !model.backingObject)
+            {
+                editingMember.value =
+                {
+                    userID: -1,
+                    firstName: '',
+                    lastName: '',
+                    username: '',
+                    permission: ServerPermissions.View,
+                    icon: undefined,
+                    publicEncryptingKey: undefined
+                };
+
+                return;
+            }
+
             const userDemographics: UserDemographics = model.backingObject;
             editingMember.value!.userID = userDemographics.UserID;
             editingMember.value!.firstName = userDemographics.FirstName;
@@ -237,6 +261,12 @@ export default defineComponent({
 
         function onSaveMember()
         {
+            if (!editingMember.value?.userID || editingMember.value.userID < 0)
+            {
+                memberSelector.value.invalidate("Please select a User");
+                return;
+            }
+
             editingMember.value!.permission = viewableServerPermissionsToServerPermissions(editingPermission.value);
             if (members.value.has(editingMember.value!.userID) && !addedMembers.has(editingMember.value!.userID))
             {
@@ -310,6 +340,7 @@ export default defineComponent({
 
         return {
             popover,
+            memberSelector,
             color,
             refreshKey,
             searchText,
@@ -325,6 +356,7 @@ export default defineComponent({
             disableMemberSearch,
             doHidePermissions,
             isOnline,
+            searchBarSizeModel,
             onOpenPopover,
             onDeleteMember,
             onSaveMember,
@@ -341,7 +373,7 @@ export default defineComponent({
 .memberTable__addMemberPopupContainer {
     display: flex;
     flex-direction: column;
-    row-gap: 10px;
+    row-gap: 21px;
     width: 15vw;
     justify-content: center;
     align-items: center;

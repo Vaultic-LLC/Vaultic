@@ -13,9 +13,9 @@
                 </ScrollView>
             </div>
             <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
-                <PopupButton :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
+                <PopupButton v-if="hideButtons !== true" :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
                     :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="computedMinButtonHeight" :height="'2vw'" @onClick="onSave" />
-                <PopupButton v-if="creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
+                <PopupButton v-if="hideButtons != true && creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
                     :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="computedMinButtonHeight"
                     :height="'2vw'" :isSubmit="true"
                     @onClick="onSaveAndClose" />
@@ -41,8 +41,8 @@ export default defineComponent({
         PopupButton,
         Message
     },
-    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 
-        'anchorButtonsDown', 'minButtonHeight'],
+    props: ['creating', 'title', 'color', 'defaultSave', 'buttonText', 'skipOnSaveFunctionality', 
+        'anchorButtonsDown', 'minButtonHeight', 'hideButtons'],
     setup(props)
     {
         const primaryColor: ComputedRef<string> = computed(() => props.color);
