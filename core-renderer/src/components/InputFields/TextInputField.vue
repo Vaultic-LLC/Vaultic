@@ -145,7 +145,7 @@ export default defineComponent({
 
             if (props.isEmailField)
             {
-                if (!/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(props.modelValue))
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(props.modelValue))
                 {
                     invalidate('Please enter a valid email');
                     return false;
