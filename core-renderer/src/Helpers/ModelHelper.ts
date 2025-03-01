@@ -118,13 +118,24 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         }
         else if (groupFilterType == DataType.Groups)
         {
+            const group: Group = v.value as unknown as Group;
+            const groupModels: GroupIconModel[] = [{
+                icon: group.icon.value,
+                toolTipText: group.name.value,
+                color: group.color.value
+            }];
+
             if (app.userPreferences.pinnedGroups.value.has(v.value.id.value))
             {
-                pinnedModels.push(new FieldedTableRowModel(filterGroupModelID.toString(), true, atRiskModel, v))
+                pinnedModels.push(new FieldedTableRowModel(filterGroupModelID.toString(), true, atRiskModel, v, {
+                    groupModels: groupModels
+                }));
             }
             else
             {
-                models.push(new FieldedTableRowModel(filterGroupModelID.toString(), false, atRiskModel, v));
+                models.push(new FieldedTableRowModel(filterGroupModelID.toString(), false, atRiskModel, v, {
+                    groupModels: groupModels
+                }));
             }
         }
     }

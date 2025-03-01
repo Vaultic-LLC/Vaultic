@@ -2,7 +2,7 @@
     <div class="vaulticTableContainer">
         <DataTable scrollable lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" :sortField="defaultSortField"
             :sortOrder="defaultSortOrder" :totalRecords="totalRecords" :paginator="!hidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" 
-            :loading="loading" resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
+            :loading="loading" resizableColumns columnResizeMode="fit" class="vaulticTableContainer__dataTable"
             @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor" @page="onPage"
             :pt="{
                 thead: 'vaulticTableContainer__thead',
@@ -618,9 +618,9 @@ export default defineComponent({
     outline: 1px solid v-bind(primaryColor) !important;
 }
 
-:deep(.vaulticTableContainer__headerCell--reOrderable) {
+/* :deep(.vaulticTableContainer__headerCell--reOrderable) {
     cursor: move;
-}
+} */
 
 :deep(.vaulticTableContainer__ControlsHeaderCell) {
     width: 10px !important;

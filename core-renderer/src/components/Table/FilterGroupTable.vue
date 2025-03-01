@@ -171,7 +171,7 @@ export default defineComponent({
             else
             {
                 models.push({ header: "Name", field: "name" });
-                models.push({ header: "Color", field: "color", component: 'ColorTableRowCell' });
+                models.push({ header: "Icon", field: "", isGroupIconCell: true, data: { 'color': color }, sortable: false });
             }
 
             return models;
