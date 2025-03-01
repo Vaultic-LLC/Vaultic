@@ -23,6 +23,7 @@ export default function setupIPC()
 	ipcMain.handle('sessionController:extend', (e) => validateSender(e, () => vaulticServer.session.extend()));
 
 	ipcMain.handle('userController:validateEmail', (e, email: string) => validateSender(e, () => vaulticServer.user.validateEmail(email)));
+	ipcMain.handle('userController:verifyEmail', (e, pendingUserToken: string, emailVerificationCode: string) => validateSender(e, () => vaulticServer.user.verifyEmail(pendingUserToken, emailVerificationCode)));
 	ipcMain.handle('userController:getDevices', (e) => validateSender(e, () => vaulticServer.user.getDevices()));
 	ipcMain.handle('userController:registerDevice', (e, name: string, requiresMFA: RequiresMFA) => validateSender(e, () => vaulticServer.user.registerDevice(name, requiresMFA)));
 	ipcMain.handle('userController:updateDevice', (e, name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => validateSender(e, () => vaulticServer.user.updateDevice(name, requiresMFA, desktopDeviceID, mobileDeviceID)));
@@ -67,7 +68,7 @@ export default function setupIPC()
 	ipcMain.handle('vaulticHelper:readCSV', (e) => validateSender(e, () => vaulticHelper.readCSV()));
 	ipcMain.handle('vaulticHelper:writeCSV', (e, fileName: string, data: string) => validateSender(e, () => vaulticHelper.writeCSV(fileName, data)));
 
-	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, email: string, firstName: string, lastName: string) => validateSender(e, () => serverHelper.registerUser(masterKey, email, firstName, lastName)));
+	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => validateSender(e, () => serverHelper.registerUser(masterKey, pendingUserToken, firstName, lastName)));
 	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData, mfaCode)));
 
 	ipcMain.handle('repositoryHelper:backupData', (e, masterKey: string) => validateSender(e, () => safeBackupData(masterKey)));

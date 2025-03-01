@@ -18,9 +18,13 @@
                     @onNotClearedData="() => accountSetupModel.clearAllDataOnLoad = true" />
                 <CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
                     :color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
+                <VerifyEmailView v-else-if="accountSetupModel.currentView == AccountSetupView.VerifyEmail"
+                    :color="primaryColor" :account="account" @onSuccess="onVerifyEmailSuccess"
+                    @onInvalidPendingUser="onInvalidPendingUser" />
                 <CreateMasterKeyView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateMasterKey"
                     :color="primaryColor" :account="account" @onSuccess="onCreateMasterKeySuccess"
-                    @onLoginFailed="onLoginFailedAfterRegistration" />
+                    @onLoginFailed="onLoginFailedAfterRegistration"
+                    @onInvalidPendingUser="onInvalidPendingUser" />
                 <CreateSubscriptionView v-else-if="accountSetupModel.currentView == AccountSetupView.SetupPayment ||
                     accountSetupModel.currentView == AccountSetupView.UpdatePayment ||
                     accountSetupModel.currentView == AccountSetupView.ReActivate" :color="primaryColor"
@@ -39,6 +43,7 @@ import SignInView from './SignInView.vue';
 import CreateSubscriptionView from './CreateSubscriptionView.vue';
 import CreateMasterKeyView from './CreateMasterKeyView.vue';
 import IonIcon from '../Icons/IonIcon.vue';
+import VerifyEmailView from './VerifyEmailView.vue';
 
 import { Account, AccountSetupModel, AccountSetupView } from '../../Types/Models';
 import { popups } from '../../Objects/Stores/PopupStore';
@@ -51,6 +56,7 @@ export default defineComponent({
     {
         ObjectPopup,
         CreateAccountView,
+        VerifyEmailView,
         SignInView,
         CreateSubscriptionView,
         CreateMasterKeyView,
@@ -90,15 +96,21 @@ export default defineComponent({
             accountSetupModel.value.currentView = AccountSetupView.CreateAccount;
         }
 
-        function onCreateAccoutViewSucceeded(firstName: string, lastName: string, email: string)
+        function onCreateAccoutViewSucceeded(firstName: string, lastName: string, email: string, pendingUserToken: string)
         {
             navigationStack.value.push(AccountSetupView.CreateAccount);
 
             account.value.firstName = firstName;
             account.value.lastName = lastName;
             account.value.email = email;
+            account.value.pendingUserToken = pendingUserToken;
 
             creatingAccount.value = true;
+            accountSetupModel.value.currentView = AccountSetupView.VerifyEmail;
+        }
+
+        function onVerifyEmailSuccess()
+        {
             accountSetupModel.value.currentView = AccountSetupView.CreateMasterKey;
         }
 
@@ -178,6 +190,19 @@ export default defineComponent({
             }
         }
 
+        function onInvalidPendingUser()
+        {
+            app.popups.showAlert('Error', 'An unrecoverable error has occured, please try again. If the issue persists', true);
+            account.value.email = '';
+            account.value.firstName = '';
+            account.value.lastName = '';
+            account.value.masterKey = '';
+            account.value.pendingUserToken = '';
+
+            navigationStack.value = [];
+            accountSetupModel.value.currentView = AccountSetupView.SignIn;
+        }
+
         watch(() => props.model.currentView, () =>
         {
             accountSetupModel.value = props.model;
@@ -206,6 +231,7 @@ export default defineComponent({
             zIndex: popupInfo.zIndex,
             moveToCreateAccount,
             onCreateAccoutViewSucceeded,
+            onVerifyEmailSuccess,
             moveToCreatePayment,
             navigateBack,
             close,
@@ -213,6 +239,7 @@ export default defineComponent({
             onCreateMasterKeySuccess,
             onFinish,
             onLoginFailedAfterRegistration,
+            onInvalidPendingUser
         }
     }
 })

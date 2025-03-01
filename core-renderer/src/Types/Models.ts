@@ -195,6 +195,7 @@ export enum AccountSetupView
     NotSet,
     SignIn,
     CreateAccount,
+    VerifyEmail,
     SetupPayment,
     UpdatePayment,
     ReActivate,
@@ -262,4 +263,5 @@ export interface Account
     lastName: string;
     email: string;
     masterKey: string;
+    pendingUserToken?: string;
 }

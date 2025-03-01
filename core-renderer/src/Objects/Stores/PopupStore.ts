@@ -12,7 +12,7 @@ import { api } from "../../API";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
-type PopupName = "loading" |
+export type PopupName = "loading" |
     "alert" |
     "devicePopup" |
     "globalAuth" |
@@ -48,7 +48,7 @@ export const popups: Popups =
     "requestAuth": { zIndex: 90, enterOrder: 4 },
     "breachedPasswords": { zIndex: 50 },
     "importSelection": { zIndex: 10 },
-    "defaultObjectPopup": { zIndex: 7 }
+    "defaultObjectPopup": { zIndex: 7, enterOrder: 5 }
 }
 
 export function createPopupStore()

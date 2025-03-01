@@ -1,4 +1,4 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, GetUserInfoResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, GetUserInfoResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, VerifyEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
@@ -19,6 +19,14 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
     {
         return axiosHelper.sts.post('User/ValidateEmail', {
             Email: email,
+        });
+    }
+
+    function verifyEmail(pendingUserToken: string, emailVerificationCode: string): Promise<VerifyEmailResponse>
+    {
+        return axiosHelper.sts.post('User/VerifyEmail', {
+            Token: pendingUserToken,
+            VerificationCode: emailVerificationCode
         });
     }
 
@@ -145,6 +153,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     return {
         validateEmail,
+        verifyEmail,
         getUserIDs,
         getDevices,
         registerDevice,

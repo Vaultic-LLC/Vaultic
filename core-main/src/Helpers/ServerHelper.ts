@@ -4,15 +4,14 @@ import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
-import { FinishRegistrationResponse, LogUserInResponse } from "@vaultic/shared/Types/Responses";
+import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
-import { EntityRepository } from "typeorm";
 
-async function registerUser(masterKey: string, email: string, firstName: string, lastName: string): Promise<FinishRegistrationResponse>
+async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
     // TODO: switch to argon2 hash
     const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
@@ -26,7 +25,7 @@ async function registerUser(masterKey: string, email: string, firstName: string,
             password: passwordHash.value
         });
 
-    const startResponse = await stsServer.registration.start(registrationRequest, email);
+    const startResponse = await stsServer.registration.start(registrationRequest, pendingUserToken);
     if (!startResponse.Success)
     {
         return startResponse;
@@ -38,7 +37,7 @@ async function registerUser(masterKey: string, email: string, firstName: string,
         password: passwordHash.value,
     });
 
-    return await stsServer.registration.finish(startResponse.PendingUserToken!, registrationRecord, firstName, lastName);
+    return await stsServer.registration.finish(pendingUserToken, registrationRecord, firstName, lastName);
 }
 
 async function logUserIn(masterKey: string, email: string,

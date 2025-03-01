@@ -32,6 +32,7 @@ const sessionController: SessionController =
 const userController: ClientUserController =
 {
     validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
+    verifyEmail: (pendingUserToken: string, emailVerificationCode: string) => ipcRenderer.invoke('userController:verifyEmail', pendingUserToken, emailVerificationCode),
     getDevices: () => ipcRenderer.invoke('userController:getDevices'),
     registerDevice: (name: string, requiresMFA: RequiresMFA) => ipcRenderer.invoke('userController:registerDevice', name, requiresMFA),
     updateDevice: (name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:updateDevice', name, requiresMFA, desktopDeviceID, mobileDeviceID),
@@ -98,7 +99,7 @@ const vaulticHelper: VaulticHelper =
 
 const serverHelper: ServerHelper =
 {
-    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
+    registerUser: (masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, pendingUserToken, firstName, lastName),
     logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData, mfaCode),
 };
 

@@ -32,6 +32,7 @@ import Message from 'primevue/message';
 
 import app from "../../Objects/Stores/AppStore";
 import { ClosePopupFuncctionKey, DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Constants/Keys';
+import { PopupName, popups } from '../../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: "ObjectView",
@@ -42,9 +43,11 @@ export default defineComponent({
         Message
     },
     props: ['creating', 'title', 'color', 'defaultSave', 'buttonText', 'skipOnSaveFunctionality', 
-        'anchorButtonsDown', 'minButtonHeight', 'hideButtons'],
+        'anchorButtonsDown', 'minButtonHeight', 'hideButtons', 'popupInfoOverride'],
     setup(props)
     {
+        const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupName] : popups.defaultObjectPopup;
+
         const primaryColor: ComputedRef<string> = computed(() => props.color);
         const buttonText: Ref<string> = ref(props.buttonText ? props.buttonText : props.creating ? "Create" : "Save and Close");
         const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
@@ -169,12 +172,12 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            app.popups.addOnEnterHandler(4, onSave);
+            app.popups.addOnEnterHandler(popupInfo.enterOrder ?? popups.defaultObjectPopup.enterOrder!, onSave);
         });
 
         onUnmounted(() =>
         {
-            app.popups.removeOnEnterHandler(4);
+            app.popups.removeOnEnterHandler(popupInfo.enterOrder ?? popups.defaultObjectPopup.enterOrder!);
         });
 
         return {

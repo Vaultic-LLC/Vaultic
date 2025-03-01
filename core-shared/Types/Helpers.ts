@@ -1,5 +1,5 @@
 import { TypedMethodResponse } from "./MethodResponse";
-import { FinishRegistrationResponse, GetUserDeactivationKeyResponse, LogUserInResponse } from "./Responses";
+import { FinishRegistrationResponse, GetUserDeactivationKeyResponse, LogUserInResponse, StartRegistrationResponse } from "./Responses";
 
 export interface ValidationHelper
 {
@@ -18,7 +18,7 @@ export interface VaulticHelper
 
 export interface ServerHelper
 {
-    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
+    registerUser: (masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => Promise<StartRegistrationResponse | FinishRegistrationResponse>;
     logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
 };
 

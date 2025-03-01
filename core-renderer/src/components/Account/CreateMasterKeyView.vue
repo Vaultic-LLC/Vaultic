@@ -60,7 +60,7 @@ export default defineComponent({
         CheckboxInputField,
         ButtonLink,
     },
-    emits: ['onSuccess', 'onLoginFailed'],
+    emits: ['onSuccess', 'onLoginFailed', 'onInvalidPendingUser'],
     props: ['color', 'account'],
     setup(props, ctx)
     {
@@ -106,7 +106,7 @@ export default defineComponent({
             }
 
             app.popups.showLoadingIndicator(props.color, "Creating Account");
-            const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
+            const response = await api.helpers.server.registerUser(key.value, account.value.pendingUserToken!, account.value.firstName,
                 account.value.lastName);
 
             if (response.Success)
@@ -164,6 +164,10 @@ export default defineComponent({
                 if (response.EmailIsTaken)
                 {
                     showAlertMessage("Email is already in use. Please use a different one");
+                }
+                else if (response.InvalidPendingUser)
+                {
+                    ctx.emit('onInvalidPendingUser');
                 }
                 else if (response.RestartOpaqueProtocol)
                 {
