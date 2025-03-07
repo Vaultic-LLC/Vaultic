@@ -7,9 +7,9 @@ import app from './core/Objects/Stores/AppStore';
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
-import PrimeVue from 'primevue/config';
+import PrimeVue from 'primevue-vaultic/config';
 import Aura from '@primevue/themes/aura';
-import ConfirmationService from 'primevue/confirmationservice';
+import ConfirmationService from 'primevue-vaultic/confirmationservice';
 import runAllTests, { runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/index"
 
 api.setAPI(window.api);

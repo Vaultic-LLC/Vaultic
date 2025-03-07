@@ -63,10 +63,10 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId, watch } from 'vue';
 
-import FloatLabel from "primevue/floatlabel";
-import InputText from 'primevue/inputtext';
-import Popover from 'primevue/popover';
-import MultiSelect, { MultiSelectAllChangeEvent, MultiSelectChangeEvent, MultiSelectState } from 'primevue/multiselect';
+import FloatLabel from "primevue-vaultic/floatlabel";
+import InputText from 'primevue-vaultic/inputtext';
+import Popover from 'primevue-vaultic/popover';
+import MultiSelect, { MultiSelectAllChangeEvent, MultiSelectChangeEvent } from 'primevue-vaultic/multiselect';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { widgetBackgroundHexString } from '../../Constants/Colors';

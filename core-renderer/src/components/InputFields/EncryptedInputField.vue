@@ -14,7 +14,8 @@
                             return 'encryptedInputFieldContainer__password'
                         }, 
                         pcInputText:
-                        { 
+                        {
+                            // @ts-ignore
                             root: ({ instance, context}) => 
                             {
                                 textFieldInstance = instance;
@@ -108,10 +109,10 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId, nextTick } from 'vue';
 
-import Password from "primevue/password";
-import FloatLabel from 'primevue/floatlabel';
-import Popover from 'primevue/popover';
-import Message from "primevue/message";
+import Password from "primevue-vaultic/password";
+import FloatLabel from 'primevue-vaultic/floatlabel';
+import Popover from 'primevue-vaultic/popover';
+import Message from "primevue-vaultic/message";
 import VaulticFieldset from './VaulticFieldset.vue';
 import TextInputField from './TextInputField.vue';
 import EnumInputField from './EnumInputField.vue';

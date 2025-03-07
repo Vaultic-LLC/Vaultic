@@ -9,7 +9,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import AccordionContent from 'primevue/accordioncontent';
+import AccordionContent from 'primevue-vaultic/accordioncontent';
 
 export default defineComponent({
     name: "VaulticAccordionContent",

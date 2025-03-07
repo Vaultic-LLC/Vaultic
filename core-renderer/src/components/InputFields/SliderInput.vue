@@ -20,8 +20,8 @@
 <script lang="ts">
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 
-import Slider from 'primevue/slider';
-import InputText from 'primevue/inputtext';
+import Slider from 'primevue-vaultic/slider';
+import InputText from 'primevue-vaultic/inputtext';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 
 export default defineComponent({

@@ -18,7 +18,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import AccordionPanel from 'primevue/accordionpanel';
+import AccordionPanel from 'primevue-vaultic/accordionpanel';
 
 export default defineComponent({
     name: "VaulticAccordionPanel",

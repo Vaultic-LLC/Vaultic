@@ -105,15 +105,15 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (devicesAreSelected.value)
             {
-                models.push({ header: "Name", field: "Name", isFielded: false });
-                models.push({ header: "Type", field: "type", isFielded: false });
-                models.push({ header: "Model", field: "Model", isFielded: false });
-                models.push({ header: "Version", field: "Version", isFielded: false });
+                models.push(new TableColumnModel("Name", "Name").setIsFielded(false));
+                models.push(new TableColumnModel("Type", "type").setIsFielded(false));
+                models.push(new TableColumnModel("Model", "Model").setIsFielded(false));
+                models.push(new TableColumnModel("Version", "Version").setIsFielded(false));
             }
             else 
             {
-                models.push({ header: "Name", field: "name", isFielded: false });
-                models.push({ header: "Vaults", field: "vaultIDsByVaultID", component: "VaultListCell", isFielded: false});
+                models.push(new TableColumnModel("Name", "name").setIsFielded(false));
+                models.push(new TableColumnModel("Vaults", "vaultIDsByVaultID").setComponent("VaultListCell").setIsFielded(false));
             }
 
             return models;

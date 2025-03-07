@@ -164,14 +164,16 @@ export default defineComponent({
             const models: TableColumnModel[] = [];
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                models.push({ header: "Active", field: "isActive", component: 'SelectorButtonTableRowCell', 
-                    data: { 'color': color, onClick: toggleFilter, startingWidth: '105px' }, onClick: toggleFilter });
-                models.push({ header: "Name", field: "name" });
+                models.push(new TableColumnModel("Active", "isActive").setComponent("SelectorButtonTableRowCell")
+                    .setData({ 'color': color, onClick: toggleFilter, startingWidth: '105px' }).setOnClick(toggleFilter));
+
+                models.push(new TableColumnModel("Name", "name"));
             }
             else
             {
-                models.push({ header: "Name", field: "name" });
-                models.push({ header: "Icon", field: "", isGroupIconCell: true, data: { 'color': color }, sortable: false });
+                models.push(new TableColumnModel("Name", "name"));
+                models.push(new TableColumnModel("Icon", "").setIsGroupIconCell(true).setData({ 'color': color })
+                    .setSortable(false));
             }
 
             return models;

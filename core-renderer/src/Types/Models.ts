@@ -16,7 +16,7 @@ export interface ComponentSizeModel
     maxWidth?: string;
 }
 
-export interface TableColumnModel 
+export class TableColumnModel
 {
     header: string;
     field: string;
@@ -27,6 +27,69 @@ export interface TableColumnModel
     data?: { [key: string]: any };
     sortable?: boolean;
     onClick?: (obj: any) => void;
+
+    constructor(columnHeader: string, columnField: string)
+    {
+        this.header = columnHeader;
+        this.field = columnField;
+    }
+
+    setIsFielded(isFielded: boolean)
+    {
+        this.isFielded = isFielded;
+        return this;
+    }
+
+    setStartingWidth(width: string)
+    {
+        this.startingWidth = width;
+        return this;
+    }
+
+    setComponent(component: string)
+    {
+        this.component = component;
+        return this;
+    }
+
+    setIsGroupIconCell(isGroupIconCell: boolean)
+    {
+        this.isGroupIconCell = isGroupIconCell;
+        return this;
+    }
+
+    setData(data: { [key: string]: any })
+    {
+        this.data = data;
+        return this;
+    }
+
+    setSortable(sortable: boolean)
+    {
+        this.sortable = sortable;
+        return this;
+    }
+
+    setOnClick(onClick: (obj: any) => void)
+    {
+        this.onClick = onClick;
+        return this;
+    }
+
+    getRawText(model: TableRowModel<any>)
+    {
+        if (this.isGroupIconCell || this.component)
+        {
+            return undefined;
+        }
+
+        if (this.isFielded === false)
+        {
+            return model.backingObject?.[this.field];
+        }
+
+        return model.backingObject?.value[this.field]?.value;
+    }
 }
 
 export class TableRowModel<T extends { [key: string]: any }>

@@ -49,13 +49,13 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId, watch } from 'vue';
 
-import FloatLabel from "primevue/floatlabel";
-import InputText from 'primevue/inputtext';
-import InputIcon from 'primevue/inputicon';
-import IconField from 'primevue/iconfield';
-import InputGroup from 'primevue/inputgroup';
-import InputGroupAddon from 'primevue/inputgroupaddon';
-import Message from "primevue/message";
+import FloatLabel from "primevue-vaultic/floatlabel";
+import InputText from 'primevue-vaultic/inputtext';
+import InputIcon from 'primevue-vaultic/inputicon';
+import IconField from 'primevue-vaultic/iconfield';
+import InputGroup from 'primevue-vaultic/inputgroup';
+import InputGroupAddon from 'primevue-vaultic/inputgroupaddon';
+import Message from "primevue-vaultic/message";
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';

@@ -21,7 +21,7 @@ import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import app from '../../Objects/Stores/AppStore';
 import { ObjectSelectOptionModel } from '../../Types/Models';
 import { UserVaultIDAndVaultID } from '@vaultic/shared/Types/Entities';
-import { useConfirm } from 'primevue/useconfirm';
+import { useConfirm } from 'primevue-vaultic/useconfirm';
 
 export default defineComponent({
     name: "ClearBreachesView",

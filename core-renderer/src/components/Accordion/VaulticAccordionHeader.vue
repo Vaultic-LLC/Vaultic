@@ -9,7 +9,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import AccordionHeader from 'primevue/accordionheader';
+import AccordionHeader from 'primevue-vaultic/accordionheader';
 
 export default defineComponent({
     name: "VaulticAccordionHeader",

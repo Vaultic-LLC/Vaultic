@@ -34,11 +34,11 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId } from 'vue';
 
-import FloatLabel from 'primevue/floatlabel';
-import InputText from 'primevue/inputtext';
-import ColorPicker from 'primevue/colorpicker';
-import IconField from 'primevue/iconfield';
-import Message from "primevue/message";
+import FloatLabel from 'primevue-vaultic/floatlabel';
+import InputText from 'primevue-vaultic/inputtext';
+import ColorPicker from 'primevue-vaultic/colorpicker';
+import IconField from 'primevue-vaultic/iconfield';
+import Message from "primevue-vaultic/message";
 
 import { ValidationFunctionsKey } from '../../Constants/Keys';
 import { widgetBackgroundHexString } from '../../Constants/Colors';

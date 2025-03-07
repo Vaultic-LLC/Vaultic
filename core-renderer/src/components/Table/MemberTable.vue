@@ -31,7 +31,7 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
-import Popover from 'primevue/popover';
+import Popover from 'primevue-vaultic/popover';
 import ObjectSingleSelect from '../InputFields/ObjectSingleSelect.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
@@ -101,11 +101,11 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = []
-            models.push({ header: "Username", field: "username", isFielded: false});
+            models.push(new TableColumnModel("Username", "username").setIsFielded(false));
 
             if (!doHidePermissions.value)
             {
-                models.push({ header: "Permissions", field: "permission", isFielded: false, component: 'PermissionsCell' });
+                models.push(new TableColumnModel("Permission", "permission").setIsFielded(false).setComponent("PermissionsCell"));
             }
 
             return models;

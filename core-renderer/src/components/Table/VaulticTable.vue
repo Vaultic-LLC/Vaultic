@@ -89,7 +89,9 @@
                 {{ emptyMessage }}
             </template>
             <Column v-for="(column) in columns" :key="column.field" :field="column.field" :header="column.header" :columnKey="getColumnID()" :sortable="column.sortable !== false" 
-                class="vaulticTableContainer__column" :headerStyle="{'width': `${column.startingWidth ?? 'auto'} !important`}"
+                class="vaulticTableContainer__column" :headerStyle="{'width': `${column.startingWidth ?? 'auto'} !important`}" :renderAsRawText="!column.isGroupIconCell && !column.component"
+                :getRawText="column.getRawText.bind(column)" :clickable="!!column.onClick" :onClick="(model: TableRowModel<any>) => column.onClick?.(model.backingObject)" 
+                :onRightClick="!column.isGroupIconCell && !column.component ? (model: TableRowModel<any>) => onTextClick(column, model.backingObject) : undefined"
                 :pt="{
                     headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__headerCell--reOrderable']
                 }">
@@ -104,7 +106,6 @@
                             @click.right.stop="!column.isGroupIconCell && !column.component ? 
                                 onTextClick(column, (slotProps.data as TableRowModel<any>).backingObject) : undefined">
                         <div class="vaulticTableContainer__cell">
-                            <!-- TODO Tooltip no longer works on group icons -->
                             <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
                                 <div v-for="model in (slotProps.data as TableRowModel<any>).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
                                     :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
@@ -116,12 +117,6 @@
                             </div>
                             <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel<any>).backingObject" 
                                 :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel<any>).state" :isFielded="column.isFielded" />
-                            <template v-else-if="column.isFielded === false">
-                                {{ (slotProps.data as TableRowModel<any>).backingObject?.[column.field] }}
-                            </template>
-                            <template v-else>
-                                {{ (slotProps.data as TableRowModel<any>).backingObject?.value[column.field]?.value }}
-                            </template>
                         </div>
                     </div>
                 </template>
@@ -164,9 +159,9 @@
 import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
-import DataTable, { DataTablePageEvent } from "primevue/datatable";
-import Column from 'primevue/column';
-import Button from 'primevue/button';
+import DataTable, { DataTablePageEvent } from "primevue-vaultic/datatable";
+import Column from 'primevue-vaultic/column';
+import Button from 'primevue-vaultic/button';
 import SearchBar from './Controls/SearchBar.vue';
 
 import AtRiskIndicator from "./AtRiskIndicator.vue";
@@ -186,7 +181,7 @@ import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import { tween } from '../../Helpers/TweenHelper';
 import * as TWEEN from '@tweenjs/tween.js';
-import { useConfirm } from "primevue/useconfirm";
+import { useConfirm } from "primevue-vaultic/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
 import app from '../../Objects/Stores/AppStore';
 
