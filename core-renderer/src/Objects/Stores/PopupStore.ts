@@ -67,7 +67,6 @@ export function createPopupStore()
     const alertLeftButton: Ref<ButtonModel | undefined> = ref(undefined);
     const alertRightButton: Ref<ButtonModel | undefined> = ref(undefined);
     const statusCode: Ref<number | undefined> = ref(undefined);
-    const logID: Ref<number | undefined> = ref(undefined);
     const axiosCode: Ref<string | undefined> = ref('');
 
     const accountSetupIsShowing: Ref<boolean> = ref(true);
@@ -174,13 +173,12 @@ export function createPopupStore()
         alertRightButton.value = undefined;
 
         showContactSupport.value = true;
-        logID.value = response.logID;
         statusCode.value = response?.statusCode;
         axiosCode.value = response?.axiosCode;
         alertIsShowing.value = true;
     }
 
-    function showErrorAlert(logid?: number)
+    function showErrorAlert()
     {
         alertTitle.value = undefined;
         alertMessage.value = undefined;
@@ -188,14 +186,12 @@ export function createPopupStore()
         alertRightButton.value = undefined;
 
         showContactSupport.value = true;
-        logID.value = logid
         alertIsShowing.value = true;
     }
 
     function showAlert(title: string, message: string, showContactSupportMessage: boolean,
         leftButton?: ButtonModel, rightButton?: ButtonModel)
     {
-        logID.value = undefined;
         statusCode.value = undefined;
         axiosCode.value = undefined;
 
@@ -220,14 +216,6 @@ export function createPopupStore()
 
     function showAccountSetup(view: AccountSetupView, message?: string, reloadAllDataIsToggled: boolean = false, clearAllData: boolean = true)
     {
-        // TODO: not needed? I think this was to prevent being redirected when on the payment or download activation key screen when session expires
-        // might not be needed after redoing the log flow?
-        // its preventing reloading data when the database fails to initalize
-        // if (accountSetupIsShowing.value)
-        // {
-        //     return;
-        // }
-
         accountSetupModel.value.reloadAllDataIsToggled = reloadAllDataIsToggled;
         accountSetupModel.value.infoMessage = message;
         accountSetupModel.value.currentView = view;
@@ -406,7 +394,6 @@ export function createPopupStore()
         get alertLeftButton() { return alertLeftButton.value; },
         get alertRightButton() { return alertRightButton.value; },
         get statusCode() { return statusCode.value },
-        get logID() { return logID.value },
         get axiosCode() { return axiosCode.value },
         get accountSetupIsShowing() { return accountSetupIsShowing.value },
         get accountSetupModel() { return accountSetupModel.value },

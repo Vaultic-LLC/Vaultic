@@ -109,8 +109,10 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        // TODO: Check update email on sever if isVaultic
-        if (updatingPassword.isVaultic.value && !app.isOnline)
+        // TODO: Check update email on sever if isVaultic. Need to update it in my database, for stripe, and locally. Would 
+        // preferably have this be the only way to update email, and not via a webhook but Idk if thats possible to prevent. Wil
+        // need to look into
+        if (updatingPassword.isVaultic.value && !app.isOnline && currentPassword.value.email.value != updatingPassword.email.value)
         {
             return false;
         }

@@ -9,18 +9,7 @@
                 <div class="unknownResponsePopup__body">
                     <div>
                         {{ computedMessage }}
-                        // TODO: this isn't setup to work
-                        <ButtonLink v-if="showContactSupport" :color="primaryColor" :text="'Contact Support'" />
-                    </div>
-                    <div v-if="statusCode">
-                        Staus Code: {{ statusCode }}
-                    </div>
-                    // TODO: remove this and statusCode now that we have logging. Users don't need to see this
-                    <div v-if="axiosCode">
-                        Network Code: {{ axiosCode }}
-                    </div>
-                    <div v-if="logID">
-                        Log ID: {{ logID }}
+                        <ButtonLink v-if="showContactSupport" :color="primaryColor" :text="'Contact Support'" @onClick="contactSupport" />
                     </div>
                 </div>
                 <div class="unknownResponsePopup__buttons">
@@ -58,7 +47,7 @@ export default defineComponent({
         ButtonLink
     },
     emits: ['onOk'],
-    props: ['title', 'message', 'showContactSupport', 'statusCode', 'logID', 'axiosCode', 'leftButton', 'rightButton'],
+    props: ['title', 'message', 'showContactSupport', 'statusCode', 'axiosCode', 'leftButton', 'rightButton'],
     setup(props, ctx)
     {
         const okButtonModel: ButtonModel = { text: "Ok", onClick: () => { } };
@@ -106,6 +95,11 @@ export default defineComponent({
             onOk();
         }
 
+        function contactSupport()
+        {
+            window.open('mailto:Vaultic.help@outlook.com')
+        }
+
         onMounted(() =>
         {
             app.popups.addOnEnterHandler(popupInfo.enterOrder!, onLeftButtonClick);
@@ -124,7 +118,8 @@ export default defineComponent({
             leftButton,
             onLeftButtonClick,
             onRightButtonClick,
-            onOk
+            onOk,
+            contactSupport
         }
     }
 })

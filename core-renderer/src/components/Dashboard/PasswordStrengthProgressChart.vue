@@ -49,7 +49,7 @@ import { RGBColor } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
 import { api } from '../../API';
 import { DataType } from '../../Types/DataTypes';
-import { LicenseStatus } from '@vaultic/shared/Types/ClientServerTypes';
+import { ChartData, LicenseStatus } from '@vaultic/shared/Types/ClientServerTypes';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler, zoomPlugin)
 
@@ -94,6 +94,9 @@ export default defineComponent({
             labels: toRaw(lableArray.value),
             datasets: getDataset()
         });
+
+        const passwordChartData: Ref<ChartData | undefined> = ref(undefined);
+        const valueChartData: Ref<ChartData | undefined> = ref(undefined);
 
         function updateData(newColor?: string, oldColor?: string)
         {
@@ -332,18 +335,19 @@ export default defineComponent({
             updateData(color.value, color.value);
         }
 
-        // TODO: I should cache the data instead of requesting it every time the table chanages. 
-        // only re request it if the data actually changes
-        async function recalcData()
+        async function refetchData()
         {
             if (!app.isOnline || app.userLicense != LicenseStatus.Active)
             {
                 return;
             }
 
+            // cache this in case it changes while the request is sending
+            const isForPassword = app.activePasswordValuesTable == DataType.Passwords;
+
             let newColor: string = "";
             let requestData: { Values: { current: number[], safe: number[]} } = { Values: { current: [], safe: [] } };
-            if (app.activePasswordValuesTable == DataType.Passwords)
+            if (isForPassword)
             {
                 // no need to send the request since we don't have enough data anyways
                 if (app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length < 2)
@@ -364,7 +368,7 @@ export default defineComponent({
                 newColor = app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
                 table.value = "Passwords";
             }
-            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            else
             {
                 // no need to send the request since we don't have enough data anyways
                 if (app.currentVault.valueStore.currentAndSafeValuesCurrent.length < 2)
@@ -396,10 +400,16 @@ export default defineComponent({
                 showStatusMessage.value = false;
                 statusMessage.value = "";
 
-                lableArray.value = response.ChartData!.Y;
-                chartOneArray.value = response.ChartData!.DataX;
-                target.value = response.ChartData!.TargetX;
-                max.value = response.ChartData!.Max;
+                if (isForPassword)
+                {
+                    passwordChartData.value = response.ChartData;
+                }
+                else
+                {
+                    valueChartData.value = response.ChartData;
+                }
+
+                setCurrentChartData(response.ChartData!);
             }
             else
             {
@@ -422,12 +432,47 @@ export default defineComponent({
 
         function onDataChange()
         {
-            recalcData();
+            refetchData();
+        }
+
+        function setCurrentChartData(chartData: ChartData | undefined)
+        {
+            if (!chartData)
+            {
+                chartOneArray.value = [];
+                return;
+            }
+
+            lableArray.value = chartData.Y;
+            chartOneArray.value = chartData.DataX;
+            target.value = chartData.TargetX;
+            max.value = chartData.Max; 
         }
 
         watch(() => app.activePasswordValuesTable, () =>
         {
-            recalcData();
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                if (!passwordChartData.value)
+                {
+                    refetchData();
+                }
+                else
+                {
+                    setCurrentChartData(passwordChartData.value);
+                }
+            }
+            else if (app.activePasswordValuesTable == DataType.NameValuePairs)
+            {
+                if (!valueChartData.value)
+                {
+                    refetchData();
+                }
+                else
+                {
+                    setCurrentChartData(valueChartData.value);
+                }
+            }
         });
 
         watch(() => app.userPreferences.currentColorPalette, (newValue, oldValue) =>
@@ -455,6 +500,18 @@ export default defineComponent({
             {
                 showStatusMessage.value = true;
                 statusMessage.value = `Not enough data. Add at least 2 ${app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"} to get started.`;
+            }
+        });
+
+        watch(() => app.loadedUser.value, () =>
+        {
+            if (!app.loadedUser.value)
+            {
+                passwordChartData.value = undefined;
+                valueChartData.value = undefined;
+
+                setCurrentChartData(undefined);
+                updateData();
             }
         });
 

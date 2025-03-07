@@ -312,6 +312,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             }
         }
 
+        app.popups.showAlert('test', 'test', true);
         return true;
     }
 
@@ -515,12 +516,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         return await this.internalLoadUserData(masterKey);
-    }
-
-    // TODO: post release
-    public shareToVault<T>(value: T, toVault: number)
-    {
-
     }
 
     public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
