@@ -140,13 +140,25 @@
                             </div>
                         </div>
                         <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel<any>).isPinned === true, data)">
-                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel<any>).isPinned === true}" :name="'magnet-outline'" />
+                            <div class="rowIcon magnet vaulticIonIcon md hydrated" :class="{ isPinned: (data as TableRowModel<any>).isPinned === true}" :name="'magnet-outline'" role="img">
+                                <div class="icon-inner">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M421.83 293.82A144 144 0 00218.18 90.17M353.94 225.94a48 48 0 00-67.88-67.88" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32"/><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32" d="M192 464v-48M90.18 421.82l33.94-33.94M48 320h48"/><path d="M286.06 158.06L172.92 271.19a32 32 0 01-45.25 0L105 248.57a32 32 0 010-45.26L218.18 90.17M421.83 293.82L308.69 407a32 32 0 01-45.26 0l-22.62-22.63a32 32 0 010-45.26l113.13-113.17M139.6 169.98l67.88 67.89M275.36 305.75l67.89 67.88" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32"/></svg>
+                                </div>
+                            </div>
                         </div>
                         <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit((data as TableRowModel<any>).backingObject, e)">
-                            <IonIcon class="rowIcon edit" :name="'create-outline'" />
+                            <div class="rowIcon edit vaulticIonIcon md hydrated" role="img">
+                                <div class="icon-inner">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M384 224v184a40 40 0 01-40 40H104a40 40 0 01-40-40V168a40 40 0 0140-40h167.48" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path stroke="currentColor" d="M459.94 53.25a16.06 16.06 0 00-23.22-.56L424.35 65a8 8 0 000 11.31l11.34 11.32a8 8 0 0011.34 0l12.06-12c6.1-6.09 6.67-16.01.85-22.38zM399.34 90L218.82 270.2a9 9 0 00-2.31 3.93L208.16 299a3.91 3.91 0 004.86 4.86l24.85-8.35a9 9 0 003.93-2.31L422 112.66a9 9 0 000-12.66l-9.95-10a9 9 0 00-12.71 0z"/></svg>
+                                </div>
+                            </div>
                         </div>
                         <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm((data as TableRowModel<any>).backingObject)">
-                            <IonIcon class="rowIcon delete" :name="'trash-outline'" />
+                            <div class="rowIcon delete vaulticIonIcon md hydrated" role="img">
+                                <div class="icon-inner">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M112 112l20 320c.95 18.49 14.4 32 32 32h184c17.67 0 30.87-13.51 32-32l20-320" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32" d="M80 112h352"/><path d="M192 112V72h0a23.93 23.93 0 0124-24h80a23.93 23.93 0 0124 24h0v40M256 176v224M184 176l8 224M328 176l-8 224" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </template>
