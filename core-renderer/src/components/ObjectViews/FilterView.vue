@@ -83,12 +83,14 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const tableColumnsModels: TableColumnModel[] = [];
-            tableColumnsModels.push({ header: "Property", field: "property", component: "PropertySelectorCell",
-                data: { color: color.value, properties: displayFieldOptions.value, label: "Property" }, sortable: false });
-            tableColumnsModels.push({ header: "Condition", field: "filterType", component: "EnumInputCell", 
-                data: { color: color.value, label: "Condition" }, sortable: false });
-            tableColumnsModels.push({ header: "Value", field: "value", component: "FilterValueSelectorCell", 
-                data: { color: color.value }, sortable: false });
+            tableColumnsModels.push(new TableColumnModel("Property", "property").setComponent("PropertySelectorCell")
+                .setData({ color: color.value, properties: displayFieldOptions.value, label: "Property" }).setSortable(false));
+
+            tableColumnsModels.push(new TableColumnModel("Condition", "filterType").setComponent("EnumInputCell")
+                .setData({ color: color.value, label: "Condition" }).setSortable(false));
+
+            tableColumnsModels.push(new TableColumnModel("Value", "value").setComponent("FilterValueSelectorCell")
+                .setData({ color: color.value }).setSortable(false));
 
             return tableColumnsModels;
         });

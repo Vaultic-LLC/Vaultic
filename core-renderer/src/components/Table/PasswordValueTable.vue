@@ -108,15 +108,15 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                models.push({ header: "Groups", field: "groups", isGroupIconCell: true, data: { 'color': color }, startingWidth: '105px' });
-                models.push({ header: "Password For", field: "passwordFor" });
-                models.push({ header: "Username", field: "login" });
+                models.push(new TableColumnModel("Groups", "groups").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('105px'));
+                models.push(new TableColumnModel("Password For", "passwordFor"));
+                models.push(new TableColumnModel("Username", "login"));
             }
             else
             {
-                models.push({ header: "Groups", field: "groups", isGroupIconCell: true, data: { 'color': color }, startingWidth: '105px' });
-                models.push({ header: "Name", field: "name" });
-                models.push({ header: "Type", field: "valueType" });
+                models.push(new TableColumnModel("Groups", "groups").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('105px'));
+                models.push(new TableColumnModel("Name", "name"));
+                models.push(new TableColumnModel("Type", "vauleType"));
             }
 
             return models;

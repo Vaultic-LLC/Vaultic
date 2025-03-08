@@ -1,7 +1,7 @@
 <template>
     <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @click.right.stop="copyValue">
         <div class="textInuptContainer">
-            <FloatLabel variant="in" :dt="floatLabelStyle"
+            <FloatLabel variant="in"
                 :pt="{
                     root: 'encryptedInputFieldContainer__floatLabel'
                 }">
@@ -14,7 +14,8 @@
                             return 'encryptedInputFieldContainer__password'
                         }, 
                         pcInputText:
-                        { 
+                        {
+                            // @ts-ignore
                             root: ({ instance, context}) => 
                             {
                                 textFieldInstance = instance;
@@ -108,10 +109,10 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId, nextTick } from 'vue';
 
-import Password from "primevue/password";
-import FloatLabel from 'primevue/floatlabel';
-import Popover from 'primevue/popover';
-import Message from "primevue/message";
+import Password from "primevue-vaultic/password";
+import FloatLabel from 'primevue-vaultic/floatlabel';
+import Popover from 'primevue-vaultic/popover';
+import Message from "primevue-vaultic/message";
 import VaulticFieldset from './VaulticFieldset.vue';
 import TextInputField from './TextInputField.vue';
 import EnumInputField from './EnumInputField.vue';
@@ -194,22 +195,6 @@ export default defineComponent({
         const appSettings: Ref<Field<AppSettings>> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
 
         const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
-
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: colorModel.value.color
-                },
-                invalid:
-                {
-                    color: errorColor.value
-                }
-            }
-        });
 
         function unlock()
         {
@@ -375,7 +360,6 @@ export default defineComponent({
             focus,
             validate,
             invalidate,
-            floatLabelStyle,
             inputBackgroundColor,
             computedFeedback,
             randomPasswordPreview,
@@ -492,8 +476,17 @@ export default defineComponent({
     font-size: var(--input-label-active-font-size) !important;
 }
 
+:deep(.p-floatlabel:has(input:focus) .encryptedInputFieldContainer__label) {
+    color: v-bind('colorModel.color') !important;
+}
+
+:deep(.p-floatlabel:has(.p-invalid) .encryptedInputFieldContainer__label) {
+    color: v-bind(errorColor) !important;
+}
+
 :deep(.encryptedInputFieldContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 
 .encryptedInputFieldContainer__randomPasswordPopover {

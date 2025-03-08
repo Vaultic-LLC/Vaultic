@@ -24,8 +24,8 @@ import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
 
 import ObjectView from '../ObjectViews/ObjectView.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
-import InputOtp from "primevue/inputotp";
-import Message from 'primevue/message';
+import InputOtp from "primevue-vaultic/inputotp";
+import Message from 'primevue-vaultic/message';
 import VaulticOTP from './VaulticOTP.vue';
 
 import app from '../../Objects/Stores/AppStore';

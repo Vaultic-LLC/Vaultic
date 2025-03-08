@@ -18,9 +18,7 @@
                 <WidgetSubscriptionMessage />
             </div>
             <div class="breachedPasswordsContainer__items" v-else-if="!failedToLoad">
-                <!-- // TODO: replace with list of vault + number of breaches in vault -->
                 <div class="breachedPasswordsContainer__map">
-                    <!-- <WorldMap :scan="scanning" /> -->
                     <VaulticTable id="breachPasswordsByVault" :color="color" :columns="tableColumns" 
                         :dataSources="tableDataSources" :emptyMessage="'No Data Breaches for any Vaults'" :loading="scanning"
                         :allowSearching="false" :hidePaginator="true" :allowPinning="false" :smallRows="true" />
@@ -83,8 +81,8 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = []
-            models.push({ header: "Vault", field: "vault", isFielded: false });
-            models.push({ header: "Breaches", field: "breachCount", isFielded: false });
+            models.push(new TableColumnModel("Vault", "vault").setIsFielded(false));
+            models.push(new TableColumnModel("Breaches", "breachCount").setIsFielded(false));
 
             return models;
         });

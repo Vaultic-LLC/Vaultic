@@ -126,10 +126,11 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = [];
-            models.push({ header: "Question", field: "question", component: "EncryptedInputCell", 
-                data: { color: color.value, label: 'Question', onDirty: onQuestionDirty }, sortable: false });
-            models.push({ header: "Answer", field: "answer", component: "EncryptedInputCell", 
-                data: { color: color.value, label: 'Answer', onDirty: onAnswerDirty }, sortable: false });  
+            models.push(new TableColumnModel("Question", "question").setComponent("EncryptedInputCell")
+                .setData({ color: color.value, label: 'Question', onDirty: onQuestionDirty }).setSortable(false));
+
+            models.push(new TableColumnModel("Answer", "answer").setComponent("EncryptedInputCell")
+                .setData({ color: color.value, label: 'Answer', onDirty: onAnswerDirty }).setSortable(false)); 
         
             return models;
         });
