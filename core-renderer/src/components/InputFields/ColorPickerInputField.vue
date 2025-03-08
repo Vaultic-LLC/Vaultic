@@ -1,6 +1,6 @@
 <template>
     <div class="colorPickerInputFieldContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle"
+        <FloatLabel variant="in"
             :pt="{
                 root: 'colorPickerInputFieldContainer__floatLabel'
             }">
@@ -11,7 +11,7 @@
                         'colorPickerInputFieldContainer__inputText': true
                     }
                 }
-            }" :fluid="true" :invalid="isInvalid" :id="id" v-model="pickedColor" :dt="inputStyle" @update:model-value="onColorSelected" />
+            }" :fluid="true" :invalid="isInvalid" :id="id" v-model="pickedColor" @update:model-value="onColorSelected" />
             <label class="colorPickerInputFieldContainer__label" :for="id">{{ label }}</label>
             <ColorPicker :pt="{
                 root: 'colorPickerIcon',
@@ -21,7 +21,7 @@
                     },
                     class: 'colorPickerInputFieldContainer__colorPreview'
                 }
-            }" v-model="pickedColor" :disabled="true" :defaultColor="defaultColor" />
+            }" v-model="pickedColor" :disabled="true" :defaultColor="defaultColor" :format="'hex'" />
         </FloatLabel>
         <Message v-if="isInvalid" severity="error" variant="simple" size="small" 
                 :pt="{
@@ -60,6 +60,7 @@ export default defineComponent({
     {
         const id = ref(useId());
         
+        const backgroundColor: Ref<string> = ref(widgetBackgroundHexString());
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
         let defaultColor: Ref<string> = ref(widgetBackgroundHexString());
         let pickedColor: Ref<string> = ref(props.modelValue);
@@ -76,37 +77,6 @@ export default defineComponent({
         const invalidMessage: Ref<string> = ref('');
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
-
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: props.color,
-                },
-                invalid:
-                {
-                    color: errorColor.value
-                }
-            }
-        });
-
-        let inputStyle = computed(() => {
-            return {
-                focus: 
-                {
-                    borderColor: props.color
-                },
-                background: widgetBackgroundHexString(),
-                invalid: 
-                {
-                    borderColor: errorColor.value,
-                    placeholderColor: errorColor.value
-                }
-            }
-        });
 
         function validate()
         {
@@ -144,10 +114,10 @@ export default defineComponent({
 
         return {
             id,
-            floatLabelStyle,
-            inputStyle,
+            backgroundColor,
             defaultColor,
             pickedColor,
+            errorColor,
             isInvalid,
             invalidMessage,
             onColorSelected,
@@ -186,6 +156,15 @@ export default defineComponent({
 :deep(.colorPickerInputFieldContainer__inputText) {
     height: 100%;
     font-size: var(--input-font-size) !important;
+    background: v-bind(backgroundColor) !important;
+}
+
+:deep(.colorPickerInputFieldContainer__inputText:focus) {
+    border-color: v-bind(color) !important;
+}
+
+:deep(.colorPickerInputFieldContainer__inputText.p-invalid) {
+    border-color: v-bind(errorColor) !important;
 }
 
 :deep(.colorPickerInputFieldContainer__label) {
@@ -196,6 +175,14 @@ export default defineComponent({
 :deep(.p-floatlabel-in:has(input.p-filled) .colorPickerInputFieldContainer__label) {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.p-floatlabel:has(input:focus) .colorPickerInputFieldContainer__label) {
+    color: v-bind(color) !important;
+}
+
+:deep(.p-floatlabel:has(.p-invalid) .colorPickerInputFieldContainer__label) {
+    color: v-bind(errorColor);
 }
 
 .colorPickerIcon {
@@ -213,9 +200,11 @@ export default defineComponent({
 :deep(.colorPickerInputFieldContainer__colorPreview) {
     height: clamp(15px, 1vw, 24px) !important;
     width: clamp(15px, 1vw, 24px) !important;
+    background: v-bind(pickedColor) !important;
 }
 
 :deep(.colorPickerInputFieldContainer__messageText) {
+    color: v-bind(errorColor);
     font-size: clamp(9px, 1vw, 14px) !important;
 }
 </style>

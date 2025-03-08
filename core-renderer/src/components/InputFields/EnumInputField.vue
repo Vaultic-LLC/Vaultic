@@ -1,15 +1,18 @@
 <template>
     <div class="dropDownContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle"
+        <FloatLabel variant="in"
             :pt="{
                 root: 'dropDownContainer__floatLabel'
             }">
             <Select 
                 :pt="{
-                    root: {
-                        class: { 
-                            'dropDownContainer__select': true,
-                            'dropDownContainer__select--invalid': isInvalid
+                    root: ({state}) => {
+                        return {
+                            class: { 
+                                'dropDownContainer__select': true,
+                                'dropDownContainer__select--invalid': isInvalid,
+                                'dropDownContainer__select--focus': state.focused
+                            }
                         }
                     },
                     clearIcon: 'dropDownContainer__clearIcon',
@@ -115,22 +118,6 @@ export default defineComponent({
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: props.color
-                },
-                invalid: 
-                {
-                    color: errorColor.value
-                }
-            }
-        });
-
         function onOptionClick(value: any)
         {
             isInvalid.value = false;
@@ -197,7 +184,6 @@ export default defineComponent({
         return {
             id,
             errorColor,
-            floatLabelStyle,
             selectBackgroundColor,
             refreshKey,
             options,
@@ -229,14 +215,6 @@ export default defineComponent({
     min-width: v-bind(computedMinWidth);
 }
 
-.primeVueSelect {
-    background: v-bind(selectBackgroundColor);
-}
-
-.primeVueSelect.p-focus {
-    border: 1px solid v-bind(color) !important;
-}
-
 :deep(.dropDownContainer__message) {
     transform: translateX(5px);
     margin-top: 1px;
@@ -246,12 +224,17 @@ export default defineComponent({
     border-color: v-bind(errorColor) !important;
 }
 
+:deep(.dropDownContainer__select--focus) {
+    border: 1px solid v-bind(color) !important;
+}
+
 :deep(.dropDownContainer__floatLabel) {
     height: 100%;
 }
 
 :deep(.dropDownContainer__select) {
     height: 100%;
+    background: v-bind(selectBackgroundColor) !important;
 }
 
 :deep(.dropDownContainer__selectLabel) {
@@ -280,13 +263,22 @@ export default defineComponent({
     transform: rotate(180deg);
 }
 
-.p-floatlabel-in:has(.p-inputwrapper-focus) .dropDownContainer__label, 
-.p-floatlabel-in:has(.p-inputwrapper-filled) .dropDownContainer__label {
+.p-floatlabel-in:has(.p-inputwrapper-focus) label.dropDownContainer__label, 
+.p-floatlabel-in:has(.p-inputwrapper-filled) label.dropDownContainer__label {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
 }
 
+:deep(.p-floatlabel:has(.p-inputwrapper-focus) .dropDownContainer__label) {
+    color: v-bind(color) !important;
+}
+
+:deep(.p-floatlabel:has(.p-invalid) .dropDownContainer__label) {
+    color: v-bind(errorColor) !important;
+}
+
 :deep(.dropDownContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 </style>

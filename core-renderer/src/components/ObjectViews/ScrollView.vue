@@ -1,10 +1,5 @@
 <template>
     <ScrollPanel style="width: 100%; height: 100%"
-        :dt="{
-            bar: {
-                background: primaryColor
-            }
-        }" 
         :pt="{
             content: 'scrollView__content',
             barY: 'scrollView__barY'
@@ -44,5 +39,9 @@ export default defineComponent({
 
 .scrollView__barY {
     width: clamp(5px, .5vw, 9px) !important;
+}
+
+.p-scrollpanel-bar {
+    background: v-bind(primaryColor) !important;
 }
 </style>

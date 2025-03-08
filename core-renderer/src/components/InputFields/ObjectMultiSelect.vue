@@ -1,14 +1,21 @@
 <template>
     <div class="objectMultiSelectContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle"
+        <FloatLabel variant="in"
             :pt="{
                 root: 'objectMultiSelectContainer__floatLabel'
             }">
-            <MultiSelect :fluid="true" :dt="inputStyle" :id="id" v-model="selectedItemsPlaceHolder" :options="options" optionLabel="label"
+            <MultiSelect :fluid="true" :id="id" v-model="selectedItemsPlaceHolder" :options="options" optionLabel="label"
                 filter :virtualScrollerOptions="{ itemSize: 50 }" @selectall-change="onSelectAllChange($event)" @change="onChange($event)" :appendTo="'self'"
                 :emptyMessage="computedEmptyMessage" 
                 :pt="{
-                    root: 'objectMultiSelectContainer__multiSelect',
+                    root: ({state}) =>{
+                        return {
+                            class: {
+                                'objectMultiSelectContainer__multiSelect': true,
+                                'objectMultiSelectContainer__multiSelect--focus': state.focused
+                            }
+                        }
+                    },
                     virtualScroller: {
                         root: 'objectMultiSelectContainer__virtualScroller',
                         spacer: 'objectMultiSelectContainer__virtualScrollerSpacer'
@@ -105,28 +112,6 @@ export default defineComponent({
 
         const computedEmptyMessage: ComputedRef<string> = computed(() => props.emptyMessage ? props.emptyMessage : "No available options");
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus:
-                {
-                    color: props.color,
-                }
-            }
-        });
-
-        let inputStyle = computed(() => {
-            return {
-                focus: 
-                {
-                    borderColor: props.color
-                },
-                background: widgetBackgroundHexString(),
-            }
-        });
-
         const onSelectAllChange = (event: MultiSelectAllChangeEvent) => 
         {
             selectedItemsPlaceHolder.value = event.checked ? options.value : [];
@@ -175,8 +160,6 @@ export default defineComponent({
             id,
             selectedItemsPlaceHolder,
             selectAll,
-            floatLabelStyle,
-            inputStyle,
             defaultInputColor,
             defaultInputTextColor,
             background,
@@ -212,6 +195,11 @@ export default defineComponent({
 
 :deep(.objectMultiSelectContainer__multiSelect) {
     height: 100%;
+    background: v-bind(background) !important;
+}
+
+:deep(.objectMultiSelectContainer__multiSelect--focus) {
+    border-color: v-bind(color) !important;
 }
 
 :deep(.objectMultiSelectContainer__multiSelectLabelContainer) {
@@ -237,10 +225,14 @@ export default defineComponent({
     font-size: var(--input-font-size) !important;
 }
 
-:deep(.p-floatlabel-in:has(.p-inputwrapper-focus)) label, 
-:deep(.p-floatlabel-in:has(.p-inputwrapper-filled)) label {
+:deep(.p-floatlabel-in:has(.p-inputwrapper-focus)) label.objectMultiSelectContainer__label, 
+:deep(.p-floatlabel-in:has(.p-inputwrapper-filled)) label.objectMultiSelectContainer__label {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.p-floatlabel:has(input:focus) .objectMultiSelectContainer__label) {
+    color: v-bind(color) !important;
 }
 
 :deep(.objectMultiSelectContainer__optionItem) {

@@ -1,6 +1,6 @@
 <template>
 	<div class="searchBarContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle"
+        <FloatLabel variant="in"
             :pt="{
                 root: 'searchBarContainer__floatLabel'
             }">
@@ -12,7 +12,7 @@
                     :pt="{
                         root: 'searchBarContainer__inputIcon'
                     }" />
-                <InputText :dt="inputStyle" size="small" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput"
+                <InputText size="small" :id="id" v-model="placeholderValue" :fluid="true" autocomplete="off" @update:model-value="onInput"
                     :pt="{
                         root: 'searchBarContainer__inputText'
                     }" />
@@ -48,6 +48,7 @@ export default defineComponent({
 	{
         const id = ref(useId());
 
+        const background: Ref<string> = ref(widgetBackgroundHexString());
         const sizeModel: ComputedRef<ComponentSizeModel> = computed(() => props.sizeModel);
 
 		const computedWidth: ComputedRef<string> = computed(() => sizeModel.value?.width ?? "300px");
@@ -57,28 +58,6 @@ export default defineComponent({
         const modelValue: Ref<string> = ref(props.modelValue);
         const placeholderValue: Ref<string> = ref(modelValue.value);
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: props.color,
-                }
-            }
-        });
-
-        let inputStyle = computed(() => {
-            return {
-                focus: 
-                {
-                    borderColor: props.color
-                },
-                background: widgetBackgroundHexString()
-            }
-        });
-
 		function onInput(value: string | undefined)
 		{
 			modelValue.value = value ?? '';
@@ -87,6 +66,7 @@ export default defineComponent({
 
 		return {
             id,
+            background,
             sizeModel,
             placeholderValue,
 			defaultInputColor,
@@ -94,8 +74,6 @@ export default defineComponent({
 			computedWidth,
 			computedHeight,
 			computedMinHeight,
-            floatLabelStyle,
-            inputStyle,
 			onInput
 		}
 	}
@@ -132,6 +110,7 @@ export default defineComponent({
     height: 100%;
     font-size: var(--input-font-size) !important;
     padding-block-start: clamp(18px, 1.5vw, 24px) !important;
+    background: v-bind(background) !important;
 }
 
 .searchBarContainer__label {
@@ -143,5 +122,13 @@ export default defineComponent({
 :deep(.p-floatlabel-in:has(input.p-filled) .searchBarContainer__label) {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
+}
+
+:deep(.p-inputtext:enabled:focus) {
+    border-color: v-bind(color) !important;
+}
+
+:deep(.p-floatlabel:has(input:focus) .searchBarContainer__label) {
+    color: v-bind(color) !important;
 }
 </style>

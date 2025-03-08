@@ -1,7 +1,7 @@
 <template>
     <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @click.right.stop="copyValue">
         <div class="textInuptContainer">
-            <FloatLabel variant="in" :dt="floatLabelStyle"
+            <FloatLabel variant="in"
                 :pt="{
                     root: 'encryptedInputFieldContainer__floatLabel'
                 }">
@@ -196,22 +196,6 @@ export default defineComponent({
 
         const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: colorModel.value.color
-                },
-                invalid:
-                {
-                    color: errorColor.value
-                }
-            }
-        });
-
         function unlock()
         {
             requestAuthorization.value = true;
@@ -376,7 +360,6 @@ export default defineComponent({
             focus,
             validate,
             invalidate,
-            floatLabelStyle,
             inputBackgroundColor,
             computedFeedback,
             randomPasswordPreview,
@@ -493,8 +476,17 @@ export default defineComponent({
     font-size: var(--input-label-active-font-size) !important;
 }
 
+:deep(.p-floatlabel:has(input:focus) .encryptedInputFieldContainer__label) {
+    color: v-bind('colorModel.color') !important;
+}
+
+:deep(.p-floatlabel:has(.p-invalid) .encryptedInputFieldContainer__label) {
+    color: v-bind(errorColor) !important;
+}
+
 :deep(.encryptedInputFieldContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 
 .encryptedInputFieldContainer__randomPasswordPopover {

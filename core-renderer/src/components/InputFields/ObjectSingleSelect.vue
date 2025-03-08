@@ -1,6 +1,6 @@
 <template>
     <div class="objectSingleSelectContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle"
+        <FloatLabel variant="in"
             :pt="{
                 root: 'objectSingleSelectContainer__floatLabel'
             }">
@@ -133,22 +133,6 @@ export default defineComponent({
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "50px");
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: props.color
-                },
-                invalid: 
-                {
-                    color: errorColor.value
-                }
-            }
-        });
-
         function onOptionClick(value: any)
         {
             isInvalid.value = false;
@@ -200,7 +184,6 @@ export default defineComponent({
         return {
             id,
             errorColor,
-            floatLabelStyle,
             selectBackgroundColor,
             refreshKey,
             options,
@@ -283,14 +266,23 @@ export default defineComponent({
     transform: rotate(180deg);
 }
 
-.p-floatlabel-in:has(.p-inputwrapper-focus) .objectSingleSelectContainer__label, 
-.p-floatlabel-in:has(.p-inputwrapper-filled) .objectSingleSelectContainer__label {
+.p-floatlabel-in:has(.p-inputwrapper-focus) label.objectSingleSelectContainer__label, 
+.p-floatlabel-in:has(.p-inputwrapper-filled) label.objectSingleSelectContainer__label {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
 }
 
+.p-floatlabel:has(.p-inputwrapper-focus) .objectSingleSelectContainer__label {
+    color: v-bind(color) !important;
+}
+
+.p-floatlabel:has(.p-invalid) .objectSingleSelectContainer__label {
+    color: v-bind(errorColor) !important;
+}
+
 .objectSingleSelectContainer__messageText {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 
 .objectSingleSelectContainer__option {

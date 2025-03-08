@@ -13,7 +13,7 @@
                         }
                     }
                 }">{{ inputGroupAddon }}</InputGroupAddon>
-            <FloatLabel variant="in" :dt="floatLabelStyle"
+            <FloatLabel variant="in"
                 :pt="{
                     root: 'textInputFieldContainer__floatLabel'
                 }">
@@ -21,12 +21,13 @@
                     :pt="{
                         root: 'textInputFieldContainer__iconField'
                     }">
-                    <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :dt="inputStyle" :disabled="disabled" :invalid="isInvalid" 
+                    <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :disabled="disabled" :invalid="isInvalid" 
                         @update:model-value="onInput"
                         :pt="{
                             root: {
                                 class: {
                                     'textInputFieldContainer__input': true,
+                                    'textInputFieldContainer__input--invalid': isInvalid,
                                     'textInputFieldContainer__input--groupAddon': inputGroupAddon 
                                 }
                             }
@@ -102,36 +103,20 @@ export default defineComponent({
         const additionalValidationFunction: Ref<{ (input: string): [boolean, string]; } | undefined> = ref(props.additionalValidationFunction);
         const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: background.value
-                },
-                focus: 
-                {
-                    color: props.color,
-                },
-                invalid:
-                {
-                    color: errorColor.value
-                }
-            }
-        });
-
-        let inputStyle = computed(() => {
-            return {
-                focus: 
-                {
-                    borderColor: props.color
-                },
-                background: background.value,
-                invalid: 
-                {
-                    borderColor: errorColor.value,
-                    placeholderColor: errorColor.value
-                }
-            }
-        });
+        // let inputStyle = computed(() => {
+        //     return {
+        //         focus: 
+        //         {
+        //             borderColor: props.color
+        //         },
+        //         background: background.value,
+        //         invalid: 
+        //         {
+        //             borderColor: errorColor.value,
+        //             placeholderColor: errorColor.value
+        //         }
+        //     }
+        // });
 
         function validate(): boolean
         {
@@ -215,8 +200,6 @@ export default defineComponent({
             background,
             valuePlaceHolder,
             shouldFadeIn,
-            floatLabelStyle,
-            inputStyle,
             defaultInputColor,
             defaultInputTextColor,
             computedWidth,
@@ -236,10 +219,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-/* .p-inputtext {
-    width: 100%;
-} */
-
 .textInputFieldContainer {
     position: relative;
     height: v-bind(computedHeight);
@@ -253,6 +232,11 @@ export default defineComponent({
 :deep(.textInputFieldContainer__input) {
     height: 100%;
     font-size: var(--input-font-size);
+    background: v-bind(background) !important;
+}
+
+:deep(.textInputFieldContainer__input--invalid) {
+    border-color: v-bind(errorColor) !important;
 }
 
 :deep(.textInputFieldContainer__inputGroup) {
@@ -273,6 +257,10 @@ export default defineComponent({
 :deep(.textInputFieldContainer__input--groupAddon) {
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
+}
+
+:deep(.textInputFieldContainer__input:focus) {
+    border-color: v-bind(color) !important;
 }
 
 :deep(.textInputFieldContainer__floatLabel) {
@@ -303,13 +291,22 @@ export default defineComponent({
     font-size: var(--input-font-size);
 }
 
-:deep(.p-floatlabel-in:has(input:focus) .textInputFieldContainer__label),
-:deep(.p-floatlabel-in:has(input.p-filled) .textInputFieldContainer__label) {
+:deep(.p-floatlabel-in:has(input:focus) label.textInputFieldContainer__label),
+:deep(.p-floatlabel-in:has(input.p-filled) label.textInputFieldContainer__label) {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
 }
 
+:deep(.p-floatlabel:has(.p-invalid) .textInputFieldContainer__label) {
+    color: v-bind(errorColor) !important;
+}
+
+:deep(.p-floatlabel:has(input:focus) .textInputFieldContainer__label) {
+    color: v-bind(color) !important;
+}
+
 :deep(.textInputFieldContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 </style>

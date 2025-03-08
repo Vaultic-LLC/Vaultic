@@ -9,7 +9,7 @@
                 content: 'textAreaInputFieldContainer__panelContent'
             }">
             <div class="textAreaInputFieldContainer__editorWrapper">
-                <Editor ref="editorRef" v-model="placeholderValue" :dt="toolbarStyle" :editorStyle="'height: 100%'" 
+                <Editor ref="editorRef" v-model="placeholderValue" :editorStyle="'height: 100%'" 
                     @update:modelValue="onInput"
                     :pt="{
                         root: 'textAreaInputFieldContainer__editor',
@@ -86,15 +86,6 @@ export default defineComponent({
 
         const editorContentHeight: Ref<string> = ref('');
 
-        const toolbarStyle = computed(() => 
-        {
-            return {
-                toolbarItemActive: {
-                    color: colorModel.value.color
-                }
-            }
-        });
-
         async function onInput(value: string)
         {
             ctx.emit("update:modelValue", value);
@@ -130,7 +121,6 @@ export default defineComponent({
 
         return {
             editorRef,
-            toolbarStyle,
             placeholderValue,
             shouldFadeIn,
             defaultInputColor,
@@ -193,5 +183,22 @@ export default defineComponent({
 
 :deep(.textAreaInputFieldContainer__editorContent){
     height: v-bind(editorContentHeight) !important;
+}
+
+:deep(.p-editor .ql-snow.ql-toolbar button.ql-active),
+:deep(.p-editor .ql-snow.ql-toolbar .ql-picker-label.ql-active),
+:deep(.p-editor .p-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label) {
+    color: v-bind('colorModel.color') !important;
+}
+
+:deep(.p-editor .ql-snow.ql-toolbar button.ql-active .ql-stroke),
+:deep(.p-editor .p-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-stroke),
+:deep(.p-editor .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke) {
+    stroke: v-bind('colorModel.color') !important;
+}
+
+:deep(.p-editor .ql-snow.ql-toolbar button.ql-active .ql-fill),
+:deep(.p-editor .p-editor-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-label .ql-fill) {
+    fill: v-bind('colorModel.color') !important;
 }
 </style>
