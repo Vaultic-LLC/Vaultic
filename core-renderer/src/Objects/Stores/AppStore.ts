@@ -1,3 +1,7 @@
+// App store is the first main thing that loads
+import * as PolyFills from "@vaultic/shared/Types/PolyFills";
+PolyFills.a;
+
 import { Ref, ref, ComputedRef, computed, watch } from "vue";
 import { hideAll } from 'tippy.js';
 import { Store, StoreEvents, StoreState } from "./Base";
@@ -20,7 +24,8 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
-import clipboard from "clipboardy";
+import { FieldTreeUtility } from "../../Types/Tree";
+import { WebFieldConstructor } from "../../Types/Fields";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -179,25 +184,25 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     protected defaultState()
     {
-        return {
-            id: new Field(""),
-            version: new Field(0),
-            settings: new Field({
-                id: new Field(""),
-                userColorPalettes: new Field(emptyUserColorPalettes),
-                autoLockTime: new Field(AutoLockTime.OneMinute),
-                multipleFilterBehavior: new Field(FilterStatus.Or),
-                oldPasswordDays: new Field(365),
-                percentMetricForPulse: new Field(1),
-                randomValueLength: new Field(25),
-                randomPhraseLength: new Field(7),
-                includeNumbersInRandomPassword: new Field(true),
-                includeSpecialCharactersInRandomPassword: new Field(true),
-                includeAmbiguousCharactersInRandomPassword: new Field(true),
-                passphraseSeperator: new Field('-'),
-                temporarilyStoreMasterKey: new Field(true)
+        return FieldTreeUtility.setupIDs<IAppStoreState>({
+            id: WebFieldConstructor.create(""),
+            version: WebFieldConstructor.create(0),
+            settings: WebFieldConstructor.create({
+                id: WebFieldConstructor.create(""),
+                userColorPalettes: WebFieldConstructor.create(emptyUserColorPalettes),
+                autoLockTime: WebFieldConstructor.create(AutoLockTime.OneMinute),
+                multipleFilterBehavior: WebFieldConstructor.create(FilterStatus.Or),
+                oldPasswordDays: WebFieldConstructor.create(365),
+                percentMetricForPulse: WebFieldConstructor.create(1),
+                randomValueLength: WebFieldConstructor.create(25),
+                randomPhraseLength: WebFieldConstructor.create(7),
+                includeNumbersInRandomPassword: WebFieldConstructor.create(true),
+                includeSpecialCharactersInRandomPassword: WebFieldConstructor.create(true),
+                includeAmbiguousCharactersInRandomPassword: WebFieldConstructor.create(true),
+                passphraseSeperator: WebFieldConstructor.create('-'),
+                temporarilyStoreMasterKey: WebFieldConstructor.create(true)
             })
-        };
+        });
     }
 
     private calcAutolockTime(time: AutoLockTime): number

@@ -272,7 +272,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalUpdateVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
-            console.log(`Update Vault`);
             const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
             if (!currentUser)
             {
@@ -526,7 +525,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const partialVaultsToBackup: Partial<Vault>[] = [];
         const vaultKeys: string[] = [];
 
-        console.log(`\nUser Vaults with vaults to backup: ${JSON.stringify(userVaultsWithVaultsToBackup[0])}\n`)
         for (let i = 0; i < userVaultsWithVaultsToBackup[0].length; i++)
         {
             const vaultBackup = {};

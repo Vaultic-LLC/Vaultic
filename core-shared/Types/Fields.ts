@@ -17,9 +17,9 @@ export class FieldedObject implements IFieldedObject
     [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
     id: Field<string>;
 
-    constructor() 
+    constructor(fieldConstructor: FieldConstructor) 
     {
-        this.id = new Field("");
+        this.id = fieldConstructor.create("");
     }
 };
 
@@ -65,32 +65,115 @@ export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | Seconda
     "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "userColorPalettes" | "pinnedDataTypes" |
     "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
     "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" | "pinnedOrganizations" | "passwordsByDomain";
+    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" |
+    "pinnedOrganizations" | "passwordsByDomain";
 
 export type KnownUnfieldedMappedFieldsType = "membersByUserID" | "vaultIDsByVaultID";
 
-export const FieldedMapFields: Set<KnownFieldedMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
-    "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "userColorPalettes", "pinnedDataTypes", "pinnedFilters",
-    "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
-    "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
-    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices", "pinnedOrganizations", "passwordsByDomain"
-]);
+export const FieldProxy =
+{
+    get(target: any, prop: any, receiver: any)
+    {
+        return target[prop];
+    },
+    set(obj: Field<any>, prop: string, newValue: any)
+    {
+        obj[prop] = newValue;
 
-export const UnfieldedMapFields: Set<KnownUnfieldedMappedFieldsType> = new Set(["membersByUserID", "vaultIDsByVaultID"])
+        if (prop == "value" || prop == "forceUpdate")
+        {
+            obj.updateAndBubble();
+        }
+
+        return true;
+    }
+};
+
+export class FieldConstructor
+{
+    create<T>(value: T): Field<T>
+    {
+        throw "Did not implement";
+    }
+}
 
 export class Field<T>
 {
+    [key: string]: any;
+
+    // Only used to identify when parsing JSON, should never be edited. Setting to private causes a bunch of ts errors though
+    isField: number;
+
+    parentID: string | undefined;
+    parent: Field<any> | undefined;
     id: string;
     value: T;
     lastModifiedTime: number;
     forceUpdate: boolean;
 
-    constructor(value: T)
+    private constructor(value: T)
     {
+        this.isField = 1;
         this.id = "";
         this.value = value;
         this.lastModifiedTime = Date.now();
         this.forceUpdate = false;
+    }
+
+    static create<T>(value: T, id: string): Field<T>
+    {
+        const field = new Field<T>(value);
+        field.id = id;
+
+        return new Proxy(field, FieldProxy);
+    }
+
+    static fromJObject(obj: any): Field<any>
+    {
+        const field = new Field(obj.value);
+        Object.assign(field, obj);
+        return new Proxy(field, FieldProxy);
+    }
+
+    static fromJObjectMap(obj: any): Field<Map<any, any>>
+    {
+        const field = new Field(new Map());
+
+        const { isMap, ...objWithoutIsMap } = obj;
+        Object.assign(field, objWithoutIsMap);
+
+        field.value = new Map(obj.value);
+        return new Proxy(field, FieldProxy);
+    }
+
+    updateAndBubble()
+    {
+        this.lastModifiedTime = Date.now();
+        if (this.parent)
+        {
+            this.parent.updateAndBubble();
+        }
+    }
+
+    addMapValue(key: any, value: Field<any>)
+    {
+        if (this.value instanceof Map)
+        {
+            value.parentID = this.id;
+            value.parent = this;
+
+            this.value.set(key, value);
+            this.updateAndBubble();
+        }
+    }
+
+    removeMapValue(key: any)
+    {
+        if (this.value instanceof Map)
+        {
+            this.value.delete(key);
+            this.updateAndBubble();
+        }
     }
 }
 

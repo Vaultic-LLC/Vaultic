@@ -164,7 +164,6 @@ export class VaulticRepository<T extends VaulticEntity>
 
         try 
         {
-            console.log(`Updating. Old Entity: ${JSON.stringify(entity)}\n New Entity: ${JSON.stringify(mockEntity)}\n`);
             const result = await repo.update(entity.identifier(), mockEntity);
             return result.affected == 1;
         }

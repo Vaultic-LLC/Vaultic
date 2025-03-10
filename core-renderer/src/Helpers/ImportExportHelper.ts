@@ -7,7 +7,7 @@ import { CSVHeaderPropertyMapperModel } from "../Types/Models";
 import { generateUniqueIDForMap } from "./generatorHelper";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
-import { ImportableDisplayField } from "../Types/Fields";
+import { ImportableDisplayField, WebFieldConstructor } from "../Types/Fields";
 import { Field } from "@vaultic/shared/Types/Fields";
 
 export async function exportLogs(color: string)
@@ -327,7 +327,7 @@ class CSVImporter<T extends IPrimaryDataObject>
 
                                     if (groupId)
                                     {
-                                        value.groups.value.set(groupId, new Field(groupId));
+                                        value.groups.addMapValue(groupId, WebFieldConstructor.create(groupId));
                                     }
                                 }
                             }
@@ -387,10 +387,10 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 for (let i = 0; i < questions.length; i++)
                 {
                     const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.set(id, new Field({
-                        id: new Field(id),
-                        question: new Field(questions[i]),
-                        answer: new Field('')
+                    this.temporarySecurityQuestions.set(id, WebFieldConstructor.create({
+                        id: WebFieldConstructor.create(id),
+                        question: WebFieldConstructor.create(questions[i]),
+                        answer: WebFieldConstructor.create('')
                     }));
                 }
             }
@@ -420,10 +420,10 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 for (let i = 0; i < answers.length; i++)
                 {
                     const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.set(id, new Field({
-                        id: new Field(id),
-                        question: new Field(''),
-                        answer: new Field(answers[i]),
+                    this.temporarySecurityQuestions.set(id, WebFieldConstructor.create({
+                        id: WebFieldConstructor.create(id),
+                        question: WebFieldConstructor.create(''),
+                        answer: WebFieldConstructor.create(answers[i]),
                     }));
                 }
             }

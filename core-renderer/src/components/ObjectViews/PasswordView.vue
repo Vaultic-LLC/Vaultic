@@ -63,6 +63,7 @@ import app from "../../Objects/Stores/AppStore";
 import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { Field } from '@vaultic/shared/Types/Fields';
+import { WebFieldConstructor } from '../../Types/Fields';
 
 export default defineComponent({
     name: "PasswordView",
@@ -180,7 +181,7 @@ export default defineComponent({
             passwordState.value.groups.value = new Map();
             selectedGroups.value.forEach(g => 
             {
-                passwordState.value.groups.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
+                passwordState.value.groups.addMapValue(g.backingObject!.value.id.value, WebFieldConstructor.create(g.backingObject!.value.id.value));
             });
 
             if (props.creating)
@@ -238,13 +239,13 @@ export default defineComponent({
         async function onAddSecurityQuestion()
         {
             const id = await generateUniqueIDForMap(passwordState.value.securityQuestions.value);
-            const securityQuestion: Field<SecurityQuestion> = new Field({
-                id: new Field(id),
-                question: new Field(''),
-                answer: new Field(''),
+            const securityQuestion: Field<SecurityQuestion> = WebFieldConstructor.create({
+                id: WebFieldConstructor.create(id),
+                question: WebFieldConstructor.create(''),
+                answer: WebFieldConstructor.create(''),
             });
 
-            passwordState.value.securityQuestions.value.set(id, securityQuestion);
+            passwordState.value.securityQuestions.addMapValue(id, securityQuestion);
 
             const securityQuestionModel: FieldedTableRowModel<Field<SecurityQuestion>> = new FieldedTableRowModel(
                 securityQuestion.id, undefined, undefined, securityQuestion, 
@@ -353,9 +354,10 @@ export default defineComponent({
 
 <style>
 #passwordView__table {
-    position: relative;
-    width: 50%;
+    right: 0;
+    width: 49%;
     height: 88%;
+    height: calc(102% - clamp(40px, 5vh, 60px));
 }
 
 .passwordViewTableHeaderControls {

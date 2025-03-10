@@ -9,7 +9,8 @@ import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes";
+import { FieldTreeUtility } from "../../Types/Tree";
+import { WebFieldConstructor } from "../../Types/Fields";
 
 export interface VaultSettings extends IFieldedObject
 {
@@ -41,7 +42,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
     protected internalVaultID: number;
-    protected internalPasswordsByDomain: Field<Map<string, Field<KnownMappedFields<PasswordsByDomainType>>>> | undefined;
+    protected internalPasswordsByDomain: Field<Map<string, Field<Map<string, Field<string>>>>> | undefined;
 
     protected internalPasswordStore: V;
     protected internalValueStore: W;
@@ -84,7 +85,7 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
         this.internalShared = data.shared;
         this.internalIsArchived = data.isArchived;
-        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Field(new Map());
+        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? WebFieldConstructor.create(new Map());
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
@@ -92,16 +93,16 @@ export class BaseVaultStore<V extends PasswordStore,
 
     protected defaultState(): VaultStoreState 
     {
-        return {
-            version: new Field(0),
-            settings: new Field(
+        return FieldTreeUtility.setupIDs<IVaultStoreState>({
+            version: WebFieldConstructor.create(0),
+            settings: WebFieldConstructor.create(
                 {
-                    id: new Field(""),
-                    loginRecordsToStorePerDay: new Field(13),
-                    numberOfDaysToStoreLoginRecords: new Field(30)
+                    id: WebFieldConstructor.create(""),
+                    loginRecordsToStorePerDay: WebFieldConstructor.create(13),
+                    numberOfDaysToStoreLoginRecords: WebFieldConstructor.create(30)
                 }),
-            loginHistory: new Field(new Map<string, Field<KnownMappedFields<DaysLogins>>>())
-        }
+            loginHistory: WebFieldConstructor.create(new Map<string, Field<KnownMappedFields<DaysLogins>>>())
+        });
     }
 }
 
@@ -212,21 +213,21 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         {
             const daysLogin: KnownMappedFields<DaysLogins> =
             {
-                id: new Field(""),
-                daysLogin: new Field(new Map<number, Field<number>>([[dateTime, new Field(dateTime)]]))
+                id: WebFieldConstructor.create(""),
+                daysLogin: WebFieldConstructor.create(new Map<number, Field<number>>([[dateTime, WebFieldConstructor.create(dateTime)]]))
             };
 
-            pendingState.loginHistory.value.set(loginHistoryKey, new Field(daysLogin));
+            pendingState.loginHistory.value.set(loginHistoryKey, WebFieldConstructor.create(daysLogin));
         }
         else if (pendingState.loginHistory.value.get(loginHistoryKey)!.value.daysLogin.value.size < this.state.settings.value.loginRecordsToStorePerDay.value)
         {
-            pendingState.loginHistory.value.get(loginHistoryKey)?.value.daysLogin.value.set(dateTime, new Field(dateTime));
+            pendingState.loginHistory.value.get(loginHistoryKey)?.value.daysLogin.value.set(dateTime, WebFieldConstructor.create(dateTime));
         }
         else
         {
             const valueToDelete = pendingState.loginHistory.value.get(loginHistoryKey)!.value.daysLogin.value.entries().next().value![0];
             pendingState.loginHistory.value.get(loginHistoryKey)!.value.daysLogin.value.delete(valueToDelete);
-            pendingState.loginHistory.value.get(loginHistoryKey)?.value.daysLogin.value.set(dateTime, new Field(dateTime));
+            pendingState.loginHistory.value.get(loginHistoryKey)?.value.daysLogin.value.set(dateTime, WebFieldConstructor.create(dateTime));
         }
     }
 

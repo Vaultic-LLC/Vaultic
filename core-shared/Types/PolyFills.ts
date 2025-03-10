@@ -1,4 +1,4 @@
-import { FieldedMapFields, UnfieldedMapFields } from "./Fields";
+import { Field } from "./Fields";
 
 declare global 
 {
@@ -89,18 +89,50 @@ Map.prototype.mapWhere = function <T>(this: Map<any, any>, predicate: (k: any, v
 
 JSON.vaulticParse = (text: string) => 
 {
+    const childrenByParentID: Map<string, any[]> = new Map();
     return JSON.parse(text, (key: string, value: any) => 
     {
-        if (FieldedMapFields.has(key as any))
+        let valueToUse = value;
+        if (valueToUse && typeof valueToUse === "object")
         {
-            return { ...value, value: new Map(value.value) }
-        }
-        else if (UnfieldedMapFields.has(key as any))
-        {
-            return new Map(value);
+            if ("isField" in valueToUse)
+            {
+                // create this first so we can add the same instance to the childByParentID that we also return
+                let field = "isMap" in valueToUse ? Field.fromJObjectMap(valueToUse) : Field.fromJObject(valueToUse);
+
+                // add this as a child so that we can set its parent when we encounter it
+                if (valueToUse.parentID)
+                {
+                    if (!childrenByParentID.has(valueToUse.parentID))
+                    {
+                        childrenByParentID.set(valueToUse.parentID, []);
+                    }
+
+                    childrenByParentID.get(valueToUse.parentID)?.push(field);
+                }
+
+                // set all children with a parentId of this id to this object
+                if (childrenByParentID.has(valueToUse.id))
+                {
+                    const children = childrenByParentID.get(valueToUse.id);
+                    if (children)
+                    {
+                        for (let i = 0; i < children.length; i++)
+                        {
+                            children[i].parent = field;
+                        }
+                    }
+                }
+
+                return field;
+            }
+            else if ("isMap" in valueToUse)
+            {
+                return new Map(valueToUse.value);
+            }
         }
 
-        return value;
+        return valueToUse;
     });
 };
 
@@ -108,18 +140,29 @@ JSON.vaulticStringify = (value: any) =>
 {
     return JSON.stringify(value, (key: string, value: any) => 
     {
-        if (FieldedMapFields.has(key as any))
+        let valueToUse = value;
+        if (valueToUse && typeof valueToUse === "object")
         {
-            // return a new obj so we don't alter the existing one and cauese issue with 
-            // it being used after serialization
-            return { ...value, value: Array.from(value.value.entries()) };
-        }
-        else if (UnfieldedMapFields.has(key as any))
-        {
-            return Array.from(value.entries());
+            if ("isField" in valueToUse)
+            {
+                // don't want to include the parent in the serialization
+                const { parent: _, ...fieldedObjectWithoutParent } = value;
+                valueToUse = fieldedObjectWithoutParent;
+
+                if (valueToUse.value instanceof Map)
+                {
+                    // return a new obj so we don't alter the existing one and cauese issue with 
+                    // it being used after serialization
+                    return { ...fieldedObjectWithoutParent, isMap: 1, value: Array.from(valueToUse.value.entries()) };
+                }
+            }
+            else if (valueToUse instanceof Map)
+            {
+                return { isMap: 1, value: Array.from(valueToUse.entries()) };
+            }
         }
 
-        return value;
+        return valueToUse;
     });
 }
 

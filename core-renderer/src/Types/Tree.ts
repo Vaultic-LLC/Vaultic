@@ -1,5 +1,7 @@
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { TreeNodeButton } from "./Models";
+import { Field } from "@vaultic/shared/Types/Fields";
+import { ObjectPropertyManager, MapPropertyManager } from "@vaultic/shared/Types/Utilities";
 
 export class TreeNodeMember 
 {
@@ -153,6 +155,40 @@ export class TreeNodeListManager
                     addNodes(n.children);
                 }
             });
+        }
+    }
+}
+
+export class FieldTreeUtility
+{
+    static setupIDs<T extends { [key: string]: any }>(obj: T): T
+    {
+        const properties = Object.keys(obj);
+        for (let i = 0; i < properties.length; i++)
+        {
+            this.internalSetIDs(obj[properties[i]])
+        }
+
+        return obj;
+    }
+
+    private static internalSetIDs(obj: Field<any>, parent?: Field<any>)
+    {
+        if (parent)
+        {
+            obj.parent = parent;
+            obj.parentID = parent.id;
+        }
+
+        if (typeof obj.value === "object")
+        {
+            const manager: ObjectPropertyManager<any> = obj.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
+            const keys = manager.keys(obj.value);
+
+            for (let i = 0; i < keys.length; i++)
+            {
+                this.internalSetIDs(manager.get(keys[i], obj.value), obj);
+            }
         }
     }
 }

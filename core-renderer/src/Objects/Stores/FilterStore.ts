@@ -4,11 +4,12 @@ import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
-import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType, DuplicateDataTypes } from "../../Types/DataTypes";
-import app from "./AppStore";
+import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType } from "../../Types/DataTypes";
 import { Field, IFieldObject, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
+import { FieldTreeUtility } from "../../Types/Tree";
+import { WebFieldConstructor } from "../../Types/Fields";
 
 interface IFilterStoreState extends StoreState
 {
@@ -16,8 +17,8 @@ interface IFilterStoreState extends StoreState
     valueFiltersByID: Field<Map<string, Field<Filter>>>;
     emptyPasswordFilters: Field<Map<string, Field<string>>>;
     emptyValueFilters: Field<Map<string, Field<string>>>;
-    duplicatePasswordFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
-    duplicateValueFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
+    duplicatePasswordFilters: Field<Map<string, Field<Map<string, Field<string>>>>>;
+    duplicateValueFilters: Field<Map<string, Field<Map<string, Field<string>>>>>;
 }
 
 export type FilterStoreState = KnownMappedFields<IFilterStoreState>;
@@ -31,15 +32,15 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
 
     protected defaultState()
     {
-        return {
-            version: new Field(0),
-            passwordFiltersByID: new Field(new Map<string, Field<Filter>>()),
-            valueFiltersByID: new Field(new Map<string, Field<Filter>>()),
-            emptyPasswordFilters: new Field(new Map<string, Field<string>>()),
-            emptyValueFilters: new Field(new Map<string, Field<string>>()),
-            duplicatePasswordFilters: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
-            duplicateValueFilters: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
-        }
+        return FieldTreeUtility.setupIDs<IFilterStoreState>({
+            version: WebFieldConstructor.create(0),
+            passwordFiltersByID: WebFieldConstructor.create(new Map<string, Field<Filter>>()),
+            valueFiltersByID: WebFieldConstructor.create(new Map<string, Field<Filter>>()),
+            emptyPasswordFilters: WebFieldConstructor.create(new Map<string, Field<string>>()),
+            emptyValueFilters: WebFieldConstructor.create(new Map<string, Field<string>>()),
+            duplicatePasswordFilters: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            duplicateValueFilters: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
+        });
     }
 
     async toggleFilter(id: string): Promise<undefined>
@@ -63,7 +64,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         {
             filter.id.value = await generateUniqueIDForMap(pendingState.passwordFiltersByID.value);
 
-            const filterField = new Field(filter);
+            const filterField = WebFieldConstructor.create(filter);
             pendingState.passwordFiltersByID.value.set(filter.id.value, filterField);
 
             // don't need to create a pending group store since the groups aren't actually being changed
@@ -76,7 +77,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         {
             filter.id.value = await generateUniqueIDForMap(pendingState.valueFiltersByID.value);
 
-            const filterField = new Field(filter);
+            const filterField = WebFieldConstructor.create(filter);
             pendingState.valueFiltersByID.value.set(filter.id.value, filterField);
 
             // don't need to create a pending group store since the groups aren't actually being changed
@@ -227,7 +228,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         primaryObjectID: string,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         allEmptyFilters: Field<Map<string, Field<string>>>,
-        allDuplicateFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
+        allDuplicateFilters: Field<Map<string, Field<Map<string, Field<string>>>>>,
         allFilters: Field<Map<string, Field<Filter>>>)
     {
         allFilters.value.forEach((v, k, map) =>
@@ -303,7 +304,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         primaryDataObjects: Map<string, Field<T>>,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         currentEmptyFilters: Field<Map<string, Field<string>>>,
-        currentDuplicateFilters: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
+        currentDuplicateFilters: Field<Map<string, Field<Map<string, Field<string>>>>>,
         allFilters: Field<Map<string, Field<Filter>>>,
         allGroups: Field<Map<string, Field<Group>>>,
         updatingFilterOrPrimaryDataObject: boolean)
@@ -316,7 +317,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
                 {
                     if (!v.value.filters.value.has(f.value.id.value))
                     {
-                        v.value.filters.value.set(f.value.id.value, new Field(f.value.id.value));
+                        v.value.filters.value.set(f.value.id.value, WebFieldConstructor.create(f.value.id.value));
                     }
                     // only want to forceUpdate when updating a filter, password, or value since updating a group
                     // also calls this method, but in that case we don't want the filter to be considered updated
@@ -328,7 +329,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
 
                     if (!f.value[primaryDataObjectCollection].value.has(v.value.id.value))
                     {
-                        f.value[primaryDataObjectCollection].value.set(v.value.id.value, new Field(v.value.id.value));
+                        f.value[primaryDataObjectCollection].value.set(v.value.id.value, WebFieldConstructor.create(v.value.id.value));
                     }
                     else if (updatingFilterOrPrimaryDataObject)
                     {

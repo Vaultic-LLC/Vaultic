@@ -1,5 +1,15 @@
 import { NameValuePairType } from "./DataTypes";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { Field, FieldConstructor } from "@vaultic/shared/Types/Fields";
+
+class WebFieldConstructorClass extends FieldConstructor
+{
+    create<T>(value: T): Field<T>
+    {
+        return Field.create(value, `${Date.now()}+${window.crypto.randomUUID()}`);
+    }
+}
+
+export const WebFieldConstructor = new WebFieldConstructorClass();
 
 export type SecretProperty = "password" | "value";
 
@@ -138,9 +148,4 @@ export interface DataTypeViewField
     y: number;
     component: string;
     mask?: string;
-}
-
-class BaseField<T> extends Field<T>
-{
-    fieldTypeID: string;
 }

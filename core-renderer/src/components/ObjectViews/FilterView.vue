@@ -33,7 +33,7 @@ import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
-import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType } from '../../Types/Fields';
+import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType, WebFieldConstructor } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 
@@ -173,14 +173,14 @@ export default defineComponent({
         async function onAdd()
         {
             const id = await generateUniqueIDForMap(filterState.value.conditions.value);
-            const filterCondition: Field<FilterCondition> = new Field({
-                id: new Field(id),
-                property: new Field(''),
-                value: new Field(''),
-                filterType: new Field(undefined)
+            const filterCondition: Field<FilterCondition> = WebFieldConstructor.create({
+                id: WebFieldConstructor.create(id),
+                property: WebFieldConstructor.create(''),
+                value: WebFieldConstructor.create(''),
+                filterType: WebFieldConstructor.create(undefined)
             });
 
-            filterState.value.conditions.value.set(id, filterCondition);
+            filterState.value.conditions.addMapValue(id, filterCondition);
 
             const tableRowModel = new FieldedTableRowModel(id, false, undefined, filterCondition, 
             {
@@ -245,9 +245,8 @@ export default defineComponent({
 
 <style>
 #addFilterTable {
-    position: relative;
     width: 70%;
-    height: 76%;
+    height: 70%;
     transform: translateY(-15%);
 }
 </style>

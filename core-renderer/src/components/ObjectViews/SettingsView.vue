@@ -578,7 +578,6 @@ export default defineComponent({
 }
 
 :deep(#settingsView__memberTable) {
-    position: relative;
     min-height: 40vh;
     height: 100%;
 }

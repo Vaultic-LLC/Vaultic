@@ -55,6 +55,7 @@ import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent } from '../../Types/Components';
 import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
 import { Field, RandomValueType } from '@vaultic/shared/Types/Fields';
+import { WebFieldConstructor } from '../../Types/Fields';
 
 export default defineComponent({
     name: "ValueView",
@@ -105,7 +106,7 @@ export default defineComponent({
             valuesState.value.groups.value = new Map();
             selectedGroups.value.forEach(g => 
             {
-                valuesState.value.groups.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
+                valuesState.value.groups.addMapValue(g.backingObject!.value.id.value, WebFieldConstructor.create(g.backingObject!.value.id.value));
             });
 
             valueInputField.value?.toggleMask(true);

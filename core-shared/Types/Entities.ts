@@ -1,6 +1,5 @@
 import { ServerPermissions } from "./ClientServerTypes"
-import { PasswordsByDomainType } from "./DataTypes";
-import { Field, KnownMappedFields } from "./Fields";
+import { Field } from "./Fields";
 import { Algorithm, SignedVaultKey } from "./Keys";
 
 export enum EntityState
@@ -140,7 +139,7 @@ export interface DisplayVault
     isReadOnly: boolean;
     lastUsed?: boolean;
     type?: VaultType;
-    passwordsByDomain?: Field<Map<string, Field<KnownMappedFields<PasswordsByDomainType>>>>;
+    passwordsByDomain?: Field<Map<string, Field<Map<string, Field<string>>>>>;
 }
 
 export function getVaultType(vault: DisplayVault)

@@ -284,7 +284,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity.value);
             if (!equalHashes)
             {
-                console.log(`Failed verify: ${JSON.stringify(this)}`);
                 return TypedMethodResponse.fail(errorCodes.HASHES_DONT_MATCH);
             }
 

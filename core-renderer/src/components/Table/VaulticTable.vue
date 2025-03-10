@@ -17,7 +17,7 @@
                 columnResizeIndicator: 'vaulticTableContainer__columnResizeIndicator',
                 tableContainer: () =>
                 {
-                    const height = hidePaginator ? '100%' : 'calc(100% - 50px)';
+                    const height = hidePaginator ? '100%' : 'calc(100% - clamp(40px, 5vh, 60px))';
                     return {
                         id: tableContainerID,
                         class: 'vaulticTableContainer__dataTableTableContainer',

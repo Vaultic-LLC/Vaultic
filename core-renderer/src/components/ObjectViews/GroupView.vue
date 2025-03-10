@@ -25,6 +25,7 @@ import app from "../../Objects/Stores/AppStore";
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
 import { Field } from '@vaultic/shared/Types/Fields';
 import icons from '../../Constants/Icons';
+import { WebFieldConstructor } from '../../Types/Fields';
 
 export default defineComponent({
     name: "GroupView",
@@ -80,7 +81,7 @@ export default defineComponent({
                 groupState.value.passwords.value = new Map();
                 selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.passwords.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
+                    groupState.value.passwords.addMapValue(g.backingObject!.value.id.value, WebFieldConstructor.create(g.backingObject!.value.id.value));
                 });
             }
             else 
@@ -88,7 +89,7 @@ export default defineComponent({
                 groupState.value.values.value = new Map();
                 selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.values.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
+                    groupState.value.values.addMapValue(g.backingObject!.value.id.value, WebFieldConstructor.create(g.backingObject!.value.id.value));
                 });
             }
 

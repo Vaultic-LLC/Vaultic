@@ -12,7 +12,7 @@
                     </div>
                 </ScrollView>
             </div>
-            <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
+            <div class="createButtons">
                 <PopupButton v-if="hideButtons !== true" :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
                     :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="computedMinButtonHeight" :height="'2vw'" @onClick="onSave" />
                 <PopupButton v-if="hideButtons != true && creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
@@ -42,8 +42,8 @@ export default defineComponent({
         PopupButton,
         Message
     },
-    props: ['creating', 'title', 'color', 'defaultSave', 'buttonText', 'skipOnSaveFunctionality', 
-        'anchorButtonsDown', 'minButtonHeight', 'hideButtons', 'popupInfoOverride'],
+    props: ['creating', 'title', 'color', 'defaultSave', 'buttonText', 'skipOnSaveFunctionality',
+        'minButtonHeight', 'hideButtons', 'popupInfoOverride'],
     setup(props)
     {
         const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupName] : popups.defaultObjectPopup;
@@ -250,11 +250,5 @@ export default defineComponent({
     justify-content: space-between;
     column-gap: 50px;
     flex-grow: 1;
-}
-
-.objectViewContainer .createButtons.anchorDown {
-    margin: 0;
-    flex-grow: 1;
-    align-items: flex-end;
 }
 </style>

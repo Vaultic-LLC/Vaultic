@@ -5,7 +5,7 @@ import { CSVHeaderPropertyMapperModel } from "../../src/core/Types/Models";
 import { DataType, defaultGroup, defaultPassword, defaultValue, NameValuePair, NameValuePairType, Password } from "../../src/core/Types/DataTypes";
 import cryptHelper from "../../src/core/Helpers/cryptHelper";
 import app from "../../src/core/Objects/Stores/AppStore";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { Field, WebFieldConstructor } from "@vaultic/shared/Types/Fields";
 
 let importExportHelperTestSuite = createTestSuite("Import / Export");
 const masterKey = "test";
@@ -154,10 +154,10 @@ importExportHelperTestSuite.tests.push({
         groupTwo.name.value = "Mary's Group";
         await app.currentVault.groupStore.addGroup(masterKey, groupTwo);
 
-        await createPassword("John", "facebook.com", "john@google.com", "JohnP", "Facebook", "", [], [], new Map([[groupOne.id.value, new Field(groupOne.id.value)]]));
+        await createPassword("John", "facebook.com", "john@google.com", "JohnP", "Facebook", "", [], [], new Map([[groupOne.id.value, WebFieldConstructor.create(groupOne.id.value)]]));
         await createPassword("Mary", "google.com", "maryL@outlook.com", "VJweiohgoinu2ith29hiodg", "Google", "For google",
             ["What is your first name", "Where were you born"], ["Maryelis", "Alaska"],
-            new Map([[groupOne.id.value, new Field(groupOne.id.value)], [groupTwo.id.value, new Field(groupTwo.id.value)]]));
+            new Map([[groupOne.id.value, WebFieldConstructor.create(groupOne.id.value)], [groupTwo.id.value, WebFieldConstructor.create(groupTwo.id.value)]]));
 
         const formattedPasswords = await getExportablePasswords('', masterKey);
         const rows = formattedPasswords.split('\n');
@@ -279,12 +279,12 @@ importExportHelperTestSuite.tests.push({
 
             for (let i = 0; i < secrutiyQuestionQuestions.length; i++)
             {
-                testPassword.securityQuestions.value.set(i.toString(), new Field({
-                    id: new Field(i.toString()),
-                    question: new Field(secrutiyQuestionQuestions[i]),
-                    questionLength: new Field(0),
-                    answer: new Field(securityQuestionAnswers[i]),
-                    answerLength: new Field(0)
+                testPassword.securityQuestions.value.set(i.toString(), WebFieldConstructor.create({
+                    id: WebFieldConstructor.create(i.toString()),
+                    question: WebFieldConstructor.create(secrutiyQuestionQuestions[i]),
+                    questionLength: WebFieldConstructor.create(0),
+                    answer: WebFieldConstructor.create(securityQuestionAnswers[i]),
+                    answerLength: WebFieldConstructor.create(0)
                 }));
             }
 
@@ -305,9 +305,9 @@ importExportHelperTestSuite.tests.push({
         groupTwo.name.value = "Banks";
         await app.currentVault.groupStore.addGroup(masterKey, groupTwo);
 
-        await createValue("Phone Code", "1234", NameValuePairType.Passcode, "", new Map([[groupOne.id.value, new Field(groupOne.id.value)]]));
+        await createValue("Phone Code", "1234", NameValuePairType.Passcode, "", new Map([[groupOne.id.value, WebFieldConstructor.create(groupOne.id.value)]]));
         await createValue("Bank Verbal Code", "sleepy time", NameValuePairType.Passcode, "For the bank",
-            new Map([[groupOne.id.value, new Field(groupOne.id.value)], [groupTwo.id.value, new Field(groupTwo.id.value)]]));
+            new Map([[groupOne.id.value, WebFieldConstructor.create(groupOne.id.value)], [groupTwo.id.value, WebFieldConstructor.create(groupTwo.id.value)]]));
 
         const formattedValues = await getExportableValues('', masterKey);
         const rows = formattedValues.split('\n');

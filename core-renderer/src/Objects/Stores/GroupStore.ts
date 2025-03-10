@@ -4,8 +4,10 @@ import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { api } from "../../API";
-import { DataType, IGroupable, AtRiskType, Group, DuplicateDataTypes, RelatedDataTypeChanges } from "../../Types/DataTypes";
+import { DataType, IGroupable, AtRiskType, Group, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { Field, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
+import { FieldTreeUtility } from "../../Types/Tree";
+import { WebFieldConstructor } from "../../Types/Fields";
 
 export interface IGroupStoreState extends StoreState
 {
@@ -13,8 +15,8 @@ export interface IGroupStoreState extends StoreState
     valueGroupsByID: Field<Map<string, Field<Group>>>
     emptyPasswordGroups: Field<Map<string, Field<string>>>;
     emptyValueGroups: Field<Map<string, Field<string>>>;
-    duplicatePasswordGroups: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
-    duplicateValueGroups: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
+    duplicatePasswordGroups: Field<Map<string, Field<Map<string, Field<string>>>>>;
+    duplicateValueGroups: Field<Map<string, Field<Map<string, Field<string>>>>>;
 }
 
 export type GroupStoreState = KnownMappedFields<IGroupStoreState>;
@@ -37,15 +39,15 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
     protected defaultState()
     {
-        return {
-            version: new Field(0),
-            passwordGroupsByID: new Field(new Map<string, Field<Group>>()),
-            valueGroupsByID: new Field(new Map<string, Field<Group>>()),
-            emptyPasswordGroups: new Field(new Map<string, Field<string>>()),
-            emptyValueGroups: new Field(new Map<string, Field<string>>()),
-            duplicatePasswordGroups: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
-            duplicateValueGroups: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
-        }
+        return FieldTreeUtility.setupIDs<IGroupStoreState>({
+            version: WebFieldConstructor.create(0),
+            passwordGroupsByID: WebFieldConstructor.create(new Map<string, Field<Group>>()),
+            valueGroupsByID: WebFieldConstructor.create(new Map<string, Field<Group>>()),
+            emptyPasswordGroups: WebFieldConstructor.create(new Map<string, Field<string>>()),
+            emptyValueGroups: WebFieldConstructor.create(new Map<string, Field<string>>()),
+            duplicatePasswordGroups: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            duplicateValueGroups: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
+        });
     }
 
     async addGroup(masterKey: string, group: Group, backup?: boolean): Promise<boolean>
@@ -59,12 +61,12 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         {
             group.id.value = await generateUniqueIDForMap(pendingState.passwordGroupsByID.value);
 
-            const groupField = new Field(group);
+            const groupField = WebFieldConstructor.create(group);
             pendingState.passwordGroupsByID.value.set(group.id.value, groupField);
 
             if (group.passwords.value.size == 0)
             {
-                pendingState.emptyPasswordGroups.value.set(group.id.value, new Field(group.id.value));
+                pendingState.emptyPasswordGroups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
                 this.checkUpdateDuplicateSecondaryObjects(group, "passwords", pendingState.duplicatePasswordGroups, pendingState.passwordGroupsByID)
             }
             else
@@ -85,12 +87,12 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         {
             group.id.value = await generateUniqueIDForMap(pendingState.valueGroupsByID.value);
 
-            const groupField = new Field(group);
+            const groupField = WebFieldConstructor.create(group);
             pendingState.valueGroupsByID.value.set(group.id.value, groupField);
 
             if (group.values.value.size == 0)
             {
-                pendingState.emptyValueGroups.value.set(group.id.value, new Field(group.id.value));
+                pendingState.emptyValueGroups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
                 this.checkUpdateDuplicateSecondaryObjects(group, "values", pendingState.duplicateValueGroups, pendingState.valueGroupsByID)
             }
             else
@@ -228,7 +230,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         changedGroups: RelatedDataTypeChanges,
         currentEmptyGroups: Field<Map<string, Field<string>>>,
-        currentDuplicateSecondaryObjects: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
+        currentDuplicateSecondaryObjects: Field<Map<string, Field<Map<string, Field<string>>>>>,
         allSecondaryObjects: Field<Map<string, Field<Group>>>)
     {
         changedGroups.added.forEach((value, key, map) =>
@@ -241,7 +243,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
             if (!group.value[primaryDataObjectCollection].value.has(primaryObjectID))
             {
-                group.value[primaryDataObjectCollection].value.set(primaryObjectID, new Field(primaryObjectID));
+                group.value[primaryDataObjectCollection].value.set(primaryObjectID, WebFieldConstructor.create(primaryObjectID));
             }
 
             this.checkUpdateEmptySecondaryObject(
@@ -293,7 +295,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         primaryObjectChanges: RelatedDataTypeChanges,
         allPrimaryObjects: Field<Map<string, Field<T>>>,
         currentEmptyGroups: Field<Map<string, Field<string>>>,
-        currentDuplicateGroups: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
+        currentDuplicateGroups: Field<Map<string, Field<Map<string, Field<string>>>>>,
         allSecondaryObjects: Field<Map<string, Field<Group>>>)
     {
         primaryObjectChanges.added.forEach((_, k) =>
@@ -301,7 +303,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             const primaryObject: Field<T> | undefined = allPrimaryObjects.value.get(k);
             if (primaryObject)
             {
-                primaryObject.value.groups.value.set(group.id.value, new Field(group.id.value));
+                primaryObject.value.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
             }
         });
 

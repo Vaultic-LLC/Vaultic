@@ -88,7 +88,7 @@ class LogRepository
         }
         catch (e) 
         {
-            console.log(`Failed to clear logs: ${e}`);
+            await this.log(undefined, "Failed to clear logs");
         }
 
         return false;

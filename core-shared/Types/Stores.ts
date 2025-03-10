@@ -1,7 +1,6 @@
-import { PasswordsByDomainType } from "./DataTypes";
-import { Field, KnownMappedFields } from "./Fields";
+import { Field } from "./Fields";
 
 export interface SimplifiedPasswordStore
 {
-    passwordsByDomain?: Field<Map<string, Field<KnownMappedFields<PasswordsByDomainType>>>>;
+    passwordsByDomain?: Field<Map<string, Field<Map<string, Field<string>>>>>;
 };

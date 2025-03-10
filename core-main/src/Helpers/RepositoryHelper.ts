@@ -402,7 +402,6 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
     if (serverUserDataPayload.removedUserVaults)
     {
-        console.log(`Removed User Vaults: ${JSON.stringify(serverUserDataPayload.removedUserVaults)}`);
         for (let i = 0; i < serverUserDataPayload.removedUserVaults.length; i++)
         {
             const serverUserVault = serverUserDataPayload.removedUserVaults[i];
@@ -417,7 +416,6 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
     if (serverUserDataPayload.removedVaults)
     {
-        console.log(`Removed Vaults: ${JSON.stringify(serverUserDataPayload.removedVaults)}`);
         for (let i = 0; i < serverUserDataPayload.removedVaults.length; i++)
         {
             const serverVault = serverUserDataPayload.removedVaults[i];

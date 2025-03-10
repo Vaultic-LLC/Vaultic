@@ -235,7 +235,6 @@ export default defineComponent({
 }
 
 #organizationView__memberTable {
-    position: relative;
     height: 90%;
     width: 85%;
 }

@@ -1,17 +1,6 @@
-import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject, KnownMappedFields, IFieldedObject } from "@vaultic/shared/Types/Fields";
-import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
-import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-
-export class DuplicateDataTypes extends FieldedObject
-{
-    duplicateDataTypesByID: Field<Map<string, Field<string>>>;
-
-    constructor()
-    {
-        super();
-        this.duplicateDataTypesByID = new Field(new Map<string, Field<string>>());
-    }
-}
+import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject } from "@vaultic/shared/Types/Fields";
+import { PasswordSecretProperty, ValueSecretProperty, WebFieldConstructor } from "./Fields";
+import { Organization } from "@vaultic/shared/Types/DataTypes";
 
 export interface IFilterable
 {
@@ -97,11 +86,11 @@ export class CurrentAndSafeStructure extends FieldedObject
 
     constructor()
     {
-        super();
+        super(WebFieldConstructor);
 
-        this.id = new Field("");
-        this.current = new Field(new Map<string, Field<number>>());
-        this.safe = new Field(new Map<string, Field<number>>());
+        this.id = WebFieldConstructor.create("");
+        this.current = WebFieldConstructor.create(new Map<string, Field<number>>());
+        this.safe = WebFieldConstructor.create(new Map<string, Field<number>>());
     }
 }
 
@@ -190,70 +179,66 @@ export interface VaultAndBreachCount
 export function defaultPassword(): Password
 {
     return {
-        id: new Field(""),
-        key: new Field(""),
-        isVaultic: new Field(false),
-        passwordFor: new Field(''),
-        login: new Field(''),
-        domain: new Field(''),
-        email: new Field(''),
-        password: new Field(''),
-        securityQuestions: new Field(new Map<string, Field<SecurityQuestion>>()),
-        additionalInformation: new Field(''),
-        lastModifiedTime: new Field(''),
-        isWeak: new Field(false),
-        isWeakMessage: new Field(''),
-        containsLogin: new Field(false),
-        filters: new Field(new Map()),
-        groups: new Field(new Map()),
-        checkedForBreach: new Field(false)
-    }
+        id: WebFieldConstructor.create(""),
+        isVaultic: WebFieldConstructor.create(false),
+        passwordFor: WebFieldConstructor.create(''),
+        login: WebFieldConstructor.create(''),
+        domain: WebFieldConstructor.create(''),
+        email: WebFieldConstructor.create(''),
+        password: WebFieldConstructor.create(''),
+        securityQuestions: WebFieldConstructor.create(new Map<string, Field<SecurityQuestion>>()),
+        additionalInformation: WebFieldConstructor.create(''),
+        lastModifiedTime: WebFieldConstructor.create(''),
+        isWeak: WebFieldConstructor.create(false),
+        isWeakMessage: WebFieldConstructor.create(''),
+        containsLogin: WebFieldConstructor.create(false),
+        filters: WebFieldConstructor.create(new Map()),
+        groups: WebFieldConstructor.create(new Map()),
+        checkedForBreach: WebFieldConstructor.create(false)
+    };
 }
 
 export function defaultValue(): NameValuePair
 {
     return {
-        id: new Field(""),
-        key: new Field(''),
-        name: new Field(''),
-        value: new Field(''),
-        valueType: new Field(undefined),
-        notifyIfWeak: new Field(true),
-        additionalInformation: new Field(''),
-        lastModifiedTime: new Field(''),
-        filters: new Field(new Map()),
-        groups: new Field(new Map()),
-        isWeak: new Field(false),
-        isWeakMessage: new Field(''),
-    }
+        id: WebFieldConstructor.create(""),
+        name: WebFieldConstructor.create(''),
+        value: WebFieldConstructor.create(''),
+        valueType: WebFieldConstructor.create(undefined),
+        notifyIfWeak: WebFieldConstructor.create(true),
+        additionalInformation: WebFieldConstructor.create(''),
+        lastModifiedTime: WebFieldConstructor.create(''),
+        filters: WebFieldConstructor.create(new Map()),
+        groups: WebFieldConstructor.create(new Map()),
+        isWeak: WebFieldConstructor.create(false),
+        isWeakMessage: WebFieldConstructor.create(''),
+    };
 }
 
 export function defaultFilter(type: DataType): Filter
 {
     return {
-        id: new Field(""),
-        key: new Field(''),
-        passwords: new Field(new Map()),
-        values: new Field(new Map()),
-        type: new Field(type),
-        isActive: new Field(false),
-        name: new Field(''),
-        conditions: new Field(new Map<string, Field<FilterCondition>>())
-    }
+        id: WebFieldConstructor.create(""),
+        passwords: WebFieldConstructor.create(new Map()),
+        values: WebFieldConstructor.create(new Map()),
+        type: WebFieldConstructor.create(type),
+        isActive: WebFieldConstructor.create(false),
+        name: WebFieldConstructor.create(''),
+        conditions: WebFieldConstructor.create(new Map<string, Field<FilterCondition>>())
+    };
 }
 
 export function defaultGroup(type: DataType): Group
 {
     return {
-        id: new Field(""),
-        key: new Field(""),
-        passwords: new Field(new Map()),
-        values: new Field(new Map()),
-        name: new Field(''),
-        type: new Field(type),
-        color: new Field(''),
-        icon: new Field('')
-    }
+        id: WebFieldConstructor.create(""),
+        passwords: WebFieldConstructor.create(new Map()),
+        values: WebFieldConstructor.create(new Map()),
+        name: WebFieldConstructor.create(''),
+        type: WebFieldConstructor.create(type),
+        color: WebFieldConstructor.create(''),
+        icon: WebFieldConstructor.create('')
+    };
 }
 
 export function defaultOrganization(): Organization

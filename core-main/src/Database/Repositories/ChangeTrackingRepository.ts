@@ -6,7 +6,8 @@ import Transaction from "../Transaction";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { StoreState } from "../Entities/States/StoreState";
 import { Field } from "@vaultic/shared/Types/Fields";
-import { MapPropertyManager, ObjectPropertyManager } from "../../Types/Properties";
+import { MapPropertyManager, ObjectPropertyManager } from "@vaultic/shared/Types/Utilities";
+import { MainFieldConstructor } from "../../Types/Field";
 
 class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 {
@@ -19,7 +20,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
     {
         try 
         {
-            this.trackObjectDifferences(userID, masterKey, new Field(newState), new Field(oldState), transaction);
+            this.trackObjectDifferences(userID, masterKey, MainFieldConstructor.create(newState), MainFieldConstructor.create(oldState), transaction);
             return JSON.vaulticStringify(newState);
         }
         catch (e)
@@ -77,7 +78,7 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
             }
         }
-        else 
+        else
         {
             // Only values have their last modified time set, objects do not. This isn't an issue
             if (newObj.forceUpdate === true || newObj.value != oldObj.value)
@@ -125,6 +126,8 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             return changeTrackingByID;
         }
 
+        // TODO: these should order by changeTrackingID ascending so that the most recent one will
+        // be left in the dictionar if there are multiple
         let changeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find(
             {
                 where: {

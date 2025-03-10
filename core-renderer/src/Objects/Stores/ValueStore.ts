@@ -7,13 +7,15 @@ import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import app from "./AppStore";
-import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, DuplicateDataTypes, RelatedDataTypeChanges } from "../../Types/DataTypes";
+import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { FieldTreeUtility } from "../../Types/Tree";
+import { WebFieldConstructor } from "../../Types/Fields";
 
 interface IValueStoreState extends StoreState
 {
     valuesByID: Field<Map<string, Field<ReactiveValue>>>;
-    duplicateValues: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>;
+    duplicateValues: Field<Map<string, Field<Map<string, Field<string>>>>>;
     currentAndSafeValues: Field<KnownMappedFields<CurrentAndSafeStructure>>;
 }
 
@@ -33,12 +35,12 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
 
     protected defaultState()
     {
-        return {
-            version: new Field(0),
-            valuesByID: new Field(new Map<string, Field<ReactiveValue>>()),
-            duplicateValues: new Field(new Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>()),
-            currentAndSafeValues: new Field(new CurrentAndSafeStructure()),
-        }
+        return FieldTreeUtility.setupIDs<IValueStoreState>({
+            version: WebFieldConstructor.create(0),
+            valuesByID: WebFieldConstructor.create(new Map<string, Field<ReactiveValue>>()),
+            duplicateValues: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            currentAndSafeValues: WebFieldConstructor.create(new CurrentAndSafeStructure()),
+        });
     }
 
     async addNameValuePair(masterKey: string, value: NameValuePair, backup?: boolean): Promise<boolean>
@@ -58,7 +60,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
             return false;
         }
 
-        const reactiveValue = new Field(createReactiveValue(value));
+        const reactiveValue = WebFieldConstructor.create(createReactiveValue(value));
         pendingState.valuesByID.value.set(reactiveValue.value.id.value, reactiveValue);
 
         await this.incrementCurrentAndSafeValues(pendingState, pendingState.valuesByID);
@@ -199,10 +201,10 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
     private async incrementCurrentAndSafeValues(pendingState: ValueStoreState, values: Field<Map<string, Field<ReactiveValue>>>)
     {
         const id = await generateUniqueIDForMap(pendingState.currentAndSafeValues.value.current.value);
-        pendingState.currentAndSafeValues.value.current.value.set(id, new Field(values.value.size));
+        pendingState.currentAndSafeValues.value.current.value.set(id, WebFieldConstructor.create(values.value.size));
 
         const safePasswords = values.value.filter((k, v) => this.valueIsSafe(pendingState, v.value));
-        pendingState.currentAndSafeValues.value.safe.value.set(id, new Field(safePasswords.size));
+        pendingState.currentAndSafeValues.value.safe.value.set(id, WebFieldConstructor.create(safePasswords.size));
     }
 
     private valueIsSafe(state: ValueStoreState, value: ReactiveValue)

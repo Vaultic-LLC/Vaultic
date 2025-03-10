@@ -22,6 +22,7 @@ import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
 import { Field } from "@vaultic/shared/Types/Fields";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
+import { MainFieldConstructor } from "../../Types/Field";
 
 class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
@@ -414,100 +415,107 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalGetCurrentUserData(this: UserRepository): Promise<TypedMethodResponse<string | undefined>>
         {
-            const currentUser = await this.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            try
             {
-                return TypedMethodResponse.fail(errorCodes.NO_USER);
-            }
-
-            const decryptedAppStoreState = await environment.utilities.crypt.symmetricDecrypt(masterKey, currentUser.appStoreState.state);
-            if (!decryptedAppStoreState)
-            {
-                return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "AppStoreState");
-            }
-
-            const userData: UserData =
-            {
-                success: false,
-                userInfo:
+                const currentUser = await this.getVerifiedCurrentUser(masterKey);
+                if (!currentUser)
                 {
-                    email: currentUser.email,
-                    firstName: currentUser.firstName,
-                    lastName: currentUser.lastName
-                },
-                appStoreState: decryptedAppStoreState.value!,
-                userPreferencesStoreState: currentUser.userPreferencesStoreState.state,
-                displayVaults: [],
-                currentVault: undefined
-            };
+                    return TypedMethodResponse.fail(errorCodes.NO_USER);
+                }
 
-            const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey,
-                [nameof<Vault>("name"), nameof<Vault>("passwordStoreState")]);
-
-            if (!userVaults || userVaults.length == 0)
-            {
-                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
-            }
-
-            for (let i = 0; i < userVaults.length; i++)
-            {
-                // we only want to set our last used vault for our vaults, not ones another user 
-                // may have accessed
-                if (userVaults[i].lastUsed && userVaults[i].isOwner)
+                const decryptedAppStoreState = await environment.utilities.crypt.symmetricDecrypt(masterKey, currentUser.appStoreState.state);
+                if (!decryptedAppStoreState)
                 {
-                    if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
+                    return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "AppStoreState");
+                }
+
+                const userData: UserData =
+                {
+                    success: false,
+                    userInfo:
                     {
-                        return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Current Vault");
+                        email: currentUser.email,
+                        firstName: currentUser.firstName,
+                        lastName: currentUser.lastName
+                    },
+                    appStoreState: decryptedAppStoreState.value!,
+                    userPreferencesStoreState: currentUser.userPreferencesStoreState.state,
+                    displayVaults: [],
+                    currentVault: undefined
+                };
+
+                const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey,
+                    [nameof<Vault>("name"), nameof<Vault>("passwordStoreState")]);
+
+                if (!userVaults || userVaults.length == 0)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
+                }
+
+                for (let i = 0; i < userVaults.length; i++)
+                {
+                    // we only want to set our last used vault for our vaults, not ones another user 
+                    // may have accessed
+                    if (userVaults[i].lastUsed && userVaults[i].isOwner)
+                    {
+                        if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
+                        {
+                            return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Current Vault");
+                        }
                     }
+
+                    userData.displayVaults!.push({
+                        userOrganizationID: userVaults[i].userOrganizationID,
+                        userVaultID: userVaults[i].userVaultID,
+                        vaultID: userVaults[i].vaultID,
+                        name: userVaults[i].name,
+                        shared: userVaults[i].shared,
+                        isOwner: userVaults[i].isOwner,
+                        isReadOnly: userVaults[i].isReadOnly,
+                        isArchived: userVaults[i].isArchived,
+                        lastUsed: userVaults[i].lastUsed,
+                        type: getVaultType(userVaults[i]),
+                        passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).passwordsByDomain ?? MainFieldConstructor.create(new Map())
+                    });
                 }
 
-                userData.displayVaults!.push({
-                    userOrganizationID: userVaults[i].userOrganizationID,
-                    userVaultID: userVaults[i].userVaultID,
-                    vaultID: userVaults[i].vaultID,
-                    name: userVaults[i].name,
-                    shared: userVaults[i].shared,
-                    isOwner: userVaults[i].isOwner,
-                    isReadOnly: userVaults[i].isReadOnly,
-                    isArchived: userVaults[i].isArchived,
-                    lastUsed: userVaults[i].lastUsed,
-                    type: getVaultType(userVaults[i]),
-                    passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).passwordsByDomain ?? new Field(new Map())
-                });
-            }
-
-            if (!userData.currentVault)
-            {
-                if (!(await setCurrentVault(userData.displayVaults![0].userVaultID, true)))
+                if (!userData.currentVault)
                 {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed to Set Backup Current Vault");
+                    if (!(await setCurrentVault(userData.displayVaults![0].userVaultID, true)))
+                    {
+                        return TypedMethodResponse.fail(undefined, undefined, "Failed to Set Backup Current Vault");
+                    }
+
+                    userData.displayVaults![0].lastUsed = true;
                 }
 
-                userData.displayVaults![0].lastUsed = true;
-            }
+                userData.success = true;
+                return TypedMethodResponse.success(JSON.vaulticStringify(userData));
 
-            userData.success = true;
-            return TypedMethodResponse.success(JSON.vaulticStringify(userData));
-
-            // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
-            async function setCurrentVault(id: number, setAsLastUsed: boolean)
-            {
-                const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [id]);
-                if (!userVault || userVault.length == 0)
+                // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
+                async function setCurrentVault(id: number, setAsLastUsed: boolean)
                 {
-                    return false;
-                }
-
-                if (setAsLastUsed)
-                {
-                    if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!, userVault[0].userVaultID)))
+                    const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [id]);
+                    if (!userVault || userVault.length == 0)
                     {
                         return false;
                     }
-                }
 
-                userData.currentVault = userVault[0];
-                return true;
+                    if (setAsLastUsed)
+                    {
+                        if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!, userVault[0].userVaultID)))
+                        {
+                            return false;
+                        }
+                    }
+
+                    userData.currentVault = userVault[0];
+                    return true;
+                }
+            }
+            catch (e)
+            {
+                console.log(e);
             }
         }
     }
@@ -518,64 +526,71 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalSaveUser(this: UserRepository): Promise<TypedMethodResponse<boolean>>
         {
-            let user: User | null;
-
-            // the masterKey is "" when updating userPreferences. This isn't a concern since its the only thing that is updated
-            // when this happens.
-            if (masterKey)
+            try
             {
-                user = await this.getVerifiedCurrentUser(masterKey);
-            }
-            else 
-            {
-                user = await this.getCurrentUser();
-            }
+                let user: User | null;
 
-            if (!user)
-            {
-                return TypedMethodResponse.fail(errorCodes.NO_USER);
-            }
-
-            const newUser: UserData = JSON.vaulticParse(newData);
-            const transaction = new Transaction();
-
-            let parsedCurrentData: UserData | undefined = undefined;
-            if (newUser.appStoreState || newUser.userPreferencesStoreState)
-            {
-                parsedCurrentData = JSON.vaulticParse(currentData);
-            }
-
-            if (newUser.appStoreState)
-            {
-                const currentAppStoreState = JSON.vaulticParse(parsedCurrentData.appStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
-
-                if (!await (environment.repositories.appStoreStates.updateState(
-                    user.appStoreState.appStoreStateID, masterKey, state, transaction)))
+                // the masterKey is "" when updating userPreferences. This isn't a concern since its the only thing that is updated
+                // when this happens.
+                if (masterKey)
                 {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update AppStoreState");
+                    user = await this.getVerifiedCurrentUser(masterKey);
                 }
-            }
-
-            if (newUser.userPreferencesStoreState)
-            {
-                const currentUserPreferences = JSON.vaulticParse(parsedCurrentData.userPreferencesStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, "", JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
-
-                if (!await (environment.repositories.userPreferencesStoreStates.updateState(
-                    user.userPreferencesStoreState.userPreferencesStoreStateID, "", state, transaction)))
+                else 
                 {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update UserPreferencesStoreState");
+                    user = await this.getCurrentUser();
                 }
-            }
 
-            const saved = await transaction.commit();
-            if (!saved)
+                if (!user)
+                {
+                    return TypedMethodResponse.fail(errorCodes.NO_USER);
+                }
+
+                const newUser: UserData = JSON.vaulticParse(newData);
+                const transaction = new Transaction();
+
+                let parsedCurrentData: UserData | undefined = undefined;
+                if (newUser.appStoreState || newUser.userPreferencesStoreState)
+                {
+                    parsedCurrentData = JSON.vaulticParse(currentData);
+                }
+
+                if (newUser.appStoreState)
+                {
+                    const currentAppStoreState = JSON.vaulticParse(parsedCurrentData.appStoreState);
+                    const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
+
+                    if (!await (environment.repositories.appStoreStates.updateState(
+                        user.appStoreState.appStoreStateID, masterKey, state, transaction)))
+                    {
+                        return TypedMethodResponse.fail(undefined, undefined, "Failed To Update AppStoreState");
+                    }
+                }
+
+                if (newUser.userPreferencesStoreState)
+                {
+                    const currentUserPreferences = JSON.vaulticParse(parsedCurrentData.userPreferencesStoreState);
+                    const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, "", JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
+
+                    if (!await (environment.repositories.userPreferencesStoreStates.updateState(
+                        user.userPreferencesStoreState.userPreferencesStoreStateID, "", state, transaction)))
+                    {
+                        return TypedMethodResponse.fail(undefined, undefined, "Failed To Update UserPreferencesStoreState");
+                    }
+                }
+
+                const saved = await transaction.commit();
+                if (!saved)
+                {
+                    return TypedMethodResponse.transactionFail();
+                }
+
+                return TypedMethodResponse.success(true);
+            }
+            catch (e)
             {
-                return TypedMethodResponse.transactionFail();
+                console.log(e);
             }
-
-            return TypedMethodResponse.success(true);
         }
     }
 

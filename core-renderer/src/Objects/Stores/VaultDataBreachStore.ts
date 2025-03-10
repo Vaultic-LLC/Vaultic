@@ -7,6 +7,7 @@ import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
 import { Field } from "@vaultic/shared/Types/Fields";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
+import { WebFieldConstructor } from "../../Types/Fields";
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed" | "onBreachesUpdated";
 
@@ -35,7 +36,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
     protected defaultState()
     {
         return {
-            version: new Field(0)
+            version: WebFieldConstructor.create(0)
         };
     }
 
@@ -73,7 +74,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
             vault.passwordsByDomain?.value.forEach((v, k, map) => 
             {
-                limitedPasswords.push(...v.value.passwordsByDomain.value.map((kk, vv) =>
+                limitedPasswords.push(...v.value.map((kk, vv) =>
                 {
                     return {
                         id: vv.value,

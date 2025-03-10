@@ -3,8 +3,8 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { AtRiskType, DataType, DuplicateDataTypes, Filter, Group, ISecondaryDataObject, RelatedDataTypeChanges } from "../../Types/DataTypes";
-import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
+import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject, RelatedDataTypeChanges } from "../../Types/DataTypes";
+import { SecretProperty, SecretPropertyType, WebFieldConstructor } from "../../Types/Fields";
 import { Field, IFieldedObject, FieldMap, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 
 // Enforced to ensure the logic to track changes always works
@@ -250,14 +250,14 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
         primaryDataObject: T,
         allPrimaryObjects: Field<Map<string, Field<T>>>,
         secretProperty: U,
-        allDuplicates: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>): Promise<void>
+        allDuplicates: Field<Map<string, Field<Map<string, Field<string>>>>>): Promise<void>
     {
         // first make sure we have a list so no null reference exceptions
         if (!allDuplicates.value.get(primaryDataObject.id.value))
         {
-            allDuplicates.value.set(primaryDataObject.id.value, new Field(new DuplicateDataTypes()));
+            allDuplicates.addMapValue(primaryDataObject.id.value, WebFieldConstructor.create(new Map()));
         }
-        else 
+        else
         {
             // for change tracking
             allDuplicates.value.get(primaryDataObject.id.value)!.forceUpdate = true;
@@ -277,7 +277,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
             // make sure we have a valid list before doing any checking
             if (!allDuplicates.value.get(currentId))
             {
-                allDuplicates.value.set(currentId, new Field(new DuplicateDataTypes()));
+                allDuplicates.addMapValue(currentId, WebFieldConstructor.create(new Map()));
             }
 
             const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject.value[secretProperty].value);
@@ -290,33 +290,33 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
             if (response.value == primaryDataObject[secretProperty].value)
             {
                 // updating the list for the current primaryObject to include the duplicate primaryObjects id
-                if (!allDuplicates.value.get(primaryDataObject.id.value)?.value.duplicateDataTypesByID.value.has(currentId))
+                if (!allDuplicates.value.get(primaryDataObject.id.value)?.value.has(currentId))
                 {
-                    allDuplicates.value.get(primaryDataObject.id.value)?.value.duplicateDataTypesByID.value.set(currentId, new Field(currentId));
+                    allDuplicates.value.get(primaryDataObject.id.value)?.addMapValue(currentId, WebFieldConstructor.create(currentId));
                 }
 
                 // updating the duplciate primaryObjects list to include the current primaryObjects id
-                if (!allDuplicates.value.get(currentId)?.value.duplicateDataTypesByID.value.has(primaryDataObject.id.value))
+                if (!allDuplicates.value.get(currentId)?.value.has(primaryDataObject.id.value))
                 {
-                    allDuplicates.value.get(currentId)?.value.duplicateDataTypesByID.value.set(primaryDataObject.id.value, new Field(currentId));
+                    allDuplicates.value.get(currentId)?.addMapValue(primaryDataObject.id.value, WebFieldConstructor.create(currentId));
                 }
             }
             else
             {
-                if (allDuplicates.value.get(primaryDataObject.id.value)?.value.duplicateDataTypesByID.value.has(currentId))
+                if (allDuplicates.value.get(primaryDataObject.id.value)?.value.has(currentId))
                 {
                     // remove old duplicate id from current primary objects list since it is no longer a duplicate
-                    allDuplicates.value.get(primaryDataObject.id.value)?.value.duplicateDataTypesByID.value.delete(currentId);
+                    allDuplicates.value.get(primaryDataObject.id.value)?.value.delete(currentId);
                 }
 
-                if (allDuplicates.value.get(currentId)?.value.duplicateDataTypesByID.value.has(primaryDataObject.id.value))
+                if (allDuplicates.value.get(currentId)?.value.has(primaryDataObject.id.value))
                 {
                     // remove current primary object from temp primary objects list since it is no loner a duplicate
-                    allDuplicates.value.get(currentId)?.value.duplicateDataTypesByID.value.delete(primaryDataObject.id.value);
+                    allDuplicates.value.get(currentId)?.value.delete(primaryDataObject.id.value);
                 }
 
                 // remove  temp primary objects list since it no longer has any duplicates
-                if (allDuplicates.value.has(currentId) && allDuplicates.value.get(currentId)?.value.duplicateDataTypesByID.value.size == 0)
+                if (allDuplicates.value.has(currentId) && allDuplicates.value.get(currentId)?.value.size == 0)
                 {
                     allDuplicates.value.delete(currentId)
                 }
@@ -324,16 +324,16 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
         }
 
         // updates all the fields in the other duplicate data objects collections for change tracking
-        allDuplicates.value.get(primaryDataObject.id.value)?.value.duplicateDataTypesByID.value.forEach((v, k, map) => 
+        allDuplicates.value.get(primaryDataObject.id.value)?.value.forEach((v, k, map) => 
         {
-            if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.duplicateDataTypesByID.value.has(primaryDataObject.id.value))
+            if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.has(primaryDataObject.id.value))
             {
-                allDuplicates.value.get(k)!.value.duplicateDataTypesByID.value.get(primaryDataObject.id.value)!.forceUpdate = true;
+                allDuplicates.value.get(k)!.value.get(primaryDataObject.id.value)!.forceUpdate = true;
             }
         });
 
         // remove current primary objects list since it no longer has any entries
-        if (allDuplicates.value.has(primaryDataObject.id.value) && allDuplicates.value.get(primaryDataObject.id.value)?.value.duplicateDataTypesByID.value.size == 0)
+        if (allDuplicates.value.has(primaryDataObject.id.value) && allDuplicates.value.get(primaryDataObject.id.value)?.value.size == 0)
         {
             allDuplicates.value.delete(primaryDataObject.id.value)
         }
@@ -343,7 +343,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
     // usually checkUpdateDuplicatePrimaryObjects handles this but we don't call that if the secret property wasn't updated since 
     // we know duplicate values can't change. We still want to update their modified times though for change tracking so that if the backing 
     // password / value was deleted on another device before it was updated, they are retrained and so are the duplicates
-    protected checkUpdateDuplicatePrimaryObjectsModifiedTime(primaryDataObjectID: string, allDuplicates: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
+    protected checkUpdateDuplicatePrimaryObjectsModifiedTime(primaryDataObjectID: string, allDuplicates: Field<Map<string, Field<Map<string, Field<string>>>>>)
     {
         if (!allDuplicates.value.has(primaryDataObjectID))
         {
@@ -353,34 +353,33 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
         allDuplicates.value.get(primaryDataObjectID)!.forceUpdate = true;
 
         // updates all the fields in the other duplicate data objects collections for change tracking
-        allDuplicates.value.get(primaryDataObjectID)?.value.duplicateDataTypesByID.value.forEach((v, k, map) => 
+        allDuplicates.value.get(primaryDataObjectID)?.value.forEach((v, k, map) => 
         {
-            if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.duplicateDataTypesByID.value.has(primaryDataObjectID))
+            if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.has(primaryDataObjectID))
             {
-                //allDuplicates.value.get(k)!.lastModifiedTime = Date.now();
-                allDuplicates.value.get(k)!.value.duplicateDataTypesByID.value.get(primaryDataObjectID)!.forceUpdate = true;
+                allDuplicates.value.get(k)!.value.get(primaryDataObjectID)!.forceUpdate = true;
             }
         });
     }
 
     protected checkRemoveFromDuplicate<T extends IIdentifiable>(
         primaryDataObject: T,
-        allDuplicates: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
+        allDuplicates: Field<Map<string, Field<Map<string, Field<string>>>>>)
     {
         if (!allDuplicates.value.has(primaryDataObject.id.value))
         {
             return;
         }
 
-        allDuplicates.value.get(primaryDataObject.id.value)?.value.duplicateDataTypesByID.value.forEach((v, k, map) =>
+        allDuplicates.value.get(primaryDataObject.id.value)?.value.forEach((v, k, map) =>
         {
             if (!allDuplicates.value.has(k))
             {
                 return;
             }
 
-            allDuplicates.value.get(k)?.value.duplicateDataTypesByID.value.delete(primaryDataObject.id.value);
-            if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.duplicateDataTypesByID.value.size == 0)
+            allDuplicates.value.get(k)?.value.delete(primaryDataObject.id.value);
+            if (allDuplicates.value.has(k) && allDuplicates.value.get(k)?.value.size == 0)
             {
                 allDuplicates.value.delete(k);
             }
@@ -433,13 +432,13 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
     protected checkUpdateDuplicateSecondaryObjects<T extends Filter | Group>(
         secondaryDataObject: T,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        currentDuplicateSecondaryObjects: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>,
+        currentDuplicateSecondaryObjects: Field<Map<string, Field<Map<string, Field<string>>>>>,
         allSecondaryDataObjects: Field<Map<string, Field<T>>>)
     {
         // setup so that we don't get any exceptions
         if (!currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value))
         {
-            currentDuplicateSecondaryObjects.value.set(secondaryDataObject.id.value, new Field(new DuplicateDataTypes()));
+            currentDuplicateSecondaryObjects.value.set(secondaryDataObject.id.value, WebFieldConstructor.create(new Map()));
         }
         else 
         {
@@ -452,23 +451,23 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
 
         // there are no duplicate secondary objects anywhere, so nothing to do
         if (potentiallyNewDuplicateSecondaryObject.length == 0 &&
-            currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.size == 0)
+            currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.size == 0)
         {
             currentDuplicateSecondaryObjects.value.delete(secondaryDataObject.id.value);
             return;
         }
 
         const addedDuplicateSeconaryObjects: string[] = potentiallyNewDuplicateSecondaryObject.filter(
-            o => !currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.has(o));
+            o => !currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.has(o));
 
-        const removedDuplicateSecondaryObjects: string[] | undefined = currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.
-            value.duplicateDataTypesByID.value.mapWhere((k, v) => !potentiallyNewDuplicateSecondaryObject.includes(k), (k, v) => k);
+        const removedDuplicateSecondaryObjects: string[] | undefined = currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)
+            ?.value.mapWhere((k, v) => !potentiallyNewDuplicateSecondaryObject.includes(k), (k, v) => k);
 
         // remove no longer duplicates first so that all we have after are un edited ones and we can update the change tracking for those
         removedDuplicateSecondaryObjects?.forEach(o =>
         {
             // remove removed secondary object from current secondary object's duplicate list
-            currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.delete(o);
+            currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.delete(o);
 
             if (!currentDuplicateSecondaryObjects.value.has(o))
             {
@@ -476,10 +475,10 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
             }
 
             // remove current secondary object from removed secondary object's list
-            if (currentDuplicateSecondaryObjects.value.get(o)?.value.duplicateDataTypesByID.value.has(secondaryDataObject.id.value))
+            if (currentDuplicateSecondaryObjects.value.get(o)?.value.has(secondaryDataObject.id.value))
             {
-                currentDuplicateSecondaryObjects.value.get(o)?.value.duplicateDataTypesByID.value.delete(secondaryDataObject.id.value);
-                if (currentDuplicateSecondaryObjects.value.get(o)?.value.duplicateDataTypesByID.value.size == 0)
+                currentDuplicateSecondaryObjects.value.get(o)?.value.delete(secondaryDataObject.id.value);
+                if (currentDuplicateSecondaryObjects.value.get(o)?.value.size == 0)
                 {
                     currentDuplicateSecondaryObjects.value.delete(o);
                 }
@@ -487,34 +486,34 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
         });
 
         // updates all the fields in the other duplicate data objects collections for change tracking
-        currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.forEach((v, k, map) => 
+        currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.forEach((v, k, map) => 
         {
             //currentDuplicateSecondaryObjects.value.get(k)!.lastModifiedTime = Date.now();
-            currentDuplicateSecondaryObjects.value.get(k)!.value.duplicateDataTypesByID.value.get(secondaryDataObject.id.value)!.forceUpdate = true;
+            currentDuplicateSecondaryObjects.value.get(k)!.value.get(secondaryDataObject.id.value)!.forceUpdate = true;
         });
 
         addedDuplicateSeconaryObjects.forEach(o =>
         {
             // add added secondary object to current secondary object's duplicate list
-            if (!currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.has(o))
+            if (!currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.has(o))
             {
-                currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.set(o, new Field(o));
+                currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.set(o, WebFieldConstructor.create(o));
             }
 
             // need to create a list for the added secondary object if it doesn't exist. Duplicate secondary objects go both ways
             if (!currentDuplicateSecondaryObjects.value.has(o))
             {
-                currentDuplicateSecondaryObjects.value.set(o, new Field(new DuplicateDataTypes()));
+                currentDuplicateSecondaryObjects.value.set(o, WebFieldConstructor.create(new Map()));
             }
 
             // add curent secondary object to added secondary objects duplicate list
-            if (!currentDuplicateSecondaryObjects.value.get(o)?.value.duplicateDataTypesByID.value.has(secondaryDataObject.id.value))
+            if (!currentDuplicateSecondaryObjects.value.get(o)?.value.has(secondaryDataObject.id.value))
             {
-                currentDuplicateSecondaryObjects.value.get(o)?.value.duplicateDataTypesByID.value.set(secondaryDataObject.id.value, new Field(secondaryDataObject.id.value));
+                currentDuplicateSecondaryObjects.value.get(o)?.value.set(secondaryDataObject.id.value, WebFieldConstructor.create(secondaryDataObject.id.value));
             }
         });
 
-        if (currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.duplicateDataTypesByID.value.size == 0)
+        if (currentDuplicateSecondaryObjects.value.get(secondaryDataObject.id.value)?.value.size == 0)
         {
             currentDuplicateSecondaryObjects.value.delete(secondaryDataObject.id.value);
         }
@@ -542,7 +541,7 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
             // if it doesn't, then add it to the list of empty filters
             if (!currentEmptySecondaryObjects.value.has(secondaryObjectID))
             {
-                currentEmptySecondaryObjects.value.set(secondaryObjectID, new Field(secondaryObjectID));
+                currentEmptySecondaryObjects.value.set(secondaryObjectID, WebFieldConstructor.create(secondaryObjectID));
             }
             else 
             {
@@ -559,22 +558,22 @@ export class SecondaryDataTypeStore<T extends KnownMappedFields<StoreState>> ext
 
     protected removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(
         secondaryDataObjectID: string,
-        currentDuplicateSecondaryDataObjects: Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
+        currentDuplicateSecondaryDataObjects: Field<Map<string, Field<Map<string, Field<string>>>>>)
     {
         if (!currentDuplicateSecondaryDataObjects.value.has(secondaryDataObjectID))
         {
             return;
         }
 
-        currentDuplicateSecondaryDataObjects.value.get(secondaryDataObjectID)?.value.duplicateDataTypesByID.value.forEach((v, k, map) =>
+        currentDuplicateSecondaryDataObjects.value.get(secondaryDataObjectID)?.value.forEach((v, k, map) =>
         {
             if (!currentDuplicateSecondaryDataObjects.value.has(k))
             {
                 return;
             }
 
-            currentDuplicateSecondaryDataObjects.value.get(k)?.value.duplicateDataTypesByID.value.delete(secondaryDataObjectID);
-            if (currentDuplicateSecondaryDataObjects.value.get(k)?.value.duplicateDataTypesByID.value.size == 0)
+            currentDuplicateSecondaryDataObjects.value.get(k)?.value.delete(secondaryDataObjectID);
+            if (currentDuplicateSecondaryDataObjects.value.get(k)?.value.size == 0)
             {
                 currentDuplicateSecondaryDataObjects.value.delete(k);
             }
