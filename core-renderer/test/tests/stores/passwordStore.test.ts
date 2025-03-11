@@ -29,14 +29,14 @@ passwordStoreSuite.tests.push({
 
         const sequrityQuestion: SecurityQuestion =
         {
-            id: WebFieldConstructor.create("SecurityQuestion"),
-            question: WebFieldConstructor.create("Question"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("Answer"),
-            answerLength: WebFieldConstructor.create(0)
+            id: Field.create("SecurityQuestion"),
+            question: Field.create("Question"),
+            questionLength: Field.create(0),
+            answer: Field.create("Answer"),
+            answerLength: Field.create(0)
         };
 
-        password.securityQuestions.value.set("SecurityQuestion", WebFieldConstructor.create(sequrityQuestion));
+        password.securityQuestions.value.set("SecurityQuestion", Field.create(sequrityQuestion));
 
         await app.currentVault.passwordStore.addPassword(masterKey, password);
         const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0];
@@ -141,7 +141,7 @@ passwordStoreSuite.tests.push({
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
-        password.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        password.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
@@ -163,11 +163,11 @@ passwordStoreSuite.tests.push({
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Add With Filter Works";
-        filter.conditions.value.set("PasswordStore Add With Filter Works", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("PasswordStore Add With Filter Works"),
-            property: WebFieldConstructor.create("login"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("PasswordStore Add With Filter Works")
+        filter.conditions.value.set("PasswordStore Add With Filter Works", Field.create({
+            id: Field.create("PasswordStore Add With Filter Works"),
+            property: Field.create("login"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("PasswordStore Add With Filter Works")
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -246,27 +246,27 @@ passwordStoreSuite.tests.push({
         password.login.value = "Update security question works 1";
         const securityQuestion: SecurityQuestion =
         {
-            id: WebFieldConstructor.create("SecurityQuestion"),
-            question: WebFieldConstructor.create("Question"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("Answer"),
-            answerLength: WebFieldConstructor.create(0)
+            id: Field.create("SecurityQuestion"),
+            question: Field.create("Question"),
+            questionLength: Field.create(0),
+            answer: Field.create("Answer"),
+            answerLength: Field.create(0)
         };
 
-        password.securityQuestions.value.set("SecurityQuestion", WebFieldConstructor.create(securityQuestion));
+        password.securityQuestions.value.set("SecurityQuestion", Field.create(securityQuestion));
 
         const password2: Password = defaultPassword();
         password2.login.value = "Update security question works 2";
         const securityQuestion2: SecurityQuestion =
         {
-            id: WebFieldConstructor.create("SecurityQuestion2"),
-            question: WebFieldConstructor.create("Question2"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("Answer2"),
-            answerLength: WebFieldConstructor.create(0)
+            id: Field.create("SecurityQuestion2"),
+            question: Field.create("Question2"),
+            questionLength: Field.create(0),
+            answer: Field.create("Answer2"),
+            answerLength: Field.create(0)
         };
 
-        password2.securityQuestions.value.set("SecurityQuestion2", WebFieldConstructor.create(securityQuestion2));
+        password2.securityQuestions.value.set("SecurityQuestion2", Field.create(securityQuestion2));
 
         await app.currentVault.passwordStore.addPassword(masterKey, password);
         await app.currentVault.passwordStore.addPassword(masterKey, password2);
@@ -404,7 +404,7 @@ passwordStoreSuite.tests.push({
 
         // clone or else it won't be detected as new since it would be the same object reference
         const addedGroupPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(password));
-        addedGroupPassword.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        addedGroupPassword.groups.value.set(group.id.value, Field.create(group.id.value));
         await app.currentVault.passwordStore.updatePassword(masterKey, addedGroupPassword, false, [], []);
 
         let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == addedGroupPassword.id.value)[0];
@@ -439,11 +439,11 @@ passwordStoreSuite.tests.push({
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Update With Filter Works";
-        filter.conditions.value.set("Id", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("Id"),
-            property: WebFieldConstructor.create("login"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("UpdateWithFilterWorks--Filter")
+        filter.conditions.value.set("Id", Field.create({
+            id: Field.create("Id"),
+            property: Field.create("login"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("UpdateWithFilterWorks--Filter")
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -580,7 +580,7 @@ passwordStoreSuite.tests.push({
         group.color.value = "#FFFFFF";
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
-        password.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        password.groups.value.set(group.id.value, Field.create(group.id.value));
         await app.currentVault.passwordStore.addPassword(masterKey, password);
 
         let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
@@ -611,11 +611,11 @@ passwordStoreSuite.tests.push({
 
         const filter: Filter = defaultFilter(DataType.Passwords);
         filter.name.value = "PasswordStore Update With Filter Works";
-        filter.conditions.value.set("DeleteWithFilterWorks--Condition", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("DeleteWithFilterWorks--Condition"),
-            property: WebFieldConstructor.create("login"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("DeleteWithFilterWorks")
+        filter.conditions.value.set("DeleteWithFilterWorks--Condition", Field.create({
+            id: Field.create("DeleteWithFilterWorks--Condition"),
+            property: Field.create("login"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("DeleteWithFilterWorks")
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);

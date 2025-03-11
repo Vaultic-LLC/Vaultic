@@ -25,7 +25,6 @@ import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
 import { FieldTreeUtility } from "../../Types/Tree";
-import { WebFieldConstructor } from "../../Types/Fields";
 
 export interface AppSettings extends IFieldedObject
 {
@@ -185,22 +184,22 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     protected defaultState()
     {
         return FieldTreeUtility.setupIDs<IAppStoreState>({
-            id: WebFieldConstructor.create(""),
-            version: WebFieldConstructor.create(0),
-            settings: WebFieldConstructor.create({
-                id: WebFieldConstructor.create(""),
-                userColorPalettes: WebFieldConstructor.create(emptyUserColorPalettes),
-                autoLockTime: WebFieldConstructor.create(AutoLockTime.OneMinute),
-                multipleFilterBehavior: WebFieldConstructor.create(FilterStatus.Or),
-                oldPasswordDays: WebFieldConstructor.create(365),
-                percentMetricForPulse: WebFieldConstructor.create(1),
-                randomValueLength: WebFieldConstructor.create(25),
-                randomPhraseLength: WebFieldConstructor.create(7),
-                includeNumbersInRandomPassword: WebFieldConstructor.create(true),
-                includeSpecialCharactersInRandomPassword: WebFieldConstructor.create(true),
-                includeAmbiguousCharactersInRandomPassword: WebFieldConstructor.create(true),
-                passphraseSeperator: WebFieldConstructor.create('-'),
-                temporarilyStoreMasterKey: WebFieldConstructor.create(true)
+            id: Field.create(""),
+            version: Field.create(0),
+            settings: Field.create({
+                id: Field.create(""),
+                userColorPalettes: Field.create(emptyUserColorPalettes),
+                autoLockTime: Field.create(AutoLockTime.OneMinute),
+                multipleFilterBehavior: Field.create(FilterStatus.Or),
+                oldPasswordDays: Field.create(365),
+                percentMetricForPulse: Field.create(1),
+                randomValueLength: Field.create(25),
+                randomPhraseLength: Field.create(7),
+                includeNumbersInRandomPassword: Field.create(true),
+                includeSpecialCharactersInRandomPassword: Field.create(true),
+                includeAmbiguousCharactersInRandomPassword: Field.create(true),
+                passphraseSeperator: Field.create('-'),
+                temporarilyStoreMasterKey: Field.create(true)
             })
         });
     }

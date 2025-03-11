@@ -4,11 +4,11 @@ import { stringify } from 'csv-stringify/browser/esm';
 import cryptHelper from "./cryptHelper";
 import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
-import { generateUniqueIDForMap } from "./generatorHelper";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
-import { ImportableDisplayField, WebFieldConstructor } from "../Types/Fields";
+import { ImportableDisplayField } from "../Types/Fields";
 import { Field } from "@vaultic/shared/Types/Fields";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 
 export async function exportLogs(color: string)
 {
@@ -327,7 +327,7 @@ class CSVImporter<T extends IPrimaryDataObject>
 
                                     if (groupId)
                                     {
-                                        value.groups.addMapValue(groupId, WebFieldConstructor.create(groupId));
+                                        value.groups.addMapValue(groupId, Field.create(groupId));
                                     }
                                 }
                             }
@@ -386,11 +386,11 @@ export class PasswordCSVImporter extends CSVImporter<Password>
             {
                 for (let i = 0; i < questions.length; i++)
                 {
-                    const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.set(id, WebFieldConstructor.create({
-                        id: WebFieldConstructor.create(id),
-                        question: WebFieldConstructor.create(questions[i]),
-                        answer: WebFieldConstructor.create('')
+                    const id = uniqueIDGenerator.generate();
+                    this.temporarySecurityQuestions.set(id, Field.create({
+                        id: Field.create(id),
+                        question: Field.create(questions[i]),
+                        answer: Field.create('')
                     }));
                 }
             }
@@ -419,11 +419,11 @@ export class PasswordCSVImporter extends CSVImporter<Password>
             {
                 for (let i = 0; i < answers.length; i++)
                 {
-                    const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.set(id, WebFieldConstructor.create({
-                        id: WebFieldConstructor.create(id),
-                        question: WebFieldConstructor.create(''),
-                        answer: WebFieldConstructor.create(answers[i]),
+                    const id = uniqueIDGenerator.generate();
+                    this.temporarySecurityQuestions.set(id, Field.create({
+                        id: Field.create(id),
+                        question: Field.create(''),
+                        answer: Field.create(answers[i]),
                     }));
                 }
             }

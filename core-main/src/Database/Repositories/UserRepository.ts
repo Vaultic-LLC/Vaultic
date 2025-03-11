@@ -22,7 +22,6 @@ import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
 import { Field } from "@vaultic/shared/Types/Fields";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
-import { MainFieldConstructor } from "../../Types/Field";
 
 class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
@@ -71,13 +70,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
     // Should only be called when we don't really care about data integrity, like in LogRepository
     public async getCurrentUser()
     {
-        if (!environment.cache.currentUserID)
+        if (!environment.cache.currentUser?.userID)
         {
             return null;
         }
 
         return this.retrieveReactive((repository) => repository.findOneBy({
-            userID: environment.cache.currentUserID
+            userID: environment.cache.currentUser.userID
         }));
     }
 
@@ -274,7 +273,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             }
 
             // set before backing up
-            environment.cache.setCurrentUserID(user.userID);
+            environment.cache.setCurrentUser(user);
 
             const backupResponse = await backupData(masterKey);
             if (!backupResponse)
@@ -360,7 +359,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         {
             // don't allow setting a current user while one is already set. This would cause issues
             // for the first user
-            if (environment.cache.currentUserID != undefined)
+            if (environment.cache.currentUser != undefined)
             {
                 return TypedMethodResponse.fail(undefined, "setCurrentUser", "Current User already set");
             }
@@ -388,7 +387,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.transactionFail();
             }
 
-            environment.cache.setCurrentUserID(user.userID);
+            environment.cache.setCurrentUser(user);
             await environment.repositories.logs.clearOldLogs(email);
 
             // Make sure the users masterKey hasn't been tampered with. If so, update it
@@ -475,7 +474,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                         isArchived: userVaults[i].isArchived,
                         lastUsed: userVaults[i].lastUsed,
                         type: getVaultType(userVaults[i]),
-                        passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).passwordsByDomain ?? MainFieldConstructor.create(new Map())
+                        passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).passwordsByDomain ?? Field.create(new Map())
                     });
                 }
 
@@ -503,7 +502,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
                     if (setAsLastUsed)
                     {
-                        if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!, userVault[0].userVaultID)))
+                        if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!.userID, userVault[0].userVaultID)))
                         {
                             return false;
                         }
@@ -536,7 +535,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 {
                     user = await this.getVerifiedCurrentUser(masterKey);
                 }
-                else 
+                else
                 {
                     user = await this.getCurrentUser();
                 }
@@ -596,8 +595,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
     public async getEntityThatNeedsToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<User> | undefined>>
     {
-        const currentUser = await this.getVerifiedCurrentUser(masterKey);
-        if (!currentUser)
+        if (!environment.cache.currentUser?.userID)
         {
             return TypedMethodResponse.fail();
         }
@@ -644,7 +642,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 .createQueryBuilder("users")
                 .leftJoinAndSelect("users.appStoreState", "appStoreState")
                 .leftJoinAndSelect("users.userPreferencesStoreState", "userPreferencesStoreState")
-                .where("users.userID = :userID", { userID: currentUser?.userID })
+                .where("users.userID = :userID", { userID: environment.cache.currentUser.userID })
                 .andWhere(`(
                         users.entityState != :entityState OR 
                         appStoreState.entityState != :entityState OR 

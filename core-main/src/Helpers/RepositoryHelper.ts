@@ -68,7 +68,7 @@ export async function getUserDataSignatures(masterKey: string, user: User): Prom
         }
     };
 
-    const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, undefined, user);
+    const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, undefined, user.userID);
     if (userVaults[0].length > 0)
     {
         userData["userVaults"] = [];
@@ -184,29 +184,42 @@ export async function backupData(masterKey: string)
     else
     {
         console.time("9");
+        console.time("9a");
         const transaction = new Transaction();
         if (userToBackup.value)
         {
+            console.log('UserToBackup');
             await environment.repositories.users.postBackupEntityUpdates(masterKey, userToBackup.value, transaction);
         }
+        console.timeEnd("9a");
 
+        console.time("9b");
         if (userVaultsToBackup.value && userVaultsToBackup.value.length > 0) 
         {
+            console.log('UserVaultsToBackup');
             await environment.repositories.userVaults.postBackupEntitiesUpdates(masterKey, userVaultsToBackup.value, transaction);
         }
+        console.timeEnd("9b");
 
+        console.time("9c");
         if (vaultsToBackup.value?.vaults && vaultsToBackup.value?.vaults?.length > 0)
         {
+            console.log('VaultsToBackup');
             await environment.repositories.vaults.postBackupEntitiesUpdates(masterKey, vaultsToBackup.value.vaults, transaction);
         }
 
+        console.timeEnd("9c");
         // all data succesfully backed up, no need for change trackings anymore
+        console.time("9d");
         await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
+        console.timeEnd("9d");
 
+        console.time("9e");
         if (!await transaction.commit())
         {
             return false;
         }
+        console.timeEnd("9e");
         console.timeEnd("9");
     }
 

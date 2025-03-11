@@ -1,7 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
 import { PrimaryDataTypeStore, StoreState } from "./Base";
-import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -10,7 +9,7 @@ import app from "./AppStore";
 import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { FieldTreeUtility } from "../../Types/Tree";
-import { WebFieldConstructor } from "../../Types/Fields";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 
 interface IValueStoreState extends StoreState
 {
@@ -36,10 +35,10 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
     protected defaultState()
     {
         return FieldTreeUtility.setupIDs<IValueStoreState>({
-            version: WebFieldConstructor.create(0),
-            valuesByID: WebFieldConstructor.create(new Map<string, Field<ReactiveValue>>()),
-            duplicateValues: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            currentAndSafeValues: WebFieldConstructor.create(new CurrentAndSafeStructure()),
+            version: Field.create(0),
+            valuesByID: Field.create(new Map<string, Field<ReactiveValue>>()),
+            duplicateValues: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            currentAndSafeValues: Field.create(new CurrentAndSafeStructure()),
         });
     }
 
@@ -50,7 +49,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        value.id.value = await generateUniqueIDForMap(pendingState.valuesByID.value);
+        value.id.value = uniqueIDGenerator.generate();
 
         // doing this before adding saves us from having to remove the current value from the list of potential duplicates
         await this.checkUpdateDuplicatePrimaryObjects(masterKey, value, pendingState.valuesByID, "value", pendingState.duplicateValues);
@@ -60,8 +59,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
             return false;
         }
 
-        const reactiveValue = WebFieldConstructor.create(createReactiveValue(value));
-        pendingState.valuesByID.value.set(reactiveValue.value.id.value, reactiveValue);
+        const reactiveValue = Field.create(createReactiveValue(value));
+        pendingState.valuesByID.addMapValue(reactiveValue.value.id.value, reactiveValue);
 
         await this.incrementCurrentAndSafeValues(pendingState, pendingState.valuesByID);
 
@@ -141,7 +140,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         }
 
         this.checkRemoveFromDuplicate(value, pendingState.duplicateValues);
-        pendingState.valuesByID.value.delete(currentValue.value.id.value);
+        pendingState.valuesByID.removeMapValue(currentValue.value.id.value);
 
         await this.incrementCurrentAndSafeValues(pendingState, pendingState.valuesByID);
 
@@ -200,11 +199,10 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
 
     private async incrementCurrentAndSafeValues(pendingState: ValueStoreState, values: Field<Map<string, Field<ReactiveValue>>>)
     {
-        const id = await generateUniqueIDForMap(pendingState.currentAndSafeValues.value.current.value);
-        pendingState.currentAndSafeValues.value.current.value.set(id, WebFieldConstructor.create(values.value.size));
+        pendingState.currentAndSafeValues.value.current.addArrayValue(Field.create(values.value.size));
 
         const safePasswords = values.value.filter((k, v) => this.valueIsSafe(pendingState, v.value));
-        pendingState.currentAndSafeValues.value.safe.value.set(id, WebFieldConstructor.create(safePasswords.size));
+        pendingState.currentAndSafeValues.value.safe.addArrayValue(Field.create(safePasswords.size));
     }
 
     private valueIsSafe(state: ValueStoreState, value: ReactiveValue)
@@ -252,8 +250,8 @@ export class ReactiveValueStore extends ValueStore
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 
-        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.currentAndSafeValues.value.current.value.map((k, v) => v.value));
-        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.currentAndSafeValues.value.safe.value.map((k, v) => v.value));
+        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.currentAndSafeValues.value.current.value.map((v) => v.value));
+        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.currentAndSafeValues.value.safe.value.map((v) => v.value));
     }
 
     protected preAssignState(state: ValueStoreState): void 

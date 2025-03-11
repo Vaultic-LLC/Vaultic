@@ -33,7 +33,7 @@ export default defineComponent({
             let attr: any[] = [];
             app.currentVault.loginHistory.value.forEach((v, k, map) =>
             {
-                v.value.daysLogin.value.forEach((dv, dk, dmap) => 
+                v.value.forEach((dk) => 
                 {
                     attr.push({
                         key: dk,

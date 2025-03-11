@@ -31,11 +31,11 @@ import { DataType, defaultFilter, EqualFilterConditionType, Filter, FilterCondit
 import { FieldedTableRowModel, GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
-import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType, WebFieldConstructor } from '../../Types/Fields';
+import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType } from '../../Types/Fields';
 import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
+import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
 
 export default defineComponent({
     name: "FilterView",
@@ -172,12 +172,12 @@ export default defineComponent({
 
         async function onAdd()
         {
-            const id = await generateUniqueIDForMap(filterState.value.conditions.value);
-            const filterCondition: Field<FilterCondition> = WebFieldConstructor.create({
-                id: WebFieldConstructor.create(id),
-                property: WebFieldConstructor.create(''),
-                value: WebFieldConstructor.create(''),
-                filterType: WebFieldConstructor.create(undefined)
+            const id = uniqueIDGenerator.generate();
+            const filterCondition: Field<FilterCondition> = Field.create({
+                id: Field.create(id),
+                property: Field.create(''),
+                value: Field.create(''),
+                filterType: Field.create(undefined)
             });
 
             filterState.value.conditions.addMapValue(id, filterCondition);
@@ -194,7 +194,7 @@ export default defineComponent({
 
         function onDelete(filterCondition: Field<FilterCondition>)
         {
-            filterState.value.conditions.value.delete(filterCondition.value.id.value);
+            filterState.value.conditions.removeMapValue(filterCondition.value.id.value);
             filterConditionModels.remove(filterCondition.value.id.value);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }

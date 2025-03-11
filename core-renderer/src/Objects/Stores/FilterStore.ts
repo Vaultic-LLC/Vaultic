@@ -1,6 +1,5 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { SecondaryDataTypeStore, StoreState } from "./Base";
-import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
@@ -9,7 +8,7 @@ import { Field, IFieldObject, IIdentifiable, KnownMappedFields, PrimaryDataObjec
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { FieldTreeUtility } from "../../Types/Tree";
-import { WebFieldConstructor } from "../../Types/Fields";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 
 interface IFilterStoreState extends StoreState
 {
@@ -33,13 +32,13 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     protected defaultState()
     {
         return FieldTreeUtility.setupIDs<IFilterStoreState>({
-            version: WebFieldConstructor.create(0),
-            passwordFiltersByID: WebFieldConstructor.create(new Map<string, Field<Filter>>()),
-            valueFiltersByID: WebFieldConstructor.create(new Map<string, Field<Filter>>()),
-            emptyPasswordFilters: WebFieldConstructor.create(new Map<string, Field<string>>()),
-            emptyValueFilters: WebFieldConstructor.create(new Map<string, Field<string>>()),
-            duplicatePasswordFilters: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            duplicateValueFilters: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            version: Field.create(0),
+            passwordFiltersByID: Field.create(new Map<string, Field<Filter>>()),
+            valueFiltersByID: Field.create(new Map<string, Field<Filter>>()),
+            emptyPasswordFilters: Field.create(new Map<string, Field<string>>()),
+            emptyValueFilters: Field.create(new Map<string, Field<string>>()),
+            duplicatePasswordFilters: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            duplicateValueFilters: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
         });
     }
 
@@ -62,10 +61,10 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
 
         if (filter.type.value == DataType.Passwords)
         {
-            filter.id.value = await generateUniqueIDForMap(pendingState.passwordFiltersByID.value);
+            filter.id.value = uniqueIDGenerator.generate();
 
-            const filterField = WebFieldConstructor.create(filter);
-            pendingState.passwordFiltersByID.value.set(filter.id.value, filterField);
+            const filterField = Field.create(filter);
+            pendingState.passwordFiltersByID.addMapValue(filter.id.value, filterField);
 
             // don't need to create a pending group store since the groups aren't actually being changed
             const pendingPasswordState = this.syncSpecificFiltersForPasswords(new Map([[filter.id.value, filterField]]), this.vault.groupStore.getState().passwordGroupsByID,
@@ -75,10 +74,10 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         }
         else
         {
-            filter.id.value = await generateUniqueIDForMap(pendingState.valueFiltersByID.value);
+            filter.id.value = uniqueIDGenerator.generate();
 
-            const filterField = WebFieldConstructor.create(filter);
-            pendingState.valueFiltersByID.value.set(filter.id.value, filterField);
+            const filterField = Field.create(filter);
+            pendingState.valueFiltersByID.addMapValue(filter.id.value, filterField);
 
             // don't need to create a pending group store since the groups aren't actually being changed
             const pendingValueState = this.syncSpecificFiltersForValues(new Map([[filter.id.value, filterField]]), this.vault.groupStore.getState().valueGroupsByID,
@@ -138,7 +137,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
 
         if (filter.type.value == DataType.Passwords)
         {
-            pendingState.passwordFiltersByID.value.delete(currentFilter.value.id.value);
+            pendingState.passwordFiltersByID.removeMapValue(currentFilter.value.id.value);
             const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(filter.id.value, "filters");
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id.value, pendingState.emptyPasswordFilters);
@@ -148,7 +147,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         }
         else if (filter.type.value == DataType.NameValuePairs)
         {
-            pendingState.valueFiltersByID.value.delete(currentFilter.value.id.value);
+            pendingState.valueFiltersByID.removeMapValue(currentFilter.value.id.value);
             const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(filter.id.value, "filters");
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id.value, pendingState.emptyValueFilters);
@@ -233,7 +232,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     {
         allFilters.value.forEach((v, k, map) =>
         {
-            v.value[primaryDataObjectCollection].value.delete(primaryObjectID);
+            v.value[primaryDataObjectCollection].removeMapValue(primaryObjectID);
 
             this.checkUpdateEmptySecondaryObject(v.value.id.value, v.value[primaryDataObjectCollection].value, allEmptyFilters);
             this.checkUpdateDuplicateSecondaryObjects(v.value, primaryDataObjectCollection, allDuplicateFilters, allFilters);
@@ -317,36 +316,36 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
                 {
                     if (!v.value.filters.value.has(f.value.id.value))
                     {
-                        v.value.filters.value.set(f.value.id.value, WebFieldConstructor.create(f.value.id.value));
+                        v.value.filters.addMapValue(f.value.id.value, Field.create(f.value.id.value));
                     }
                     // only want to forceUpdate when updating a filter, password, or value since updating a group
                     // also calls this method, but in that case we don't want the filter to be considered updated
                     else if (updatingFilterOrPrimaryDataObject)
                     {
                         // for change tracking. make sure value is updated in case it is deleted on another device
-                        v.value.filters.value.get(f.value.id.value)!.forceUpdate = true;
+                        v.value.filters.value.get(f.value.id.value)!.updateAndBubble();
                     }
 
                     if (!f.value[primaryDataObjectCollection].value.has(v.value.id.value))
                     {
-                        f.value[primaryDataObjectCollection].value.set(v.value.id.value, WebFieldConstructor.create(v.value.id.value));
+                        f.value[primaryDataObjectCollection].addMapValue(v.value.id.value, Field.create(v.value.id.value));
                     }
                     else if (updatingFilterOrPrimaryDataObject)
                     {
                         // for change tracking. make sure value is updated in case it is deleted on another device
-                        f.value[primaryDataObjectCollection].value.get(v.value.id.value)!.forceUpdate = true;
+                        f.value[primaryDataObjectCollection].value.get(v.value.id.value)!.updateAndBubble();
                     }
                 }
                 else
                 {
                     if (v.value.filters.value.has(f.value.id.value))
                     {
-                        v.value.filters.value.delete(f.value.id.value);
+                        v.value.filters.removeMapValue(f.value.id.value);
                     }
 
                     if (f.value[primaryDataObjectCollection].value.has(v.value.id.value))
                     {
-                        f.value[primaryDataObjectCollection].value.delete(v.value.id.value);
+                        f.value[primaryDataObjectCollection].removeMapValue(v.value.id.value);
                     }
                 }
             });

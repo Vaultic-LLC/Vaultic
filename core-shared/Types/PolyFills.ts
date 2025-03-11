@@ -87,6 +87,9 @@ Map.prototype.mapWhere = function <T>(this: Map<any, any>, predicate: (k: any, v
     return temp;
 }
 
+const isMapIdentifier = "im";
+const isFieldIdentifier = "if";
+
 JSON.vaulticParse = (text: string) => 
 {
     const childrenByParentID: Map<string, any[]> = new Map();
@@ -95,20 +98,20 @@ JSON.vaulticParse = (text: string) =>
         let valueToUse = value;
         if (valueToUse && typeof valueToUse === "object")
         {
-            if ("isField" in valueToUse)
+            if (isFieldIdentifier in valueToUse)
             {
                 // create this first so we can add the same instance to the childByParentID that we also return
-                let field = "isMap" in valueToUse ? Field.fromJObjectMap(valueToUse) : Field.fromJObject(valueToUse);
+                let field = isMapIdentifier in valueToUse ? Field.fromJObjectMap(valueToUse) : Field.fromJObject(valueToUse);
 
                 // add this as a child so that we can set its parent when we encounter it
-                if (valueToUse.parentID)
+                if (valueToUse.pID)
                 {
-                    if (!childrenByParentID.has(valueToUse.parentID))
+                    if (!childrenByParentID.has(valueToUse.pID))
                     {
-                        childrenByParentID.set(valueToUse.parentID, []);
+                        childrenByParentID.set(valueToUse.pID, []);
                     }
 
-                    childrenByParentID.get(valueToUse.parentID)?.push(field);
+                    childrenByParentID.get(valueToUse.pID)?.push(field);
                 }
 
                 // set all children with a parentId of this id to this object
@@ -119,14 +122,14 @@ JSON.vaulticParse = (text: string) =>
                     {
                         for (let i = 0; i < children.length; i++)
                         {
-                            children[i].parent = field;
+                            children[i].p = field;
                         }
                     }
                 }
 
                 return field;
             }
-            else if ("isMap" in valueToUse)
+            else if (isMapIdentifier in valueToUse)
             {
                 return new Map(valueToUse.value);
             }
@@ -143,22 +146,24 @@ JSON.vaulticStringify = (value: any) =>
         let valueToUse = value;
         if (valueToUse && typeof valueToUse === "object")
         {
-            if ("isField" in valueToUse)
+            if (isFieldIdentifier in valueToUse)
             {
                 // don't want to include the parent in the serialization
-                const { parent: _, ...fieldedObjectWithoutParent } = value;
+                const { p: _, ...fieldedObjectWithoutParent } = value;
                 valueToUse = fieldedObjectWithoutParent;
 
                 if (valueToUse.value instanceof Map)
                 {
                     // return a new obj so we don't alter the existing one and cauese issue with 
                     // it being used after serialization
-                    return { ...fieldedObjectWithoutParent, isMap: 1, value: Array.from(valueToUse.value.entries()) };
+                    // im = isMap
+                    return { ...fieldedObjectWithoutParent, im: 1, value: Array.from(valueToUse.value.entries()) };
                 }
             }
             else if (valueToUse instanceof Map)
             {
-                return { isMap: 1, value: Array.from(valueToUse.entries()) };
+                // im = isMap
+                return { im: 1, value: Array.from(valueToUse.entries()) };
             }
         }
 

@@ -1,0 +1,85 @@
+export class PropertyManagerConstructor
+{
+    static getFor(obj: any)
+    {
+        if (obj instanceof Map)
+        {
+            return new MapPropertyManager();
+        }
+        else if (obj instanceof Array)
+        {
+            return new ArrayPropertyManager();
+        }
+
+        return new ObjectPropertyManager();
+    }
+}
+
+export class ObjectPropertyManager<T extends { [key: string | number]: any }>
+{
+    keys(obj: T): any[]
+    {
+        return Object.keys(obj);
+    }
+
+    get(key: any, obj: T)
+    {
+        return obj[key];
+    }
+
+    set(key: any, value: any, obj: T)
+    {
+        obj[key] = value;
+    }
+
+    delete(key: any, obj: T)
+    {
+        delete obj[key];
+    }
+}
+
+export class MapPropertyManager extends ObjectPropertyManager<Map<any, any>>
+{
+    keys(obj: Map<any, any>)
+    {
+        return obj.keyArray();
+    }
+
+    get(key: any, obj: Map<any, any>)
+    {
+        return obj.get(key);
+    }
+
+    set(key: any, value: any, obj: Map<any, any>)
+    {
+        obj.set(key, value)
+    }
+
+    delete(key: any, obj: Map<any, any>)
+    {
+        obj.delete(key);
+    }
+}
+
+export class ArrayPropertyManager extends ObjectPropertyManager<Array<any>>
+{
+    keys(obj: Array<any>)
+    {
+        return Array.from(obj.keys());
+    }
+
+    get(key: any, obj: Array<any>)
+    {
+        return obj[key];
+    }
+
+    set(key: any, value: any, obj: Array<any>)
+    {
+        obj[key] = value;
+    }
+
+    delete(key: any, obj: Array<any>)
+    {
+        obj.splice(key, 1);
+    }
+}

@@ -119,7 +119,7 @@ valueStoreSuite.tests.push({
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
-        value.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        value.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
@@ -142,11 +142,11 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "ValueStore Add With Filter Works";
 
-        filter.conditions.value.set("ValueStore Add With Filter Works", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("ValueStore Add With Filter Works"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("ValueStore Add With Filter Works")
+        filter.conditions.value.set("ValueStore Add With Filter Works", Field.create({
+            id: Field.create("ValueStore Add With Filter Works"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("ValueStore Add With Filter Works")
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -350,7 +350,7 @@ valueStoreSuite.tests.push({
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
         const valueWithGroup: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(value));
-        valueWithGroup.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        valueWithGroup.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithGroup, false);
 
@@ -385,11 +385,11 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "ValueStore Update With Filter Works";
 
-        filter.conditions.value.set("ValueStore Update With Filter Works", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("ValueStore Update With Filter Works"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("ValueStore Update With Filter Works")
+        filter.conditions.value.set("ValueStore Update With Filter Works", Field.create({
+            id: Field.create("ValueStore Update With Filter Works"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("ValueStore Update With Filter Works")
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -562,7 +562,7 @@ valueStoreSuite.tests.push({
         group.color.value = "#FFFFFF";
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
-        value.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        value.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
@@ -592,11 +592,11 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = name;
 
-        filter.conditions.value.set(name, WebFieldConstructor.create({
-            id: WebFieldConstructor.create(name),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create(name)
+        filter.conditions.value.set(name, Field.create({
+            id: Field.create(name),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create(name)
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);

@@ -173,12 +173,12 @@ mergingDataTestSuite.tests.push({
         let retrievedPassword: Field<Password> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         ctx.assertTruthy("Retrieved Password exists", retrievedPassword);
 
-        retrievedPassword!.value.securityQuestions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            question: WebFieldConstructor.create("First"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("yes"),
-            answerLength: WebFieldConstructor.create(0)
+        retrievedPassword!.value.securityQuestions.value.set("1", Field.create({
+            id: Field.create("1"),
+            question: Field.create("First"),
+            questionLength: Field.create(0),
+            answer: Field.create("yes"),
+            answerLength: Field.create(0)
         }));
 
         const addOffline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
@@ -189,12 +189,12 @@ mergingDataTestSuite.tests.push({
         retrievedPassword = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         ctx.assertEquals("Retrieved Password security question doesn't exist", retrievedPassword?.value.securityQuestions.value.size, 0);
 
-        retrievedPassword!.value.securityQuestions.value.set("2", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("2"),
-            question: WebFieldConstructor.create("Second"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("no"),
-            answerLength: WebFieldConstructor.create(0)
+        retrievedPassword!.value.securityQuestions.value.set("2", Field.create({
+            id: Field.create("2"),
+            question: Field.create("Second"),
+            questionLength: Field.create(0),
+            answer: Field.create("no"),
+            answerLength: Field.create(0)
         }));
 
         const addOnline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
@@ -218,11 +218,11 @@ mergingDataTestSuite.tests.push({
 
         const filter = defaultFilter(DataType.Passwords);
         filter.name.value = "Merging Added Filter For Password";
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("domain"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Added Filter For Password")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("domain"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Added Filter For Password")
         }));
 
         const group = defaultGroup(DataType.Passwords);
@@ -254,14 +254,14 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("No Passwords for Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)?.value.passwords.value.size, 0);
 
         const clonedPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(retrievedPassword!.value));
-        clonedPassword.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        clonedPassword.groups.value.set(group.id.value, Field.create(group.id.value));
 
         let updateOffline = await app.currentVault.passwordStore.updatePassword(masterKey, clonedPassword, false, [], []);
         ctx.assertTruthy("Update password offline worked", updateOffline);
         ctx.assertTruthy("Group has offline password", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)?.value.passwords.value.has(clonedPassword.id.value));
 
         const clonedGroup: Group = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.groupStore.passwordGroupsByID.value.get(group2.id.value)!.value));
-        clonedGroup.passwords.value.set(clonedPassword.id.value, WebFieldConstructor.create(clonedPassword.id.value));
+        clonedGroup.passwords.value.set(clonedPassword.id.value, Field.create(clonedPassword.id.value));
 
         updateOffline = await app.currentVault.groupStore.updateGroup(masterKey, clonedGroup);
         ctx.assertTruthy("Update group offline worked", updateOffline);
@@ -305,11 +305,11 @@ mergingDataTestSuite.tests.push({
 
         const filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "Merging Added Filter For Value";
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Added Filters / Groups for Value")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Added Filters / Groups for Value")
         }));
 
         const group = defaultGroup(DataType.NameValuePairs);
@@ -341,14 +341,14 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("No Value for Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)?.value.values.value.size, 0);
 
         const clonedValue: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(retrievedValue!.value));
-        clonedValue.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        clonedValue.groups.value.set(group.id.value, Field.create(group.id.value));
 
         let updateOffline = await app.currentVault.valueStore.updateNameValuePair(masterKey, clonedValue, false);
         ctx.assertTruthy("Update Value offline worked", updateOffline);
         ctx.assertTruthy("Group has offline Value", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)?.value.values.value.has(clonedValue.id.value));
 
         const clonedGroup: Group = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.groupStore.valueGroupsByID.value.get(group2.id.value)!.value));
-        clonedGroup.values.value.set(clonedValue.id.value, WebFieldConstructor.create(clonedValue.id.value));
+        clonedGroup.values.value.set(clonedValue.id.value, Field.create(clonedValue.id.value));
 
         updateOffline = await app.currentVault.groupStore.updateGroup(masterKey, clonedGroup);
         ctx.assertTruthy("Update group offline worked", updateOffline);
@@ -615,11 +615,11 @@ mergingDataTestSuite.tests.push({
         let retrievedFilter: Field<Filter> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         ctx.assertTruthy("Retrieved Filter exists", retrievedFilter);
 
-        retrievedFilter!.value.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("login"),
-            filterType: WebFieldConstructor.create(FilterConditionType.Contains),
-            value: WebFieldConstructor.create("")
+        retrievedFilter!.value.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("login"),
+            filterType: Field.create(FilterConditionType.Contains),
+            value: Field.create("")
         }));
 
         const addOffline = await app.currentVault.filterStore.updateFilter(masterKey, retrievedFilter!.value);
@@ -630,11 +630,11 @@ mergingDataTestSuite.tests.push({
         retrievedFilter = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         ctx.assertEquals("Retrieved offline Password security question doesn't exist", retrievedFilter?.value.conditions.value.size, 0);
 
-        retrievedFilter!.value.conditions.value.set("2", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("2"),
-            property: WebFieldConstructor.create("login"),
-            filterType: WebFieldConstructor.create(FilterConditionType.Contains),
-            value: WebFieldConstructor.create("")
+        retrievedFilter!.value.conditions.value.set("2", Field.create({
+            id: Field.create("2"),
+            property: Field.create("login"),
+            filterType: Field.create(FilterConditionType.Contains),
+            value: Field.create("")
         }));
 
         const addOnline = await app.currentVault.filterStore.updateFilter(masterKey, retrievedFilter!.value);
@@ -951,12 +951,12 @@ mergingDataTestSuite.tests.push({
     {
         const password = defaultPassword();
         password.login.value = "Merging Updated Security Questions Works";
-        password.securityQuestions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            question: WebFieldConstructor.create("zero"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("zero"),
-            answerLength: WebFieldConstructor.create(0)
+        password.securityQuestions.value.set("1", Field.create({
+            id: Field.create("1"),
+            question: Field.create("zero"),
+            questionLength: Field.create(0),
+            answer: Field.create("zero"),
+            answerLength: Field.create(0)
         }));
 
         let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password);
@@ -1230,11 +1230,11 @@ mergingDataTestSuite.tests.push({
     {
         const filter = defaultFilter(DataType.Passwords);
         filter.name.value = "Merging Filter Conditions";
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("0"),
-            filterType: WebFieldConstructor.create(FilterConditionType.Contains),
-            value: WebFieldConstructor.create("0")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("0"),
+            filterType: Field.create(FilterConditionType.Contains),
+            value: Field.create("0")
         }));
 
         const addFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -1481,28 +1481,28 @@ mergingDataTestSuite.tests.push({
     {
         const password = defaultPassword();
         password.login.value = "Merging Deleted Security Questions Works";
-        password.securityQuestions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            question: WebFieldConstructor.create("zero"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("zero"),
-            answerLength: WebFieldConstructor.create(0)
+        password.securityQuestions.value.set("1", Field.create({
+            id: Field.create("1"),
+            question: Field.create("zero"),
+            questionLength: Field.create(0),
+            answer: Field.create("zero"),
+            answerLength: Field.create(0)
         }));
 
-        password.securityQuestions.value.set("2", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("2"),
-            question: WebFieldConstructor.create("zero"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("zero"),
-            answerLength: WebFieldConstructor.create(0)
+        password.securityQuestions.value.set("2", Field.create({
+            id: Field.create("2"),
+            question: Field.create("zero"),
+            questionLength: Field.create(0),
+            answer: Field.create("zero"),
+            answerLength: Field.create(0)
         }));
 
-        password.securityQuestions.value.set("3", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("3"),
-            question: WebFieldConstructor.create("zero"),
-            questionLength: WebFieldConstructor.create(0),
-            answer: WebFieldConstructor.create("zero"),
-            answerLength: WebFieldConstructor.create(0)
+        password.securityQuestions.value.set("3", Field.create({
+            id: Field.create("3"),
+            question: Field.create("zero"),
+            questionLength: Field.create(0),
+            answer: Field.create("zero"),
+            answerLength: Field.create(0)
         }));
 
         let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password);
@@ -1559,38 +1559,38 @@ mergingDataTestSuite.tests.push({
 
         const filter = defaultFilter(DataType.Passwords);
         filter.name.value = "Merging Deleted Filters / Groups for password Works";
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("domain"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for password Works")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("domain"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for password Works")
         }));
 
         const filter2 = defaultFilter(DataType.Passwords);
         filter2.name.value = "Merging Deleted Filters / Groups for password Works";
-        filter2.conditions.value.set("2", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("2"),
-            property: WebFieldConstructor.create("domain"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for password Works")
+        filter2.conditions.value.set("2", Field.create({
+            id: Field.create("2"),
+            property: Field.create("domain"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for password Works")
         }));
 
         const filter3 = defaultFilter(DataType.Passwords);
         filter3.name.value = "Merging Deleted Filters / Groups for password Works";
-        filter3.conditions.value.set("3", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("3"),
-            property: WebFieldConstructor.create("domain"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for password Works")
+        filter3.conditions.value.set("3", Field.create({
+            id: Field.create("3"),
+            property: Field.create("domain"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for password Works")
         }));
 
         const filter4 = defaultFilter(DataType.Passwords);
         filter4.name.value = "Merging Deleted Filters / Groups for password Works";
-        filter4.conditions.value.set("4", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("4"),
-            property: WebFieldConstructor.create("domain"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for password Works")
+        filter4.conditions.value.set("4", Field.create({
+            id: Field.create("4"),
+            property: Field.create("domain"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for password Works")
         }));
 
         const group = defaultGroup(DataType.Passwords);
@@ -1629,10 +1629,10 @@ mergingDataTestSuite.tests.push({
         addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group4);
         ctx.assertTruthy("Add Group 4 succeeded", addedGroupSucceeded);
 
-        password.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
-        password.groups.value.set(group2.id.value, WebFieldConstructor.create(group2.id.value));
-        password.groups.value.set(group3.id.value, WebFieldConstructor.create(group3.id.value));
-        password.groups.value.set(group4.id.value, WebFieldConstructor.create(group4.id.value));
+        password.groups.value.set(group.id.value, Field.create(group.id.value));
+        password.groups.value.set(group2.id.value, Field.create(group2.id.value));
+        password.groups.value.set(group3.id.value, Field.create(group3.id.value));
+        password.groups.value.set(group4.id.value, Field.create(group4.id.value));
 
         let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password);
         ctx.assertTruthy("Add Password succeeded", addPasswordSucceeded);
@@ -1790,38 +1790,38 @@ mergingDataTestSuite.tests.push({
 
         const filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "Merging Deleted Filters / Groups for Value Works";
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for Value Works")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for Value Works")
         }));
 
         const filter2 = defaultFilter(DataType.NameValuePairs);
         filter2.name.value = "Merging Deleted Filters / Groups for Value Works";
-        filter2.conditions.value.set("2", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("2"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for Value Works")
+        filter2.conditions.value.set("2", Field.create({
+            id: Field.create("2"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for Value Works")
         }));
 
         const filter3 = defaultFilter(DataType.NameValuePairs);
         filter3.name.value = "Merging Deleted Filters / Groups for Value Works";
-        filter3.conditions.value.set("3", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("3"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for Value Works")
+        filter3.conditions.value.set("3", Field.create({
+            id: Field.create("3"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for Value Works")
         }));
 
         const filter4 = defaultFilter(DataType.NameValuePairs);
         filter4.name.value = "Merging Deleted Filters / Groups for Value Works";
-        filter4.conditions.value.set("4", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("4"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Filters / Groups for Value Works")
+        filter4.conditions.value.set("4", Field.create({
+            id: Field.create("4"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Filters / Groups for Value Works")
         }));
 
         const group = defaultGroup(DataType.NameValuePairs);
@@ -1860,10 +1860,10 @@ mergingDataTestSuite.tests.push({
         addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group4);
         ctx.assertTruthy("Add Group 4 succeeded", addedGroupSucceeded);
 
-        Value.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
-        Value.groups.value.set(group2.id.value, WebFieldConstructor.create(group2.id.value));
-        Value.groups.value.set(group3.id.value, WebFieldConstructor.create(group3.id.value));
-        Value.groups.value.set(group4.id.value, WebFieldConstructor.create(group4.id.value));
+        Value.groups.value.set(group.id.value, Field.create(group.id.value));
+        Value.groups.value.set(group2.id.value, Field.create(group2.id.value));
+        Value.groups.value.set(group3.id.value, Field.create(group3.id.value));
+        Value.groups.value.set(group4.id.value, Field.create(group4.id.value));
 
         let addValueSucceeded = await app.currentVault.valueStore.addNameValuePair(masterKey, Value);
         ctx.assertTruthy("Add Value succeeded", addValueSucceeded);
@@ -2205,32 +2205,32 @@ mergingDataTestSuite.tests.push({
     {
         const filter = defaultFilter(DataType.Passwords);
         filter.name.value = "Merging Filter Conditions";
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("0"),
-            filterType: WebFieldConstructor.create(FilterConditionType.Contains),
-            value: WebFieldConstructor.create("0")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("0"),
+            filterType: Field.create(FilterConditionType.Contains),
+            value: Field.create("0")
         }));
 
-        filter.conditions.value.set("2", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("2"),
-            property: WebFieldConstructor.create("0"),
-            filterType: WebFieldConstructor.create(FilterConditionType.Contains),
-            value: WebFieldConstructor.create("0")
+        filter.conditions.value.set("2", Field.create({
+            id: Field.create("2"),
+            property: Field.create("0"),
+            filterType: Field.create(FilterConditionType.Contains),
+            value: Field.create("0")
         }));
 
-        filter.conditions.value.set("3", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("3"),
-            property: WebFieldConstructor.create("0"),
-            filterType: WebFieldConstructor.create(FilterConditionType.Contains),
-            value: WebFieldConstructor.create("0")
+        filter.conditions.value.set("3", Field.create({
+            id: Field.create("3"),
+            property: Field.create("0"),
+            filterType: Field.create(FilterConditionType.Contains),
+            value: Field.create("0")
         }));
 
-        filter.conditions.value.set("4", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("4"),
-            property: WebFieldConstructor.create("0"),
-            filterType: WebFieldConstructor.create(FilterConditionType.Contains),
-            value: WebFieldConstructor.create("0")
+        filter.conditions.value.set("4", Field.create({
+            id: Field.create("4"),
+            property: Field.create("0"),
+            filterType: Field.create(FilterConditionType.Contains),
+            value: Field.create("0")
         }));
 
         const addFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -2373,11 +2373,11 @@ mergingDataTestSuite.tests.push({
         group.name.value = "Merging Deleted Password for Filters / Groups Works";
 
         const filter = defaultFilter(DataType.Passwords);
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("domain"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Password for Filters / Groups Works")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("domain"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Password for Filters / Groups Works")
         }));
 
         let addSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group);
@@ -2388,19 +2388,19 @@ mergingDataTestSuite.tests.push({
 
         const password1 = defaultPassword();
         password1.domain.value = "Merging Deleted Password for Filters / Groups Works";
-        password1.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        password1.groups.value.set(group.id.value, Field.create(group.id.value));
 
         const password2 = defaultPassword();
         password2.domain.value = "Merging Deleted Password for Filters / Groups Works";
-        password2.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        password2.groups.value.set(group.id.value, Field.create(group.id.value));
 
         const password3 = defaultPassword();
         password3.domain.value = "Merging Deleted Password for Filters / Groups Works";
-        password3.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        password3.groups.value.set(group.id.value, Field.create(group.id.value));
 
         const password4 = defaultPassword();
         password4.domain.value = "Merging Deleted Password for Filters / Groups Works";
-        password4.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        password4.groups.value.set(group.id.value, Field.create(group.id.value));
 
         addSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password1);
         ctx.assertTruthy("Add Password 1 succeeded", addSucceeded);
@@ -2483,11 +2483,11 @@ mergingDataTestSuite.tests.push({
         group.name.value = "Merging Deleted Values for Filters / Groups Works";
 
         const filter = defaultFilter(DataType.NameValuePairs);
-        filter.conditions.value.set("1", WebFieldConstructor.create({
-            id: WebFieldConstructor.create("1"),
-            property: WebFieldConstructor.create("name"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create("Merging Deleted Values for Filters / Groups Works")
+        filter.conditions.value.set("1", Field.create({
+            id: Field.create("1"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("Merging Deleted Values for Filters / Groups Works")
         }));
 
         let addSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group);
@@ -2498,19 +2498,19 @@ mergingDataTestSuite.tests.push({
 
         const value1 = defaultValue();
         value1.name.value = "Merging Deleted Values for Filters / Groups Works";
-        value1.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        value1.groups.value.set(group.id.value, Field.create(group.id.value));
 
         const value2 = defaultValue();
         value2.name.value = "Merging Deleted Values for Filters / Groups Works";
-        value2.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        value2.groups.value.set(group.id.value, Field.create(group.id.value));
 
         const value3 = defaultValue();
         value3.name.value = "Merging Deleted Values for Filters / Groups Works";
-        value3.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        value3.groups.value.set(group.id.value, Field.create(group.id.value));
 
         const value4 = defaultValue();
         value4.name.value = "Merging Deleted Values for Filters / Groups Works";
-        value4.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        value4.groups.value.set(group.id.value, Field.create(group.id.value));
 
         addSucceeded = await app.currentVault.valueStore.addNameValuePair(masterKey, value1);
         ctx.assertTruthy("Add Value 1 succeeded", addSucceeded);
@@ -2584,5 +2584,8 @@ mergingDataTestSuite.tests.push({
         ctx.assertTruthy("Filter doesn't have Value 4", !app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)!.value.values.value.has(value4.id.value));
     }
 });
+
+// TODO: add tests for vaultStore -> loginHistory, appStore -> colorPalettes, userPreferencesStore -> pinnedDataTypes etc
+// complex objects
 
 export default mergingDataTestSuite;

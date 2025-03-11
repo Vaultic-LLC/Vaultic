@@ -1,7 +1,7 @@
 import { TestContext, createTestSuite } from "../test";
 import app from "../../src/core/Objects/Stores/AppStore";
 import { defaultFilter, DataType, FilterConditionType, defaultGroup, defaultPassword } from "../../src/core/Types/DataTypes";
-import { Field, WebFieldConstructor } from "@vaultic/shared/Types/Fields";
+import { Field } from "@vaultic/shared/Types/Fields";
 
 let transactionTestSuite = createTestSuite("Transaction");
 
@@ -13,11 +13,11 @@ transactionTestSuite.tests.push({
         const test = "Transaction rollbacks store states on fail";
 
         const filter = defaultFilter(DataType.Passwords);
-        filter.conditions.value.set(test, WebFieldConstructor.create({
-            id: WebFieldConstructor.create(test),
-            property: WebFieldConstructor.create("login"),
-            filterType: WebFieldConstructor.create(FilterConditionType.EqualTo),
-            value: WebFieldConstructor.create(test)
+        filter.conditions.value.set(test, Field.create({
+            id: Field.create(test),
+            property: Field.create("login"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create(test)
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -27,7 +27,7 @@ transactionTestSuite.tests.push({
 
         const password = defaultPassword();
         password.login.value = test;
-        password.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+        password.groups.value.set(group.id.value, Field.create(group.id.value));
 
         const passwordStoreState = JSON.vaulticStringify(app.currentVault.passwordStore.getState());
         const filterStoreState = JSON.vaulticStringify(app.currentVault.filterStore.getState());

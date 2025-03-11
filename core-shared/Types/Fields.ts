@@ -1,3 +1,5 @@
+import { uniqueIDGenerator } from "../Utilities/UniqueIDGenerator";
+
 export type Primitive = string | boolean | number;
 
 export interface IIdentifiable
@@ -7,19 +9,19 @@ export interface IIdentifiable
 
 export interface IFieldObject
 {
-    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject> | undefined> | FieldMap;
+    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject> | undefined> | FieldMap | Field<any[]>;
 }
 
 export type IFieldedObject = IIdentifiable & IFieldObject;
 
 export class FieldedObject implements IFieldedObject
 {
-    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
+    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap | Field<any[]>;
     id: Field<string>;
 
-    constructor(fieldConstructor: FieldConstructor) 
+    constructor() 
     {
-        this.id = fieldConstructor.create("");
+        this.id = Field.create("");
     }
 };
 
@@ -80,7 +82,7 @@ export const FieldProxy =
     {
         obj[prop] = newValue;
 
-        if (prop == "value" || prop == "forceUpdate")
+        if (prop == "value")
         {
             obj.updateAndBubble();
         }
@@ -89,41 +91,37 @@ export const FieldProxy =
     }
 };
 
-export class FieldConstructor
-{
-    create<T>(value: T): Field<T>
-    {
-        throw "Did not implement";
-    }
-}
-
 export class Field<T>
 {
     [key: string]: any;
 
-    // Only used to identify when parsing JSON, should never be edited. Setting to private causes a bunch of ts errors though
-    isField: number;
+    // isField. Only used to identify when parsing JSON, should never be edited. Setting to private causes a bunch of ts errors though
+    if: number;
 
-    parentID: string | undefined;
-    parent: Field<any> | undefined;
+    // parentID
+    pID: string | undefined;
+
+    // parent
+    p: Field<any> | undefined;
+
     id: string;
     value: T;
-    lastModifiedTime: number;
-    forceUpdate: boolean;
+
+    // last modified time
+    mt: number;
 
     private constructor(value: T)
     {
-        this.isField = 1;
+        this.if = 1;
         this.id = "";
         this.value = value;
-        this.lastModifiedTime = Date.now();
-        this.forceUpdate = false;
+        this.mt = Date.now();
     }
 
-    static create<T>(value: T, id: string): Field<T>
+    static create<T>(value: T): Field<T>
     {
         const field = new Field<T>(value);
-        field.id = id;
+        field.id = uniqueIDGenerator.generate();
 
         return new Proxy(field, FieldProxy);
     }
@@ -148,10 +146,22 @@ export class Field<T>
 
     updateAndBubble()
     {
-        this.lastModifiedTime = Date.now();
-        if (this.parent)
+        this.mt = Date.now();
+        if (this.p)
         {
-            this.parent.updateAndBubble();
+            this.p.updateAndBubble();
+        }
+    }
+
+    addArrayValue(value: Field<any>)
+    {
+        if (this.value instanceof Array)
+        {
+            value.pID = this.id;
+            value.p = this;
+
+            this.value.push(value);
+            this.updateAndBubble();
         }
     }
 
@@ -159,8 +169,8 @@ export class Field<T>
     {
         if (this.value instanceof Map)
         {
-            value.parentID = this.id;
-            value.parent = this;
+            value.pID = this.id;
+            value.p = this;
 
             this.value.set(key, value);
             this.updateAndBubble();

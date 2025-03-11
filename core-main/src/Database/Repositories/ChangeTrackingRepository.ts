@@ -5,9 +5,8 @@ import { environment } from "../../Environment";
 import Transaction from "../Transaction";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { StoreState } from "../Entities/States/StoreState";
+import { ObjectPropertyManager, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
 import { Field } from "@vaultic/shared/Types/Fields";
-import { MapPropertyManager, ObjectPropertyManager } from "@vaultic/shared/Types/Utilities";
-import { MainFieldConstructor } from "../../Types/Field";
 
 class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 {
@@ -18,9 +17,9 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 
     public trackStateDifferences(userID: number, masterKey: string, newState: StoreState, oldState: StoreState, transaction: Transaction): string
     {
-        try 
+        try
         {
-            this.trackObjectDifferences(userID, masterKey, MainFieldConstructor.create(newState), MainFieldConstructor.create(oldState), transaction);
+            this.trackObjectDifferences(userID, masterKey, Field.create(newState), Field.create(oldState), transaction, true);
             return JSON.vaulticStringify(newState);
         }
         catch (e)
@@ -29,14 +28,20 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         }
     }
 
-    public trackObjectDifferences(userID: number, masterKey: string, newObj: any, oldObj: any, transaction: Transaction): boolean
+    public trackObjectDifferences(userID: number, masterKey: string, newObj: any, oldObj: any, transaction: Transaction, first: boolean = false): boolean
     {
         // used to propagate changes up to the parent object
         let updatedValue = false;
 
+        // values weren't updated, can just return
+        if (!first && newObj.mt === oldObj.mt)
+        {
+            return updatedValue;
+        }
+
         if (typeof newObj.value == 'object')
         {
-            let manager: ObjectPropertyManager<any> = newObj.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
+            let manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(newObj.value);
 
             const keys = manager.keys(newObj.value);
             const oldKeys = manager.keys(oldObj.value);
@@ -74,20 +79,16 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             // the object was deleted on another, we still want to keep it
             if (updatedValue)
             {
-                newObj.lastModifiedTime = Date.now();
-                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.mt), masterKey, () => this);
             }
         }
         else
         {
             // Only values have their last modified time set, objects do not. This isn't an issue
-            if (newObj.forceUpdate === true || newObj.value != oldObj.value)
+            if (newObj.value != oldObj.value)
             {
                 updatedValue = true;
-                newObj.lastModifiedTime = Date.now();
-                newObj.forceUpdate = false;
-
-                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.lastModifiedTime), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.mt), masterKey, () => this);
             }
         }
 
@@ -96,15 +97,12 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 
     private insertObject(userID: number, masterKey: string, field: any, transaction: Transaction)
     {
-        field.id = environment.utilities.generator.uniqueId();
-        field.lastModifiedTime = Date.now();
+        transaction.insertEntity(ChangeTracking.inserted(userID, field.id, field.mt), masterKey, () => this);
 
-        transaction.insertEntity(ChangeTracking.inserted(userID, field.id, field.lastModifiedTime), masterKey, () => this);
-
-        // all nested objects were also inserted, update their IDs and LastModifiedTime as well
+        // all nested objects were also inserted
         if (typeof field.value == "object")
         {
-            let innerManager: ObjectPropertyManager<any> = field.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
+            let innerManager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(field.value);
             const keys = innerManager.keys(field.value);
 
             for (let i = 0; i < keys.length; i++)
@@ -151,12 +149,10 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 
     public async clearChangeTrackings(masterKey: string, transaction: Transaction)
     {
-        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-
         // user will be undefined if we are adding it from the server. no change trackings to clear then obviously
-        if (currentUser)
+        if (environment.cache.currentUser?.userID)
         {
-            transaction.deleteEntity<ChangeTracking>({ userID: currentUser.userID }, () => environment.repositories.changeTrackings);
+            transaction.deleteEntity<ChangeTracking>({ userID: environment.cache.currentUser.userID }, () => environment.repositories.changeTrackings);
         }
     }
 }

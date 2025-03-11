@@ -1,10 +1,11 @@
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { environment } from "./Environment";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import { User } from "./Database/Entities/User";
 
 export class VaulticCache
 {
-    private internalCurrentUserID: number | undefined;
+    private internalCurrentUser: Partial<User> | undefined;
     private internalSessionKey: string | undefined;
     private internalExportKey: string | undefined;
     private internalMasterKey: string | undefined;
@@ -13,7 +14,7 @@ export class VaulticCache
     private internalPasswordHash: string | undefined;
     private internalClientLoginState: string | undefined;
 
-    get currentUserID() { return this.internalCurrentUserID; }
+    get currentUser() { return this.internalCurrentUser; }
     get sessionKey() { return this.internalSessionKey; }
     get exportKey() { return this.internalExportKey; }
     get masterKey() { return this.internalMasterKey; }
@@ -29,7 +30,7 @@ export class VaulticCache
 
     clear()
     {
-        this.internalCurrentUserID = undefined;
+        this.internalCurrentUser = undefined;
         this.internalSessionKey = undefined;
         this.internalExportKey = undefined;
         this.internalMasterKey = undefined;
@@ -51,9 +52,15 @@ export class VaulticCache
         this.internalClientLoginState = undefined;
     }
 
-    setCurrentUserID(currentUserID: number)
+    setCurrentUser(user: User)
     {
-        this.internalCurrentUserID = currentUserID;
+        // cache this data so that we don't have to verify the user as much
+        this.internalCurrentUser =
+        {
+            userID: user.userID,
+            privateSigningKey: user.privateSigningKey,
+            privateEncryptingKey: user.privateEncryptingKey
+        };
     }
 
     async setSessionInfo(sessionKey: string, exportKey: string, tokenHash: string)

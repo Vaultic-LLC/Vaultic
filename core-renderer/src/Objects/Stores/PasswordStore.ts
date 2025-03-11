@@ -1,7 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
 import { PrimaryDataTypeStore, StoreEvents, StoreState } from "./Base";
-import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -10,7 +9,7 @@ import { VaultStoreParameter } from "./VaultStore";
 import { AtRiskType, CurrentAndSafeStructure, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { FieldTreeUtility } from "../../Types/Tree";
-import { WebFieldConstructor } from "../../Types/Fields";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 
 interface IPasswordStoreState extends StoreState
 {
@@ -38,11 +37,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
     protected defaultState()
     {
         return FieldTreeUtility.setupIDs<IPasswordStoreState>({
-            version: WebFieldConstructor.create(0),
-            passwordsByID: WebFieldConstructor.create(new Map<string, Field<ReactivePassword>>()),
-            passwordsByDomain: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            duplicatePasswords: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            currentAndSafePasswords: WebFieldConstructor.create(new CurrentAndSafeStructure()),
+            version: Field.create(0),
+            passwordsByID: Field.create(new Map<string, Field<ReactivePassword>>()),
+            passwordsByDomain: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            duplicatePasswords: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            currentAndSafePasswords: Field.create(new CurrentAndSafeStructure()),
         });
     }
 
@@ -53,7 +52,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState: PasswordStoreState = this.cloneState();
 
-        password.id.value = await generateUniqueIDForMap(pendingState.passwordsByID.value);
+        password.id.value = uniqueIDGenerator.generate();
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
         await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingState.passwordsByID, "password", pendingState.duplicatePasswords);
@@ -65,8 +64,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         await this.updateSecurityQuestions(masterKey, password, true, [], []);
 
-        const reactivePassword = WebFieldConstructor.create(createReactivePassword(password));
-        pendingState.passwordsByID.value.set(password.id.value, reactivePassword);
+        const reactivePassword = Field.create(createReactivePassword(password));
+        pendingState.passwordsByID.addMapValue(password.id.value, reactivePassword);
         this.updatePasswordsByDomain(pendingState, reactivePassword.value.id.value, reactivePassword.value.domain.value);
 
         await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
@@ -204,7 +203,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         }
 
         this.checkRemoveFromDuplicate(password, pendingState.duplicatePasswords);
-        pendingState.passwordsByID.value.delete(currentPassword.value.id.value);
+        pendingState.passwordsByID.removeMapValue(currentPassword.value.id.value);
         this.updatePasswordsByDomain(pendingState, currentPassword.value.id.value, undefined, currentPassword.value.domain.value);
 
         await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
@@ -236,10 +235,10 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         {
             if (!pendingState.passwordsByDomain.value.has(newDomain))
             {
-                pendingState.passwordsByDomain.addMapValue(newDomain, WebFieldConstructor.create(new Map()));
+                pendingState.passwordsByDomain.addMapValue(newDomain, Field.create(new Map()));
             }
 
-            pendingState.passwordsByDomain.value.get(newDomain)?.addMapValue(id, WebFieldConstructor.create(id));
+            pendingState.passwordsByDomain.value.get(newDomain)?.addMapValue(id, Field.create(id));
         }
 
         if (oldDomain && newDomain != oldDomain)
@@ -249,17 +248,16 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
                 return;
             }
 
-            pendingState.passwordsByDomain.value.get(oldDomain)?.value.delete(id);
+            pendingState.passwordsByDomain.value.get(oldDomain)?.removeMapValue(id);
         }
     }
 
     private async incrementCurrentAndSafePasswords(pendingState: PasswordStoreState, passwords: Field<Map<string, Field<ReactivePassword>>>)
     {
-        const id = await generateUniqueIDForMap(pendingState.currentAndSafePasswords.value.current.value);
-        pendingState.currentAndSafePasswords.value.current.addMapValue(id, WebFieldConstructor.create(passwords.value.size));
+        pendingState.currentAndSafePasswords.value.current.addArrayValue(Field.create(passwords.value.size));
 
         const safePasswords = passwords.value.filter((k, v) => this.passwordIsSafe(pendingState, v.value));
-        pendingState.currentAndSafePasswords.value.safe.addMapValue(id, WebFieldConstructor.create(safePasswords.size));
+        pendingState.currentAndSafePasswords.value.safe.addArrayValue(Field.create(safePasswords.size));
     }
 
     private passwordIsSafe(state: PasswordStoreState, password: ReactivePassword)
@@ -378,8 +376,8 @@ export class ReactivePasswordStore extends PasswordStore
         this.internalWeakPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.isWeak.value, (k, v) => v.value.id.value));
         this.internalContainsLoginPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.containsLogin.value, (k, v) => v.value.id.value));
 
-        this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.currentAndSafePasswords.value.current.value.map((k, v) => v.value));
-        this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.currentAndSafePasswords.value.safe.value.map((k, v) => v.value));
+        this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.currentAndSafePasswords.value.current.value.map((v) => v.value));
+        this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.currentAndSafePasswords.value.safe.value.map((v) => v.value));
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
 

@@ -41,13 +41,13 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return new Set(vaults.map(v => v.vaultID));
     }
 
-    public async setLastUsedVault(user: User, userVaultID: number)
+    public async setLastUsedVault(userID: number, userVaultID: number)
     {
         const transaction = new Transaction();
 
         const currentVaults: Vault[] = await this.repository.createQueryBuilder("vaults")
             .leftJoinAndSelect("vaults.userVaults", "userVaults")
-            .where("userVaults.userID = :userID", { userID: user.userID })
+            .where("userVaults.userID = :userID", { userID: userID })
             .andWhere("vaults.lastUsed = :lastUsed", { lastUsed: true })
             .getMany();
 
@@ -60,7 +60,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         const newCurrentVault: Vault | null = await this.repository.createQueryBuilder("vaults")
             .leftJoinAndSelect("vaults.userVaults", "userVaults")
-            .where("userVaults.userID = :userID", { userID: user.userID })
+            .where("userVaults.userID = :userID", { userID: userID })
             .andWhere("userVaults.userVaultID = :userVaultID", { userVaultID })
             .getOne();
 
@@ -76,7 +76,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return await transaction.commit();
     }
 
-    public async createNewVault(masterKey: string, name: string, shared: boolean, currentUser?: User, addedOrganizations?: Organization[],
+    public async createNewVault(masterKey: string, name: string, shared: boolean, currentUser?: Partial<User>, addedOrganizations?: Organization[],
         addedMembers?: Member[]): Promise<boolean | [UserVault, Vault]>
     {
         const vaultKey: string = JSON.vaulticStringify(environment.utilities.crypt.generateSymmetricKey());
@@ -159,7 +159,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         {
             if (!privateSigningKey)
             {
-                const result = await currentUser.decryptAndGet(masterKey, "privateSigningKey");
+                const result = await environment.utilities.crypt.symmetricDecrypt(masterKey, currentUser.privateSigningKey);
                 if (!result.success)
                 {
                     return false;
@@ -178,15 +178,14 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalCreateNewVaultForUser(this: VaultRepository): Promise<TypedMethodResponse<CondensedVaultData>>
         {
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            if (!environment.cache.currentUser)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
             const parsedUpdatedVaultData: UpdateVaultData = JSON.vaulticParse(updateVaultData);
 
-            const vaultData = await this.createNewVault(masterKey, parsedUpdatedVaultData.name, parsedUpdatedVaultData.shared, currentUser,
+            const vaultData = await this.createNewVault(masterKey, parsedUpdatedVaultData.name, parsedUpdatedVaultData.shared, environment.cache.currentUser,
                 parsedUpdatedVaultData.addedOrganizations, parsedUpdatedVaultData.addedMembers);
             if (!vaultData)
             {
@@ -196,8 +195,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const userVault: UserVault = vaultData[0];
             const vault: Vault = vaultData[1];
 
-            userVault.userID = currentUser.userID;
-            userVault.user = currentUser;
+            userVault.userID = environment.cache.currentUser.userID;
 
             const transaction = new Transaction();
 
@@ -226,7 +224,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (parsedUpdatedVaultData.setAsActive)
             {
-                await this.setLastUsedVault(currentUser, userVault.userVaultID);
+                await this.setLastUsedVault(environment.cache.currentUser.userID, userVault.userVaultID);
             }
 
             const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVault.userVaultID]);
@@ -245,8 +243,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalSetActiveVault(this: VaultRepository): Promise<TypedMethodResponse<CondensedVaultData>>
         {
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            if (!environment.cache.currentUser?.userID)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
@@ -254,7 +251,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVaultID]);
             if (userVaults && userVaults.length == 1)
             {
-                if (!(await this.setLastUsedVault(currentUser, userVaultID)))
+                if (!(await this.setLastUsedVault(environment.cache.currentUser.userID, userVaultID)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Last User");
                 }
@@ -272,8 +269,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalUpdateVault(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            if (!environment.cache.currentUser)
             {
                 return TypedMethodResponse.failWithValue(false);
             }
@@ -320,7 +316,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     return TypedMethodResponse.fail(undefined, undefined, "Failed to get private signing key");
                 }
 
-                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(currentUser.userID, privateKey, userVaults[1][0], parsedUpdateVaultData.addedOrganizations);
+                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(environment.cache.currentUser.userID, privateKey, userVaults[1][0], parsedUpdateVaultData.addedOrganizations);
                 needToUpdateSharing = true;
             }
 
@@ -337,7 +333,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     return TypedMethodResponse.fail(undefined, undefined, "Failed to get private signing key");
                 }
 
-                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(currentUser.userID, privateKey, userVaults[1][0], parsedUpdateVaultData.addedMembers);
+                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(environment.cache.currentUser.userID, privateKey, userVaults[1][0], parsedUpdateVaultData.addedMembers);
                 needToUpdateSharing = true;
             }
 
@@ -392,7 +388,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             {
                 if (!privateKey)
                 {
-                    const result = await currentUser.decryptAndGet(masterKey, "privateSigningKey");
+                    const result = await environment.utilities.crypt.symmetricDecrypt(masterKey, environment.cache.currentUser.privateSigningKey);
                     if (!result.success)
                     {
                         return false;
@@ -424,8 +420,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const newVaultData: CondensedVaultData = JSON.vaulticParse(newData);
             const currentVaultData: CondensedVaultData | undefined = currentData ? JSON.vaulticParse(currentData) : undefined;
 
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            if (!environment.cache.currentUser?.userID)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVaultData");
             }
@@ -434,7 +429,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.vaultStoreState)
             {
                 const currentVaultState = JSON.vaulticParse(currentVaultData.vaultStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.vaultStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.vaultStoreState),
                     currentVaultState, transaction);
 
                 if (!await (environment.repositories.vaultStoreStates.updateState(
@@ -447,7 +442,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.passwordStoreState)
             {
                 const currentPasswordState = JSON.vaulticParse(currentVaultData.passwordStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.passwordStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.passwordStoreState),
                     currentPasswordState, transaction);
 
                 if (!await (environment.repositories.passwordStoreStates.updateState(
@@ -460,7 +455,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.valueStoreState)
             {
                 const currentValueState = JSON.vaulticParse(currentVaultData.valueStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.valueStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.valueStoreState),
                     currentValueState, transaction);
 
                 if (!await (environment.repositories.valueStoreStates.updateState(
@@ -473,7 +468,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.filterStoreState)
             {
                 const currentFilterState = JSON.vaulticParse(currentVaultData.filterStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.filterStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.filterStoreState),
                     currentFilterState, transaction);
 
                 if (!await (environment.repositories.filterStoreStates.updateState(
@@ -486,7 +481,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             if (newVaultData.groupStoreState)
             {
                 const currentGroupState = JSON.vaulticParse(currentVaultData.groupStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.groupStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.groupStoreState),
                     currentGroupState, transaction);
 
                 if (!await (environment.repositories.groupStoreStates.updateState(
@@ -508,14 +503,13 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
     public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<VaultsAndKeys | undefined>>
     {
-        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-        if (!currentUser)
+        if (!environment.cache.currentUser?.userID)
         {
             TypedMethodResponse.fail();
         }
 
         let userVaultsWithVaultsToBackup = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey,
-            undefined, currentUser, vaultQuery);
+            undefined, environment.cache.currentUser.userID, vaultQuery);
 
         if (userVaultsWithVaultsToBackup[0].length == 0)
         {
@@ -585,7 +579,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 .leftJoinAndSelect("vault.valueStoreState", "valueStoreState")
                 .leftJoinAndSelect("vault.filterStoreState", "filterStoreState")
                 .leftJoinAndSelect("vault.groupStoreState", "groupStoreState")
-                .where("userVaults.userID = :userID", { userID: currentUser?.userID })
+                .where("userVaults.userID = :userID", { userID: environment.cache.currentUser.userID })
                 .andWhere("(userVaults.isOwner = true OR userVaults.permissions = :permissions)", { permissions: ServerPermissions.ViewAndEdit })
                 .andWhere(`(
                     vault.entityState != :entityState OR 
@@ -602,8 +596,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
     public async postBackupEntitiesUpdates(key: string, entities: DeepPartial<Vault>[], transaction: Transaction): Promise<boolean> 
     {
-        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(key);
-        if (!currentUser)
+        if (!environment.cache.currentUser?.userID)
         {
             return false;
         }
@@ -635,9 +628,11 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         if (otherVaults.length > 0)
         {
+            console.time("12");
             const vaultIDs = otherVaults.filter(v => v.vaultID).map(v => v.vaultID!);
-            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, vaultIDs, currentUser, (repository) => userVaultQuery(repository, vaultIDs));
-
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, vaultIDs, environment.cache.currentUser.userID,
+                (repository) => userVaultQuery(repository, vaultIDs));
+            console.timeEnd("12");
             for (let i = 0; i < otherVaults.length; i++)
             {
                 const index = userVaults[0].findIndex(v => v.vault.vaultID == otherVaults[i].vaultID);
@@ -691,7 +686,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 .leftJoinAndSelect('vault.valueStoreState', 'valueStoreState')
                 .leftJoinAndSelect('vault.filterStoreState', 'filterStoreState')
                 .leftJoinAndSelect('vault.groupStoreState', 'groupStoreState')
-                .where('userVault.userID = :userID', { userID: currentUser!.userID })
+                .where('userVault.userID = :userID', { userID: environment.cache.currentUser.userID })
                 .andWhere('userVault.vaultID IN (:...vaultIDs)', { vaultIDs })
                 .getMany();
         }

@@ -1,13 +1,12 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { SecondaryDataTypeStore, StoreState } from "./Base";
-import { generateUniqueIDForMap } from "../../Helpers/generatorHelper";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { api } from "../../API";
 import { DataType, IGroupable, AtRiskType, Group, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { Field, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { FieldTreeUtility } from "../../Types/Tree";
-import { WebFieldConstructor } from "../../Types/Fields";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 
 export interface IGroupStoreState extends StoreState
 {
@@ -40,13 +39,13 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
     protected defaultState()
     {
         return FieldTreeUtility.setupIDs<IGroupStoreState>({
-            version: WebFieldConstructor.create(0),
-            passwordGroupsByID: WebFieldConstructor.create(new Map<string, Field<Group>>()),
-            valueGroupsByID: WebFieldConstructor.create(new Map<string, Field<Group>>()),
-            emptyPasswordGroups: WebFieldConstructor.create(new Map<string, Field<string>>()),
-            emptyValueGroups: WebFieldConstructor.create(new Map<string, Field<string>>()),
-            duplicatePasswordGroups: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            duplicateValueGroups: WebFieldConstructor.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            version: Field.create(0),
+            passwordGroupsByID: Field.create(new Map<string, Field<Group>>()),
+            valueGroupsByID: Field.create(new Map<string, Field<Group>>()),
+            emptyPasswordGroups: Field.create(new Map<string, Field<string>>()),
+            emptyValueGroups: Field.create(new Map<string, Field<string>>()),
+            duplicatePasswordGroups: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
+            duplicateValueGroups: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
         });
     }
 
@@ -59,14 +58,14 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
         if (group.type.value == DataType.Passwords)
         {
-            group.id.value = await generateUniqueIDForMap(pendingState.passwordGroupsByID.value);
+            group.id.value = uniqueIDGenerator.generate();
 
-            const groupField = WebFieldConstructor.create(group);
-            pendingState.passwordGroupsByID.value.set(group.id.value, groupField);
+            const groupField = Field.create(group);
+            pendingState.passwordGroupsByID.addMapValue(group.id.value, groupField);
 
             if (group.passwords.value.size == 0)
             {
-                pendingState.emptyPasswordGroups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+                pendingState.emptyPasswordGroups.addMapValue(group.id.value, Field.create(group.id.value));
                 this.checkUpdateDuplicateSecondaryObjects(group, "passwords", pendingState.duplicatePasswordGroups, pendingState.passwordGroupsByID)
             }
             else
@@ -85,14 +84,14 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         }
         else if (group.type.value == DataType.NameValuePairs)
         {
-            group.id.value = await generateUniqueIDForMap(pendingState.valueGroupsByID.value);
+            group.id.value = uniqueIDGenerator.generate();
 
-            const groupField = WebFieldConstructor.create(group);
-            pendingState.valueGroupsByID.value.set(group.id.value, groupField);
+            const groupField = Field.create(group);
+            pendingState.valueGroupsByID.addMapValue(group.id.value, groupField);
 
             if (group.values.value.size == 0)
             {
-                pendingState.emptyValueGroups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+                pendingState.emptyValueGroups.addMapValue(group.id.value, Field.create(group.id.value));
                 this.checkUpdateDuplicateSecondaryObjects(group, "values", pendingState.duplicateValueGroups, pendingState.valueGroupsByID)
             }
             else
@@ -176,7 +175,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
         if (group.type.value == DataType.Passwords)
         {
-            pendingState.passwordGroupsByID.value.delete(group.id.value);
+            pendingState.passwordGroupsByID.removeMapValue(group.id.value);
             const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(group.id.value, "groups");
 
             // do this here since it can update passwords
@@ -190,7 +189,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         }
         else if (group.type.value == DataType.NameValuePairs)
         {
-            pendingState.valueGroupsByID.value.delete(group.id.value);
+            pendingState.valueGroupsByID.removeMapValue(group.id.value);
             const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(group.id.value, "groups");
 
             // do this here since it can update values
@@ -243,7 +242,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
             if (!group.value[primaryDataObjectCollection].value.has(primaryObjectID))
             {
-                group.value[primaryDataObjectCollection].value.set(primaryObjectID, WebFieldConstructor.create(primaryObjectID));
+                group.value[primaryDataObjectCollection].addMapValue(primaryObjectID, Field.create(primaryObjectID));
             }
 
             this.checkUpdateEmptySecondaryObject(
@@ -263,7 +262,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
             if (group.value[primaryDataObjectCollection].value.has(primaryObjectID))
             {
-                group.value[primaryDataObjectCollection].value.delete(primaryObjectID);
+                group.value[primaryDataObjectCollection].removeMapValue(primaryObjectID);
             }
 
             this.checkUpdateEmptySecondaryObject(
@@ -283,7 +282,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
             if (group.value[primaryDataObjectCollection].value.has(primaryObjectID))
             {
-                group.value[primaryDataObjectCollection].value.get(primaryObjectID)!.forceUpdate = true;
+                group.value[primaryDataObjectCollection].value.get(primaryObjectID)!.updateAndBubble();
             }
         });
     }
@@ -303,7 +302,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             const primaryObject: Field<T> | undefined = allPrimaryObjects.value.get(k);
             if (primaryObject)
             {
-                primaryObject.value.groups.value.set(group.id.value, WebFieldConstructor.create(group.id.value));
+                primaryObject.value.groups.addMapValue(group.id.value, Field.create(group.id.value));
             }
         });
 
@@ -312,7 +311,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             const primaryObject: Field<T> | undefined = allPrimaryObjects.value.get(k);
             if (primaryObject)
             {
-                primaryObject.value.groups.value.delete(group.id.value);
+                primaryObject.value.groups.removeMapValue(group.id.value);
             }
         });
 
@@ -321,7 +320,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
             const primaryObject: Field<T> | undefined = allPrimaryObjects.value.get(k);
             if (primaryObject)
             {
-                primaryObject.value.groups.value.get(group.id.value)!.forceUpdate = true;
+                primaryObject.value.groups.value.get(group.id.value)!.updateAndBubble();
             }
         });
 

@@ -41,7 +41,7 @@ groupStoreSuite.tests.push({
             getPrimaryObject: () => Field<T>)
         {
             const group: Group = defaultGroup(type);
-            group[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            group[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
             group.name.value = `GroupStore Add With Primary Object Works Type ${type}`;
             group.color.value = "#FFFFFF";
 
@@ -98,8 +98,8 @@ groupStoreSuite.tests.push({
             const duplicateGroupTwo = defaultGroup(type);
             duplicateGroupTwo.name.value = `GroupStore Add Metrics Work Dup Two Type ${type}`;
 
-            duplicateGroupOne[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
-            duplicateGroupTwo[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            duplicateGroupOne[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
+            duplicateGroupTwo[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
 
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
@@ -200,7 +200,7 @@ groupStoreSuite.tests.push({
             getPrimaryObject: () => Field<T>)
         {
             const group: Group = defaultGroup(type);
-            group[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            group[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
             group.name.value = `GroupStore Update With Primary Object Works Type ${type}`;
             group.color.value = "#FFFFFF";
 
@@ -224,7 +224,7 @@ groupStoreSuite.tests.push({
             ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.value.groups.value.has(group.id.value));
 
             const groupWithPrimaryObject: Group = JSON.vaulticParse(JSON.vaulticStringify(groupWithoutPrimaryObject));
-            groupWithPrimaryObject[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            groupWithPrimaryObject[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
 
             await app.currentVault.groupStore.updateGroup(masterKey, groupWithPrimaryObject);
 
@@ -273,7 +273,7 @@ groupStoreSuite.tests.push({
             let hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
             ctx.assertTruthy(`Empty Group Exist for type ${type}`, hasEmptyGroup);
 
-            emptyGroup[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            emptyGroup[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
             await app.currentVault.groupStore.updateGroup(masterKey, emptyGroup);
 
             hasEmptyGroup = getEmptyGroups().value.has(emptyGroup.id.value);
@@ -291,8 +291,8 @@ groupStoreSuite.tests.push({
             const duplicateGroupTwo = defaultGroup(type);
             duplicateGroupTwo.name.value = `GroupStore Update Metrics Work Dup Two Type ${type}`;
 
-            duplicateGroupOne[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
-            duplicateGroupTwo[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            duplicateGroupOne[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
+            duplicateGroupTwo[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupTwo);
@@ -319,7 +319,7 @@ groupStoreSuite.tests.push({
 
             ctx.assertUndefined(`Duplicate group two isn't a duplicate ${type}`, retrievedDuplicateGroupTwo);
 
-            duplicateGroupOne[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            duplicateGroupOne[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
 
             await app.currentVault.groupStore.updateGroup(masterKey, duplicateGroupOne);
 
@@ -384,7 +384,7 @@ groupStoreSuite.tests.push({
             getPrimaryObject: () => Field<T>)
         {
             const group: Group = defaultGroup(type);
-            group[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            group[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
             group.name.value = `GroupStore Delete With Primary Object Works Type ${type}`;
             group.color.value = "#FFFFFF";
 
@@ -451,8 +451,8 @@ groupStoreSuite.tests.push({
             const duplicateGroupTwo = defaultGroup(type);
             duplicateGroupTwo.name.value = `GroupStore Delete Metrics Work Dup Two Type ${type}`;
 
-            duplicateGroupOne[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
-            duplicateGroupTwo[property].value.set(primaryObject.id.value, WebFieldConstructor.create(primaryObject.id.value));
+            duplicateGroupOne[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
+            duplicateGroupTwo[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
 
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupOne);
             await app.currentVault.groupStore.addGroup(masterKey, duplicateGroupTwo);

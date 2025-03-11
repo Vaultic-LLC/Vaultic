@@ -19,15 +19,14 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         return safetifyMethod(this, internalCreateOrganization);
         async function internalCreateOrganization(this: OrganizationController): Promise<TypedMethodResponse<CreateOrganizationResponse | undefined>>
         {
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            if (!environment.cache.currentUser)
             {
                 return TypedMethodResponse.fail();
             }
 
             const orgData: CreateOrganizationData = JSON.vaulticParse(createOrganizationData);
-            const addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, currentUser.userID, currentUser.privateSigningKey,
-                orgData.addedVaults.map(v => v.userVaultID), orgData.addedMembers);
+            const addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, environment.cache.currentUser.userID,
+                environment.cache.currentUser.privateSigningKey, orgData.addedVaults.map(v => v.userVaultID), orgData.addedMembers);
 
             return TypedMethodResponse.success(await axiosHelper.api.post('Organization/CreateOrganization', {
                 Name: orgData.name,
@@ -42,8 +41,7 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
         return safetifyMethod(this, internalUpdateOrganization);
         async function internalUpdateOrganization(this: OrganizationController): Promise<TypedMethodResponse<BaseResponse | undefined>>
         {
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            if (!environment.cache.currentUser)
             {
                 return TypedMethodResponse.fail();
             }
@@ -59,8 +57,8 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
             if (parsedUpdatedOrgData.addedVaults.length > 0)
             {
                 const allMembers = [...parsedUpdatedOrgData.originalMembers, ...parsedUpdatedOrgData.addedMembers];
-                addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, currentUser.userID, currentUser.privateSigningKey,
-                    parsedUpdatedOrgData.addedVaults.map(v => v.vaultID), allMembers);
+                addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, environment.cache.currentUser.userID,
+                    environment.cache.currentUser.privateSigningKey, parsedUpdatedOrgData.addedVaults.map(v => v.vaultID), allMembers);
             }
 
             if (parsedUpdatedOrgData.removedVaults.length > 0)
@@ -70,9 +68,9 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
 
             if (parsedUpdatedOrgData.addedMembers.length > 0)
             {
-                addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, currentUser.userID, currentUser.privateSigningKey,
-                    [...parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID), ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)],
-                    parsedUpdatedOrgData.addedMembers);
+                addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, environment.cache.currentUser.userID,
+                    environment.cache.currentUser.privateSigningKey, [...parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID),
+                    ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)], parsedUpdatedOrgData.addedMembers);
             }
 
             if (parsedUpdatedOrgData.updatedMembers.length > 0)

@@ -60,10 +60,9 @@ import { FieldedTableRowModel, GridDefinition, HeaderTabModel, InputColorModel, 
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { Field } from '@vaultic/shared/Types/Fields';
-import { WebFieldConstructor } from '../../Types/Fields';
+import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
 
 export default defineComponent({
     name: "PasswordView",
@@ -181,7 +180,7 @@ export default defineComponent({
             passwordState.value.groups.value = new Map();
             selectedGroups.value.forEach(g => 
             {
-                passwordState.value.groups.addMapValue(g.backingObject!.value.id.value, WebFieldConstructor.create(g.backingObject!.value.id.value));
+                passwordState.value.groups.addMapValue(g.backingObject!.value.id.value, Field.create(g.backingObject!.value.id.value));
             });
 
             if (props.creating)
@@ -238,11 +237,11 @@ export default defineComponent({
 
         async function onAddSecurityQuestion()
         {
-            const id = await generateUniqueIDForMap(passwordState.value.securityQuestions.value);
-            const securityQuestion: Field<SecurityQuestion> = WebFieldConstructor.create({
-                id: WebFieldConstructor.create(id),
-                question: WebFieldConstructor.create(''),
-                answer: WebFieldConstructor.create(''),
+            const id = uniqueIDGenerator.generate();
+            const securityQuestion: Field<SecurityQuestion> = Field.create({
+                id: Field.create(id),
+                question: Field.create(''),
+                answer: Field.create(''),
             });
 
             passwordState.value.securityQuestions.addMapValue(id, securityQuestion);
@@ -275,7 +274,7 @@ export default defineComponent({
 
         function onDeleteSecurityQuestion(securityQuestion: Field<SecurityQuestion>)
         {
-            passwordState.value.securityQuestions.value.delete(securityQuestion.value.id.value);
+            passwordState.value.securityQuestions.removeMapValue(securityQuestion.value.id.value);
             if (dirtySecurityQuestionQuestions.value.includes(securityQuestion.value.id.value))
             {
                 dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(securityQuestion.value.id.value), 1);

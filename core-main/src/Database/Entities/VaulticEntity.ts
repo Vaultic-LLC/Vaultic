@@ -232,47 +232,62 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 
     protected async internalVerify(key: string): Promise<TypedMethodResponse<any>>
     {
+        console.time('17')
         if (!this.currentSignature)
         {
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE);
         }
-
+        console.timeEnd("17");
+        console.time("18");
         let signatureMakeup = this.getSignatureMakeup();
         if (!signatureMakeup)
         {
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_MAKEUP);
         }
 
+        console.timeEnd("18");
+        console.time("19");
         const serializedMakeup = JSON.vaulticStringify(signatureMakeup);
+        console.timeEnd("19");
+        console.log(serializedMakeup);
+        console.time("20");
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);
         if (!hashedEntity.success)
         {
             return TypedMethodResponse.fail();
         }
 
+        console.timeEnd("20");
+        console.time("21");
         const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, key);
         if (!hashedKey.success)
         {
             return TypedMethodResponse.fail();
         }
 
+        console.timeEnd("21");
         const keyBytes = hexToBytes(hashedKey.value);
 
         try
         {
+            console.time("23");
             const response = await jose.jwtDecrypt(this.currentSignature, keyBytes, {
                 issuer: 'vaultic',
                 audience: 'vaulticUser',
                 contentEncryptionAlgorithms: ['A256GCM']
             });
 
+            console.timeEnd("23");
             if (nameof<StoreState>('previousSignature') in this)
             {
+                console.time("24");
                 await jose.jwtDecrypt(this[nameof<StoreState>("previousSignature")], keyBytes, {
                     issuer: 'vaultic',
                     audience: 'vaulticUser',
                     contentEncryptionAlgorithms: ['A256GCM']
                 });
+
+                console.timeEnd("24");
             }
 
             const retrievedEntity = response.payload.entity;
@@ -281,11 +296,14 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
                 return TypedMethodResponse.fail(errorCodes.NO_RETRIEVED_ENTITY);
             }
 
+            console.time("25");
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity.value);
             if (!equalHashes)
             {
                 return TypedMethodResponse.fail(errorCodes.HASHES_DONT_MATCH);
             }
+
+            console.timeEnd("25");
 
             return TypedMethodResponse.success();
         }

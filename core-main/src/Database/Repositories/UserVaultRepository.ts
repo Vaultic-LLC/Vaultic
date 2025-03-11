@@ -25,7 +25,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return environment.databaseDataSouce.getRepository(UserVault);
     }
 
-    private async getUserVaults(user: User, userVaultIDs?: number[]): Promise<UserVault[]>
+    private async getUserVaults(userID: number, userVaultIDs?: number[]): Promise<UserVault[]>
     {
         return this.retrieveManyReactive(getUserVaultsQuery);
 
@@ -40,7 +40,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                 .leftJoinAndSelect('vault.valueStoreState', 'valueStoreState')
                 .leftJoinAndSelect('vault.filterStoreState', 'filterStoreState')
                 .leftJoinAndSelect('vault.groupStoreState', 'groupStoreState')
-                .where('userVault.userID = :userID', { userID: user.userID })
+                .where('userVault.userID = :userID', { userID: userID })
                 .andWhere('vault.entityState != :state', { state: EntityState.Deleted });
 
             if (userVaultIDs && userVaultIDs.length > 0)
@@ -52,18 +52,17 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         }
     }
 
-    public async getVerifiedUserVaults(masterKey: string, userVaultIDs?: number[], user?: User,
+    public async getVerifiedUserVaults(masterKey: string, userVaultIDs?: number[], userID?: number,
         query?: (repository: Repository<UserVault>) => Promise<UserVault[] | null>): Promise<[UserVault[], string[]]>
     {
-        if (!user)
+        if (!userID)
         {
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            if (!environment.cache.currentUser?.userID)
             {
                 return [[], []];
             }
 
-            user = currentUser;
+            userID = environment.cache.currentUser.userID;
         }
 
         let userVaults: UserVault[] | null = [];
@@ -73,7 +72,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         }
         else 
         {
-            userVaults = await this.getUserVaults(user, userVaultIDs);
+            userVaults = await this.getUserVaults(userID, userVaultIDs);
         }
 
         if (!userVaults || userVaults.length == 0)
@@ -84,24 +83,29 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         const vaultKeys: string[] = [];
         for (let i = 0; i < userVaults.length; i++)
         {
+            console.time(`14-${i}`);
             const userVaultResponse = await userVaults[i].verify(masterKey);
             if (!userVaultResponse)
             {
                 return [[], []];
             }
+            console.timeEnd(`14-${i}`);
+            console.time(`15-${i}`);
 
             const decryptedVaultKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
                 return [[], []];
             }
+            console.timeEnd(`15-${i}`);
+            console.time(`16-${i}`);
 
             const vaultResponse = await userVaults[i].vault.verify(decryptedVaultKey.value!);
             if (!vaultResponse)
             {
                 return [[], []];
             }
-
+            console.timeEnd(`16-${i}`);
             vaultKeys.push(decryptedVaultKey.value!);
         }
 
@@ -150,13 +154,12 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             }
             else 
             {
-                const user = await environment.repositories.users.getCurrentUser();
-                if (!user)
+                if (!environment.cache.currentUser?.userID)
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "No User");
                 }
 
-                userVaults = await this.getUserVaults(user, [userVaultID]);
+                userVaults = await this.getUserVaults(environment.cache.currentUser.userID, [userVaultID]);
             }
 
             if (userVaults.length != 1)
@@ -170,14 +173,13 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const transaction = new Transaction();
             if (newUserVault.vaultPreferencesStoreState)
             {
-                const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-                if (!currentUser)
+                if (!environment.cache.currentUser?.userID)
                 {
                     return TypedMethodResponse.fail(errorCodes.NO_USER, "saveUserVault");
                 }
 
                 const currentVaultPreferences = JSON.vaulticParse((JSON.vaulticParse(currentData) as CondensedVaultData).vaultPreferencesStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(currentUser.userID, masterKey, JSON.vaulticParse(newUserVault.vaultPreferencesStoreState),
+                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newUserVault.vaultPreferencesStoreState),
                     currentVaultPreferences, transaction);
 
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
@@ -199,8 +201,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
 
     public async getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<UserVault>[] | undefined>> 
     {
-        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-        if (!currentUser)
+        if (!environment.cache.currentUser?.userID)
         {
             return TypedMethodResponse.fail();
         }
@@ -248,7 +249,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             return repository
                 .createQueryBuilder('userVault')
                 .leftJoinAndSelect("userVault.vaultPreferencesStoreState", "vaultPreferencesStoreState")
-                .where("userVault.userID = :userID", { userID: currentUser?.userID })
+                .where("userVault.userID = :userID", { userID: environment.cache.currentUser.userID })
                 .andWhere(`(
                     userVault.entityState != :entityState OR 
                     vaultPreferencesStoreState.entityState != :entityState
@@ -260,13 +261,12 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
 
     public async postBackupEntitiesUpdates(key: string, entities: DeepPartial<UserVault>[], transaction: Transaction): Promise<boolean> 
     {
-        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(key);
-        if (!currentUser)
+        if (!environment.cache.currentUser?.userID)
         {
             return false;
         }
 
-        const userVaults = await this.getVerifiedUserVaults(key, entities.filter(f => f.userVaultID).map(u => u.userVaultID!), currentUser);
+        const userVaults = await this.getVerifiedUserVaults(key, entities.filter(f => f.userVaultID).map(u => u.userVaultID!), environment.cache.currentUser.userID);
         for (let i = 0; i < entities.length; i++)
         {
             const userVault = userVaults[0].filter(uv => uv.userVaultID == entities[i].userVaultID);

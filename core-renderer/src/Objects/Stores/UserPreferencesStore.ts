@@ -10,7 +10,6 @@ import { DataType } from "../../Types/DataTypes";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { FieldTreeUtility } from "../../Types/Tree";
-import { WebFieldConstructor } from "../../Types/Fields";
 
 export interface PinnedDataTypes extends IFieldedObject
 {
@@ -21,13 +20,13 @@ export interface PinnedDataTypes extends IFieldedObject
 }
 
 // just used for validation
-const emptyDataTypes: Field<PinnedDataTypes> = WebFieldConstructor.create(
+const emptyDataTypes: Field<PinnedDataTypes> = Field.create(
     {
-        id: WebFieldConstructor.create(""),
-        pinnedFilters: WebFieldConstructor.create(new Map<string, Field<string>>()),
-        pinnedGroups: WebFieldConstructor.create(new Map<string, Field<string>>()),
-        pinnedPasswords: WebFieldConstructor.create(new Map<string, Field<string>>()),
-        pinnedValues: WebFieldConstructor.create(new Map<string, Field<string>>()),
+        id: Field.create(""),
+        pinnedFilters: Field.create(new Map<string, Field<string>>()),
+        pinnedGroups: Field.create(new Map<string, Field<string>>()),
+        pinnedPasswords: Field.create(new Map<string, Field<string>>()),
+        pinnedValues: Field.create(new Map<string, Field<string>>()),
     });
 
 interface IUserPreferencesStoreState extends StoreState
@@ -50,10 +49,10 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     set currentColorPalette(value: ColorPalette) { this.state.currentColorPalette.value = value; }
     get currentPrimaryColor() { return this.internalCurrentPrimaryColor }
 
-    get pinnedFilters() { return this.getPinnedDataTypes(DataType.Filters) ?? WebFieldConstructor.create(new Map()); }
-    get pinnedGroups() { return this.getPinnedDataTypes(DataType.Groups) ?? WebFieldConstructor.create(new Map()); }
-    get pinnedPasswords() { return this.getPinnedDataTypes(DataType.Passwords) ?? WebFieldConstructor.create(new Map()); }
-    get pinnedValues() { return this.getPinnedDataTypes(DataType.NameValuePairs) ?? WebFieldConstructor.create(new Map()); }
+    get pinnedFilters() { return this.getPinnedDataTypes(DataType.Filters) ?? Field.create(new Map()); }
+    get pinnedGroups() { return this.getPinnedDataTypes(DataType.Groups) ?? Field.create(new Map()); }
+    get pinnedPasswords() { return this.getPinnedDataTypes(DataType.Passwords) ?? Field.create(new Map()); }
+    get pinnedValues() { return this.getPinnedDataTypes(DataType.NameValuePairs) ?? Field.create(new Map()); }
     get pinnedDesktopDevices() { return this.state.pinnedDesktopDevices; }
     get pinnedMobileDevices() { return this.state.pinnedMobileDevices; }
     get pinnedOrganizations() { return this.state.pinnedOrganizations; }
@@ -76,8 +75,8 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         }
         else 
         {
-            if (!validateObject(stateToUse.currentColorPalette, WebFieldConstructor.create(emptyColorPalette), testProperty) ||
-                !validateObject(stateToUse.pinnedDataTypes, WebFieldConstructor.create(new Map()), undefined, mapTest))
+            if (!validateObject(stateToUse.currentColorPalette, Field.create(emptyColorPalette), testProperty) ||
+                !validateObject(stateToUse.pinnedDataTypes, Field.create(new Map()), undefined, mapTest))
             {
                 stateToUse = this.defaultState();
             }
@@ -177,30 +176,30 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
     protected defaultState(): UserPreferencesStoreState
     {
-        const defaultPinnedDataTypes = WebFieldConstructor.create(new Map<number, Field<PinnedDataTypes>>());
+        const defaultPinnedDataTypes = Field.create(new Map<number, Field<PinnedDataTypes>>());
         if (this.initalized?.value && app.currentVault.userVaultID)
         {
             this.setDefaultPinnedDataTypes(app.currentVault.userVaultID, defaultPinnedDataTypes);
         }
 
         return FieldTreeUtility.setupIDs<IUserPreferencesStoreState>({
-            version: WebFieldConstructor.create(0),
+            version: Field.create(0),
             currentColorPalette: defaultColorPalettes.entries().next().value![1],
             pinnedDataTypes: defaultPinnedDataTypes,
-            pinnedDesktopDevices: WebFieldConstructor.create(new Map()),
-            pinnedMobileDevices: WebFieldConstructor.create(new Map()),
-            pinnedOrganizations: WebFieldConstructor.create(new Map())
+            pinnedDesktopDevices: Field.create(new Map()),
+            pinnedMobileDevices: Field.create(new Map()),
+            pinnedOrganizations: Field.create(new Map())
         });
     }
 
     protected setDefaultPinnedDataTypes(userVaultID: number, pinnedDataTypes: Field<Map<number, Field<PinnedDataTypes>>>)
     {
-        pinnedDataTypes.value.set(userVaultID, WebFieldConstructor.create({
-            id: WebFieldConstructor.create(""),
-            pinnedFilters: WebFieldConstructor.create(new Map()),
-            pinnedGroups: WebFieldConstructor.create(new Map()),
-            pinnedPasswords: WebFieldConstructor.create(new Map()),
-            pinnedValues: WebFieldConstructor.create(new Map()),
+        pinnedDataTypes.addMapValue(userVaultID, Field.create({
+            id: Field.create(""),
+            pinnedFilters: Field.create(new Map()),
+            pinnedGroups: Field.create(new Map()),
+            pinnedPasswords: Field.create(new Map()),
+            pinnedValues: Field.create(new Map()),
         }));
     }
 
@@ -285,49 +284,49 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
     public async addPinnedFilter(id: string)
     {
-        this.getPinnedDataTypes(DataType.Filters)?.value.set(id, WebFieldConstructor.create(id));
+        this.getPinnedDataTypes(DataType.Filters)?.addMapValue(id, Field.create(id));
         await this.update();
     }
 
     public async removePinnedFilters(id: string)
     {
-        this.getPinnedDataTypes(DataType.Filters)?.value.delete(id);
+        this.getPinnedDataTypes(DataType.Filters)?.removeMapValue(id);
         await this.update();
     }
 
     public async addPinnedGroup(id: string)
     {
-        this.getPinnedDataTypes(DataType.Groups)?.value.set(id, WebFieldConstructor.create(id));
+        this.getPinnedDataTypes(DataType.Groups)?.addMapValue(id, Field.create(id));
         await this.update();
     }
 
     public async removePinnedGroups(id: string)
     {
-        this.getPinnedDataTypes(DataType.Groups)?.value.delete(id);
+        this.getPinnedDataTypes(DataType.Groups)?.removeMapValue(id);
         await this.update();
     }
 
     public async addPinnedPassword(id: string)
     {
-        this.getPinnedDataTypes(DataType.Passwords)?.value.set(id, WebFieldConstructor.create(id));
+        this.getPinnedDataTypes(DataType.Passwords)?.addMapValue(id, Field.create(id));
         await this.update();
     }
 
     public async removePinnedPasswords(id: string)
     {
-        this.getPinnedDataTypes(DataType.Passwords)?.value.delete(id);
+        this.getPinnedDataTypes(DataType.Passwords)?.removeMapValue(id);
         await this.update();
     }
 
     public async addPinnedValue(id: string)
     {
-        this.getPinnedDataTypes(DataType.NameValuePairs)?.value.set(id, WebFieldConstructor.create(id));
+        this.getPinnedDataTypes(DataType.NameValuePairs)?.addMapValue(id, Field.create(id));
         await this.update();
     }
 
     public async removePinnedValues(id: string)
     {
-        this.getPinnedDataTypes(DataType.NameValuePairs)?.value.delete(id);
+        this.getPinnedDataTypes(DataType.NameValuePairs)?.removeMapValue(id);
         await this.update();
     }
 
@@ -335,11 +334,11 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     {
         if (desktop)
         {
-            this.state.pinnedDesktopDevices.value.set(id, WebFieldConstructor.create(id));
+            this.state.pinnedDesktopDevices.addMapValue(id, Field.create(id));
         }
         else 
         {
-            this.state.pinnedMobileDevices.value.set(id, WebFieldConstructor.create(id));
+            this.state.pinnedMobileDevices.addMapValue(id, Field.create(id));
         }
 
         await this.update();
@@ -349,11 +348,11 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     {
         if (desktop)
         {
-            this.state.pinnedDesktopDevices.value.delete(id);
+            this.state.pinnedDesktopDevices.removeMapValue(id);
         }
         else 
         {
-            this.state.pinnedMobileDevices.value.delete(id);
+            this.state.pinnedMobileDevices.removeMapValue(id);
         }
 
         await this.update();
@@ -363,7 +362,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     {
         if (!this.state.pinnedOrganizations.value.has(id))
         {
-            this.state.pinnedOrganizations.value.set(id, WebFieldConstructor.create(id));
+            this.state.pinnedOrganizations.addMapValue(id, Field.create(id));
             await this.update();
         }
     }
@@ -372,7 +371,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     {
         if (this.state.pinnedOrganizations.value.has(id))
         {
-            this.state.pinnedOrganizations.value.delete(id);
+            this.state.pinnedOrganizations.removeMapValue(id);
             await this.update();
         }
     }

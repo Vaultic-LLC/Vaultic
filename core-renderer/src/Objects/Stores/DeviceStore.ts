@@ -4,6 +4,7 @@ import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import app from "./AppStore";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 
 export class DeviceStore extends Store<StoreState>
 {
@@ -77,7 +78,7 @@ export class DeviceStore extends Store<StoreState>
 
         for (let i = 0; i < devices.length; i++)
         {
-            const deviceId = await api.utilities.generator.uniqueId();
+            const deviceId = uniqueIDGenerator.generate();
             const clientDevice: ClientDevice =
             {
                 ...devices[i],
@@ -111,7 +112,7 @@ export class DeviceStore extends Store<StoreState>
         device.UserDesktopDeviceID = result.UserDesktopDeviceID;
         device.UserMobileDeviceID = result.UserMobileDeviceID;
 
-        const deviceId = await api.utilities.generator.uniqueId();
+        const deviceId = uniqueIDGenerator.generate();
         device.id = deviceId;
 
         this.internalDevicesByID.value.set(deviceId, device);

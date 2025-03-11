@@ -1,7 +1,7 @@
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { TreeNodeButton } from "./Models";
 import { Field } from "@vaultic/shared/Types/Fields";
-import { ObjectPropertyManager, MapPropertyManager } from "@vaultic/shared/Types/Utilities";
+import { ObjectPropertyManager, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export class TreeNodeMember 
 {
@@ -176,13 +176,13 @@ export class FieldTreeUtility
     {
         if (parent)
         {
-            obj.parent = parent;
-            obj.parentID = parent.id;
+            obj.p = parent;
+            obj.pID = parent.id;
         }
 
         if (typeof obj.value === "object")
         {
-            const manager: ObjectPropertyManager<any> = obj.value instanceof Map ? new MapPropertyManager() : new ObjectPropertyManager();
+            const manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(obj.value);
             const keys = manager.keys(obj.value);
 
             for (let i = 0; i < keys.length; i++)
