@@ -1,10 +1,8 @@
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { environment } from "../Environment";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { sha256 } from "@noble/hashes/sha2";
-import { bytesToHex, hexToBytes } from "@noble/hashes/utils";
 
-class CoreHashUtility
+export class CoreHashUtility
 {
     constructor() { }
 
@@ -12,11 +10,11 @@ class CoreHashUtility
     {
         try 
         {
+            const valueToHash = value + salt;
             switch (algorithm)
             {
                 case Algorithm.SHA_256:
-                    const valueToHash = value + salt;
-                    return TypedMethodResponse.success(bytesToHex(sha256(valueToHash)));
+                    return TypedMethodResponse.success(environment.utilities.crypt.bytesToHex(this.sha256Hash(valueToHash)));
             }
         }
         catch (e: any)
@@ -34,8 +32,8 @@ class CoreHashUtility
             return false;
         }
 
-        const aBytes = hexToBytes(a);
-        const bBytes = hexToBytes(b);
+        const aBytes = environment.utilities.crypt.hexToBytes(a);
+        const bBytes = environment.utilities.crypt.hexToBytes(b);
 
         let equal = 0;
         for (let i = 0; i < aBytes.length; i++)
@@ -45,8 +43,9 @@ class CoreHashUtility
 
         return equal == 0;
     }
-}
 
-const coreHashUtility = new CoreHashUtility();
-export type ICoreHashUtility = typeof coreHashUtility;
-export default coreHashUtility;
+    protected sha256Hash(value: string): Uint8Array
+    {
+        throw "Not Implemented";
+    }
+}

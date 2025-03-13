@@ -134,15 +134,19 @@ export class VaulticRepository<T extends VaulticEntity>
             return true;
         }
 
+        console.time("30");
         if (!(await this.encryptUpdatedProperties(key, entity)))
         {
             return false;
         }
+        console.timeEnd("30");
 
+        console.time("31");
         if (!(await this.checkAndSign(key, entity)))
         {
             return false;
         }
+        console.timeEnd("31");
 
         const repo = manager.withRepository(this.repository);
 

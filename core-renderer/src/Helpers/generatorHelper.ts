@@ -1,4 +1,3 @@
-import { api } from "../API";
 import qrCode from "qrcode";
 
 export function generateMFAQRCode(issuedTo: string, key: string): Promise<any>

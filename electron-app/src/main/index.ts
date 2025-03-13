@@ -11,8 +11,8 @@ import { environment } from "./Core/Environment"
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
 import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
-import coreHashUtility from "./Core/Utilities/CoreHashUtility";
-import cryptUtility from "./Core/Utilities/CoreCryptUtility";
+import { HashUtility } from "./Utilities/HashUtility";
+import { CryptUtility } from "./Utilities/CryptUtility";
 
 async function createWindow(): Promise<void>
 {
@@ -148,8 +148,8 @@ async function setupEnvironment(isTest: boolean)
 		},
 		utilities:
 		{
-			crypt: cryptUtility,
-			hash: coreHashUtility,
+			crypt: new CryptUtility(),
+			hash: new HashUtility(),
 			generator: generatorUtility
 		},
 		database:

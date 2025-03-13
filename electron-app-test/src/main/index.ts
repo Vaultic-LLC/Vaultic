@@ -6,8 +6,8 @@ import setupIPC from './ipcSetup';
 import { electronAPI } from "@electron-toolkit/preload";
 
 import { environment } from "./Core/Environment"
-import cryptUtility from "./Core/Utilities/CoreCryptUtility";
-import coreHashUtility from "./Core/Utilities/CoreHashUtility";
+import { CryptUtility } from "./Utilities/CryptUtility";
+import { HashUtility } from "./Utilities/HashUtility";
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
 import database, { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
@@ -147,8 +147,8 @@ async function setupEnvironment(isTest: boolean)
         },
         utilities:
         {
-            crypt: cryptUtility,
-            hash: coreHashUtility,
+            crypt: new CryptUtility(),
+            hash: new HashUtility(),
             generator: generatorUtility
         },
         database:

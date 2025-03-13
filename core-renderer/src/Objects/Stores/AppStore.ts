@@ -316,7 +316,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             }
         }
 
-        app.popups.showAlert('test', 'test', true);
         return true;
     }
 

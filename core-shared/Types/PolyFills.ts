@@ -149,7 +149,7 @@ JSON.vaulticStringify = (value: any) =>
             if (isFieldIdentifier in valueToUse)
             {
                 // don't want to include the parent in the serialization
-                const { p: _, ...fieldedObjectWithoutParent } = value;
+                const { p: _, ...fieldedObjectWithoutParent } = valueToUse;
                 valueToUse = fieldedObjectWithoutParent;
 
                 if (valueToUse.value instanceof Map)

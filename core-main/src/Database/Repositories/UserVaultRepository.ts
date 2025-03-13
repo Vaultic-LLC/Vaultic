@@ -83,29 +83,23 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         const vaultKeys: string[] = [];
         for (let i = 0; i < userVaults.length; i++)
         {
-            console.time(`14-${i}`);
             const userVaultResponse = await userVaults[i].verify(masterKey);
             if (!userVaultResponse)
             {
                 return [[], []];
             }
-            console.timeEnd(`14-${i}`);
-            console.time(`15-${i}`);
 
             const decryptedVaultKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, userVaults[i].vaultKey);
             if (!decryptedVaultKey.success)
             {
                 return [[], []];
             }
-            console.timeEnd(`15-${i}`);
-            console.time(`16-${i}`);
 
             const vaultResponse = await userVaults[i].vault.verify(decryptedVaultKey.value!);
             if (!vaultResponse)
             {
                 return [[], []];
             }
-            console.timeEnd(`16-${i}`);
             vaultKeys.push(decryptedVaultKey.value!);
         }
 
