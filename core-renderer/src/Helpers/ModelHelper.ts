@@ -1,16 +1,15 @@
-import { AtRiskModel, FieldedTableRowModel, GroupIconModel } from "../Types/Models";
+import { AtRiskModel, GroupIconModel, TableRowModel } from "../Types/Models";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject, Group } from "../Types/DataTypes";
 import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
 
-let filterGroupModelID = 0;
 export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[])
-    : [FieldedTableRowModel<Field<T>>[], FieldedTableRowModel<Field<T>>[]]
+    : [TableRowModel[], TableRowModel[]]
 {
-    let models: FieldedTableRowModel<Field<T>>[] = [];
-    let pinnedModels: FieldedTableRowModel<Field<T>>[] = [];
+    let models: TableRowModel[] = [];
+    let pinnedModels: TableRowModel[] = [];
 
     if (groupFilterType == DataType.Groups && passwordValueType == DataType.Passwords && app.currentVault.groupStore.activeAtRiskPasswordGroupType != AtRiskType.None)
     {
@@ -97,8 +96,6 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
 
     function buildModel(v: Field<T>, message?: string)
     {
-        filterGroupModelID += 1;
-
         let atRiskModel: AtRiskModel | undefined = undefined;
         if (message)
         {
@@ -109,11 +106,11 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         {
             if (app.userPreferences.pinnedFilters.value.has(v.value.id.value))
             {
-                pinnedModels.push(new FieldedTableRowModel(filterGroupModelID.toString(), true, atRiskModel, v))
+                pinnedModels.push(new TableRowModel(v.value.id.value, true, atRiskModel))
             }
             else
             {
-                models.push(new FieldedTableRowModel(filterGroupModelID.toString(), false, atRiskModel, v));
+                models.push(new TableRowModel(v.value.id.value, false, atRiskModel));
             }
         }
         else if (groupFilterType == DataType.Groups)
@@ -127,13 +124,13 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
 
             if (app.userPreferences.pinnedGroups.value.has(v.value.id.value))
             {
-                pinnedModels.push(new FieldedTableRowModel(filterGroupModelID.toString(), true, atRiskModel, v, {
+                pinnedModels.push(new TableRowModel(v.value.id.value, true, atRiskModel, {
                     groupModels: groupModels
                 }));
             }
             else
             {
-                models.push(new FieldedTableRowModel(filterGroupModelID.toString(), false, atRiskModel, v, {
+                models.push(new TableRowModel(v.value.id.value, false, atRiskModel, {
                     groupModels: groupModels
                 }));
             }
@@ -141,12 +138,11 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
     }
 }
 
-let passwordValueModelID = 0;
 export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(color: string, dataType: DataType, allValues: Field<T>[])
-    : [FieldedTableRowModel<Field<T>>[], FieldedTableRowModel<Field<T>>[]]
+    : [TableRowModel[], TableRowModel[]]
 {
-    const newModels: FieldedTableRowModel<Field<T>>[] = [];
-    const pinnedModels: FieldedTableRowModel<Field<T>>[] = [];
+    const newModels: TableRowModel[] = [];
+    const pinnedModels: TableRowModel[] = [];
 
     if (dataType == DataType.Passwords && app.currentVault.passwordStore.activeAtRiskPasswordType != AtRiskType.None)
     {
@@ -236,8 +232,6 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
 
     function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void)
     {
-        passwordValueModelID += 1;
-
         let atRiskModel: AtRiskModel | undefined = undefined;
         if (atRiskMessage)
         {
@@ -260,13 +254,13 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
 
             if (app.userPreferences.pinnedPasswords.value.has(v.value.id.value))
             {
-                pinnedModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), true, atRiskModel, v, {
+                pinnedModels.push(new TableRowModel(v.value.id.value, true, atRiskModel, {
                     groupModels: groupModels
                 }));
             }
             else
             {
-                newModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), false, atRiskModel, v, {
+                newModels.push(new TableRowModel(v.value.id.value, false, atRiskModel, {
                     groupModels: groupModels
                 }));
             }
@@ -286,13 +280,13 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
 
             if (app.userPreferences.pinnedValues.value.has(v.value.id.value))
             {
-                pinnedModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), true, atRiskModel, v, {
+                pinnedModels.push(new TableRowModel(v.value.id.value, true, atRiskModel, {
                     groupModels: groupModels
                 }));
             }
             else
             {
-                newModels.push(new FieldedTableRowModel(passwordValueModelID.toString(), false, atRiskModel, v, {
+                newModels.push(new TableRowModel(v.value.id.value, false, atRiskModel, {
                     groupModels: groupModels
                 }));
             }

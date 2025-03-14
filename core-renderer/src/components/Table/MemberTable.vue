@@ -73,7 +73,7 @@ export default defineComponent({
         const currentMemberIDs: Ref<string> = ref('[]');
         
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-        const memberCollection: SortedCollection = new SortedCollection([], "username");
+        const memberCollection: SortedCollection = new SortedCollection([], () => members.value, "username");
 
         const disableMemberSearch: Ref<boolean> = ref(false);
         const selectedUserDemographics: Ref<ObjectSelectOptionModel | undefined> = ref();
@@ -132,10 +132,10 @@ export default defineComponent({
 
         function setTableRows()
         {
-            const rows: TableRowModel<Member>[] = [];
-            members.value.forEach(v =>
+            const rows: TableRowModel[] = [];
+            members.value.forEach((v, k, map) =>
             {
-                rows.push(new TableRowModel(v.userID.toString(), (obj: Member) => obj.userID, undefined, undefined, undefined, v));
+                rows.push(new TableRowModel(k));
             });
 
             memberCollection.updateValues(rows);

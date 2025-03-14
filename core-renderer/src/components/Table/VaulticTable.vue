@@ -100,12 +100,12 @@
                 <template #body="slotProps">
                     <!-- Click handler needs its own div since cellWrapper has padding, which isn't clickable -->
                     <div class="vaulticTableContainer__cellWrapper" :class="{'vaulticTableContainer__cellWrapper--clickable': !!column.onClick}"
-                            @click="() => column.onClick?.((slotProps.data as TableRowModel<any>).backingObject)"
+                            @click="() => column.onClick?.(getBackingObject((slotProps.data as TableRowModel).id))"
                             @click.right.stop="!column.isGroupIconCell && !column.component ? 
-                                onTextClick(column, (slotProps.data as TableRowModel<any>).backingObject) : undefined">
+                                onTextClick(column, (slotProps.data as TableRowModel).id) : undefined">
                         <div class="vaulticTableContainer__cell">
                             <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
-                                <div v-for="model in (slotProps.data as TableRowModel<any>).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
+                                <div v-for="model in (slotProps.data as TableRowModel).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
                                     :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
                                     <span class="vaulticTableContainer__groupIconSpan">
                                         <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
@@ -113,13 +113,13 @@
                                     </span>
                                 </div>
                             </div>
-                            <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel<any>).backingObject" 
-                                :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel<any>).state" :isFielded="column.isFielded" />
+                            <component v-else-if="column.component != undefined" :is="column.component" :model="getBackingObject((slotProps.data as TableRowModel).id)" 
+                                :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" :isFielded="column.isFielded" />
                             <template v-else-if="column.isFielded === false">
-                                {{ (slotProps.data as TableRowModel<any>).backingObject?.[column.field] }}
+                                {{ getBackingObject((slotProps.data as TableRowModel).id)?.[column.field] }}
                             </template>
                             <template v-else>
-                                {{ (slotProps.data as TableRowModel<any>).backingObject?.value[column.field]?.value }}
+                                {{ getBackingObject((slotProps.data as TableRowModel).id)?.value[column.field]?.value }}
                             </template>
                         </div>
                     </div>
@@ -138,18 +138,18 @@
                 </template>
                 <template #body="{ data }">
                     <div class="vaulticTableContainer__rowIconButtonsContainer">
-                        <div v-if="(data as TableRowModel<any>).atRiskModel" class="vaulticTableContainer__rowIconButton" @click="(data as TableRowModel<any>).atRiskModel?.onClick">
+                        <div v-if="(data as TableRowModel).atRiskModel" class="vaulticTableContainer__rowIconButton" @click="(data as TableRowModel).atRiskModel?.onClick">
                             <div class="tableRow__rowIconContainer">
-                                <AtRiskIndicator :color="color" :message="(data as TableRowModel<any>).atRiskModel?.message" />
+                                <AtRiskIndicator :color="color" :message="(data as TableRowModel).atRiskModel?.message" />
                             </div>
                         </div>
-                        <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel<any>).isPinned === true, data)">
-                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel<any>).isPinned === true}" :name="'magnet-outline'" />
+                        <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel).isPinned === true, data)">
+                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel).isPinned === true}" :name="'magnet-outline'" />
                         </div>
-                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit((data as TableRowModel<any>).backingObject, e)">
+                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit(getBackingObject((data as TableRowModel).id), e)">
                             <IonIcon class="rowIcon edit" :name="'create-outline'" />
                         </div>
-                        <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm((data as TableRowModel<any>).backingObject)">
+                        <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm(getBackingObject((data as TableRowModel).id))">
                             <IonIcon class="rowIcon delete" :name="'trash-outline'" />
                         </div>
                     </div>
@@ -235,15 +235,16 @@ export default defineComponent({
         const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
 
         const showSearchBar: ComputedRef<boolean> = computed(() => props.allowSearching != undefined ? props.allowSearching : true);
-        const tableDataSources: Ref<TableDataSources> = ref(props.dataSources);    
-        const activeTableDataSource: ComputedRef<TableDataSouce> = computed(() => tableDataSources.value.dataSources[tableDataSources.value.activeIndex()]);
-        const rowValues: Ref<TableRowModel<any>[]> = ref([]);
+        const tableDataSources: TableDataSources = props.dataSources;    
+        let activeTableDataSource: TableDataSouce = tableDataSources.dataSources[tableDataSources.activeIndex()];
 
-        const pinnedRowValues: Ref<TableRowModel<any>[] | undefined> = ref(props.pinnedValues ?? []);
+        const rowValues: Ref<TableRowModel[]> = ref([]);
+
+        const pinnedRowValues: Ref<TableRowModel[] | undefined> = ref(props.pinnedValues ?? []);
         const searchText: Ref<string | undefined > = ref();
 
-        const defaultSortField: ComputedRef<string | undefined> = computed(() => activeTableDataSource.value.collection.property);
-        const defaultSortOrder: ComputedRef<number> = computed(() => activeTableDataSource.value.collection.descending ? -1 : 1);
+        const defaultSortField: Ref<string | undefined> = ref(activeTableDataSource.collection.property);
+        const defaultSortOrder: Ref<number> = ref(activeTableDataSource.collection.descending ? -1 : 1);
 
         let tweenGroup: TWEEN.Group | undefined = undefined;
         let scrollbarColor: Ref<string> = ref(primaryColor.value);
@@ -257,7 +258,7 @@ export default defineComponent({
 
         let currentColumnId = 0;
 
-        const allRows: Ref<TableRowModel<any>[]> = ref([]);
+        const allRows: Ref<TableRowModel[]> = ref([]);
         const totalRecords: Ref<number> = ref(0);
         const firstRow: Ref<number> = ref(0);
         const rowsToDisplay: Ref<number> = ref(15);
@@ -375,43 +376,43 @@ export default defineComponent({
             }
         }
 
-        function internalOnPin(isPinned: boolean, model: TableRowModel<any>)
+        function internalOnPin(isPinned: boolean, model: TableRowModel)
         {
             if (isPinned)
             {
                 model.isPinned = false;
-                activeTableDataSource.value.pinnedCollection?.remove(model.getBackingObjectIdentifier());
-                activeTableDataSource.value.collection.push(model);
+                activeTableDataSource.pinnedCollection?.remove(model.id);
+                activeTableDataSource.collection.push(model);
             }
             else
             {
                 model.isPinned = true;
-                activeTableDataSource.value.pinnedCollection?.push(model);
-                activeTableDataSource.value.collection.remove(model.getBackingObjectIdentifier());
+                activeTableDataSource.pinnedCollection?.push(model);
+                activeTableDataSource.collection.remove(model.id);
             }
 
-            props.onPin?.(isPinned, model.backingObject);
+            props.onPin?.(isPinned, getBackingObject(model.id));
         }
 
         function onSortOrder(value: undefined | number)
         {
-            activeTableDataSource.value.collection.updateSort(activeTableDataSource.value.collection.property, value == -1, true);
-            activeTableDataSource.value.pinnedCollection?.updateSort(activeTableDataSource.value.pinnedCollection.property, value == -1, true);
+            activeTableDataSource.collection.updateSort(activeTableDataSource.collection.property, value == -1, true);
+            activeTableDataSource.pinnedCollection?.updateSort(activeTableDataSource.pinnedCollection.property, value == -1, true);
         }
 
         function onSortField(value: string)
         {
             // don't actually do the sort yet since onSortOrder will be called after
-            activeTableDataSource.value.collection.updateSort(value, activeTableDataSource.value.collection.descending, false);
-            activeTableDataSource.value.pinnedCollection?.updateSort(value, activeTableDataSource.value.pinnedCollection.descending, false);
+            activeTableDataSource.collection.updateSort(value, activeTableDataSource.collection.descending, false);
+            activeTableDataSource.pinnedCollection?.updateSort(value, activeTableDataSource.pinnedCollection.descending, false);
         }
 
         const confirm = useConfirm();
         const deleteConfirm = (backingObject: any) => 
         {
             confirm.require({
-                message: `Are you sure you want to delete this ${activeTableDataSource.value.friendlyDataTypeName}?`,
-                header: `Delete ${activeTableDataSource.value.friendlyDataTypeName}`,
+                message: `Are you sure you want to delete this ${activeTableDataSource.friendlyDataTypeName}?`,
+                header: `Delete ${activeTableDataSource.friendlyDataTypeName}`,
                 icon: 'pi pi-info-circle',
                 rejectLabel: 'Cancel',
                 rejectProps: {
@@ -435,16 +436,24 @@ export default defineComponent({
             reSetRowValues();
         }
 
+        let lastSearch = 0;
         function onSearch(value: string | undefined)
         {
-            activeTableDataSource.value.collection.search(value ?? "");
+            const now = Date.now();
+            if (now - lastSearch <= 100)
+            {
+                return;
+            }
+
+            lastSearch = now;
+            activeTableDataSource.collection.search(value ?? "");
         }
 
         function reSetRowValues()
         {
-            totalRecords.value = (activeTableDataSource.value.pinnedCollection?.values.length ?? 0) + activeTableDataSource.value.collection.values.length;
-            allRows.value = activeTableDataSource.value.pinnedCollection?.calculatedValues != undefined ? [...activeTableDataSource.value.pinnedCollection?.calculatedValues] : [];
-            allRows.value.push(...activeTableDataSource.value.collection.calculatedValues);
+            totalRecords.value = (activeTableDataSource.pinnedCollection?.values.length ?? 0) + activeTableDataSource.collection.values.length;
+            allRows.value = activeTableDataSource.pinnedCollection?.calculatedValues != undefined ? Array.from(activeTableDataSource.pinnedCollection?.calculatedValues) : [];
+            allRows.value = allRows.value.concat(activeTableDataSource.collection.calculatedValues);
 
             rowValues.value = allRows.value.slice(0, rowChunkAmount);
             scrollToTop();
@@ -463,11 +472,12 @@ export default defineComponent({
             const rowsToLoad = Math.min(20, rowsToDisplay.value - rowValues.value.length);
             const start = firstRow.value + rowValues.value.length;
 
-            rowValues.value.push(...allRows.value.slice(start, start + rowsToLoad));
+            rowValues.value = rowValues.value.concat(allRows.value.slice(start, start + rowsToLoad));
         }
 
-        function onTextClick(column: TableColumnModel, object: any)
+        function onTextClick(column: TableColumnModel, id: string)
         {
+            const object = getBackingObject(id);
             if (column.isFielded === false)
             {
                 app.copyToClipboard(object?.[column.field])
@@ -478,10 +488,19 @@ export default defineComponent({
             }
         }
 
-        watch(() => activeTableDataSource.value, () => 
+        function getBackingObject(id: string): any
         {
+            return activeTableDataSource.collection.getBackingObject(id);
+        }
+
+        watch(tableDataSources.activeIndex, (newValue) =>
+        {
+            activeTableDataSource = tableDataSources.dataSources[newValue];
+            defaultSortField.value = activeTableDataSource.collection.property;
+            defaultSortOrder.value = activeTableDataSource.collection.descending ? -1 : 1;
+
             reSetRowValues();
-            searchText.value = activeTableDataSource.value.collection.searchText;
+            searchText.value = activeTableDataSource.collection.searchText;
         });
 
         watch(() => props.color, () =>
@@ -491,9 +510,9 @@ export default defineComponent({
     
         onMounted(() =>
         {
-            if (tableDataSources.value)
+            if (tableDataSources)
             {
-                tableDataSources.value.dataSources.forEach(d => 
+                tableDataSources.dataSources.forEach(d => 
                 {
                     d.collection.onUpdate = onTableCollectionUpdate;
                     if (d.pinnedCollection)
@@ -558,7 +577,8 @@ export default defineComponent({
             onSortOrder,
             onSortField,
             onSearch,
-            onPage
+            onPage,
+            getBackingObject
         }
     },
 })
@@ -709,8 +729,8 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__emptyMessage) {
     background: transparent !important;
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
+    /* opacity: 0;
+    animation: fadeIn 1s linear forwards; */
 }
 
 :deep(.vaulticTableContainer__emptyMessageCell) {

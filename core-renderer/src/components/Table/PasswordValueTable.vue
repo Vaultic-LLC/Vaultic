@@ -1,7 +1,7 @@
 <template>
     <div class="passwordValueTableContainer">
         <VaulticTable ref="tableRef" id="passwordValueTable" :color="color" :columns="tableColumns" 
-            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
+            :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
             :searchBarSizeModel="searchBarSizeModel" :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
@@ -29,7 +29,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
@@ -65,11 +65,11 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value : app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
 
-        const passwords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
-        const pinnedPasswords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], "passwordFor");
+        const passwords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], () => app.currentVault.passwordStore.passwordsByID.value, "passwordFor");
+        const pinnedPasswords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], () => app.currentVault.passwordStore.passwordsByID.value, "passwordFor");
 
-        const nameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], "name");
-        const pinnedNameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], "name");
+        const nameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], () => app.currentVault.valueStore.nameValuePairsByID.value, "name");
+        const pinnedNameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], () => app.currentVault.valueStore.nameValuePairsByID.value, "name");
 
         let showEditPasswordPopup: Ref<boolean> = ref(false);
         let currentEditingPasswordModel: Ref<ReactivePassword | undefined> = ref(undefined);
@@ -85,7 +85,7 @@ export default defineComponent({
             minWidth: '110px',
         });
 
-        const tableDataSources: Reactive<TableDataSources> = reactive(
+        const tableDataSources: TableDataSources =
         {
             activeIndex: () => app.activePasswordValuesTable == DataType.Passwords ? 0 : 1,
             dataSources: 
@@ -101,7 +101,7 @@ export default defineComponent({
                     pinnedCollection: pinnedNameValuePairs
                 }
             ]
-        });
+        };
 
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
@@ -190,7 +190,7 @@ export default defineComponent({
             else if (newValue.length > oldValue.length)
             {
                 // @ts-ignore
-                let temp: Field<T>[] = [...localVariable.values.map(v => v.backingObject)];
+                let temp: Field<T>[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
                 if (app.settings.value.multipleFilterBehavior.value == FilterStatus.Or)
                 {
                     const filtersActivated: Field<Filter>[] = newValue.filter(f => !oldValue.includes(f));
@@ -212,7 +212,7 @@ export default defineComponent({
             else if (newValue.length < oldValue.length)
             {
                 // @ts-ignore
-                let temp: Field<T>[] = [...localVariable.values.map(v => v.backingObject)];
+                let temp: Field<T>[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
                 if (app.settings.value.multipleFilterBehavior.value == FilterStatus.Or)
                 {
                     const filtersRemoved: Field<Filter>[] = oldValue.filter(f => !newValue.includes(f));

@@ -56,7 +56,7 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
 
             if (parsedUpdatedOrgData.addedVaults.length > 0)
             {
-                const allMembers = [...parsedUpdatedOrgData.originalMembers, ...parsedUpdatedOrgData.addedMembers];
+                const allMembers = parsedUpdatedOrgData.originalMembers.concat(parsedUpdatedOrgData.addedMembers);
                 addedVaultModifiedOrgMembers = await organizationUpdateAddedVaultsToAddedOrgMembers(masterKey, environment.cache.currentUser.userID,
                     environment.cache.currentUser.privateSigningKey, parsedUpdatedOrgData.addedVaults.map(v => v.vaultID), allMembers);
             }
@@ -69,8 +69,8 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
             if (parsedUpdatedOrgData.addedMembers.length > 0)
             {
                 addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, environment.cache.currentUser.userID,
-                    environment.cache.currentUser.privateSigningKey, [...parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID),
-                    ...parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)], parsedUpdatedOrgData.addedMembers);
+                    environment.cache.currentUser.privateSigningKey, parsedUpdatedOrgData.addedVaults.map(v => v.userVaultID).concat(
+                        parsedUpdatedOrgData.unchangedVaults.map(v => v.userVaultID)), parsedUpdatedOrgData.addedMembers);
             }
 
             if (parsedUpdatedOrgData.updatedMembers.length > 0)

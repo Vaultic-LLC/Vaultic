@@ -199,10 +199,11 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
 
     private async incrementCurrentAndSafeValues(pendingState: ValueStoreState, values: Field<Map<string, Field<ReactiveValue>>>)
     {
-        pendingState.currentAndSafeValues.value.current.addArrayValue(Field.create(values.value.size));
+        const id = uniqueIDGenerator.generate();
+        pendingState.currentAndSafeValues.value.current.addMapValue(id, Field.create(values.value.size));
 
         const safePasswords = values.value.filter((k, v) => this.valueIsSafe(pendingState, v.value));
-        pendingState.currentAndSafeValues.value.safe.addArrayValue(Field.create(safePasswords.size));
+        pendingState.currentAndSafeValues.value.safe.addMapValue(id, Field.create(safePasswords.size));
     }
 
     private valueIsSafe(state: ValueStoreState, value: ReactiveValue)
@@ -250,8 +251,8 @@ export class ReactiveValueStore extends ValueStore
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 
-        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.currentAndSafeValues.value.current.value.map((v) => v.value));
-        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.currentAndSafeValues.value.safe.value.map((v) => v.value));
+        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.currentAndSafeValues.value.current.value.map((k, v) => v.value));
+        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.currentAndSafeValues.value.safe.value.map((k, v) => v.value));
     }
 
     protected preAssignState(state: ValueStoreState): void 

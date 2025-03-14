@@ -56,7 +56,7 @@ import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { Password, SecurityQuestion, defaultPassword } from '../../Types/DataTypes';
-import { FieldedTableRowModel, GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
@@ -88,7 +88,7 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const securityQuestions: SortedCollection = new SortedCollection([]);
+        const securityQuestions: SortedCollection = new SortedCollection([], () => passwordState.value.securityQuestions.value);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
 
         const passwordIsDirty: Ref<boolean> = ref(false);
@@ -149,10 +149,10 @@ export default defineComponent({
 
         function setSecurityQuestionModels()
         {
-            const securityQuestionRows: FieldedTableRowModel<Field<SecurityQuestion>>[] = [];
+            const securityQuestionRows: TableRowModel[] = [];
             passwordState.value.securityQuestions.value.forEach((v, k) => 
             {
-                securityQuestionRows.push(new FieldedTableRowModel(k, false, undefined, v, 
+                securityQuestionRows.push(new TableRowModel(k, false, undefined, 
                 {
                     isInitiallyEncrypted: isInitiallyEncrypted.value
                 }));
@@ -246,11 +246,9 @@ export default defineComponent({
 
             passwordState.value.securityQuestions.addMapValue(id, securityQuestion);
 
-            const securityQuestionModel: FieldedTableRowModel<Field<SecurityQuestion>> = new FieldedTableRowModel(
-                securityQuestion.id, undefined, undefined, securityQuestion, 
-                {
-                    isInitiallyEncrypted: false
-                });
+            const securityQuestionModel: TableRowModel = new TableRowModel(securityQuestion.id, undefined, undefined, {
+                isInitiallyEncrypted: false
+            });
 
             securityQuestions.push(securityQuestionModel);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);

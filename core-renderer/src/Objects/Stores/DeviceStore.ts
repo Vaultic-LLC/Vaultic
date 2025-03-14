@@ -16,6 +16,7 @@ export class DeviceStore extends Store<StoreState>
 
     private internalHasRegisteredCurrentDevice: ComputedRef<boolean>;
 
+    get devicesByID() { return this.internalDevicesByID.value; }
     get currentDeviceInfo() { return this.internalCurrentDeviceInfo.value; }
     get devices() { return this.internalDevices.value; }
     get failedToGetDevices() { return this.internalFailedToGetDevices.value; }

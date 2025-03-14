@@ -76,8 +76,8 @@ export default defineComponent({
         const color: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ?
             app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value : app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
 
-        let lableArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswordsCurrent]);
-        let chartOneArray: Ref<number[]> = ref([...app.currentVault.passwordStore.currentAndSafePasswordsSafe]);
+        let lableArray: Ref<number[]> = ref(Array.from(app.currentVault.passwordStore.currentAndSafePasswordsCurrent));
+        let chartOneArray: Ref<number[]> = ref(Array.from(app.currentVault.passwordStore.currentAndSafePasswordsSafe));
 
         let table: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values")
         let target: Ref<(number | undefined)[]> = ref(app.currentVault.passwordStore.currentAndSafePasswordsCurrent.map(_ => app.currentVault.passwordStore.passwords.length));

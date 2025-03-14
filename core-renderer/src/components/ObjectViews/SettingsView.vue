@@ -12,19 +12,7 @@
                             :color="color" v-model="appSettings.multipleFilterBehavior.value" :optionsEnum="FilterStatus"
                             fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                             :disabled="readOnly" />
-                    </div>
-                    <div class="settingsView__inputSection">
-                        <TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
-                            :label="'Max Login Records Per Day'" v-model="vaultSettings.loginRecordsToStorePerDay.value"
-                            :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                            :minHeight="'35px'" :disabled="readOnly"
-                            :additionalValidationFunction="enforceLoginRecordsPerDay" />
-                        <TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
-                            :label="'Days to Store Login Records'" v-model="vaultSettings.numberOfDaysToStoreLoginRecords.value"
-                            :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                            :minHeight="'35px'" :disabled="readOnly"
-                            :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
-                    </div>                     
+                    </div>                    
                 </VaulticAccordionContent>
             </VaulticAccordionPanel>
             <VaulticAccordionPanel :value="'1'">
@@ -162,8 +150,8 @@ export default defineComponent({
         const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
         const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
 
-        const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
-        const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
+        // const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
+        // const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
@@ -217,13 +205,13 @@ export default defineComponent({
                 transaction.updateUserStore(app, state);
             }
 
-            if (JSON.vaulticStringify(originalVaultSettings.value) != JSON.vaulticStringify(vaultSettings.value))
-            {
-                const state = app.currentVault.cloneState();
-                state.settings.value = vaultSettings.value;
+            // if (JSON.vaulticStringify(originalVaultSettings.value) != JSON.vaulticStringify(vaultSettings.value))
+            // {
+            //     const state = app.currentVault.cloneState();
+            //     state.settings.value = vaultSettings.value;
 
-                transaction.updateVaultStore(app.currentVault, state);
-            }
+            //     transaction.updateVaultStore(app.currentVault, state);
+            // }
 
             const succeeded = await transaction.commit(masterKey, app.isOnline);
             if (succeeded && 
@@ -498,7 +486,6 @@ export default defineComponent({
             usernameField,
             memberTable,
             appSettings,
-            vaultSettings,
             refreshKey,
             AutoLockTime,
             FilterStatus,

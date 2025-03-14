@@ -135,7 +135,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => [...defaultColorPalettes.valueArray(), ...this.state.settings.value.userColorPalettes.value.valueArray()])
+        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(this.state.settings.value.userColorPalettes.value.valueArray()))
 
         this.internalUserVaults = ref([]);
         this.internalUserVaultsByVaultID = computed(() => this.internalUserVaults.value.reduce((map: Map<number, DisplayVault>, dv: DisplayVault) =>
@@ -353,7 +353,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         // force trigger reactivity
-        const temp = [...this.internalUserVaults.value];
+        const temp = Array.from(this.internalUserVaults.value);
         temp.push({
             userOrganizationID: vaultData.userOrganizationID,
             userVaultID: vaultData.userVaultID,
@@ -470,7 +470,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const tempArchivedVaults = [...this.internalUserVaults.value];
+        const tempArchivedVaults = Array.from(this.internalUserVaults.value);
         tempArchivedVaults.splice(index, 1);
 
         this.internalUserVaults.value = tempArchivedVaults;

@@ -28,7 +28,7 @@ import VaulticTable from '../Table/VaulticTable.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { DataType, defaultFilter, EqualFilterConditionType, Filter, FilterCondition, FilterConditionType, NameValuePairType } from '../../Types/DataTypes';
-import { FieldedTableRowModel, GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
@@ -56,7 +56,7 @@ export default defineComponent({
         const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
-        const filterConditionModels: SortedCollection = new SortedCollection([]);
+        const filterConditionModels: SortedCollection = new SortedCollection([], () => filterState.value.conditions.value);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -182,7 +182,7 @@ export default defineComponent({
 
             filterState.value.conditions.addMapValue(id, filterCondition);
 
-            const tableRowModel = new FieldedTableRowModel(id, false, undefined, filterCondition, 
+            const tableRowModel = new TableRowModel(id, false, undefined, 
             {
                 filterConditionType: FilterConditionType,
                 inputType: PropertyType.String
@@ -207,11 +207,11 @@ export default defineComponent({
             }
             else
             {
-                let models: FieldedTableRowModel<Field<FilterCondition>>[] = [];
+                let models: TableRowModel[] = [];
                 filterState.value.conditions.value.forEach((v, k, map) =>
                 {
                     const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.value.property.value)?.type ?? PropertyType.String;
-                    models.push(new FieldedTableRowModel(k, false, undefined, v, 
+                    models.push(new TableRowModel(k, false, undefined, 
                     {
                         filterConditionType: propertyType == PropertyType.String ? FilterConditionType : EqualFilterConditionType,
                         inputType: propertyType,

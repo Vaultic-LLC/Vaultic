@@ -63,7 +63,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         for (let i = 0; i < app.userVaults.value.length; i++)
         {
             const vault = app.userVaults.value[i];
-            const limitedPasswords: { id: string, domain: string }[] = [];
+            let limitedPasswords: { id: string, domain: string }[] = [];
 
             const vaultPostData: BreachRequestVault =
             {
@@ -73,7 +73,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
             vault.passwordsByDomain?.value.forEach((v, k, map) => 
             {
-                limitedPasswords.push(...v.value.map((kk, vv) =>
+                limitedPasswords = limitedPasswords.concat(v.value.map((kk, vv) =>
                 {
                     return {
                         id: vv.value,

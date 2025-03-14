@@ -33,17 +33,14 @@ export default defineComponent({
             let attr: any[] = [];
             app.currentVault.loginHistory.value.forEach((v, k, map) =>
             {
-                v.value.forEach((dk) => 
-                {
-                    attr.push({
-                        key: dk,
-                        dates: [dk],
-                        dot: true,
-                        popover: {
-                            label: new Date(dk).toLocaleTimeString(),
-                            visibility: "hover"
-                        }
-                    })
+                attr.push({
+                    key: k,
+                    dates: [k],
+                    dot: true,
+                    popover: {
+                        label: new Date(k).toLocaleTimeString(),
+                        visibility: "hover"
+                    }
                 });
             });
 

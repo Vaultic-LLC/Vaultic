@@ -254,10 +254,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     private async incrementCurrentAndSafePasswords(pendingState: PasswordStoreState, passwords: Field<Map<string, Field<ReactivePassword>>>)
     {
-        pendingState.currentAndSafePasswords.value.current.addArrayValue(Field.create(passwords.value.size));
+        const id = uniqueIDGenerator.generate();
+        pendingState.currentAndSafePasswords.value.current.addMapValue(id, Field.create(passwords.value.size));
 
         const safePasswords = passwords.value.filter((k, v) => this.passwordIsSafe(pendingState, v.value));
-        pendingState.currentAndSafePasswords.value.safe.addArrayValue(Field.create(safePasswords.size));
+        pendingState.currentAndSafePasswords.value.safe.addMapValue(id, Field.create(safePasswords.size));
     }
 
     private passwordIsSafe(state: PasswordStoreState, password: ReactivePassword)
@@ -376,8 +377,8 @@ export class ReactivePasswordStore extends PasswordStore
         this.internalWeakPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.isWeak.value, (k, v) => v.value.id.value));
         this.internalContainsLoginPasswords = computed(() => this.state.passwordsByID.value.mapWhere((k, v) => v.value.containsLogin.value, (k, v) => v.value.id.value));
 
-        this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.currentAndSafePasswords.value.current.value.map((v) => v.value));
-        this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.currentAndSafePasswords.value.safe.value.map((v) => v.value));
+        this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.currentAndSafePasswords.value.current.value.map((k, v) => v.value));
+        this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.currentAndSafePasswords.value.safe.value.map((k, v) => v.value));
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
 

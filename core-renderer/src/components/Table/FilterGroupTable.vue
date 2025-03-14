@@ -61,17 +61,17 @@ export default defineComponent({
         const tabToOpenOnAdd: ComputedRef<number> = computed(() => app.activeFilterGroupsTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
-        const passwordFilters: SortedCollection = new SortedCollection([], "name");
-        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], "name");
+        const passwordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID.value, "name");
+        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID.value, "name");
 
-        const passwordGroups: SortedCollection = new SortedCollection([], "name");
-        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], "name");
+        const passwordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID.value, "name");
+        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID.value, "name");
 
-        const valueFilters: SortedCollection = new SortedCollection([], "name");
-        const pinnedValueFilters: SortedCollection = new SortedCollection([], "name");
+        const valueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID.value,  "name");
+        const pinnedValueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID.value,  "name");
 
-        const valueGroups: SortedCollection = new SortedCollection([], "name");
-        const pinnedValueGroups: SortedCollection = new SortedCollection([], "name");
+        const valueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID.value, "name");
+        const pinnedValueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID.value, "name");
 
         const showEditGroupPopup: Ref<boolean> = ref(false);
         const currentlyEditingGroupModel: Ref<Group | any> = ref({});

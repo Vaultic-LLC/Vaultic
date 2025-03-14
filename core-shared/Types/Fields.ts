@@ -9,14 +9,14 @@ export interface IIdentifiable
 
 export interface IFieldObject
 {
-    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject> | undefined> | FieldMap | Field<any[]>;
+    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject> | undefined> | FieldMap;
 }
 
 export type IFieldedObject = IIdentifiable & IFieldObject;
 
 export class FieldedObject implements IFieldedObject
 {
-    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap | Field<any[]>;
+    [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
     id: Field<string>;
 
     constructor() 
@@ -150,18 +150,6 @@ export class Field<T>
         if (this.p)
         {
             this.p.updateAndBubble();
-        }
-    }
-
-    addArrayValue(value: Field<any>)
-    {
-        if (this.value instanceof Array)
-        {
-            value.pID = this.id;
-            value.p = this;
-
-            this.value.push(value);
-            this.updateAndBubble();
         }
     }
 

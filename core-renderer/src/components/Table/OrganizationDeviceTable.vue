@@ -39,10 +39,10 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
-        const devices: SortedCollection = new SortedCollection([], "Name");
+        const devices: SortedCollection = new SortedCollection([], () => app.devices.devicesByID, "Name");
         
-        const organizations: VaultListSortedCollection = new VaultListSortedCollection([], "name");
-        const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([], "name");
+        const organizations: VaultListSortedCollection = new VaultListSortedCollection([], () => app.organizations.organizationsByID, "name");
+        const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([], () => app.organizations.organizationsByID, "name");
             
         const devicesAreSelected: ComputedRef<boolean> = computed(() => app.activeDeviceOrganizationsTable == DataType.Devices);
         const showAdd: ComputedRef<boolean> = computed(() => app.isOnline && (!devicesAreSelected.value || (devicesAreSelected.value && !app.devices.hasRegisteredCurrentDevice)));
@@ -145,9 +145,10 @@ export default defineComponent({
         {
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Devices)
             {
-                const deviceRows = app.devices.devices.map((d) =>
+                const deviceRows: TableRowModel[] = [];
+                app.devices.devicesByID.forEach((v, k, map) =>
                 {
-                    return new TableRowModel(d.id, (obj: ClientDevice) => obj.id, undefined, false, undefined, d);
+                    deviceRows.push(new TableRowModel(k));
                 });
     
                 devices.updateValues(deviceRows);
@@ -155,18 +156,18 @@ export default defineComponent({
 
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Organizations)
             {
-                const newOrganizationModels: TableRowModel<Organization>[] = [];
-                const newPinnedOrganizationModels: TableRowModel<Organization>[] = [];
+                const newOrganizationModels: TableRowModel[] = [];
+                const newPinnedOrganizationModels: TableRowModel[] = [];
 
-                app.organizations.organizations.value.forEach(o =>
+                app.organizations.organizationsByID.forEach((v, k, map) =>
                 {
-                    if (app.userPreferences.pinnedOrganizations.value.has(o.organizationID))
+                    if (app.userPreferences.pinnedOrganizations.value.has(k))
                     {
-                        newPinnedOrganizationModels.push(new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, true, undefined, o));
+                        newPinnedOrganizationModels.push(new TableRowModel(k, true));
                     }
                     else
                     {
-                        newOrganizationModels.push(new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, false, undefined, o));
+                        newOrganizationModels.push(new TableRowModel(k));
                     }
                 });
     

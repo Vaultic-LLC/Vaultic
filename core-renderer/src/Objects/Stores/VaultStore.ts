@@ -11,16 +11,13 @@ import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { FieldTreeUtility } from "../../Types/Tree";
 
-export interface VaultSettings extends IFieldedObject
-{
-    loginRecordsToStorePerDay: Field<number>;
-    numberOfDaysToStoreLoginRecords: Field<number>;
-}
+const MAX_LOGIN_RECORDS = 500;
+export interface VaultSettings extends IFieldedObject { }
 
 interface IVaultStoreState extends StoreState
 {
     settings: Field<VaultSettings>;
-    loginHistory: Field<Map<string, Field<number[]>>>;
+    loginHistory: Field<Map<number, Field<number>>>;
 }
 
 export type VaultStoreState = KnownMappedFields<IVaultStoreState>;
@@ -95,7 +92,7 @@ export class BaseVaultStore<V extends PasswordStore,
                     loginRecordsToStorePerDay: Field.create(13),
                     numberOfDaysToStoreLoginRecords: Field.create(30)
                 }),
-            loginHistory: Field.create(new Map<string, Field<number[]>>())
+            loginHistory: Field.create(new Map<number, Field<number>>())
         });
     }
 }
@@ -190,7 +187,6 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     {
         const pendingState = this.cloneState();
         await this.recordLogin(pendingState, Date.now());
-        await this.checkRemoveOldLoginRecords(pendingState);
 
         const transaction = new StoreUpdateTransaction(this.userVaultID);
         transaction.updateVaultStore(this, pendingState);
@@ -200,40 +196,19 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     private async recordLogin(pendingState: VaultStoreState, dateTime: number): Promise<void>
     {
-        const dateObj: Date = new Date(dateTime);
-        const loginHistoryKey: string = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
-
-        if (!pendingState.loginHistory.value.has(loginHistoryKey))
+        if (pendingState.loginHistory.value.size >= MAX_LOGIN_RECORDS)
         {
-            const newDayMap = Field.create([]);
-            pendingState.loginHistory.addMapValue(loginHistoryKey, newDayMap);
-
-            // does this after so parents are setup properly
-            newDayMap.addArrayValue(Field.create(dateTime));
-        }
-        else if (pendingState.loginHistory.value.get(loginHistoryKey)!.value.length < this.state.settings.value.loginRecordsToStorePerDay.value)
-        {
-            pendingState.loginHistory.value.get(loginHistoryKey)?.addArrayValue(Field.create(dateTime));
-        }
-        else
-        {
-            const valueToDelete = pendingState.loginHistory.value.get(loginHistoryKey)!.value.entries().next().value![0];
-            pendingState.loginHistory.value.get(loginHistoryKey)!.removeMapValuee(valueToDelete);
-            pendingState.loginHistory.value.get(loginHistoryKey)?.addArrayValue(Field.create(dateTime));
-        }
-    }
-
-    private async checkRemoveOldLoginRecords(pendingState: VaultStoreState)
-    {
-        const daysToStoreLoginsAsMiliseconds: number = this.state.settings.value.numberOfDaysToStoreLoginRecords.value * 24 * 60 * 60 * 1000;
-        pendingState.loginHistory.value.forEach((v, k, m) => 
-        {
-            const date: number = Date.parse(k);
-            if (date - Date.now() > daysToStoreLoginsAsMiliseconds)
+            for (let i = pendingState.loginHistory.value.size - MAX_LOGIN_RECORDS; i >= 0; i--)
             {
-                pendingState.loginHistory.removeMapValue(k);
+                const result = pendingState.loginHistory.value.entries().next();
+                if (result.value)
+                {
+                    pendingState.loginHistory.removeMapValue(result.value[0]);
+                }
             }
-        });
+        }
+
+        pendingState.loginHistory.addMapValue(dateTime, Field.create(dateTime));
     }
 }
 

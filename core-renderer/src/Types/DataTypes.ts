@@ -81,16 +81,16 @@ export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
 
 export class CurrentAndSafeStructure extends FieldedObject
 {
-    current: Field<Field<number>[]>;
-    safe: Field<Field<number>[]>;
+    current: Field<Map<string, Field<number>>>;
+    safe: Field<Map<string, Field<number>>>;
 
     constructor()
     {
         super();
 
         this.id = Field.create("");
-        this.current = Field.create([]);
-        this.safe = Field.create([]);
+        this.current = Field.create(new Map());
+        this.safe = Field.create(new Map());
     }
 }
 

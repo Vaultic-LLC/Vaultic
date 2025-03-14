@@ -1,68 +1,80 @@
-import { Field, IIdentifiable, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { Field } from "@vaultic/shared/Types/Fields";
 import app from "../../Objects/Stores/AppStore";
 import { DataType, Group } from "../../Types/DataTypes";
-import { FieldedTableRowModel, TableRowModel } from "../../Types/Models";
+import { TableRowModel } from "../../Types/Models";
 
 export class SortedCollection
 {
     descending: boolean | undefined;
     property: string | undefined;
+    backingValues: () => Map<any, any>;
 
-    values: TableRowModel<any>[];                // shouldn't ever be modified, kept as a source of truth
-    calculatedValues: TableRowModel<any>[];      // Calculated values to show
+    values: TableRowModel[];                // shouldn't ever be modified, kept as a source of truth
+    calculatedValues: TableRowModel[];      // Calculated values to show
 
     searchText: string;
     onUpdate: (() => void) | undefined;
 
-    constructor(values: TableRowModel<any>[], property?: string, descending?: boolean)
+    constructor(values: TableRowModel[], backingValues: () => Map<any, any>, property?: string, descending?: boolean)
     {
         this.descending = descending !== undefined ? descending : true;
         this.property = property;
-        this.values = [...values];
-        this.calculatedValues = [...values];
+        this.values = Array.from(values);
+        this.calculatedValues = Array.from(values);
+        this.backingValues = backingValues;
         this.searchText = "";
 
         this.sort(false);
+    }
+
+    public getBackingObject(id: any)
+    {
+        return this.backingValues()?.get(id);
+    }
+
+    public getBackingObjectProperty(id: string | number, prop: string)
+    {
+        return this.getBackingObject(id)?.[prop];
     }
 
     protected sort(notifyUpdate: boolean)
     {
         if (this.values.length == 0 || this.descending == undefined || this.property == undefined)
         {
-            this.calculatedValues = [...this.values];
+            this.calculatedValues = Array.from(this.values);
             return;
         }
 
-        switch (typeof this.values[0].getBackingObjectProperty(this.property!))
+        switch (typeof this.getBackingObjectProperty(this.values[0].id, this.property!))
         {
             case "string":
                 if (this.descending)
                 {
-                    this.values = this.values.sort((a, b) => a.getBackingObjectProperty(this.property!).localeCompare(b.getBackingObjectProperty(this.property!)))
+                    this.values = this.values.sort((a, b) => this.getBackingObjectProperty(a.id, this.property!).localeCompare(this.getBackingObjectProperty(b.id, this.property!)))
                 }
                 else
                 {
-                    this.values = this.values.sort((a, b) => b.getBackingObjectProperty(this.property!).localeCompare(a.getBackingObjectProperty(this.property!)))
+                    this.values = this.values.sort((a, b) => this.getBackingObjectProperty(b.id, this.property!).localeCompare(this.getBackingObjectProperty(a.id, this.property!)))
                 }
                 break;
             case "number":
                 if (this.descending)
                 {
-                    this.values = this.values.sort((a, b) => a.getBackingObjectProperty(this.property!) <= b.getBackingObjectProperty(this.property!) ? 1 : -1)
+                    this.values = this.values.sort((a, b) => this.getBackingObjectProperty(a.id, this.property!) <= this.getBackingObjectProperty(b.id, this.property!) ? 1 : -1)
                 }
                 else
                 {
-                    this.values = this.values.sort((a, b) => a.getBackingObjectProperty(this.property!) >= b.getBackingObjectProperty(this.property!) ? 1 : -1)
+                    this.values = this.values.sort((a, b) => this.getBackingObjectProperty(a.id, this.property!) >= this.getBackingObjectProperty(b.id, this.property!) ? 1 : -1)
                 }
                 break;
             case "boolean":
                 if (this.descending)
                 {
-                    this.values = this.values.sort((a, b) => a.getBackingObjectProperty(this.property!) <= b.getBackingObjectProperty(this.property!) ? 1 : -1)
+                    this.values = this.values.sort((a, b) => this.getBackingObjectProperty(a.id, this.property!) <= this.getBackingObjectProperty(b.id, this.property!) ? 1 : -1)
                 }
                 else
                 {
-                    this.values = this.values.sort((a, b) => a.getBackingObjectProperty(this.property!) >= b.getBackingObjectProperty(this.property!) ? 1 : -1)
+                    this.values = this.values.sort((a, b) => this.getBackingObjectProperty(a.id, this.property!) >= this.getBackingObjectProperty(b.id, this.property!) ? 1 : -1)
                 }
         }
 
@@ -80,17 +92,17 @@ export class SortedCollection
         }
     }
 
-    updateValues(values: TableRowModel<any>[])
+    updateValues(values: TableRowModel[])
     {
-        this.values = [...values];
-        this.calculatedValues = [...values];
+        this.values = Array.from(values);
+        this.calculatedValues = Array.from(values);
 
         this.sort(false);
 
         this.onUpdate?.();
     }
 
-    push(value: TableRowModel<any>)
+    push(value: TableRowModel)
     {
         this.values.push(value);
         this.sort(false);
@@ -100,7 +112,7 @@ export class SortedCollection
 
     remove(id: string)
     {
-        this.values = this.values.filter(v => v.getBackingObjectIdentifier() != id);
+        this.values = this.values.filter(v => v.id != id);
         this.sort(false);
 
         this.onUpdate?.();
@@ -114,15 +126,14 @@ export class SortedCollection
             return;
         }
 
-        if (this.searchText == "" || this.values.length <= 0 || typeof this.values[0].getBackingObjectProperty(this.property!) !== "string")
+        if (this.searchText == "" || this.values.length <= 0 || typeof this.getBackingObjectProperty(this.values[0].id, this.property!) !== "string")
         {
-            this.calculatedValues = [...this.values];
+            this.calculatedValues = Array.from(this.values);
         }
         else
         {
-            this.calculatedValues = [...this.values.filter(
-                // @ts-ignore
-                v => v.getBackingObjectProperty(this.property!).toLowerCase().indexOf(this.searchText.toLowerCase()) != -1)]
+            this.calculatedValues = Array.from(this.values.filter(
+                v => this.getBackingObjectProperty(v.id, this.property!).toLowerCase().indexOf(this.searchText.toLowerCase()) != -1))
         }
 
         if (notifyUpdate)
@@ -132,14 +143,27 @@ export class SortedCollection
     }
 }
 
-export class IGroupableSortedCollection extends SortedCollection
+export class FieldedSortedCollection extends SortedCollection
+{
+    constructor(values: TableRowModel[], backingValues: () => Map<any, any>, property?: string, descending?: boolean)
+    {
+        super(values, backingValues, property, descending)
+    }
+
+    public getBackingObjectProperty(id: string, prop: string)
+    {
+        return this.getBackingObject(id)?.value[prop].value;
+    }
+}
+
+export class IGroupableSortedCollection extends FieldedSortedCollection
 {
     private dataType: DataType;
 
-    constructor(dataType: DataType, values: FieldedTableRowModel<Field<IIdentifiable & SecondaryDataObjectCollectionType>>[], property?: string,
-        descending?: boolean)
+    constructor(dataType: DataType, values: TableRowModel[],
+        backingValues: () => Map<any, any>, property?: string, descending?: boolean)
     {
-        super(values, property, descending);
+        super(values, backingValues, property, descending);
         this.dataType = dataType;
     }
 
@@ -186,19 +210,19 @@ export class IGroupableSortedCollection extends SortedCollection
         this.searchText = search;
         if (this.searchText == "")
         {
-            this.calculatedValues = [...this.values];
+            this.calculatedValues = Array.from(this.values);
         }
         else
         {
             if (this.dataType == DataType.Passwords)
             {
                 this.calculatedValues =
-                    [...this.values.filter(v => this.internalGroupSearch(this.searchText, v.backingObject?.value.groups.value, app.currentVault.groupStore.passwordGroups))];
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.value.groups.value, app.currentVault.groupStore.passwordGroups)));
             }
             else if (this.dataType == DataType.NameValuePairs)
             {
                 this.calculatedValues =
-                    [...this.values.filter(v => this.internalGroupSearch(this.searchText, v.backingObject?.value.groups.value, app.currentVault.groupStore.valuesGroups))];
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.value.groups.value, app.currentVault.groupStore.valuesGroups)));
             }
         }
 
@@ -214,41 +238,41 @@ export class IGroupableSortedCollection extends SortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.backingObject?.value.groups.value.size == 0)
+                if (this.backingValues().get(a.id)?.value.groups.value.size == 0)
                 {
                     return 1;
                 }
 
-                if (b.backingObject?.value.groups.value.size == 0)
+                if (this.backingValues().get(b.id)?.value.groups.value.size == 0)
                 {
                     return -1;
                 }
 
-                return getLowestGroup(a) >= getLowestGroup(b) ? 1 : -1;
+                return this.getLowestGroup(a, sortedGroups) >= this.getLowestGroup(b, sortedGroups) ? 1 : -1;
             });
         }
         else
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.backingObject?.value.groups.value.size == 0)
+                if (this.backingValues().get(a.id)?.value.groups.value.size == 0)
                 {
                     return -1;
                 }
 
-                if (b.backingObject?.value.groups.value.size == 0)
+                if (this.backingValues().get(b.id)?.value.groups.value.size == 0)
                 {
                     return 1;
                 }
 
-                return getLowestGroup(a) <= getLowestGroup(b) ? 1 : -1;
+                return this.getLowestGroup(a, sortedGroups) <= this.getLowestGroup(b, sortedGroups) ? 1 : -1;
             });
         }
+    }
 
-        function getLowestGroup(item: TableRowModel<any>): number
-        {
-            return Math.min(...item.backingObject?.value.groups.value.map((id: string) => sortedGroups.findIndex(g => g.value.id.value == id)));
-        }
+    private getLowestGroup(item: TableRowModel, sortedGroups: Field<Group>[]): number
+    {
+        return Math.min(...this.backingValues().get(item.id)?.value.groups.value.map((id: string) => sortedGroups.findIndex(g => g.value.id.value == id)));
     }
 
     private internalGroupSearch(search: string, groupIds: Map<string, Field<string>>, allGroups: Field<Group>[]): boolean
@@ -295,36 +319,36 @@ export class VaultListSortedCollection extends SortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.backingObject?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues().get(a.id)?.vaultIDsByVaultID.size == 0)
                 {
                     return 1;
                 }
 
-                if (b.backingObject?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues().get(b.id)?.vaultIDsByVaultID.size == 0)
                 {
                     return -1;
                 }
 
-                return getLowestVault(a.backingObject?.vaultIDsByVaultID) >=
-                    getLowestVault(b.backingObject?.vaultIDsByVaultID) ? 1 : -1;
+                return getLowestVault(this.backingValues().get(a.id)?.vaultIDsByVaultID) >=
+                    getLowestVault(this.backingValues().get(b.id)?.vaultIDsByVaultID) ? 1 : -1;
             });
         }
         else
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (a.backingObject?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues().get(a.id)?.vaultIDsByVaultID.size == 0)
                 {
                     return -1;
                 }
 
-                if (b.backingObject?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues().get(b.id)?.vaultIDsByVaultID.size == 0)
                 {
                     return 1;
                 }
 
-                return getLowestVault(a.backingObject?.vaultIDsByVaultID) <=
-                    getLowestVault(b.backingObject?.vaultIDsByVaultID) ? 1 : -1;
+                return getLowestVault(this.backingValues().get(a.id)?.vaultIDsByVaultID) <=
+                    getLowestVault(this.backingValues().get(b.id)?.vaultIDsByVaultID) ? 1 : -1;
             });
         }
 
@@ -341,13 +365,13 @@ export class VaultListSortedCollection extends SortedCollection
         this.searchText = search;
         if (this.searchText == "")
         {
-            this.calculatedValues = [...this.values];
+            this.calculatedValues = Array.from(this.values);
         }
         else
         {
-            this.calculatedValues = [...this.values.filter(v =>
+            this.calculatedValues = Array.from(this.values.filter(v =>
             {
-                const vaultIDs: Map<number, number> | undefined = v.backingObject?.vaultIDsByVaultID;
+                const vaultIDs: Map<number, number> | undefined = this.backingValues().get(v.id)?.vaultIDsByVaultID;
                 if (vaultIDs)
                 {
                     for (const [key, _] of vaultIDs.entries())
@@ -361,7 +385,7 @@ export class VaultListSortedCollection extends SortedCollection
                 }
 
                 return false;
-            })];
+            }));
         }
 
         if (notifyUpdate)

@@ -75,68 +75,21 @@ export class TableColumnModel
         this.onClick = onClick;
         return this;
     }
-
-    getRawText(model: TableRowModel<any>)
-    {
-        if (this.isGroupIconCell || this.component)
-        {
-            return undefined;
-        }
-
-        if (this.isFielded === false)
-        {
-            return model.backingObject?.[this.field];
-        }
-
-        return model.backingObject?.value[this.field]?.value;
-    }
 }
 
-export class TableRowModel<T extends { [key: string]: any }>
+export class TableRowModel
 {
-    id: string;
+    id: string | number;
     isPinned?: boolean;
     atRiskModel?: AtRiskModel;
-    backingObject?: T;
     state?: any;
-    backingObjectIdentifier: (obj: T) => any;
-    backingObjectPropertyAccessor: (obj: T, prop: string) => any;
 
-    constructor(id: string, backingObjectIdentifier: (obj: T) => any, backingObjectPropertyAccessor?: (obj: T, prop: string) => any,
-        isPinned?: boolean, atRiskModel?: AtRiskModel, backingObject?: T, state?: any) 
+    constructor(id: string | number, isPinned?: boolean, atRiskModel?: AtRiskModel, state?: any) 
     {
         this.id = id;
-        this.backingObjectIdentifier = backingObjectIdentifier;
-        this.backingObjectPropertyAccessor = backingObjectPropertyAccessor ?? ((obj: T, prop: string) => obj[prop]);
         this.isPinned = isPinned;
         this.atRiskModel = atRiskModel;
-        this.backingObject = backingObject;
         this.state = state;
-    }
-
-    getBackingObjectIdentifier(): any
-    {
-        if (this.backingObject)
-        {
-            return this.backingObjectIdentifier(this.backingObject);
-        }
-    }
-
-    getBackingObjectProperty(prop: string): any
-    {
-        if (this.backingObject)
-        {
-            return this.backingObjectPropertyAccessor(this.backingObject, prop);
-        }
-    }
-}
-
-export class FieldedTableRowModel<T extends Field<IIdentifiable & { [key: string]: any }>> extends TableRowModel<T>
-{
-    constructor(id: string, isPinned?: boolean, atRiskModel?: AtRiskModel, backingObject?: T, state?: any)
-    {
-        super(id, (obj: T) => obj?.value.id.value, (obj: T, prop: string) => obj?.value[prop].value, isPinned,
-            atRiskModel, backingObject, state);
     }
 }
 

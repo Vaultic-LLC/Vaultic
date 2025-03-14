@@ -64,7 +64,8 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
         const scanning: Ref<boolean> = ref(false);
         const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
-        const vaultsAndBreachCount: SortedCollection = new SortedCollection([], "vault");
+        let backingVaultsAndBreachCount: Map<string, VaultAndBreachCount> = new Map();
+        const vaultAndBreachCountCollection: SortedCollection = new SortedCollection([], () => backingVaultsAndBreachCount, "vault");
 
         const tableDataSources: Reactive<TableDataSources> = reactive(
         {
@@ -73,7 +74,7 @@ export default defineComponent({
             [
                 {
                     friendlyDataTypeName: "Data Breaches",
-                    collection: vaultsAndBreachCount                
+                    collection: vaultAndBreachCountCollection                
                 },
             ]
         });
@@ -170,7 +171,9 @@ export default defineComponent({
 
         function setRows()
         {
-            const rows: TableRowModel<VaultAndBreachCount>[] = [];               
+            backingVaultsAndBreachCount = new Map();
+            const rows: TableRowModel[] = [];           
+                
             app.vaultDataBreaches.vaultDataBreachCountByVaultID.forEach((v, k, map) => 
             {
                 const vault = app.userVaultsByVaultID.get(k);
@@ -183,11 +186,12 @@ export default defineComponent({
                         breachCount: v
                     }
 
-                    rows.push(new TableRowModel(k.toString(), (obj: VaultAndBreachCount) => obj.vaultID, undefined, false, undefined, vaultAndBreachCount));
+                    backingVaultsAndBreachCount.set(k.toString(), vaultAndBreachCount);
+                    rows.push(new TableRowModel(k.toString(), undefined, undefined, vaultAndBreachCount));
                 }
             });
 
-            vaultsAndBreachCount.updateValues(rows);
+            vaultAndBreachCountCollection.updateValues(rows);
         }
 
         function clearBreaches()
@@ -230,7 +234,6 @@ export default defineComponent({
             scanning,
             metricModel,
             failedToLoad,
-            vaultsAndBreachCount,
             tableDataSources,
             tableColumns,
             startScan,
