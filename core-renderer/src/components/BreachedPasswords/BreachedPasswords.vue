@@ -44,7 +44,7 @@ import WidgetSubscriptionMessage from '../Widgets/WidgetSubscriptionMessage.vue'
 
 import { SmallMetricGaugeModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { AtRiskType, DataType, VaultAndBreachCount } from '../../Types/DataTypes';
+import { AtRiskType, DataType, Password, VaultAndBreachCount } from '../../Types/DataTypes';
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
@@ -169,11 +169,23 @@ export default defineComponent({
             scanning.value = false;          
         }
 
+        async function checkPasswordsForBreach(passwords: Password[])
+        {
+            if (!canLoadWidget.value)
+            {
+                return;
+            }
+
+            scanning.value = true;
+            await app.vaultDataBreaches.checkPasswordsForBreach(passwords);
+            scanning.value = false;          
+        }
+
         function setRows()
         {
             backingVaultsAndBreachCount = new Map();
             const rows: TableRowModel[] = [];           
-                
+
             app.vaultDataBreaches.vaultDataBreachCountByVaultID.forEach((v, k, map) => 
             {
                 const vault = app.userVaultsByVaultID.get(k);
@@ -218,14 +230,18 @@ export default defineComponent({
         {
             app.vaultDataBreaches.addEvent("onBreachesUpdated", setRows);
             app.vaultDataBreaches.addEvent("onBreachDismissed", setRows);
+
             app.currentVault.passwordStore.addEvent("onCheckPasswordBreach", checkPasswordForBreach);
+            app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
         });
 
         onUnmounted(() =>
         {
             app.vaultDataBreaches.removeEvent("onBreachesUpdated", setRows);
             app.vaultDataBreaches.removeEvent("onBreachDismissed", setRows);
+            
             app.currentVault.passwordStore.removeEvent("onCheckPasswordBreach", checkPasswordForBreach);
+            app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
         });
 
         return {

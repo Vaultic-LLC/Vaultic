@@ -7,6 +7,7 @@ import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
 import { Field } from "@vaultic/shared/Types/Fields";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
+import { Password } from "../../Types/DataTypes";
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed" | "onBreachesUpdated";
 
@@ -97,7 +98,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         {
             for (let i = 0; i < response.DataBreaches.length; i++)
             {
-                this.setBreach(response.DataBreaches[i].PasswordID, response.DataBreaches[i]);
+                this.setBreach(response.DataBreaches[i]);
             }
 
             this.emit("onBreachesUpdated");
@@ -106,6 +107,45 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         this.internalFailedToLoadDataBreaches.value = false;
         return true;
     };
+
+    public async checkPasswordsForBreach(passwords: Password[])
+    {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
+        const checkPasswordsForBreachData =
+        {
+            UserOrganizationID: app.currentVault.userOrganizationID,
+            VaultID: app.currentVault.vaultID,
+            LimitedPasswords: passwords.map(p =>
+            {
+                return {
+                    id: p.id,
+                    domain: p.domain
+                }
+            })
+        };
+
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.vaulticStringify(checkPasswordsForBreachData));
+        if (!response.Success)
+        {
+            return false;
+        }
+
+        if (response.DataBreaches && response.DataBreaches.length > 0)
+        {
+            for (let i = 0; i < response.DataBreaches.length; i++)
+            {
+                this.setBreach(response.DataBreaches[i]);
+            }
+
+            this.emit("onBreachesUpdated");
+        }
+
+        return true;
+    }
 
     public async checkPasswordForBreach(password: Field<ReactivePassword>)
     {
@@ -118,14 +158,14 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         {
             UserOrganizationID: app.currentVault.userOrganizationID,
             VaultID: app.currentVault.vaultID,
-            LimitedPassword:
-            {
-                id: password.value.id.value,
-                domain: password.value.domain.value
-            }
+            LimitedPasswords:
+                [{
+                    id: password.value.id.value,
+                    domain: password.value.domain.value
+                }]
         };
 
-        const response = await api.server.vault.checkPasswordForBreach(JSON.vaulticStringify(checkPasswordForBreachData));
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.vaulticStringify(checkPasswordForBreachData));
         if (!response.Success)
         {
             return false;
@@ -133,7 +173,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
         if (response.DataBreaches && response.DataBreaches.length > 0)
         {
-            this.setBreach(password.value.id.value, response.DataBreaches[0]);
+            this.setBreach(response.DataBreaches[0]);
             this.emit("onBreachesUpdated");
         }
 
@@ -220,7 +260,8 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         return true;
     }
 
-    private setBreach(passwordID: string, dataBreach: VaultDataBreach)
+    // TOOD: make sure this still works after removing PasswordID as a parameter
+    private setBreach(dataBreach: VaultDataBreach)
     {
         let currentBreachCount = this.internalVaultDataBreacheCountByVaultID.value.get(dataBreach.VaultID)
         if (currentBreachCount === undefined)
@@ -233,7 +274,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         }
 
         this.internalVaultDataBreaches.value.push(dataBreach);
-        this.internalVaultDataBreachesByPasswordID.value.set(passwordID, dataBreach);
+        this.internalVaultDataBreachesByPasswordID.value.set(dataBreach.PasswordID, dataBreach);
         this.internalVaultDataBreacheCountByVaultID.value.set(dataBreach.VaultID, currentBreachCount);
     }
 }

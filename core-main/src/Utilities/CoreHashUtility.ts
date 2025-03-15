@@ -1,8 +1,9 @@
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { environment } from "../Environment";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
+import { ClientHashUtility } from "@vaultic/shared/Types/Utilities";
 
-export class CoreHashUtility
+export class CoreHashUtility implements ClientHashUtility
 {
     constructor() { }
 

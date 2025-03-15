@@ -6,6 +6,7 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
 import { Field, IFieldedObject, FieldMap, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { Algorithm } from "@vaultic/shared/Types/Keys";
 
 // Enforced to ensure the logic to track changes always works
 // Note: Every nested Object should be wrapped in KnownMappdFields<>
@@ -133,6 +134,18 @@ export class Store<T extends KnownMappedFields<StoreState>, U extends string = S
     {
         this.events[event]?.forEach(f => f(...params));
     }
+
+    protected async getIdentifyingHash(value: string): Promise<string | undefined>
+    {
+        // TODO: switch to argon
+        const response = await api.utilities.hash.hash(Algorithm.SHA_256, value);
+        if (!response.success || !response.value)
+        {
+            return;
+        }
+
+        return response.value!.substring(0, 5);
+    }
 }
 
 export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents> extends Store<T, U>
@@ -248,6 +261,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
     protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable & SecretPropertyType<U> & IFieldObject, U extends SecretProperty>(
         masterKey: string,
         primaryDataObject: T,
+        valuesByHash: Field<Map<string, Field<Map<string, Field<string>>>>>,
         allPrimaryObjects: Field<Map<string, Field<T>>>,
         secretProperty: U,
         allDuplicates: Field<Map<string, Field<Map<string, Field<string>>>>>): Promise<void>
@@ -263,62 +277,79 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
             allDuplicates.value.get(primaryDataObject.id.value)!.updateAndBubble();
         }
 
-        for (const [key, value] of allPrimaryObjects.value.entries())
+        const hashID = await this.getIdentifyingHash(primaryDataObject[secretProperty].value);
+        if (!hashID)
         {
-            let tempPrimaryObject: Field<T> = value;
-            const currentId: string = key;
+            await api.repositories.logs.log(undefined, "Failed to hash", Error().stack);
+            return;
+        }
 
-            // don't count our own as a duplicate
-            if (currentId == primaryDataObject.id.value)
-            {
-                continue;
-            }
+        const valuesForHash = valuesByHash.value.get(hashID);
 
-            // make sure we have a valid list before doing any checking
-            if (!allDuplicates.value.get(currentId))
+        if (valuesForHash)
+        {
+            for (const [key, _] of valuesForHash.value.entries())
             {
-                allDuplicates.addMapValue(currentId, Field.create(new Map()));
-            }
-
-            const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject.value[secretProperty].value);
-            if (!response.success)
-            {
-                continue;
-            }
-
-            // have duplicate values
-            if (response.value == primaryDataObject[secretProperty].value)
-            {
-                // updating the list for the current primaryObject to include the duplicate primaryObjects id
-                if (!allDuplicates.value.get(primaryDataObject.id.value)?.value.has(currentId))
+                let tempPrimaryObject: Field<T> | undefined = allPrimaryObjects.value.get(key);
+                if (!tempPrimaryObject)
                 {
-                    allDuplicates.value.get(primaryDataObject.id.value)?.addMapValue(currentId, Field.create(currentId));
+                    continue;
                 }
 
-                // updating the duplciate primaryObjects list to include the current primaryObjects id
-                if (!allDuplicates.value.get(currentId)?.value.has(primaryDataObject.id.value))
+                const currentId: string = key;
+
+                // don't count our own as a duplicate
+                if (currentId == primaryDataObject.id.value)
                 {
-                    allDuplicates.value.get(currentId)?.addMapValue(primaryDataObject.id.value, Field.create(currentId));
-                }
-            }
-            else
-            {
-                if (allDuplicates.value.get(primaryDataObject.id.value)?.value.has(currentId))
-                {
-                    // remove old duplicate id from current primary objects list since it is no longer a duplicate
-                    allDuplicates.value.get(primaryDataObject.id.value)?.removeMapValue(currentId);
+                    continue;
                 }
 
-                if (allDuplicates.value.get(currentId)?.value.has(primaryDataObject.id.value))
+                // make sure we have a valid list before doing any checking
+                if (!allDuplicates.value.get(currentId))
                 {
-                    // remove current primary object from temp primary objects list since it is no loner a duplicate
-                    allDuplicates.value.get(currentId)?.removeMapValue(primaryDataObject.id.value);
+                    allDuplicates.addMapValue(currentId, Field.create(new Map()));
                 }
 
-                // remove  temp primary objects list since it no longer has any duplicates
-                if (allDuplicates.value.has(currentId) && allDuplicates.value.get(currentId)?.value.size == 0)
+                const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject.value[secretProperty].value);
+                if (!response.success)
                 {
-                    allDuplicates.removeMapValue(currentId)
+                    continue;
+                }
+
+                // have duplicate values
+                if (response.value == primaryDataObject[secretProperty].value)
+                {
+                    // updating the list for the current primaryObject to include the duplicate primaryObjects id
+                    if (!allDuplicates.value.get(primaryDataObject.id.value)?.value.has(currentId))
+                    {
+                        allDuplicates.value.get(primaryDataObject.id.value)?.addMapValue(currentId, Field.create(currentId));
+                    }
+
+                    // updating the duplciate primaryObjects list to include the current primaryObjects id
+                    if (!allDuplicates.value.get(currentId)?.value.has(primaryDataObject.id.value))
+                    {
+                        allDuplicates.value.get(currentId)?.addMapValue(primaryDataObject.id.value, Field.create(currentId));
+                    }
+                }
+                else
+                {
+                    if (allDuplicates.value.get(primaryDataObject.id.value)?.value.has(currentId))
+                    {
+                        // remove old duplicate id from current primary objects list since it is no longer a duplicate
+                        allDuplicates.value.get(primaryDataObject.id.value)?.removeMapValue(currentId);
+                    }
+
+                    if (allDuplicates.value.get(currentId)?.value.has(primaryDataObject.id.value))
+                    {
+                        // remove current primary object from temp primary objects list since it is no loner a duplicate
+                        allDuplicates.value.get(currentId)?.removeMapValue(primaryDataObject.id.value);
+                    }
+
+                    // remove  temp primary objects list since it no longer has any duplicates
+                    if (allDuplicates.value.has(currentId) && allDuplicates.value.get(currentId)?.value.size == 0)
+                    {
+                        allDuplicates.removeMapValue(currentId)
+                    }
                 }
             }
         }
@@ -386,6 +417,52 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
         });
 
         allDuplicates.removeMapValue(primaryDataObject.id.value);
+    }
+
+    protected async updateValuesByHash<T extends IIdentifiable & SecretPropertyType<U> & IFieldObject, U extends SecretProperty>
+        (valuesByHash: Field<Map<string, Field<Map<string, Field<string>>>>>, secretProperty: U, newValue?: T, currentValue?: T)
+    {
+        if (newValue)
+        {
+            const hashID = await this.getIdentifyingHash(newValue[secretProperty].value);
+            if (!hashID)
+            {
+                await api.repositories.logs.log(undefined, "Failed to hash", Error().stack);
+                return;
+            }
+
+            if (!valuesByHash.value.has(hashID))
+            {
+                valuesByHash.addMapValue(hashID, Field.create(new Map()));
+            }
+
+            const valuesForHash = valuesByHash.value.get(hashID);
+            if (!valuesForHash!.value.has(newValue.id.value))
+            {
+                valuesForHash!.addMapValue(newValue.id.value, Field.create(newValue.id.value));
+            }
+        }
+
+        if (currentValue)
+        {
+            const hashID = await this.getIdentifyingHash(currentValue[secretProperty].value);
+            if (!hashID)
+            {
+                await api.repositories.logs.log(undefined, "Failed to hash", Error().stack);
+                return;
+            }
+
+            const valuesForHash = valuesByHash.value.get(hashID);
+
+            if (valuesForHash && valuesForHash.value.has(currentValue.id.value))
+            {
+                valuesForHash.removeMapValue(currentValue.id.value);
+                if (valuesForHash.value.size == 0)
+                {
+                    valuesByHash.removeMapValue(hashID);
+                }
+            }
+        }
     }
 }
 

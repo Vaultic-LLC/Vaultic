@@ -10,7 +10,7 @@ import { ReactiveValue } from "./ReactiveValue";
 import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 
-interface IFilterStoreState extends StoreState
+export interface IFilterStoreState extends StoreState
 {
     passwordFiltersByID: Field<Map<string, Field<Filter>>>;
     valueFiltersByID: Field<Map<string, Field<Filter>>>;
@@ -185,33 +185,24 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     }
 
     // called externally when adding / updating passwords 
-    syncFiltersForPasswords(passwords: Map<string, Field<ReactivePassword>>, allGroups: Field<Map<string, Field<Group>>>, updatingPassword: boolean)
+    syncFiltersForPasswords(passwords: Map<string, Field<ReactivePassword>>, allGroups: Field<Map<string, Field<Group>>>, updatingPassword: boolean,
+        pendingFilterStoreState: IFilterStoreState)
     {
-        const pendingState = this.cloneState();
-
-        this.syncFiltersForPrimaryDataObject(pendingState.passwordFiltersByID.value, passwords, "passwords", pendingState.emptyPasswordFilters,
-            pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID, allGroups, updatingPassword);
-
-        return pendingState;
+        this.syncFiltersForPrimaryDataObject(pendingFilterStoreState.passwordFiltersByID.value, passwords, "passwords", pendingFilterStoreState.emptyPasswordFilters,
+            pendingFilterStoreState.duplicatePasswordFilters, pendingFilterStoreState.passwordFiltersByID, allGroups, updatingPassword);
     }
 
-    // called externally when adding / updating passwords 
-    syncFiltersForValues(values: Map<string, Field<ReactiveValue>>, allGroups: Field<Map<string, Field<Group>>>, updatingValue: boolean)
+    // called externally when adding / updating values 
+    syncFiltersForValues(values: Map<string, Field<ReactiveValue>>, allGroups: Field<Map<string, Field<Group>>>, updatingValue: boolean,
+        pendingFilterStoreState: IFilterStoreState)
     {
-        const pendingState = this.cloneState();
-
-        this.syncFiltersForPrimaryDataObject(pendingState.valueFiltersByID.value, values, "values",
-            pendingState.emptyValueFilters, pendingState.duplicateValueFilters, pendingState.valueFiltersByID, allGroups, updatingValue);
-
-        return pendingState;
+        this.syncFiltersForPrimaryDataObject(pendingFilterStoreState.valueFiltersByID.value, values, "values",
+            pendingFilterStoreState.emptyValueFilters, pendingFilterStoreState.duplicateValueFilters, pendingFilterStoreState.valueFiltersByID, allGroups, updatingValue);
     }
 
-    removePasswordFromFilters(passwordID: string)
+    removePasswordFromFilters(passwordID: string, pendingFilterState: IFilterStoreState)
     {
-        const pendingState = this.cloneState();
-        this.removePrimaryObjectFromValues(passwordID, "passwords", pendingState.emptyPasswordFilters, pendingState.duplicatePasswordFilters, pendingState.passwordFiltersByID);
-
-        return pendingState;
+        this.removePrimaryObjectFromValues(passwordID, "passwords", pendingFilterState.emptyPasswordFilters, pendingFilterState.duplicatePasswordFilters, pendingFilterState.passwordFiltersByID);
     }
 
     removeValuesFromFilters(valueID: string)

@@ -5,10 +5,15 @@ import cryptHelper from "./cryptHelper";
 import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
+import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType, Group } from "../Types/DataTypes";
 import { ImportableDisplayField } from "../Types/Fields";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { Field, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
+import { IGroupStoreState } from "../Objects/Stores/GroupStore";
+import { IFilterStoreState } from "../Objects/Stores/FilterStore";
+import { IPasswordStoreState } from "../Objects/Stores/PasswordStore";
+import { IValueStoreState } from "../Objects/Stores/ValueStore";
+import StoreUpdateTransaction from "../Objects/StoreUpdateTransaction";
 
 export async function exportLogs(color: string)
 {
@@ -246,9 +251,26 @@ class CSVImporter<T extends IPrimaryDataObject>
 {
     dataType: DataType;
 
+    pendingGroupStoreState: KnownMappedFields<IGroupStoreState>;
+    pendingFilterStoreState: KnownMappedFields<IFilterStoreState>;
+
+    didFailToSave: boolean;
+
     constructor(dataType: DataType)
     {
         this.dataType = dataType;
+        this.didFailToSave = false;
+    }
+
+    protected getTypeName()
+    {
+        return "";
+    }
+
+    protected preImport()
+    {
+        this.pendingGroupStoreState = app.currentVault.groupStore.cloneState();
+        this.pendingFilterStoreState = app.currentVault.filterStore.cloneState();
     }
 
     protected createValue(): T
@@ -256,13 +278,20 @@ class CSVImporter<T extends IPrimaryDataObject>
         return {} as T;
     }
 
-    protected async saveValue(masterKey: string, value: T, backup: boolean)
+    protected async saveValue(masterKey: string, value: T, commit: boolean)
     {
+    }
+
+    protected async saveGroup(group: Group): Promise<void>
+    {
+
     }
 
     public async import(color: string, masterKey: string, records: string[][], columnToProperty: Dictionary<ImportableDisplayField[]>)
     {
         app.popups.showLoadingIndicator(color, "Importing");
+
+        this.preImport();
 
         let groupsAdded: Dictionary<string> = {};
         const headers: string[] = records[0];
@@ -315,7 +344,7 @@ class CSVImporter<T extends IPrimaryDataObject>
                                         const group = defaultGroup(this.dataType);
                                         group.name.value = groups[l];
 
-                                        await app.currentVault.groupStore.addGroup(masterKey, group, false);
+                                        await this.saveGroup(group);
 
                                         groupId = group.id.value;
                                         groupsAdded[group.name.value] = group.id.value;
@@ -346,17 +375,31 @@ class CSVImporter<T extends IPrimaryDataObject>
         }
 
         app.popups.hideLoadingIndicator();
-        app.popups.showToast("Import Complete", true);
+
+        if (this.didFailToSave)
+        {
+            this.failedToSave()
+        }
+        else
+        {
+            app.popups.showToast("Import Complete", true);
+        }
     }
 
     protected async customSetProperty(value: T, property: ImportableDisplayField, cellValue: string)
     {
         return false;
     }
+
+    protected failedToSave()
+    {
+        app.popups.showAlert("Unable to Import", `An error occured when trying to import your ${this.getTypeName()}s, please try again. If the issue persists`, true);
+    }
 }
 
 export class PasswordCSVImporter extends CSVImporter<Password>
 {
+    pendingPasswordStoreState: KnownMappedFields<IPasswordStoreState>;
     temporarySecurityQuestions: Map<string, Field<SecurityQuestion>>;
 
     constructor()
@@ -365,14 +408,40 @@ export class PasswordCSVImporter extends CSVImporter<Password>
         this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
     }
 
+    protected getTypeName(): string
+    {
+        return "password";
+    }
+
+    protected preImport(): void
+    {
+        super.preImport();
+        this.pendingPasswordStoreState = app.currentVault.passwordStore.cloneState();
+    }
+
     protected createValue(): Password 
     {
         return defaultPassword();
     }
 
-    protected async saveValue(masterKey: string, value: Password, backup: boolean): Promise<void> 
+    protected async saveGroup(group: Group): Promise<void>
     {
-        await app.currentVault.passwordStore.addPassword(masterKey, value, backup);
+        await app.currentVault.groupStore.addGroupToStores(group, this.pendingGroupStoreState, this.pendingFilterStoreState, this.pendingPasswordStoreState);
+    }
+
+    protected async saveValue(masterKey: string, value: Password, commit: boolean): Promise<void> 
+    {
+        await app.currentVault.passwordStore.addPasswordToStores(masterKey, value, this.pendingPasswordStoreState, this.pendingFilterStoreState,
+            this.pendingGroupStoreState);
+
+        if (commit)
+        {
+            if (!await app.currentVault.passwordStore.commitPasswordEdits(masterKey, [], this.pendingPasswordStoreState, this.pendingFilterStoreState,
+                this.pendingGroupStoreState))
+            {
+                this.didFailToSave = true;
+            }
+        }
     }
 
     protected async customSetProperty(value: Password, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
@@ -450,9 +519,22 @@ export class PasswordCSVImporter extends CSVImporter<Password>
 
 export class ValueCSVImporter extends CSVImporter<NameValuePair>
 {
+    pendingValueStoreState: KnownMappedFields<IValueStoreState>;
+
     constructor()
     {
         super(DataType.NameValuePairs);
+    }
+
+    protected getTypeName(): string
+    {
+        return "value";
+    }
+
+    protected preImport(): void
+    {
+        super.preImport();
+        this.pendingValueStoreState = app.currentVault.valueStore.cloneState();
     }
 
     protected createValue(): NameValuePair 
@@ -460,9 +542,30 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
         return defaultValue();
     }
 
-    protected async saveValue(masterKey: string, value: NameValuePair, backup: boolean): Promise<void> 
+    protected async saveValue(masterKey: string, value: NameValuePair, commit: boolean): Promise<void> 
     {
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value, backup);
+        await app.currentVault.valueStore.addNameValuePairToStores(masterKey, value, this.pendingValueStoreState, this.pendingFilterStoreState,
+            this.pendingGroupStoreState);
+
+        if (commit)
+        {
+            const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+
+            transaction.updateVaultStore(app.currentVault.valueStore, this.pendingValueStoreState);
+            transaction.updateVaultStore(app.currentVault.groupStore, this.pendingGroupStoreState);
+            transaction.updateVaultStore(app.currentVault.filterStore, this.pendingFilterStoreState);
+
+            if (!await transaction.commit(masterKey, app.isOnline))
+            {
+                this.didFailToSave = true;
+            }
+        }
+    }
+
+    protected async saveGroup(group: Group): Promise<void>
+    {
+        await app.currentVault.groupStore.addGroupToStores(group, this.pendingGroupStoreState, this.pendingFilterStoreState, undefined,
+            this.pendingValueStoreState);
     }
 
     protected async customSetProperty(value: NameValuePair, property: ImportableDisplayField, cellValue: string): Promise<boolean> 

@@ -39,7 +39,7 @@ export interface ClientVaultController
 {
     getMembers: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultMembersResponse>;
     getVaultDataBreaches: (getVaultDataBreachData: string) => Promise<GetVaultDataBreachesResponse>;
-    checkPasswordForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    checkPasswordsForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
     dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => Promise<BaseResponse>;
     clearDataBreaches: (vaults: BreachRequestVault[]) => Promise<BaseResponse>;
 }

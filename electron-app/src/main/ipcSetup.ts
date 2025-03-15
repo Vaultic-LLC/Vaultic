@@ -12,6 +12,7 @@ import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes"
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 import { RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
+import { Algorithm } from "@vaultic/shared/Types/Keys";
 
 export default function setupIPC()
 {
@@ -40,7 +41,7 @@ export default function setupIPC()
 
 	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, userVaultID)));
 	ipcMain.handle('vaultController:getVaultDataBreaches', (e, getVaultDataBreachesData: string) => validateSender(e, () => vaulticServer.vault.getVaultDataBreaches(getVaultDataBreachesData)));
-	ipcMain.handle('vaultController:checkPasswordForBreach', (e, checkPasswordForBreachData: string) => validateSender(e, () => vaulticServer.vault.checkPasswordForBreach(checkPasswordForBreachData)));
+	ipcMain.handle('vaultController:checkPasswordsForBreach', (e, checkPasswordForBreachData: string) => validateSender(e, () => vaulticServer.vault.checkPasswordsForBreach(checkPasswordForBreachData)));
 	ipcMain.handle('vaultController:dismissVaultDataBreach', (e, userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => validateSender(e, () => vaulticServer.vault.dismissVaultDataBreach(userOrganizaitonID, vaultID, vaultDataBreachID)));
 	ipcMain.handle('vaultController:clearDataBreaches', (e, vaults: BreachRequestVault[]) => validateSender(e, () => vaulticServer.vault.clearDataBreaches(vaults)));
 
@@ -58,6 +59,8 @@ export default function setupIPC()
 	ipcMain.handle('generatorUtility:uniqueId', (e) => validateSender(e, () => generatorUtility.uniqueId()));
 	ipcMain.handle('generatorUtility:generateRandomPasswordOrPassphrase', (e, type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => validateSender(e, () => generatorUtility.generateRandomPasswordOrPassphrase(type, length, includeNumbers, includeSpecialCharacters, includeAbmiguousCharacters, passphraseSeperator)));
 	ipcMain.handle('generatorUtility:ECKeys', (e) => validateSender(e, () => generatorUtility.ECKeys()));
+
+	ipcMain.handle('hashUtility:hash', (e, algorithm: Algorithm, value: string, salt?: string) => validateSender(e, () => environment.utilities.hash.hash(algorithm, value, salt)));
 
 	ipcMain.handle('validationHelper:isWeak', (e, value: string, type: string) => validateSender(e, () => validationHelper.isWeak(value, type)));
 	ipcMain.handle('validationHelper:containsNumber', (e, value: string) => validateSender(e, () => validationHelper.containsNumber(value)));

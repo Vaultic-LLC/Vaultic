@@ -68,7 +68,7 @@ export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | Seconda
     "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
     "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
     "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" |
-    "pinnedOrganizations" | "passwordsByDomain";
+    "pinnedOrganizations" | "passwordsByDomain" | "passwordsByHash" | "valuesByHash";
 
 export type KnownUnfieldedMappedFieldsType = "membersByUserID" | "vaultIDsByVaultID";
 

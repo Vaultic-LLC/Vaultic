@@ -2,7 +2,7 @@ import { ipcRenderer } from "electron";
 
 import { DeviceInfo, RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
-import { ClientCryptUtility, ClientGeneratorUtility } from "@vaultic/shared/Types/Utilities";
+import { ClientCryptUtility, ClientGeneratorUtility, ClientHashUtility } from "@vaultic/shared/Types/Utilities";
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
@@ -54,7 +54,7 @@ const vaultController: ClientVaultController =
 {
     getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID),
     getVaultDataBreaches: (getVaultDataBreachesData: string) => ipcRenderer.invoke('vaultController:getVaultDataBreaches', getVaultDataBreachesData),
-    checkPasswordForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordForBreach', checkPasswordForBreachData),
+    checkPasswordsForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordsForBreach', checkPasswordForBreachData),
     dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => ipcRenderer.invoke('vaultController:dismissVaultDataBreach', userOrganizaitonID, vaultID, vaultDataBreachID),
     clearDataBreaches: (vaults: BreachRequestVault[]) => ipcRenderer.invoke('vaultController:clearDataBreaches', vaults)
 }
@@ -80,6 +80,11 @@ const generatorUtility: Promisify<ClientGeneratorUtility> =
     uniqueId: () => ipcRenderer.invoke('generatorUtility:uniqueId'),
     generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => ipcRenderer.invoke('generatorUtility:generateRandomPasswordOrPassphrase', type, length, includeNumbers, includeSpecialCharacters, includeAbmiguousCharacters, passphraseSeperator),
     ECKeys: () => ipcRenderer.invoke('generatorUtility:ECKeys')
+};
+
+const hashUtility: Promisify<ClientHashUtility> =
+{
+    hash: (algorithm: Algorithm, value: string, salt?: string) => ipcRenderer.invoke('hashUtility:hash', algorithm, value, salt)
 };
 
 const validationHelper: Promisify<ValidationHelper> =
@@ -176,6 +181,7 @@ const api: IAPI =
     utilities: {
         crypt: cryptUtility,
         generator: generatorUtility,
+        hash: hashUtility
     },
     helpers: {
         validation: validationHelper,

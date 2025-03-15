@@ -10,16 +10,19 @@ import { AtRiskType, CurrentAndSafeStructure, Password, RelatedDataTypeChanges, 
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
+import { IFilterStoreState } from "./FilterStore";
+import { IGroupStoreState } from "./GroupStore";
 
-interface IPasswordStoreState extends StoreState
+export interface IPasswordStoreState extends StoreState
 {
     passwordsByID: Field<Map<string, Field<ReactivePassword>>>;
     passwordsByDomain: Field<Map<string, Field<Map<string, Field<string>>>>>;
     duplicatePasswords: Field<Map<string, Field<Map<string, Field<string>>>>>;
     currentAndSafePasswords: Field<KnownMappedFields<CurrentAndSafeStructure>>;
+    passwordsByHash: Field<Map<string, Field<Map<string, Field<string>>>>>;
 };
 
-export type PasswordStoreEvents = StoreEvents | "onCheckPasswordBreach";
+export type PasswordStoreEvents = StoreEvents | "onCheckPasswordBreach" | "onCheckPasswordsForBreach";
 export type PasswordStoreState = KnownMappedFields<IPasswordStoreState>;
 
 export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, PasswordStoreEvents>
@@ -42,41 +45,34 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             passwordsByDomain: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
             duplicatePasswords: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
             currentAndSafePasswords: Field.create(new CurrentAndSafeStructure()),
+            passwordsByHash: Field.create(new Map<string, Field<Map<string, Field<string>>>>())
         });
     }
 
     async addPassword(masterKey: string, password: Password, backup?: boolean): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
+        const passwordStoreState = this.cloneState();
+        const filterStoreState = app.currentVault.filterStore.cloneState();
+        const groupStoreState = app.currentVault.groupStore.cloneState();
 
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        const pendingState: PasswordStoreState = this.cloneState();
-
-        password.id.value = uniqueIDGenerator.generate();
-
-        // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingState.passwordsByID, "password", pendingState.duplicatePasswords);
-
-        if (!(await this.setPasswordProperties(masterKey, password)))
+        if (!await this.addPasswordToStores(masterKey, password, passwordStoreState, filterStoreState, groupStoreState))
         {
             return false;
         }
 
-        await this.updateSecurityQuestions(masterKey, password, true, [], []);
+        return await this.commitPasswordEdits(masterKey, [password], passwordStoreState, filterStoreState, groupStoreState, backup);
+    }
 
-        const reactivePassword = Field.create(createReactivePassword(password));
-        pendingState.passwordsByID.addMapValue(password.id.value, reactivePassword);
-        this.updatePasswordsByDomain(pendingState, reactivePassword.value.id.value, reactivePassword.value.domain.value);
+    async commitPasswordEdits(masterKey: string, addedPasswords: Password[], pendingPasswordStoreState: IPasswordStoreState, pendingFilterStoreState: IFilterStoreState,
+        pendingGroupStoreState: IGroupStoreState, backup?: boolean): Promise<boolean>
+    {
+        backup = backup ?? app.isOnline;
 
-        await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
-        // update groups before filters
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(reactivePassword.value.id.value, new RelatedDataTypeChanges(reactivePassword.value.groups.value));
-        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[reactivePassword.value.id.value, reactivePassword]]), pendingGroupState.passwordGroupsByID, true);
-
-        transaction.updateVaultStore(this, pendingState);
-        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
-        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
+        transaction.updateVaultStore(this, pendingPasswordStoreState);
+        transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
+        transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
         if (!(await transaction.commit(masterKey, backup)))
         {
@@ -88,8 +84,40 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         // too difficult to store some state and re check all data breaches against a new password 
         if (app.isOnline)
         {
-            this.emit("onCheckPasswordBreach", reactivePassword);
+            // TODO: need to update server to take multiple passwords now instead of just one
+            this.emit("onCheckPasswordsForBreach", addedPasswords);
         }
+
+        return true;
+    }
+
+    async addPasswordToStores(masterKey: string, password: Password, pendingPasswordStoreState: IPasswordStoreState, pendingFilterStoreState: IFilterStoreState,
+        pendingGroupStoreState: IGroupStoreState): Promise<boolean>
+    {
+        password.id.value = uniqueIDGenerator.generate();
+
+        await this.updateValuesByHash(pendingPasswordStoreState.passwordsByHash, "password", password, undefined);
+
+        // doing this before adding saves us from having to remove the current password from the list of potential duplicates
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingPasswordStoreState.passwordsByHash, pendingPasswordStoreState.passwordsByID,
+            "password", pendingPasswordStoreState.duplicatePasswords);
+
+        if (!(await this.setPasswordProperties(masterKey, password)))
+        {
+            return false;
+        }
+
+        await this.updateSecurityQuestions(masterKey, password, true, [], []);
+
+        const reactivePassword = Field.create(createReactivePassword(password));
+        pendingPasswordStoreState.passwordsByID.addMapValue(password.id.value, reactivePassword);
+        this.updatePasswordsByDomain(pendingPasswordStoreState, reactivePassword.value.id.value, reactivePassword.value.domain.value);
+
+        await this.incrementCurrentAndSafePasswords(pendingPasswordStoreState, pendingPasswordStoreState.passwordsByID);
+
+        // update groups before filters
+        this.vault.groupStore.syncGroupsForPasswords(reactivePassword.value.id.value, new RelatedDataTypeChanges(reactivePassword.value.groups.value), pendingGroupStoreState);
+        this.vault.filterStore.syncFiltersForPasswords(new Map([[reactivePassword.value.id.value, reactivePassword]]), pendingGroupStoreState.passwordGroupsByID, true, pendingFilterStoreState);
 
         return true;
     }
@@ -128,8 +156,12 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
                 updatingPassword.password.value = currentPassword.value.password.value;
             }
 
+            await this.updateValuesByHash(pendingState.passwordsByHash, "password", updatingPassword, currentPassword.value);
+
             // do this before re encrypting the password
-            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, pendingState.passwordsByID, "password", pendingState.duplicatePasswords);
+            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, pendingState.passwordsByHash, pendingState.passwordsByID, "password",
+                pendingState.duplicatePasswords);
+
             if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
             {
                 return false;
@@ -160,8 +192,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id.value, changedGroups);
-        const pendingFilterState = this.vault.filterStore.syncFiltersForPasswords(new Map([[currentPassword.value.id.value, currentPassword]]), pendingGroupState.passwordGroupsByID, true);
+        const pendingGroupState = this.vault.groupStore.cloneState();
+        this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id.value, changedGroups, pendingGroupState);
+
+        const pendingFilterState = this.vault.filterStore.cloneState();
+        this.vault.filterStore.syncFiltersForPasswords(new Map([[currentPassword.value.id.value, currentPassword]]), pendingGroupState.passwordGroupsByID, true, pendingFilterState);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -202,14 +237,19 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
+        await this.updateValuesByHash(pendingState.passwordsByHash, "password", undefined, currentPassword.value);
+
         this.checkRemoveFromDuplicate(password, pendingState.duplicatePasswords);
         pendingState.passwordsByID.removeMapValue(currentPassword.value.id.value);
         this.updatePasswordsByDomain(pendingState, currentPassword.value.id.value, undefined, currentPassword.value.domain.value);
 
         await this.incrementCurrentAndSafePasswords(pendingState, pendingState.passwordsByID);
 
-        const pendingGroupState = this.vault.groupStore.syncGroupsForPasswords(password.id.value, new RelatedDataTypeChanges(undefined, password.groups.value, undefined));
-        const pendingFilterState = this.vault.filterStore.removePasswordFromFilters(password.id.value);
+        const pendingGroupState = this.vault.groupStore.cloneState();
+        this.vault.groupStore.syncGroupsForPasswords(password.id.value, new RelatedDataTypeChanges(undefined, password.groups.value, undefined), pendingGroupState);
+
+        const pendingFilterState = this.vault.filterStore.cloneState();
+        this.vault.filterStore.removePasswordFromFilters(password.id.value, pendingFilterState);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
