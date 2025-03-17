@@ -401,11 +401,14 @@ export class PasswordCSVImporter extends CSVImporter<Password>
 {
     pendingPasswordStoreState: KnownMappedFields<IPasswordStoreState>;
     temporarySecurityQuestions: Map<string, Field<SecurityQuestion>>;
+    addedPasswords: Password[];
 
     constructor()
     {
         super(DataType.Passwords);
+
         this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
+        this.addedPasswords = [];
     }
 
     protected getTypeName(): string
@@ -431,12 +434,14 @@ export class PasswordCSVImporter extends CSVImporter<Password>
 
     protected async saveValue(masterKey: string, value: Password, commit: boolean): Promise<void> 
     {
+        this.addedPasswords.push(value);
+
         await app.currentVault.passwordStore.addPasswordToStores(masterKey, value, this.pendingPasswordStoreState, this.pendingFilterStoreState,
             this.pendingGroupStoreState);
 
         if (commit)
         {
-            if (!await app.currentVault.passwordStore.commitPasswordEdits(masterKey, [], this.pendingPasswordStoreState, this.pendingFilterStoreState,
+            if (!await app.currentVault.passwordStore.commitPasswordEdits(masterKey, this.addedPasswords, this.pendingPasswordStoreState, this.pendingFilterStoreState,
                 this.pendingGroupStoreState))
             {
                 this.didFailToSave = true;
