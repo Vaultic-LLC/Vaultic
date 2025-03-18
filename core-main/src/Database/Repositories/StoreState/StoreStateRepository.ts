@@ -92,7 +92,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             return;
         }
 
-        console.log(`Object Changed: ${JSON.vaulticStringify(newObj)}`);
         if (typeof newObj.value == 'object')
         {
             // one of these was changed. Take the newer one here or else it'll still reflect the old value even though its nested value was updated 
