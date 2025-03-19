@@ -116,6 +116,11 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         return [];
     }
 
+    public getCompressableProperties(): string[]
+    {
+        return [];
+    }
+
     public getEncryptableProperties(): string[]
     {
         return [];

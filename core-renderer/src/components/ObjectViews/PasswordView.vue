@@ -185,8 +185,10 @@ export default defineComponent({
 
             if (props.creating)
             {
+                console.time('add password');
                 if (await app.currentVault.passwordStore.addPassword(key, passwordState.value))
                 {
+                    console.timeEnd('add password');
                     passwordState.value = defaultPassword();
                     refreshKey.value = Date.now().toString();
                     selectedGroups.value = [];

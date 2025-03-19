@@ -151,6 +151,7 @@ export default defineComponent({
 
             if (onlineMode.value)
             {          
+                console.time('loggingIn');
                 const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value, mfaCode);
                 if (response.success && response.value!.Success)
                 {
@@ -159,6 +160,7 @@ export default defineComponent({
                     
                     if (await app.loadUserData(response.value?.masterKey!))
                     {
+                        console.timeEnd('loggingIn');
                         ctx.emit('onKeySuccess');
                     }
                 }

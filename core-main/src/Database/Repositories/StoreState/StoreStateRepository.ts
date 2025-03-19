@@ -3,7 +3,6 @@ import { StoreState } from "../../Entities/States/StoreState";
 import Transaction from "../../Transaction";
 import { VaulticRepository } from "../VaulticRepository";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { environment } from "../../../Environment";
 import { ChangeTracking } from "../../Entities/ChangeTracking";
 import { ObjectPropertyManager, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
 import { Field } from "@vaultic/shared/Types/Fields";
@@ -43,31 +42,23 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             return false;
         }
 
-        let newStateToUse = newState.state;
-        let currentStateToUse = currentState.state;
-
-        if (decrypt)
+        let newStateToUse = await StoreState.getUsableState(key, newState.state, decrypt);
+        if (!newStateToUse.success)
         {
-            const decryptedCurrentState = await environment.utilities.crypt.symmetricDecrypt(key, currentStateToUse);
-            if (!decryptedCurrentState.success)
-            {
-                return false;
-            }
+            return false;
+        }
 
-            const decyptedNewState = await environment.utilities.crypt.symmetricDecrypt(key, newStateToUse);
-            if (!decyptedNewState.success)
-            {
-                return false;
-            }
-
-            currentStateToUse = decryptedCurrentState.value;
-            newStateToUse = decyptedNewState.value;
+        let currentStateToUse = await StoreState.getUsableState(key, currentState.state, decrypt);
+        if (!currentStateToUse.success)
+        {
+            return false;
         }
 
         try 
         {
-            const updatedState = this.mergeStoreStates(Field.create(JSON.vaulticParse(currentStateToUse)),
-                Field.create(JSON.vaulticParse(newStateToUse)), changeTrackings, true);
+            const updatedState = this.mergeStoreStates(Field.create(JSON.vaulticParse(currentStateToUse.value)),
+                Field.create(JSON.vaulticParse(newStateToUse.value)), changeTrackings, true);
+
             currentState.state = JSON.vaulticStringify(updatedState.value);
             currentState.previousSignature = newState.previousSignature;
 

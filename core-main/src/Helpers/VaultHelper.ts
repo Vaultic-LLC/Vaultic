@@ -3,6 +3,8 @@ import { Vault } from "../Database/Entities/Vault";
 import { environment } from "../Environment";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { Algorithm, MLKEM1024KeyResult, SignedVaultKey, SignedVaultKeyMessage } from "@vaultic/shared/Types/Keys";
+import { VaultStoreStates } from "@vaultic/shared/Types/Stores";
+import { StoreState } from "../Database/Entities/States/StoreState";
 
 class VaultHelper 
 {
@@ -51,9 +53,22 @@ class VaultHelper
         return await environment.utilities.crypt.asymmetricDecrypt(recipientPrivateEncryptingKey, signedVaultKey.message.vaultKey, signedVaultKey.message.cipherText);
     }
 
-    public async decryptCondensedUserVault(vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[])
+    public async decryptCondensedUserVault(vaultKey: string, condensedVault: CondensedVaultData, propertiesToDecrypt?: string[], storeStatesToUse?: VaultStoreStates[],
+        allFields: boolean = false)
     {
-        const decryptableProperties = propertiesToDecrypt ?? Vault.getDecryptableProperties();
+        let decryptableProperties = propertiesToDecrypt;
+        if (!decryptableProperties)
+        {
+            if (allFields)
+            {
+                decryptableProperties = Vault.getDecryptableProperties();
+            }
+            else
+            {
+                decryptableProperties = [];
+            }
+        }
+
         for (let j = 0; j < decryptableProperties.length; j++)
         {
             const response = await environment.utilities.crypt.symmetricDecrypt(vaultKey, condensedVault[decryptableProperties[j]]);
@@ -63,6 +78,30 @@ class VaultHelper
             }
 
             condensedVault[decryptableProperties[j]] = response.value!;
+        }
+
+        let storeStates = storeStatesToUse;
+        if (!storeStates)
+        {
+            if (allFields)
+            {
+                storeStates = ["vaultStoreState", "passwordStoreState", "valueStoreState", "filterStoreState", "groupStoreState"];
+            }
+            else 
+            {
+                storeStates = [];
+            }
+        }
+
+        for (let j = 0; j < storeStates.length; j++)
+        {
+            const response = await StoreState.getUsableState(vaultKey, condensedVault[storeStates[j]]);
+            if (!response.success)
+            {
+                return null;
+            }
+
+            condensedVault[storeStates[j]] = response.value!;
         }
 
         return condensedVault;

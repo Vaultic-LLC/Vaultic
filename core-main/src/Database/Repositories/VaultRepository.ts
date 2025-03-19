@@ -27,6 +27,7 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
+import { VaultStoreStates } from "@vaultic/shared/Types/Stores";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -227,7 +228,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 await this.setLastUsedVault(environment.cache.currentUser.userID, userVault.userVaultID);
             }
 
-            const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVault.userVaultID]);
+            const uvData = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, undefined, [userVault.userVaultID], true);
             if (!uvData || uvData.length == 0)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
@@ -248,7 +249,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [userVaultID]);
+            const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, undefined, [userVaultID], true);
             if (userVaults && userVaults.length == 1)
             {
                 if (!(await this.setLastUsedVault(environment.cache.currentUser.userID, userVaultID)))
@@ -908,33 +909,33 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalGetStoreStates(this: VaultRepository): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData>>>
         {
-            const statesToDecrypt = [];
+            const statesToGet: VaultStoreStates[] = [];
             if (storeStatesToRetrieve.vaultStoreState)
             {
-                statesToDecrypt.push(nameof<Vault>("vaultStoreState"));
+                statesToGet.push("vaultStoreState");
             }
 
             if (storeStatesToRetrieve.passwordStoreState)
             {
-                statesToDecrypt.push(nameof<Vault>("passwordStoreState"));
+                statesToGet.push("passwordStoreState");
             }
 
             if (storeStatesToRetrieve.valueStoreState)
             {
-                statesToDecrypt.push(nameof<Vault>("valueStoreState"));
+                statesToGet.push("valueStoreState");
             }
 
             if (storeStatesToRetrieve.filterStoreState)
             {
-                statesToDecrypt.push(nameof<Vault>("filterStoreState"));
+                statesToGet.push("filterStoreState");
             }
 
             if (storeStatesToRetrieve.groupStoreState)
             {
-                statesToDecrypt.push(nameof<Vault>("groupStoreState"));
+                statesToGet.push("groupStoreState");
             }
 
-            const condensedVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, statesToDecrypt, [userVaultID]);
+            const condensedVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, statesToGet, [userVaultID]);
             if (!condensedVaults || condensedVaults.length != 1)
             {
                 return TypedMethodResponse.fail(undefined, "", "No user vaults");

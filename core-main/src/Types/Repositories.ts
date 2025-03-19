@@ -9,6 +9,7 @@ import { ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository 
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { VaultsAndKeys } from "./Responses";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
+import { VaultStoreStates } from "@vaultic/shared/Types/Stores";
 
 export interface VaulticRepository<T extends VaulticEntity>
 {
@@ -30,7 +31,7 @@ export interface IUserRepository extends ClientUserRepository, VaulticRepository
 export interface IUserVaultRepository extends ClientUserVaultRepository, VaulticRepository<UserVault>
 {
     getVerifiedUserVaults: (masterKey: string, userVaultIDs?: number[]) => Promise<[UserVault[], string[]]>;
-    getVerifiedAndDecryt: (masterKey: string, propertiesToDecrypt?: string[], userVaultIDs?: number[]) => Promise<CondensedVaultData[] | null>;
+    getVerifiedAndDecryt: (masterKey: string, propertiesToDecrypt?: string[], storeStatesToUse?: VaultStoreStates[], userVaultIDs?: number[], allFields?: boolean) => Promise<CondensedVaultData[] | null>;
     getEntitiesThatNeedToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<UserVault>[] | undefined>>;
 }
 
