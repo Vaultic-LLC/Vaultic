@@ -30,6 +30,17 @@ export class CreateSchema1722604318830 implements MigrationInterface
             }
         ];
 
+        const ledgerProperties: TableColumnOptions[] = [
+            {
+                name: "lastLoadedLedgerVersion",
+                type: "integer"
+            },
+            {
+                name: "currentLedgerVersion",
+                type: "integer"
+            }
+        ];
+
         await queryRunner.createTable(new Table({
             name: "users",
             columns: [
@@ -82,7 +93,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "privateEncryptingKey",
                     type: "text"
-                }
+                },
+                ...ledgerProperties
             ]
         }));
 
@@ -119,7 +131,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "vaultKey",
                     type: "text"
-                }
+                },
+                ...ledgerProperties
             ]
         }));
 
@@ -147,7 +160,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "lastUsed",
                     type: "boolean"
-                }
+                },
+                ...ledgerProperties
             ]
         }));
 

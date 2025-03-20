@@ -48,6 +48,9 @@ export interface UserDataPayload
     sharedUserVaults?: SharedClientUserVault[];
     removedUserVaults?: DeepPartial<IUserVault>[];
     removedVaults?: DeepPartial<IVault>[];
+    userLedger?: ClientUserLedger;
+    userVaultLedgers?: ClientUserVaultLedger[];
+    vaultLedgers?: ClientVaultLedger[];
 };
 
 export enum ServerPermissions
@@ -163,4 +166,29 @@ export enum ServerAllowSharingFrom
 {
     Everyone,
     SpecificUsers
+}
+
+interface ClientLedgerObject
+{
+    lastLoadedLedgerVersion: number;
+    ledgerChanges: { version: number, changes: string }[];
+}
+
+export interface ClientUserLedger extends ClientLedgerObject
+{
+    userID: number
+}
+
+export interface ClientUserVaultLedger extends ClientLedgerObject
+{
+    userOrganizationID: number;
+    userVaultID: number;
+    permissions: ServerPermissions;
+}
+
+export interface ClientVaultLedger extends ClientLedgerObject
+{
+    userOrganizationID: number;
+    userVaultID: number;
+    vaultID: number;
 }
