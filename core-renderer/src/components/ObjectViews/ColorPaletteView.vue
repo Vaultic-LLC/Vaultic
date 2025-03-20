@@ -3,31 +3,31 @@
         :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Error Color'" :color="color"
-                v-model="colorPaletteState.errorColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.errorColor" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
             <ColorPickerInputField :label="'Success Color'" :color="color"
-                v-model="colorPaletteState.successColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.successColor" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Sub Color One'" :color="color"
-                v-model="colorPaletteState.filtersColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.filtersColor" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
             <ColorPickerInputField :label="'Sub Color Two'" :color="color"
-                v-model="colorPaletteState.groupsColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.groupsColor" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <div class="colorPaletteView__groupedColorPickers colorPaletteView__passwordColors">
                 <label class="colorPaletteView__groupedColorPickerLabels">Main Colors One</label>
                 <ColorPickerInputField :label="'Primary'" :color="color"
-                    v-model="colorPaletteState.passwordsColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.passwordsColor.primaryColor" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Secondary One'" :color="color"
-                    v-model="colorPaletteState.passwordsColor.value.secondaryColorOne.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.passwordsColor.secondaryColorOne" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Seconday Two'" :color="color"
-                    v-model="colorPaletteState.passwordsColor.value.secondaryColorTwo.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.passwordsColor.secondaryColorTwo" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
                     :size="'clamp(18px, 1.7vw, 28px)'" />
@@ -37,13 +37,13 @@
             <div class="colorPaletteView__groupedColorPickers colorPaletteView__valueColors">
                 <label class="colorPaletteView__groupedColorPickerLabels">Main Colors Two</label>
                 <ColorPickerInputField :label="'Primary'" :color="color"
-                    v-model="colorPaletteState.valuesColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
+                    v-model="colorPaletteState.valuesColor.primaryColor" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
                     :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Secondary One'" :color="color"
-                    v-model="colorPaletteState.valuesColor.value.secondaryColorOne.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.valuesColor.secondaryColorOne" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Secondary Two'" :color="color"
-                    v-model="colorPaletteState.valuesColor.value.secondaryColorTwo.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.valuesColor.secondaryColorTwo" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
                     :size="'clamp(18px, 1.7vw, 28px)'" />
@@ -103,8 +103,8 @@ export default defineComponent({
         async function doSave(key: string)
         {
             app.popups.showLoadingIndicator(primaryColor.value, "Saving Color Palette");
-            colorPaletteState.value.isCreated.value = true;
-            colorPaletteState.value.editable.value = true;
+            colorPaletteState.value.isCreated = true;
+            colorPaletteState.value.editable = true;
 
             await app.updateColorPalette(key, colorPaletteState.value);
 

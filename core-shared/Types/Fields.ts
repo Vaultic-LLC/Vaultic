@@ -4,7 +4,7 @@ export type Primitive = string | boolean | number;
 
 export interface IIdentifiable
 {
-    id: Field<string>;
+    id: string;
 }
 
 export interface IFieldObject
@@ -53,13 +53,13 @@ export type SecondaryDataObjectCollection = "filters" | "groups";
 // Keyed by password / value ID
 export type PrimaryDataObjectCollectionType =
     {
-        [key in PrimaryDataObjectCollection]: Field<Map<string, Field<string>>>;
+        [key in PrimaryDataObjectCollection]: Map<string, string>;
     }
 
 // Keyed by filter / group ID
 export type SecondaryDataObjectCollectionType =
     {
-        [key in SecondaryDataObjectCollection]: Field<Map<string, Field<string>>>;
+        [key in SecondaryDataObjectCollection]: Map<string, string>;
     }
 
 // We use this to know what fields need to be specially handled when serializing / parsing objects into JSON

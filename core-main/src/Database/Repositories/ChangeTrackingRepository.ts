@@ -33,18 +33,12 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         // used to propagate changes up to the parent object
         let updatedValue = false;
 
-        // values weren't updated, can just return
-        if (!first && newObj.mt === oldObj.mt)
+        if (typeof newObj == 'object')
         {
-            return updatedValue;
-        }
+            let manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(newObj);
 
-        if (typeof newObj.value == 'object')
-        {
-            let manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(newObj.value);
-
-            const keys = manager.keys(newObj.value);
-            const oldKeys = manager.keys(oldObj.value);
+            const keys = manager.keys(newObj);
+            const oldKeys = manager.keys(oldObj);
 
             for (let i = 0; i < keys.length; i++)
             {
@@ -53,12 +47,12 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
                 // not in old keys, it was inserted
                 if (oldKeyMatchingIndex < 0)
                 {
-                    this.insertObject(userID, masterKey, manager.get(keys[i], newObj.value), transaction);
+                    this.insertObject(userID, masterKey, manager.get(keys[i], newObj), transaction);
                 }
                 // field is in both, check value differences
                 else
                 {
-                    if (this.trackObjectDifferences(userID, masterKey, manager.get(keys[i], newObj.value), manager.get(oldKeys[oldKeyMatchingIndex], oldObj.value), transaction))
+                    if (this.trackObjectDifferences(userID, masterKey, manager.get(keys[i], newObj), manager.get(oldKeys[oldKeyMatchingIndex], oldObj), transaction))
                     {
                         updatedValue = true;
                     }
@@ -72,23 +66,23 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             {
                 updatedValue = true;
                 const deletedTime = Date.now();
-                transaction.insertEntity(ChangeTracking.deleted(userID, manager.get(oldKeys[i], oldObj.value).id, deletedTime), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.deleted(userID, '1', deletedTime), masterKey, () => this);
             }
 
             // propagated the updated properties up to this object so that we can better merge deleted objects. i.e. if a property is deleted on one device after
             // the object was deleted on another, we still want to keep it
             if (updatedValue)
             {
-                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.mt), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.updated(userID, '1', 1), masterKey, () => this);
             }
         }
         else
         {
             // Only values have their last modified time set, objects do not. This isn't an issue
-            if (newObj.value != oldObj.value)
+            if (newObj != oldObj)
             {
                 updatedValue = true;
-                transaction.insertEntity(ChangeTracking.updated(userID, newObj.id, newObj.mt), masterKey, () => this);
+                transaction.insertEntity(ChangeTracking.updated(userID, '1', 1), masterKey, () => this);
             }
         }
 
@@ -97,17 +91,17 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 
     private insertObject(userID: number, masterKey: string, field: any, transaction: Transaction)
     {
-        transaction.insertEntity(ChangeTracking.inserted(userID, field.id, field.mt), masterKey, () => this);
+        transaction.insertEntity(ChangeTracking.inserted(userID, '1', 1), masterKey, () => this);
 
         // all nested objects were also inserted
-        if (typeof field.value == "object")
+        if (typeof field == "object")
         {
-            let innerManager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(field.value);
-            const keys = innerManager.keys(field.value);
+            let innerManager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(field);
+            const keys = innerManager.keys(field);
 
             for (let i = 0; i < keys.length; i++)
             {
-                const nestedField = innerManager.get(keys[i], field.value);
+                const nestedField = innerManager.get(keys[i], field);
                 this.insertObject(userID, masterKey, nestedField, transaction);
             }
         }

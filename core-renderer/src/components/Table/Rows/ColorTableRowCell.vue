@@ -24,7 +24,7 @@ export default defineComponent({
 	props: ["model", "data"],
 	setup(props)
 	{
-        const pickedColor: ComputedRef<string> = computed(() => props.model.value.color.value);
+        const pickedColor: ComputedRef<string> = computed(() => props.model.color);
 
 		return {
             pickedColor

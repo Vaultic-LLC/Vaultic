@@ -31,7 +31,7 @@ export default defineComponent({
         const attributes = computed(() =>
         {
             let attr: any[] = [];
-            app.currentVault.loginHistory.value.forEach((v, k, map) =>
+            app.currentVault.loginHistory.forEach((v, k, map) =>
             {
                 attr.push({
                     key: k,

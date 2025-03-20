@@ -7,18 +7,17 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import app from "./AppStore";
 import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges } from "../../Types/DataTypes";
-import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
-import { FieldTreeUtility } from "../../Types/Tree";
+import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
 
 export interface IValueStoreState extends StoreState
 {
-    valuesByID: Field<Map<string, Field<ReactiveValue>>>;
-    duplicateValues: Field<Map<string, Field<Map<string, Field<string>>>>>;
-    currentAndSafeValues: Field<KnownMappedFields<CurrentAndSafeStructure>>;
-    valuesByHash: Field<Map<string, Field<Map<string, Field<string>>>>>;
+    valuesByID: Map<string, ReactiveValue>;
+    duplicateValues: Map<string, Map<string, string>>;
+    currentAndSafeValues: CurrentAndSafeStructure;
+    valuesByHash: Map<string, Map<string, string>>;
 }
 
 export type ValueStoreState = KnownMappedFields<IValueStoreState>;
@@ -30,20 +29,20 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         super(vault, "valueStoreState");
     }
 
-    protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): Field<Map<string, Field<SecondaryDataObjectCollectionType & IFieldedObject>>>
+    protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): Map<string, SecondaryDataObjectCollectionType>
     {
         return state.valuesByID;
     }
 
     protected defaultState()
     {
-        return FieldTreeUtility.setupIDs<IValueStoreState>({
-            version: Field.create(0),
-            valuesByID: Field.create(new Map<string, Field<ReactiveValue>>()),
-            duplicateValues: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            currentAndSafeValues: Field.create(new CurrentAndSafeStructure()),
-            valuesByHash: Field.create(new Map<string, Field<Map<string, Field<string>>>>())
-        });
+        return {
+            version: 0,
+            valuesByID: new Map<string, ReactiveValue>(),
+            duplicateValues: new Map<string, Map<string, string>>(),
+            currentAndSafeValues: new CurrentAndSafeStructure(),
+            valuesByHash: new Map<string, Map<string, string>>()
+        };
     }
 
     async addNameValuePair(masterKey: string, value: NameValuePair, backup?: boolean): Promise<boolean>
@@ -70,7 +69,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
     async addNameValuePairToStores(masterKey: string, value: NameValuePair, pendingValueStoreState: IValueStoreState,
         pendingFilterStoreState: IFilterStoreState, pendingGroupStoreState: IGroupStoreState): Promise<boolean>
     {
-        value.id.value = uniqueIDGenerator.generate();
+        value.id = uniqueIDGenerator.generate();
 
         await this.updateValuesByHash(pendingValueStoreState.valuesByHash, "value", value);
 
@@ -83,14 +82,14 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
             return false;
         }
 
-        const reactiveValue = Field.create(createReactiveValue(value));
-        pendingValueStoreState.valuesByID.addMapValue(reactiveValue.value.id.value, reactiveValue);
+        const reactiveValue = createReactiveValue(value);
+        pendingValueStoreState.valuesByID.set(reactiveValue.id, reactiveValue);
 
         await this.incrementCurrentAndSafeValues(pendingValueStoreState, pendingValueStoreState.valuesByID);
 
         // update groups before filters
-        this.vault.groupStore.syncGroupsForValues(value.id.value, new RelatedDataTypeChanges(value.groups.value), pendingGroupStoreState);
-        this.vault.filterStore.syncFiltersForValues(new Map([[reactiveValue.value.id.value, reactiveValue]]), pendingGroupStoreState.valueGroupsByID, true,
+        this.vault.groupStore.syncGroupsForValues(value.id, new RelatedDataTypeChanges(value.groups), pendingGroupStoreState);
+        this.vault.filterStore.syncFiltersForValues(new Map([[reactiveValue.id, reactiveValue]]), pendingGroupStoreState.valueGroupsByID, true,
             pendingFilterStoreState);
 
         return true;
@@ -101,7 +100,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        const currentValue = pendingState.valuesByID.value.get(updatedValue.id.value);
+        let currentValue = pendingState.valuesByID.get(updatedValue.id);
         if (!currentValue)
         {
             await api.repositories.logs.log(undefined, `No Value`, "ValueStore.Upate")
@@ -109,11 +108,11 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         }
 
         // retrieve these before updating
-        const channgedGroups = this.getRelatedDataTypeChanges(currentValue.value.groups.value, updatedValue.groups.value);
+        const channgedGroups = this.getRelatedDataTypeChanges(currentValue.groups, updatedValue.groups);
 
         if (valueWasUpdated)
         {
-            await this.updateValuesByHash(pendingState.valuesByHash, "value", updatedValue, currentValue.value);
+            await this.updateValuesByHash(pendingState.valuesByHash, "value", updatedValue, currentValue);
             await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, pendingState.valuesByHash, pendingState.valuesByID, "value",
                 pendingState.duplicateValues);
 
@@ -124,9 +123,9 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         }
         else
         {
-            this.checkUpdateDuplicatePrimaryObjectsModifiedTime(updatedValue.id.value, pendingState.duplicateValues);
+            this.checkUpdateDuplicatePrimaryObjectsModifiedTime(updatedValue.id, pendingState.duplicateValues);
 
-            const response = await cryptHelper.decrypt(masterKey, updatedValue.value.value);
+            const response = await cryptHelper.decrypt(masterKey, updatedValue.value);
             if (!response.success)
             {
                 return false;
@@ -139,13 +138,13 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         await this.incrementCurrentAndSafeValues(pendingState, pendingState.valuesByID);
 
         const newReactiveValue = createReactiveValue(updatedValue);
-        currentValue.value = newReactiveValue;
+        currentValue = newReactiveValue;
 
         const pendingGroupState = this.vault.groupStore.cloneState();
-        this.vault.groupStore.syncGroupsForValues(updatedValue.id.value, channgedGroups, pendingGroupState);
+        this.vault.groupStore.syncGroupsForValues(updatedValue.id, channgedGroups, pendingGroupState);
 
         const pendingFilterState = this.vault.filterStore.cloneState();
-        this.vault.filterStore.syncFiltersForValues(new Map([[currentValue.value.id.value, currentValue]]), pendingGroupState.valueGroupsByID, true,
+        this.vault.filterStore.syncFiltersForValues(new Map([[currentValue.id, currentValue]]), pendingGroupState.valueGroupsByID, true,
             pendingFilterState);
 
         transaction.updateVaultStore(this, pendingState);
@@ -160,24 +159,24 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
-        const currentValue = pendingState.valuesByID.value.get(value.id.value);
+        const currentValue = pendingState.valuesByID.get(value.id);
         if (!currentValue)
         {
             await api.repositories.logs.log(undefined, `No Value`, "ValueStore.Delete")
             return false;
         }
 
-        await this.updateValuesByHash(pendingState.valuesByHash, "value", undefined, currentValue.value);
+        await this.updateValuesByHash(pendingState.valuesByHash, "value", undefined, currentValue);
 
         this.checkRemoveFromDuplicate(value, pendingState.duplicateValues);
-        pendingState.valuesByID.removeMapValue(currentValue.value.id.value);
+        pendingState.valuesByID.delete(currentValue.id);
 
         await this.incrementCurrentAndSafeValues(pendingState, pendingState.valuesByID);
 
         const pendingGroupState = this.vault.groupStore.cloneState();
-        this.vault.groupStore.syncGroupsForValues(value.id.value, new RelatedDataTypeChanges(undefined, value.groups.value), pendingGroupState);
+        this.vault.groupStore.syncGroupsForValues(value.id, new RelatedDataTypeChanges(undefined, value.groups), pendingGroupState);
 
-        const pendingFilterState = this.vault.filterStore.removeValuesFromFilters(value.id.value);
+        const pendingFilterState = this.vault.filterStore.removeValuesFromFilters(value.id);
 
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
@@ -188,16 +187,16 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
 
     private async setValueProperties(masterKey: string, value: NameValuePair): Promise<boolean>
     {
-        value.lastModifiedTime.value = new Date().getTime().toString();
-        this.checkIfValueIsWeak(value.value.value, value);
+        value.lastModifiedTime = new Date().getTime().toString();
+        this.checkIfValueIsWeak(value.value, value);
 
-        const response = await cryptHelper.encrypt(masterKey, value.value.value);
+        const response = await cryptHelper.encrypt(masterKey, value.value);
         if (!response.success)
         {
             return false;
         }
 
-        value.value.value = response.value!;
+        value.value = response.value!;
         return true;
     }
 
@@ -206,47 +205,47 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
     // if we fail on the re encrypt, we would be in trouble
     private async checkIfValueIsWeak(value: string, nameValuePair: NameValuePair)
     {
-        if (nameValuePair.valueType?.value == NameValuePairType.Passphrase)
+        if (nameValuePair.valueType == NameValuePairType.Passphrase)
         {
             if (value.length < 16)
             {
-                nameValuePair.isWeak.value = true;
-                nameValuePair.isWeakMessage.value = `Passphrase is less than 16 characters. For best security, create Passphrases that are at least 16 characters long.`;
+                nameValuePair.isWeak = true;
+                nameValuePair.isWeakMessage = 4;
 
                 return;
             }
         }
-        else if (nameValuePair.valueType?.value == NameValuePairType.Passcode && nameValuePair.notifyIfWeak.value)
+        else if (nameValuePair.valueType == NameValuePairType.Passcode && nameValuePair.notifyIfWeak)
         {
-            const [isWeak, isWeakMessage] = await api.helpers.validation.isWeak(value, "Value");
-            nameValuePair.isWeak.value = isWeak;
-            nameValuePair.isWeakMessage.value = isWeakMessage;
+            const [isWeak, isWeakMessage] = await api.helpers.validation.isWeak(value);
+            nameValuePair.isWeak = isWeak;
+            nameValuePair.isWeakMessage = isWeakMessage;
 
             return;
         }
 
-        nameValuePair.isWeak.value = false;
-        nameValuePair.isWeakMessage.value = "";
+        nameValuePair.isWeak = false;
+        nameValuePair.isWeakMessage = -1;
     }
 
-    private async incrementCurrentAndSafeValues(pendingState: ValueStoreState, values: Field<Map<string, Field<ReactiveValue>>>)
+    private async incrementCurrentAndSafeValues(pendingState: ValueStoreState, values: Map<string, ReactiveValue>)
     {
         const id = uniqueIDGenerator.generate();
-        pendingState.currentAndSafeValues.value.current.addMapValue(id, Field.create(values.value.size));
+        pendingState.currentAndSafeValues.current.set(id, values.size);
 
-        const safePasswords = values.value.filter((k, v) => this.valueIsSafe(pendingState, v.value));
-        pendingState.currentAndSafeValues.value.safe.addMapValue(id, Field.create(safePasswords.size));
+        const safePasswords = values.filter((k, v) => this.valueIsSafe(pendingState, v));
+        pendingState.currentAndSafeValues.safe.set(id, safePasswords.size);
     }
 
     private valueIsSafe(state: ValueStoreState, value: ReactiveValue)
     {
-        return !value.isOld() && !value.isWeak.value && !state.duplicateValues.value.has(value.id.value);
+        return !value.isOld() && !value.isWeak && !state.duplicateValues.has(value.id);
     }
 }
 
 export class ReactiveValueStore extends ValueStore 
 {
-    private internalNameValuePairs: ComputedRef<Field<ReactiveValue>[]>;
+    private internalNameValuePairs: ComputedRef<ReactiveValue[]>;
 
     private internalOldNameValuePairs: ComputedRef<string[]>;
     private internalWeakPassphraseValues: ComputedRef<string[]>;
@@ -271,27 +270,27 @@ export class ReactiveValueStore extends ValueStore
     {
         super(vault);
 
-        this.internalNameValuePairs = computed(() => this.state.valuesByID.value.valueArray());
+        this.internalNameValuePairs = computed(() => this.state.valuesByID.valueArray());
 
-        this.internalOldNameValuePairs = computed(() => this.state.valuesByID.value.mapWhere((k, v) => v.value.isOld(), (k, v) => v.value.id.value));
+        this.internalOldNameValuePairs = computed(() => this.state.valuesByID.mapWhere((k, v) => v.isOld(), (k, v) => v.id));
 
         this.internalWeakPassphraseValues = computed(() =>
-            this.state.valuesByID.value.mapWhere((k, v) => v.value.valueType?.value == NameValuePairType.Passphrase && v.value.isWeak.value, (k, v) => v.value.id.value));
+            this.state.valuesByID.mapWhere((k, v) => v.valueType == NameValuePairType.Passphrase && v.isWeak, (k, v) => v.id));
 
         this.internalWeakPasscodeValues = computed(() =>
-            this.state.valuesByID.value.mapWhere((k, v) => v.value.valueType?.value == NameValuePairType.Passcode && v.value.isWeak.value, (k, v) => v.value.id.value));
+            this.state.valuesByID.mapWhere((k, v) => v.valueType == NameValuePairType.Passcode && v.isWeak, (k, v) => v.id));
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 
-        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.currentAndSafeValues.value.current.value.map((k, v) => v.value));
-        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.currentAndSafeValues.value.safe.value.map((k, v) => v.value));
+        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.currentAndSafeValues.current.map((k, v) => v));
+        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.currentAndSafeValues.safe.map((k, v) => v));
     }
 
     protected preAssignState(state: ValueStoreState): void 
     {
-        for (const [key, value] of state.valuesByID.value.entries())
+        for (const [key, value] of state.valuesByID.entries())
         {
-            value.value = createReactiveValue(value.value);
+            state.valuesByID.set(key, createReactiveValue(value));
         }
     }
 

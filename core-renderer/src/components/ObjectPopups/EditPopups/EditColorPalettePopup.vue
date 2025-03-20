@@ -6,10 +6,9 @@
         <div class="cloneFromHeader">Clone From</div>
         <div class="existingColorPalettes">
             <div class="colorPalette" :class="{ hovering: hoveringColorPalette == index }"
-                v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp.value)"
+                v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp)"
                 @mouseenter="hoveringColorPalette = index" @mouseleave="hoveringColorPalette = -1">
-                <ColorPalettePill :leftColor="cp.value.passwordsColor.value.primaryColor.value" 
-                :rightColor="cp.value.valuesColor.value.primaryColor.value"
+                <ColorPalettePill :leftColor="cp.passwordsColor.primaryColor" :rightColor="cp.valuesColor.primaryColor"
                     :hovering="hoveringColorPalette == index" />
             </div>
         </div>
@@ -41,7 +40,7 @@ export default defineComponent({
         const hoveringColorPalette: Ref<number> = ref(-1);
         // copy the object so that we don't edit the original one. Also needed for change tracking
         const colorPaletteModel: Ref<ColorPalette> = ref(JSON.vaulticParse(JSON.vaulticStringify(props.model)));
-        const currentColorPalettes: ComputedRef<Field<ColorPalette>[]> = computed(() => app.colorPalettes.filter(cp => cp.value.isCreated.value));
+        const currentColorPalettes: ComputedRef<ColorPalette[]> = computed(() => app.colorPalettes.filter(cp => cp.isCreated));
 
         function cloneColorPalette(colorPalette: ColorPalette)
         {

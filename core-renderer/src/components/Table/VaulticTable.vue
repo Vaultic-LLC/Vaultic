@@ -119,7 +119,7 @@
                                 {{ getBackingObject((slotProps.data as TableRowModel).id)?.[column.field] }}
                             </template>
                             <template v-else>
-                                {{ getBackingObject((slotProps.data as TableRowModel).id)?.value[column.field]?.value }}
+                                {{ getBackingObject((slotProps.data as TableRowModel).id)?.[column.field] }}
                             </template>
                         </div>
                     </div>
@@ -475,7 +475,7 @@ export default defineComponent({
             rowValues.value = rowValues.value.concat(allRows.value.slice(start, start + rowsToLoad));
         }
 
-        function onTextClick(column: TableColumnModel, id: string)
+        function onTextClick(column: TableColumnModel, id: string | number)
         {
             const object = getBackingObject(id);
             if (column.isFielded === false)
@@ -484,11 +484,11 @@ export default defineComponent({
             }
             else
             {
-                app.copyToClipboard(object?.value[column.field]?.value)
+                app.copyToClipboard(object?.[column.field])
             }
         }
 
-        function getBackingObject(id: string): any
+        function getBackingObject(id: string | number): any
         {
             return activeTableDataSource.collection.getBackingObject(id);
         }

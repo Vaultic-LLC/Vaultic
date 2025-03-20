@@ -77,24 +77,24 @@
                             :width="'100%'" :maxWidth="''" :maxHeight="''" :hideClear="true" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Passphrase">
-                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.value.passphraseSeperator.value" 
+                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.passphraseSeperator" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
-                        <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length.value" />
+                        <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
-                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.value.includeNumbersInRandomPassword.value" 
+                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.includeNumbersInRandomPassword" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Special Characters'" 
-                            v-model="appSettings.value.includeSpecialCharactersInRandomPassword.value" :width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="appSettings.includeSpecialCharactersInRandomPassword" :width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Include Ambiguous Characters'"
-                            v-model="appSettings.value.includeAmbiguousCharactersInRandomPassword.value":width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="appSettings.includeAmbiguousCharactersInRandomPassword":width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <div class="encryptedInputFieldContainer__randomPasswordPopupButtons">
@@ -127,7 +127,7 @@ import { InputColorModel } from '../../Types/Models';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import cryptHelper from '../../Helpers/cryptHelper';
 import { ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Constants/Keys';
-import { Field, RandomValueType } from '@vaultic/shared/Types/Fields';
+import { RandomValueType } from '@vaultic/shared/Types/Fields';
 import { api } from '../../API';
 
 export default defineComponent({
@@ -159,7 +159,7 @@ export default defineComponent({
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
         const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor);
 
         const popupIsShowing: Ref<boolean> = ref(false);
 
@@ -192,9 +192,9 @@ export default defineComponent({
 
         const randomPasswordPreview: Ref<string> = ref('');
         const randomValueType: Ref<RandomValueType> = ref(props.randomValueType ?? RandomValueType.Password);
-        const appSettings: Ref<Field<AppSettings>> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
 
-        const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
+        const length: ComputedRef<number> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.randomValueLength : appSettings.value.randomPhraseLength);
 
         function unlock()
         {
@@ -290,9 +290,9 @@ export default defineComponent({
 
         async function onGenerateRandomPasswordOrPhrase()
         {
-            randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value.value,
-                appSettings.value.value.includeNumbersInRandomPassword.value, appSettings.value.value.includeSpecialCharactersInRandomPassword.value, 
-                appSettings.value.value.includeAmbiguousCharactersInRandomPassword.value, appSettings.value.value.passphraseSeperator.value);
+            randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value,
+                appSettings.value.includeNumbersInRandomPassword, appSettings.value.includeSpecialCharactersInRandomPassword, 
+                appSettings.value.includeAmbiguousCharactersInRandomPassword, appSettings.value.passphraseSeperator);
         }
 
         function confirmRandomPasswordOrPhrase()

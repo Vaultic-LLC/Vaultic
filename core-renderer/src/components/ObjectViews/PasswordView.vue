@@ -3,29 +3,29 @@
         :gridDefinition="gridDefinition">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-                v-model="passwordState.passwordFor.value" :width="'50%'" :maxWidth="''" :maxHeight="''" />
-            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login.value"
+                v-model="passwordState.passwordFor" :width="'50%'" :maxWidth="''" :maxHeight="''" />
+            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login"
                 :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
-                :label="'Password'" v-model="passwordState.password.value" :isInitiallyEncrypted="isInitiallyEncrypted" 
+                :label="'Password'" v-model="passwordState.password" :isInitiallyEncrypted="isInitiallyEncrypted" 
                 :showRandom="true" :showUnlock="true" :required="true"
                 showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
-            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain.value"
+            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain"
                 :showToolTip="true"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
                 :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email.value"
+            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email"
                 :width="'50%'" :isEmailField="true" :maxWidth="''" :maxHeight="''" />
             <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
                 :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset :fillSpace="true" :static="true">
             <TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
-                :label="'Additional Information'" v-model="passwordState.additionalInformation.value" :width="'50%'"
+                :label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'50%'"
                 :height="''" :minWidth="'216px'" :minHeight="''" :maxHeight="''" :maxWidth="''" />
             <VaulticTable ref="tableRef" id="passwordView__table" :color="color" :columns="tableColumns" 
                 :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :allowSearching="false"
@@ -85,10 +85,10 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const passwordState: Ref<Password> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const securityQuestions: SortedCollection = new SortedCollection([], () => passwordState.value.securityQuestions.value);
+        const securityQuestions: SortedCollection = new SortedCollection([], () => passwordState.value.securityQuestions);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
 
         const passwordIsDirty: Ref<boolean> = ref(false);
@@ -150,7 +150,7 @@ export default defineComponent({
         function setSecurityQuestionModels()
         {
             const securityQuestionRows: TableRowModel[] = [];
-            passwordState.value.securityQuestions.value.forEach((v, k) => 
+            passwordState.value.securityQuestions.forEach((v, k) => 
             {
                 securityQuestionRows.push(new TableRowModel(k, false, undefined, 
                 {
@@ -177,10 +177,10 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(color.value, "Saving Password");
 
-            passwordState.value.groups.value = new Map();
+            passwordState.value.groups = new Map();
             selectedGroups.value.forEach(g => 
             {
-                passwordState.value.groups.addMapValue(g.backingObject!.value.id.value, Field.create(g.backingObject!.value.id.value));
+                passwordState.value.groups.set(g.backingObject!.id, g.backingObject!.id);
             });
 
             if (props.creating)
@@ -238,13 +238,13 @@ export default defineComponent({
         async function onAddSecurityQuestion()
         {
             const id = uniqueIDGenerator.generate();
-            const securityQuestion: Field<SecurityQuestion> = Field.create({
-                id: Field.create(id),
-                question: Field.create(''),
-                answer: Field.create(''),
-            });
+            const securityQuestion: SecurityQuestion = {
+                id: id,
+                question: '',
+                answer: '',
+            };
 
-            passwordState.value.securityQuestions.addMapValue(id, securityQuestion);
+            passwordState.value.securityQuestions.set(id, securityQuestion);
 
             const securityQuestionModel: TableRowModel = new TableRowModel(securityQuestion.id, undefined, undefined, {
                 isInitiallyEncrypted: false
@@ -254,36 +254,36 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function onQuestionDirty(securityQuestion: Field<SecurityQuestion>)
+        function onQuestionDirty(securityQuestion: SecurityQuestion)
         {
-            if (!dirtySecurityQuestionQuestions.value.includes(securityQuestion.value.id.value))
+            if (!dirtySecurityQuestionQuestions.value.includes(securityQuestion.id))
             {
-                dirtySecurityQuestionQuestions.value.push(securityQuestion.value.id.value);
+                dirtySecurityQuestionQuestions.value.push(securityQuestion.id);
             }
         }
 
-        function onAnswerDirty(securityQuestion: Field<SecurityQuestion>)
+        function onAnswerDirty(securityQuestion: SecurityQuestion)
         {
-            if (!dirtySecurityQuestionAnswers.value.includes(securityQuestion.value.id.value))
+            if (!dirtySecurityQuestionAnswers.value.includes(securityQuestion.id))
             {
-                dirtySecurityQuestionAnswers.value.push(securityQuestion.value.id.value);
+                dirtySecurityQuestionAnswers.value.push(securityQuestion.id);
             }
         }
 
-        function onDeleteSecurityQuestion(securityQuestion: Field<SecurityQuestion>)
+        function onDeleteSecurityQuestion(securityQuestion: SecurityQuestion)
         {
-            passwordState.value.securityQuestions.removeMapValue(securityQuestion.value.id.value);
-            if (dirtySecurityQuestionQuestions.value.includes(securityQuestion.value.id.value))
+            passwordState.value.securityQuestions.delete(securityQuestion.id);
+            if (dirtySecurityQuestionQuestions.value.includes(securityQuestion.id))
             {
-                dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(securityQuestion.value.id.value), 1);
+                dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(securityQuestion.id), 1);
             }
 
-            if (dirtySecurityQuestionAnswers.value.includes(securityQuestion.value.id.value))
+            if (dirtySecurityQuestionAnswers.value.includes(securityQuestion.id))
             {
-                dirtySecurityQuestionAnswers.value.splice(dirtySecurityQuestionAnswers.value.indexOf(securityQuestion.value.id.value), 1);
+                dirtySecurityQuestionAnswers.value.splice(dirtySecurityQuestionAnswers.value.indexOf(securityQuestion.id), 1);
             }
 
-            securityQuestions.remove(securityQuestion.value.id.value);
+            securityQuestions.remove(securityQuestion.id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
@@ -294,28 +294,28 @@ export default defineComponent({
             {
                 const option: ObjectSelectOptionModel = 
                 {
-                    label: g.value.name.value,
+                    label: g.name,
                     backingObject: g,
-                    icon: g.value.icon.value,
-                    color: g.value.color.value
+                    icon: g.icon,
+                    color: g.color
                 };
 
                 return option
             });
 
-            passwordState.value.groups.value.forEach((v, k) => 
+            passwordState.value.groups.forEach((v, k) => 
             {
-                const group = app.currentVault.groupStore.passwordGroupsByID.value.get(k);
+                const group = app.currentVault.groupStore.passwordGroupsByID.get(k);
                 if (!group)
                 {
                     return;
                 }
 
                 selectedGroups.value.push({
-                    label: group.value.name.value,
+                    label: group.name,
                     backingObject: group,
-                    icon: group.value.icon.value,
-                    color: group.value.color.value
+                    icon: group.icon,
+                    color: group.color
                 });
             });
         });

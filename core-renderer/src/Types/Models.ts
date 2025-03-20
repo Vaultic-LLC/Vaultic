@@ -93,11 +93,6 @@ export class TableRowModel
     }
 }
 
-export interface SelectableBackingObject extends IIdentifiable
-{
-    isActive: Field<boolean>;
-}
-
 export interface TableDataSouce 
 {
     friendlyDataTypeName: string;

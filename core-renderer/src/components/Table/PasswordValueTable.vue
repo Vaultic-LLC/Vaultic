@@ -45,7 +45,7 @@ import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
 import { DataType, Filter, FilterStatus, IFilterable, IGroupable } from '../../Types/DataTypes';
-import { Field, IIdentifiable } from '@vaultic/shared/Types/Fields';
+import { IIdentifiable } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "PasswordValueTable",
@@ -63,13 +63,13 @@ export default defineComponent({
         const activeTable: Ref<number> = ref(app.activePasswordValuesTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
         const color: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
-            app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value : app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
+            app.userPreferences.currentColorPalette.passwordsColor.primaryColor : app.userPreferences.currentColorPalette.valuesColor.primaryColor);
 
-        const passwords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], () => app.currentVault.passwordStore.passwordsByID.value, "passwordFor");
-        const pinnedPasswords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], () => app.currentVault.passwordStore.passwordsByID.value, "passwordFor");
+        const passwords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], () => app.currentVault.passwordStore.passwordsByID, "passwordFor");
+        const pinnedPasswords: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.Passwords, [], () => app.currentVault.passwordStore.passwordsByID, "passwordFor");
 
-        const nameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], () => app.currentVault.valueStore.nameValuePairsByID.value, "name");
-        const pinnedNameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], () => app.currentVault.valueStore.nameValuePairsByID.value, "name");
+        const nameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], () => app.currentVault.valueStore.nameValuePairsByID, "name");
+        const pinnedNameValuePairs: IGroupableSortedCollection = new IGroupableSortedCollection(DataType.NameValuePairs, [], () => app.currentVault.valueStore.nameValuePairsByID, "name");
 
         let showEditPasswordPopup: Ref<boolean> = ref(false);
         let currentEditingPasswordModel: Ref<ReactivePassword | undefined> = ref(undefined);
@@ -154,19 +154,19 @@ export default defineComponent({
             {
                 name: 'Passwords',
                 active: computed(() => app.activePasswordValuesTable == DataType.Passwords),
-                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor),
                 onClick: () => { app.activePasswordValuesTable = DataType.Passwords; }
             },
             {
                 name: 'Values',
                 active: computed(() => app.activePasswordValuesTable == DataType.NameValuePairs),
-                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.primaryColor),
                 onClick: () => { app.activePasswordValuesTable = DataType.NameValuePairs; }
             }
         ];
 
         function filter<T extends IFilterable & IIdentifiable & IGroupable & { [key: string]: string }>(dataType: DataType,
-            newValue: Field<Filter>[], oldValue: Field<Filter>[], localVariable: IGroupableSortedCollection, originalVariable: Field<T>[])
+            newValue: Filter[], oldValue: Filter[], localVariable: IGroupableSortedCollection, originalVariable: T[])
         {
             // no active filters
             if (newValue.length == 0)
@@ -177,10 +177,10 @@ export default defineComponent({
             // adding first filter
             else if (oldValue.length == 0)
             {
-                let temp: Field<T>[] = [];
+                let temp: T[] = [];
                 newValue.forEach(f =>
                 {
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.value.filters.value.has(f.value.id.value)));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.has(f.id)));
                 });
 
                 const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
@@ -190,19 +190,19 @@ export default defineComponent({
             else if (newValue.length > oldValue.length)
             {
                 // @ts-ignore
-                let temp: Field<T>[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
-                if (app.settings.value.multipleFilterBehavior.value == FilterStatus.Or)
+                let temp: T[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
+                if (app.settings.multipleFilterBehavior == FilterStatus.Or)
                 {
-                    const filtersActivated: Field<Filter>[] = newValue.filter(f => !oldValue.includes(f));
+                    const filtersActivated: Filter[] = newValue.filter(f => !oldValue.includes(f));
                     filtersActivated.forEach(f =>
                     {
-                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.value.filters.value.has(f.value.id.value)));
+                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.filters.has(f.id)));
                     });
                 }
-                else if (app.settings.value.multipleFilterBehavior.value == FilterStatus.And)
+                else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.has(f.id))));
                 }
 
                 const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
@@ -212,30 +212,30 @@ export default defineComponent({
             else if (newValue.length < oldValue.length)
             {
                 // @ts-ignore
-                let temp: Field<T>[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
-                if (app.settings.value.multipleFilterBehavior.value == FilterStatus.Or)
+                let temp: T[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
+                if (app.settings.multipleFilterBehavior == FilterStatus.Or)
                 {
-                    const filtersRemoved: Field<Filter>[] = oldValue.filter(f => !newValue.includes(f));
+                    const filtersRemoved: Filter[] = oldValue.filter(f => !newValue.includes(f));
 
                     filtersRemoved.forEach(f =>
                     {
                         temp = temp.filter(v =>
                         {
                             // keep values that the removed filter doesn't apply to
-                            if (!v.value.filters.value.has(f.value.id.value))
+                            if (!v.filters.has(f.id))
                             {
                                 return true;
                             }
 
                             // remove value if it doesn't have a current active filter
-                            return newValue.filter(nv => v.value.filters.value.has(nv.value.id.value)).length > 0;
+                            return newValue.filter(nv => v.filters.has(nv.id)).length > 0;
                         });
                     });
                 }
-                else if (app.settings.value.multipleFilterBehavior.value == FilterStatus.And)
+                else if (app.settings.multipleFilterBehavior == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.value.filters.value.has(f.value.id.value))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.filters.has(f.id))));
                 }
 
                 const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
@@ -331,15 +331,15 @@ export default defineComponent({
             }
         }
 
-        function onEditPassword(password: Field<ReactivePassword>)
+        function onEditPassword(password: ReactivePassword)
         {
-            currentEditingPasswordModel.value = password.value;
+            currentEditingPasswordModel.value = password;
             showEditPasswordPopup.value = true;
         }
 
-        function onEditValue(value: Field<ReactiveValue>)
+        function onEditValue(value: ReactiveValue)
         {
-            currentEditingValueModel.value = value.value;
+            currentEditingValueModel.value = value;
             showEditValuePopup.value = true;
         }
 
@@ -363,11 +363,11 @@ export default defineComponent({
             }
         }
 
-        function onPasswordDeleteInitiated(password: Field<ReactivePassword>)
+        function onPasswordDeleteInitiated(password: ReactivePassword)
         {
             deletePassword.value = async (key: string) =>
             {
-                return await app.currentVault.passwordStore.deletePassword(key, password.value);
+                return await app.currentVault.passwordStore.deletePassword(key, password);
             };
 
             app.popups.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
@@ -389,11 +389,11 @@ export default defineComponent({
             }
         }
 
-        function onValueDeleteInitiated(value: Field<ReactiveValue>)
+        function onValueDeleteInitiated(value: ReactiveValue)
         {
             deleteValue.value = async (key: string) =>
             {
-                return await app.currentVault.valueStore.deleteNameValuePair(key, value.value);
+                return await app.currentVault.valueStore.deleteNameValuePair(key, value);
             };
 
             app.popups.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });
@@ -415,45 +415,45 @@ export default defineComponent({
             }
         }
 
-        function onPinPassword(isPinned: boolean, value: Field<ReactivePassword>)
+        function onPinPassword(isPinned: boolean, value: ReactivePassword)
         {
             if (isPinned)
             {
-                app.userPreferences.removePinnedPasswords(value.value.id.value);
+                app.userPreferences.removePinnedPasswords(value.id);
 
                 // make sure password is still in current filters
-                let activeFilters: Field<Filter>[] = app.currentVault.filterStore.activePasswordFilters;
+                let activeFilters: Filter[] = app.currentVault.filterStore.activePasswordFilters;
 
                 // password isn't in current filters, remove it
-                if (activeFilters.length > 0 && activeFilters.filter(f => value.value.filters.value.has(f.value.id.value)).length > 0)
+                if (activeFilters.length > 0 && activeFilters.filter(f => value.filters.has(f.id)).length > 0)
                 {
-                    passwords.remove(value.value.id.value);
+                    passwords.remove(value.id);
                 }
             }
             else
             {
-                app.userPreferences.addPinnedPassword(value.value.id.value);
+                app.userPreferences.addPinnedPassword(value.id);
             }
         }
 
-        function onPinValue(isPinned: boolean, value: Field<ReactivePassword>)
+        function onPinValue(isPinned: boolean, value: ReactivePassword)
         {
             if (isPinned)
             {
-                app.userPreferences.removePinnedValues(value.value.id.value);
+                app.userPreferences.removePinnedValues(value.id);
 
                 // make sure value is still in current filters
-                let activeFilters: Field<Filter>[] = app.currentVault.filterStore.activeNameValuePairFilters;
+                let activeFilters: Filter[] = app.currentVault.filterStore.activeNameValuePairFilters;
 
                 // values isn't in current filters, remove it
-                if (activeFilters.length > 0 && activeFilters.filter(f => value.value.filters.value.has(f.value.id.value)).length > 0)
+                if (activeFilters.length > 0 && activeFilters.filter(f => value.filters.has(f.id)).length > 0)
                 {
-                    nameValuePairs.remove(value.value.id.value);
+                    nameValuePairs.remove(value.id);
                 }
             }
             else
             {
-                app.userPreferences.addPinnedValue(value.value.id.value);
+                app.userPreferences.addPinnedValue(value.id);
             }
         }
 
@@ -516,7 +516,7 @@ export default defineComponent({
             initValues();
         });
 
-        watch(() => app.settings.value.multipleFilterBehavior.value, () =>
+        watch(() => app.settings.multipleFilterBehavior, () =>
         {
             init();
         });

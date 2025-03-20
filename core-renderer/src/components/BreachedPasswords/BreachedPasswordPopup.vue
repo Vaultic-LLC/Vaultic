@@ -53,7 +53,6 @@ import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { popups } from '../../Objects/Stores/PopupStore';
 import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
-import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "DeviceView",
@@ -71,7 +70,7 @@ export default defineComponent({
 
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const vaultDataBreach: Ref<VaultDataBreach | undefined> = ref(undefined);
-        const password: Ref<Field<ReactivePassword>| undefined> = ref(undefined);
+        const password: Ref<ReactivePassword| undefined> = ref(undefined);
         const disabled: Ref<boolean> = ref(false);
         const dateString: Ref<string> = ref('');
 
@@ -114,7 +113,7 @@ export default defineComponent({
                 dateString.value = `${dateBreached.getUTCMonth() + 1}/${dateBreached.getUTCDay() + 1}/${dateBreached.getUTCFullYear()}`;
             }
 
-            const foundPassword: Field<ReactivePassword> | undefined = app.currentVault.passwordStore.getState().passwordsByID.value.get(props.passwordID);
+            const foundPassword: ReactivePassword | undefined = app.currentVault.passwordStore.getState().passwordsByID.get(props.passwordID);
             if (foundPassword)
             {
                 password.value = foundPassword;

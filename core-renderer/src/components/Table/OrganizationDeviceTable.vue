@@ -83,7 +83,7 @@ export default defineComponent({
             {
                 name: 'Registered Devices',
                 active: devicesAreSelected,
-                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Devices;
@@ -92,7 +92,7 @@ export default defineComponent({
             {
                 name: 'Organizations',
                 active: computed(() => !devicesAreSelected.value),
-                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.primaryColor),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Organizations;
@@ -161,7 +161,7 @@ export default defineComponent({
 
                 app.organizations.organizationsByID.forEach((v, k, map) =>
                 {
-                    if (app.userPreferences.pinnedOrganizations.value.has(k))
+                    if (app.userPreferences.pinnedOrganizations.has(k))
                     {
                         newPinnedOrganizationModels.push(new TableRowModel(k, true));
                     }

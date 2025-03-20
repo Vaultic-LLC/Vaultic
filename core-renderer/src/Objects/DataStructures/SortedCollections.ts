@@ -1,4 +1,3 @@
-import { Field } from "@vaultic/shared/Types/Fields";
 import app from "../../Objects/Stores/AppStore";
 import { DataType, Group } from "../../Types/DataTypes";
 import { TableRowModel } from "../../Types/Models";
@@ -110,7 +109,7 @@ export class SortedCollection
         this.onUpdate?.();
     }
 
-    remove(id: string)
+    remove(id: string | number)
     {
         this.values = this.values.filter(v => v.id != id);
         this.sort(false);
@@ -152,7 +151,7 @@ export class FieldedSortedCollection extends SortedCollection
 
     public getBackingObjectProperty(id: string, prop: string)
     {
-        return this.getBackingObject(id)?.value[prop].value;
+        return this.getBackingObject(id)?.[prop];
     }
 }
 
@@ -217,12 +216,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
             if (this.dataType == DataType.Passwords)
             {
                 this.calculatedValues =
-                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.value.groups.value, app.currentVault.groupStore.passwordGroups)));
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.groups, app.currentVault.groupStore.passwordGroups)));
             }
             else if (this.dataType == DataType.NameValuePairs)
             {
                 this.calculatedValues =
-                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.value.groups.value, app.currentVault.groupStore.valuesGroups)));
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.groups, app.currentVault.groupStore.valuesGroups)));
             }
         }
 
@@ -232,18 +231,18 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
         }
     }
 
-    private internalGroupSort(sortedGroups: Field<Group>[])
+    private internalGroupSort(sortedGroups: Group[])
     {
         if (this.descending)
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.value.groups.value.size == 0)
+                if (this.backingValues().get(a.id)?.groups.size == 0)
                 {
                     return 1;
                 }
 
-                if (this.backingValues().get(b.id)?.value.groups.value.size == 0)
+                if (this.backingValues().get(b.id)?.groups.size == 0)
                 {
                     return -1;
                 }
@@ -255,12 +254,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.value.groups.value.size == 0)
+                if (this.backingValues().get(a.id)?.groups.size == 0)
                 {
                     return -1;
                 }
 
-                if (this.backingValues().get(b.id)?.value.groups.value.size == 0)
+                if (this.backingValues().get(b.id)?.groups.size == 0)
                 {
                     return 1;
                 }
@@ -270,20 +269,20 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
         }
     }
 
-    private getLowestGroup(item: TableRowModel, sortedGroups: Field<Group>[]): number
+    private getLowestGroup(item: TableRowModel, sortedGroups: Group[]): number
     {
-        return Math.min(...this.backingValues().get(item.id)?.value.groups.value.map((id: string) => sortedGroups.findIndex(g => g.value.id.value == id)));
+        return Math.min(...this.backingValues().get(item.id)?.groups.map((id: string) => sortedGroups.findIndex(g => g.id == id)));
     }
 
-    private internalGroupSearch(search: string, groupIds: Map<string, Field<string>>, allGroups: Field<Group>[]): boolean
+    private internalGroupSearch(search: string, groupIds: Map<string, string>, allGroups: Group[]): boolean
     {
-        const groups: Field<Group>[] = allGroups.filter(g => groupIds.has(g.value.id.value));
+        const groups: Group[] = allGroups.filter(g => groupIds.has(g.id));
         if (groups.length == 0)
         {
             return false;
         }
 
-        return groups.some(g => g.value.name.value.toLowerCase().indexOf(search.toLowerCase()) != -1);
+        return groups.some(g => g.name.toLowerCase().indexOf(search.toLowerCase()) != -1);
     }
 }
 

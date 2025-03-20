@@ -139,7 +139,7 @@ export interface DisplayVault
     isReadOnly: boolean;
     lastUsed?: boolean;
     type?: VaultType;
-    passwordsByDomain?: Field<Map<string, Field<Map<string, Field<string>>>>>;
+    passwordsByDomain?: Map<string, Map<string, string>>;
 }
 
 export function getVaultType(vault: DisplayVault)

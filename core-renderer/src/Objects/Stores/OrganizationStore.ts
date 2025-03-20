@@ -6,7 +6,6 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 import { CreateOrganizationData, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 import app from "./AppStore";
-import { Field } from "@vaultic/shared/Types/Fields";
 
 export class OrganizationStore extends Store<StoreState>
 {
@@ -32,7 +31,7 @@ export class OrganizationStore extends Store<StoreState>
         this.internalOrganizationIDsByVaultIDs = ref(new Map());
 
         this.internalOrganizations = computed(() => this.internalOrganizationsByID.value.valueArray());
-        this.internalPinnedOrganizations = computed(() => this.internalOrganizations.value.filter(o => app.userPreferences.pinnedOrganizations.value.has(o.organizationID)));
+        this.internalPinnedOrganizations = computed(() => this.internalOrganizations.value.filter(o => app.userPreferences.pinnedOrganizations.has(o.organizationID)));
     }
 
     public resetToDefault(): void
@@ -45,7 +44,7 @@ export class OrganizationStore extends Store<StoreState>
     protected defaultState()
     {
         return {
-            version: Field.create(0)
+            version: 0
         }
     }
 

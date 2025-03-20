@@ -1,10 +1,10 @@
 <template>
     <div class="filterValueSelectorCell">
         <TextInputField v-if="inputType == 0" :label="'Value'" :color="color"
-            v-model="modelField.value" :fadeIn="false" :isOnWidget="true" :width="''"
+            v-model="modelField" :fadeIn="false" :isOnWidget="true" :width="''"
             :minWidth="'100px'" :maxWidth="''" />
         <EnumInputField v-if="inputType == 1" :label="'Value'" :color="color"
-            v-model="modelField.value" :optionsEnum="inputEnumType" :fadeIn="false" :isOnWidget="true"
+            v-model="modelField" :optionsEnum="inputEnumType" :fadeIn="false" :isOnWidget="true"
             :width="''" :minWidth="'100px'" :maxWidth="''" />
     </div>
 </template>
@@ -15,7 +15,6 @@ import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
 import TextInputField from '../../InputFields/TextInputField.vue';
 import EnumInputField from '../../InputFields/EnumInputField.vue';
 
-import { Field } from '@vaultic/shared/Types/Fields';
 import { PropertyType } from '../../../Types/Fields';
 
 export default defineComponent({
@@ -28,7 +27,7 @@ export default defineComponent({
 	props: ["model", "field", "data", "state"],
 	setup(props)
 	{
-        const modelField: Ref<Field<any>> = ref(props.model.value[props.field]);
+        const modelField: Ref<any> = ref(props.model[props.field]);
         const color: ComputedRef<string> = computed(() => props.data["color"]);
         const state: ComputedRef<any> = computed(() => props.state);
 

@@ -7,20 +7,19 @@ import { PasswordStore, PasswordStoreState, ReactivePasswordStore } from "./Pass
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { FieldTreeUtility } from "../../Types/Tree";
 
 const MAX_LOGIN_RECORDS = 500;
-export interface VaultSettings extends IFieldedObject { }
+export interface VaultSettings { }
 
 interface IVaultStoreState extends StoreState
 {
-    settings: Field<VaultSettings>;
-    loginHistory: Field<Map<number, Field<number>>>;
+    settings: VaultSettings;
+    loginHistory: Map<number, number>;
 }
 
-export type VaultStoreState = KnownMappedFields<IVaultStoreState>;
+export type VaultStoreState = IVaultStoreState;
 
 export class BaseVaultStore<V extends PasswordStore,
     W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState>
@@ -33,7 +32,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
     protected internalVaultID: number;
-    protected internalPasswordsByDomain: Field<Map<string, Field<Map<string, Field<string>>>>> | undefined;
+    protected internalPasswordsByDomain: Map<string, Map<string, string>> | undefined;
 
     protected internalPasswordStore: V;
     protected internalValueStore: W;
@@ -76,7 +75,7 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
         this.internalShared = data.shared;
         this.internalIsArchived = data.isArchived;
-        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? Field.create(new Map());
+        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Map();
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
@@ -84,16 +83,11 @@ export class BaseVaultStore<V extends PasswordStore,
 
     protected defaultState(): VaultStoreState 
     {
-        return FieldTreeUtility.setupIDs<IVaultStoreState>({
-            version: Field.create(0),
-            settings: Field.create(
-                {
-                    id: Field.create(""),
-                    loginRecordsToStorePerDay: Field.create(13),
-                    numberOfDaysToStoreLoginRecords: Field.create(30)
-                }),
-            loginHistory: Field.create(new Map<number, Field<number>>())
-        });
+        return {
+            version: 0,
+            settings: {},
+            loginHistory: new Map<number, number>()
+        };
     }
 }
 
@@ -196,19 +190,19 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     private async recordLogin(pendingState: VaultStoreState, dateTime: number): Promise<void>
     {
-        if (pendingState.loginHistory.value.size >= MAX_LOGIN_RECORDS)
+        if (pendingState.loginHistory.size >= MAX_LOGIN_RECORDS)
         {
-            for (let i = pendingState.loginHistory.value.size - MAX_LOGIN_RECORDS; i >= 0; i--)
+            for (let i = pendingState.loginHistory.size - MAX_LOGIN_RECORDS; i >= 0; i--)
             {
-                const result = pendingState.loginHistory.value.entries().next();
+                const result = pendingState.loginHistory.entries().next();
                 if (result.value)
                 {
-                    pendingState.loginHistory.removeMapValue(result.value[0]);
+                    pendingState.loginHistory.delete(result.value[0]);
                 }
             }
         }
 
-        pendingState.loginHistory.addMapValue(dateTime, Field.create(dateTime));
+        pendingState.loginHistory.set(dateTime, dateTime);
     }
 }
 

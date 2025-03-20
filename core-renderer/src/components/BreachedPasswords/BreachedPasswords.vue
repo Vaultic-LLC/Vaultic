@@ -61,7 +61,7 @@ export default defineComponent({
     setup()
     {
         const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
         const scanning: Ref<boolean> = ref(false);
         const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
         let backingVaultsAndBreachCount: Map<string, VaultAndBreachCount> = new Map();
@@ -157,7 +157,7 @@ export default defineComponent({
             }
         }
 
-        async function checkPasswordForBreach(password: Field<ReactivePassword>)
+        async function checkPasswordForBreach(password: ReactivePassword)
         {
             if (!canLoadWidget.value)
             {
@@ -239,7 +239,7 @@ export default defineComponent({
         {
             app.vaultDataBreaches.removeEvent("onBreachesUpdated", setRows);
             app.vaultDataBreaches.removeEvent("onBreachDismissed", setRows);
-            
+
             app.currentVault.passwordStore.removeEvent("onCheckPasswordBreach", checkPasswordForBreach);
             app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
         });

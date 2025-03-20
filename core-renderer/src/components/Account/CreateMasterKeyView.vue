@@ -140,13 +140,13 @@ export default defineComponent({
                     }
 
                     const password: Password = defaultPassword();
-                    password.isVaultic.value = true;
-                    password.password.value = key.value;
-                    password.login.value = account.value.email;
-                    password.domain.value = "Vaultic.org"; // TODO: switch to actual website
-                    password.email.value = account.value.email;
-                    password.passwordFor.value = "Vaultic Password Manager";
-                    password.additionalInformation.value = "Email used to log into your Vaultic Password Manager account.";
+                    password.isVaultic = true;
+                    password.password = key.value;
+                    password.login = account.value.email;
+                    password.domain = "Vaultic.org"; // TODO: switch to actual website
+                    password.email = account.value.email;
+                    password.passwordFor = "Vaultic Password Manager";
+                    password.additionalInformation = "Email used to log into your Vaultic Password Manager account.";
 
                     await app.currentVault.passwordStore.addPassword(loginResponse.value?.masterKey!, password);
                     ctx.emit('onSuccess');

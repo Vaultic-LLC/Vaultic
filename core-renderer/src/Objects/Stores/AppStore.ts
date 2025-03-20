@@ -17,37 +17,35 @@ import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, IUser, UserData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
 import { FilterStatus, DataType } from "../../Types/DataTypes";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
-import { FieldTreeUtility } from "../../Types/Tree";
 
-export interface AppSettings extends IFieldedObject
+export interface AppSettings
 {
-    userColorPalettes: Field<Map<string, Field<ColorPalette>>>;
-    autoLockTime: Field<AutoLockTime>;
-    multipleFilterBehavior: Field<FilterStatus>;
-    oldPasswordDays: Field<number>;
-    percentMetricForPulse: Field<number>;
-    randomValueLength: Field<number>;
-    randomPhraseLength: Field<number>;
-    includeNumbersInRandomPassword: Field<boolean>;
-    includeSpecialCharactersInRandomPassword: Field<boolean>;
-    includeAmbiguousCharactersInRandomPassword: Field<boolean>;
-    passphraseSeperator: Field<string>;
-    temporarilyStoreMasterKey: Field<boolean>;
+    userColorPalettes: Map<string, ColorPalette>;
+    autoLockTime: AutoLockTime;
+    multipleFilterBehavior: FilterStatus;
+    oldPasswordDays: number;
+    percentMetricForPulse: number;
+    randomValueLength: number;
+    randomPhraseLength: number;
+    includeNumbersInRandomPassword: boolean;
+    includeSpecialCharactersInRandomPassword: boolean;
+    includeAmbiguousCharactersInRandomPassword: boolean;
+    passphraseSeperator: string;
+    temporarilyStoreMasterKey: boolean;
 }
 
 export interface IAppStoreState extends StoreState
 {
-    settings: Field<AppSettings>;
+    settings: AppSettings;
 }
 
-export type AppStoreState = KnownMappedFields<IAppStoreState>;
+export type AppStoreState = IAppStoreState;
 
 export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
@@ -67,7 +65,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalIsOnline: Ref<boolean>;
 
-    private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
+    private internalColorPalettes: ComputedRef<ColorPalette[]>;
 
     private internalUserVaults: Ref<DisplayVault[]>;
     private internalUserVaultsByVaultID: ComputedRef<Map<number, DisplayVault>>;
@@ -135,7 +133,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(this.state.settings.value.userColorPalettes.value.valueArray()))
+        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(this.state.settings.userColorPalettes.valueArray()))
 
         this.internalUserVaults = ref([]);
         this.internalUserVaultsByVaultID = computed(() => this.internalUserVaults.value.reduce((map: Map<number, DisplayVault>, dv: DisplayVault) =>
@@ -170,7 +168,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalCanShowSubscriptionWidgets = computed(() => this.isOnline && this.internalUserLicense.value == LicenseStatus.Active);
         this.internalUserLicense = ref(LicenseStatus.Unknown);
 
-        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.value.autoLockTime.value));
+        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.autoLockTime));
 
         watch(() => this.internalAutoLockNumberTime.value, (newValue) => 
         {
@@ -183,25 +181,23 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     protected defaultState()
     {
-        return FieldTreeUtility.setupIDs<IAppStoreState>({
-            id: Field.create(""),
-            version: Field.create(0),
-            settings: Field.create({
-                id: Field.create(""),
-                userColorPalettes: Field.create(emptyUserColorPalettes),
-                autoLockTime: Field.create(AutoLockTime.OneMinute),
-                multipleFilterBehavior: Field.create(FilterStatus.Or),
-                oldPasswordDays: Field.create(365),
-                percentMetricForPulse: Field.create(1),
-                randomValueLength: Field.create(25),
-                randomPhraseLength: Field.create(7),
-                includeNumbersInRandomPassword: Field.create(true),
-                includeSpecialCharactersInRandomPassword: Field.create(true),
-                includeAmbiguousCharactersInRandomPassword: Field.create(true),
-                passphraseSeperator: Field.create('-'),
-                temporarilyStoreMasterKey: Field.create(true)
-            })
-        });
+        return {
+            version: 0,
+            settings: {
+                userColorPalettes: emptyUserColorPalettes,
+                autoLockTime: AutoLockTime.OneMinute,
+                multipleFilterBehavior: FilterStatus.Or,
+                oldPasswordDays: 365,
+                percentMetricForPulse: 1,
+                randomValueLength: 25,
+                randomPhraseLength: 7,
+                includeNumbersInRandomPassword: true,
+                includeSpecialCharactersInRandomPassword: true,
+                includeAmbiguousCharactersInRandomPassword: true,
+                passphraseSeperator: '-',
+                temporarilyStoreMasterKey: true
+            }
+        };
     }
 
     private calcAutolockTime(time: AutoLockTime): number
@@ -307,7 +303,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.getUserInfo();
         }
 
-        if (this.state.settings.value.temporarilyStoreMasterKey.value)
+        if (this.state.settings.temporarilyStoreMasterKey)
         {
             const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
             if (!setMasterKeyResponse.success)
@@ -526,16 +522,16 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
 
-        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.userColorPalettes.value.get(colorPalette.id.value);
+        let oldColorPalette: ColorPalette | undefined = pendingState.settings.userColorPalettes.get(colorPalette.id);
         if (!oldColorPalette)
         {
             return Promise.resolve();
         }
 
-        oldColorPalette.value = colorPalette;
-        if (this.internalUsersPreferencesStore.currentColorPalette.id.value == oldColorPalette.value.id.value)
+        oldColorPalette = colorPalette;
+        if (this.internalUsersPreferencesStore.currentColorPalette.id == oldColorPalette.id)
         {
-            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette.value);
+            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette);
         }
 
         transaction.updateUserStore(this, pendingState);

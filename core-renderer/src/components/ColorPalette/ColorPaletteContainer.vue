@@ -22,12 +22,12 @@ export default defineComponent({
     },
     setup()
     {
-        const cpOne: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[0].value);
-        const cpTwo: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[1].value);
-        const cpThree: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[2].value);
-        const cpFour: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[3].value);
-        const cpFive: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[4].value);
-        const cpSix: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[5].value);
+        const cpOne: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[0]);
+        const cpTwo: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[1]);
+        const cpThree: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[2]);
+        const cpFour: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[3]);
+        const cpFive: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[4]);
+        const cpSix: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[5]);
 
         return {
             cpOne,

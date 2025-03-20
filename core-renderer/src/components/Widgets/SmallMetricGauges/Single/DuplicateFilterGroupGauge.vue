@@ -30,11 +30,11 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `vgdup${app.currentVault.groupStore.duplicateValueGroups.value.size}${app.currentVault.groupStore.valuesGroups.length}`,
+                                key: `vgdup${app.currentVault.groupStore.duplicateValueGroups.size}${app.currentVault.groupStore.valuesGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.groupStore.duplicateValueGroups.value.size,
+                                filledAmount: app.currentVault.groupStore.duplicateValueGroups.size,
                                 totalAmount: app.currentVault.groupStore.valuesGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor.value,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
                                 active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -44,11 +44,11 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `vfdup${app.currentVault.filterStore.duplicateValueFilters.value.size}${app.currentVault.filterStore.nameValuePairFilters.length}`,
+                                key: `vfdup${app.currentVault.filterStore.duplicateValueFilters.size}${app.currentVault.filterStore.nameValuePairFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.filterStore.duplicateValueFilters.value.size,
+                                filledAmount: app.currentVault.filterStore.duplicateValueFilters.size,
                                 totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor.value,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
                                 active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -62,11 +62,11 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `pgdup${app.currentVault.groupStore.duplicatePasswordGroups.value.size}${app.currentVault.groupStore.passwordGroups.length}`,
+                                key: `pgdup${app.currentVault.groupStore.duplicatePasswordGroups.size}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.groupStore.duplicatePasswordGroups.value.size,
+                                filledAmount: app.currentVault.groupStore.duplicatePasswordGroups.size,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor.value,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
                                 active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -76,11 +76,11 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `pfdup${app.currentVault.filterStore.duplicatePasswordFilters.value.size}${app.currentVault.filterStore.passwordFilters.length}`,
+                                key: `pfdup${app.currentVault.filterStore.duplicatePasswordFilters.size}${app.currentVault.filterStore.passwordFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.filterStore.duplicatePasswordFilters.value.size,
+                                filledAmount: app.currentVault.filterStore.duplicatePasswordFilters.size,
                                 totalAmount: app.currentVault.filterStore.passwordFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor.value,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
                                 active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {

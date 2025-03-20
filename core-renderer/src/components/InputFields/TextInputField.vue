@@ -81,7 +81,7 @@ export default defineComponent({
     "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField', 'inputGroupAddon'],
     setup(props, ctx)
     {
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor);
         const id = ref(useId());
         const valuePlaceHolder = ref(props.modelValue);
         const inputIcon: Ref<any> = ref();
@@ -102,21 +102,6 @@ export default defineComponent({
 
         const additionalValidationFunction: Ref<{ (input: string): [boolean, string]; } | undefined> = ref(props.additionalValidationFunction);
         const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
-
-        // let inputStyle = computed(() => {
-        //     return {
-        //         focus: 
-        //         {
-        //             borderColor: props.color
-        //         },
-        //         background: background.value,
-        //         invalid: 
-        //         {
-        //             borderColor: errorColor.value,
-        //             placeholderColor: errorColor.value
-        //         }
-        //     }
-        // });
 
         function validate(): boolean
         {

@@ -5,7 +5,7 @@ export type SecretProperty = "password" | "value";
 
 export type SecretPropertyType<T extends SecretProperty> =
     {
-        [K in T]: Field<string>;
+        [K in T]: string;
     }
 
 export interface PasswordSecretProperty extends SecretPropertyType<"password"> { };

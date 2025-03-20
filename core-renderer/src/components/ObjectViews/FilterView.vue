@@ -2,7 +2,7 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
-            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
+            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :end="true" :fill-space="true">
@@ -33,7 +33,6 @@ import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
 import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType } from '../../Types/Fields';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
 
@@ -52,11 +51,11 @@ export default defineComponent({
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const filterState: Ref<Filter> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor);
         const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
-        const filterConditionModels: SortedCollection = new SortedCollection([], () => filterState.value.conditions.value);
+        const filterConditionModels: SortedCollection = new SortedCollection([], () => filterState.value.conditions);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -124,7 +123,7 @@ export default defineComponent({
             {
                 if (await app.currentVault.filterStore.addFilter(key, filterState.value))
                 {
-                    filterState.value = await defaultFilter(filterState.value.type.value);
+                    filterState.value = defaultFilter(filterState.value.type);
                     await onAdd();
                     refreshKey.value = Date.now().toString();
 
@@ -173,14 +172,14 @@ export default defineComponent({
         async function onAdd()
         {
             const id = uniqueIDGenerator.generate();
-            const filterCondition: Field<FilterCondition> = Field.create({
-                id: Field.create(id),
-                property: Field.create(''),
-                value: Field.create(''),
-                filterType: Field.create(undefined)
-            });
+            const filterCondition: FilterCondition = {
+                id,
+                property: '',
+                value: '',
+                filterType: undefined
+            };
 
-            filterState.value.conditions.addMapValue(id, filterCondition);
+            filterState.value.conditions.set(id, filterCondition);
 
             const tableRowModel = new TableRowModel(id, false, undefined, 
             {
@@ -192,30 +191,30 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function onDelete(filterCondition: Field<FilterCondition>)
+        function onDelete(filterCondition: FilterCondition)
         {
-            filterState.value.conditions.removeMapValue(filterCondition.value.id.value);
-            filterConditionModels.remove(filterCondition.value.id.value);
+            filterState.value.conditions.delete(filterCondition.id);
+            filterConditionModels.remove(filterCondition.id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         onMounted(() =>
         {
-            if (filterState.value.conditions.value.size == 0)
+            if (filterState.value.conditions.size == 0)
             {
                 onAdd();
             }
             else
             {
                 let models: TableRowModel[] = [];
-                filterState.value.conditions.value.forEach((v, k, map) =>
+                filterState.value.conditions.forEach((v, k, map) =>
                 {
-                    const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.value.property.value)?.type ?? PropertyType.String;
+                    const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.property)?.type ?? PropertyType.String;
                     models.push(new TableRowModel(k, false, undefined, 
                     {
                         filterConditionType: propertyType == PropertyType.String ? FilterConditionType : EqualFilterConditionType,
                         inputType: propertyType,
-                        filterType: v.value.filterType.value,
+                        filterType: v.filterType,
                         inputEnumType: propertyType == PropertyType.Enum ? NameValuePairType : undefined    // Passwords don't have an emum selectable type
                     }));
                 });

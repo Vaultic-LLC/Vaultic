@@ -66,9 +66,10 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
         try 
         {
-            const updatedState = this.mergeStoreStates(Field.create(JSON.vaulticParse(currentStateToUse)),
-                Field.create(JSON.vaulticParse(newStateToUse)), changeTrackings, true);
-            currentState.state = JSON.vaulticStringify(updatedState.value);
+            const updatedState = this.mergeStoreStates(JSON.vaulticParse(currentStateToUse),
+                JSON.vaulticParse(newStateToUse), changeTrackings, true);
+
+            currentState.state = JSON.vaulticStringify(updatedState);
             currentState.previousSignature = newState.previousSignature;
 
             transaction.updateEntity(currentState, key, this.getVaulticRepository);
@@ -86,23 +87,12 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
     // Ex: Updating an EmptyFiler that stays Empty. The Field<string> in filterStore.emptyFilters needs to have its lastModifiedTime updated
     private mergeStoreStates(currentObj: any, newObj: any, changeTrackings: Dictionary<ChangeTracking>, first: boolean = false)
     {
-        // nothing was changed, can just return
-        if (!first && currentObj.mt === newObj.mt)
+        if (typeof newObj == 'object')
         {
-            return;
-        }
+            const manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(newObj);
 
-        console.log(`Object Changed: ${JSON.vaulticStringify(newObj)}`);
-        if (typeof newObj.value == 'object')
-        {
-            // one of these was changed. Take the newer one here or else it'll still reflect the old value even though its nested value was updated 
-            // correctly
-            currentObj.mt = Math.max(currentObj.mt, newObj.mt);
-
-            const manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(newObj.value);
-
-            const keys = manager.keys(newObj.value);
-            const currentKeys = manager.keys(currentObj.value);
+            const keys = manager.keys(newObj);
+            const currentKeys = manager.keys(currentObj);
 
             for (let i = 0; i < keys.length; i++)
             {
@@ -111,29 +101,32 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 // not in current keys. Check to see if it was deleted locally or if it was inserted / created on another device
                 if (currentKeyMatchingIndex < 0)
                 {
-                    const id = manager.get(keys[i], newObj.value).id;
-                    const changeTracking = changeTrackings[id];
+                    const id = manager.get(keys[i], newObj).id;
+
+                    // TODO: Doens't work since objects are no longer guranteed to have an ID
+                    //const changeTracking = changeTrackings[id];
+                    const changeTracking = undefined;
 
                     // wasn't altered locally, was added on another device
                     if (!changeTracking)
                     {
-                        manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);
+                        manager.set(keys[i], manager.get(keys[i], newObj), currentObj);
                     }
                     // was deleted locally, check to make sure that it was deleted before any updates to the 
                     // object on another device were
                     else
                     {
                         // object was edited on another device after it was deleted on this one, keep it
-                        if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj.value).mt)
+                        if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj).mt)
                         {
-                            manager.set(keys[i], manager.get(keys[i], newObj.value), currentObj.value);
+                            manager.set(keys[i], manager.get(keys[i], newObj), currentObj);
                         }
                     }
                 }
                 else
                 {
                     // both objects exist, check them
-                    this.mergeStoreStates(manager.get(currentKeys[currentKeyMatchingIndex], currentObj.value), manager.get(keys[i], newObj.value), changeTrackings);
+                    this.mergeStoreStates(manager.get(currentKeys[currentKeyMatchingIndex], currentObj), manager.get(keys[i], newObj), changeTrackings);
                     currentKeys.splice(currentKeyMatchingIndex, 1);
                 }
             }
@@ -141,8 +134,11 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             // all the keys that are in the current obj, but not the newObj.
             for (let i = 0; i < currentKeys.length; i++)
             {
-                const id = manager.get(currentKeys[i], currentObj.value).id;
-                const changeTracking = changeTrackings[id];
+                const id = manager.get(currentKeys[i], currentObj).id;
+
+                // TODO: Doens't work since objects are no longer guranteed to have an ID
+                // const changeTracking = changeTrackings[id];
+                const changeTracking = true;
 
                 // wasn't modified locally and not in newObj, it was deleted on another device.
                 // If state is Inserted, we want to keep it. 
@@ -150,16 +146,15 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 // If state is Deleted, it wouldn't be in currentKeys
                 if (!changeTracking)
                 {
-                    manager.delete(currentKeys[i], currentObj.value);
+                    manager.delete(currentKeys[i], currentObj);
                 }
             }
         }
         else 
         {
-            if (currentObj.value != newObj.value && currentObj.mt < newObj.mt)
+            if (currentObj != newObj)
             {
-                currentObj.value = newObj.value;
-                currentObj.mt = newObj.mt;
+                currentObj = newObj;
             }
         }
 

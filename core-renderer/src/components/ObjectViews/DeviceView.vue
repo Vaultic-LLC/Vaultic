@@ -35,7 +35,7 @@ import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 
 import app from "../../Objects/Stores/AppStore";
-import { DisplayRequiresMFA, ClientDevice, requiresMFAToDisplay, displayRequiresMFAToRequiresMFA, RequiresMFA, defaultClientDevice } from '@vaultic/shared/Types/Device';
+import { DisplayRequiresMFA, ClientDevice, requiresMFAToDisplay, displayRequiresMFAToRequiresMFA, defaultClientDevice } from '@vaultic/shared/Types/Device';
 import { ClosePopupFuncctionKey } from '../../Constants/Keys';
 
 export default defineComponent({
@@ -52,7 +52,7 @@ export default defineComponent({
     {
         const refreshKey: Ref<string> = ref("");
         const deviceState: Ref<ClientDevice> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultClientDevice());
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
 
         const buttonText: ComputedRef<string> = computed(() => props.creating ? 'Register': 'Save');
         const requiresMFA: Ref<DisplayRequiresMFA> = ref(requiresMFAToDisplay(deviceState.value.RequiresMFA));

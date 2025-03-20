@@ -88,7 +88,7 @@ const hashUtility: Promisify<ClientHashUtility> =
 
 const validationHelper: Promisify<ValidationHelper> =
 {
-	isWeak: (value: string, type: string) => ipcRenderer.invoke('validationHelper:isWeak', value, type),
+	isWeak: (value: string) => ipcRenderer.invoke('validationHelper:isWeak', value),
 	containsNumber: (value: string) => ipcRenderer.invoke('validationHelper:containsNumber', value),
 	containsSpecialCharacter: (value: string) => ipcRenderer.invoke('validationHelper:containsSpecialCharacter', value),
 	containsUppercaseAndLowercaseNumber: (value: string) => ipcRenderer.invoke('validationHelper:containsUppercaseAndLowercaseNumber', value)

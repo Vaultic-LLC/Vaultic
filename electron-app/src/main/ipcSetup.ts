@@ -62,7 +62,7 @@ export default function setupIPC()
 
 	ipcMain.handle('hashUtility:hash', (e, algorithm: Algorithm, value: string, salt?: string) => validateSender(e, () => environment.utilities.hash.hash(algorithm, value, salt)));
 
-	ipcMain.handle('validationHelper:isWeak', (e, value: string, type: string) => validateSender(e, () => validationHelper.isWeak(value, type)));
+	ipcMain.handle('validationHelper:isWeak', (e, value: string) => validateSender(e, () => validationHelper.isWeak(value)));
 	ipcMain.handle('validationHelper:containsNumber', (e, value: string) => validateSender(e, () => validationHelper.containsNumber(value)));
 	ipcMain.handle('validationHelper:containsSpecialCharacter', (e, value: string) => validateSender(e, () => validationHelper.containsSpecialCharacter(value)));
 	ipcMain.handle('validationHelper:containsUppercaseAndLowercaseNumber', (e, value: string) => validateSender(e, () => validationHelper.containsUppercaseAndLowercaseNumber(value)));

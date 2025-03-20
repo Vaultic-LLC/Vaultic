@@ -1,28 +1,28 @@
 import { ValidationHelper } from "@vaultic/shared/Types/Helpers";
 
-function isWeak(value: string, type: string): [boolean, string]
+function isWeak(value: string): [boolean, number]
 {
     if (value.length < 16)
     {
-        return [true, type + ` is less than 16 characters. For best security, create ${type}s that are at least 16 characters long.`];
+        return [true, 0];
     }
     else if (!containsUppercaseAndLowercaseNumber(value))
     {
-        return [true, type + " does not contain and uppercase and lowercase letter. For best security, add an uppercase and lowercase letter to your " + type];
+        return [true, 1]
     }
     else if (!containsNumber(value))
     {
-        return [true, type + " does not contain any numbers. For best security, add at least one number to your " + type];
+        return [true, 2];
     }
     else
     {
         if (!containsSpecialCharacter(value))
         {
-            return [true, type + " does not contain any special characters. For best security, add at least one special character to your " + type];
+            return [true, 3];
         }
     }
 
-    return [false, ""];
+    return [false, -1];
 }
 
 function containsNumber(value: string): boolean

@@ -29,7 +29,7 @@ export default defineComponent({
     {
         const popupInfo = popups.toast;
         const colorToUse: ComputedRef<string> = computed(() => 
-            props.success ? app.userPreferences.currentColorPalette.successColor.value : app.userPreferences.currentColorPalette.errorColor.value);
+            props.success ? app.userPreferences.currentColorPalette.successColor : app.userPreferences.currentColorPalette.errorColor);
 
         const toastText: ComputedRef<string> = computed(() => props.text);
         const isSuccess: ComputedRef<boolean> = computed(() => props.success);

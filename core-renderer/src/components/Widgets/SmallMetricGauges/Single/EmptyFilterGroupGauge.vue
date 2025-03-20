@@ -30,11 +30,11 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `vgempty${app.currentVault.groupStore.emptyValueGroups.value.size}${app.currentVault.groupStore.valuesGroups.length}`,
+                                key: `vgempty${app.currentVault.groupStore.emptyValueGroups.size}${app.currentVault.groupStore.valuesGroups.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.groupStore.emptyValueGroups.value.size,
+                                filledAmount: app.currentVault.groupStore.emptyValueGroups.size,
                                 totalAmount: app.currentVault.groupStore.valuesGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor.value,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
                                 active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
@@ -44,11 +44,11 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `vfempty${app.currentVault.filterStore.emptyValueFilters.value.size}${app.currentVault.filterStore.nameValuePairFilters.length}`,
+                                key: `vfempty${app.currentVault.filterStore.emptyValueFilters.size}${app.currentVault.filterStore.nameValuePairFilters.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.filterStore.emptyValueFilters.value.size,
+                                filledAmount: app.currentVault.filterStore.emptyValueFilters.size,
                                 totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor.value,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
                                 active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
@@ -62,11 +62,11 @@ export default defineComponent({
                     {
                         case DataType.Groups:
                             return {
-                                key: `pgempty${app.currentVault.groupStore.emptyPasswordGroups.value.size}${app.currentVault.groupStore.passwordGroups.length}`,
+                                key: `pgempty${app.currentVault.groupStore.emptyPasswordGroups.size}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.groupStore.emptyPasswordGroups.value.size,
+                                filledAmount: app.currentVault.groupStore.emptyPasswordGroups.size,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor.value,
+                                color: app.userPreferences.currentColorPalette.groupsColor,
                                 active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Empty,
                                 onClick: function ()
                                 {
@@ -76,11 +76,11 @@ export default defineComponent({
                         case DataType.Filters:
                         default:
                             return {
-                                key: `pfempty${app.currentVault.filterStore.emptyPasswordFilters.value.size}${app.currentVault.filterStore.passwordFilters.length}`,
+                                key: `pfempty${app.currentVault.filterStore.emptyPasswordFilters.size}${app.currentVault.filterStore.passwordFilters.length}`,
                                 title: 'Empty',
-                                filledAmount: app.currentVault.filterStore.emptyPasswordFilters.value.size,
+                                filledAmount: app.currentVault.filterStore.emptyPasswordFilters.size,
                                 totalAmount: app.currentVault.filterStore.passwordFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor.value,
+                                color: app.userPreferences.currentColorPalette.filtersColor,
                                 active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Empty,
                                 onClick: function ()
                                 {

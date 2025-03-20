@@ -1,9 +1,9 @@
 <template>
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name.value"
+        <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name"
             :width="'50%'" :maxWidth="''" />
-        <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color.value"
+        <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color"
             :width="'50%'" :minHeight="''" :minWidth="'125px'" :maxWidth="''" />
         <ObjectSingleSelect :label="'Icon'" :color="groupColor" v-model="selectedIcon"
             :options="allIcons" :width="'50%'" :minWidth="'125px'" :maxWidth="''" @update:model-value="onIconSelected" />
@@ -23,7 +23,6 @@ import ObjectSingleSelect from '../InputFields/ObjectSingleSelect.vue';
 import { GridDefinition, ObjectSelectOptionModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
 import icons from '../../Constants/Icons';
 
 export default defineComponent({
@@ -41,7 +40,7 @@ export default defineComponent({
     {
         const refreshKey: Ref<string> = ref("");
         const groupState: Ref<Group> = ref(props.model);
-        const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor.value);
+        const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor);
 
         const selectLabel: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values");
         const selectedDataObjectOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
@@ -77,18 +76,18 @@ export default defineComponent({
 
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                groupState.value.passwords.value = new Map();
+                groupState.value.passwords = new Map();
                 selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.passwords.addMapValue(g.backingObject!.value.id.value, Field.create(g.backingObject!.value.id.value));
+                    groupState.value.passwords.set(g.backingObject!.id, g.backingObject!.id);
                 });
             }
             else 
             {
-                groupState.value.values.value = new Map();
+                groupState.value.values = new Map();
                 selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.values.addMapValue(g.backingObject!.value.id.value, Field.create(g.backingObject!.value.id.value));
+                    groupState.value.values.set(g.backingObject!.id, g.backingObject!.id);
                 });
             }
 
@@ -96,7 +95,7 @@ export default defineComponent({
             {
                 if (await app.currentVault.groupStore.addGroup(key, groupState.value))
                 {
-                    groupState.value = defaultGroup(groupState.value.type.value);
+                    groupState.value = defaultGroup(groupState.value.type);
                     refreshKey.value = Date.now().toString();
                     selectedDataObjectOptions.value = [];
 
@@ -144,12 +143,12 @@ export default defineComponent({
 
         function onIconSelected(model: ObjectSelectOptionModel)
         {
-            groupState.value.icon.value = model?.icon ?? "";
+            groupState.value.icon = model?.icon ?? "";
         }
 
         onMounted(() =>
         {
-            const foundIcon = icons.filter(i => i.icon == groupState.value.icon.value);
+            const foundIcon = icons.filter(i => i.icon == groupState.value.icon);
             if (foundIcon.length == 1)
             {
                 selectedIcon.value = foundIcon[0];
@@ -161,23 +160,23 @@ export default defineComponent({
                 {
                     const option: ObjectSelectOptionModel = 
                     {
-                        label: p.value.passwordFor.value,
+                        label: p.passwordFor,
                         backingObject: p,
                     };
 
                     return option
                 });
 
-                groupState.value.passwords.value.forEach((v, k, map) => 
+                groupState.value.passwords.forEach((v, k, map) => 
                 {
-                    const password = app.currentVault.passwordStore.passwordsByID.value.get(k);
+                    const password = app.currentVault.passwordStore.passwordsByID.get(k);
                     if (!password)
                     {
                         return;
                     }
 
                     selectedDataObjectOptions.value.push({
-                        label: password.value.passwordFor.value,
+                        label: password.passwordFor,
                         backingObject: password,
                     });
                 });
@@ -188,23 +187,23 @@ export default defineComponent({
                 {
                     const option: ObjectSelectOptionModel = 
                     {
-                        label: v.value.name.value,
+                        label: v.name,
                         backingObject: v,
                     };
 
                     return option
                 });
 
-                groupState.value.values.value.forEach((v, k, map) => 
+                groupState.value.values.forEach((v, k, map) => 
                 {
-                    const value = app.currentVault.valueStore.nameValuePairsByID.value.get(k);
+                    const value = app.currentVault.valueStore.nameValuePairsByID.get(k);
                     if (!value)
                     {
                         return;
                     }
 
                     selectedDataObjectOptions.value.push({
-                        label: value.value.name.value,
+                        label: value.name,
                         backingObject: value,
                     });
                 });

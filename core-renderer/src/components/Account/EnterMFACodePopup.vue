@@ -46,10 +46,10 @@ export default defineComponent({
     setup(_, ctx)
     {
         const otp: Ref<any> = ref();
-        const currentErrorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor.value);
+        const currentErrorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor);
         const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const popupInfo = popups.enterMFACode;
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
         const mfaCode: Ref<string> = ref('');
 
         const background: Ref<string> = ref(widgetBackgroundHexString());

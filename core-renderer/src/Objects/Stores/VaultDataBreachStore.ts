@@ -5,7 +5,6 @@ import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
 import { ref, Ref } from "vue";
 import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
-import { Field } from "@vaultic/shared/Types/Fields";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { Password } from "../../Types/DataTypes";
 
@@ -36,7 +35,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
     protected defaultState()
     {
         return {
-            version: Field.create(0)
+            version: 0
         };
     }
 
@@ -72,12 +71,12 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
                 VaultID: vault.vaultID
             };
 
-            vault.passwordsByDomain?.value.forEach((v, k, map) => 
+            vault.passwordsByDomain?.forEach((v, k, map) => 
             {
-                limitedPasswords = limitedPasswords.concat(v.value.map((kk, vv) =>
+                limitedPasswords = limitedPasswords.concat(v.map((kk, vv) =>
                 {
                     return {
-                        id: vv.value,
+                        id: vv,
                         domain: k
                     }
                 }))
@@ -147,7 +146,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         return true;
     }
 
-    public async checkPasswordForBreach(password: Field<ReactivePassword>)
+    public async checkPasswordForBreach(password: ReactivePassword)
     {
         if (!app.isOnline)
         {
@@ -160,8 +159,8 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
             VaultID: app.currentVault.vaultID,
             LimitedPasswords:
                 [{
-                    id: password.value.id.value,
-                    domain: password.value.domain.value
+                    id: password.id,
+                    domain: password.domain
                 }]
         };
 
