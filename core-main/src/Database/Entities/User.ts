@@ -69,6 +69,12 @@ export class User extends VaulticEntity implements IUser
     @Column("text")
     privateEncryptingKey: string
 
+    @Column("integer")
+    lastLoadedLedgerVersion: number
+
+    @Column("integer")
+    currentLedgerVersion: number
+
     @OneToOne(() => AppStoreState, (state: AppStoreState) => state.user, { eager: true })
     appStoreState: AppStoreState;
 

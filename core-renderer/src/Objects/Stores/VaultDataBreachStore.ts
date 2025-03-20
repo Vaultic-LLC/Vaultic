@@ -1,4 +1,4 @@
-import { Store, StoreEvents, StoreState } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
 import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
@@ -7,6 +7,7 @@ import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { Password } from "../../Types/DataTypes";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed" | "onBreachesUpdated";
 

@@ -1,3 +1,5 @@
+export type ManagableObject = { [key: string | number]: any } & Array<any> & Map<any, any>;
+
 export class PropertyManagerConstructor
 {
     static getFor(obj: any)
@@ -82,4 +84,20 @@ export class ArrayPropertyManager extends ObjectPropertyManager<Array<any>>
     {
         obj.splice(key, 1);
     }
+}
+
+export function getObjectFromPath(path: string, start: any, full: boolean = false): [any, string]
+{
+    const paths = path.split('.');
+
+    let lastObject = start;
+    const till = full ? paths.length : paths.length - 1;
+
+    for (let i = 0; i < till; i++)
+    {
+        const manager = PropertyManagerConstructor.getFor(lastObject);
+        lastObject = manager.get(paths[i], lastObject as unknown as ManagableObject);
+    }
+
+    return [lastObject, paths[paths.length - 1]];
 }

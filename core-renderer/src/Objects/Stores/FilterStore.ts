@@ -1,5 +1,5 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { SecondaryDataTypeStore, StoreState } from "./Base";
+import { SecondaryDataTypeStore } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
@@ -8,6 +8,7 @@ import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IFilterStoreState extends StoreState
 {

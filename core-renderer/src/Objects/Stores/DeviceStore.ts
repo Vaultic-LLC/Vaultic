@@ -1,10 +1,11 @@
-import { Store, StoreState } from "./Base";
+import { Store } from "./Base";
 import { ClientDevice, Device, DeviceInfo } from "@vaultic/shared/Types/Device";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import app from "./AppStore";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export class DeviceStore extends Store<StoreState>
 {

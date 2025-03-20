@@ -1,5 +1,5 @@
 import { ColorPalette, defaultColorPalettes, emptyColorPalette } from "../../Types/Colors";
-import { Store, StoreState } from "./Base";
+import { Store } from "./Base";
 import { Ref, ref, watch } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
@@ -9,6 +9,7 @@ import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { FieldTreeUtility } from "../../Types/Tree";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface PinnedDataTypes
 {

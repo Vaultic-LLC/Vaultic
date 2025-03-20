@@ -30,6 +30,12 @@ export class UserVault extends VaulticEntity implements IUserVault
     @Column("integer")
     vaultID: number
 
+    @Column("integer")
+    lastLoadedLedgerVersion: number
+
+    @Column("integer")
+    currentLedgerVersion: number
+
     @ManyToOne(() => Vault, (vault: Vault) => vault.userVaults, { eager: true })
     @JoinColumn({ name: "vaultID" })
     vault: Vault;

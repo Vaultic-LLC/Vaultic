@@ -1,6 +1,6 @@
 import { computed, ComputedRef, ref, Ref } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { Store, StoreState } from "./Base";
+import { Store } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
 import { GroupStore, ReactiveGroupStore } from "./GroupStore";
 import { PasswordStore, PasswordStoreState, ReactivePasswordStore } from "./PasswordStore";
@@ -9,6 +9,7 @@ import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { FieldTreeUtility } from "../../Types/Tree";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 const MAX_LOGIN_RECORDS = 500;
 export interface VaultSettings { }

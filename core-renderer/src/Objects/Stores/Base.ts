@@ -5,19 +5,9 @@ import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
-import { Field, IFieldedObject, FieldMap, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { Field, IFieldedObject, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-
-// Enforced to ensure the logic to track changes always works
-// Note: Every nested Object should be wrapped in KnownMappdFields<>
-type StoreStateProperty = Field<NonArrayType<Primitive>> | FieldMap | Field<NonArrayType<IFieldedObject>>;
-
-export interface StoreState
-{
-    // [key: string]: StoreStateProperty;
-    [key: string]: any;
-    version: number;
-}
+import { PendingStoreState, StoreState } from "@vaultic/shared/Types/Stores";
 
 export type StoreEvents = "onChanged";
 
@@ -56,6 +46,12 @@ export class Store<T extends KnownMappedFields<StoreState>, U extends string = S
         this.preAssignState(state);
 
         return state;
+    }
+
+    public getPendingState(): PendingStoreState<T>
+    {
+        const state = this.cloneState();
+        return new PendingStoreState(state);
     }
 
     protected defaultState(): T

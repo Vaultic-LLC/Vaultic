@@ -35,6 +35,12 @@ export class Vault extends VaulticEntity implements IVault
     @Column("boolean")
     lastUsed: boolean;
 
+    @Column("integer")
+    lastLoadedLedgerVersion: number
+
+    @Column("integer")
+    currentLedgerVersion: number
+
     @OneToOne(() => VaultStoreState, (state: VaultStoreState) => state.vault, { eager: true })
     vaultStoreState: VaultStoreState;
 

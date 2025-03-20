@@ -63,6 +63,9 @@ import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
 import { Field } from '@vaultic/shared/Types/Fields';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
+import { PendingStoreState } from '@vaultic/shared/Types/Stores';
+import { IPasswordStoreState } from '../../Objects/Stores/PasswordStore';
+import { nameof } from '@vaultic/shared/Helpers/TypeScriptHelper';
 
 export default defineComponent({
     name: "PasswordView",
@@ -82,6 +85,7 @@ export default defineComponent({
     {
         const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 
+        const pendingStoreState: PendingStoreState<IPasswordStoreState> = app.currentVault.passwordStore.getPendingState();
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const passwordState: Ref<Password> = ref(props.model);
@@ -320,6 +324,11 @@ export default defineComponent({
                     color: group.color
                 });
             });
+
+            if (!props.creating)
+            {
+                passwordState.value = pendingStoreState.proxifyObject("passwordsByID.", passwordState.value);
+            }
         });
 
         return {

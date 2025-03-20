@@ -1,5 +1,6 @@
-import { StoreState, VaultContrainedStore } from "./Base";
+import { VaultContrainedStore } from "./Base";
 import { VaultStoreParameter } from "./VaultStore";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface VaultPreferencesState extends StoreState
 {
