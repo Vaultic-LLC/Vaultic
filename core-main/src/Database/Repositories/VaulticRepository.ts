@@ -4,6 +4,7 @@ import { StoreState } from "../Entities/States/StoreState";
 import { EntityState } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import logRepository from "./LogRepository";
+import { environment } from "../../Environment";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -67,6 +68,19 @@ export class VaulticRepository<T extends VaulticEntity>
         return saveableEntity;
     }
 
+    private async prepDataForSave(key: string, entity: T): Promise<boolean>
+    {
+        const properties = entity.getCompressableProperties();
+        for (let i = 0; i < properties.length; i++)
+        {
+            console.time('compress');
+            entity[properties[i]] = await environment.utilities.data.compress(entity[properties[i]]);
+            console.timeEnd('compress');
+        }
+
+        return this.encryptUpdatedProperties(key, entity);
+    }
+
     private encryptUpdatedProperties(key: string, entity: T): Promise<boolean>
     {
         const encryptableProperties = entity.getEncryptableProperties()
@@ -77,7 +91,7 @@ export class VaulticRepository<T extends VaulticEntity>
 
     public async signAndInsert(manager: EntityManager, key: string, entity: T): Promise<boolean>
     {
-        if (!(await this.encryptUpdatedProperties(key, entity)))
+        if (!(await this.prepDataForSave(key, entity)))
         {
             return false;
         }
@@ -135,7 +149,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         console.time("30");
-        if (!(await this.encryptUpdatedProperties(key, entity)))
+        if (!(await this.prepDataForSave(key, entity)))
         {
             return false;
         }

@@ -13,6 +13,7 @@ import { getDeviceInfo } from './Objects/DeviceInfo';
 import database, { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 import fs from "fs";
 import http2 from "http2";
+import { DataUtility } from "./Utilities/DataUtility";
 
 async function createWindow(): Promise<void>
 {
@@ -149,7 +150,8 @@ async function setupEnvironment(isTest: boolean)
         {
             crypt: new CryptUtility(),
             hash: new HashUtility(),
-            generator: generatorUtility
+            generator: generatorUtility,
+            data: new DataUtility()
         },
         database:
         {

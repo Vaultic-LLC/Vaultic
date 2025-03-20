@@ -167,7 +167,18 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
     public async getLastUsedUserPreferences(): Promise<string | null>
     {
         const lastUsedUser = await this.getLastUsedUser();
-        return lastUsedUser?.userPreferencesStoreState?.state ?? null;
+        if (!lastUsedUser?.userPreferencesStoreState?.state)
+        {
+            return null;
+        }
+
+        const result = await StoreState.getUsableState('', lastUsedUser.userPreferencesStoreState.state);
+        if (!result.success)
+        {
+            return null;
+        }
+
+        return result.value;
     }
 
     public async getValidMasterKey(): Promise<string | undefined>
@@ -422,10 +433,16 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     return TypedMethodResponse.fail(errorCodes.NO_USER);
                 }
 
-                const decryptedAppStoreState = await environment.utilities.crypt.symmetricDecrypt(masterKey, currentUser.appStoreState.state);
+                const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
                 if (!decryptedAppStoreState)
                 {
                     return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "AppStoreState");
+                }
+
+                const usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);
+                if (!usableUserPreferencesState.success)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Unable to get user preferences");
                 }
 
                 const userData: UserData =
@@ -438,14 +455,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                         lastName: currentUser.lastName
                     },
                     appStoreState: decryptedAppStoreState.value!,
-                    userPreferencesStoreState: currentUser.userPreferencesStoreState.state,
+                    userPreferencesStoreState: usableUserPreferencesState.value,
                     displayVaults: [],
                     currentVault: undefined
                 };
 
-                const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey,
-                    [nameof<Vault>("name"), nameof<Vault>("passwordStoreState")]);
-
+                const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, [nameof<Vault>("name")], ["passwordStoreState"]);
                 if (!userVaults || userVaults.length == 0)
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
@@ -494,7 +509,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
                 async function setCurrentVault(id: number, setAsLastUsed: boolean)
                 {
-                    const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, [id]);
+                    const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, undefined, [id], true);
                     if (!userVault || userVault.length == 0)
                     {
                         return false;
@@ -835,10 +850,10 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const userData: DeepPartial<UserData> = {};
             if (masterKey && storeStatesToRetrieve.appStoreState)
             {
-                const decryptedAppStoreState = await environment.utilities.crypt.symmetricDecrypt(masterKey, currentUser.appStoreState.state);
+                const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
                 if (!decryptedAppStoreState)
                 {
-                    return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "AppStoreState");
+                    return TypedMethodResponse.fail(undefined, undefined, "AppStoreState");
                 }
 
                 userData.appStoreState = decryptedAppStoreState.value;
@@ -846,7 +861,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             if (storeStatesToRetrieve.userPreferencesStoreState)
             {
-                userData.userPreferencesStoreState = currentUser.userPreferencesStoreState.state;
+                const usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);
+                if (!usableUserPreferencesState.success)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "UserPreferencesStoreState");
+                }
+
+                userData.userPreferencesStoreState = usableUserPreferencesState.value;
             }
 
             return TypedMethodResponse.success(userData);

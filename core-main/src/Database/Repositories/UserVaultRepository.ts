@@ -17,6 +17,7 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { Algorithm, PublicKeyType } from "@vaultic/shared/Types/Keys";
 import vaulticServer from "../../Server/VaulticServer";
+import { VaultStoreStates } from "@vaultic/shared/Types/Stores";
 
 class UserVaultRepository extends VaulticRepository<UserVault> implements IUserVaultRepository
 {
@@ -106,7 +107,8 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return [userVaults, vaultKeys];
     }
 
-    public async getVerifiedAndDecryt(masterKey: string, propertiesToDecrypt?: string[], userVaultIDs?: number[]): Promise<CondensedVaultData[] | null>
+    public async getVerifiedAndDecryt(masterKey: string, propertiesToDecrypt?: string[], storeStatesToUse?: VaultStoreStates[], userVaultIDs?: number[], allFields: boolean = false):
+        Promise<CondensedVaultData[] | null>
     {
         const userVaults = await this.getVerifiedUserVaults(masterKey, userVaultIDs);
         if (userVaults[0].length == 0)
@@ -118,7 +120,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         for (let i = 0; i < userVaults[0].length; i++)
         {
             const condensedUserVault = userVaults[0][i].condense();
-            const decryptedUserVault = await vaultHelper.decryptCondensedUserVault(userVaults[1][i], condensedUserVault, propertiesToDecrypt);
+            const decryptedUserVault = await vaultHelper.decryptCondensedUserVault(userVaults[1][i], condensedUserVault, propertiesToDecrypt, storeStatesToUse, allFields);
             if (!decryptedUserVault)
             {
                 // This really should never happen since we get verified vaults above
@@ -373,7 +375,13 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                 return TypedMethodResponse.fail(undefined, "", "No user vaults");
             }
 
-            return TypedMethodResponse.success({ vaultPreferencesStoreState: condensedVaults[0][0].vaultPreferencesStoreState.state });
+            const result = await StoreState.getUsableState('', condensedVaults[0][0].vaultPreferencesStoreState.state);
+            if (!result.success)
+            {
+                return TypedMethodResponse.fail(undefined, "", "Failed to get usable vault preferences store");
+            }
+
+            return TypedMethodResponse.success({ vaultPreferencesStoreState: result.value });
         }
     }
 

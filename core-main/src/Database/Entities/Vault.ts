@@ -119,12 +119,7 @@ export class Vault extends VaulticEntity implements IVault
     public static getDecryptableProperties()
     {
         return [
-            nameof<Vault>("name"),
-            nameof<Vault>("vaultStoreState"),
-            nameof<Vault>("passwordStoreState"),
-            nameof<Vault>("valueStoreState"),
-            nameof<Vault>("filterStoreState"),
-            nameof<Vault>("groupStoreState")
+            nameof<Vault>("name")
         ];
     }
 

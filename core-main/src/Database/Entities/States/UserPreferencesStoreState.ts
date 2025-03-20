@@ -3,6 +3,8 @@ import { StoreState } from "./StoreState";
 import { User } from "../User";
 import { IUserPreferencesStoreState } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { environment } from "../../../Environment";
 
 @Entity({ name: "userPreferencesStoreStates" })
 export class UserPreferencesStoreState extends StoreState implements IUserPreferencesStoreState

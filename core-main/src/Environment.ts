@@ -7,6 +7,7 @@ import { GeneratorUtility } from "./Types/Utilities";
 import * as PolyFills from "@vaultic/shared/Types/PolyFills";
 import { CoreCryptUtility } from "./Utilities/CoreCryptUtility";
 import { CoreHashUtility } from "./Utilities/CoreHashUtility";
+import { CoreDataUtility } from "./Utilities/CoreDataUtility";
 PolyFills.a;
 
 export interface SessionHandler
@@ -24,6 +25,7 @@ export interface InternalEnvironment
         crypt: CoreCryptUtility;
         hash: CoreHashUtility;
         generator: GeneratorUtility;
+        data: CoreDataUtility;
     };
     database:
     {

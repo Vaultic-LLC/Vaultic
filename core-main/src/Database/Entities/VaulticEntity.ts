@@ -116,6 +116,11 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         return [];
     }
 
+    public getCompressableProperties(): string[]
+    {
+        return [];
+    }
+
     public getEncryptableProperties(): string[]
     {
         return [];
@@ -242,7 +247,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         }
 
         console.time("19");
-        const serializedMakeup = JSON.vaulticStringify(signatureMakeup);
+        const serializedMakeup = JSON.stringify(signatureMakeup);
         console.timeEnd("19");
         console.time("20");
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);
