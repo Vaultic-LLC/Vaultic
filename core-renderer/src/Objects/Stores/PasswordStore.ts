@@ -1,6 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
-import { PrimaryDataTypeStore, StoreEvents, StoreState } from "./Base";
+import { PrimaryDataTypeStore, StoreEvents } from "./Base";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -12,6 +12,7 @@ import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
+import { StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IPasswordStoreState extends StoreState
 {
@@ -20,6 +21,13 @@ export interface IPasswordStoreState extends StoreState
     duplicatePasswords: Field<Map<string, Field<Map<string, Field<string>>>>>;
     currentAndSafePasswords: Field<KnownMappedFields<CurrentAndSafeStructure>>;
     passwordsByHash: Field<Map<string, Field<Map<string, Field<string>>>>>;
+};
+
+type PasswordStoreKeys = "passwordsByID" | "passwordsByDomain";
+
+export const PasswordStorePathRetriever: StorePathRetriever<PasswordStoreKeys> =
+{
+    'passwordsByID': (...ids: string[]) => `passwordsByID.${ids[0]}`
 };
 
 export type PasswordStoreEvents = StoreEvents | "onCheckPasswordBreach" | "onCheckPasswordsForBreach";

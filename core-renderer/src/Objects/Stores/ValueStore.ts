@@ -1,6 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
-import { PrimaryDataTypeStore, StoreState } from "./Base";
+import { PrimaryDataTypeStore } from "./Base";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -12,6 +12,7 @@ import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IValueStoreState extends StoreState
 {

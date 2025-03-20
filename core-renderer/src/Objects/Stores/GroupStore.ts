@@ -1,5 +1,5 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { SecondaryDataTypeStore, StoreState } from "./Base";
+import { SecondaryDataTypeStore } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { api } from "../../API";
@@ -10,6 +10,7 @@ import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IPasswordStoreState } from "./PasswordStore";
 import { IValueStoreState } from "./ValueStore";
 import { IFilterStoreState } from "./FilterStore";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IGroupStoreState extends StoreState
 {

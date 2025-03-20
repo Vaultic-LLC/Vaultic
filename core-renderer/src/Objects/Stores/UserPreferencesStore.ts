@@ -1,6 +1,6 @@
 import { ColorPalette, defaultColorPalettes, emptyColorPalette } from "../../Types/Colors";
-import { Store, StoreState } from "./Base";
-import { computed, ComputedRef, Ref, ref, watch } from "vue";
+import { Store } from "./Base";
+import { Ref, ref, watch } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
 import app, { AppStore } from "./AppStore";
@@ -10,6 +10,7 @@ import { DataType } from "../../Types/DataTypes";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { FieldTreeUtility } from "../../Types/Tree";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface PinnedDataTypes extends IFieldedObject
 {

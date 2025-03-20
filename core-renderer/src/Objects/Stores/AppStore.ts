@@ -4,7 +4,7 @@ PolyFills.a;
 
 import { Ref, ref, ComputedRef, computed, watch } from "vue";
 import { hideAll } from 'tippy.js';
-import { Store, StoreEvents, StoreState } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -25,6 +25,7 @@ import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
 import { FieldTreeUtility } from "../../Types/Tree";
+import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface AppSettings extends IFieldedObject
 {
