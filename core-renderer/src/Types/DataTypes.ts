@@ -4,12 +4,14 @@ import { Organization } from "@vaultic/shared/Types/DataTypes";
 
 export interface IFilterable
 {
-    filters: Map<string, string>;
+    /** Filters */
+    i: Map<string, string>;
 }
 
 export interface IGroupable
 {
-    groups: Map<string, string>;
+    /** Groups */
+    g: Map<string, string>;
 }
 
 export enum DataType
@@ -36,27 +38,36 @@ export interface IPrimaryDataObject extends IFilterable, IIdentifiable, IGroupab
 export interface Password extends IPrimaryDataObject, PasswordSecretProperty
 {
     [key: string]: any;
-    isVaultic: boolean;
-    login: string;
-    domain: string;
-    email: string;
-    passwordFor: string;
-    securityQuestions: Map<string, SecurityQuestion>;
-    additionalInformation: string;
-    lastModifiedTime: string;
-    isWeak: boolean;
-    isWeakMessage: number;
-    containsLogin: boolean;
+    /** Is Vaultic */
+    v: boolean;
+    /** Login */
+    l: string;
+    /** Domain */
+    d: string;
+    /** Email */
+    e: string;
+    /** Password For */
+    f: string;
+    /** Security Questions */
+    q: Map<string, SecurityQuestion>;
+    /** Additional Information */
+    a: string;
+    /** Last Modified Time */
+    t: string;
+    /** Is Weak */
+    w: boolean;
+    /** Is Weak Message */
+    m: number;
+    /** Contains Login */
+    c: boolean;
 }
-
-export const isWeakPasswordMessages: string[] = [
-
-];
 
 export interface SecurityQuestion extends IIdentifiable
 {
-    question: string;
-    answer: string;
+    /** Question */
+    q: string;
+    /** Answer */
+    a: string;
 }
 
 export enum NameValuePairType
@@ -74,24 +85,33 @@ export const nameValuePairTypesValues = Object.values(NameValuePairType);
 export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
 {
     [key: string]: any;
-    name: string;
-    valueType: NameValuePairType | undefined;
-    notifyIfWeak: boolean;
-    additionalInformation: string;
-    lastModifiedTime: string;
-    isWeak: boolean;
-    isWeakMessage: number;
+    /** Name */
+    n: string;
+    /** Value Type */
+    y: NameValuePairType | undefined;
+    /** Notify If Weak */
+    o: boolean;
+    /** Additional Information */
+    a: string;
+    /** Last Modified Time */
+    t: string;
+    /** Is Weak */
+    w: boolean;
+    /** Is Weak Message */
+    m: number;
 }
 
 export class CurrentAndSafeStructure
 {
-    current: Map<string, number>;
-    safe: Map<string, number>;
+    /** Current */
+    c: Map<string, number>;
+    /** Safe */
+    s: Map<string, number>;
 
     constructor()
     {
-        this.current = new Map();
-        this.safe = new Map();
+        this.c = new Map();
+        this.s = new Map();
     }
 }
 
@@ -119,21 +139,28 @@ export interface AtRisks
 
 export interface ISecondaryDataObject extends IIdentifiable, PrimaryDataObjectCollectionType
 {
-    type: DataType;
+    /** Type */
+    t: DataType;
 }
 
 export interface Filter extends ISecondaryDataObject
 {
-    name: string;
-    isActive: boolean;
-    conditions: Map<string, FilterCondition>;
+    /** Name */
+    n: string;
+    /** Is Active */
+    a: boolean;
+    /** Conditions */
+    c: Map<string, FilterCondition>;
 }
 
 export interface FilterCondition extends IIdentifiable
 {
-    property: string;
-    filterType: FilterConditionType | undefined;
-    value: string;
+    /** Property */
+    p: string;
+    /** Filter Type */
+    t: FilterConditionType | undefined;
+    /** Value */
+    v: string;
 }
 
 export enum EqualFilterConditionType
@@ -151,9 +178,12 @@ export enum FilterConditionType
 
 export interface Group extends ISecondaryDataObject
 {
-    name: string;
-    color: string; // hex value
-    icon: string;
+    /** Name */
+    n: string;
+    /** Color as Hex */
+    c: string;
+    /** Icon */
+    i: string;
 }
 
 export class RelatedDataTypeChanges 
@@ -181,21 +211,20 @@ export function defaultPassword(): Password
 {
     return {
         id: "",
-        isVaultic: false,
-        passwordFor: '',
-        login: '',
-        domain: '',
-        email: '',
-        password: '',
-        securityQuestions: new Map<string, SecurityQuestion>(),
-        additionalInformation: '',
-        lastModifiedTime: '',
-        isWeak: false,
-        isWeakMessage: '',
-        containsLogin: false,
-        filters: new Map(),
-        groups: new Map(),
-        checkedForBreach: false
+        v: false,
+        f: '',
+        l: '',
+        d: '',
+        e: '',
+        p: '',
+        q: new Map<string, SecurityQuestion>(),
+        a: '',
+        t: '',
+        w: false,
+        m: -1,
+        c: false,
+        i: new Map(),
+        g: new Map()
     };
 }
 
@@ -203,16 +232,16 @@ export function defaultValue(): NameValuePair
 {
     return {
         id: "",
-        name: '',
-        value: '',
-        valueType: undefined,
-        notifyIfWeak: true,
-        additionalInformation: '',
-        lastModifiedTime: '',
-        filters: new Map(),
-        groups: new Map(),
-        isWeak: false,
-        isWeakMessage: '',
+        n: '',
+        v: '',
+        y: undefined,
+        o: true,
+        a: '',
+        t: '',
+        i: new Map(),
+        g: new Map(),
+        w: false,
+        m: -1,
     };
 }
 
@@ -220,12 +249,12 @@ export function defaultFilter(type: DataType): Filter
 {
     return {
         id: "",
-        passwords: new Map(),
-        values: new Map(),
-        type: type,
-        isActive: false,
-        name: '',
-        conditions: new Map<string, FilterCondition>()
+        p: new Map(),
+        v: new Map(),
+        t: type,
+        a: false,
+        n: '',
+        c: new Map<string, FilterCondition>()
     };
 }
 
@@ -233,12 +262,12 @@ export function defaultGroup(type: DataType): Group
 {
     return {
         id: "",
-        passwords: new Map(),
-        values: new Map(),
-        name: '',
-        type: type,
-        color: '',
-        icon: ''
+        p: new Map(),
+        v: new Map(),
+        n: '',
+        t: type,
+        c: '',
+        i: ''
     };
 }
 

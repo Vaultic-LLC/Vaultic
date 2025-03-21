@@ -81,7 +81,7 @@ export default defineComponent({
     "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField', 'inputGroupAddon'],
     setup(props, ctx)
     {
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
         const id = ref(useId());
         const valuePlaceHolder = ref(props.modelValue);
         const inputIcon: Ref<any> = ref();

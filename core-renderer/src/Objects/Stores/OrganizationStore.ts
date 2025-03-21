@@ -6,7 +6,6 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 import { CreateOrganizationData, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 import app from "./AppStore";
-import { Field } from "@vaultic/shared/Types/Fields";
 import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export class OrganizationStore extends Store<StoreState>

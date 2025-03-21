@@ -74,7 +74,7 @@ export default defineComponent({
         const lineChart: Ref<any> = ref(null);
 
         const color: Ref<string> = ref(app.activePasswordValuesTable == DataType.Passwords ?
-            app.userPreferences.currentColorPalette.passwordsColor.primaryColor : app.userPreferences.currentColorPalette.valuesColor.primaryColor);
+            app.userPreferences.currentColorPalette.p.p : app.userPreferences.currentColorPalette.v.p);
 
         let lableArray: Ref<number[]> = ref(Array.from(app.currentVault.passwordStore.currentAndSafePasswordsCurrent));
         let chartOneArray: Ref<number[]> = ref(Array.from(app.currentVault.passwordStore.currentAndSafePasswordsSafe));
@@ -365,7 +365,7 @@ export default defineComponent({
                     safe: app.currentVault.passwordStore.currentAndSafePasswordsSafe
                 };
 
-                newColor = app.userPreferences.currentColorPalette.passwordsColor.primaryColor;
+                newColor = app.userPreferences.currentColorPalette.p.p;
                 table.value = "Passwords";
             }
             else
@@ -386,7 +386,7 @@ export default defineComponent({
                     safe: app.currentVault.valueStore.currentAndSafeValuesSafe
                 };
                 
-                newColor = app.userPreferences.currentColorPalette.valuesColor.primaryColor;
+                newColor = app.userPreferences.currentColorPalette.v.p;
                 table.value = "Values";
             }
 
@@ -479,13 +479,13 @@ export default defineComponent({
         {
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                updateColors(newValue.passwordsColor.primaryColor, oldValue.passwordsColor.primaryColor, 0);
-                color.value = newValue.passwordsColor.primaryColor;
+                updateColors(newValue.p.p, oldValue.p.p, 0);
+                color.value = newValue.p.p;
             }
             else if (app.activePasswordValuesTable == DataType.NameValuePairs)
             {
-                updateColors(newValue.valuesColor.primaryColor, oldValue.valuesColor.primaryColor, 0);
-                color.value = newValue.valuesColor.primaryColor;
+                updateColors(newValue.v.p, oldValue.v.p, 0);
+                color.value = newValue.v.p;
             }
         });
 

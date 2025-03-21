@@ -83,7 +83,7 @@ export default defineComponent({
             {
                 name: 'Registered Devices',
                 active: devicesAreSelected,
-                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor),
+                color: computed(() => app.userPreferences.currentColorPalette.p.p),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Devices;
@@ -92,7 +92,7 @@ export default defineComponent({
             {
                 name: 'Organizations',
                 active: computed(() => !devicesAreSelected.value),
-                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.primaryColor),
+                color: computed(() => app.userPreferences.currentColorPalette.v.p),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Organizations;

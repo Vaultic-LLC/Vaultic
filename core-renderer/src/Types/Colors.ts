@@ -11,193 +11,181 @@ export interface RGBColor
 
 export interface TableColorScheme
 {
-    primaryColor: string;
-    secondaryColorOne: string;
-    secondaryColorTwo: string;
+    /** Primary Color */
+    p: string;
+    /** Seconday Color One */
+    o: string;
+    /** Secondary Color Two */
+    t: string;
 }
 
 export interface ColorPalette
 {
     id: string;
-    active: boolean;
-    isCreated: boolean;
-    editable: boolean;
-    passwordsColor: TableColorScheme;
-    valuesColor: TableColorScheme;
-    filtersColor: string;
-    groupsColor: string;
-    backgroundColor: string;
-    tableColor: string;
-    widgetColor: string;
-    errorColor: string;
-    successColor: string;
+    /** Active */
+    a: boolean;
+    /** Is Created */
+    i: boolean;
+    /** Editable */
+    e: boolean;
+    /** Password Color */
+    p: TableColorScheme;
+    /** Value Colors */
+    v: TableColorScheme;
+    /** Filter Color */
+    f: string;
+    /** Group Color */
+    g: string;
+    /** Error Color */
+    r: string;
+    /** Success Color */
+    s: string;
 }
 
 export const emptyColorPalette: ColorPalette =
 {
     id: "m84ezgwm0",
-    active: false,
-    isCreated: false,
-    editable: false,
-    passwordsColor: {
-        primaryColor: "",
-        secondaryColorOne: "",
-        secondaryColorTwo: "",
+    a: false,
+    i: false,
+    e: false,
+    p: {
+        p: "",
+        o: "",
+        t: "",
     },
-    valuesColor: {
-        primaryColor: "",
-        secondaryColorOne: "",
-        secondaryColorTwo: "",
+    v: {
+        p: "",
+        o: "",
+        t: "",
     },
-    filtersColor: "",
-    groupsColor: "",
-    backgroundColor: "#0f111d",
-    tableColor: "#161e29",
-    widgetColor: "#2c2c3329",
-    errorColor: "",
-    successColor: ""
+    f: "",
+    g: "",
+    r: "",
+    s: ""
 }
 
 export const defaultColorPalettes: Map<string, ColorPalette> = new Map([
     ["m84ezgwm3", {
         id: "m84ezgwm3",
-        active: false,
-        isCreated: true,
-        editable: false,
-        passwordsColor: {
-            primaryColor: "#bb29ff",
-            secondaryColorOne: "#6612ec",
-            secondaryColorTwo: "#2419bf",
+        a: false,
+        i: true,
+        e: false,
+        p: {
+            p: "#bb29ff",
+            o: "#6612ec",
+            t: "#2419bf",
         },
-        valuesColor: {
-            primaryColor: "#03C4A1",
-            secondaryColorOne: "#03a7c4",
-            secondaryColorTwo: "#0374c4",
+        v: {
+            p: "#03C4A1",
+            o: "#03a7c4",
+            t: "#0374c4",
         },
-        filtersColor: "#7752FE",
-        groupsColor: "#19A7CE",
-        backgroundColor: "#0f111d",
-        tableColor: "#161e29",
-        widgetColor: "#2c2c3329",
-        errorColor: "#ef4444",
-        successColor: "#45d741"
+        f: "#7752FE",
+        g: "#19A7CE",
+        r: "#ef4444",
+        s: "#45d741"
     }],
     ["m84ezgwm7", {
         id: "m84ezgwm7",
-        active: true,
-        isCreated: true,
-        editable: false,
-        passwordsColor: {
-            primaryColor: "#9A031E",
-            secondaryColorOne: "#a712ec",
-            secondaryColorTwo: "#530101",
+        a: true,
+        i: true,
+        e: false,
+        p: {
+            p: "#9A031E",
+            o: "#a712ec",
+            t: "#530101",
         },
-        valuesColor: {
-            primaryColor: "#BF3131",
-            secondaryColorOne: "#5d0ca6",
-            secondaryColorTwo: "#a712ec",
+        v: {
+            p: "#BF3131",
+            o: "#5d0ca6",
+            t: "#a712ec",
         },
-        filtersColor: "#FB8B24",
-        groupsColor: "#E36414",
-        backgroundColor: "#0f111d",
-        tableColor: "#161e29",
-        widgetColor: "#2c2c3329",
-        errorColor: "#ef4444",
-        successColor: "#45d741"
+        f: "#FB8B24",
+        g: "#E36414",
+        r: "#ef4444",
+        s: "#45d741"
     }],
     ["m84ezgwn1", {
         id: "m84ezgwn1",
-        active: false,
-        isCreated: true,
-        editable: false,
-        passwordsColor: {
-            primaryColor: "#777777",
-            secondaryColorOne: "#bbbbbb",
-            secondaryColorTwo: "#111111",
+        a: false,
+        i: true,
+        e: false,
+        p: {
+            p: "#777777",
+            o: "#bbbbbb",
+            t: "#111111",
         },
-        valuesColor: {
-            primaryColor: "#888888",
-            secondaryColorOne: "#bbbbbb",
-            secondaryColorTwo: "#111111",
+        v: {
+            p: "#888888",
+            o: "#bbbbbb",
+            t: "#111111",
         },
-        filtersColor: "#a9b3bb",
-        groupsColor: "#8e9a98",
-        backgroundColor: "#0f111d",
-        tableColor: "#161e29",
-        widgetColor: "#2c2c3329",
-        errorColor: "#FFFFFF",
-        successColor: "#FFFFFF"
+        f: "#a9b3bb",
+        g: "#8e9a98",
+        r: "#FFFFFF",
+        s: "#FFFFFF"
     }]
 ]);
 
 export const emptyUserColorPalettes: Map<string, ColorPalette> = new Map([
     ["m84ezgwn4", {
         id: "m84ezgwn4",
-        active: false,
-        isCreated: false,
-        editable: false,
-        passwordsColor: {
-            primaryColor: "",
-            secondaryColorOne: "",
-            secondaryColorTwo: "",
+        a: false,
+        i: false,
+        e: false,
+        p: {
+            p: "",
+            o: "",
+            t: "",
         },
-        valuesColor: {
-            primaryColor: "",
-            secondaryColorOne: "",
-            secondaryColorTwo: "",
+        v: {
+            p: "",
+            o: "",
+            t: "",
         },
-        filtersColor: "",
-        groupsColor: "",
-        backgroundColor: "#0f111d",
-        tableColor: "#161e29",
-        widgetColor: "#2c2c3329",
-        errorColor: "",
-        successColor: ""
+        f: "",
+        g: "",
+        r: "",
+        s: ""
     }],
     ["m84ezgwn7", {
         id: "m84ezgwn7",
-        active: false,
-        isCreated: false,
-        editable: false,
-        passwordsColor: {
-            primaryColor: "",
-            secondaryColorOne: "",
-            secondaryColorTwo: "",
+        a: false,
+        i: false,
+        e: false,
+        p: {
+            p: "",
+            o: "",
+            t: "",
         },
-        valuesColor: {
-            primaryColor: "",
-            secondaryColorOne: "",
-            secondaryColorTwo: "",
+        v: {
+            p: "",
+            o: "",
+            t: "",
         },
-        filtersColor: "",
-        groupsColor: "",
-        backgroundColor: "#0f111d",
-        tableColor: "#161e29",
-        widgetColor: "#2c2c3329",
-        errorColor: "",
-        successColor: ""
+        f: "",
+        g: "",
+        r: "",
+        s: ""
     }],
     ["m84ezgwn10", {
         id: "m84ezgwn10",
-        active: false,
-        isCreated: false,
-        editable: false,
-        passwordsColor: {
-            primaryColor: "",
-            secondaryColorOne: "",
-            secondaryColorTwo: "",
+        a: false,
+        i: false,
+        e: false,
+        p: {
+            p: "",
+            o: "",
+            t: "",
         },
-        valuesColor: {
-            primaryColor: "",
-            secondaryColorOne: "",
-            secondaryColorTwo: "",
+        v: {
+            p: "",
+            o: "",
+            t: "",
         },
-        filtersColor: "",
-        groupsColor: "",
-        backgroundColor: "#0f111d",
-        tableColor: "#161e29",
-        widgetColor: "#2c2c3329",
-        errorColor: "",
-        successColor: ""
+        f: "",
+        g: "",
+        r: "",
+        s: ""
     }]
 ]);

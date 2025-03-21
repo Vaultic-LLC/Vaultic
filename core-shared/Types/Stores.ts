@@ -7,13 +7,13 @@ type StoreStateProperty = Field<NonArrayType<Primitive>> | FieldMap | Field<NonA
 
 export interface StoreState
 {
-    [key: string]: StoreStateProperty;
-    version: Field<number>;
+    [key: string]: any;
+    version: number;
 }
 
 export interface SimplifiedPasswordStore
 {
-    passwordsByDomain?: Map<string, Map<string, string>>;
+    o?: Map<string, Map<string, string>>;
 };
 
 export type VaultStoreStates = "vaultStoreState" | "passwordStoreState" | "valueStoreState" | "filterStoreState" | "groupStoreState";
@@ -29,33 +29,53 @@ export enum StoreStateChangeType
     Delete
 }
 
-export class PendingStoreState<T extends StoreState>
+export interface StoreStateChanges
+{
+    [key: string]: PathChange[];
+}
+
+export interface PathChange
+{
+    /** Type */
+    t: StoreStateChangeType;
+    /** Value - Add and Upate Only */
+    v?: any;
+    /** Property - Update and Delete Only */
+    p?: string;
+}
+
+export class PendingStoreState<T extends StoreState, U extends string>
 {
     state: T;
-    changes: { type: StoreStateChangeType, path: string, value: any }[];
+    retriever: StorePathRetriever<U>;
+    changes: StoreStateChanges;
     objProxyChanges: Map<string, string[]>;
 
-    constructor(state: T)
+    constructor(state: T, pathRetriever: StorePathRetriever<U>)
     {
         this.state = state;
-        this.changes = [];
+        this.retriever = pathRetriever;
+        this.changes = {};
         this.objProxyChanges = new Map();
     }
 
-    proxifyObject(path: string, obj: any)
+    proxifyObject(identifier: U, obj: any, ...ids: string[])
     {
+        const path = this.retriever[identifier](...ids);
         return new Proxy(obj, this.getHandler(path, this.objProxyChanges));
     }
 
-    commitProxyObject(path: string, updatedObj: any)
+    commitProxyObject(identifier: U, updatedObj: any, ...ids: string[])
     {
+        const path = this.retriever[identifier](...ids);
         const proxyChanges = this.objProxyChanges.get(path);
+
         if (!proxyChanges || proxyChanges.length == 0)
         {
             return;
         }
 
-        const [currentObj, _] = getObjectFromPath(path, this.state, true);
+        const currentObj = getObjectFromPath(path, this.state);
         const manager = PropertyManagerConstructor.getFor(currentObj);
 
         for (let i = 0; i < proxyChanges.length; i++)
@@ -66,51 +86,74 @@ export class PendingStoreState<T extends StoreState>
             }
 
             manager.set(proxyChanges[i], manager.get(proxyChanges[i], updatedObj), currentObj);
-            this.changes.push({
-                type: StoreStateChangeType.Update,
-                path: `${path}.${proxyChanges[i]}`,
-                value: manager.get(proxyChanges[i], updatedObj)
+
+            if (!this.changes[path])
+            {
+                this.changes[path] = [];
+            }
+
+            this.changes[path].push({
+                t: StoreStateChangeType.Update,
+                v: manager.get(proxyChanges[i], updatedObj),
+                p: proxyChanges[i]
             });
         }
     }
 
-    addValue(path: string, value: any)
+    addValue(identifier: U, property: string, value: any, ...ids: string[])
     {
-        this.changes.push({
-            type: StoreStateChangeType.Add,
-            path,
-            value
+        const path = this.retriever[identifier](...ids);
+        if (!this.changes[path])
+        {
+            this.changes[path] = [];
+        }
+
+        this.changes[path].push({
+            t: StoreStateChangeType.Add,
+            v: value,
+            p: property
         });
 
-        const [obj, property] = getObjectFromPath(path, this.state);
+        const obj = getObjectFromPath(path, this.state);
         const manager = PropertyManagerConstructor.getFor(obj);
 
         manager.set(property, value, obj);
     }
 
-    updateValue(path: string, value: any)
+    updateValue(identifier: U, property: string, value: any, ...ids: string[])
     {
-        this.changes.push({
-            type: StoreStateChangeType.Update,
-            path,
-            value
+        const path = this.retriever[identifier](...ids);
+        if (!this.changes[path])
+        {
+            this.changes[path] = [];
+        }
+
+        this.changes[path].push({
+            t: StoreStateChangeType.Update,
+            v: value,
+            p: property
         });
 
-        const [obj, property] = getObjectFromPath(path, this.state);
+        const obj = getObjectFromPath(path, this.state);
         const manager = PropertyManagerConstructor.getFor(obj);
 
         manager.set(property, value, obj);
     }
 
-    deleteValue(path: string, value: any)
+    deleteValue(identifier: U, property: string, ...ids: string[])
     {
-        this.changes.push({
-            type: StoreStateChangeType.Delete,
-            path,
-            value
+        const path = this.retriever[identifier](...ids);
+        if (!this.changes[path])
+        {
+            this.changes[path] = [];
+        }
+
+        this.changes[path].push({
+            t: StoreStateChangeType.Delete,
+            p: property
         });
 
-        const [obj, property] = getObjectFromPath(path, this.state);
+        const obj = getObjectFromPath(path, this.state);
         const manager = PropertyManagerConstructor.getFor(obj);
 
         manager.delete(property, obj);

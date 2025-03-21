@@ -106,12 +106,12 @@ export async function getExportablePasswords(color: string, masterKey: string): 
     for (let i = 0; i < app.currentVault.passwordStore.passwords.length; i++)
     {
         let password = app.currentVault.passwordStore.passwords[i];
-        if (password.isVaultic)
+        if (password.v)
         {
             continue;
         }
 
-        let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.password);
+        let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.p);
         if (!decryptedPasswordResponse.success)
         {
             showExportError();
@@ -121,16 +121,16 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         let securityQuestionQuestions: string[] = [];
         let securityQuestionAnswers: string[] = [];
 
-        for (const [key, value] of password.securityQuestions.entries())
+        for (const [key, value] of password.q.entries())
         {
-            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, value.question);
+            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, value.q);
             if (!decryptedSecurityQuestionQuestion.success)
             {
                 showExportError();
                 return "";
             }
 
-            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, value.answer);
+            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, value.a);
             if (!decryptedSecurityQuestionAnswer.success)
             {
                 showExportError();
@@ -142,12 +142,12 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         }
 
         let groups: string[] = [];
-        password.groups.forEach((v, k, map) => 
+        password.g.forEach((v, k, map) => 
         {
-            const group = app.currentVault.groupStore.getState().passwordGroupsByID.get(k);
+            const group = app.currentVault.groupStore.getState().p.get(k);
             if (group)
             {
-                groups.push(group.name);
+                groups.push(group.n);
             }
             else 
             {
@@ -155,8 +155,8 @@ export async function getExportablePasswords(color: string, masterKey: string): 
             }
         });
 
-        data.push([password.login, password.domain, password.email, password.passwordFor, decryptedPasswordResponse.value!,
-        securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.additionalInformation, groups.join(';')]);
+        data.push([password.l, password.d, password.e, password.f, decryptedPasswordResponse.value!,
+        securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.a, groups.join(';')]);
     }
 
     return await exportData(data);
@@ -171,7 +171,7 @@ export async function getExportableValues(color: string, masterKey: string): Pro
     {
         let nameValuePair = app.currentVault.valueStore.nameValuePairs[i];
 
-        let decryptedValueResponse = await cryptHelper.decrypt(masterKey, nameValuePair.value);
+        let decryptedValueResponse = await cryptHelper.decrypt(masterKey, nameValuePair.v);
         if (!decryptedValueResponse.success)
         {
             showExportError();
@@ -179,12 +179,12 @@ export async function getExportableValues(color: string, masterKey: string): Pro
         }
 
         let groups: string[] = [];
-        nameValuePair.groups.forEach((v, k, map) => 
+        nameValuePair.g.forEach((v, k, map) => 
         {
-            const group = app.currentVault.groupStore.getState().valueGroupsByID.get(k);
+            const group = app.currentVault.groupStore.getState().v.get(k);
             if (group)
             {
-                groups.push(group.name);
+                groups.push(group.n);
             }
             else 
             {
@@ -192,8 +192,8 @@ export async function getExportableValues(color: string, masterKey: string): Pro
             }
         });
 
-        data.push([nameValuePair.name, decryptedValueResponse.value!, nameValuePair.valueType ?? "",
-        nameValuePair.additionalInformation, groups.join(';')]);
+        data.push([nameValuePair.n, decryptedValueResponse.value!, nameValuePair.y ?? "",
+        nameValuePair.a, groups.join(';')]);
     }
 
     return await exportData(data);
@@ -323,7 +323,7 @@ class CSVImporter<T extends IPrimaryDataObject>
                     if (!(await this.customSetProperty(value, properties[k], cellValue)))
                     {
                         // then check groups
-                        if (properties[k].backingProperty == "groups")
+                        if (properties[k].backingProperty == "g")
                         {
                             // split groups up if the user has specified a delimiter for them, otherwise just use the entire value as the group name
                             const groups: string[] = cellValue ? properties[k].delimiter ? cellValue.split(properties[k].delimiter!) : [cellValue] : [];
@@ -341,12 +341,12 @@ class CSVImporter<T extends IPrimaryDataObject>
                                     if (!groupsAdded[groups[l]])
                                     {
                                         const group = defaultGroup(this.dataType);
-                                        group.name = groups[l];
+                                        group.n = groups[l];
 
                                         await this.saveGroup(group);
 
                                         groupId = group.id;
-                                        groupsAdded[group.name] = group.id;
+                                        groupsAdded[group.n] = group.id;
                                     }
                                     else 
                                     {
@@ -363,6 +363,7 @@ class CSVImporter<T extends IPrimaryDataObject>
                         else 
                         {
                             // default set, can just set to the value in the csv cell
+                            // @ts-ignore
                             value[properties[k].backingProperty] = cellValue;
                         }
                     }
@@ -462,8 +463,8 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                     const id = uniqueIDGenerator.generate();
                     this.temporarySecurityQuestions.set(id, {
                         id: id,
-                        question: questions[i],
-                        answer: ''
+                        q: questions[i],
+                        a: ''
                     });
                 }
             }
@@ -473,11 +474,11 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 let count = 0;
                 for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
-                    value.question = questions[count];
+                    value.q = questions[count];
                     count += 1;
                 }
 
-                value.securityQuestions = this.temporarySecurityQuestions;
+                value.q = this.temporarySecurityQuestions;
                 this.temporarySecurityQuestions = new Map<string, SecurityQuestion>();
             }
 
@@ -495,8 +496,8 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                     const id = uniqueIDGenerator.generate();
                     this.temporarySecurityQuestions.set(id, {
                         id: id,
-                        question: '',
-                        answer: answers[i],
+                        q: '',
+                        a: answers[i],
                     });
                 }
             }
@@ -506,11 +507,11 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 let count = 0;
                 for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
-                    value.answer = answers[count];
+                    value.a = answers[count];
                     count += 1;
                 }
 
-                value.securityQuestions = this.temporarySecurityQuestions;
+                value.q = this.temporarySecurityQuestions;
                 this.temporarySecurityQuestions = new Map<string, SecurityQuestion>();
             }
 
@@ -574,10 +575,10 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
 
     protected async customSetProperty(value: NameValuePair, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
     {
-        if (property.backingProperty == "valueType")
+        if (property.backingProperty == "y")
         {
             // @ts-ignore
-            value.valueType = nameValuePairTypesValues.includes(cellValue) ? cellValue : NameValuePairType.Other;
+            value.y = nameValuePairTypesValues.includes(cellValue) ? cellValue : NameValuePairType.Other;
             return true;
         }
 
@@ -587,32 +588,32 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
 
 export const importablePasswordProperties: ImportableDisplayField[] = [
     {
-        backingProperty: "login",
+        backingProperty: "l",
         displayName: "Username",
         required: true,
     },
     {
-        backingProperty: "password",
+        backingProperty: "p",
         displayName: "Password",
         required: true,
     },
     {
-        backingProperty: "passwordFor",
+        backingProperty: "f",
         displayName: "Password For",
         required: false,
     },
     {
-        backingProperty: "domain",
+        backingProperty: "d",
         displayName: "Domain",
         required: false,
     },
     {
-        backingProperty: "email",
+        backingProperty: "e",
         displayName: "Email",
         required: false,
     },
     {
-        backingProperty: "additionalInformation",
+        backingProperty: "a",
         displayName: "Additional Info",
         required: false,
     },
@@ -629,7 +630,7 @@ export const importablePasswordProperties: ImportableDisplayField[] = [
         requiresDelimiter: true
     },
     {
-        backingProperty: "groups",
+        backingProperty: "g",
         displayName: "Groups",
         required: false,
         requiresDelimiter: true
@@ -638,27 +639,27 @@ export const importablePasswordProperties: ImportableDisplayField[] = [
 
 export const importableValueProperties: ImportableDisplayField[] = [
     {
-        backingProperty: "name",
+        backingProperty: "n",
         displayName: "Name",
         required: true
     },
     {
-        backingProperty: "value",
+        backingProperty: "v",
         displayName: "Value",
         required: true
     },
     {
-        backingProperty: "valueType",
+        backingProperty: "y",
         displayName: "Type",
         required: false
     },
     {
-        backingProperty: "additionalInformation",
+        backingProperty: "a",
         displayName: "Additional Info",
         required: false
     },
     {
-        backingProperty: "groups",
+        backingProperty: "g",
         displayName: "Groups",
         required: false,
         requiresDelimiter: true

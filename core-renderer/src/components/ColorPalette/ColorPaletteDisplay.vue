@@ -63,14 +63,14 @@ export default defineComponent({
         const editButton: Ref<HTMLElement | null> = ref(null);
         const colorPalette: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[props.index]);
 
-        const primaryColor: ComputedRef<string> = computed(() => colorPalette.value.passwordsColor.primaryColor);
-        const valuesColor: ComputedRef<string> = computed(() => colorPalette.value.valuesColor.primaryColor);
+        const primaryColor: ComputedRef<string> = computed(() => colorPalette.value.p.p);
+        const valuesColor: ComputedRef<string> = computed(() => colorPalette.value.v.p);
 
         const editIconBackgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(primaryColor.value));
         const valueBackgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(valuesColor.value));
 
-        const created: ComputedRef<boolean> = computed(() => colorPalette.value.isCreated);
-        const editable: ComputedRef<boolean> = computed(() => colorPalette.value.editable);
+        const created: ComputedRef<boolean> = computed(() => colorPalette.value.i);
+        const editable: ComputedRef<boolean> = computed(() => colorPalette.value.e);
 
         const addColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const addColorGradient: Ref<string> = ref(getLinearGradientFromColor(app.userPreferences.currentPrimaryColor.value));
@@ -84,7 +84,7 @@ export default defineComponent({
         {
             return {
                 isActive: computed(() => colorPalette.value.id == app.userPreferences.currentColorPalette.id),
-                color: computed(() => colorPalette.value.passwordsColor.primaryColor),
+                color: computed(() => colorPalette.value.p.p),
                 onClick: onPaletteSelected
             }
         });
@@ -97,7 +97,7 @@ export default defineComponent({
                 return;
             }
 
-            colorPalette.value.active = true;
+            colorPalette.value.a = true;
             app.userPreferences.updateAndCommitCurrentColorPalette(colorPalette.value);
         }
 

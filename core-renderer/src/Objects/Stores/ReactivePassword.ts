@@ -17,28 +17,28 @@ export default function createReactivePassword(password: Password): ReactivePass
     const isOld: ComputedRef<boolean> = computed(() =>
     {
         const today = new Date().getTime();
-        const lastModifiedTime = Date.parse(passwordState.lastModifiedTime);
+        const lastModifiedTime = Date.parse(passwordState.t);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
-        return differenceInDays >= app.settings.oldPasswordDays;
+        return differenceInDays >= app.settings.o;
     });
 
     return {
         get id() { return passwordState.id; },
-        get login() { return passwordState.login; },
-        get domain() { return passwordState.domain; },
-        get email() { return passwordState.email; },
-        get password() { return passwordState.password; },
-        get passwordFor() { return passwordState.passwordFor; },
-        get securityQuestions() { return passwordState.securityQuestions; },
-        get additionalInformation() { return passwordState.additionalInformation; },
-        get lastModifiedTime() { return passwordState.lastModifiedTime; },
-        get filters() { return passwordState.filters; },
-        get groups() { return passwordState.groups; },
-        get isWeak() { return passwordState.isWeak; },
-        get isWeakMessage() { return passwordState.isWeakMessage; },
-        get containsLogin() { return passwordState.containsLogin; },
-        get isVaultic() { return passwordState.isVaultic; },
+        get l() { return passwordState.l; },
+        get d() { return passwordState.d; },
+        get e() { return passwordState.e; },
+        get p() { return passwordState.p; },
+        get f() { return passwordState.f; },
+        get q() { return passwordState.q; },
+        get a() { return passwordState.a; },
+        get t() { return passwordState.t; },
+        get i() { return passwordState.i; },
+        get g() { return passwordState.g; },
+        get w() { return passwordState.w; },
+        get m() { return passwordState.m; },
+        get c() { return passwordState.c; },
+        get v() { return passwordState.v; },
         isOld() { return isOld.value },
     }
 }

@@ -5,13 +5,14 @@ import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
-import { Field, IFieldedObject, IFieldObject, IIdentifiable, KnownMappedFields, NonArrayType, PrimaryDataObjectCollection, Primitive, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { PendingStoreState, StoreState } from "@vaultic/shared/Types/Stores";
+import { PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
 
 export type StoreEvents = "onChanged";
+export type StateKeys = "";
 
-export class Store<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents>
+export class Store<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
 {
     events: Dictionary<{ (...params: any[]): void }[]>;
 
@@ -48,10 +49,15 @@ export class Store<T extends KnownMappedFields<StoreState>, U extends string = S
         return state;
     }
 
-    public getPendingState(): PendingStoreState<T>
+    protected getStorePathRetriever(): StorePathRetriever<V>
+    {
+        return {} as StorePathRetriever<V>;
+    }
+
+    public getPendingState(): PendingStoreState<T, V>
     {
         const state = this.cloneState();
-        return new PendingStoreState(state);
+        return new PendingStoreState(state, this.getStorePathRetriever());
     }
 
     protected defaultState(): T
@@ -145,7 +151,8 @@ export class Store<T extends KnownMappedFields<StoreState>, U extends string = S
     }
 }
 
-export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents> extends Store<T, U>
+export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
+    extends Store<T, U, V>
 {
     protected vault: VaultStoreParameter;
 
@@ -156,7 +163,8 @@ export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, U ext
     }
 }
 
-export class DataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents> extends VaultContrainedStore<T, U>
+export class DataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
+    extends VaultContrainedStore<T, U, V>
 {
     constructor(vault: VaultStoreParameter, stateName: string)
     {
@@ -237,7 +245,8 @@ export class DataTypeStore<T extends KnownMappedFields<StoreState>, U extends st
     }
 }
 
-export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents> extends DataTypeStore<T, U>
+export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
+    extends DataTypeStore<T, U, V>
 {
     public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
     {
@@ -463,7 +472,8 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
     }
 }
 
-export class SecondaryDataTypeStore<T extends StoreState> extends DataTypeStore<T>
+export class SecondaryDataTypeStore<T extends StoreState, U extends string = StoreEvents, V extends string = StateKeys>
+    extends DataTypeStore<T, U, V>
 {
     private getSecondaryDataObjectDuplicates<T extends ISecondaryDataObject>(
         secondaryDataObject: T,

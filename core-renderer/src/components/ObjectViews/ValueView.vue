@@ -2,18 +2,18 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
-            <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name" :width="'50%'"
+            <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.n" :width="'50%'"
                 :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <div class="valueView__valueTypeContainer">
-                <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType"
+                <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.y"
                     :optionsEnum="NameValuePairType" :fadeIn="true" :width="'100%'"
                     :minWidth="'130px'" :showRandom="showRandom" :maxWidth="''" />
                 <Transition name="fade">
                     <div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
                         <CheckboxInputField class="valueView__notifyIfWeak" :label="'Notify if Weak'" :color="color"
-                            v-model="valuesState.notifyIfWeak" :fadeIn="false" :width="''" :height="'0.7vw'"
+                            v-model="valuesState.o" :fadeIn="false" :width="''" :height="'0.7vw'"
                             :minHeight="'12px'" />
                         <ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
                             :message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
@@ -23,7 +23,7 @@
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
-                v-model="valuesState.value" :isInitiallyEncrypted="isInitiallyEncrypted"
+                v-model="valuesState.v" :isInitiallyEncrypted="isInitiallyEncrypted"
                 :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
                 :required="true" :width="'50%'" :maxWidth="''" :minWidth="'150px'" @onDirty="valueIsDirty = true"  />
         </VaulticFieldset>
@@ -75,7 +75,7 @@ export default defineComponent({
         const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const valuesState: Ref<NameValuePair> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.v.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
         const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
@@ -83,11 +83,11 @@ export default defineComponent({
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
 
-        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.valueType == NameValuePairType.Passcode);
-        const showRandom: ComputedRef<boolean> = computed(() => valuesState.value.valueType == NameValuePairType.Passphrase ||
-            valuesState.value.valueType == NameValuePairType.Passcode || valuesState.value.valueType == NameValuePairType.Other);
+        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.y == NameValuePairType.Passcode);
+        const showRandom: ComputedRef<boolean> = computed(() => valuesState.value.y == NameValuePairType.Passphrase ||
+            valuesState.value.y == NameValuePairType.Passcode || valuesState.value.y == NameValuePairType.Other);
         const randomValueType: ComputedRef<string> = computed(() => 
-            valuesState.value.valueType == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
+            valuesState.value.y == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
 
         const gridDefinition: GridDefinition = 
         {
@@ -102,10 +102,10 @@ export default defineComponent({
 
         function onSave()
         {
-            valuesState.value.groups = new Map();
+            valuesState.value.g = new Map();
             selectedGroups.value.forEach(g => 
             {
-                valuesState.value.groups.set(g.backingObject!.id, g.backingObject!.id);
+                valuesState.value.g.set(g.backingObject!.id, g.backingObject!.id);
             });
 
             valueInputField.value?.toggleMask(true);
@@ -180,16 +180,16 @@ export default defineComponent({
             {
                 const option: ObjectSelectOptionModel = 
                 {
-                    label: g.name,
+                    label: g.n,
                     backingObject: g,
-                    icon: g.icon,
-                    color: g.color
+                    icon: g.i,
+                    color: g.c
                 };
 
                 return option
             });
 
-            valuesState.value.groups.forEach((v, k) => 
+            valuesState.value.g.forEach((v, k) => 
             {
                 const group = app.currentVault.groupStore.valueGroupsByID.get(k);
                 if (!group)
@@ -198,15 +198,15 @@ export default defineComponent({
                 }
 
                 selectedGroups.value.push({
-                    label: group.name,
+                    label: group.n,
                     backingObject: group,
-                    icon: group.icon,
-                    color: group.color
+                    icon: group.i,
+                    color: group.c
                 });
             });
         });
 
-        watch(() => valuesState.value.valueType, (newValue) =>
+        watch(() => valuesState.value.y, (newValue) =>
         {
             showNotifyIfWeak.value = newValue == NameValuePairType.Passcode;
         });

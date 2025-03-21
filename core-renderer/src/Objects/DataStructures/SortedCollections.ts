@@ -168,7 +168,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
 
     protected sort(notifyUpdate: boolean)
     {
-        if (this.property == "groups")
+        if (this.property == "g")
         {
             this.groupSort(notifyUpdate);
         }
@@ -180,7 +180,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
 
     search(search: string, notifyUpdate: boolean = true)
     {
-        if (this.property == "groups")
+        if (this.property == "g")
         {
             this.groupSearch(search, notifyUpdate);
         }
@@ -216,12 +216,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
             if (this.dataType == DataType.Passwords)
             {
                 this.calculatedValues =
-                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.groups, app.currentVault.groupStore.passwordGroups)));
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.g, app.currentVault.groupStore.passwordGroups)));
             }
             else if (this.dataType == DataType.NameValuePairs)
             {
                 this.calculatedValues =
-                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.groups, app.currentVault.groupStore.valuesGroups)));
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.g, app.currentVault.groupStore.valuesGroups)));
             }
         }
 
@@ -237,12 +237,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.groups.size == 0)
+                if (this.backingValues().get(a.id)?.g.size == 0)
                 {
                     return 1;
                 }
 
-                if (this.backingValues().get(b.id)?.groups.size == 0)
+                if (this.backingValues().get(b.id)?.g.size == 0)
                 {
                     return -1;
                 }
@@ -254,12 +254,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.groups.size == 0)
+                if (this.backingValues().get(a.id)?.g.size == 0)
                 {
                     return -1;
                 }
 
-                if (this.backingValues().get(b.id)?.groups.size == 0)
+                if (this.backingValues().get(b.id)?.g.size == 0)
                 {
                     return 1;
                 }
@@ -271,7 +271,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
 
     private getLowestGroup(item: TableRowModel, sortedGroups: Group[]): number
     {
-        return Math.min(...this.backingValues().get(item.id)?.groups.map((id: string) => sortedGroups.findIndex(g => g.id == id)));
+        return Math.min(...this.backingValues().get(item.id)?.g.map((id: string) => sortedGroups.findIndex(g => g.id == id)));
     }
 
     private internalGroupSearch(search: string, groupIds: Map<string, string>, allGroups: Group[]): boolean
@@ -282,7 +282,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
             return false;
         }
 
-        return groups.some(g => g.name.toLowerCase().indexOf(search.toLowerCase()) != -1);
+        return groups.some(g => g.n.toLowerCase().indexOf(search.toLowerCase()) != -1);
     }
 }
 

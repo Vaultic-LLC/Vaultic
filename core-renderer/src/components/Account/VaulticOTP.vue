@@ -38,7 +38,7 @@ export default defineComponent({
         const otpModel: Ref<string> = ref(props.modelValue);
         const otp: Ref<any> = ref();
         const background: Ref<string> = ref(widgetBackgroundHexString());
-        const currentErrorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor);
+        const currentErrorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
 
         const isValid: Ref<boolean> = ref(false);
         const invalidMessage: Ref<string> = ref('');

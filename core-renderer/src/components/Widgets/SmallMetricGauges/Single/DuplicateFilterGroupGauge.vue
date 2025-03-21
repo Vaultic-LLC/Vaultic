@@ -34,7 +34,7 @@ export default defineComponent({
                                 title: 'Duplicate',
                                 filledAmount: app.currentVault.groupStore.duplicateValueGroups.size,
                                 totalAmount: app.currentVault.groupStore.valuesGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                color: app.userPreferences.currentColorPalette.g,
                                 active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -48,7 +48,7 @@ export default defineComponent({
                                 title: 'Duplicate',
                                 filledAmount: app.currentVault.filterStore.duplicateValueFilters.size,
                                 totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                color: app.userPreferences.currentColorPalette.f,
                                 active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -66,7 +66,7 @@ export default defineComponent({
                                 title: 'Duplicate',
                                 filledAmount: app.currentVault.groupStore.duplicatePasswordGroups.size,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
-                                color: app.userPreferences.currentColorPalette.groupsColor,
+                                color: app.userPreferences.currentColorPalette.g,
                                 active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {
@@ -80,7 +80,7 @@ export default defineComponent({
                                 title: 'Duplicate',
                                 filledAmount: app.currentVault.filterStore.duplicatePasswordFilters.size,
                                 totalAmount: app.currentVault.filterStore.passwordFilters.length,
-                                color: app.userPreferences.currentColorPalette.filtersColor,
+                                color: app.userPreferences.currentColorPalette.f,
                                 active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Duplicate,
                                 onClick: function ()
                                 {

@@ -32,7 +32,6 @@ export default defineComponent({
         const state: ComputedRef<any> = computed(() => props.state);
 
         const inputType: ComputedRef<PropertyType> = computed(() => props.state["inputType"]);
-        const value: Ref<string> = ref(state.value.value);
         const inputEnumType: ComputedRef<any> = computed(() => state.value.inputEnumType);
 
         watch(() => inputType.value, () =>
@@ -45,7 +44,6 @@ export default defineComponent({
             modelField,
             state,
             inputType,
-            value,
             inputEnumType
 		};
 	},

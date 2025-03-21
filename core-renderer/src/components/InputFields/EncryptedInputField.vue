@@ -77,24 +77,24 @@
                             :width="'100%'" :maxWidth="''" :maxHeight="''" :hideClear="true" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Passphrase">
-                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.passphraseSeperator" 
+                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.e" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
                         <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
-                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.includeNumbersInRandomPassword" 
+                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.n" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Special Characters'" 
-                            v-model="appSettings.includeSpecialCharactersInRandomPassword" :width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="appSettings.s" :width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Include Ambiguous Characters'"
-                            v-model="appSettings.includeAmbiguousCharactersInRandomPassword":width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="appSettings.m":width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <div class="encryptedInputFieldContainer__randomPasswordPopupButtons">
@@ -159,7 +159,7 @@ export default defineComponent({
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
         const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
 
         const popupIsShowing: Ref<boolean> = ref(false);
 
@@ -194,7 +194,7 @@ export default defineComponent({
         const randomValueType: Ref<RandomValueType> = ref(props.randomValueType ?? RandomValueType.Password);
         const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
 
-        const length: ComputedRef<number> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.randomValueLength : appSettings.value.randomPhraseLength);
+        const length: ComputedRef<number> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.v : appSettings.value.r);
 
         function unlock()
         {
@@ -291,8 +291,7 @@ export default defineComponent({
         async function onGenerateRandomPasswordOrPhrase()
         {
             randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value,
-                appSettings.value.includeNumbersInRandomPassword, appSettings.value.includeSpecialCharactersInRandomPassword, 
-                appSettings.value.includeAmbiguousCharactersInRandomPassword, appSettings.value.passphraseSeperator);
+                appSettings.value.n, appSettings.value.s, appSettings.value.m, appSettings.value.e);
         }
 
         function confirmRandomPasswordOrPhrase()

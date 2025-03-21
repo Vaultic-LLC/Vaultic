@@ -6,10 +6,10 @@
                 <VaulticAccordionContent>
                     <div class="settingsView__inputSection">
                         <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
-                            v-model="appSettings.autoLockTime" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
+                            v-model="appSettings.a" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
                             :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
                         <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
-                            :color="color" v-model="appSettings.multipleFilterBehavior" :optionsEnum="FilterStatus"
+                            :color="color" v-model="appSettings.f" :optionsEnum="FilterStatus"
                             fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                             :disabled="readOnly" />
                     </div>                    
@@ -20,11 +20,11 @@
                 <VaulticAccordionContent>
                     <div class="settingsView__inputSection">
                         <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
-                            v-model.number="appSettings.oldPasswordDays" :inputType="'number'" :width="'10vw'"
+                            v-model.number="appSettings.o" :inputType="'number'" :width="'10vw'"
                             :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforceOldPasswordDays" />
                         <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
-                            :label="'% Filled Metric for Pulse'" v-model.number="appSettings.percentMetricForPulse"
+                            :label="'% Filled Metric for Pulse'" v-model.number="appSettings.p"
                             :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                             :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
@@ -33,18 +33,18 @@
                     </div>
                     <div class="settingsView__inputSection">
                         <TextInputField :color="color"
-                            :label="'Random Password Length'" v-model.number="appSettings.randomValueLength"
+                            :label="'Random Password Length'" v-model.number="appSettings.v"
                             :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                             :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforceMinRandomPasswordLength" />
                         <TextInputField class="settingsView__randomPassphraseLength" :color="color"
-                            :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength"
+                            :label="'Random Passphrase Length'" v-model.number="appSettings.r"
                             :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                             :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforceMinRandomPassphraseLength" />
                     </div>
                     <div class="settingsView__inputSection">
-                        <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.passphraseSeperator"
+                        <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.e"
                             :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
                         <EnumInputField v-if="isOnline" class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
                             :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
@@ -53,19 +53,19 @@
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                            :label="'Remember Master Key While Logged In'" v-model="appSettings.temporarilyStoreMasterKey" />
+                            :label="'Remember Master Key While Logged In'" v-model="appSettings.t" />
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                            :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.includeAmbiguousCharactersInRandomPassword" />
+                            :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.m" />
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Numbers in Random Passwords'" v-model="appSettings.includeNumbersInRandomPassword" />
+                                :label="'Include Numbers in Random Passwords'" v-model="appSettings.n" />
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword" />
+                                :label="'Include Special Characters in Random Password'" v-model="appSettings.s" />
                     </div>               
                 </VaulticAccordionContent>
             </VaulticAccordionPanel>
@@ -188,7 +188,7 @@ export default defineComponent({
         async function onAuthenticationSuccessful(masterKey: string)
         {
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
-            const originalTemporarilyStoreMasterKey = app.settings.temporarilyStoreMasterKey;
+            const originalTemporarilyStoreMasterKey = app.settings.t;
             
             //check / save shared settinsg first in case username is already taken
             if (!await checkUpdateSettings())
@@ -215,9 +215,9 @@ export default defineComponent({
 
             const succeeded = await transaction.commit(masterKey, app.isOnline);
             if (succeeded && 
-                originalTemporarilyStoreMasterKey != app.settings.temporarilyStoreMasterKey)
+                originalTemporarilyStoreMasterKey != app.settings.t)
             {
-                if (app.settings.temporarilyStoreMasterKey)
+                if (app.settings.t)
                 {
                     await api.cache.setMasterKey(masterKey);
                 }

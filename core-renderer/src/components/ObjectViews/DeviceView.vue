@@ -52,7 +52,7 @@ export default defineComponent({
     {
         const refreshKey: Ref<string> = ref("");
         const deviceState: Ref<ClientDevice> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultClientDevice());
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
 
         const buttonText: ComputedRef<string> = computed(() => props.creating ? 'Register': 'Save');
         const requiresMFA: Ref<DisplayRequiresMFA> = ref(requiresMFAToDisplay(deviceState.value.RequiresMFA));

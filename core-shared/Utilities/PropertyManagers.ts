@@ -86,18 +86,16 @@ export class ArrayPropertyManager extends ObjectPropertyManager<Array<any>>
     }
 }
 
-export function getObjectFromPath(path: string, start: any, full: boolean = false): [any, string]
+export function getObjectFromPath(path: string, start: any): any
 {
     const paths = path.split('.');
-
     let lastObject = start;
-    const till = full ? paths.length : paths.length - 1;
 
-    for (let i = 0; i < till; i++)
+    for (let i = 0; i < paths.length; i++)
     {
         const manager = PropertyManagerConstructor.getFor(lastObject);
         lastObject = manager.get(paths[i], lastObject as unknown as ManagableObject);
     }
 
-    return [lastObject, paths[paths.length - 1]];
+    return lastObject;
 }

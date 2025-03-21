@@ -18,25 +18,25 @@ export default function createReactiveValue(nameValuePair: NameValuePair): React
     const isOld: ComputedRef<boolean> = computed(() =>
     {
         const today = new Date().getTime();
-        const lastModifiedTime = Date.parse(nameValuePairState.lastModifiedTime);
+        const lastModifiedTime = Date.parse(nameValuePairState.t);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
-        return differenceInDays >= app.settings.oldPasswordDays;
+        return differenceInDays >= app.settings.o;
     });
 
 
     return {
         get id() { return nameValuePairState.id; },
-        get name() { return nameValuePairState.name; },
-        get value() { return nameValuePairState.value; },
-        get valueType() { return nameValuePairState.valueType; },
-        get notifyIfWeak() { return nameValuePairState.notifyIfWeak; },
-        get additionalInformation() { return nameValuePairState.additionalInformation; },
-        get lastModifiedTime() { return nameValuePairState.lastModifiedTime; },
-        get filters() { return nameValuePairState.filters; },
-        get groups() { return nameValuePairState.groups; },
-        get isWeak() { return nameValuePairState.isWeak; },
-        get isWeakMessage() { return nameValuePairState.isWeakMessage; },
+        get n() { return nameValuePairState.n; },
+        get v() { return nameValuePairState.v; },
+        get y() { return nameValuePairState.y; },
+        get o() { return nameValuePairState.o; },
+        get a() { return nameValuePairState.a; },
+        get t() { return nameValuePairState.t; },
+        get i() { return nameValuePairState.i; },
+        get g() { return nameValuePairState.g; },
+        get w() { return nameValuePairState.w; },
+        get m() { return nameValuePairState.m; },
         get key() { return nameValuePairState.key; },
         isOld() { return isOld.value; },
     };

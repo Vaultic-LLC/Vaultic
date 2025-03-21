@@ -123,7 +123,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
             {
                 return {
                     id: p.id,
-                    domain: p.domain
+                    domain: p.d
                 }
             })
         };
@@ -161,7 +161,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
             LimitedPasswords:
                 [{
                     id: password.id,
-                    domain: password.domain
+                    domain: password.d
                 }]
         };
 

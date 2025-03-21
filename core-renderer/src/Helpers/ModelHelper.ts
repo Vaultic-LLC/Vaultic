@@ -117,9 +117,9 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         {
             const group: Group = v as unknown as Group;
             const groupModels: GroupIconModel[] = [{
-                icon: group.icon,
-                toolTipText: group.name,
-                color: group.color
+                icon: group.i,
+                toolTipText: group.n,
+                color: group.c
             }];
 
             if (app.userPreferences.pinnedGroups.has(v.id))
@@ -151,7 +151,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
             case AtRiskType.Old:
                 app.currentVault.passwordStore.oldPasswords.value.forEach(p =>
                 {
-                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.oldPasswordDays} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0]);
+                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.o} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0]);
                 });
                 break;
             case AtRiskType.Duplicate:
@@ -164,7 +164,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                 app.currentVault.passwordStore.weakPasswords.value.forEach(p =>
                 {
                     const passwordStore: ReactivePassword = app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0];
-                    addAtRiskValues(getIsWeakMessage(passwordStore.isWeakMessage, "Password"), passwordStore);
+                    addAtRiskValues(getIsWeakMessage(passwordStore.m, "Password"), passwordStore);
                 });
                 break;
             case AtRiskType.ContainsLogin:
@@ -194,7 +194,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
             case AtRiskType.Old:
                 app.currentVault.valueStore.oldNameValuePairs.value.forEach(v =>
                 {
-                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.oldPasswordDays} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.o} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
                 });
                 break;
             case AtRiskType.Duplicate:
@@ -207,14 +207,14 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                 app.currentVault.valueStore.weakPassphraseValues.value.forEach(v =>
                 {
                     const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
-                    addAtRiskValues(getIsWeakMessage(valueStore.isWeakMessage, "Value"), app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+                    addAtRiskValues(getIsWeakMessage(valueStore.m, "Value"), app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
                 });
                 break;
             case AtRiskType.Weak:
                 app.currentVault.valueStore.weakPasscodeValues.value.forEach(v =>
                 {
                     const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
-                    addAtRiskValues(getIsWeakMessage(valueStore.isWeakMessage, "Value"), app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
+                    addAtRiskValues(getIsWeakMessage(valueStore.m, "Value"), app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
                 });
         }
     }
@@ -241,7 +241,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         const groupModels: GroupIconModel[] = [];
         if (app.activePasswordValuesTable == DataType.Passwords)
         {
-            v.groups.forEach((v, k, map) => 
+            v.g.forEach((v, k, map) => 
             {
                 const group = app.currentVault.groupStore.passwordGroupsByID.get(k);
                 if (!group)
@@ -267,7 +267,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
         else 
         {
-            v.groups.forEach((v, k, map) => 
+            v.g.forEach((v, k, map) => 
             {
                 const group = app.currentVault.groupStore.valueGroupsByID.get(k);
                 if (!group)
@@ -298,15 +298,15 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         if (currentModels.length < 4)
         {
             currentModels.push({
-                icon: group.icon,
-                toolTipText: group.name,
-                color: group.color
+                icon: group.i,
+                toolTipText: group.n,
+                color: group.c
             });
         }
         else
         {
             currentModels[3].icon = `+${currentModels.length - 3}`;
-            currentModels[3].toolTipText += `, ${group.name}`;
+            currentModels[3].toolTipText += `, ${group.n}`;
             currentModels[3].color = color
         }
     }

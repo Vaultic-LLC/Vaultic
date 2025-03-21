@@ -3,22 +3,22 @@
         :gridDefinition="gridDefinition">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-                v-model="passwordState.passwordFor" :width="'50%'" :maxWidth="''" :maxHeight="''" />
-            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login"
+                v-model="passwordState.f" :width="'50%'" :maxWidth="''" :maxHeight="''" />
+            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.l"
                 :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
-                :label="'Password'" v-model="passwordState.password" :isInitiallyEncrypted="isInitiallyEncrypted" 
+                :label="'Password'" v-model="passwordState.p" :isInitiallyEncrypted="isInitiallyEncrypted" 
                 :showRandom="true" :showUnlock="true" :required="true"
                 showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
-            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain"
+            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.d"
                 :showToolTip="true"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
                 :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email"
+            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.e"
                 :width="'50%'" :isEmailField="true" :maxWidth="''" :maxHeight="''" />
             <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
                 :maxWidth="''" :maxHeight="''" />
@@ -61,11 +61,7 @@ import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
-import { PendingStoreState } from '@vaultic/shared/Types/Stores';
-import { IPasswordStoreState } from '../../Objects/Stores/PasswordStore';
-import { nameof } from '@vaultic/shared/Helpers/TypeScriptHelper';
 
 export default defineComponent({
     name: "PasswordView",
@@ -85,14 +81,14 @@ export default defineComponent({
     {
         const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 
-        const pendingStoreState: PendingStoreState<IPasswordStoreState> = app.currentVault.passwordStore.getPendingState();
+        const pendingStoreState = app.currentVault.passwordStore.getPendingState();
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const passwordState: Ref<Password> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const securityQuestions: SortedCollection = new SortedCollection([], () => passwordState.value.securityQuestions);
+        const securityQuestions: SortedCollection = new SortedCollection([], () => passwordState.value.q);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
 
         const passwordIsDirty: Ref<boolean> = ref(false);
@@ -130,10 +126,10 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = [];
-            models.push(new TableColumnModel("Question", "question").setComponent("EncryptedInputCell")
+            models.push(new TableColumnModel("Question", "q").setComponent("EncryptedInputCell")
                 .setData({ color: color.value, label: 'Question', onDirty: onQuestionDirty }).setSortable(false));
 
-            models.push(new TableColumnModel("Answer", "answer").setComponent("EncryptedInputCell")
+            models.push(new TableColumnModel("Answer", "a").setComponent("EncryptedInputCell")
                 .setData({ color: color.value, label: 'Answer', onDirty: onAnswerDirty }).setSortable(false)); 
         
             return models;
@@ -154,7 +150,7 @@ export default defineComponent({
         function setSecurityQuestionModels()
         {
             const securityQuestionRows: TableRowModel[] = [];
-            passwordState.value.securityQuestions.forEach((v, k) => 
+            passwordState.value.q.forEach((v, k) => 
             {
                 securityQuestionRows.push(new TableRowModel(k, false, undefined, 
                 {
@@ -181,10 +177,10 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(color.value, "Saving Password");
 
-            passwordState.value.groups = new Map();
+            passwordState.value.g = new Map();
             selectedGroups.value.forEach(g => 
             {
-                passwordState.value.groups.set(g.backingObject!.id, g.backingObject!.id);
+                passwordState.value.g.set(g.backingObject!.id, g.backingObject!.id);
             });
 
             if (props.creating)
@@ -246,11 +242,11 @@ export default defineComponent({
             const id = uniqueIDGenerator.generate();
             const securityQuestion: SecurityQuestion = {
                 id: id,
-                question: '',
-                answer: '',
+                q: '',
+                a: '',
             };
 
-            passwordState.value.securityQuestions.set(id, securityQuestion);
+            passwordState.value.q.set(id, securityQuestion);
 
             const securityQuestionModel: TableRowModel = new TableRowModel(securityQuestion.id, undefined, undefined, {
                 isInitiallyEncrypted: false
@@ -278,7 +274,7 @@ export default defineComponent({
 
         function onDeleteSecurityQuestion(securityQuestion: SecurityQuestion)
         {
-            passwordState.value.securityQuestions.delete(securityQuestion.id);
+            passwordState.value.q.delete(securityQuestion.id);
             if (dirtySecurityQuestionQuestions.value.includes(securityQuestion.id))
             {
                 dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(securityQuestion.id), 1);
@@ -300,16 +296,16 @@ export default defineComponent({
             {
                 const option: ObjectSelectOptionModel = 
                 {
-                    label: g.name,
+                    label: g.n,
                     backingObject: g,
-                    icon: g.icon,
-                    color: g.color
+                    icon: g.i,
+                    color: g.c
                 };
 
                 return option
             });
 
-            passwordState.value.groups.forEach((v, k) => 
+            passwordState.value.g.forEach((v, k) => 
             {
                 const group = app.currentVault.groupStore.passwordGroupsByID.get(k);
                 if (!group)
@@ -318,16 +314,16 @@ export default defineComponent({
                 }
 
                 selectedGroups.value.push({
-                    label: group.name,
+                    label: group.n,
                     backingObject: group,
-                    icon: group.icon,
-                    color: group.color
+                    icon: group.i,
+                    color: group.c
                 });
             });
 
             if (!props.creating)
             {
-                passwordState.value = pendingStoreState.proxifyObject("passwordsByID.", passwordState.value);
+                passwordState.value = pendingStoreState.proxifyObject("passwordsByIDPassword", passwordState.value, passwordState.value.id);
             }
         });
 

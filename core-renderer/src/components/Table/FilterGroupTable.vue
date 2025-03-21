@@ -60,17 +60,17 @@ export default defineComponent({
         const tabToOpenOnAdd: ComputedRef<number> = computed(() => app.activeFilterGroupsTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
-        const passwordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "name");
-        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "name");
+        const passwordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "n");
+        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "n");
 
-        const passwordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "name");
-        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "name");
+        const passwordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "n");
+        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "n");
 
-        const valueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "name");
-        const pinnedValueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "name");
+        const valueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "n");
+        const pinnedValueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "n");
 
-        const valueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "name");
-        const pinnedValueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "name");
+        const valueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "n");
+        const pinnedValueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "n");
 
         const showEditGroupPopup: Ref<boolean> = ref(false);
         const currentlyEditingGroupModel: Ref<Group | any> = ref({});
@@ -91,10 +91,10 @@ export default defineComponent({
             switch (app.activeFilterGroupsTable)
             {
                 case DataType.Groups:
-                    return app.userPreferences.currentColorPalette.groupsColor;
+                    return app.userPreferences.currentColorPalette.g;
                 case DataType.Filters:
                 default:
-                    return app.userPreferences.currentColorPalette.filtersColor;
+                    return app.userPreferences.currentColorPalette.f;
             }
         });
 
@@ -142,13 +142,13 @@ export default defineComponent({
             {
                 name: 'Filters',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Filters),
-                color: computed(() => app.userPreferences.currentColorPalette.filtersColor),
+                color: computed(() => app.userPreferences.currentColorPalette.f),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Filters; }
             },
             {
                 name: 'Groups',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Groups),
-                color: computed(() => app.userPreferences.currentColorPalette.groupsColor),
+                color: computed(() => app.userPreferences.currentColorPalette.g),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Groups; }
             }
         ];
@@ -163,14 +163,14 @@ export default defineComponent({
             const models: TableColumnModel[] = [];
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                models.push(new TableColumnModel("Active", "isActive").setComponent("SelectorButtonTableRowCell")
+                models.push(new TableColumnModel("Active", "a").setComponent("SelectorButtonTableRowCell")
                     .setData({ 'color': color, onClick: toggleFilter, startingWidth: '105px' }).setOnClick(toggleFilter));
 
-                models.push(new TableColumnModel("Name", "name"));
+                models.push(new TableColumnModel("Name", "n"));
             }
             else
             {
-                models.push(new TableColumnModel("Name", "name"));
+                models.push(new TableColumnModel("Name", "n"));
                 models.push(new TableColumnModel("Icon", "").setIsGroupIconCell(true).setData({ 'color': color })
                     .setSortable(false));
             }

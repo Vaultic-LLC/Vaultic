@@ -46,7 +46,6 @@ import { SmallMetricGaugeModel, TableColumnModel, TableDataSources, TableRowMode
 import app from "../../Objects/Stores/AppStore";
 import { AtRiskType, DataType, Password, VaultAndBreachCount } from '../../Types/DataTypes';
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 
 export default defineComponent({
@@ -61,7 +60,7 @@ export default defineComponent({
     setup()
     {
         const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.primaryColor);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const scanning: Ref<boolean> = ref(false);
         const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
         let backingVaultsAndBreachCount: Map<string, VaultAndBreachCount> = new Map();

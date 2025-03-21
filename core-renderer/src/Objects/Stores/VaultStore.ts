@@ -8,7 +8,6 @@ import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { FieldTreeUtility } from "../../Types/Tree";
 import { StoreState } from "@vaultic/shared/Types/Stores";
 
 const MAX_LOGIN_RECORDS = 500;
@@ -16,8 +15,8 @@ export interface VaultSettings { }
 
 interface IVaultStoreState extends StoreState
 {
-    settings: VaultSettings;
-    loginHistory: Map<number, number>;
+    s: VaultSettings;
+    l: Map<number, number>;
 }
 
 export type VaultStoreState = IVaultStoreState;
@@ -52,7 +51,7 @@ export class BaseVaultStore<V extends PasswordStore,
     get passwordsByDomain() { return this.internalPasswordsByDomain; }
     set passwordsByDomain(value) { this.internalPasswordsByDomain = value; }
 
-    get settings() { return this.state.settings; }
+    get settings() { return this.state.s; }
 
     get passwordStore() { return this.internalPasswordStore; }
     get valueStore() { return this.internalValueStore; }
@@ -86,8 +85,8 @@ export class BaseVaultStore<V extends PasswordStore,
     {
         return {
             version: 0,
-            settings: {},
-            loginHistory: new Map<number, number>()
+            s: {},
+            l: new Map<number, number>()
         };
     }
 }
@@ -133,7 +132,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     protected internalReactiveUserVaultID: ComputedRef<number>;
 
     get reactiveUserVaultID() { return this.internalReactiveUserVaultID.value; }
-    get loginHistory() { return this.state.loginHistory; }
+    get loginHistory() { return this.state.l; }
 
     constructor()
     {
@@ -191,19 +190,19 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     private async recordLogin(pendingState: VaultStoreState, dateTime: number): Promise<void>
     {
-        if (pendingState.loginHistory.size >= MAX_LOGIN_RECORDS)
+        if (pendingState.l.size >= MAX_LOGIN_RECORDS)
         {
-            for (let i = pendingState.loginHistory.size - MAX_LOGIN_RECORDS; i >= 0; i--)
+            for (let i = pendingState.l.size - MAX_LOGIN_RECORDS; i >= 0; i--)
             {
-                const result = pendingState.loginHistory.entries().next();
+                const result = pendingState.l.entries().next();
                 if (result.value)
                 {
-                    pendingState.loginHistory.delete(result.value[0]);
+                    pendingState.l.delete(result.value[0]);
                 }
             }
         }
 
-        pendingState.loginHistory.set(dateTime, dateTime);
+        pendingState.l.set(dateTime, dateTime);
     }
 }
 

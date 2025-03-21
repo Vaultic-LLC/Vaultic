@@ -17,11 +17,11 @@ export type IFieldedObject = IIdentifiable & IFieldObject;
 export class FieldedObject implements IFieldedObject
 {
     [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
-    id: Field<string>;
+    id: string;
 
     constructor() 
     {
-        this.id = Field.create("");
+        this.id = "";
     }
 };
 
@@ -47,8 +47,13 @@ export type NonArrayType<T> = T extends any[] ? never : T;
 // @ts-ignore
 export type FieldMap = Field<Map<any, Field<NonArrayType<Primitive | KnownMappedFields<IFieldedObject> | FieldMap>>>>;
 
-export type PrimaryDataObjectCollection = "passwords" | "values";
-export type SecondaryDataObjectCollection = "filters" | "groups";
+// p = Passwords
+// v = Values
+export type PrimaryDataObjectCollection = "p" | "v";
+
+// i = Filters
+// g = Groups
+export type SecondaryDataObjectCollection = "i" | "g";
 
 // Keyed by password / value ID
 export type PrimaryDataObjectCollectionType =
@@ -63,12 +68,12 @@ export type SecondaryDataObjectCollectionType =
     }
 
 // We use this to know what fields need to be specially handled when serializing / parsing objects into JSON
-export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataObjectCollection | "passwordsByID" | "valuesByID" |
-    "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "userColorPalettes" | "pinnedDataTypes" |
-    "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
-    "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" |
-    "pinnedOrganizations" | "passwordsByDomain" | "passwordsByHash" | "valuesByHash";
+export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataObjectCollection | "p" | "v" |
+    "t" |
+    "f" | "g" | "v" | "d" |
+    "current" | "safe" | "d" | "w" | "l" | "u" |
+    "c" | "q" | "d" | "m" |
+    "o" | "h";
 
 export type KnownUnfieldedMappedFieldsType = "membersByUserID" | "vaultIDsByVaultID";
 

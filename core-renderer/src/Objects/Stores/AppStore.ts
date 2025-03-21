@@ -23,28 +23,40 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
-import { FieldTreeUtility } from "../../Types/Tree";
 import { StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface AppSettings
 {
-    userColorPalettes: Map<string, ColorPalette>;
-    autoLockTime: AutoLockTime;
-    multipleFilterBehavior: FilterStatus;
-    oldPasswordDays: number;
-    percentMetricForPulse: number;
-    randomValueLength: number;
-    randomPhraseLength: number;
-    includeNumbersInRandomPassword: boolean;
-    includeSpecialCharactersInRandomPassword: boolean;
-    includeAmbiguousCharactersInRandomPassword: boolean;
-    passphraseSeperator: string;
-    temporarilyStoreMasterKey: boolean;
+    /** User Color Palettes */
+    c: Map<string, ColorPalette>;
+    /** Auto Lock Time */
+    a: AutoLockTime;
+    /** Multiple Filter Behavior */
+    f: FilterStatus;
+    /** Old Password Days */
+    o: number;
+    /** Percent Metric For Pulse */
+    p: number;
+    /** Random Value Length */
+    v: number;
+    /** Random Phrase Lengh */
+    r: number;
+    /** Include Numbers In Random Password */
+    n: boolean;
+    /** Include Special Characters In random Password */
+    s: boolean;
+    /** Include Ambiguous Charactesr in Random Password */
+    m: boolean;
+    /** Passphrase Seperator */
+    e: string;
+    /** Temporarily Store Master Key */
+    t: boolean;
 }
 
 export interface IAppStoreState extends StoreState
 {
-    settings: AppSettings;
+    /** Settings */
+    s: AppSettings;
 }
 
 export type AppStoreState = IAppStoreState;
@@ -94,7 +106,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalActiveDataType: ComputedRef<DataType>;
 
     get loadedUser() { return this.internaLoadedUser; }
-    get settings() { return this.state.settings; }
+    get settings() { return this.state.s; }
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
     get activeAppView() { return this.internalActiveAppView.value; }
@@ -135,7 +147,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(this.state.settings.userColorPalettes.valueArray()))
+        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(this.state.s.c.valueArray()))
 
         this.internalUserVaults = ref([]);
         this.internalUserVaultsByVaultID = computed(() => this.internalUserVaults.value.reduce((map: Map<number, DisplayVault>, dv: DisplayVault) =>
@@ -170,7 +182,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalCanShowSubscriptionWidgets = computed(() => this.isOnline && this.internalUserLicense.value == LicenseStatus.Active);
         this.internalUserLicense = ref(LicenseStatus.Unknown);
 
-        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.autoLockTime));
+        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.s.a));
 
         watch(() => this.internalAutoLockNumberTime.value, (newValue) => 
         {
@@ -185,19 +197,19 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     {
         return {
             version: 0,
-            settings: {
-                userColorPalettes: emptyUserColorPalettes,
-                autoLockTime: AutoLockTime.OneMinute,
-                multipleFilterBehavior: FilterStatus.Or,
-                oldPasswordDays: 365,
-                percentMetricForPulse: 1,
-                randomValueLength: 25,
-                randomPhraseLength: 7,
-                includeNumbersInRandomPassword: true,
-                includeSpecialCharactersInRandomPassword: true,
-                includeAmbiguousCharactersInRandomPassword: true,
-                passphraseSeperator: '-',
-                temporarilyStoreMasterKey: true
+            s: {
+                c: emptyUserColorPalettes,
+                a: AutoLockTime.OneMinute,
+                f: FilterStatus.Or,
+                o: 365,
+                p: 1,
+                v: 25,
+                r: 7,
+                n: true,
+                s: true,
+                m: true,
+                e: '-',
+                t: true
             }
         };
     }
@@ -305,7 +317,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.getUserInfo();
         }
 
-        if (this.state.settings.temporarilyStoreMasterKey)
+        if (this.state.s.t)
         {
             const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
             if (!setMasterKeyResponse.success)
@@ -363,7 +375,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             isReadOnly: vaultData.isReadOnly,
             lastUsed: setAsActive,
             type: getVaultType(vaultData),
-            passwordsByDomain: (JSON.vaulticParse(vaultData.passwordStoreState) as PasswordStoreState).passwordsByDomain
+            passwordsByDomain: (JSON.vaulticParse(vaultData.passwordStoreState) as PasswordStoreState).o
         });
 
         this.internalUserVaults.value = temp;
@@ -524,7 +536,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         const transaction = new StoreUpdateTransaction();
         const pendingState = this.cloneState();
 
-        let oldColorPalette: ColorPalette | undefined = pendingState.settings.userColorPalettes.get(colorPalette.id);
+        let oldColorPalette: ColorPalette | undefined = pendingState.s.c.get(colorPalette.id);
         if (!oldColorPalette)
         {
             return Promise.resolve();

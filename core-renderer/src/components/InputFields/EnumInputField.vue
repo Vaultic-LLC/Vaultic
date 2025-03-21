@@ -86,7 +86,7 @@ export default defineComponent({
         const id = ref(useId());
         const refreshKey: Ref<string> = ref('');
 
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
         const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
 
         const options: ComputedRef<any[]> = computed(() => 

@@ -1,9 +1,9 @@
 <template>
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition">
-        <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name"
+        <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.n"
             :width="'50%'" :maxWidth="''" />
-        <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color"
+        <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.c"
             :width="'50%'" :minHeight="''" :minWidth="'125px'" :maxWidth="''" />
         <ObjectSingleSelect :label="'Icon'" :color="groupColor" v-model="selectedIcon"
             :options="allIcons" :width="'50%'" :minWidth="'125px'" :maxWidth="''" @update:model-value="onIconSelected" />
@@ -40,7 +40,7 @@ export default defineComponent({
     {
         const refreshKey: Ref<string> = ref("");
         const groupState: Ref<Group> = ref(props.model);
-        const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.groupsColor);
+        const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.g);
 
         const selectLabel: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values");
         const selectedDataObjectOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
@@ -76,18 +76,18 @@ export default defineComponent({
 
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                groupState.value.passwords = new Map();
+                groupState.value.p = new Map();
                 selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.passwords.set(g.backingObject!.id, g.backingObject!.id);
+                    groupState.value.p.set(g.backingObject!.id, g.backingObject!.id);
                 });
             }
             else 
             {
-                groupState.value.values = new Map();
+                groupState.value.v = new Map();
                 selectedDataObjectOptions.value.forEach(g => 
                 {
-                    groupState.value.values.set(g.backingObject!.id, g.backingObject!.id);
+                    groupState.value.v.set(g.backingObject!.id, g.backingObject!.id);
                 });
             }
 
@@ -95,7 +95,7 @@ export default defineComponent({
             {
                 if (await app.currentVault.groupStore.addGroup(key, groupState.value))
                 {
-                    groupState.value = defaultGroup(groupState.value.type);
+                    groupState.value = defaultGroup(groupState.value.t);
                     refreshKey.value = Date.now().toString();
                     selectedDataObjectOptions.value = [];
 
@@ -143,12 +143,12 @@ export default defineComponent({
 
         function onIconSelected(model: ObjectSelectOptionModel)
         {
-            groupState.value.icon = model?.icon ?? "";
+            groupState.value.i = model?.icon ?? "";
         }
 
         onMounted(() =>
         {
-            const foundIcon = icons.filter(i => i.icon == groupState.value.icon);
+            const foundIcon = icons.filter(i => i.icon == groupState.value.i);
             if (foundIcon.length == 1)
             {
                 selectedIcon.value = foundIcon[0];
@@ -160,14 +160,14 @@ export default defineComponent({
                 {
                     const option: ObjectSelectOptionModel = 
                     {
-                        label: p.passwordFor,
+                        label: p.f,
                         backingObject: p,
                     };
 
                     return option
                 });
 
-                groupState.value.passwords.forEach((v, k, map) => 
+                groupState.value.p.forEach((v, k, map) => 
                 {
                     const password = app.currentVault.passwordStore.passwordsByID.get(k);
                     if (!password)
@@ -176,7 +176,7 @@ export default defineComponent({
                     }
 
                     selectedDataObjectOptions.value.push({
-                        label: password.passwordFor,
+                        label: password.f,
                         backingObject: password,
                     });
                 });
@@ -187,14 +187,14 @@ export default defineComponent({
                 {
                     const option: ObjectSelectOptionModel = 
                     {
-                        label: v.name,
+                        label: v.n,
                         backingObject: v,
                     };
 
                     return option
                 });
 
-                groupState.value.values.forEach((v, k, map) => 
+                groupState.value.v.forEach((v, k, map) => 
                 {
                     const value = app.currentVault.valueStore.nameValuePairsByID.get(k);
                     if (!value)
@@ -203,7 +203,7 @@ export default defineComponent({
                     }
 
                     selectedDataObjectOptions.value.push({
-                        label: value.name,
+                        label: value.n,
                         backingObject: value,
                     });
                 });

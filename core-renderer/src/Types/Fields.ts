@@ -1,15 +1,14 @@
 import { NameValuePairType } from "./DataTypes";
-import { Field } from "@vaultic/shared/Types/Fields";
 
-export type SecretProperty = "password" | "value";
+export type SecretProperty = "p" | "v";
 
 export type SecretPropertyType<T extends SecretProperty> =
     {
         [K in T]: string;
     }
 
-export interface PasswordSecretProperty extends SecretPropertyType<"password"> { };
-export interface ValueSecretProperty extends SecretPropertyType<"value"> { }
+export interface PasswordSecretProperty extends SecretPropertyType<"p"> { };
+export interface ValueSecretProperty extends SecretPropertyType<"v"> { }
 
 export interface DisplayField
 {
@@ -48,32 +47,32 @@ export interface PropertySelectorDisplayFields extends DisplayField
 
 export const FilterablePasswordProperties: PropertySelectorDisplayFields[] = [
     {
-        backingProperty: "passwordFor",
+        backingProperty: "f",
         displayName: "Password For",
         type: PropertyType.String,
     },
     {
-        backingProperty: "domain",
+        backingProperty: "d",
         displayName: "Domain",
         type: PropertyType.String,
     },
     {
-        backingProperty: "email",
+        backingProperty: "e",
         displayName: "Email",
         type: PropertyType.String,
     },
     {
-        backingProperty: "login",
+        backingProperty: "l",
         displayName: "Username",
         type: PropertyType.String,
     },
     {
-        backingProperty: "additionalInformation",
+        backingProperty: "a",
         displayName: "Additional Info",
         type: PropertyType.String,
     },
     {
-        backingProperty: "groups",
+        backingProperty: "g",
         displayName: "Group Name",
         type: PropertyType.Object,
     }
@@ -81,23 +80,23 @@ export const FilterablePasswordProperties: PropertySelectorDisplayFields[] = [
 
 export const FilterableValueProperties: PropertySelectorDisplayFields[] = [
     {
-        backingProperty: "name",
+        backingProperty: "n",
         displayName: "Name",
         type: PropertyType.String,
     },
     {
-        backingProperty: "additionalInformation",
+        backingProperty: "a",
         displayName: "Additional Info",
         type: PropertyType.String,
     },
     {
-        backingProperty: "valueType",
+        backingProperty: "y",
         displayName: "Type",
         type: PropertyType.Enum,
         enum: NameValuePairType,
     },
     {
-        backingProperty: "groups",
+        backingProperty: "g",
         displayName: "Group Name",
         type: PropertyType.Object,
     }
