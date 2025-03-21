@@ -8,27 +8,27 @@ import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface PinnedDataTypes
 {
     /** Pinned Filters */
-    f: Map<string, string>;
+    f: DictionaryAsList;
     /** Pinned Groups */
-    g: Map<string, string>;
+    g: DictionaryAsList;
     /** Pinned Passwords */
-    p: Map<string, string>;
+    p: DictionaryAsList;
     /** Pinned Values */
-    v: Map<string, string>;
+    v: DictionaryAsList;
 }
 
 // just used for validation
 const emptyDataTypes: PinnedDataTypes =
 {
-    f: new Map<string, string>(),
-    g: new Map<string, string>(),
-    p: new Map<string, string>(),
-    v: new Map<string, string>(),
+    f: {},
+    g: {},
+    p: {},
+    v: {},
 };
 
 interface IUserPreferencesStoreState extends StoreState
@@ -36,9 +36,9 @@ interface IUserPreferencesStoreState extends StoreState
     /** Current Color Palette */
     c: ColorPalette;
     /** Pinned Data Typtes Keyed by UserVaultID */
-    t: Map<number, PinnedDataTypes>;
+    t: { [key: string]: PinnedDataTypes };
     /** Pinned Organizations */
-    o: Map<number, number>;
+    o: DictionaryAsList;
 }
 
 export type UserPreferencesStoreState = IUserPreferencesStoreState;

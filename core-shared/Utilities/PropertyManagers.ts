@@ -17,6 +17,47 @@ export class PropertyManagerConstructor
     }
 }
 
+/** Typed Object Helper Methods */
+export class OH
+{
+    static size<T extends { [key: string]: any }>(obj: T): number
+    {
+        return Object.keys(obj).length;
+    }
+
+    static mapWhere<T extends { [key: string]: any }, U>(obj: T, predicate: (value: T[keyof T]) => boolean, select: (value: T[keyof T]) => U): U[]
+    {
+        const values: U[] = [];
+        Object.values(obj).forEach(v =>
+        {
+            if (predicate(v))
+            {
+                values.push(select(v));
+            }
+        });
+
+        return values;
+    }
+
+    static forEachKey<T extends { [key: string]: any }>(obj: T, predicate: (key: string) => void)
+    {
+        const keys = Object.keys(obj);
+        for (let i = 0; i < keys.length; i++)
+        {
+            predicate(keys[i]);
+        }
+    }
+
+    static forEachValue<T extends { [key: string]: any }>(obj: T, predicate: (value: T[keyof T]) => void)
+    {
+        const values = Object.values(obj);
+        for (let i = 0; i < values.length; i++)
+        {
+            predicate(values[i]);
+        }
+    }
+}
+
 export class ObjectPropertyManager<T extends { [key: string | number]: any }>
 {
     keys(obj: T): any[]

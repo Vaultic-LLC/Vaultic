@@ -8,7 +8,7 @@ import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, StoreState } from "@vaultic/shared/Types/Stores";
 
 const MAX_LOGIN_RECORDS = 500;
 export interface VaultSettings { }
@@ -16,7 +16,7 @@ export interface VaultSettings { }
 interface IVaultStoreState extends StoreState
 {
     s: VaultSettings;
-    l: Map<number, number>;
+    l: DictionaryAsList;
 }
 
 export type VaultStoreState = IVaultStoreState;
@@ -32,7 +32,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
     protected internalVaultID: number;
-    protected internalPasswordsByDomain: Map<string, Map<string, string>> | undefined;
+    protected internalPasswordsByDomain: DoubleKeyedObject | undefined;
 
     protected internalPasswordStore: V;
     protected internalValueStore: W;

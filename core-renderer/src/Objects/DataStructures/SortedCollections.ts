@@ -6,7 +6,7 @@ export class SortedCollection
 {
     descending: boolean | undefined;
     property: string | undefined;
-    backingValues: () => Map<any, any>;
+    backingValues: () => { [key: string | number]: any };
 
     values: TableRowModel[];                // shouldn't ever be modified, kept as a source of truth
     calculatedValues: TableRowModel[];      // Calculated values to show
@@ -14,7 +14,7 @@ export class SortedCollection
     searchText: string;
     onUpdate: (() => void) | undefined;
 
-    constructor(values: TableRowModel[], backingValues: () => Map<any, any>, property?: string, descending?: boolean)
+    constructor(values: TableRowModel[], backingValues: () => { [key: string | number]: any }, property?: string, descending?: boolean)
     {
         this.descending = descending !== undefined ? descending : true;
         this.property = property;
@@ -28,7 +28,7 @@ export class SortedCollection
 
     public getBackingObject(id: any)
     {
-        return this.backingValues()?.get(id);
+        return this.backingValues()?.[id]
     }
 
     public getBackingObjectProperty(id: string | number, prop: string)
@@ -144,7 +144,7 @@ export class SortedCollection
 
 export class FieldedSortedCollection extends SortedCollection
 {
-    constructor(values: TableRowModel[], backingValues: () => Map<any, any>, property?: string, descending?: boolean)
+    constructor(values: TableRowModel[], backingValues: () => { [key: string | number]: any }, property?: string, descending?: boolean)
     {
         super(values, backingValues, property, descending)
     }
@@ -160,7 +160,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
     private dataType: DataType;
 
     constructor(dataType: DataType, values: TableRowModel[],
-        backingValues: () => Map<any, any>, property?: string, descending?: boolean)
+        backingValues: () => { [key: string | number]: any }, property?: string, descending?: boolean)
     {
         super(values, backingValues, property, descending);
         this.dataType = dataType;
@@ -216,12 +216,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
             if (this.dataType == DataType.Passwords)
             {
                 this.calculatedValues =
-                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.g, app.currentVault.groupStore.passwordGroups)));
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues()[v.id]?.g, app.currentVault.groupStore.passwordGroups)));
             }
             else if (this.dataType == DataType.NameValuePairs)
             {
                 this.calculatedValues =
-                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues().get(v.id)?.g, app.currentVault.groupStore.valuesGroups)));
+                    Array.from(this.values.filter(v => this.internalGroupSearch(this.searchText, this.backingValues()[v.id]?.g, app.currentVault.groupStore.valuesGroups)));
             }
         }
 
@@ -237,12 +237,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.g.size == 0)
+                if (this.backingValues()[a.id]?.g.size == 0)
                 {
                     return 1;
                 }
 
-                if (this.backingValues().get(b.id)?.g.size == 0)
+                if (this.backingValues()[b.id]?.g.size == 0)
                 {
                     return -1;
                 }
@@ -254,12 +254,12 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.g.size == 0)
+                if (this.backingValues()[a.id]?.g.size == 0)
                 {
                     return -1;
                 }
 
-                if (this.backingValues().get(b.id)?.g.size == 0)
+                if (this.backingValues()[b.id]?.g.size == 0)
                 {
                     return 1;
                 }
@@ -271,7 +271,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
 
     private getLowestGroup(item: TableRowModel, sortedGroups: Group[]): number
     {
-        return Math.min(...this.backingValues().get(item.id)?.g.map((id: string) => sortedGroups.findIndex(g => g.id == id)));
+        return Math.min(...this.backingValues()[item.id]?.g.map((id: string) => sortedGroups.findIndex(g => g.id == id)));
     }
 
     private internalGroupSearch(search: string, groupIds: Map<string, string>, allGroups: Group[]): boolean
@@ -318,36 +318,36 @@ export class VaultListSortedCollection extends SortedCollection
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues()[a.id]?.vaultIDsByVaultID.size == 0)
                 {
                     return 1;
                 }
 
-                if (this.backingValues().get(b.id)?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues()[b.id]?.vaultIDsByVaultID.size == 0)
                 {
                     return -1;
                 }
 
-                return getLowestVault(this.backingValues().get(a.id)?.vaultIDsByVaultID) >=
-                    getLowestVault(this.backingValues().get(b.id)?.vaultIDsByVaultID) ? 1 : -1;
+                return getLowestVault(this.backingValues()[a.id]?.vaultIDsByVaultID) >=
+                    getLowestVault(this.backingValues()[b.id]?.vaultIDsByVaultID) ? 1 : -1;
             });
         }
         else
         {
             this.values = this.values.sort((a, b) =>
             {
-                if (this.backingValues().get(a.id)?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues()[a.id]?.vaultIDsByVaultID.size == 0)
                 {
                     return -1;
                 }
 
-                if (this.backingValues().get(b.id)?.vaultIDsByVaultID.size == 0)
+                if (this.backingValues()[b.id]?.vaultIDsByVaultID.size == 0)
                 {
                     return 1;
                 }
 
-                return getLowestVault(this.backingValues().get(a.id)?.vaultIDsByVaultID) <=
-                    getLowestVault(this.backingValues().get(b.id)?.vaultIDsByVaultID) ? 1 : -1;
+                return getLowestVault(this.backingValues()[a.id]?.vaultIDsByVaultID) <=
+                    getLowestVault(this.backingValues()[b.id]?.vaultIDsByVaultID) ? 1 : -1;
             });
         }
 
@@ -370,7 +370,7 @@ export class VaultListSortedCollection extends SortedCollection
         {
             this.calculatedValues = Array.from(this.values.filter(v =>
             {
-                const vaultIDs: Map<number, number> | undefined = this.backingValues().get(v.id)?.vaultIDsByVaultID;
+                const vaultIDs: Map<number, number> | undefined = this.backingValues()[v.id]?.vaultIDsByVaultID;
                 if (vaultIDs)
                 {
                     for (const [key, _] of vaultIDs.entries())

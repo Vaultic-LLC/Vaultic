@@ -21,6 +21,7 @@ import SmallMetricGauge from '../../../../components/Dashboard/SmallMetricGauge.
 import { SmallMetricGaugeModel } from '../../../../Types/Models';
 import app from "../../../../Objects/Stores/AppStore";
 import { DataType, AtRiskType } from '../../../../Types/DataTypes';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "PasswordValueGauges",
@@ -60,9 +61,9 @@ export default defineComponent({
                         });
                     models.push(
                         {
-                            key: `vdup${app.currentVault.valueStore.duplicateNameValuePairs.size}${app.currentVault.valueStore.nameValuePairs.length}`,
+                            key: `vdup${OH.size(app.currentVault.valueStore.duplicateNameValuePairs)}${app.currentVault.valueStore.nameValuePairs.length}`,
                             title: 'Duplicate',
-                            filledAmount: app.currentVault.valueStore.duplicateNameValuePairs.size,
+                            filledAmount: OH.size(app.currentVault.valueStore.duplicateNameValuePairs),
                             totalAmount: app.currentVault.valueStore.nameValuePairs.length,
                             color: app.userPreferences.currentColorPalette.v.p,
                             active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.Duplicate,
@@ -115,9 +116,9 @@ export default defineComponent({
                         });
                     models.push(
                         {
-                            key: `pdup${app.currentVault.passwordStore.duplicatePasswords.size}${app.currentVault.passwordStore.passwords.length}`,
+                            key: `pdup${OH.size(app.currentVault.passwordStore.duplicatePasswords)}${app.currentVault.passwordStore.passwords.length}`,
                             title: 'Duplicate',
-                            filledAmount: app.currentVault.passwordStore.duplicatePasswords.size,
+                            filledAmount: OH.size(app.currentVault.passwordStore.duplicatePasswords),
                             totalAmount: app.currentVault.passwordStore.passwords.length,
                             color: app.userPreferences.currentColorPalette.p.p,
                             active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Duplicate,

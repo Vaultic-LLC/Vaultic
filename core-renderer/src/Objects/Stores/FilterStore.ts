@@ -8,22 +8,22 @@ import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IFilterStoreState extends StoreState
 {
     /** Password Filters By ID */
-    p: Map<string, Filter>;
+    p: { [key: string]: Filter };
     /** Value Filters By ID */
-    v: Map<string, Filter>;
+    v: { [key: string]: Filter };
     /** Empty Password Filtesr */
-    w: Map<string, string>;
+    w: DictionaryAsList;
     /** Empty Value Filters */
-    l: Map<string, string>;
+    l: DictionaryAsList;
     /** Duplicate Password Filters */
-    o: Map<string, Map<string, string>>;
+    o: DoubleKeyedObject;
     /** Duplicate Value Filters */
-    u: Map<string, Map<string, string>>;
+    u: DoubleKeyedObject;
 }
 
 export type FilterStoreState = KnownMappedFields<IFilterStoreState>;
@@ -39,7 +39,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
     {
         return {
             version: 0,
-            p: new Map<string, Filter>(),
+            p: {},
             v: new Map<string, Filter>(),
             w: new Map<string, string>(),
             l: new Map<string, string>(),
@@ -297,7 +297,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
 
     private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable>(
         filtersToSync: Map<string, Filter>,
-        primaryDataObjects: Map<string, T>,
+        primaryDataObjects: { [key: string]: T },
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         currentEmptyFilters: Map<string, string>,
         currentDuplicateFilters: Map<string, Map<string, string>>,

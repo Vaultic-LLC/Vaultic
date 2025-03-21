@@ -9,22 +9,22 @@ import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IPasswordStoreState } from "./PasswordStore";
 import { IValueStoreState } from "./ValueStore";
 import { IFilterStoreState } from "./FilterStore";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, StoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IGroupStoreState extends StoreState
 {
     /** Password Groups By ID */
-    p: Map<string, Group>;
+    p: { [key: string]: Group };
     /** PasswordFiltersByID */
-    v: Map<string, Group>;
+    v: { [key: string]: Group };
     /** Empty Password Groups */
-    w: Map<string, string>;
+    w: DictionaryAsList;
     /** Empty Value Groups */
-    l: Map<string, string>;
+    l: DictionaryAsList;
     /** Duplicate Password Groups */
-    o: Map<string, Map<string, string>>;
+    o: DoubleKeyedObject;
     /** Duplicate Value Groups */
-    u: Map<string, Map<string, string>>;
+    u: DoubleKeyedObject;
 }
 
 export type GroupStoreState = IGroupStoreState;
@@ -49,12 +49,12 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
     {
         return {
             version: 0,
-            p: new Map<string, Group>(),
-            v: new Map<string, Group>(),
-            w: new Map<string, string>(),
-            l: new Map<string, string>(),
-            o: new Map<string, Map<string, string>>(),
-            u: new Map<string, Map<string, string>>(),
+            p: {},
+            v: {},
+            w: {},
+            l: {},
+            o: {},
+            u: {},
         };
     }
 

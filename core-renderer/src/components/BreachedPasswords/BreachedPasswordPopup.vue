@@ -113,7 +113,7 @@ export default defineComponent({
                 dateString.value = `${dateBreached.getUTCMonth() + 1}/${dateBreached.getUTCDay() + 1}/${dateBreached.getUTCFullYear()}`;
             }
 
-            const foundPassword: ReactivePassword | undefined = app.currentVault.passwordStore.getState().p.get(props.passwordID);
+            const foundPassword: ReactivePassword | undefined = app.currentVault.passwordStore.getState().p[props.passwordID];
             if (foundPassword)
             {
                 password.value = foundPassword;

@@ -7,23 +7,25 @@ import { AtRiskType, DataType, Filter, Group, ISecondaryDataObject, RelatedDataT
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
 import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export type StoreEvents = "onChanged";
-export type StateKeys = "";
 
-export class Store<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
+export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys, U extends string = StoreEvents>
 {
     events: Dictionary<{ (...params: any[]): void }[]>;
 
     protected state: Reactive<T>;
+    protected retriever: StorePathRetriever<K> | undefined;
     private internalStateName: string;
 
     get stateName() { return this.internalStateName; }
 
-    constructor(stateName: string)
+    constructor(stateName: string, retriever: StorePathRetriever<K> | undefined = undefined)
     {
         this.state = reactive(this.defaultState());
+        this.retriever = retriever;
         this.internalStateName = stateName;
         this.events = {};
     }
@@ -49,15 +51,15 @@ export class Store<T extends KnownMappedFields<StoreState>, U extends string = S
         return state;
     }
 
-    protected getStorePathRetriever(): StorePathRetriever<V>
+    public getPendingState(): PendingStoreState<T, K> | undefined
     {
-        return {} as StorePathRetriever<V>;
-    }
+        if (!this.retriever)
+        {
+            return;
+        }
 
-    public getPendingState(): PendingStoreState<T, V>
-    {
         const state = this.cloneState();
-        return new PendingStoreState(state, this.getStorePathRetriever());
+        return new PendingStoreState(state, this.retriever);
     }
 
     protected defaultState(): T
@@ -151,24 +153,24 @@ export class Store<T extends KnownMappedFields<StoreState>, U extends string = S
     }
 }
 
-export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
-    extends Store<T, U, V>
+export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, K extends StateKeys, U extends string = StoreEvents>
+    extends Store<T, K, U>
 {
     protected vault: VaultStoreParameter;
 
-    constructor(vault: VaultStoreParameter, stateName: string)
+    constructor(vault: VaultStoreParameter, stateName: string, retriever: StorePathRetriever<K>)
     {
-        super(stateName);
+        super(stateName, retriever);
         this.vault = vault;
     }
 }
 
-export class DataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
-    extends VaultContrainedStore<T, U, V>
+export class DataTypeStore<T extends KnownMappedFields<StoreState>, K extends StateKeys, U extends string = StoreEvents>
+    extends VaultContrainedStore<T, K, U>
 {
-    constructor(vault: VaultStoreParameter, stateName: string)
+    constructor(vault: VaultStoreParameter, stateName: string, retriever: StorePathRetriever<K>)
     {
-        super(vault, stateName);
+        super(vault, stateName, retriever);
     }
 
     public resetToDefault()
@@ -245,42 +247,47 @@ export class DataTypeStore<T extends KnownMappedFields<StoreState>, U extends st
     }
 }
 
-export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U extends string = StoreEvents, V extends string = StateKeys>
-    extends DataTypeStore<T, U, V>
+export interface PrimarydataTypeStoreStateKeys extends StateKeys
+{
+    'dataTypes': '',
+    'dataTypesByHash': '';
+    'dataTypesByHash.dataTypes': '';
+    'duplicateDataTypes': '';
+    'duplicateDataTypes.dataTypes': '';
+};
+
+export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents>
+    extends DataTypeStore<T, K, U>
 {
     public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
     {
         const pendingState = this.cloneState();
-        this.getPrimaryDataTypesByID(pendingState).forEach((v, k, map) =>
+        OH.forEachValue(this.getPrimaryDataTypesByID(pendingState), (v => 
         {
             v[secondaryObjectCollection].delete(secondaryObjectID);
-        });
+        }));
 
         return pendingState;
     }
 
-    protected getPrimaryDataTypesByID(state: T): Map<string, SecondaryDataObjectCollectionType>
+    protected getPrimaryDataTypesByID(state: T): { [key: string]: SecondaryDataObjectCollectionType }
     {
         return {} as any;
     }
 
-    protected async checkUpdateDuplicatePrimaryObjects<T extends IIdentifiable & SecretPropertyType<U>, U extends SecretProperty>(
+    protected async checkUpdateDuplicatePrimaryObjects<D extends IIdentifiable & SecretPropertyType<U>, U extends SecretProperty>(
         masterKey: string,
-        primaryDataObject: T,
-        valuesByHash: Map<string, Map<string, string>>,
-        allPrimaryObjects: Map<string, T>,
+        primaryDataObject: D,
         secretProperty: U,
-        allDuplicates: Map<string, Map<string, string>>): Promise<void>
+        pendingStoreState: PendingStoreState<T, K>): Promise<void>
     {
+        //const allDuplicates: DoubleKeyedObject = pendingStoreState.getObject('duplicateDataTypes');
+        const tempDuplicates: DoubleKeyedObject = {};
+
         // first make sure we have a list so no null reference exceptions
-        if (!allDuplicates.get(primaryDataObject.id))
+        if (!allDuplicates.has(primaryDataObject.id))
         {
-            allDuplicates.set(primaryDataObject.id, new Map());
-        }
-        else
-        {
-            // for change tracking
-            //allDuplicates.get(primaryDataObject.id.value)!.updateAndBubble();
+            tempDuplicates[primaryDataObject.id] = {};
         }
 
         const hashID = await this.getIdentifyingHash(primaryDataObject[secretProperty]);
@@ -290,13 +297,15 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
             return;
         }
 
-        const valuesForHash = valuesByHash.get(hashID);
+        const allPrimaryObjects: { [key: string]: D } = pendingStoreState.getObject('dataTypes');
+        const valuesByHash: DoubleKeyedObject = pendingStoreState.getObject('dataTypesByHash');
 
+        const valuesForHash = valuesByHash[hashID];
         if (valuesForHash)
         {
-            for (const [key, _] of valuesForHash.entries())
+            for (const [key, _] of Object.entries(valuesForHash))
             {
-                let tempPrimaryObject: T | undefined = allPrimaryObjects.get(key);
+                let tempPrimaryObject: D | undefined = allPrimaryObjects[key];
                 if (!tempPrimaryObject)
                 {
                     continue;
@@ -311,9 +320,9 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
                 }
 
                 // make sure we have a valid list before doing any checking
-                if (!allDuplicates.get(currentId))
+                if (!allDuplicates.has(currentId))
                 {
-                    allDuplicates.set(currentId, new Map());
+                    allDuplicates[currentId] = {};
                 }
 
                 const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject[secretProperty]);
@@ -326,23 +335,31 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
                 if (response.value == primaryDataObject[secretProperty])
                 {
                     // updating the list for the current primaryObject to include the duplicate primaryObjects id
-                    if (!allDuplicates.get(primaryDataObject.id)?.has(currentId))
+                    if (!allDuplicates[primaryDataObject.id])
                     {
-                        allDuplicates.get(primaryDataObject.id)?.set(currentId, currentId);
+                        const newDuplicate: DictionaryAsList = {};
+                        newDuplicate[currentId] = true;
+
+                        pendingStoreState.addValue('duplicateDataTypes', primaryDataObject.id, newDuplicate);
+                    }
+                    else if (!allDuplicates[primaryDataObject.id].has(currentId))
+                    {
+                        pendingStoreState.addValue('duplicateDataTypes.dataTypes', currentId, true, primaryDataObject.id);
                     }
 
+
                     // updating the duplciate primaryObjects list to include the current primaryObjects id
-                    if (!allDuplicates.get(currentId)?.has(primaryDataObject.id))
+                    if (!allDuplicates[currentId]?.has(primaryDataObject.id))
                     {
-                        allDuplicates.get(currentId)?.set(primaryDataObject.id, currentId);
+                        allDuplicates[currentId][primaryDataObject.id] = true;
                     }
                 }
                 else
                 {
-                    if (allDuplicates.get(primaryDataObject.id)?.has(currentId))
+                    if (allDuplicates[primaryDataObject.id]?.has(currentId))
                     {
                         // remove old duplicate id from current primary objects list since it is no longer a duplicate
-                        allDuplicates.get(primaryDataObject.id)?.delete(currentId);
+                        delete allDuplicates[primaryDataObject.id][currentId];
                     }
 
                     if (allDuplicates.get(currentId)?.has(primaryDataObject.id))
@@ -380,7 +397,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
     // usually checkUpdateDuplicatePrimaryObjects handles this but we don't call that if the secret property wasn't updated since 
     // we know duplicate values can't change. We still want to update their modified times though for change tracking so that if the backing 
     // password / value was deleted on another device before it was updated, they are retrained and so are the duplicates
-    protected checkUpdateDuplicatePrimaryObjectsModifiedTime(primaryDataObjectID: string, allDuplicates: Map<string, Map<string, string>>)
+    protected checkUpdateDuplicatePrimaryObjectsModifiedTime(primaryDataObjectID: string, allDuplicates: DoubleKeyedObject)
     {
         if (!allDuplicates.has(primaryDataObjectID))
         {
@@ -401,7 +418,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
 
     protected checkRemoveFromDuplicate<T extends IIdentifiable>(
         primaryDataObject: T,
-        allDuplicates: Map<string, Map<string, string>>)
+        allDuplicates: DoubleKeyedObject)
     {
         if (!allDuplicates.has(primaryDataObject.id))
         {
@@ -425,9 +442,14 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
         allDuplicates.delete(primaryDataObject.id);
     }
 
-    protected async updateValuesByHash<T extends IIdentifiable & SecretPropertyType<U>, U extends SecretProperty>
-        (valuesByHash: Map<string, Map<string, string>>, secretProperty: U, newValue?: T, currentValue?: T)
+    protected async updateValuesByHash<W extends IIdentifiable & SecretPropertyType<X>, X extends SecretProperty>(
+        pendingStoreState: PendingStoreState<T, K>,
+        secretProperty: X,
+        newValue?: W,
+        currentValue?: W)
     {
+        const dataTypesByHash: DoubleKeyedObject = pendingStoreState.getObject("dataTypesByHash");
+
         if (newValue)
         {
             const hashID = await this.getIdentifyingHash(newValue[secretProperty]);
@@ -437,15 +459,20 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
                 return;
             }
 
-            if (!valuesByHash.has(hashID))
+            if (!dataTypesByHash.has(hashID))
             {
-                valuesByHash.set(hashID, new Map());
-            }
+                const newHashEntry: DictionaryAsList = {};
+                newHashEntry[newValue.id] = true;
 
-            const valuesForHash = valuesByHash.get(hashID);
-            if (!valuesForHash!.has(newValue.id))
+                pendingStoreState.addValue("dataTypesByHash", hashID, newHashEntry);
+            }
+            else
             {
-                valuesForHash!.set(newValue.id, newValue.id);
+                const valuesForHash = dataTypesByHash[hashID];
+                if (!valuesForHash!.has(newValue.id))
+                {
+                    pendingStoreState.addValue('dataTypesByHash.dataTypes', newValue.id, true, hashID);
+                }
             }
         }
 
@@ -458,14 +485,17 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, U ext
                 return;
             }
 
-            const valuesForHash = valuesByHash.get(hashID);
-
+            const valuesForHash = dataTypesByHash[hashID];
             if (valuesForHash && valuesForHash.has(currentValue.id))
             {
-                valuesForHash.delete(currentValue.id);
-                if (valuesForHash.size == 0)
+                // We are deleting the last value, delete everything
+                if (OH.size(valuesForHash) == 1)
                 {
-                    valuesByHash.delete(hashID);
+                    pendingStoreState.deleteValue('dataTypesByHash', hashID);
+                }
+                else
+                {
+                    pendingStoreState.deleteValue('dataTypesByHash.dataTypes', currentValue.id, hashID);
                 }
             }
         }

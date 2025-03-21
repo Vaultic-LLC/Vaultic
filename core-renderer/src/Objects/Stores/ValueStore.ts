@@ -11,18 +11,19 @@ import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/s
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { DoubleKeyedObject, StoreState } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IValueStoreState extends StoreState
 {
     /** Values By ID */
-    v: Map<string, ReactiveValue>;
+    v: { [key: string]: ReactiveValue };
     /** Duplicate Values */
-    d: Map<string, Map<string, string>>;
+    d: DoubleKeyedObject;
     /** Current And Safe Values */
     c: CurrentAndSafeStructure;
     /** Values By Hash */
-    h: Map<string, Map<string, string>>;
+    h: DoubleKeyedObject;
 }
 
 export type ValueStoreState = KnownMappedFields<IValueStoreState>;
@@ -34,7 +35,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         super(vault, "valueStoreState");
     }
 
-    protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): Map<string, SecondaryDataObjectCollectionType>
+    protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): { [key: string]: SecondaryDataObjectCollectionType }
     {
         return state.v;
     }
@@ -43,10 +44,10 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
     {
         return {
             version: 0,
-            v: new Map<string, ReactiveValue>(),
-            d: new Map<string, Map<string, string>>(),
+            v: {},
+            d: {},
             c: new CurrentAndSafeStructure(),
-            h: new Map<string, Map<string, string>>()
+            h: {}
         };
     }
 
@@ -275,15 +276,15 @@ export class ReactiveValueStore extends ValueStore
     {
         super(vault);
 
-        this.internalNameValuePairs = computed(() => this.state.v.valueArray());
+        this.internalNameValuePairs = computed(() => Object.values(this.state.v));
 
-        this.internalOldNameValuePairs = computed(() => this.state.v.mapWhere((k, v) => v.isOld(), (k, v) => v.id));
+        this.internalOldNameValuePairs = computed(() => OH.mapWhere(this.state.v, (v) => v.isOld(), (v) => v.id));
 
         this.internalWeakPassphraseValues = computed(() =>
-            this.state.v.mapWhere((k, v) => v.y == NameValuePairType.Passphrase && v.w, (k, v) => v.id));
+            OH.mapWhere(this.state.v, (v) => v.y == NameValuePairType.Passphrase && v.w, (v) => v.id));
 
         this.internalWeakPasscodeValues = computed(() =>
-            this.state.v.mapWhere((k, v) => v.y == NameValuePairType.Passcode && v.w, (k, v) => v.id));
+            OH.mapWhere(this.state.v, (v) => v.y == NameValuePairType.Passcode && v.w, (v) => v.id));
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 
@@ -293,9 +294,9 @@ export class ReactiveValueStore extends ValueStore
 
     protected preAssignState(state: ValueStoreState): void 
     {
-        for (const [key, value] of state.v.entries())
+        for (const [key, value] of Object.entries(state.v))
         {
-            state.v.set(key, createReactiveValue(value));
+            state.v[key] = createReactiveValue(value);
         }
     }
 

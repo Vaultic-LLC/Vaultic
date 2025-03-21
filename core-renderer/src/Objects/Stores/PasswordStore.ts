@@ -1,6 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
-import { PrimaryDataTypeStore, StateKeys, StoreEvents } from "./Base";
+import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, StateKeys, StoreEvents } from "./Base";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -11,76 +11,75 @@ import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/s
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
-import { StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IPasswordStoreState extends StoreState
 {
     /** Passwords By ID */
-    p: Map<string, ReactivePassword>;
+    p: { [key: string]: ReactivePassword };
     /** Passwords By Domain */
-    o: Map<string, Map<string, string>>;
+    o: DoubleKeyedObject;
     /** Duplicate Passwords */
-    d: Map<string, Map<string, string>>;
+    d: DoubleKeyedObject;
     /** Current and Safe Passwords */
     c: CurrentAndSafeStructure;
     /** Passwords By Hash */
-    h: Map<string, Map<string, string>>;
+    h: DoubleKeyedObject;
 };
 
-type PasswordStoreKeys = StateKeys |
-    "passwordsByID" | "passwordsByIDPassword" |
-    "securityQuestion" | "securityQuestionQuestion" | "securityQuestionAnswer" |
-    "passwordsByDomain" | "passwordsByDomainPasswords" |
-    "duplicatePasswords" | "duplicatePasswordsPasswords" |
-    "currentAndSafePasswords" |
-    "passwordsByHash" | "passwordsByHashPasswords";
-
-const PasswordStorePathRetriever: StorePathRetriever<PasswordStoreKeys> =
+interface PasswordStoreStateKeys extends PrimarydataTypeStoreStateKeys
 {
-    '': (...ids: string[]) => '',
+    'passwordsByID': '';
+    'passwordsByID.password': '';
+    'securityQuestions': '';
+    'securityQuestions.question': '';
+    'securityQuestion.answer': '';
+    'passwordsByDomain': '';
+    'passwordsByDomain.passwords': '';
+    'currentAndSafePasswords': '';
+}
+
+const PasswordStorePathRetriever: StorePathRetriever<PasswordStoreStateKeys> =
+{
     'passwordsByID': (...ids: string[]) => `p`,
-    'passwordsByIDPassword': (...ids: string[]) => `p.${ids[0]}`,
-    'securityQuestion': (...ids: string[]) => `p.${ids[0]}.q`,
-    'securityQuestionQuestion': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}.q`,
-    'securityQuestionAnswer': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}.a`,
+    'passwordsByID.password': (...ids: string[]) => `p.${ids[0]}`,
+    'securityQuestions': (...ids: string[]) => `p.${ids[0]}.q`,
+    'securityQuestions.question': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}.q`,
+    'securityQuestion.answer': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}.a`,
     'passwordsByDomain': (...ids: string[]) => `o`,
-    'passwordsByDomainPasswords': (...ids: string[]) => `o.${ids[0]}`,
-    'duplicatePasswords': (...ids: string[]) => 'd',
-    'duplicatePasswordsPasswords': (...ids: string[]) => `d.${ids[0]}`,
+    'passwordsByDomain.passwords': (...ids: string[]) => `o.${ids[0]}`,
+    'duplicateDataTypes': (...ids: string[]) => 'd',
+    'duplicateDataTypes.dataTypes': (...ids: string[]) => `d.${ids[0]}`,
     'currentAndSafePasswords': (...ids: string[]) => 'c',
-    'passwordsByHash': (...ids: string[]) => 'h',
-    'passwordsByHashPasswords': (...ids: string[]) => `h.${ids[0]}`
+    'dataTypesByHash': (...ids: string[]) => 'h',
+    'dataTypesByHash.dataTypes': (...ids: string[]) => `h.${ids[0]}`
 };
 
 export type PasswordStoreEvents = StoreEvents | "onCheckPasswordBreach" | "onCheckPasswordsForBreach";
 export type PasswordStoreState = KnownMappedFields<IPasswordStoreState>;
 
-export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, PasswordStoreEvents, PasswordStoreKeys>
+export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, PasswordStoreStateKeys, PasswordStoreEvents>
 {
     constructor(vault: VaultStoreParameter)
     {
-        super(vault, "passwordStoreState");
+        super(vault, "passwordStoreState", PasswordStorePathRetriever);
     }
 
-    protected getPrimaryDataTypesByID(state: KnownMappedFields<IPasswordStoreState>): Map<string, SecondaryDataObjectCollectionType>
+    protected getPrimaryDataTypesByID(state: KnownMappedFields<IPasswordStoreState>): { [key: string]: SecondaryDataObjectCollectionType }
     {
         return state.p;
-    }
-
-    protected getStorePathRetriever(): StorePathRetriever<PasswordStoreKeys>
-    {
-        return PasswordStorePathRetriever;
     }
 
     protected defaultState()
     {
         return {
             version: 0,
-            p: new Map<string, ReactivePassword>(),
-            o: new Map<string, Map<string, string>>(),
-            d: new Map<string, Map<string, string>>(),
+            p: {},
+            o: {},
+            d: {},
             c: new CurrentAndSafeStructure(),
-            h: new Map<string, Map<string, string>>()
+            h: {}
         };
     }
 
@@ -126,12 +125,12 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         return true;
     }
 
-    async addPasswordToStores(masterKey: string, password: Password, pendingPasswordStoreState: IPasswordStoreState, pendingFilterStoreState: IFilterStoreState,
-        pendingGroupStoreState: IGroupStoreState): Promise<boolean>
+    async addPasswordToStores(masterKey: string, password: Password, pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        pendingFilterStoreState: IFilterStoreState, pendingGroupStoreState: IGroupStoreState): Promise<boolean>
     {
         password.id = uniqueIDGenerator.generate();
 
-        await this.updateValuesByHash(pendingPasswordStoreState.h, "p", password, undefined);
+        await this.updateValuesByHash(pendingPasswordState, "p", password, undefined);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
         await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingPasswordStoreState.h, pendingPasswordStoreState.p,
@@ -312,10 +311,10 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         {
             if (!pendingState.o.has(newDomain))
             {
-                pendingState.o.set(newDomain, new Map());
+                pendingState.o[newDomain] = {};
             }
 
-            pendingState.o.get(newDomain)?.set(id, id);
+            pendingState.o[newDomain][id] = true;
         }
 
         if (oldDomain && newDomain != oldDomain)
@@ -325,11 +324,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
                 return;
             }
 
-            pendingState.o.get(oldDomain)?.delete(id);
+            delete pendingState.o[oldDomain][id];
         }
     }
 
-    private async incrementCurrentAndSafePasswords(pendingState: PasswordStoreState, passwords: Map<string, ReactivePassword>)
+    private async incrementCurrentAndSafePasswords(pendingState: PasswordStoreState, passwords: { [key: string]: ReactivePassword })
     {
         const id = uniqueIDGenerator.generate();
         pendingState.c.c.set(id, passwords.size);
@@ -373,6 +372,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         updatedSecurityQuestionQuestions: string[],
         updatedSecurityQuestionAnswers: string[])
     {
+
+        // TODO: these will have to be set differently to get working with the new change tracking
+        // currently they are always updated here, even when they were just added. In that case
+        // we would only want a change tracking for Add, and not any for
+
         if (updateAllSecurityQuestions)
         {
             for (const [key, value] of password.q.entries())
@@ -448,11 +452,11 @@ export class ReactivePasswordStore extends PasswordStore
     {
         super(vault);
 
-        this.internalPasswords = computed(() => this.state.p.valueArray());
+        this.internalPasswords = computed(() => Object.values(this.state.p));
 
-        this.internalOldPasswords = computed(() => this.state.p.mapWhere((k, v) => v.isOld(), (k, v) => v.id));
-        this.internalWeakPasswords = computed(() => this.state.p.mapWhere((k, v) => v.w, (k, v) => v.id));
-        this.internalContainsLoginPasswords = computed(() => this.state.p.mapWhere((k, v) => v.c, (k, v) => v.id));
+        this.internalOldPasswords = computed(() => OH.mapWhere(this.state.p, (v) => v.isOld(), (v) => v.id));
+        this.internalWeakPasswords = computed(() => OH.mapWhere(this.state.p, (v) => v.w, (v) => v.id));
+        this.internalContainsLoginPasswords = computed(() => OH.mapWhere(this.state.p, v => v.c, v => v.id));
 
         this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.c.c.map((k, v) => v));
         this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.c.s.map((k, v) => v));
@@ -465,9 +469,9 @@ export class ReactivePasswordStore extends PasswordStore
 
     protected preAssignState(state: PasswordStoreState): void 
     {
-        for (const [key, value] of state.p.entries())
+        for (const [key, value] of Object.entries(state.p))
         {
-            state.p.set(key, createReactivePassword(value));
+            state.p[key] = createReactivePassword(value);
         }
     }
 

@@ -2,6 +2,11 @@ import { Field } from "./Fields";
 
 declare global 
 {
+    interface Object
+    {
+        has: (prop: string) => boolean;
+    }
+
     interface Set<T>
     {
         difference: (other: Set<T>) => Set<T>
@@ -22,6 +27,11 @@ declare global
         vaulticParse: (text: string) => any;
         vaulticStringify: (value: any) => string;
     }
+}
+
+Object.prototype.has = function (this: Object, prop: string): boolean
+{
+    return Object.hasOwn(this, prop);
 }
 
 Map.prototype.difference = function (this: Map<any, any>, other: Map<any, any>)

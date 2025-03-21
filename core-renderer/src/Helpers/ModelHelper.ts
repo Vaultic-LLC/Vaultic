@@ -4,6 +4,7 @@ import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject, Group } from "../Types/DataTypes";
 import { IIdentifiable } from "@vaultic/shared/Types/Fields";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: T[])
     : [TableRowModel[], TableRowModel[]]
@@ -155,10 +156,10 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.passwordStore.duplicatePasswords.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.passwordStore.duplicatePasswords, (k => 
                 {
-                    addAtRiskValues("This Password is used more than once. For best security, create unique Passwords.", app.currentVault.passwordStore.passwordsByID.get(k)!);
-                });
+                    addAtRiskValues("This Password is used more than once. For best security, create unique Passwords.", app.currentVault.passwordStore.passwordsByID[k]);
+                }));
                 break;
             case AtRiskType.Weak:
                 app.currentVault.passwordStore.weakPasswords.value.forEach(p =>
@@ -198,9 +199,9 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.valueStore.duplicateNameValuePairs.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.valueStore.duplicateNameValuePairs, (k) =>
                 {
-                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairsByID.get(k)!);
+                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairsByID[k]);
                 });
                 break;
             case AtRiskType.WeakPhrase:

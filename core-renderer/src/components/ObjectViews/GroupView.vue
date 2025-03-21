@@ -169,7 +169,7 @@ export default defineComponent({
 
                 groupState.value.p.forEach((v, k, map) => 
                 {
-                    const password = app.currentVault.passwordStore.passwordsByID.get(k);
+                    const password = app.currentVault.passwordStore.passwordsByID[k];
                     if (!password)
                     {
                         return;
@@ -196,7 +196,7 @@ export default defineComponent({
 
                 groupState.value.v.forEach((v, k, map) => 
                 {
-                    const value = app.currentVault.valueStore.nameValuePairsByID.get(k);
+                    const value = app.currentVault.valueStore.nameValuePairsByID[k];
                     if (!value)
                     {
                         return;

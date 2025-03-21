@@ -72,16 +72,19 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
                 VaultID: vault.vaultID
             };
 
-            vault.passwordsByDomain?.forEach((v, k, map) => 
+            if (vault.passwordsByDomain)
             {
-                limitedPasswords = limitedPasswords.concat(v.map((kk, vv) =>
+                Object.keys(vault.passwordsByDomain).forEach(k =>
                 {
-                    return {
-                        id: vv,
-                        domain: k
-                    }
-                }))
-            });
+                    limitedPasswords = limitedPasswords.concat(Object.keys(vault.passwordsByDomain![k]).map(v =>
+                    {
+                        return {
+                            id: v,
+                            domain: k
+                        }
+                    }))
+                });
+            }
 
             vaultPostData['LimitedPasswords'] = limitedPasswords;
             postData.Vaults.push(vaultPostData);

@@ -307,7 +307,7 @@ export default defineComponent({
 
             passwordState.value.g.forEach((v, k) => 
             {
-                const group = app.currentVault.groupStore.passwordGroupsByID.get(k);
+                const group = app.currentVault.groupStore.passwordGroupsByID[k];
                 if (!group)
                 {
                     return;

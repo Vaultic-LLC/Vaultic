@@ -28,7 +28,7 @@ import { StoreState } from "@vaultic/shared/Types/Stores";
 export interface AppSettings
 {
     /** User Color Palettes */
-    c: Map<string, ColorPalette>;
+    c: { [key: string]: ColorPalette };
     /** Auto Lock Time */
     a: AutoLockTime;
     /** Multiple Filter Behavior */

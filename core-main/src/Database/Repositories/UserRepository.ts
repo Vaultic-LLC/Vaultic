@@ -489,7 +489,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                         isArchived: userVaults[i].isArchived,
                         lastUsed: userVaults[i].lastUsed,
                         type: getVaultType(userVaults[i]),
-                        passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).o ?? new Map()
+                        passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).o ?? {}
                     });
                 }
 

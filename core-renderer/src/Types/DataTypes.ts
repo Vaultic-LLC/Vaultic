@@ -1,4 +1,4 @@
-import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject } from "@vaultic/shared/Types/Fields";
+import { SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject } from "@vaultic/shared/Types/Fields";
 import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
 
