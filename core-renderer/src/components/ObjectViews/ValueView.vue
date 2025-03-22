@@ -55,6 +55,10 @@ import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent } from '../../Types/Components';
 import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
 import {RandomValueType } from '@vaultic/shared/Types/Fields';
+import { DictionaryAsList, PendingStoreState } from '@vaultic/shared/Types/Stores';
+import { PrimarydataTypeStoreStateKeys } from '../../Objects/Stores/Base';
+import { ValueStoreState } from '../../Objects/Stores/ValueStore';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "ValueView",
@@ -72,6 +76,8 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        const pendingState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys> = app.currentVault.valueStore.getPendingState()!;
+        
         const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const valuesState: Ref<NameValuePair> = ref(props.model);
@@ -102,12 +108,6 @@ export default defineComponent({
 
         function onSave()
         {
-            valuesState.value.g = new Map();
-            selectedGroups.value.forEach(g => 
-            {
-                valuesState.value.g.set(g.backingObject!.id, g.backingObject!.id);
-            });
-
             valueInputField.value?.toggleMask(true);
             app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 
@@ -123,7 +123,12 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Value");
             if (props.creating)
             {
-                if (await app.currentVault.valueStore.addNameValuePair(key, valuesState.value))
+                selectedGroups.value.forEach(g => 
+                {
+                    valuesState.value.g[g.backingObject!.id] = true;
+                });
+
+                if (await app.currentVault.valueStore.addNameValuePair(key, valuesState.value, pendingState))
                 {
                     valuesState.value = defaultValue();
                     selectedGroups.value = [];
@@ -137,7 +142,16 @@ export default defineComponent({
             }
             else
             {
-                if (await app.currentVault.valueStore.updateNameValuePair(key, valuesState.value, valueIsDirty.value))
+                // we want to pass the current selection instead of setting them so change tracking
+                // can add them properly
+                const newGroups: DictionaryAsList = {};
+                selectedGroups.value.forEach(g => 
+                {
+                    newGroups[g.backingObject!.id] = true;
+                });
+
+                if (await app.currentVault.valueStore.updateNameValuePair(key, valuesState.value, valueIsDirty.value, newGroups,
+                    pendingState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -189,9 +203,9 @@ export default defineComponent({
                 return option
             });
 
-            valuesState.value.g.forEach((v, k) => 
+            OH.forEachKey(valuesState.value.g, (k) => 
             {
-                const group = app.currentVault.groupStore.valueGroupsByID.get(k);
+                const group = app.currentVault.groupStore.valueGroupsByID[k];
                 if (!group)
                 {
                     return;
@@ -204,6 +218,11 @@ export default defineComponent({
                     color: group.c
                 });
             });
+
+            if (!props.creating)
+            {
+                valuesState.value = pendingState.proxifyObject('dataTypesByID.dataType', valuesState.value, valuesState.value.id);
+            }
         });
 
         watch(() => valuesState.value.y, (newValue) =>

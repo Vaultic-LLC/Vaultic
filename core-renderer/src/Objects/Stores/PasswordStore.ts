@@ -1,6 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
-import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, StateKeys, StoreEvents } from "./Base";
+import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, StoreEvents } from "./Base";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -11,7 +11,7 @@ import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/s
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
-import { DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IPasswordStoreState extends StoreState
@@ -28,30 +28,27 @@ export interface IPasswordStoreState extends StoreState
     h: DoubleKeyedObject;
 };
 
-interface PasswordStoreStateKeys extends PrimarydataTypeStoreStateKeys
+export interface PasswordStoreStateKeys extends PrimarydataTypeStoreStateKeys
 {
-    'passwordsByID': '';
-    'passwordsByID.password': '';
     'securityQuestions': '';
     'securityQuestions.question': '';
-    'securityQuestion.answer': '';
     'passwordsByDomain': '';
     'passwordsByDomain.passwords': '';
-    'currentAndSafePasswords': '';
 }
 
 const PasswordStorePathRetriever: StorePathRetriever<PasswordStoreStateKeys> =
 {
-    'passwordsByID': (...ids: string[]) => `p`,
-    'passwordsByID.password': (...ids: string[]) => `p.${ids[0]}`,
+    'dataTypesByID': (...ids: string[]) => `p`,
+    'dataTypesByID.dataType': (...ids: string[]) => `p.${ids[0]}`,
     'securityQuestions': (...ids: string[]) => `p.${ids[0]}.q`,
-    'securityQuestions.question': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}.q`,
-    'securityQuestion.answer': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}.a`,
+    'securityQuestions.question': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}`,
     'passwordsByDomain': (...ids: string[]) => `o`,
     'passwordsByDomain.passwords': (...ids: string[]) => `o.${ids[0]}`,
     'duplicateDataTypes': (...ids: string[]) => 'd',
     'duplicateDataTypes.dataTypes': (...ids: string[]) => `d.${ids[0]}`,
-    'currentAndSafePasswords': (...ids: string[]) => 'c',
+    'currentAndSafeDataTypes': (...ids: string[]) => 'c',
+    'currentAndSafeDataTypes.current': (...ids: string[]) => 'c.c',
+    'currentAndSafeDataTypes.safe': (...ids: string[]) => 'c.s',
     'dataTypesByHash': (...ids: string[]) => 'h',
     'dataTypesByHash.dataTypes': (...ids: string[]) => `h.${ids[0]}`
 };
@@ -83,22 +80,31 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         };
     }
 
-    async addPassword(masterKey: string, password: Password, backup?: boolean): Promise<boolean>
+    async addPassword(
+        masterKey: string,
+        password: Password,
+        addedSecurityQuestions: SecurityQuestion[],
+        pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        backup?: boolean): Promise<boolean>
     {
-        const passwordStoreState = this.cloneState();
-        const filterStoreState = app.currentVault.filterStore.cloneState();
-        const groupStoreState = app.currentVault.groupStore.cloneState();
+        const filterStoreState = app.currentVault.filterStore.getPendingState();
+        const groupStoreState = app.currentVault.groupStore.getPendingState();
 
-        if (!await this.addPasswordToStores(masterKey, password, passwordStoreState, filterStoreState, groupStoreState))
+        if (!await this.addPasswordToStores(masterKey, password, addedSecurityQuestions, pendingPasswordStoreState, filterStoreState, groupStoreState))
         {
             return false;
         }
 
-        return await this.commitPasswordEdits(masterKey, [password], passwordStoreState, filterStoreState, groupStoreState, backup);
+        return await this.commitPasswordEdits(masterKey, [password], pendingPasswordStoreState, filterStoreState, groupStoreState, backup);
     }
 
-    async commitPasswordEdits(masterKey: string, addedPasswords: Password[], pendingPasswordStoreState: IPasswordStoreState, pendingFilterStoreState: IFilterStoreState,
-        pendingGroupStoreState: IGroupStoreState, backup?: boolean): Promise<boolean>
+    async commitPasswordEdits(
+        masterKey: string,
+        addedPasswords: Password[],
+        pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        pendingFilterStoreState: IFilterStoreState,
+        pendingGroupStoreState: IGroupStoreState,
+        backup?: boolean): Promise<boolean>
     {
         backup = backup ?? app.isOnline;
 
@@ -125,29 +131,34 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         return true;
     }
 
-    async addPasswordToStores(masterKey: string, password: Password, pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        pendingFilterStoreState: IFilterStoreState, pendingGroupStoreState: IGroupStoreState): Promise<boolean>
+    async addPasswordToStores(
+        masterKey: string,
+        password: Password,
+        addedSecurityQuestions: SecurityQuestion[],
+        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        pendingFilterStoreState: IFilterStoreState,
+        pendingGroupStoreState: IGroupStoreState): Promise<boolean>
     {
         password.id = uniqueIDGenerator.generate();
 
         await this.updateValuesByHash(pendingPasswordState, "p", password, undefined);
 
         // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, pendingPasswordStoreState.h, pendingPasswordStoreState.p,
-            "p", pendingPasswordStoreState.d);
+        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, "p", pendingPasswordState);
 
         if (!(await this.setPasswordProperties(masterKey, password)))
         {
             return false;
         }
 
-        await this.updateSecurityQuestions(masterKey, password, true, [], []);
+        await this.updateSecurityQuestions(masterKey, password, addedSecurityQuestions, [], [], [], pendingPasswordState);
 
         const reactivePassword = createReactivePassword(password);
-        pendingPasswordStoreState.p.set(password.id, reactivePassword);
-        this.updatePasswordsByDomain(pendingPasswordStoreState, reactivePassword.id, reactivePassword.d);
+        pendingPasswordState.addValue('dataTypesByID', password.id, reactivePassword);
 
-        await this.incrementCurrentAndSafePasswords(pendingPasswordStoreState, pendingPasswordStoreState.p);
+        this.updatePasswordsByDomain(pendingPasswordState, reactivePassword.id, reactivePassword.d);
+
+        await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
 
         // update groups before filters
         this.vault.groupStore.syncGroupsForPasswords(reactivePassword.id, new RelatedDataTypeChanges(reactivePassword.g), pendingGroupStoreState);
@@ -156,15 +167,21 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         return true;
     }
 
-    async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
-        updatedSecurityQuestionAnswers: string[], backup?: boolean): Promise<boolean>
+    async updatePassword(
+        masterKey: string,
+        updatingPassword: Password,
+        passwordWasUpdated: boolean,
+        addedSecurityQuestions: SecurityQuestion[],
+        updatedSecurityQuestionQuestions: SecurityQuestion[],
+        updatedSecurityQuestionAnswers: SecurityQuestion[],
+        deletedSecurityQuestions: string[],
+        groups: DictionaryAsList,
+        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        backup?: boolean): Promise<boolean>
     {
         backup = backup ?? app.isOnline;
 
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        const pendingState = this.cloneState();
-
-        let currentPassword = pendingState.p.get(updatingPassword.id);
+        const currentPassword: ReactivePassword | undefined = pendingPasswordState.getObject('dataTypesByID.dataType', updatingPassword.id);
         if (!currentPassword)
         {
             await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Update")
@@ -180,7 +197,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         }
 
         // retrieve these before updating
-        const changedGroups = this.getRelatedDataTypeChanges(currentPassword.g, updatingPassword.g);
+        const changedGroups = this.getRelatedDataTypeChanges(currentPassword.g, groups);
 
         if (passwordWasUpdated)
         {
@@ -190,11 +207,10 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
                 updatingPassword.password = currentPassword.password;
             }
 
-            await this.updateValuesByHash(pendingState.h, "p", updatingPassword, currentPassword);
+            await this.updateValuesByHash(pendingPasswordState, "p", updatingPassword, currentPassword);
 
             // do this before re encrypting the password
-            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, pendingState.h, pendingState.p, "p",
-                pendingState.d);
+            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, "p", pendingPasswordState);
 
             if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
             {
@@ -203,8 +219,6 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         }
         else if (!updatingPassword.v)
         {
-            this.checkUpdateDuplicatePrimaryObjectsModifiedTime(updatingPassword.id, pendingState.d);
-
             // need to check to see if the password contains their potentially updated username
             const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.password);
             if (!decryptResponse.success)
@@ -218,15 +232,14 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             }
         }
 
-        await this.updateSecurityQuestions(masterKey, updatingPassword, false, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers);
+        await this.updateSecurityQuestions(masterKey, updatingPassword, addedSecurityQuestions, updatedSecurityQuestionQuestions,
+            updatedSecurityQuestionAnswers, deletedSecurityQuestions, pendingPasswordState);
 
-        this.updatePasswordsByDomain(pendingState, currentPassword.id, updatingPassword.d, currentPassword.d);
-        const newPassword = createReactivePassword(updatingPassword);
+        this.updatePasswordsByDomain(pendingPasswordState, currentPassword.id, updatingPassword.d, currentPassword.d);
 
-        // TODO: this probably doesn't work. Same with Values, filters, and groups
-        currentPassword = newPassword;
+        pendingPasswordState.commitProxyObject("dataTypesByID.dataType", updatingPassword, updatingPassword.id);
 
-        await this.incrementCurrentAndSafePasswords(pendingState, pendingState.p);
+        await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
 
         const pendingGroupState = this.vault.groupStore.cloneState();
         this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id, changedGroups, pendingGroupState);
@@ -234,7 +247,9 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const pendingFilterState = this.vault.filterStore.cloneState();
         this.vault.filterStore.syncFiltersForPasswords(new Map([[currentPassword.id, currentPassword]]), pendingGroupState.p, true, pendingFilterState);
 
-        transaction.updateVaultStore(this, pendingState);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
+
+        transaction.updateVaultStore(this, pendingPasswordState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
@@ -253,11 +268,10 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         return true;
     }
 
-    async deletePassword(masterKey: string, password: ReactivePassword): Promise<boolean>
+    async deletePassword(
+        masterKey: string,
+        password: ReactivePassword): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        const pendingState = this.cloneState();
-
         // TODO: should just hide the delete button for the vaultic password? Is this even needed anymore? 
         // Can users update their email another way, like via stripe and then I have a webhook for that?
         if (password.v)
@@ -266,20 +280,21 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        const currentPassword = pendingState.p.get(password.id);
+        const pendingPasswordState = this.getPendingState()!;
+        const currentPassword: ReactivePassword | undefined = pendingPasswordState.getObject('dataTypesByID.dataType', password.id);
         if (!currentPassword)
         {
             await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Delete")
             return false;
         }
 
-        await this.updateValuesByHash(pendingState.h, "p", undefined, currentPassword);
+        await this.updateValuesByHash(pendingPasswordState, "p", undefined, currentPassword);
 
-        this.checkRemoveFromDuplicate(password, pendingState.d);
-        pendingState.p.delete(currentPassword.id);
-        this.updatePasswordsByDomain(pendingState, currentPassword.id, undefined, currentPassword.d);
+        this.checkRemoveFromDuplicate(password, pendingPasswordState);
+        pendingPasswordState.deleteValue('dataTypesByID', currentPassword.id);
+        this.updatePasswordsByDomain(pendingPasswordState, currentPassword.id, undefined, currentPassword.d);
 
-        await this.incrementCurrentAndSafePasswords(pendingState, pendingState.p);
+        await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
 
         const pendingGroupState = this.vault.groupStore.cloneState();
         this.vault.groupStore.syncGroupsForPasswords(password.id, new RelatedDataTypeChanges(undefined, password.g, undefined), pendingGroupState);
@@ -287,7 +302,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const pendingFilterState = this.vault.filterStore.cloneState();
         this.vault.filterStore.removePasswordFromFilters(password.id, pendingFilterState);
 
-        transaction.updateVaultStore(this, pendingState);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
+        transaction.updateVaultStore(this, pendingPasswordState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
@@ -300,46 +316,55 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         return true;
     }
 
-    private updatePasswordsByDomain(pendingState: PasswordStoreState, id: string, newDomain?: string, oldDomain?: string)
+    private updatePasswordsByDomain(
+        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        id: string,
+        newDomain?: string,
+        oldDomain?: string)
     {
         if (newDomain === oldDomain)
         {
             return;
         }
 
+        const passwordsByDomain: DoubleKeyedObject = pendingPasswordState.getObject('passwordsByDomain');
         if (newDomain)
         {
-            if (!pendingState.o.has(newDomain))
+            if (!passwordsByDomain.has(newDomain))
             {
-                pendingState.o[newDomain] = {};
-            }
+                const newDomainObject: DictionaryAsList = {};
+                newDomainObject[id] = true;
 
-            pendingState.o[newDomain][id] = true;
+                pendingPasswordState.addValue('passwordsByDomain', newDomain, newDomainObject);
+            }
+            else
+            {
+                pendingPasswordState.addValue('passwordsByDomain.passwords', id, true, newDomain);
+            }
         }
 
-        if (oldDomain && newDomain != oldDomain)
+        if (oldDomain)
         {
-            if (!pendingState.o.has(oldDomain))
+            if (!passwordsByDomain.has(oldDomain))
             {
                 return;
             }
 
-            delete pendingState.o[oldDomain][id];
+            if (OH.size(passwordsByDomain[oldDomain]) == 1)
+            {
+                // last domain, delete the entire object
+                pendingPasswordState.deleteValue('passwordsByDomain', oldDomain);
+            }
+            else
+            {
+                pendingPasswordState.deleteValue('passwordsByDomain.passwords', id, oldDomain);
+            }
         }
     }
 
-    private async incrementCurrentAndSafePasswords(pendingState: PasswordStoreState, passwords: { [key: string]: ReactivePassword })
+    private passwordIsSafe(duplicateDataTypes: DoubleKeyedObject, password: ReactivePassword)
     {
-        const id = uniqueIDGenerator.generate();
-        pendingState.c.c.set(id, passwords.size);
-
-        const safePasswords = passwords.filter((k, v) => this.passwordIsSafe(pendingState, v));
-        pendingState.c.s.set(id, safePasswords.size);
-    }
-
-    private passwordIsSafe(state: PasswordStoreState, password: ReactivePassword)
-    {
-        return !password.isOld() && !password.c && !password.w && !state.d.has(password.id);
+        return !password.isOld() && !password.c && !password.w && !duplicateDataTypes.has(password.id);
     }
 
     private async setPasswordProperties(masterKey: string, password: Password): Promise<boolean>
@@ -368,54 +393,43 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
     private async updateSecurityQuestions(
         masterKey: string,
         password: Password,
-        updateAllSecurityQuestions: boolean,
-        updatedSecurityQuestionQuestions: string[],
-        updatedSecurityQuestionAnswers: string[])
+        addedSecurityQuestions: SecurityQuestion[],
+        updatedSecurityQuestionQuestions: SecurityQuestion[],
+        updatedSecurityQuestionAnswers: SecurityQuestion[],
+        deletedSecurityQuestions: string[],
+        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>)
     {
-
-        // TODO: these will have to be set differently to get working with the new change tracking
-        // currently they are always updated here, even when they were just added. In that case
-        // we would only want a change tracking for Add, and not any for
-
-        if (updateAllSecurityQuestions)
+        for (let i = 0; i < addedSecurityQuestions.length; i++)
         {
-            for (const [key, value] of password.q.entries())
-            {
-                await updateSecurityQuestionQuestion(masterKey, value);
-                await updateSecurityQuestionnAnswer(masterKey, value);
-            }
-        }
-        else
-        {
-            for (let i = 0; i < updatedSecurityQuestionQuestions.length; i++)
-            {
-                let sq = password.q.get(updatedSecurityQuestionQuestions[i]);
-                if (!sq)
-                {
-                    continue;
-                }
+            await updateSecurityQuestionQuestion(addedSecurityQuestions[i]);
+            await updateSecurityQuestionnAnswer(addedSecurityQuestions[i]);
 
-                await updateSecurityQuestionQuestion(masterKey, sq);
-            }
-
-            for (let i = 0; i < updatedSecurityQuestionAnswers.length; i++)
-            {
-                let sq = password.q.get(updatedSecurityQuestionAnswers[i]);
-                if (!sq)
-                {
-                    continue;
-                }
-
-                await updateSecurityQuestionnAnswer(masterKey, sq);
-            }
+            pendingPasswordState.addValue('securityQuestions', addedSecurityQuestions[i].id, addedSecurityQuestions[i], password.id);
         }
 
-        async function updateSecurityQuestionQuestion(masterKey: string, securityQuestion: SecurityQuestion)
+        for (let i = 0; i < updatedSecurityQuestionQuestions.length; i++)
+        {
+            await updateSecurityQuestionQuestion(updatedSecurityQuestionQuestions[i]);
+            pendingPasswordState.updateValue('securityQuestions.question', 'q', updatedSecurityQuestionQuestions[i].q, password.id, updatedSecurityQuestionQuestions[i].id);
+        }
+
+        for (let i = 0; i < updatedSecurityQuestionAnswers.length; i++)
+        {
+            await updateSecurityQuestionnAnswer(updatedSecurityQuestionAnswers[i]);
+            pendingPasswordState.updateValue('securityQuestions.question', 'a', updatedSecurityQuestionAnswers[i].a, password.id, updatedSecurityQuestionAnswers[i].id);
+        }
+
+        for (let i = 0; i < deletedSecurityQuestions.length; i++)
+        {
+            pendingPasswordState.deleteValue('securityQuestions', updatedSecurityQuestionQuestions[i].id, password.id);
+        }
+
+        async function updateSecurityQuestionQuestion(securityQuestion: SecurityQuestion)
         {
             securityQuestion.q = (await cryptHelper.encrypt(masterKey, securityQuestion.q)).value ?? "";
         }
 
-        async function updateSecurityQuestionnAnswer(masterKey: string, securityQuestion: SecurityQuestion)
+        async function updateSecurityQuestionnAnswer(securityQuestion: SecurityQuestion)
         {
             securityQuestion.a = ((await cryptHelper.encrypt(masterKey, securityQuestion.a)).value ?? "");
         }

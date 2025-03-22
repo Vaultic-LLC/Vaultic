@@ -1,17 +1,18 @@
 import { SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject } from "@vaultic/shared/Types/Fields";
 import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
+import { DictionaryAsList } from "@vaultic/shared/Types/Stores";
 
 export interface IFilterable
 {
     /** Filters */
-    i: Map<string, string>;
+    i: DictionaryAsList;
 }
 
 export interface IGroupable
 {
     /** Groups */
-    g: Map<string, string>;
+    g: DictionaryAsList;
 }
 
 export enum DataType
@@ -49,7 +50,7 @@ export interface Password extends IPrimaryDataObject, PasswordSecretProperty
     /** Password For */
     f: string;
     /** Security Questions */
-    q: Map<string, SecurityQuestion>;
+    q: { [key: string]: SecurityQuestion };
     /** Additional Information */
     a: string;
     /** Last Modified Time */
@@ -101,17 +102,19 @@ export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
     m: number;
 }
 
+export const MAX_CURRENT_AND_SAFE_SIZE = 200;
+
 export class CurrentAndSafeStructure
 {
     /** Current */
-    c: Map<string, number>;
+    c: number[];
     /** Safe */
-    s: Map<string, number>;
+    s: number[];
 
     constructor()
     {
-        this.c = new Map();
-        this.s = new Map();
+        this.c = [];
+        this.s = [];
     }
 }
 
@@ -150,7 +153,7 @@ export interface Filter extends ISecondaryDataObject
     /** Is Active */
     a: boolean;
     /** Conditions */
-    c: Map<string, FilterCondition>;
+    c: { [key: string]: FilterCondition };
 }
 
 export interface FilterCondition extends IIdentifiable
@@ -188,15 +191,15 @@ export interface Group extends ISecondaryDataObject
 
 export class RelatedDataTypeChanges 
 {
-    added: Map<string, string>;
-    removed: Map<string, string>;
-    unchanged: Map<string, string>;
+    added: DictionaryAsList;
+    removed: DictionaryAsList;
+    unchanged: DictionaryAsList;
 
-    constructor(added?: Map<string, string>, removed?: Map<string, string>, unchanged?: Map<string, string>) 
+    constructor(added?: DictionaryAsList, removed?: DictionaryAsList, unchanged?: DictionaryAsList) 
     {
-        this.added = added ?? new Map();
-        this.removed = removed ?? new Map();
-        this.unchanged = unchanged ?? new Map();
+        this.added = added ?? {};
+        this.removed = removed ?? {};
+        this.unchanged = unchanged ?? {};
     }
 }
 
@@ -217,14 +220,14 @@ export function defaultPassword(): Password
         d: '',
         e: '',
         p: '',
-        q: new Map<string, SecurityQuestion>(),
+        q: {},
         a: '',
         t: '',
         w: false,
         m: -1,
         c: false,
-        i: new Map(),
-        g: new Map()
+        i: {},
+        g: {}
     };
 }
 
@@ -238,8 +241,8 @@ export function defaultValue(): NameValuePair
         o: true,
         a: '',
         t: '',
-        i: new Map(),
-        g: new Map(),
+        i: {},
+        g: {},
         w: false,
         m: -1,
     };
@@ -249,12 +252,12 @@ export function defaultFilter(type: DataType): Filter
 {
     return {
         id: "",
-        p: new Map(),
-        v: new Map(),
+        p: {},
+        v: {},
         t: type,
         a: false,
         n: '',
-        c: new Map<string, FilterCondition>()
+        c: {}
     };
 }
 
@@ -262,8 +265,8 @@ export function defaultGroup(type: DataType): Group
 {
     return {
         id: "",
-        p: new Map(),
-        v: new Map(),
+        p: {},
+        v: {},
         n: '',
         t: type,
         c: '',

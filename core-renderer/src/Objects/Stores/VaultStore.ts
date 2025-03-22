@@ -8,7 +8,7 @@ import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { DictionaryAsList, DoubleKeyedObject, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, StateKeys, StoreState } from "@vaultic/shared/Types/Stores";
 
 const MAX_LOGIN_RECORDS = 500;
 export interface VaultSettings { }
@@ -22,7 +22,7 @@ interface IVaultStoreState extends StoreState
 export type VaultStoreState = IVaultStoreState;
 
 export class BaseVaultStore<V extends PasswordStore,
-    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState>
+    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState, StateKeys>
 {
     protected internalName: string;
     protected internalShared: boolean;

@@ -1,5 +1,5 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { SecondaryDataTypeStore } from "./Base";
+import { SecondaryDataTypeStore, SecondarydataTypeStoreStateKeys } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { api } from "../../API";
@@ -29,7 +29,7 @@ export interface IGroupStoreState extends StoreState
 
 export type GroupStoreState = IGroupStoreState;
 
-export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
+export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, SecondarydataTypeStoreStateKeys>
 {
     protected internalPasswordGroups: ComputedRef<Group[]>;
     protected internalValueGroups: ComputedRef<Group[]>;

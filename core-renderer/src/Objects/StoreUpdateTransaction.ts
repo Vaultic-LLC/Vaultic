@@ -5,6 +5,7 @@ import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
 import { Store, StoreEvents } from "./Stores/Base";
 import app from "./Stores/AppStore";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
+import { StateKeys } from "@vaultic/shared/Types/Stores";
 
 export enum Entity
 {
@@ -15,7 +16,7 @@ export enum Entity
 
 interface StoreUpdateState
 {
-    store: Store<any, StoreEvents>;
+    store: Store<any, StateKeys, StoreEvents>;
     currentState: any;
     pendingState: any;
     postSave?: () => void;
@@ -38,7 +39,7 @@ export default class StoreUpdateTransaction
         this.vaultStoreUpdateStates = {};
     }
 
-    private addStore(updateStoreStates: Dictionary<StoreUpdateState>, store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    private addStore(updateStoreStates: Dictionary<StoreUpdateState>, store: Store<any, StateKeys, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
         if (updateStoreStates[store.stateName])
         {
@@ -54,17 +55,17 @@ export default class StoreUpdateTransaction
         };
     }
 
-    updateUserStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    updateUserStore(store: Store<any, StateKeys, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
         this.addStore(this.userStoreUpdateStates, store, pendingState, postSave);
     }
 
-    updateUserVaultStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    updateUserVaultStore(store: Store<any, StateKeys, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
         this.addStore(this.userVaultStoreUpdateStates, store, pendingState, postSave);
     }
 
-    updateVaultStore(store: Store<any, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
+    updateVaultStore(store: Store<any, StateKeys, StoreEvents>, pendingState: any, postSave: ((() => void) | undefined) = undefined)
     {
         this.addStore(this.vaultStoreUpdateStates, store, pendingState, postSave);
     }

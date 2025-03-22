@@ -1,4 +1,5 @@
 import { uniqueIDGenerator } from "../Utilities/UniqueIDGenerator";
+import { DictionaryAsList } from "./Stores";
 
 export type Primitive = string | boolean | number;
 
@@ -58,13 +59,13 @@ export type SecondaryDataObjectCollection = "i" | "g";
 // Keyed by password / value ID
 export type PrimaryDataObjectCollectionType =
     {
-        [key in PrimaryDataObjectCollection]: Map<string, string>;
+        [key in PrimaryDataObjectCollection]: DictionaryAsList;
     }
 
 // Keyed by filter / group ID
 export type SecondaryDataObjectCollectionType =
     {
-        [key in SecondaryDataObjectCollection]: Map<string, string>;
+        [key in SecondaryDataObjectCollection]: DictionaryAsList;
     }
 
 // We use this to know what fields need to be specially handled when serializing / parsing objects into JSON

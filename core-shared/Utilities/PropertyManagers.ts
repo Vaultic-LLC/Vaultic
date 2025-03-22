@@ -39,6 +39,28 @@ export class OH
         return values;
     }
 
+    static countWhere<T extends { [key: string]: any }>(obj: T, predicate: (value: T[keyof T]) => boolean): number
+    {
+        let count = 0;
+        Object.values(obj).forEach(v =>
+        {
+            if (predicate(v))
+            {
+                count += 1;
+            }
+        });
+
+        return count;
+    }
+
+    static forEach<T extends { [key: string]: any }>(obj: T, predicate: (key: string, value: T[keyof T]) => void)
+    {
+        for (const [key, value] of obj.entries())
+        {
+            predicate(key, value);
+        }
+    }
+
     static forEachKey<T extends { [key: string]: any }>(obj: T, predicate: (key: string) => void)
     {
         const keys = Object.keys(obj);

@@ -10,9 +10,12 @@ import { ImportableDisplayField } from "../Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IGroupStoreState } from "../Objects/Stores/GroupStore";
 import { IFilterStoreState } from "../Objects/Stores/FilterStore";
-import { IPasswordStoreState } from "../Objects/Stores/PasswordStore";
-import { IValueStoreState } from "../Objects/Stores/ValueStore";
+import { IPasswordStoreState, PasswordStoreState, PasswordStoreStateKeys } from "../Objects/Stores/PasswordStore";
+import { IValueStoreState, ValueStoreState } from "../Objects/Stores/ValueStore";
 import StoreUpdateTransaction from "../Objects/StoreUpdateTransaction";
+import { PendingStoreState } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import { PrimarydataTypeStoreStateKeys } from "../Objects/Stores/Base";
 
 export async function exportLogs(color: string)
 {
@@ -121,16 +124,16 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         let securityQuestionQuestions: string[] = [];
         let securityQuestionAnswers: string[] = [];
 
-        for (const [key, value] of password.q.entries())
+        for (const sq of Object.values(password.q))
         {
-            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, value.q);
+            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, sq.q);
             if (!decryptedSecurityQuestionQuestion.success)
             {
                 showExportError();
                 return "";
             }
 
-            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, value.a);
+            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, sq.a);
             if (!decryptedSecurityQuestionAnswer.success)
             {
                 showExportError();
@@ -142,9 +145,9 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         }
 
         let groups: string[] = [];
-        password.g.forEach((v, k, map) => 
+        OH.forEachKey(password.g, (k) => 
         {
-            const group = app.currentVault.groupStore.getState().p.get(k);
+            const group = app.currentVault.groupStore.getState().p[k];
             if (group)
             {
                 groups.push(group.n);
@@ -179,9 +182,9 @@ export async function getExportableValues(color: string, masterKey: string): Pro
         }
 
         let groups: string[] = [];
-        nameValuePair.g.forEach((v, k, map) => 
+        OH.forEachKey(nameValuePair.g, (k) => 
         {
-            const group = app.currentVault.groupStore.getState().v.get(k);
+            const group = app.currentVault.groupStore.getState().v[k];
             if (group)
             {
                 groups.push(group.n);
@@ -399,7 +402,7 @@ class CSVImporter<T extends IPrimaryDataObject>
 
 export class PasswordCSVImporter extends CSVImporter<Password>
 {
-    pendingPasswordStoreState: IPasswordStoreState;
+    pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>;
     temporarySecurityQuestions: Map<string, SecurityQuestion>;
     addedPasswords: Password[];
 
@@ -419,7 +422,7 @@ export class PasswordCSVImporter extends CSVImporter<Password>
     protected preImport(): void
     {
         super.preImport();
-        this.pendingPasswordStoreState = app.currentVault.passwordStore.cloneState();
+        this.pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
     }
 
     protected createValue(): Password 
@@ -436,8 +439,10 @@ export class PasswordCSVImporter extends CSVImporter<Password>
     {
         this.addedPasswords.push(value);
 
-        await app.currentVault.passwordStore.addPasswordToStores(masterKey, value, this.pendingPasswordStoreState, this.pendingFilterStoreState,
-            this.pendingGroupStoreState);
+        await app.currentVault.passwordStore.addPasswordToStores(masterKey, value, this.temporarySecurityQuestions.valueArray(), this.pendingPasswordStoreState,
+            this.pendingFilterStoreState, this.pendingGroupStoreState);
+
+        this.temporarySecurityQuestions = new Map();
 
         if (commit)
         {
@@ -477,9 +482,6 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                     value.q = questions[count];
                     count += 1;
                 }
-
-                value.q = this.temporarySecurityQuestions;
-                this.temporarySecurityQuestions = new Map<string, SecurityQuestion>();
             }
 
             return true;
@@ -510,9 +512,6 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                     value.a = answers[count];
                     count += 1;
                 }
-
-                value.q = this.temporarySecurityQuestions;
-                this.temporarySecurityQuestions = new Map<string, SecurityQuestion>();
             }
 
             return true;
@@ -524,7 +523,7 @@ export class PasswordCSVImporter extends CSVImporter<Password>
 
 export class ValueCSVImporter extends CSVImporter<NameValuePair>
 {
-    pendingValueStoreState: IValueStoreState;
+    pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>;
 
     constructor()
     {
@@ -539,7 +538,7 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
     protected preImport(): void
     {
         super.preImport();
-        this.pendingValueStoreState = app.currentVault.valueStore.cloneState();
+        this.pendingValueStoreState = app.currentVault.valueStore.getPendingState()!;
     }
 
     protected createValue(): NameValuePair 

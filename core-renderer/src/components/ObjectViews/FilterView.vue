@@ -35,6 +35,9 @@ import { TableTemplateComponent } from '../../Types/Components';
 import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType } from '../../Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
+import { PendingStoreState } from '@vaultic/shared/Types/Stores';
+import { FilterStoreState, FilterStoreStateKeys } from '../../Objects/Stores/FilterStore';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "FilterView",
@@ -48,6 +51,8 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        const filterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
+        
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const filterState: Ref<Filter> = ref(props.model);
@@ -55,7 +60,11 @@ export default defineComponent({
         const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
-        const filterConditionModels: SortedCollection = new SortedCollection([], () => filterState.value.c);
+        const allConditions: { [key: string]: FilterCondition } = {};
+        const addedConditions: FilterCondition[] = [];
+        const removedConditions: string[] = [];
+
+        const filterConditionModels: SortedCollection = new SortedCollection([], () => allConditions);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -121,7 +130,7 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Filter");
             if (props.creating)
             {
-                if (await app.currentVault.filterStore.addFilter(key, filterState.value))
+                if (await app.currentVault.filterStore.addFilter(key, filterState.value, filterStoreState))
                 {
                     filterState.value = defaultFilter(filterState.value.t);
                     await onAdd();
@@ -135,7 +144,8 @@ export default defineComponent({
             }
             else
             {
-                if (await app.currentVault.filterStore.updateFilter(key, filterState.value))
+                if (await app.currentVault.filterStore.updateFilter(key, filterState.value, addedConditions, 
+                    removedConditions, filterStoreState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -179,7 +189,8 @@ export default defineComponent({
                 t: undefined
             };
 
-            filterState.value.c.set(id, filterCondition);
+            allConditions[id] = filterCondition;
+            addedConditions.push(filterCondition);
 
             const tableRowModel = new TableRowModel(id, false, undefined, 
             {
@@ -193,22 +204,56 @@ export default defineComponent({
 
         function onDelete(filterCondition: FilterCondition)
         {
-            filterState.value.c.delete(filterCondition.id);
+            delete allConditions[filterCondition.id];
+
+            const addedIndex = addedConditions.findIndex(c => c.id == filterCondition.id);
+            if (addedIndex >= 0)
+            {
+                addedConditions.splice(addedIndex, 1);
+                return;
+            }
+
+            removedConditions.push(filterCondition.id);
             filterConditionModels.remove(filterCondition.id);
+
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
+        }
+
+        function setupProxies(dataTypePath: keyof FilterStoreStateKeys, conditionPath: keyof FilterStoreStateKeys)
+        {
+            filterState.value = filterStoreState.proxifyObject(dataTypePath, filterState.value, filterState.value.id);
+
+            OH.forEachValue(filterState.value.c, (c) =>
+            {
+                c = filterStoreState.proxifyObject(conditionPath, c, filterState.value.id, c.id)
+            });
         }
 
         onMounted(() =>
         {
-            if (filterState.value.c.size == 0)
+            if (!props.creating)
+            {
+                if (filterState.value.t == DataType.Passwords)
+                {
+                    setupProxies('passwordDataTypesByID.dataType', 'passwordDataTypes.conditions.condition')
+                }
+                else
+                {
+                    setupProxies('valueDataTypesByID.dataType', 'valueDataTypes.conditions.condition')
+                }
+            }
+
+            if (OH.size(filterState.value.c) == 0)
             {
                 onAdd();
             }
             else
             {
                 let models: TableRowModel[] = [];
-                filterState.value.c.forEach((v, k, map) =>
+                OH.forEach(filterState.value.c, (k, v)  =>
                 {
+                    allConditions[k] = v;
+
                     const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.p)?.type ?? PropertyType.String;
                     models.push(new TableRowModel(k, false, undefined, 
                     {
