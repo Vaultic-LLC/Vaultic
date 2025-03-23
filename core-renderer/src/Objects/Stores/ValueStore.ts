@@ -1,6 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
-import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys } from "./Base";
+import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, SecondarydataTypeStoreStateKeys } from "./Base";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -9,8 +9,8 @@ import app from "./AppStore";
 import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { IFilterStoreState } from "./FilterStore";
-import { IGroupStoreState } from "./GroupStore";
+import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
+import { GroupStoreState, IGroupStoreState } from "./GroupStore";
 import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
@@ -30,6 +30,8 @@ const ValueStorePathRetriever: StorePathRetriever<PrimarydataTypeStoreStateKeys>
 {
     'dataTypesByID': (...ids: string[]) => `v`,
     'dataTypesByID.dataType': (...ids: string[]) => `v.${ids[0]}`,
+    'dataTypesByID.dataType.filters': (...ids: string[]) => `v.${ids[0]}.i`,
+    'dataTypesByID.dataType.groups': (...ids: string[]) => `v.${ids[0]}.g`,
     'duplicateDataTypes': (...ids: string[]) => 'd',
     'duplicateDataTypes.dataTypes': (...ids: string[]) => `d.${ids[0]}`,
     'currentAndSafeDataTypes': (...ids: string[]) => 'c',
@@ -72,8 +74,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
     {
         backup = backup ?? app.isOnline;
 
-        const pendingFilterStoreState = this.vault.filterStore.cloneState();
-        const pendingGroupStoreState = this.vault.groupStore.cloneState();
+        const pendingFilterStoreState = this.vault.filterStore.getPendingState()!;
+        const pendingGroupStoreState = this.vault.groupStore.getPendingState()!;
 
         if (!await this.addNameValuePairToStores(masterKey, value, pendingValueStoreState, pendingFilterStoreState, pendingGroupStoreState))
         {
@@ -92,8 +94,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         masterKey: string,
         value: NameValuePair,
         pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>,
-        pendingFilterStoreState: IFilterStoreState,
-        pendingGroupStoreState: IGroupStoreState): Promise<boolean>
+        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
+        pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
         value.id = uniqueIDGenerator.generate();
 
@@ -114,8 +116,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
         // update groups before filters
         this.vault.groupStore.syncGroupsForValues(value.id, new RelatedDataTypeChanges(value.g), pendingGroupStoreState);
-        this.vault.filterStore.syncFiltersForValues(new Map([[reactiveValue.id, reactiveValue]]), pendingGroupStoreState.v, true,
-            pendingFilterStoreState);
+        this.vault.filterStore.syncFiltersForValues([reactiveValue], pendingValueStoreState, pendingGroupStoreState.v, pendingFilterStoreState);
 
         return true;
     }
@@ -165,9 +166,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         const pendingGroupState = this.vault.groupStore.cloneState();
         this.vault.groupStore.syncGroupsForValues(updatedValue.id, channgedGroups, pendingGroupState);
 
-        const pendingFilterState = this.vault.filterStore.cloneState();
-        this.vault.filterStore.syncFiltersForValues(new Map([[currentValue.id, currentValue]]), pendingGroupState.v, true,
-            pendingFilterState);
+        const pendingFilterState = this.vault.filterStore.getPendingState()!;
+        this.vault.filterStore.syncFiltersForValues([currentValue], pendingValueStoreState, pendingGroupState.v, pendingFilterState);
 
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         transaction.updateVaultStore(this, pendingValueStoreState);
@@ -198,7 +198,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         const pendingGroupState = this.vault.groupStore.cloneState();
         this.vault.groupStore.syncGroupsForValues(value.id, new RelatedDataTypeChanges(undefined, value.g), pendingGroupState);
 
-        const pendingFilterState = this.vault.filterStore.removeValuesFromFilters(value.id);
+        const pendingFilterState = this.vault.filterStore.getPendingState()!;
+        this.vault.filterStore.removeValuesFromFilters(value.id, pendingFilterState);
 
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         transaction.updateVaultStore(this, pendingState);
@@ -286,13 +287,13 @@ export class ReactiveValueStore extends ValueStore
 
         this.internalNameValuePairs = computed(() => Object.values(this.state.v));
 
-        this.internalOldNameValuePairs = computed(() => OH.mapWhere(this.state.v, (v) => v.isOld(), (v) => v.id));
+        this.internalOldNameValuePairs = computed(() => OH.mapWhere(this.state.v, (_, v) => v.isOld(), (k, _) => k));
 
         this.internalWeakPassphraseValues = computed(() =>
-            OH.mapWhere(this.state.v, (v) => v.y == NameValuePairType.Passphrase && v.w, (v) => v.id));
+            OH.mapWhere(this.state.v, (_, v) => v.y == NameValuePairType.Passphrase && v.w, (k, _) => k));
 
         this.internalWeakPasscodeValues = computed(() =>
-            OH.mapWhere(this.state.v, (v) => v.y == NameValuePairType.Passcode && v.w, (v) => v.id));
+            OH.mapWhere(this.state.v, (_, v) => v.y == NameValuePairType.Passcode && v.w, (k, _) => k));
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 

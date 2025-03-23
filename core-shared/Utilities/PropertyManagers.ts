@@ -25,16 +25,44 @@ export class OH
         return Object.keys(obj).length;
     }
 
-    static mapWhere<T extends { [key: string]: any }, U>(obj: T, predicate: (value: T[keyof T]) => boolean, select: (value: T[keyof T]) => U): U[]
+    static filter<T extends { [key: string]: any }>(obj: T, predicate: (key: string, value: T[keyof T]) => boolean): T
+    {
+        const temp: { [key: string]: any } = {};
+        for (const [key, value] of obj.entries())
+        {
+            if (predicate(key, value))
+            {
+                temp[key] = value;
+            }
+        }
+
+        return temp as T;
+    }
+
+    static map<T extends { [key: string]: any }>(obj: T, predicate: (key: string, value: T[keyof T]) => boolean): T
+    {
+        const temp: { [key: string]: any } = {};
+        for (const [key, value] of obj.entries())
+        {
+            if (predicate(key, value))
+            {
+                temp[key] = value;
+            }
+        }
+
+        return temp as T;
+    }
+
+    static mapWhere<T extends { [key: string]: any }, U>(obj: T, predicate: (key: string, value: T[keyof T]) => boolean, select: (key: string, value: T[keyof T]) => U): U[]
     {
         const values: U[] = [];
-        Object.values(obj).forEach(v =>
+        for (const [key, value] of obj.entries())
         {
-            if (predicate(v))
+            if (predicate(key, value))
             {
-                values.push(select(v));
+                values.push(select(key, value));
             }
-        });
+        }
 
         return values;
     }

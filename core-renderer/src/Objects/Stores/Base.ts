@@ -253,6 +253,8 @@ export interface PrimarydataTypeStoreStateKeys extends StateKeys
 {
     'dataTypesByID': '',
     'dataTypesByID.dataType': '',
+    'dataTypesByID.dataType.filters': '',
+    'dataTypesByID.dataType.groups': '',
     'dataTypesByHash': '';
     'dataTypesByHash.dataTypes': '';
     'duplicateDataTypes': '';
@@ -529,80 +531,88 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
     private getSecondaryDataObjectDuplicates<T extends ISecondaryDataObject>(
         secondaryDataObject: T,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        allSecondaryDataObjects: Map<string, T>): string[]
+        allSecondaryDataObjects: { [key: string]: T }): string[]
     {
-        // make sure we aren't considering our current object as a duplicate to itself
-        const secondaryDataObjectsToLookAt = allSecondaryDataObjects.filter((k, v) => k != secondaryDataObject.id);
-
         // we don't have any primary objects so grab others that are also empty
-        if (secondaryDataObject[primaryDataObjectCollection].size == 0)
+        if (OH.size(secondaryDataObject[primaryDataObjectCollection]) == 0)
         {
-            return secondaryDataObjectsToLookAt.mapWhere((k, v) => v[primaryDataObjectCollection].size == 0, (k, v) => v.id);
+            return OH.mapWhere(allSecondaryDataObjects,
+                (k, v) => k != secondaryDataObject.id && OH.size(v[primaryDataObjectCollection]) == 0, (k) => k);
         }
 
         // only need to check others that have the same length
-        let potentiallyDuplicateObjects: Map<string, T> = secondaryDataObjectsToLookAt.filter(
-            (k, v) => v[primaryDataObjectCollection].size == secondaryDataObject[primaryDataObjectCollection].size);
+        let potentiallyDuplicateObjects: T[] = OH.mapWhere(allSecondaryDataObjects,
+            (_, v) => v[primaryDataObjectCollection].size == secondaryDataObject[primaryDataObjectCollection].size, (_, v) => v);
 
-        //@ts-ignore
-        for (let item of secondaryDataObject[primaryDataObjectCollection].value)
+        for (const [key, _] of Object.entries(secondaryDataObject[primaryDataObjectCollection]))
         {
             // we've filtered out all secondary objects, aka there aren't any duplicates. We can stop checking
-            if (potentiallyDuplicateObjects.size == 0)
+            if (potentiallyDuplicateObjects.length == 0)
             {
                 return [];
             }
 
             // only grap the secondary objects with values that match our current one
-            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter((k, v) => v[primaryDataObjectCollection].has(item[0]));
+            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter(v => v[primaryDataObjectCollection].has(key));
         }
 
-        return potentiallyDuplicateObjects.map((k, v) => v.id);
+        return potentiallyDuplicateObjects.map(v => v.id);
     }
 
-    // checks / handles duplicates for a single filter
-    // secondaryDataObject: the filter / group to check / handle for
-    // potentiallyNewDuplicateSecondaryObject: re calced duplicate filters / groups from getSecondaryDataObjectDuplicates()
-    // currentDuplicateSecondaryObjects: last saved duplicate filters / groups
-    protected checkUpdateDuplicateSecondaryObjects<T extends Filter | Group>(
-        secondaryDataObject: T,
+    /**
+     * checks / handles duplicates for a single filter or group
+     * @param secondaryDataObject The current secondary object we are checking duplicates for
+     * @param primaryDataObjectCollection The collection of primary objects we are checking duplicate for, either "p" or "v"
+     * @param currentDuplicateSecondaryObjects All the current duplicate secondary objects, either duplicatePasswordDataTypes or duplicateValueDataTypes
+     * @param allSecondaryDataObjects All current secondary objects, either passwordDataTypes or valueDataTypes
+     * @param duplicateDataTypesPath The path to the current duplicate data types, either "duplicatePasswordDataTypes" or "duplicateValueDataTypes"
+     * @param duplicateDataTypesDataTypesPath the path to the current duplicates data types data tyeps, either "duplicatePasswordDataTypes.dataTypes" or "duplicateValueDataTypes.dataTypes"
+     * @param pendingStoreState The current pending store state
+     * @returns 
+     */
+    protected checkUpdateDuplicateSecondaryObjects<D extends Filter | Group>(
+        secondaryDataObject: D,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        currentDuplicateSecondaryObjects: Map<string, Map<string, string>>,
-        allSecondaryDataObjects: Map<string, T>)
+        currentDuplicateSecondaryObjects: DoubleKeyedObject,
+        allSecondaryDataObjects: { [key: string]: D },
+        duplicateDataTypesPath: keyof K,
+        duplicateDataTypesDataTypesPath: keyof K,
+        pendingStoreState: PendingStoreState<T, K>)
     {
-        // setup so that we don't get any exceptions
-        if (!currentDuplicateSecondaryObjects.get(secondaryDataObject.id))
-        {
-            currentDuplicateSecondaryObjects.set(secondaryDataObject.id, new Map());
-        }
-        else 
-        {
-            // for change tracking
-            //currentDuplicateSecondaryObjects.get(secondaryDataObject.id)!.updateAndBubble();
-        }
-
         const potentiallyNewDuplicateSecondaryObject: string[] =
             this.getSecondaryDataObjectDuplicates(secondaryDataObject, primaryDataObjectCollection, allSecondaryDataObjects);
 
+        const hasDuplicatesForCurrentScondaryObject = currentDuplicateSecondaryObjects.has(secondaryDataObject.id);
+
         // there are no duplicate secondary objects anywhere, so nothing to do
         if (potentiallyNewDuplicateSecondaryObject.length == 0 &&
-            currentDuplicateSecondaryObjects.get(secondaryDataObject.id)?.size == 0)
+            (!hasDuplicatesForCurrentScondaryObject || OH.size(currentDuplicateSecondaryObjects[secondaryDataObject.id]) == 0))
         {
-            currentDuplicateSecondaryObjects.delete(secondaryDataObject.id);
             return;
         }
 
         const addedDuplicateSeconaryObjects: string[] = potentiallyNewDuplicateSecondaryObject.filter(
-            o => !currentDuplicateSecondaryObjects.get(secondaryDataObject.id)?.has(o));
+            o => !hasDuplicatesForCurrentScondaryObject || !currentDuplicateSecondaryObjects[secondaryDataObject.id].has(o));
 
-        const removedDuplicateSecondaryObjects: string[] | undefined = currentDuplicateSecondaryObjects.get(secondaryDataObject.id)
-            ?.mapWhere((k, v) => !potentiallyNewDuplicateSecondaryObject.includes(k), (k, v) => k);
+        const removedDuplicateSecondaryObjects: string[] | undefined = !hasDuplicatesForCurrentScondaryObject ? [] :
+            OH.mapWhere(currentDuplicateSecondaryObjects[secondaryDataObject.id], (k, _) => !potentiallyNewDuplicateSecondaryObject.includes(k), (k, _) => k);
 
-        // remove no longer duplicates first so that all we have after are un edited ones and we can update the change tracking for those
+
+        let deleteAllForThisDuplicates = false;
+        // we don't have any duplicates left, delete the entire object for this secondary data object
+        if ((addedDuplicateSeconaryObjects.length + OH.size(currentDuplicateSecondaryObjects[secondaryDataObject.id]) - removedDuplicateSecondaryObjects.length) == 0)
+        {
+            deleteAllForThisDuplicates = true;
+            pendingStoreState.deleteValue(duplicateDataTypesPath, secondaryDataObject.id);
+        }
+
         removedDuplicateSecondaryObjects?.forEach(o =>
         {
-            // remove removed secondary object from current secondary object's duplicate list
-            currentDuplicateSecondaryObjects.get(secondaryDataObject.id)?.delete(o);
+            if (!deleteAllForThisDuplicates)
+            {
+                // remove removed secondary object from current secondary object's duplicate list
+                pendingStoreState.deleteValue(duplicateDataTypesDataTypesPath, o, secondaryDataObject.id);
+            }
 
             if (!currentDuplicateSecondaryObjects.has(o))
             {
@@ -610,47 +620,52 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
             }
 
             // remove current secondary object from removed secondary object's list
-            if (currentDuplicateSecondaryObjects.get(o)?.has(secondaryDataObject.id))
+            if (OH.size(currentDuplicateSecondaryObjects[o]) == 0)
             {
-                currentDuplicateSecondaryObjects.get(o)?.delete(secondaryDataObject.id);
-                if (currentDuplicateSecondaryObjects.get(o)?.size == 0)
-                {
-                    currentDuplicateSecondaryObjects.delete(o);
-                }
+                pendingStoreState.deleteValue(duplicateDataTypesPath, o);
+            }
+            else
+            {
+                pendingStoreState.deleteValue(duplicateDataTypesDataTypesPath, secondaryDataObject.id, o);
             }
         });
 
-        // updates all the fields in the other duplicate data objects collections for change tracking
-        currentDuplicateSecondaryObjects.get(secondaryDataObject.id)?.forEach((v, k, map) => 
+
+        let alreadyAddedAllDupsForThisSecondaryObject = false;
+        if (!currentDuplicateSecondaryObjects.has(secondaryDataObject.id))
         {
-            //currentDuplicateSecondaryObjects.get(k)!.get(secondaryDataObject.id)!.updateAndBubble();
-        });
+            alreadyAddedAllDupsForThisSecondaryObject = true;
+            const dups: DictionaryAsList = {};
+
+            for (let i = 0; i < addedDuplicateSeconaryObjects.length; i++)
+            {
+                dups[addedDuplicateSeconaryObjects[i]] = true;
+            }
+
+            pendingStoreState.addValue(duplicateDataTypesPath, secondaryDataObject.id, dups);
+        }
 
         addedDuplicateSeconaryObjects.forEach(o =>
         {
-            // add added secondary object to current secondary object's duplicate list
-            if (!currentDuplicateSecondaryObjects.get(secondaryDataObject.id)?.has(o))
+            if (!alreadyAddedAllDupsForThisSecondaryObject)
             {
-                currentDuplicateSecondaryObjects.get(secondaryDataObject.id)?.set(o, o);
+                pendingStoreState.addValue(duplicateDataTypesDataTypesPath, o, true, secondaryDataObject.id);
             }
 
             // need to create a list for the added secondary object if it doesn't exist. Duplicate secondary objects go both ways
             if (!currentDuplicateSecondaryObjects.has(o))
             {
-                currentDuplicateSecondaryObjects.set(o, new Map());
-            }
+                const dups: DictionaryAsList = {};
+                dups[secondaryDataObject.id] = true;
 
-            // add curent secondary object to added secondary objects duplicate list
-            if (!currentDuplicateSecondaryObjects.get(o)?.has(secondaryDataObject.id))
+                pendingStoreState.addValue(duplicateDataTypesPath, o, dups);
+            }
+            else
             {
-                currentDuplicateSecondaryObjects.get(o)?.set(secondaryDataObject.id, secondaryDataObject.id);
+                // add curent secondary object to added secondary objects duplicate list
+                pendingStoreState.addValue(duplicateDataTypesDataTypesPath, secondaryDataObject.id, true, o);
             }
         });
-
-        if (currentDuplicateSecondaryObjects.get(secondaryDataObject.id)?.size == 0)
-        {
-            currentDuplicateSecondaryObjects.delete(secondaryDataObject.id);
-        }
     }
 
     protected removeSeconaryObjectFromEmptySecondaryObjects(
@@ -667,29 +682,34 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
         pendingStoreState.deleteValue(emptyDataTypesPath, secondaryObjectID);
     }
 
-    // checks / handles emptiness for a single secondary object
-    // secondaryObjectID: the id of the filter / group
-    // primaryObjectIDsForSecondaryObject: the primary objects the filter / group has. either .passwords or .values
-    // currentEmptySecondaryObjects: the list of current empty secondary objects
+    /**
+     * checks / handles emptiness for a single secondary object
+     * @param secondaryObjectID The Id of the secondary data object, either Filter or Group
+     * @param primaryObjectIDsForSecondaryObject The Passwords or Values for this Filter or Group
+     * @param emptyDataTypePath The path to the empty data types for, either for emptyPasswordDatatypes or emptyValueDataTypes
+     * @param currentEmptySecondaryObjects The current list of empty secondary objects
+     * @param pendingState The current pending state
+     */
     protected checkUpdateEmptySecondaryObject(
         secondaryObjectID: string,
         primaryObjectIDsForSecondaryObject: DictionaryAsList,
+        emptyDataTypePath: keyof K,
         currentEmptySecondaryObjects: DictionaryAsList,
         pendingState: PendingStoreState<T, K>)
     {
         // check to see if this filter has any passwords or values
-        if (primaryObjectIDsForSecondaryObject.size == 0)
+        if (OH.size(primaryObjectIDsForSecondaryObject) == 0)
         {
             // if it doesn't, then add it to the list of empty filters
             if (!currentEmptySecondaryObjects.has(secondaryObjectID))
             {
-                currentEmptySecondaryObjects.set(secondaryObjectID, secondaryObjectID);
+                pendingState.addValue(emptyDataTypePath, secondaryObjectID, true);
             }
         }
         else
         {
             // since we do have passwords or values, remove the secondary object from the empty list if its in there
-            this.removeSeconaryObjectFromEmptySecondaryObjects(secondaryObjectID, currentEmptySecondaryObjects);
+            this.removeSeconaryObjectFromEmptySecondaryObjects(secondaryObjectID, emptyDataTypePath, pendingState);
         }
     }
 

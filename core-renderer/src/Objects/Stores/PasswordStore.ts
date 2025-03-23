@@ -1,6 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactivePassword, { ReactivePassword } from "./ReactivePassword";
-import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, StoreEvents } from "./Base";
+import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, SecondarydataTypeStoreStateKeys, StoreEvents } from "./Base";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -9,8 +9,8 @@ import { VaultStoreParameter } from "./VaultStore";
 import { AtRiskType, CurrentAndSafeStructure, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
 import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { IFilterStoreState } from "./FilterStore";
-import { IGroupStoreState } from "./GroupStore";
+import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
+import { GroupStoreState, IGroupStoreState } from "./GroupStore";
 import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
@@ -40,6 +40,8 @@ const PasswordStorePathRetriever: StorePathRetriever<PasswordStoreStateKeys> =
 {
     'dataTypesByID': (...ids: string[]) => `p`,
     'dataTypesByID.dataType': (...ids: string[]) => `p.${ids[0]}`,
+    'dataTypesByID.dataType.filters': (...ids: string[]) => `p.${ids[0]}.i`,
+    'dataTypesByID.dataType.groups': (...ids: string[]) => `p.${ids[0]}.g`,
     'securityQuestions': (...ids: string[]) => `p.${ids[0]}.q`,
     'securityQuestions.question': (...ids: string[]) => `p.${ids[0]}.q.${ids[1]}`,
     'passwordsByDomain': (...ids: string[]) => `o`,
@@ -87,8 +89,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
         backup?: boolean): Promise<boolean>
     {
-        const filterStoreState = app.currentVault.filterStore.getPendingState();
-        const groupStoreState = app.currentVault.groupStore.getPendingState();
+        const filterStoreState = app.currentVault.filterStore.getPendingState()!;
+        const groupStoreState = app.currentVault.groupStore.getPendingState()!;
 
         if (!await this.addPasswordToStores(masterKey, password, addedSecurityQuestions, pendingPasswordStoreState, filterStoreState, groupStoreState))
         {
@@ -102,8 +104,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         masterKey: string,
         addedPasswords: Password[],
         pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        pendingFilterStoreState: IFilterStoreState,
-        pendingGroupStoreState: IGroupStoreState,
+        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
+        pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>,
         backup?: boolean): Promise<boolean>
     {
         backup = backup ?? app.isOnline;
@@ -136,8 +138,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         password: Password,
         addedSecurityQuestions: SecurityQuestion[],
         pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        pendingFilterStoreState: IFilterStoreState,
-        pendingGroupStoreState: IGroupStoreState): Promise<boolean>
+        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
+        pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
         password.id = uniqueIDGenerator.generate();
 
@@ -162,7 +164,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         // update groups before filters
         this.vault.groupStore.syncGroupsForPasswords(reactivePassword.id, new RelatedDataTypeChanges(reactivePassword.g), pendingGroupStoreState);
-        this.vault.filterStore.syncFiltersForPasswords(new Map([[reactivePassword.id, reactivePassword]]), pendingGroupStoreState.p, true, pendingFilterStoreState);
+        this.vault.filterStore.syncFiltersForPasswords([reactivePassword], pendingPasswordState, pendingGroupStoreState.p, pendingFilterStoreState);
 
         return true;
     }
@@ -244,8 +246,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const pendingGroupState = this.vault.groupStore.cloneState();
         this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id, changedGroups, pendingGroupState);
 
-        const pendingFilterState = this.vault.filterStore.cloneState();
-        this.vault.filterStore.syncFiltersForPasswords(new Map([[currentPassword.id, currentPassword]]), pendingGroupState.p, true, pendingFilterState);
+        const pendingFilterState = this.vault.filterStore.getPendingState()!;
+        this.vault.filterStore.syncFiltersForPasswords([currentPassword], pendingPasswordState, pendingGroupState.p, pendingFilterState);
 
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
@@ -299,7 +301,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const pendingGroupState = this.vault.groupStore.cloneState();
         this.vault.groupStore.syncGroupsForPasswords(password.id, new RelatedDataTypeChanges(undefined, password.g, undefined), pendingGroupState);
 
-        const pendingFilterState = this.vault.filterStore.cloneState();
+        const pendingFilterState = this.vault.filterStore.getPendingState()!;
         this.vault.filterStore.removePasswordFromFilters(password.id, pendingFilterState);
 
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
@@ -468,9 +470,9 @@ export class ReactivePasswordStore extends PasswordStore
 
         this.internalPasswords = computed(() => Object.values(this.state.p));
 
-        this.internalOldPasswords = computed(() => OH.mapWhere(this.state.p, (v) => v.isOld(), (v) => v.id));
-        this.internalWeakPasswords = computed(() => OH.mapWhere(this.state.p, (v) => v.w, (v) => v.id));
-        this.internalContainsLoginPasswords = computed(() => OH.mapWhere(this.state.p, v => v.c, v => v.id));
+        this.internalOldPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.isOld(), (k, _) => k));
+        this.internalWeakPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.w, (k, _) => k));
+        this.internalContainsLoginPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.c, (k, _) => k));
 
         this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.c.c.map((k, v) => v));
         this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.c.s.map((k, v) => v));

@@ -24,6 +24,7 @@ import { GridDefinition, ObjectSelectOptionModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
 import icons from '../../Constants/Icons';
+import { DictionaryAsList } from '@vaultic/shared/Types/Stores';
 
 export default defineComponent({
     name: "GroupView",
@@ -38,6 +39,7 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        const pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
         const refreshKey: Ref<string> = ref("");
         const groupState: Ref<Group> = ref(props.model);
         const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.g);
@@ -74,26 +76,28 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(groupColor.value, "Saving Group");
 
-            if (app.activePasswordValuesTable == DataType.Passwords)
-            {
-                groupState.value.p = new Map();
-                selectedDataObjectOptions.value.forEach(g => 
-                {
-                    groupState.value.p.set(g.backingObject!.id, g.backingObject!.id);
-                });
-            }
-            else 
-            {
-                groupState.value.v = new Map();
-                selectedDataObjectOptions.value.forEach(g => 
-                {
-                    groupState.value.v.set(g.backingObject!.id, g.backingObject!.id);
-                });
-            }
-
             if (props.creating)
             {
-                if (await app.currentVault.groupStore.addGroup(key, groupState.value))
+                // only want to set these directly on the object when we are creating
+                // since we want to just track the entire object as an Add
+                if (app.activePasswordValuesTable == DataType.Passwords)
+                {
+                    groupState.value.p = {};
+                    selectedDataObjectOptions.value.forEach(g => 
+                    {
+                        groupState.value.p[g.backingObject!.id] = true;
+                    });
+                }
+                else 
+                {
+                    groupState.value.v = {}
+                    selectedDataObjectOptions.value.forEach(g => 
+                    {
+                        groupState.value.v[g.backingObject!.id] = true;
+                    });
+                }
+
+                if (await app.currentVault.groupStore.addGroup(key, groupState.value, pendingGroupStoreState))
                 {
                     groupState.value = defaultGroup(groupState.value.t);
                     refreshKey.value = Date.now().toString();
@@ -107,7 +111,25 @@ export default defineComponent({
             }
             else
             {
-                if (await app.currentVault.groupStore.updateGroup(key, groupState.value))
+                // need to track each individual added / removed group as an update
+                const primaryDataObjects: DictionaryAsList = {};
+                if (app.activePasswordValuesTable == DataType.Passwords)
+                {
+                    selectedDataObjectOptions.value.forEach(g =>
+                    {
+                        primaryDataObjects[g.backingObject!.id] = true;
+                    });
+                }
+                else 
+                {
+                    selectedDataObjectOptions.value.forEach(g => 
+                    {
+                        primaryDataObjects[g.backingObject!.id] = true;
+                    });
+                }
+
+                if (await app.currentVault.groupStore.updateGroup(key, groupState.value, primaryDataObjects,
+                    pendingGroupStoreState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -156,6 +178,11 @@ export default defineComponent({
 
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
+                if (!props.creating)
+                {
+                    groupState.value = pendingGroupStoreState.proxifyObject('passwordDataTypesByID.dataType', groupState.value, groupState.value.id);
+                }
+
                 allDataObjectsOptions.value = app.currentVault.passwordStore.passwords.map(p => 
                 {
                     const option: ObjectSelectOptionModel = 
@@ -183,6 +210,11 @@ export default defineComponent({
             }
             else 
             {
+                if (!props.creating)
+                {
+                    groupState.value = pendingGroupStoreState.proxifyObject('valueDataTypesByID.dataType', groupState.value, groupState.value.id);
+                }
+
                 allDataObjectsOptions.value = app.currentVault.valueStore.nameValuePairs.map(v => 
                 {
                     const option: ObjectSelectOptionModel = 
