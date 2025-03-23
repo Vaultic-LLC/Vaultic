@@ -6,7 +6,7 @@ import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
-import { AtRiskType, CurrentAndSafeStructure, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
+import { AtRiskType, CurrentAndSafeStructure, IPrimaryDataObject, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
 import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
@@ -65,7 +65,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         super(vault, "passwordStoreState", PasswordStorePathRetriever);
     }
 
-    protected getPrimaryDataTypesByID(state: KnownMappedFields<IPasswordStoreState>): { [key: string]: SecondaryDataObjectCollectionType }
+    protected getPrimaryDataTypesByID(state: KnownMappedFields<IPasswordStoreState>): { [key: string]: IPrimaryDataObject }
     {
         return state.p;
     }
@@ -164,7 +164,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         // update groups before filters
         this.vault.groupStore.syncGroupsForPasswords(reactivePassword.id, new RelatedDataTypeChanges(reactivePassword.g), pendingGroupStoreState);
-        this.vault.filterStore.syncFiltersForPasswords([reactivePassword], pendingPasswordState, pendingGroupStoreState.p, pendingFilterStoreState);
+        this.vault.filterStore.syncFiltersForPasswords([reactivePassword], pendingPasswordState, pendingGroupStoreState.state.p, pendingFilterStoreState);
 
         return true;
     }
@@ -243,11 +243,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
 
-        const pendingGroupState = this.vault.groupStore.cloneState();
+        const pendingGroupState = this.vault.groupStore.getPendingState()!;
         this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id, changedGroups, pendingGroupState);
 
         const pendingFilterState = this.vault.filterStore.getPendingState()!;
-        this.vault.filterStore.syncFiltersForPasswords([currentPassword], pendingPasswordState, pendingGroupState.p, pendingFilterState);
+        this.vault.filterStore.syncFiltersForPasswords([currentPassword], pendingPasswordState, pendingGroupState.state.p, pendingFilterState);
 
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
@@ -298,7 +298,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
 
-        const pendingGroupState = this.vault.groupStore.cloneState();
+        const pendingGroupState = this.vault.groupStore.getPendingState()!;
         this.vault.groupStore.syncGroupsForPasswords(password.id, new RelatedDataTypeChanges(undefined, password.g, undefined), pendingGroupState);
 
         const pendingFilterState = this.vault.filterStore.getPendingState()!;

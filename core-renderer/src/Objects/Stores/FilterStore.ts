@@ -197,7 +197,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
             }
 
             pendingState.deleteValue('passwordDataTypesByID', currentFilter.id);
-            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(filter.id, "i");
+            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(filter.id, "i", "dataTypesByID.dataType.filters");
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, "emptyPasswordDataTypes", pendingState);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, "duplicatePasswordDataTypes", "duplicatePasswordDataTypes.dataTypes",
@@ -215,7 +215,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
             }
 
             pendingState.deleteValue('valueDataTypesByID', currentFilter.id);
-            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(filter.id, "i");
+            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(filter.id, "i", "dataTypesByID.dataType.filters");
 
             this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, "emptyValueDataTypes", pendingState);
             this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, "duplicateValueDataTypes", "duplicateValueDataTypes.dataTypes",

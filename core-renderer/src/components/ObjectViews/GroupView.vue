@@ -25,6 +25,7 @@ import app from "../../Objects/Stores/AppStore";
 import { DataType, defaultGroup, Group } from '../../Types/DataTypes';
 import icons from '../../Constants/Icons';
 import { DictionaryAsList } from '@vaultic/shared/Types/Stores';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "GroupView",
@@ -194,7 +195,7 @@ export default defineComponent({
                     return option
                 });
 
-                groupState.value.p.forEach((v, k, map) => 
+                OH.forEachKey(groupState.value.p, k => 
                 {
                     const password = app.currentVault.passwordStore.passwordsByID[k];
                     if (!password)
@@ -226,7 +227,7 @@ export default defineComponent({
                     return option
                 });
 
-                groupState.value.v.forEach((v, k, map) => 
+                OH.forEachKey(groupState.value.v, k => 
                 {
                     const value = app.currentVault.valueStore.nameValuePairsByID[k];
                     if (!value)

@@ -6,7 +6,7 @@ import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import app from "./AppStore";
-import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges } from "../../Types/DataTypes";
+import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges, IPrimaryDataObject } from "../../Types/DataTypes";
 import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
@@ -50,7 +50,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         super(vault, "valueStoreState", ValueStorePathRetriever);
     }
 
-    protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): { [key: string]: SecondaryDataObjectCollectionType }
+    protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): { [key: string]: IPrimaryDataObject }
     {
         return state.v;
     }
@@ -116,7 +116,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
         // update groups before filters
         this.vault.groupStore.syncGroupsForValues(value.id, new RelatedDataTypeChanges(value.g), pendingGroupStoreState);
-        this.vault.filterStore.syncFiltersForValues([reactiveValue], pendingValueStoreState, pendingGroupStoreState.v, pendingFilterStoreState);
+        this.vault.filterStore.syncFiltersForValues([reactiveValue], pendingValueStoreState, pendingGroupStoreState.state.v, pendingFilterStoreState);
 
         return true;
     }
@@ -163,11 +163,11 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         await this.incrementCurrentAndSafe(pendingValueStoreState, this.valueIsSafe);
         pendingValueStoreState.commitProxyObject('dataTypesByID.dataType', updatedValue, updatedValue.id);
 
-        const pendingGroupState = this.vault.groupStore.cloneState();
+        const pendingGroupState = this.vault.groupStore.getPendingState()!;
         this.vault.groupStore.syncGroupsForValues(updatedValue.id, channgedGroups, pendingGroupState);
 
         const pendingFilterState = this.vault.filterStore.getPendingState()!;
-        this.vault.filterStore.syncFiltersForValues([currentValue], pendingValueStoreState, pendingGroupState.v, pendingFilterState);
+        this.vault.filterStore.syncFiltersForValues([currentValue], pendingValueStoreState, pendingGroupState.state.v, pendingFilterState);
 
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         transaction.updateVaultStore(this, pendingValueStoreState);
@@ -195,7 +195,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
         await this.incrementCurrentAndSafe(pendingState, this.valueIsSafe);
 
-        const pendingGroupState = this.vault.groupStore.cloneState();
+        const pendingGroupState = this.vault.groupStore.getPendingState()!;
         this.vault.groupStore.syncGroupsForValues(value.id, new RelatedDataTypeChanges(undefined, value.g), pendingGroupState);
 
         const pendingFilterState = this.vault.filterStore.getPendingState()!;

@@ -3,7 +3,7 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { AtRiskType, CurrentAndSafeStructure, DataType, Filter, Group, ISecondaryDataObject, MAX_CURRENT_AND_SAFE_SIZE, RelatedDataTypeChanges } from "../../Types/DataTypes";
+import { AtRiskType, CurrentAndSafeStructure, DataType, Filter, Group, IPrimaryDataObject, ISecondaryDataObject, MAX_CURRENT_AND_SAFE_SIZE, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
 import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
@@ -267,18 +267,26 @@ export interface PrimarydataTypeStoreStateKeys extends StateKeys
 export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents>
     extends DataTypeStore<T, K, U>
 {
-    public removeSecondaryObjectFromValues(secondaryObjectID: string, secondaryObjectCollection: SecondaryDataObjectCollection): T
+    public removeSecondaryObjectFromValues(
+        secondaryObjectID: string,
+        secondaryDataObjectCollection: SecondaryDataObjectCollection,
+        pathToSecondaryObjectsOnPrimaryObject: keyof K): PendingStoreState<T, K>
     {
-        const pendingState = this.cloneState();
-        OH.forEachValue(this.getPrimaryDataTypesByID(pendingState), (v => 
+        const pendingState = this.getPendingState()!;
+        OH.forEachValue(this.getPrimaryDataTypesByID(pendingState.state), (v => 
         {
-            v[secondaryObjectCollection].delete(secondaryObjectID);
+            if (!v[secondaryDataObjectCollection].has(secondaryObjectID))
+            {
+                return;
+            }
+
+            pendingState.deleteValue(pathToSecondaryObjectsOnPrimaryObject, secondaryObjectID, v.id);
         }));
 
         return pendingState;
     }
 
-    protected getPrimaryDataTypesByID(state: T): { [key: string]: SecondaryDataObjectCollectionType }
+    protected getPrimaryDataTypesByID(state: T): { [key: string]: IPrimaryDataObject }
     {
         return {} as any;
     }
