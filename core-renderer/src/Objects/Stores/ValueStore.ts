@@ -11,7 +11,7 @@ import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/s
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
 import { GroupStoreState, IGroupStoreState } from "./GroupStore";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IValueStoreState extends StoreState
@@ -47,7 +47,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 {
     constructor(vault: VaultStoreParameter)
     {
-        super(vault, "valueStoreState", ValueStorePathRetriever);
+        super(vault, StoreType.Value, ValueStorePathRetriever);
     }
 
     protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): { [key: string]: IPrimaryDataObject }
@@ -87,7 +87,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
-        return await transaction.commit(masterKey, backup);
+        return await transaction.commit(masterKey);
     }
 
     async addNameValuePairToStores(

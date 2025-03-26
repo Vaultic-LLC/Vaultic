@@ -5,7 +5,8 @@ import { VaulticRepository } from "../VaulticRepository";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../../Entities/ChangeTracking";
 import { ObjectPropertyManager, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { ClientChange } from "@vaultic/shared/Types/ClientServerTypes";
 
 export class StoreStateRepository<T extends StoreState> extends VaulticRepository<T>
 {
@@ -33,25 +34,43 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         return true;
     }
 
-    public async mergeStates(key: string, currentStateID: number, newState: DeepPartial<StoreState>, changeTrackings: Dictionary<ChangeTracking>,
-        transaction: Transaction, decrypt: boolean = true)
+    /**
+     * Merges changes on the server and our local changes with our current store state
+     * @param key 
+     * @param currentStateID 
+     * @param newState 
+     * @param serverChangeTrackings 
+     * @param localChangeTrackings 
+     * @param transaction 
+     * @param decrypt 
+     * @returns Method response of ClientChanges. These ClientChanges have the correct version set and should be pushed to the server, otherwise undefined is returned
+     * if there weren't any local changes that needed to be pushed.
+     */
+    public async mergeStates(
+        key: string,
+        currentStateID: number,
+        newState: DeepPartial<StoreState>,
+        serverChangeTrackings: ChangeTracking[],
+        localChangeTrackings: ChangeTracking[],
+        transaction: Transaction,
+        decrypt: boolean = true): Promise<TypedMethodResponse<ClientChange[] | undefined>>
     {
         let currentState = await this.getByID(currentStateID);
         if (!currentState || (key && !(await currentState.verify(key))))
         {
-            return false;
+            return TypedMethodResponse.fail();
         }
 
         let newStateToUse = await StoreState.getUsableState(key, newState.state, decrypt);
         if (!newStateToUse.success)
         {
-            return false;
+            return TypedMethodResponse.fail();
         }
 
         let currentStateToUse = await StoreState.getUsableState(key, currentState.state, decrypt);
         if (!currentStateToUse.success)
         {
-            return false;
+            return TypedMethodResponse.fail();
         }
 
         try 

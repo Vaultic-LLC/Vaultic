@@ -127,65 +127,70 @@ export const defaultColorPalettes: Map<string, ColorPalette> = new Map([
     }]
 ]);
 
-export const emptyUserColorPalettes: Map<string, ColorPalette> = new Map([
-    ["m84ezgwn4", {
-        id: "m84ezgwn4",
-        a: false,
-        i: false,
-        e: false,
-        p: {
-            p: "",
-            o: "",
-            t: "",
-        },
-        v: {
-            p: "",
-            o: "",
-            t: "",
-        },
-        f: "",
-        g: "",
-        r: "",
-        s: ""
-    }],
-    ["m84ezgwn7", {
-        id: "m84ezgwn7",
-        a: false,
-        i: false,
-        e: false,
-        p: {
-            p: "",
-            o: "",
-            t: "",
-        },
-        v: {
-            p: "",
-            o: "",
-            t: "",
-        },
-        f: "",
-        g: "",
-        r: "",
-        s: ""
-    }],
-    ["m84ezgwn10", {
-        id: "m84ezgwn10",
-        a: false,
-        i: false,
-        e: false,
-        p: {
-            p: "",
-            o: "",
-            t: "",
-        },
-        v: {
-            p: "",
-            o: "",
-            t: "",
-        },
-        f: "",
-        g: "",
-        r: "",
-        s: ""
-    }]
-]);
+
+export const emptyUserColorPalettes: { [key: string]: ColorPalette } = {};
+emptyUserColorPalettes["m84ezgwn4"] =
+{
+    id: "m84ezgwn4",
+    a: false,
+    i: false,
+    e: false,
+    p: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    v: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    f: "",
+    g: "",
+    r: "",
+    s: ""
+};
+
+emptyUserColorPalettes["m84ezgwn7"] =
+{
+    id: "m84ezgwn7",
+    a: false,
+    i: false,
+    e: false,
+    p: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    v: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    f: "",
+    g: "",
+    r: "",
+    s: ""
+};
+
+emptyUserColorPalettes["m84ezgwn10"] =
+{
+    id: "m84ezgwn10",
+    a: false,
+    i: false,
+    e: false,
+    p: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    v: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    f: "",
+    g: "",
+    r: "",
+    s: ""
+};

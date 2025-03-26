@@ -3,10 +3,11 @@ import { User } from "../Database/Entities/User";
 import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
-import { CurrentSignaturesVaultKeys } from "../Types/Responses";
+import { ClientChangeTrackingType, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { Algorithm, SignedVaultKey } from "@vaultic/shared/Types/Keys";
+import { LastLoadedLedgerVersionsAndVaultKeys } from "../Types/Responses";
+import { server } from "@serenity-kit/opaque";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>, onSucceed?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>
 {
@@ -47,94 +48,48 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
     return TypedMethodResponse.fail();
 }
 
-export async function getUserDataSignatures(masterKey: string, user: User): Promise<CurrentSignaturesVaultKeys>
+export async function getLastLoadedLedgerVersionsAndKeys(masterKey: string, user: User): Promise<LastLoadedLedgerVersionsAndVaultKeys>
 {
     let userData = {}
-    userData["user"] =
+    userData["userChanges"] =
     {
         userID: user.userID,
-        currentSignature: user.currentSignature,
-        appStoreState:
-        {
-            appStoreStateID: user.appStoreState.appStoreStateID,
-            currentSignature: user.appStoreState.currentSignature,
-            entityState: user.appStoreState.entityState
-        },
-        userPreferencesStoreState:
-        {
-            userPreferencesStoreStateID: user.userPreferencesStoreState.userPreferencesStoreStateID,
-            currentSignature: user.userPreferencesStoreState.currentSignature,
-            entityState: user.userPreferencesStoreState.entityState
-        }
+        lastLoadedChangeVersion: user.lastLoadedChangeVersion,
     };
 
     const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, undefined, user.userID);
     if (userVaults[0].length > 0)
     {
-        userData["userVaults"] = [];
-        userData["vaults"] = [];
+        userData["userVaultChanges"] = [];
+        userData["vaultChanges"] = [];
 
         for (let i = 0; i < userVaults[0].length; i++)
         {
             const userVault = userVaults[0][i];
 
-            userData["userVaults"].push({
+            userData["userVaultLedgers"].push({
+                userOrganizationID: userVault.userOrganizationID,
                 userVaultID: userVault.userVaultID,
-                currentSignature: userVault.currentSignature,
-                entityState: userVault.entityState,
                 permissions: userVault.permissions,
-                vaultPreferencesStoreState:
-                {
-                    vaultPreferencesStoreStateID: userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
-                    currentSignature: userVault.vaultPreferencesStoreState.currentSignature,
-                    entityState: userVault.vaultPreferencesStoreState.entityState
-                }
+                lastLoadedChangeVersion: userVault.lastLoadedChangeVersion
             });
 
-            userData["vaults"].push({
+            userData["vaultLedgers"].push({
+                userOrganizationID: userVault.userOrganizationID,
+                userVaultID: userVault.userVaultID,
                 vaultID: userVault.vault.vaultID,
-                currentSignature: userVault.vault.currentSignature,
-                entityState: userVault.vault.entityState,
-                vaultStoreState:
-                {
-                    vaultStoreStateID: userVault.vault.vaultStoreState.vaultStoreStateID,
-                    currentSignature: userVault.vault.vaultStoreState.currentSignature,
-                    entityState: userVault.vault.vaultStoreState.entityState
-                },
-                passwordStoreState:
-                {
-                    passwordStoreStateID: userVault.vault.passwordStoreState.passwordStoreStateID,
-                    currentSignature: userVault.vault.passwordStoreState.currentSignature,
-                    entityState: userVault.vault.passwordStoreState.entityState
-                },
-                valueStoreState:
-                {
-                    valueStoreStateID: userVault.vault.valueStoreState.valueStoreStateID,
-                    currentSignature: userVault.vault.valueStoreState.currentSignature,
-                    entityState: userVault.vault.valueStoreState.entityState
-                },
-                filterStoreState:
-                {
-                    filterStoreStateID: userVault.vault.filterStoreState.filterStoreStateID,
-                    currentSignature: userVault.vault.filterStoreState.currentSignature,
-                    entityState: userVault.vault.filterStoreState.entityState
-                },
-                groupStoreState:
-                {
-                    groupStoreStateID: userVault.vault.groupStoreState.groupStoreStateID,
-                    currentSignature: userVault.vault.groupStoreState.currentSignature,
-                    entityState: userVault.vault.groupStoreState.entityState
-                }
+                lastLoadedChangeVersion: userVault.vault.lastLoadedChangeVersion
             });
         }
     }
 
-    return { signatures: userData, keys: userVaults[1] };
+    return { versions: userData, keys: userVaults[1] };
 }
 
 // Only call within a method wrapped in safetifyMethod
-export async function backupData(masterKey: string)
+export async function backupData(masterKey: string, currentUser: User, dataToBackup?: UserDataPayload)
 {
+    const postData: { userDataPayload: UserDataPayload } = { userDataPayload: (dataToBackup ?? {}) };
     console.time("6");
     const userToBackup = await environment.repositories.users.getEntityThatNeedsToBeBackedUp(masterKey);
     if (!userToBackup.success)
@@ -156,7 +111,6 @@ export async function backupData(masterKey: string)
 
     console.timeEnd("6");
     console.time("7");
-    const postData: { userDataPayload: UserDataPayload } = { userDataPayload: {} };
     if (userToBackup.value)
     {
         postData.userDataPayload["user"] = userToBackup.value;
@@ -177,7 +131,7 @@ export async function backupData(masterKey: string)
     if (!backupResponse.Success)
     {
         console.time("8");
-        const s = await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload);
+        const s = await checkMergeMissingData(masterKey, currentUser, vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload);
         console.timeEnd("8");
         return s;
     }
@@ -211,7 +165,7 @@ export async function backupData(masterKey: string)
         console.timeEnd("9c");
         // all data succesfully backed up, no need for change trackings anymore
         console.time("9d");
-        await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
+        await environment.repositories.changeTrackings.clearChangeTrackings(transaction);
         console.timeEnd("9d");
 
         console.time("9e");
@@ -247,7 +201,13 @@ export async function safeBackupData(masterKey: string): Promise<TypedMethodResp
 // If the entity state is updated, then I need to merge them by updatedTime
 //
 // any vaults / userVaults that are maked as 'removed' from the server will be deleted
-export async function checkMergeMissingData(masterKey: string, email: string, vaultKeys: string[], clientUserDataPayload: UserDataPayload, serverUserDataPayload: UserDataPayload, transaction?: Transaction): Promise<boolean>
+export async function checkMergeMissingData(
+    masterKey: string,
+    currentUser: User,
+    vaultKeys: string[],
+    clientUserDataPayload: UserDataPayload,
+    serverUserDataPayload: UserDataPayload,
+    transaction?: Transaction): Promise<boolean>
 {
     if (!serverUserDataPayload)
     {
@@ -255,9 +215,10 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
     }
 
     transaction = transaction ?? new Transaction();
-    let needsToRePushData = false;
-    const changeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsByID(masterKey, email);
+    const changeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsByStoreType(masterKey, email);
 
+    let needsToRePushData = false;
+    const dataToBackup: UserDataPayload = {};
     if (serverUserDataPayload.user)
     {
         if (!clientUserDataPayload.user)
@@ -275,9 +236,18 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
         }
         else
         {
-            if (await environment.repositories.users.updateFromServer(masterKey, clientUserDataPayload.user, serverUserDataPayload.user, changeTrackings, transaction))
+            const response = await environment.repositories.users.updateFromServer(masterKey, currentUser, serverUserDataPayload.user, serverUserDataPayload.userChanges,
+                changeTrackings[ClientChangeTrackingType.User], clientUserDataPayload.userChanges, transaction);
+
+            if (response.needsToRePushAppState || response.needsToRePushUserPreferences)
             {
                 needsToRePushData = true;
+            }
+
+            if (response.clientUserChangesToPush)
+            {
+                needsToRePushData = true;
+                dataToBackup.userChanges = response.clientUserChangesToPush;
             }
         }
     }
@@ -442,7 +412,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
     }
 
     // we've handled all trackedChanges. Clear them
-    await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
+    await environment.repositories.changeTrackings.clearChangeTrackings(transaction);
 
     if (!(await transaction.commit()))
     {
@@ -451,7 +421,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
     if (needsToRePushData)
     {
-        return await backupData(masterKey);
+        return await backupData(masterKey, dataToBackup);
     }
 
     return true;
@@ -467,4 +437,9 @@ export async function reloadAllUserData(masterKey: string, email: string, userDa
     transaction.raw("DELETE FROM changeTrackings");
 
     return await checkMergeMissingData(masterKey, email, [], {}, userDataPayload, transaction);
+}
+
+export async function mergeData()
+{
+
 }

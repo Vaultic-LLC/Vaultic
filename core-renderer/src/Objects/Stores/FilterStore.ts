@@ -8,7 +8,7 @@ import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, PrimaryD
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
 import { ValueStoreState } from "./ValueStore";
@@ -63,7 +63,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
 {
     constructor(vault: any)
     {
-        super(vault, "filterStoreState", FilterStorePathRetriever);
+        super(vault, StoreType.Filter, FilterStorePathRetriever);
     }
 
     protected defaultState()
@@ -358,7 +358,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         });
     }
 
-    private filterAppliesToDataObject<T extends IGroupable>(filter: Filter, dataObject: T, groups: { [key: string]: Group }): boolean
+    private filterAppliesToDataObject<T extends IGroupable & { [key: string]: any }>(filter: Filter, dataObject: T, groups: { [key: string]: Group }): boolean
     {
         // if we don't have any conditions, then default to false so 
         // objects don't get included by default
@@ -434,7 +434,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
      * @param duplicateDataTypesDataTypePath Path to the current duplicates data types data tyeps, either "duplicatePasswordDataTypes.dataTypes" or "duplicateValueDataTypes.dataTypes"
      * @param pendingFilterStoreState Current pending filter store state
      */
-    private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable>(
+    private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable & { [key: string]: any }>(
         filtersToSync: { [key: string]: Filter },
         primaryDataObjects: T[],
         primaryDataObjectCollection: PrimaryDataObjectCollection,

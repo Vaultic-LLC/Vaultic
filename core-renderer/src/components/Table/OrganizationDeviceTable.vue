@@ -161,7 +161,7 @@ export default defineComponent({
 
                 app.organizations.organizationsByID.forEach((v, k, map) =>
                 {
-                    if (app.userPreferences.pinnedOrganizations.has(k))
+                    if (app.userPreferences.pinnedOrganizations.has(k.toString()))
                     {
                         newPinnedOrganizationModels.push(new TableRowModel(k, true));
                     }

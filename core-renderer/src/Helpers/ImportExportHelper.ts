@@ -8,14 +8,14 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType, Group } from "../Types/DataTypes";
 import { ImportableDisplayField } from "../Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { IGroupStoreState } from "../Objects/Stores/GroupStore";
-import { IFilterStoreState } from "../Objects/Stores/FilterStore";
+import { GroupStoreState, IGroupStoreState } from "../Objects/Stores/GroupStore";
+import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "../Objects/Stores/FilterStore";
 import { IPasswordStoreState, PasswordStoreState, PasswordStoreStateKeys } from "../Objects/Stores/PasswordStore";
 import { IValueStoreState, ValueStoreState } from "../Objects/Stores/ValueStore";
 import StoreUpdateTransaction from "../Objects/StoreUpdateTransaction";
 import { PendingStoreState } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
-import { PrimarydataTypeStoreStateKeys } from "../Objects/Stores/Base";
+import { PrimarydataTypeStoreStateKeys, SecondarydataTypeStoreStateKeys } from "../Objects/Stores/Base";
 
 export async function exportLogs(color: string)
 {
@@ -253,8 +253,8 @@ class CSVImporter<T extends IPrimaryDataObject>
 {
     dataType: DataType;
 
-    pendingGroupStoreState: IGroupStoreState;
-    pendingFilterStoreState: IFilterStoreState;
+    pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>;
+    pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>;
 
     didFailToSave: boolean;
 
@@ -271,8 +271,8 @@ class CSVImporter<T extends IPrimaryDataObject>
 
     protected preImport()
     {
-        this.pendingGroupStoreState = app.currentVault.groupStore.cloneState();
-        this.pendingFilterStoreState = app.currentVault.filterStore.cloneState();
+        this.pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+        this.pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
     }
 
     protected createValue(): T
@@ -559,7 +559,7 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
             transaction.updateVaultStore(app.currentVault.groupStore, this.pendingGroupStoreState);
             transaction.updateVaultStore(app.currentVault.filterStore, this.pendingFilterStoreState);
 
-            if (!await transaction.commit(masterKey, app.isOnline))
+            if (!await transaction.commit(masterKey))
             {
                 this.didFailToSave = true;
             }

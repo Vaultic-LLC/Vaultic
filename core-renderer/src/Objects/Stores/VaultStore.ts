@@ -8,21 +8,33 @@ import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { DictionaryAsList, DoubleKeyedObject, StateKeys, StoreState } from "@vaultic/shared/Types/Stores";
+import { DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
 const MAX_LOGIN_RECORDS = 500;
 export interface VaultSettings { }
 
 interface IVaultStoreState extends StoreState
 {
+    /** Settings */
     s: VaultSettings;
-    l: DictionaryAsList;
+    /** Login History */
+    l: number[];
 }
+
+export interface VaultStoreStateKeys extends StateKeys
+{
+    'loginHistory': '';
+}
+
+const VaultStorePathRetriever: StorePathRetriever<VaultStoreStateKeys> =
+{
+    'loginHistory': (...ids: string[]) => `l`,
+};
 
 export type VaultStoreState = IVaultStoreState;
 
 export class BaseVaultStore<V extends PasswordStore,
-    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState, StateKeys>
+    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState, VaultStoreStateKeys>
 {
     protected internalName: string;
     protected internalShared: boolean;
@@ -61,7 +73,7 @@ export class BaseVaultStore<V extends PasswordStore,
 
     constructor() 
     {
-        super("vaultStoreState");
+        super(StoreType.Vault, VaultStorePathRetriever);
         this.internalIsReadOnly = ref(false);
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
@@ -86,7 +98,7 @@ export class BaseVaultStore<V extends PasswordStore,
         return {
             version: 0,
             s: {},
-            l: new Map<number, number>()
+            l: []
         };
     }
 }
@@ -179,7 +191,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     private async updateLogins(masterKey: string)
     {
-        const pendingState = this.cloneState();
+        const pendingState = this.getPendingState()!;
         await this.recordLogin(pendingState, Date.now());
 
         const transaction = new StoreUpdateTransaction(this.userVaultID);
@@ -188,21 +200,19 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         await transaction.commit(masterKey);
     }
 
-    private async recordLogin(pendingState: VaultStoreState, dateTime: number): Promise<void>
+    private async recordLogin(
+        pendingState: PendingStoreState<VaultStoreState, VaultStoreStateKeys>,
+        dateTime: number): Promise<void>
     {
-        if (pendingState.l.size >= MAX_LOGIN_RECORDS)
+        if (pendingState.state.l.length >= MAX_LOGIN_RECORDS)
         {
-            for (let i = pendingState.l.size - MAX_LOGIN_RECORDS; i >= 0; i--)
+            for (let i = pendingState.state.l.length - MAX_LOGIN_RECORDS; i >= 0; i--)
             {
-                const result = pendingState.l.entries().next();
-                if (result.value)
-                {
-                    pendingState.l.delete(result.value[0]);
-                }
+                pendingState.deleteValue("loginHistory", "");
             }
         }
 
-        pendingState.l.set(dateTime, dateTime);
+        pendingState.addValue("loginHistory", "", dateTime);
     }
 }
 

@@ -53,10 +53,6 @@
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                            :label="'Remember Master Key While Logged In'" v-model="appSettings.t" />
-                    </div>
-                    <div class="settingsView__inputSection">
-                        <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
                             :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.m" />
                     </div>
                     <div class="settingsView__inputSection">
@@ -112,7 +108,6 @@ import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
 
 import { AutoLockTime } from '../../Types/App';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
-import { VaultSettings } from "../../Objects/Stores/VaultStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
 import { FilterStatus } from '../../Types/DataTypes';
 import { AllowSharingFrom, ServerAllowSharingFrom, ServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
@@ -146,6 +141,7 @@ export default defineComponent({
         const usernameField: Ref<InputComponent | null> = ref(null);
         const objectView: Ref<ObjectViewComponent | null> = ref(null);
 
+        const appStoreState = app.getPendingState()!;
         // copy the objects so that we don't edit the original one. Also needed for change tracking
         const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
         const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
@@ -188,7 +184,6 @@ export default defineComponent({
         async function onAuthenticationSuccessful(masterKey: string)
         {
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
-            const originalTemporarilyStoreMasterKey = app.settings.t;
             
             //check / save shared settinsg first in case username is already taken
             if (!await checkUpdateSettings())
@@ -199,10 +194,13 @@ export default defineComponent({
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
             if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
             {
-                const state = app.cloneState();
-                state.settings = appSettings.value;
+                appStoreState.commitProxyObject('settings', appSettings.value);
+                transaction.updateUserStore(app, appStoreState);
 
-                transaction.updateUserStore(app, state);
+                if (!(await transaction.commit(masterKey)))
+                {
+                    return false;
+                }
             }
 
             // if (JSON.vaulticStringify(originalVaultSettings.value) != JSON.vaulticStringify(vaultSettings.value))
@@ -213,22 +211,8 @@ export default defineComponent({
             //     transaction.updateVaultStore(app.currentVault, state);
             // }
 
-            const succeeded = await transaction.commit(masterKey, app.isOnline);
-            if (succeeded && 
-                originalTemporarilyStoreMasterKey != app.settings.t)
-            {
-                if (app.settings.t)
-                {
-                    await api.cache.setMasterKey(masterKey);
-                }
-                else
-                {
-                    await api.cache.clearMasterKey();
-                }
-            }
-
             app.popups.hideLoadingIndicator();
-            saveSucceeded(succeeded);
+            saveSucceeded(true);
         }
 
         async function checkUpdateSettings(): Promise<boolean>
@@ -417,6 +401,8 @@ export default defineComponent({
 
         onMounted(async () => 
         {
+            appSettings.value = appStoreState.proxifyObject('settings', appSettings.value);
+
             if (isOnline.value)
             {
                 isLoadingSharedData.value = true;

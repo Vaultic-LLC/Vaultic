@@ -12,7 +12,7 @@ export interface ClientUserRepository
     setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<undefined>>;
     getCurrentUserData: (masterKey: string) => Promise<TypedMethodResponse<string | undefined>>;
     verifyUserMasterKey: (masterKey: string, email?: string, isVaulticKey?: boolean) => Promise<TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>>;
-    saveUser: (masterKey: string, newData: string, currentData: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    saveUser: (masterKey: string, changes: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     getStoreStates: (masterKey: string, storesToRetrieve: UserData) => Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>;
     getValidMasterKey: () => Promise<string | undefined>;
 }
@@ -41,7 +41,7 @@ export interface ClientVaultRepository
 {
     updateVault: (masterKey: string, updateVaultData: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     setActiveVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
-    saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    saveVaultData: (masterKey: string, userVaultID: number, changes: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     createNewVaultForUser: (masterKey: string, updateVaultData: string) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     getStoreStates: (masterKey: string, userVaultID: number, storesToRetrieve: CondensedVaultData) => Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>;
     deleteVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<boolean | undefined>>;
@@ -50,7 +50,7 @@ export interface ClientVaultRepository
 
 export interface ClientUserVaultRepository
 {
-    saveUserVault: (masterKey: string, userVaultID: number, newData: string, currentData: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    saveUserVault: (masterKey: string, userVaultID: number, changes: string) => Promise<TypedMethodResponse<boolean | undefined>>;
     getStoreStates: (masterKey: string, userVaultID: number, storesToRetrieve: CondensedVaultData) => Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>;
 }
 

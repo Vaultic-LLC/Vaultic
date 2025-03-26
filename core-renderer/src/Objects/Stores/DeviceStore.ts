@@ -5,9 +5,9 @@ import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import app from "./AppStore";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
-export class DeviceStore extends Store<StoreState>
+export class DeviceStore extends Store<StoreState, StateKeys>
 {
     private internalCurrentDeviceInfo: Ref<DeviceInfo | undefined>;
     private internalRegisteredCurrentDevice: Ref<ClientDevice | undefined>;
@@ -25,7 +25,7 @@ export class DeviceStore extends Store<StoreState>
 
     constructor()
     {
-        super('deviceStore');
+        super(StoreType.Device);
 
         this.internalCurrentDeviceInfo = ref(undefined);
         this.internalRegisteredCurrentDevice = ref(undefined);

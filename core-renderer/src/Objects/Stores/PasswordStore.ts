@@ -11,7 +11,7 @@ import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/s
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
 import { GroupStoreState, IGroupStoreState } from "./GroupStore";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IPasswordStoreState extends StoreState
@@ -62,7 +62,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 {
     constructor(vault: VaultStoreParameter)
     {
-        super(vault, "passwordStoreState", PasswordStorePathRetriever);
+        super(vault, StoreType.Password, PasswordStorePathRetriever);
     }
 
     protected getPrimaryDataTypesByID(state: KnownMappedFields<IPasswordStoreState>): { [key: string]: IPrimaryDataObject }
@@ -116,7 +116,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
-        if (!(await transaction.commit(masterKey, backup)))
+        if (!(await transaction.commit(masterKey)))
         {
             return false;
         }
@@ -255,7 +255,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
-        if (!(await transaction.commit(masterKey, backup)))
+        if (!(await transaction.commit(masterKey)))
         {
             return false;
         }

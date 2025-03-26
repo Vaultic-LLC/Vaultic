@@ -3,13 +3,13 @@ import { stsServer } from "../Server/VaulticServer";
 import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
+import { checkMergeMissingData, getLastLoadedLedgerVersionsAndKeys, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
-import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { LastLoadedLedgerVersionsAndVaultKeys } from "../Types/Responses";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
@@ -88,7 +88,7 @@ async function logUserIn(masterKey: string, email: string,
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
         const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
-        let currentSignatures: CurrentSignaturesVaultKeys = { signatures: {}, keys: [] }
+        let versionsAndKeys: LastLoadedLedgerVersionsAndVaultKeys = { versions: {}, keys: [] }
         let masterKeyVaulticKey: string | undefined;
 
         if (!firstLogin && !reloadAllData && currentUser)
@@ -100,10 +100,10 @@ async function logUserIn(masterKey: string, email: string,
             };
 
             masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
-            currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
+            versionsAndKeys = await getLastLoadedLedgerVersionsAndKeys(masterKeyVaulticKey, currentUser);
         }
 
-        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
+        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, versionsAndKeys?.versions ?? {});
         if (finishResponse.Success)
         {
             await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
@@ -139,7 +139,7 @@ async function logUserIn(masterKey: string, email: string,
                 }
                 else
                 {
-                    await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
+                    await checkMergeMissingData(masterKeyVaulticKey, email, versionsAndKeys?.keys ?? [], versionsAndKeys?.versions ?? {}, result.value.userDataPayload);
                 }
 
                 // This has to go after merging in the event that the user isn't in the local data yet

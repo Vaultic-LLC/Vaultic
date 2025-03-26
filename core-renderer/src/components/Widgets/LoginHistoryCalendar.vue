@@ -31,14 +31,14 @@ export default defineComponent({
         const attributes = computed(() =>
         {
             let attr: any[] = [];
-            app.currentVault.loginHistory.forEach((v, k, map) =>
+            app.currentVault.loginHistory.forEach(v =>
             {
                 attr.push({
-                    key: k,
-                    dates: [k],
+                    key: v,
+                    dates: [v],
                     dot: true,
                     popover: {
-                        label: new Date(k).toLocaleTimeString(),
+                        label: new Date(v).toLocaleTimeString(),
                         visibility: "hover"
                     }
                 });

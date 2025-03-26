@@ -48,9 +48,9 @@ export interface UserDataPayload
     sharedUserVaults?: SharedClientUserVault[];
     removedUserVaults?: DeepPartial<IUserVault>[];
     removedVaults?: DeepPartial<IVault>[];
-    userLedger?: ClientUserLedger;
-    userVaultLedgers?: ClientUserVaultLedger[];
-    vaultLedgers?: ClientVaultLedger[];
+    userChanges?: ClientUserChangeTrackings;
+    userVaultChanges?: ClientUserVaultChangeTrackings[];
+    vaultChanges?: ClientVaultChangeTrackings[];
 };
 
 export enum ServerPermissions
@@ -168,27 +168,41 @@ export enum ServerAllowSharingFrom
     SpecificUsers
 }
 
-interface ClientLedgerObject
+export enum ClientChangeTrackingType
 {
-    lastLoadedLedgerVersion: number;
-    ledgerChanges: { version: number, changes: string }[];
+    User,
+    UserVault,
+    Vault
 }
 
-export interface ClientUserLedger extends ClientLedgerObject
+interface ClientChangeTrackingObject
+{
+    lastLoadedChangeVersion: number;
+    allChanges: ClientChange[];
+}
+
+export interface ClientUserChangeTrackings extends ClientChangeTrackingObject
 {
     userID: number
 }
 
-export interface ClientUserVaultLedger extends ClientLedgerObject
+export interface ClientUserVaultChangeTrackings extends ClientChangeTrackingObject
 {
     userOrganizationID: number;
     userVaultID: number;
     permissions: ServerPermissions;
 }
 
-export interface ClientVaultLedger extends ClientLedgerObject
+export interface ClientVaultChangeTrackings extends ClientChangeTrackingObject
 {
     userOrganizationID: number;
     userVaultID: number;
     vaultID: number;
+}
+
+export interface ClientChange
+{
+    version?: number;
+    changeTime: number;
+    changes: string;
 }

@@ -7,11 +7,11 @@ import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { Password } from "../../Types/DataTypes";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed" | "onBreachesUpdated";
 
-export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent>
+export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreachStoreEvent>
 {
     private internalVaultDataBreaches: Ref<VaultDataBreach[]>;
     private internalVaultDataBreachesByPasswordID: Ref<Map<string, VaultDataBreach>>;
@@ -25,7 +25,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     constructor()
     {
-        super('vaultDataBreachStore');
+        super(StoreType.VaultDataBreach);
 
         this.internalVaultDataBreaches = ref([]);
         this.internalVaultDataBreachesByPasswordID = ref(new Map());

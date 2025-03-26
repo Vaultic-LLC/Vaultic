@@ -9,7 +9,7 @@ import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IPasswordStoreState, PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
 import { IValueStoreState, ValueStoreState } from "./ValueStore";
 import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IGroupStoreState extends StoreState
@@ -56,7 +56,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
     constructor(vault: any)
     {
-        super(vault, "groupStoreState", GroupStorePathRetriever);
+        super(vault, StoreType.Group, GroupStorePathRetriever);
 
         this.internalPasswordGroups = computed(() => Object.values(this.state.p));
         this.internalValueGroups = computed(() => Object.values(this.state.v));
@@ -113,7 +113,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
             transaction.updateVaultStore(this, pendingStoreState);
         }
 
-        return await transaction.commit(masterKey, backup);
+        return await transaction.commit(masterKey);
     }
 
     async addGroupToStores(

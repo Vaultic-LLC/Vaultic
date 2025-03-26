@@ -32,11 +32,7 @@ export class CreateSchema1722604318830 implements MigrationInterface
 
         const ledgerProperties: TableColumnOptions[] = [
             {
-                name: "lastLoadedLedgerVersion",
-                type: "integer"
-            },
-            {
-                name: "currentLedgerVersion",
+                name: "lastLoadedChangeVersion",
                 type: "integer"
             }
         ];
@@ -346,15 +342,20 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "integer"
                 },
                 {
-                    name: "objectID",
-                    type: "text"
+                    name: "vaultID",
+                    type: "integer",
+                    isNullable: true
                 },
                 {
-                    name: "objectState",
+                    name: "clientTrackingType",
                     type: "integer"
                 },
                 {
-                    name: "lastModifiedTime",
+                    name: "changes",
+                    type: "text"
+                },
+                {
+                    name: "changeTime",
                     type: "integer"
                 }
             ]

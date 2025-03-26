@@ -24,10 +24,10 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { VaultsAndKeys } from "../../Types/Responses";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultMembersInfo, ClientChangeTrackingType, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
-import { VaultStoreStates } from "@vaultic/shared/Types/Stores";
+import { StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -124,6 +124,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         vault.valueStoreState = new ValueStoreState().makeReactive();
         vault.filterStoreState = new FilterStoreState().makeReactive();
         vault.groupStoreState = new GroupStoreState().makeReactive();
+        vault.lastLoadedChangeVersion = 0;
 
         userVault.vault = vault;
         vault.userVaults = [userVault];
@@ -136,6 +137,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         userVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID = response.VaultPreferencesStoreStateID!;
         userVault.vaultPreferencesStoreState.state = "{}";
         userVault.vaultKey = vaultKey;
+        userVault.lastLoadedChangeVersion = 0;
 
         vault.vaultID = response.VaultID!;
         vault.vaultStoreState.vaultID = response.VaultID!;
@@ -403,94 +405,28 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async saveVaultData(masterKey: string, userVaultID: number, newData: string, currentData?: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveVaultData(masterKey: string, userVaultID: number, changes: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveVaultData);
 
         async function internalSaveVaultData(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
+            if (!environment.cache.currentUser?.userID)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVaultData");
+            }
+
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
             if (userVaults[0].length != 1)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "No UserVault");
             }
 
-            const oldVault = userVaults[0][0].vault.makeReactive();
             const vaultKey = userVaults[1][0];
-
-            const newVaultData: CondensedVaultData = JSON.vaulticParse(newData);
-            const currentVaultData: CondensedVaultData | undefined = currentData ? JSON.vaulticParse(currentData) : undefined;
-
-            if (!environment.cache.currentUser?.userID)
-            {
-                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveVaultData");
-            }
-
             const transaction = new Transaction();
-            if (newVaultData.vaultStoreState)
-            {
-                const currentVaultState = JSON.vaulticParse(currentVaultData.vaultStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.vaultStoreState),
-                    currentVaultState, transaction);
 
-                if (!await (environment.repositories.vaultStoreStates.updateState(
-                    oldVault.vaultStoreState.vaultStoreStateID, vaultKey, state, transaction)))
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update VaultStoreState");
-                }
-            }
-
-            if (newVaultData.passwordStoreState)
-            {
-                const currentPasswordState = JSON.vaulticParse(currentVaultData.passwordStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.passwordStoreState),
-                    currentPasswordState, transaction);
-
-                if (!await (environment.repositories.passwordStoreStates.updateState(
-                    oldVault.passwordStoreState.passwordStoreStateID, vaultKey, state, transaction)))
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update PasswordStoreState");
-                }
-            }
-
-            if (newVaultData.valueStoreState)
-            {
-                const currentValueState = JSON.vaulticParse(currentVaultData.valueStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.valueStoreState),
-                    currentValueState, transaction);
-
-                if (!await (environment.repositories.valueStoreStates.updateState(
-                    oldVault.valueStoreState.valueStoreStateID, vaultKey, state, transaction)))
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update ValueStoreState");
-                }
-            }
-
-            if (newVaultData.filterStoreState)
-            {
-                const currentFilterState = JSON.vaulticParse(currentVaultData.filterStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.filterStoreState),
-                    currentFilterState, transaction);
-
-                if (!await (environment.repositories.filterStoreStates.updateState(
-                    oldVault.filterStoreState.filterStoreStateID, vaultKey, state, transaction)))
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update FilterStoreState");
-                }
-            }
-
-            if (newVaultData.groupStoreState)
-            {
-                const currentGroupState = JSON.vaulticParse(currentVaultData.groupStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newVaultData.groupStoreState),
-                    currentGroupState, transaction);
-
-                if (!await (environment.repositories.groupStoreStates.updateState(
-                    oldVault.groupStoreState.groupStoreStateID, vaultKey, state, transaction)))
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed To Update GroupStoreState");
-                }
-            }
+            ChangeTracking.creteAndInsert(vaultKey, ClientChangeTrackingType.Vault, changes, transaction, environment.cache.currentUser.userID,
+                userVaults[0][0].vaultID);
 
             const saved = await transaction.commit();
             if (!saved)
@@ -780,6 +716,12 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         if (newVault.isArchived)
         {
             partialVault[nameof<Vault>("isArchived")] = newVault.isArchived;
+            updatedVault = true;
+        }
+
+        if (newVault.lastLoadedChangeVersion)
+        {
+            partialVault[nameof<Vault>("lastLoadedChangeVersion")] = newVault.lastLoadedChangeVersion;
             updatedVault = true;
         }
 

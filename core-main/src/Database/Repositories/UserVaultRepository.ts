@@ -17,7 +17,8 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { Algorithm, PublicKeyType } from "@vaultic/shared/Types/Keys";
 import vaulticServer from "../../Server/VaulticServer";
-import { VaultStoreStates } from "@vaultic/shared/Types/Stores";
+import { StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
+import { ClientChangeTrackingType } from "@vaultic/shared/Types/ClientServerTypes";
 
 class UserVaultRepository extends VaulticRepository<UserVault> implements IUserVaultRepository
 {
@@ -133,12 +134,17 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return condensedDecryptedUserVaults;
     }
 
-    public async saveUserVault(masterKey: string, userVaultID: number, newData: string, currentData: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveUserVault(masterKey: string, userVaultID: number, changes: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveUserVault);
 
         async function internalSaveUserVault(this: UserVaultRepository): Promise<TypedMethodResponse<boolean>>
         {
+            if (!environment.cache.currentUser?.userID)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER, "saveUserVault");
+            }
+
             let userVaults: UserVault[];
 
             // masterKey will be "" when updating vaultPreferencesStoreState. This is fine since it'll be the only thing
@@ -163,27 +169,10 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                 return TypedMethodResponse.fail(undefined, undefined, `Invalid number of UserVaulst: ${userVaults.length}`)
             }
 
-            const oldUserVault = userVaults[0];
-            const newUserVault: CondensedVaultData = JSON.vaulticParse(newData);
-
             const transaction = new Transaction();
-            if (newUserVault.vaultPreferencesStoreState)
-            {
-                if (!environment.cache.currentUser?.userID)
-                {
-                    return TypedMethodResponse.fail(errorCodes.NO_USER, "saveUserVault");
-                }
 
-                const currentVaultPreferences = JSON.vaulticParse((JSON.vaulticParse(currentData) as CondensedVaultData).vaultPreferencesStoreState);
-                const state = environment.repositories.changeTrackings.trackStateDifferences(environment.cache.currentUser.userID, masterKey, JSON.vaulticParse(newUserVault.vaultPreferencesStoreState),
-                    currentVaultPreferences, transaction);
-
-                if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
-                    oldUserVault.userVaultID, "", state, transaction)))
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "VaultPreferencesStoreState Update Failed");
-                }
-            }
+            ChangeTracking.creteAndInsert(masterKey, ClientChangeTrackingType.UserVault, changes, transaction,
+                environment.cache.currentUser.userID, userVaults[0].vaultID);
 
             const saved = await transaction.commit();
             if (!saved)
@@ -321,6 +310,12 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         if (newUserVault.permissions != null)
         {
             partialUserVault[nameof<UserVault>("permissions")] = newUserVault.permissions;
+            updatedUserVault = true;
+        }
+
+        if (newUserVault.lastLoadedChangeVersion)
+        {
+            partialUserVault[nameof<UserVault>("lastLoadedChangeVersion")] = newUserVault.lastLoadedChangeVersion;
             updatedUserVault = true;
         }
 

@@ -23,7 +23,7 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
 export interface AppSettings
 {
@@ -49,8 +49,6 @@ export interface AppSettings
     m: boolean;
     /** Passphrase Seperator */
     e: string;
-    /** Temporarily Store Master Key */
-    t: boolean;
 }
 
 export interface IAppStoreState extends StoreState
@@ -59,11 +57,27 @@ export interface IAppStoreState extends StoreState
     s: AppSettings;
 }
 
+export interface AppStoreStateKeys extends StateKeys
+{
+    "settings": "";
+    "colorPalettes.palette": "";
+    "colorPalette.passwordColors": "";
+    "colorPalette.valueColors": "";
+}
+
+const AppStorePathRetriever: StorePathRetriever<AppStoreStateKeys> =
+{
+    'settings': (...ids: string[]) => `s`,
+    'colorPalettes.palette': (...ids: string[]) => `s.c.${ids[0]}`,
+    'colorPalette.passwordColors': (...ids: string[]) => `s.c.${ids[0]}.p`,
+    'colorPalette.valueColors': (...ids: string[]) => `s.c.${ids[0]}.v`
+};
+
 export type AppStoreState = IAppStoreState;
 
 export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
-export class AppStore extends Store<AppStoreState, AppStoreEvents>
+export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEvents>
 {
     private internaLoadedUser: Ref<boolean>;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
@@ -139,7 +153,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     constructor()
     {
-        super("appStoreState");
+        super(StoreType.App, AppStorePathRetriever);
 
         this.internaLoadedUser = ref(false);
         this.internalVaultDataBreachStore = new VaultDataBreachStore();
@@ -147,7 +161,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(this.state.s.c.valueArray()))
+        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(Object.values(this.state.s.c)));
 
         this.internalUserVaults = ref([]);
         this.internalUserVaultsByVaultID = computed(() => this.internalUserVaults.value.reduce((map: Map<number, DisplayVault>, dv: DisplayVault) =>
@@ -317,13 +331,10 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.getUserInfo();
         }
 
-        if (this.state.s.t)
+        const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
+        if (!setMasterKeyResponse.success)
         {
-            const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
-            if (!setMasterKeyResponse.success)
-            {
-                defaultHandleFailedResponse(setMasterKeyResponse);
-            }
+            defaultHandleFailedResponse(setMasterKeyResponse);
         }
 
         return true;
@@ -531,24 +542,29 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return await this.internalLoadUserData(masterKey);
     }
 
-    public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
+    public async updateColorPalette(
+        masterKey: string,
+        colorPalette: ColorPalette,
+        pendingStorState: PendingStoreState<AppStoreState, AppStoreStateKeys>
+    ): Promise<void>
     {
         const transaction = new StoreUpdateTransaction();
-        const pendingState = this.cloneState();
-
-        let oldColorPalette: ColorPalette | undefined = pendingState.s.c.get(colorPalette.id);
+        let oldColorPalette: ColorPalette | undefined = pendingStorState.state.s.c[colorPalette.id];
         if (!oldColorPalette)
         {
-            return Promise.resolve();
+            return;
         }
 
-        oldColorPalette = colorPalette;
+        pendingStorState.commitProxyObject("colorPalettes.palette", colorPalette, colorPalette.id);
+        pendingStorState.commitProxyObject("colorPalette.passwordColors", colorPalette.p, colorPalette.id);
+        pendingStorState.commitProxyObject("colorPalette.valueColors", colorPalette.v, colorPalette.id);
+
         if (this.internalUsersPreferencesStore.currentColorPalette.id == oldColorPalette.id)
         {
             this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette);
         }
 
-        transaction.updateUserStore(this, pendingState);
+        transaction.updateUserStore(this, pendingStorState);
         await transaction.commit(masterKey);
     }
 

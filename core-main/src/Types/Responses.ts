@@ -1,6 +1,7 @@
 import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { Vault } from "../Database/Entities/Vault";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { ClientChangeTrackingType, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { ChangeTracking } from "../Database/Entities/ChangeTracking";
 
 export class VaultsAndKeys
 {
@@ -14,8 +15,10 @@ export class VaultsAndKeys
     }
 }
 
-export interface CurrentSignaturesVaultKeys 
+export interface LastLoadedLedgerVersionsAndVaultKeys 
 {
-    signatures: UserDataPayload;
+    versions: UserDataPayload;
     keys: string[];
 }
+
+export type ChangeTrackingsByType = Partial<Record<ClientChangeTrackingType, ChangeTracking[]>>;

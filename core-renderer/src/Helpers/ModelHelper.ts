@@ -17,15 +17,15 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         switch (app.currentVault.groupStore.activeAtRiskPasswordGroupType)
         {
             case AtRiskType.Empty:
-                app.currentVault.groupStore.emptyPasswordGroups.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.emptyPasswordGroups, k =>
                 {
-                    addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroupsByID.get(k)!);
+                    addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroupsByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.groupStore.duplicatePasswordGroups.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.duplicatePasswordGroups, k =>
                 {
-                    addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroupsByID.get(k)!);
+                    addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroupsByID[k]!);
                 });
                 break;
         }
@@ -35,15 +35,15 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         switch (app.currentVault.groupStore.activeAtRiskValueGroupType)
         {
             case AtRiskType.Empty:
-                app.currentVault.groupStore.emptyValueGroups.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.emptyValueGroups, k =>
                 {
-                    addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valueGroupsByID.get(k)!);
+                    addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valueGroupsByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.groupStore.duplicateValueGroups.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.duplicateValueGroups, (k) =>
                 {
-                    addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valueGroupsByID.get(k)!);
+                    addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valueGroupsByID[k]!);
                 });
                 break;
         }
@@ -53,15 +53,15 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         switch (app.currentVault.filterStore.activeAtRiskPasswordFilterType)
         {
             case AtRiskType.Empty:
-                app.currentVault.filterStore.emptyPasswordFilters.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.emptyPasswordFilters, (k) =>
                 {
-                    addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFiltersByID.get(k)!);
+                    addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFiltersByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.filterStore.duplicatePasswordFilters.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.duplicatePasswordFilters, (k) =>
                 {
-                    addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFiltersByID.get(k)!);
+                    addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFiltersByID[k]!);
                 });
         }
     }
@@ -70,15 +70,15 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         switch (app.currentVault.filterStore.activeAtRiskValueFilterType)
         {
             case AtRiskType.Empty:
-                app.currentVault.filterStore.emptyValueFilters.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.emptyValueFilters, k =>
                 {
-                    addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFiltersByID.get(k)!);
+                    addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFiltersByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.filterStore.duplicateValueFilters.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.duplicateValueFilters, k =>
                 {
-                    addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFiltersByID.get(k)!);
+                    addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFiltersByID[k]!);
                 });
         }
     }
@@ -242,9 +242,9 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         const groupModels: GroupIconModel[] = [];
         if (app.activePasswordValuesTable == DataType.Passwords)
         {
-            v.g.forEach((v, k, map) => 
+            OH.forEachKey(v.g, k => 
             {
-                const group = app.currentVault.groupStore.passwordGroupsByID.get(k);
+                const group = app.currentVault.groupStore.passwordGroupsByID[k];
                 if (!group)
                 {
                     return;
@@ -268,9 +268,9 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
         else 
         {
-            v.g.forEach((v, k, map) => 
+            OH.forEachKey(v.g, k => 
             {
-                const group = app.currentVault.groupStore.valueGroupsByID.get(k);
+                const group = app.currentVault.groupStore.valueGroupsByID[k];
                 if (!group)
                 {
                     return;

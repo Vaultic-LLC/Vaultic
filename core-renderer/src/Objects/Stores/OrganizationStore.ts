@@ -6,9 +6,9 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 import { CreateOrganizationData, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 import app from "./AppStore";
-import { StoreState } from "@vaultic/shared/Types/Stores";
+import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
-export class OrganizationStore extends Store<StoreState>
+export class OrganizationStore extends Store<StoreState, StateKeys>
 {
     private internalFailedToRetrieveOrganizations: Ref<boolean>;
     private internalOrganizationsByID: Ref<Map<number, Organization>>;
@@ -25,14 +25,14 @@ export class OrganizationStore extends Store<StoreState>
 
     constructor()
     {
-        super('organizationStore');
+        super(StoreType.Organization);
 
         this.internalFailedToRetrieveOrganizations = ref(false);
         this.internalOrganizationsByID = ref(new Map());
         this.internalOrganizationIDsByVaultIDs = ref(new Map());
 
         this.internalOrganizations = computed(() => this.internalOrganizationsByID.value.valueArray());
-        this.internalPinnedOrganizations = computed(() => this.internalOrganizations.value.filter(o => app.userPreferences.pinnedOrganizations.has(o.organizationID)));
+        this.internalPinnedOrganizations = computed(() => this.internalOrganizations.value.filter(o => app.userPreferences.pinnedOrganizations.has(o.organizationID.toString())));
     }
 
     public resetToDefault(): void

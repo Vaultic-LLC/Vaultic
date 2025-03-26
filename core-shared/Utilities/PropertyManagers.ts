@@ -184,6 +184,11 @@ export function getObjectFromPath(path: string, start: any): any
 
     for (let i = 0; i < paths.length; i++)
     {
+        if (!lastObject)
+        {
+            return undefined;
+        }
+
         const manager = PropertyManagerConstructor.getFor(lastObject);
         lastObject = manager.get(paths[i], lastObject as unknown as ManagableObject);
     }

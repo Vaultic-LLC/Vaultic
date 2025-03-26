@@ -52,7 +52,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, watch } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
@@ -74,6 +74,8 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        const appStoreState = app.getPendingState()!;
+
         const refreshKey: Ref<string> = ref("");
         const colorPaletteState: Ref<ColorPalette> = ref(props.model);
         const color: ComputedRef<string> = computed(() => '#d0d0d0');
@@ -106,7 +108,7 @@ export default defineComponent({
             colorPaletteState.value.i = true;
             colorPaletteState.value.e = true;
 
-            await app.updateColorPalette(key, colorPaletteState.value);
+            await app.updateColorPalette(key, colorPaletteState.value, appStoreState);
 
             refreshKey.value = Date.now().toString();
 
@@ -123,6 +125,18 @@ export default defineComponent({
         {
             colorPaletteState.value = newValue;
             refreshKey.value = Date.now().toString();
+        });
+
+        onMounted(() =>
+        {
+            colorPaletteState.value = appStoreState.proxifyObject('colorPalettes.palette', 
+                colorPaletteState.value, colorPaletteState.value.id);
+
+            colorPaletteState.value.p = appStoreState.proxifyObject('colorPalette.passwordColors', 
+                colorPaletteState.value.p, colorPaletteState.value.id);
+
+            colorPaletteState.value.v = appStoreState.proxifyObject('colorPalette.valueColors', 
+                colorPaletteState.value.v, colorPaletteState.value.id);
         });
 
         return {

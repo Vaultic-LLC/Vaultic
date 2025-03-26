@@ -1,6 +1,21 @@
 import { getObjectFromPath, PropertyManagerConstructor } from "../Utilities/PropertyManagers";
 import { Field, FieldMap, IFieldedObject, NonArrayType, Primitive } from "./Fields";
 
+export enum StoreType
+{
+    App = "0",
+    UserPreferences = "1",
+    Vault = "2",
+    VaultPreferences = "3",
+    Password = "4",
+    Value = "5",
+    Filter = "6",
+    Group = "7",
+    Device = "8",
+    VaultDataBreach = "9",
+    Organization = "10"
+}
+
 // Enforced to ensure the logic to track changes always works
 // Note: Every nested Object should be wrapped in KnownMappdFields<>
 type StoreStateProperty = Field<NonArrayType<Primitive>> | FieldMap | Field<NonArrayType<IFieldedObject>>;
@@ -48,14 +63,6 @@ export enum StoreStateChangeType
     Delete
 }
 
-export interface StoreStateChanges
-{
-    /** Time */
-    t: number;
-    /** Changes */
-    c: { [key: string]: PathChange[] }
-}
-
 export interface PathChange
 {
     /** Type */
@@ -63,28 +70,22 @@ export interface PathChange
     /** Value - Add and Upate Only */
     v?: any;
     /** Property */
-    p?: string;
+    p: string;
 }
 
 export class PendingStoreState<T extends StoreState, U extends StateKeys>
 {
     state: T;
     retriever: StorePathRetriever<U>;
-    changes: StoreStateChanges;
+    changes: { [key: string]: PathChange[] };
     objProxyChanges: Map<string, string[]>;
 
     constructor(state: T, pathRetriever: StorePathRetriever<U>)
     {
         this.state = state;
         this.retriever = pathRetriever;
-        this.changes = { t: 0, c: {} };
+        this.changes = {};
         this.objProxyChanges = new Map();
-    }
-
-    finalizeChanges()
-    {
-        this.changes.t = Date.now();
-        return JSON.stringify(this.changes);
     }
 
     getObject(identifier: keyof U, ...ids: string[])
@@ -121,12 +122,12 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
 
             manager.set(proxyChanges[i], manager.get(proxyChanges[i], updatedObj), currentObj);
 
-            if (!this.changes.c[path])
+            if (!this.changes[path])
             {
-                this.changes.c[path] = [];
+                this.changes[path] = [];
             }
 
-            this.changes.c[path].push({
+            this.changes[path].push({
                 t: StoreStateChangeType.Update,
                 v: manager.get(proxyChanges[i], updatedObj),
                 p: proxyChanges[i]
@@ -137,12 +138,12 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
     addValue(identifier: keyof U, property: string, value: any, ...ids: string[])
     {
         const path = this.retriever[identifier](...ids);
-        if (!this.changes.c[path])
+        if (!this.changes[path])
         {
-            this.changes.c[path] = [];
+            this.changes[path] = [];
         }
 
-        this.changes.c[path].push({
+        this.changes[path].push({
             t: StoreStateChangeType.Add,
             v: value,
             p: property
@@ -157,12 +158,12 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
     updateValue(identifier: keyof U, property: string, value: any, ...ids: string[])
     {
         const path = this.retriever[identifier](...ids);
-        if (!this.changes.c[path])
+        if (!this.changes[path])
         {
-            this.changes.c[path] = [];
+            this.changes[path] = [];
         }
 
-        this.changes.c[path].push({
+        this.changes[path].push({
             t: StoreStateChangeType.Update,
             v: value,
             p: property
@@ -177,12 +178,12 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
     deleteValue(identifier: keyof U, property: string, ...ids: string[])
     {
         const path = this.retriever[identifier](...ids);
-        if (!this.changes.c[path])
+        if (!this.changes[path])
         {
-            this.changes.c[path] = [];
+            this.changes[path] = [];
         }
 
-        this.changes.c[path].push({
+        this.changes[path].push({
             t: StoreStateChangeType.Delete,
             p: property
         });

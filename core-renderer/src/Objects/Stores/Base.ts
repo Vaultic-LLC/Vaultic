@@ -7,10 +7,8 @@ import { AtRiskType, CurrentAndSafeStructure, DataType, Filter, Group, IPrimaryD
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
 import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState } from "@vaultic/shared/Types/Stores";
+import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
-import { ReactiveValue } from "./ReactiveValue";
-import { ReactivePassword } from "./ReactivePassword";
 
 export type StoreEvents = "onChanged";
 
@@ -20,15 +18,15 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
 
     protected state: Reactive<T>;
     protected retriever: StorePathRetriever<K> | undefined;
-    private internalStateName: string;
+    private internalStoreType: StoreType;
 
-    get stateName() { return this.internalStateName; }
+    get type() { return this.internalStoreType; }
 
-    constructor(stateName: string, retriever: StorePathRetriever<K> | undefined = undefined)
+    constructor(storeType: StoreType, retriever: StorePathRetriever<K> | undefined = undefined)
     {
         this.state = reactive(this.defaultState());
         this.retriever = retriever;
-        this.internalStateName = stateName;
+        this.internalStoreType = storeType;
         this.events = {};
     }
 
@@ -40,7 +38,7 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
     public getBackupableState(): any
     {
         const state: { [key: string]: any } = {};
-        state[this.internalStateName] = JSON.vaulticStringify(this.getState());
+        state[this.internalStoreType] = JSON.vaulticStringify(this.getState());
 
         return state;
     }
@@ -102,7 +100,7 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
         }
         catch (e)
         {
-            await api.repositories.logs.log(undefined, `Exception when parsing JSON state for ${this.stateName}`);
+            await api.repositories.logs.log(undefined, `Exception when parsing JSON state for ${this.type}`);
         }
 
         // fallback to default state
@@ -160,9 +158,9 @@ export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, K ext
 {
     protected vault: VaultStoreParameter;
 
-    constructor(vault: VaultStoreParameter, stateName: string, retriever: StorePathRetriever<K>)
+    constructor(vault: VaultStoreParameter, storeType: StoreType, retriever: StorePathRetriever<K>)
     {
-        super(stateName, retriever);
+        super(storeType, retriever);
         this.vault = vault;
     }
 }
@@ -170,9 +168,9 @@ export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, K ext
 export class DataTypeStore<T extends KnownMappedFields<StoreState>, K extends StateKeys, U extends string = StoreEvents>
     extends VaultContrainedStore<T, K, U>
 {
-    constructor(vault: VaultStoreParameter, stateName: string, retriever: StorePathRetriever<K>)
+    constructor(vault: VaultStoreParameter, storeType: StoreType, retriever: StorePathRetriever<K>)
     {
-        super(vault, stateName, retriever);
+        super(vault, storeType, retriever);
     }
 
     public resetToDefault()
