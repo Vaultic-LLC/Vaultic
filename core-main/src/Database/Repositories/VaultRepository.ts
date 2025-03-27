@@ -11,7 +11,7 @@ import { PasswordStoreState } from "../Entities/States/PasswordStoreState";
 import { ValueStoreState } from "../Entities/States/ValueStoreState";
 import { FilterStoreState } from "../Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Entities/States/GroupStoreState";
-import { backupData, checkMergeMissingData, getUserDataSignatures } from "../../Helpers/RepositoryHelper";
+import { backupData, checkMergeMissingData } from "../../Helpers/RepositoryHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { User } from "../Entities/User";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
@@ -24,10 +24,12 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { VaultsAndKeys } from "../../Types/Responses";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-import { AddedOrgInfo, AddedVaultMembersInfo, ClientChangeTrackingType, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultMembersInfo, ClientChangeTrackingType, ClientVaultChangeTrackings, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
+import { StoreStateRepository } from "./StoreState/StoreStateRepository";
+import { StoreRetriever } from "../../Types/Parameters";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -219,7 +221,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.transactionFail();
             }
 
-            const backupResponse = await backupData(masterKey);
+            const backupResponse = await backupData(masterKey, environment.cache.currentUser);
             if (!backupResponse)
             {
                 return TypedMethodResponse.backupFail();
@@ -382,7 +384,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     return TypedMethodResponse.fail();
                 }
 
-                await backupData(masterKey);
+                await backupData(masterKey, environment.cache.currentUser);
             }
 
             return TypedMethodResponse.success();
@@ -684,7 +686,15 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return true;
     }
 
-    public async updateFromServer(key: string, currentVault: DeepPartial<Vault>, newVault: DeepPartial<Vault>, changeTrackings: Dictionary<ChangeTracking>,
+    public async updateFromServer(
+        key: string,
+        currentVault: DeepPartial<Vault>,
+        userVaultID: number,
+        userOrganizationID: number,
+        newVault: DeepPartial<Vault>,
+        serverChanges: ClientVaultChangeTrackings | undefined,
+        localChanges: ChangeTracking[],
+        existingUserChanges: ClientVaultChangeTrackings | undefined,
         transaction: Transaction)
     {
         if (!newVault.vaultID)
@@ -730,119 +740,63 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             transaction.overrideEntity(newVault.vaultID, partialVault, () => this);
         }
 
-        let needsToRePushData = false;
-
         if (newVault.vaultStoreState && newVault.vaultStoreState.vaultStoreStateID)
         {
-            if (currentVault.vaultStoreState?.entityState == EntityState.Updated)
+            const partialVaultStoreState: DeepPartial<VaultStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.vaultStoreState);
+            if (Object.keys(partialVaultStoreState).length > 0)
             {
-                if (!await (environment.repositories.vaultStoreStates.mergeStates(key, currentVault.vaultStoreState.vaultStoreStateID,
-                    newVault.vaultStoreState, changeTrackings, transaction)))
-                {
-                    return;
-                }
-
-                needsToRePushData = true;
-            }
-            else
-            {
-                const partialVaultStoreState: DeepPartial<VaultStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.vaultStoreState);
-                if (Object.keys(partialVaultStoreState).length > 0)
-                {
-                    transaction.overrideEntity(newVault.vaultStoreState.vaultStoreStateID, partialVaultStoreState, () => environment.repositories.vaultStoreStates);
-                }
+                transaction.overrideEntity(newVault.vaultStoreState.vaultStoreStateID, partialVaultStoreState, () => environment.repositories.vaultStoreStates);
             }
         }
 
         if (newVault.passwordStoreState && newVault.passwordStoreState.passwordStoreStateID)
         {
-            if (currentVault.passwordStoreState?.entityState == EntityState.Updated)
+            const partialPasswordStoreState: DeepPartial<PasswordStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.passwordStoreState);
+            if (Object.keys(partialPasswordStoreState).length > 0)
             {
-                if (!await (environment.repositories.passwordStoreStates.mergeStates(key, currentVault.passwordStoreState.passwordStoreStateID,
-                    newVault.passwordStoreState, changeTrackings, transaction)))
-                {
-                    return;
-                }
-
-                needsToRePushData = true;
-            }
-            else 
-            {
-                const partialPasswordStoreState: DeepPartial<PasswordStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.passwordStoreState);
-                if (Object.keys(partialPasswordStoreState).length > 0)
-                {
-                    transaction.overrideEntity(newVault.passwordStoreState.passwordStoreStateID, partialPasswordStoreState, () => environment.repositories.passwordStoreStates);
-                }
+                transaction.overrideEntity(newVault.passwordStoreState.passwordStoreStateID, partialPasswordStoreState, () => environment.repositories.passwordStoreStates);
             }
         }
 
         if (newVault.valueStoreState && newVault.valueStoreState.valueStoreStateID)
         {
-            if (currentVault.valueStoreState?.entityState == EntityState.Updated)
+            const partialValueStoreState: DeepPartial<ValueStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.valueStoreState);
+            if (Object.keys(partialValueStoreState).length > 0)
             {
-                if (!await (environment.repositories.valueStoreStates.mergeStates(key, currentVault.valueStoreState.valueStoreStateID,
-                    newVault.valueStoreState, changeTrackings, transaction)))
-                {
-                    return;
-                }
-
-                needsToRePushData = true;
-            }
-            else 
-            {
-                const partialValueStoreState: DeepPartial<ValueStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.valueStoreState);
-                if (Object.keys(partialValueStoreState).length > 0)
-                {
-                    transaction.overrideEntity(newVault.valueStoreState.valueStoreStateID, partialValueStoreState, () => environment.repositories.valueStoreStates);
-                }
+                transaction.overrideEntity(newVault.valueStoreState.valueStoreStateID, partialValueStoreState, () => environment.repositories.valueStoreStates);
             }
         }
 
         if (newVault.filterStoreState && newVault.filterStoreState.filterStoreStateID)
         {
-            if (currentVault.filterStoreState?.entityState == EntityState.Updated)
+            const partialFilterStoreState: DeepPartial<FilterStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.filterStoreState);
+            if (Object.keys(partialFilterStoreState).length > 0)
             {
-                if (!await (environment.repositories.filterStoreStates.mergeStates(key, currentVault.filterStoreState.filterStoreStateID,
-                    newVault.filterStoreState, changeTrackings, transaction)))
-                {
-                    return;
-                }
-
-                needsToRePushData = true;
-            }
-            else 
-            {
-                const partialFilterStoreState: DeepPartial<FilterStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.filterStoreState);
-                if (Object.keys(partialFilterStoreState).length > 0)
-                {
-                    transaction.overrideEntity(newVault.filterStoreState.filterStoreStateID, partialFilterStoreState, () => environment.repositories.filterStoreStates);
-                }
+                transaction.overrideEntity(newVault.filterStoreState.filterStoreStateID, partialFilterStoreState, () => environment.repositories.filterStoreStates);
             }
         }
 
         if (newVault.groupStoreState && newVault.groupStoreState.groupStoreStateID)
         {
-            if (currentVault.groupStoreState?.entityState == EntityState.Updated)
+            const partialGroupStoreState: DeepPartial<GroupStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.groupStoreState);
+            if (Object.keys(partialGroupStoreState).length > 0)
             {
-                if (!await (environment.repositories.groupStoreStates.mergeStates(key, currentVault.groupStoreState.groupStoreStateID,
-                    newVault.groupStoreState, changeTrackings, transaction)))
-                {
-                    return;
-                }
-
-                needsToRePushData = true;
-            }
-            else 
-            {
-                const partialGroupStoreState: DeepPartial<GroupStoreState> = StoreState.getUpdatedPropertiesFromObject(newVault.groupStoreState);
-                if (Object.keys(partialGroupStoreState).length > 0)
-                {
-                    transaction.overrideEntity(newVault.groupStoreState.groupStoreStateID, partialGroupStoreState, () => environment.repositories.groupStoreStates);
-                }
+                transaction.overrideEntity(newVault.groupStoreState.groupStoreStateID, partialGroupStoreState, () => environment.repositories.groupStoreStates);
             }
         }
 
-        return needsToRePushData;
+        const states = this.getStoreRetriever(key, currentVault.vaultID);
+        const clientUserChangesToPush: ClientVaultChangeTrackings =
+        {
+            userVaultID: userVaultID,
+            userOrganizationID: userOrganizationID,
+            vaultID: currentVault.vaultID,
+            lastLoadedChangeVersion: currentVault.lastLoadedChangeVersion,
+            allChanges: []
+        };
+
+        const response = await StoreStateRepository.mergeData(key, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
+        return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
 
     public async getStoreStates(masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>
@@ -939,7 +893,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.success();
             }
 
-            const success = await checkMergeMissingData(masterKey, currentUser.email, signatures.keys, signatures.signatures, result.userDataPayload);
+            const success = await checkMergeMissingData(masterKey, currentUser.email, signatures.keys, signatures.signatures, result.userDataPayload, undefined, currentUser);
             if (!success)
             {
                 return TypedMethodResponse.fail();
@@ -947,6 +901,82 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             return TypedMethodResponse.success();
         }
+    }
+
+    private getStoreRetriever(vaultKey: string, vaultID: number): StoreRetriever
+    {
+        const states: StoreRetriever = {};
+        states[StoreType.Vault] =
+        {
+            repository: environment.repositories.vaultStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.vaultStoreStates.retrieveAndVerify(vaultKey,
+                    (repository) => repository.findOneBy({
+                        vaultID: vaultID
+                    }));
+
+                return state[1];
+            }
+        };
+
+        states[StoreType.Password] =
+        {
+            repository: environment.repositories.passwordStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.passwordStoreStates.retrieveAndVerify(vaultKey,
+                    (repository) => repository.findOneBy({
+                        vaultID: vaultID
+                    }));
+
+                return state[1];
+            }
+        }
+
+        states[StoreType.Value] =
+        {
+            repository: environment.repositories.valueStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.valueStoreStates.retrieveAndVerify(vaultKey,
+                    (repository) => repository.findOneBy({
+                        vaultID: vaultID
+                    }));
+
+                return state[1];
+            }
+        }
+
+        states[StoreType.Filter] =
+        {
+            repository: environment.repositories.filterStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.filterStoreStates.retrieveAndVerify(vaultKey,
+                    (repository) => repository.findOneBy({
+                        vaultID: vaultID
+                    }));
+
+                return state[1];
+            }
+        }
+
+        states[StoreType.Group] =
+        {
+            repository: environment.repositories.groupStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.groupStoreStates.retrieveAndVerify(vaultKey,
+                    (repository) => repository.findOneBy({
+                        vaultID: vaultID
+                    }));
+
+                return state[1];
+            }
+        }
+
+        return states;
     }
 }
 

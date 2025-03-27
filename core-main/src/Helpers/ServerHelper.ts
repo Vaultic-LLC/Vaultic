@@ -135,11 +135,11 @@ async function logUserIn(masterKey: string, email: string,
 
                 if (reloadAllData)
                 {
-                    await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);
+                    await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload, currentUser);
                 }
                 else
                 {
-                    await checkMergeMissingData(masterKeyVaulticKey, email, versionsAndKeys?.keys ?? [], versionsAndKeys?.versions ?? {}, result.value.userDataPayload);
+                    await checkMergeMissingData(masterKeyVaulticKey, email, versionsAndKeys?.keys ?? [], versionsAndKeys?.versions ?? {}, result.value.userDataPayload, undefined, currentUser);
                 }
 
                 // This has to go after merging in the event that the user isn't in the local data yet

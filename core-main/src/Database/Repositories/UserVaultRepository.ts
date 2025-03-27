@@ -18,7 +18,10 @@ import { ChangeTracking } from "../Entities/ChangeTracking";
 import { Algorithm, PublicKeyType } from "@vaultic/shared/Types/Keys";
 import vaulticServer from "../../Server/VaulticServer";
 import { StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
-import { ClientChangeTrackingType } from "@vaultic/shared/Types/ClientServerTypes";
+import { ClientChangeTrackingType, ClientUserVaultChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
+import { StoreRetriever } from "../../Types/Parameters";
+import { StoreStateRepository } from "./StoreState/StoreStateRepository";
+import { UpdateFromServerResponse } from "../../Types/Responses";
 
 class UserVaultRepository extends VaulticRepository<UserVault> implements IUserVaultRepository
 {
@@ -283,8 +286,14 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return true;
     }
 
-    public async updateFromServer(currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>,
-        changeTrackings: Dictionary<ChangeTracking>, transaction: Transaction)
+    public async updateFromServer(
+        masterKey: string,
+        currentUserVault: DeepPartial<UserVault>,
+        newUserVault: DeepPartial<UserVault>,
+        serverChanges: ClientUserVaultChangeTrackings | undefined,
+        localChanges: ChangeTracking[],
+        existingUserChanges: ClientUserVaultChangeTrackings | undefined,
+        transaction: Transaction): Promise<UpdateFromServerResponse<ClientUserVaultChangeTrackings>>
     {
         if (!newUserVault.userVaultID)
         {
@@ -329,28 +338,39 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         // Shouldn't ever happen since we don't use the vault preferences anymore atm
         if (newUserVault.vaultPreferencesStoreState && newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID)
         {
-            if (currentUserVault.vaultPreferencesStoreState?.entityState == EntityState.Updated)
+            const partialVaultPreferencesStoreState: DeepPartial<VaultPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUserVault.vaultPreferencesStoreState);
+            if (Object.keys(partialVaultPreferencesStoreState).length > 0)
             {
-                if (!await (environment.repositories.vaultPreferencesStoreStates.mergeStates("", currentUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
-                    newUserVault.vaultPreferencesStoreState, changeTrackings, transaction, false)))
-                {
-                    return;
-                }
-
-                needsToRePushData = true;
-            }
-            else 
-            {
-                const partialVaultPreferencesStoreState: DeepPartial<VaultPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUserVault.vaultPreferencesStoreState);
-                if (Object.keys(partialVaultPreferencesStoreState).length > 0)
-                {
-                    transaction.overrideEntity(newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
-                        partialVaultPreferencesStoreState, () => environment.repositories.vaultPreferencesStoreStates);
-                }
+                transaction.overrideEntity(newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
+                    partialVaultPreferencesStoreState, () => environment.repositories.vaultPreferencesStoreStates);
             }
         }
 
-        return needsToRePushData;
+        const states: StoreRetriever = {};
+        states[StoreType.VaultPreferences] =
+        {
+            repository: environment.repositories.vaultPreferencesStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.vaultPreferencesStoreStates.retrieveAndVerify(masterKey,
+                    (repository) => repository.findOneBy({
+                        userVaultID: currentUserVault.userVaultID
+                    }));
+
+                return state[1];
+            }
+        };
+
+        const clientUserChangesToPush: ClientUserVaultChangeTrackings =
+        {
+            userVaultID: currentUserVault.userVaultID,
+            userOrganizationID: currentUserVault.userOrganizationID,
+            lastLoadedChangeVersion: currentUserVault.lastLoadedChangeVersion,
+            allChanges: []
+        };
+
+        const response = await StoreStateRepository.mergeData(masterKey, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
+        return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
 
     public async getStoreStates(masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData): Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>

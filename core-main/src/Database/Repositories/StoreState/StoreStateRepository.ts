@@ -1,12 +1,11 @@
-import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { PathChange, StoreStateChangeType, StoreType } from "@vaultic/shared/Types/Stores";
 import { StoreState } from "../../Entities/States/StoreState";
 import Transaction from "../../Transaction";
 import { VaulticRepository } from "../VaulticRepository";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
+import { ClientChange, ClientChangeTrackingObject } from "@vaultic/shared/Types/ClientServerTypes";
+import { getObjectFromPath, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
 import { ChangeTracking } from "../../Entities/ChangeTracking";
-import { ObjectPropertyManager, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
-import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
-import { ClientChange } from "@vaultic/shared/Types/ClientServerTypes";
+import { StoreRetriever } from "../../../Types/Parameters";
 
 export class StoreStateRepository<T extends StoreState> extends VaulticRepository<T>
 {
@@ -34,139 +33,291 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         return true;
     }
 
-    /**
-     * Merges changes on the server and our local changes with our current store state
-     * @param key 
-     * @param currentStateID 
-     * @param newState 
-     * @param serverChangeTrackings 
-     * @param localChangeTrackings 
-     * @param transaction 
-     * @param decrypt 
-     * @returns Method response of ClientChanges. These ClientChanges have the correct version set and should be pushed to the server, otherwise undefined is returned
-     * if there weren't any local changes that needed to be pushed.
-     */
-    public async mergeStates(
+    public static async mergeData(
         key: string,
-        currentStateID: number,
-        newState: DeepPartial<StoreState>,
-        serverChangeTrackings: ChangeTracking[],
-        localChangeTrackings: ChangeTracking[],
-        transaction: Transaction,
-        decrypt: boolean = true): Promise<TypedMethodResponse<ClientChange[] | undefined>>
+        alreadyMergedLocalChanges: ClientChangeTrackingObject,
+        serverChanges: ClientChangeTrackingObject,
+        localChangesToMerge: ChangeTracking[],
+        states: StoreRetriever,
+        clientChangesToPushAfter: ClientChangeTrackingObject,
+        transaction: Transaction)
     {
-        let currentState = await this.getByID(currentStateID);
-        if (!currentState || (key && !(await currentState.verify(key))))
+        let needsToRePushStoreStates = false;
+        // Keep track of the store states we've loaded so we don't load them more than once
+        const loadedStoreStates: Partial<Record<StoreType, { entity: StoreState, state: any }>> = {};
+        const seenServerChanges: Map<StoreType, Map<string, number>> = new Map();
+
+        if (serverChanges)
         {
-            return TypedMethodResponse.fail();
+            for (let i = 0; i < serverChanges.allChanges.length; i++)
+            {
+                clientChangesToPushAfter.lastLoadedChangeVersion = serverChanges.allChanges[i].version;
+                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(serverChanges.allChanges[i].changes);
+
+                const storeTypes = Object.keys(parsedChanges) as StoreType[];
+                for (let j = 0; j < storeTypes.length; j++)
+                {
+                    if (!loadedStoreStates[storeTypes[j]])
+                    {
+                        const stateEntity = await states[storeTypes[j]].getState();
+                        if (!stateEntity)
+                        {
+                            return;
+                        }
+
+                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(stateEntity.state) };
+                    }
+
+                    this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
+                        serverChanges.allChanges[i].changeTime, false, seenServerChanges);
+                }
+            }
         }
 
-        let newStateToUse = await StoreState.getUsableState(key, newState.state, decrypt);
-        if (!newStateToUse.success)
+        // We already applied these changes once but failed to backup because someone else backed up before we could.
+        // We just need to check to see if they updated the same property as us and handle those. We need to check and handle
+        // both if our local change is newer or if theirs are because they could have made the change a while ago but just now 
+        // backed it up
+        if (alreadyMergedLocalChanges)
         {
-            return TypedMethodResponse.fail();
+            for (let i = 0; i < alreadyMergedLocalChanges.allChanges.length; i++)
+            {
+                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(alreadyMergedLocalChanges.allChanges[i].changes);
+                const storeTypes = Object.keys(parsedChanges) as StoreType[];
+
+                for (let j = 0; j < storeTypes.length; j++)
+                {
+                    // we didn't load this store therefor we couldn't have overriden any of our changes for it
+                    if (!loadedStoreStates[storeTypes[j]])
+                    {
+                        continue;
+                    }
+
+                    this.checkUpdatAlreadyAppliedChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
+                        alreadyMergedLocalChanges.allChanges[i].changeTime, seenServerChanges);
+                }
+
+                clientChangesToPushAfter.lastLoadedChangeVersion += 1;
+                const clientChange: ClientChange =
+                {
+                    changes: JSON.stringify(parsedChanges),
+                    changeTime: alreadyMergedLocalChanges.allChanges[i].changeTime,
+                    version: clientChangesToPushAfter.lastLoadedChangeVersion
+                };
+
+                clientChangesToPushAfter.allChanges.push(clientChange);
+            }
+        }
+        // First time calculating changes
+        else 
+        {
+            for (let i = 0; i < localChangesToMerge.length; i++)
+            {
+                needsToRePushStoreStates = true;
+
+                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(localChangesToMerge[i].changes);
+                const storeTypes = Object.keys(parsedChanges) as StoreType[];
+
+                for (let j = 0; j < storeTypes.length; j++)
+                {
+                    if (!loadedStoreStates[storeTypes[j]])
+                    {
+                        const stateEntity = await states[storeTypes[j]].getState();
+                        if (!stateEntity)
+                        {
+                            return;
+                        }
+
+                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(stateEntity.state) };
+                    }
+
+                    this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
+                        localChangesToMerge[i].changeTime, true, seenServerChanges);
+                }
+
+                clientChangesToPushAfter.lastLoadedChangeVersion += 1;
+                const clientChange: ClientChange =
+                {
+                    changes: JSON.stringify(parsedChanges),
+                    changeTime: localChangesToMerge[i].changeTime,
+                    version: clientChangesToPushAfter.lastLoadedChangeVersion
+                };
+
+                clientChangesToPushAfter.allChanges.push(clientChange);
+            }
+
+            const updatedStateKeys = Object.keys(loadedStoreStates) as StoreType[];
+            for (let i = 0; i < updatedStateKeys.length; i++)
+            {
+                loadedStoreStates[updatedStateKeys[i]].entity.state = JSON.stringify(loadedStoreStates[updatedStateKeys[i]].state);
+                transaction.updateEntity(loadedStoreStates[updatedStateKeys[i]].entity, key, () => states[updatedStateKeys[i]].repository);
+            }
         }
 
-        let currentStateToUse = await StoreState.getUsableState(key, currentState.state, decrypt);
-        if (!currentStateToUse.success)
-        {
-            return TypedMethodResponse.fail();
-        }
-
-        try 
-        {
-            const updatedState = this.mergeStoreStates(JSON.vaulticParse(currentStateToUse.value),
-                JSON.vaulticParse(newStateToUse.value), changeTrackings, true);
-
-            currentState.state = JSON.vaulticStringify(updatedState.value);
-            currentState.previousSignature = newState.previousSignature;
-
-            transaction.updateEntity(currentState, key, this.getVaulticRepository);
-        }
-        catch (e)
-        {
-            throw e;
-        }
-
-        return true;
+        return needsToRePushStoreStates;
     }
 
-    // merges store states. 
-    // Warning: In order for data to not become corrupted, proxy fields need to have their lastModifiedTime updated whenever updated.
-    // Ex: Updating an EmptyFiler that stays Empty. The Field<string> in filterStore.emptyFilters needs to have its lastModifiedTime updated
-    private mergeStoreStates(currentObj: any, newObj: any, changeTrackings: Dictionary<ChangeTracking>, first: boolean = false)
+    private static mergeChanges(
+        type: StoreType,
+        current: any,
+        pathChanges: { [key: string]: PathChange[] },
+        changeTime: number,
+        forClient: boolean,
+        seenServerChanges: Map<StoreType, Map<string, number>>)
     {
-        if (typeof newObj == 'object')
+        const paths = Object.keys(pathChanges);
+        for (let i = 0; i < paths.length; i++)
         {
-            const manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(newObj);
-
-            const keys = manager.keys(newObj);
-            const currentKeys = manager.keys(currentObj);
-
-            for (let i = 0; i < keys.length; i++)
+            const pathChange = pathChanges[paths[i]];
+            for (let j = 0; j < pathChange.length; j++)
             {
-                const currentKeyMatchingIndex = currentKeys.indexOf(keys[i]);
-
-                // not in current keys. Check to see if it was deleted locally or if it was inserted / created on another device
-                if (currentKeyMatchingIndex < 0)
+                // Most likely an array
+                if (!pathChange[j].p)
                 {
-                    const id = manager.get(keys[i], newObj).id;
-
-                    // TODO: Doens't work since objects are no longer guranteed to have an ID
-                    //const changeTracking = changeTrackings[id];
-                    const changeTracking = undefined;
-
-                    // wasn't altered locally, was added on another device
-                    if (!changeTracking)
+                    const obj = getObjectFromPath(paths[i], current);
+                    if (!obj)
                     {
-                        manager.set(keys[i], manager.get(keys[i], newObj), currentObj);
-                    }
-                    // was deleted locally, check to make sure that it was deleted before any updates to the 
-                    // object on another device were
-                    else
-                    {
-                        // object was edited on another device after it was deleted on this one, keep it
-                        if (changeTracking.lastModifiedTime < manager.get(keys[i], newObj).mt)
+                        if (forClient)
                         {
-                            manager.set(keys[i], manager.get(keys[i], newObj), currentObj);
+                            // The object was delete on another device, don't include changes to it
+                            delete pathChanges[paths[i]];
                         }
+                    }
+
+                    if (!Array.isArray(obj))
+                    {
+                        // don't know how to handle objects that don't have a property and aren't an array
+                        continue;
+                    }
+
+                    switch (pathChange[j].t)
+                    {
+                        case StoreStateChangeType.Add:
+                            obj.push(pathChange[j].v);
+                            break;
+                        case StoreStateChangeType.Delete:
+                            obj.splice(0, 1);
+                            break;
                     }
                 }
                 else
                 {
-                    // both objects exist, check them
-                    this.mergeStoreStates(manager.get(currentKeys[currentKeyMatchingIndex], currentObj), manager.get(keys[i], newObj), changeTrackings);
-                    currentKeys.splice(currentKeyMatchingIndex, 1);
-                }
-            }
+                    const path = `${paths[i]}.${pathChange[j].p}`;
+                    if (forClient)
+                    {
+                        const serverChangeTime = seenServerChanges.get(type)?.get(path);
+                        if (serverChangeTime && serverChangeTime > changeTime)
+                        {
+                            // TODO: test to make sure this works
+                            // The value was updated on the server after we updted it locally, making the server value the newest.
+                            // We don't want to apply this change, nor do we want any other devices to apply it
+                            delete pathChanges[paths[i]];
+                            continue;
+                        }
+                    }
 
-            // all the keys that are in the current obj, but not the newObj.
-            for (let i = 0; i < currentKeys.length; i++)
-            {
-                const id = manager.get(currentKeys[i], currentObj).id;
+                    const obj = getObjectFromPath(paths[i], current);
+                    if (!obj)
+                    {
+                        if (forClient)
+                        {
+                            // The object was delete on another device, don't include changes to it
+                            delete pathChanges[paths[i]];
+                        }
+                    }
 
-                // TODO: Doens't work since objects are no longer guranteed to have an ID
-                // const changeTracking = changeTrackings[id];
-                const changeTracking = true;
+                    const manager = PropertyManagerConstructor.getFor(obj);
+                    switch (pathChange[j].t)
+                    {
+                        case StoreStateChangeType.Add:
+                            manager.set(pathChange[j].p, pathChange[j].v, obj);
+                            break;
+                        case StoreStateChangeType.Update:
+                            manager.set(pathChange[j].p, pathChange[j].v, obj);
+                            updateSeen();
+                            break;
+                        case StoreStateChangeType.Delete:
+                            manager.delete(pathChange[j].p, obj);
+                            break;
+                    }
 
-                // wasn't modified locally and not in newObj, it was deleted on another device.
-                // If state is Inserted, we want to keep it. 
-                // If state is Updated, we want to keep it since we can't check when it was deleted on another device
-                // If state is Deleted, it wouldn't be in currentKeys
-                if (!changeTracking)
-                {
-                    manager.delete(currentKeys[i], currentObj);
+                    function updateSeen()
+                    {
+                        if (!forClient)
+                        {
+                            if (!seenServerChanges.has(type))
+                            {
+                                const seenChange = new Map();
+                                seenChange.set(path, changeTime);
+
+                                seenServerChanges.set(type, seenChange);
+                            }
+                            else
+                            {
+                                seenServerChanges.get(type).set(path, changeTime)
+                            }
+                        }
+                    }
                 }
             }
         }
-        else 
+    }
+
+    private static checkUpdatAlreadyAppliedChanges(
+        type: StoreType,
+        current: any,
+        pathChanges: { [key: string]: PathChange[] },
+        changeTime: number,
+        seenServerChanges: Map<StoreType, Map<string, number>>)
+    {
+        const paths = Object.keys(pathChanges);
+        for (let i = 0; i < paths.length; i++)
         {
-            if (currentObj != newObj)
+            const pathChange = pathChanges[paths[i]];
+            for (let j = 0; j < pathChange.length; j++)
             {
-                currentObj = newObj;
+                // Most likely an array
+                if (!pathChange[j].p)
+                {
+                    continue;
+                }
+                else
+                {
+                    const path = `${paths[i]}.${pathChange[j].p}`;
+
+                    const serverChangeTime = seenServerChanges.get(type)?.get(path);
+                    if (serverChangeTime)
+                    {
+                        if (serverChangeTime > changeTime)
+                        {
+                            // TODO: test to make sure this works
+                            // The value was updated on the server after we updted it locally, making the server value the newest.
+                            // We don't want to apply this change, nor do we want any other devices to apply it
+                            delete pathChanges[path[i]];
+                            continue;
+                        }
+                        else
+                        {
+                            const obj = getObjectFromPath(paths[i], current);
+                            if (!obj)
+                            {
+                                // The object was delete on another device, don't include changes to it
+                                delete pathChanges[paths[i]];
+                            }
+
+                            const manager = PropertyManagerConstructor.getFor(obj);
+                            switch (pathChange[j].t)
+                            {
+                                // We only care about update since that's the only one that the new changes from the server 
+                                // could have overriden
+                                case StoreStateChangeType.Update:
+                                    manager.set(pathChange[j].p, pathChange[j].v, obj);
+                                    break;
+                            }
+                        }
+                    }
+                }
             }
         }
-
-        return currentObj;
     }
 }

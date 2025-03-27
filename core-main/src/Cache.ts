@@ -58,6 +58,7 @@ export class VaulticCache
         this.internalCurrentUser =
         {
             userID: user.userID,
+            lastLoadedChangeVersion: user.lastLoadedChangeVersion,
             privateSigningKey: user.privateSigningKey,
             privateEncryptingKey: user.privateEncryptingKey
         };

@@ -20,8 +20,11 @@ import { PathChange, SimplifiedPasswordStore, StoreStateChangeType, StoreType } 
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
 import { ChangeTracking } from "../Entities/ChangeTracking";
-import { ClientChange, ClientChangeTrackingType, ClientUserChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
+import { ClientChange, ClientChangeTrackingObject, ClientChangeTrackingType, ClientUserChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
 import { getObjectFromPath, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
+import { StoreStateRepository } from "./StoreState/StoreStateRepository";
+import { StoreRetriever } from "../../Types/Parameters";
+import { UpdateFromServerResponse } from "../../Types/Responses";
 
 class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
@@ -675,12 +678,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
     public async updateFromServer(
         masterKey: string,
-        currentUser: User,
+        currentUser: Partial<User> | undefined,
         newUser: DeepPartial<User>,
         serverChanges: ClientUserChangeTrackings,
         localChanges: ChangeTracking[],
         existingUserChanges: ClientUserChangeTrackings | undefined,
-        transaction: Transaction)
+        transaction: Transaction): Promise<UpdateFromServerResponse<ClientUserChangeTrackings>>
     {
         const partialUser: DeepPartial<User> = {};
         let updatedUser = false;
@@ -759,311 +762,16 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             }
         }
 
-        const seenServerChanges: Map<StoreType, Map<string, number>> = new Map();
-        let lastLoadedVersion = currentUser.lastLoadedChangeVersion;
-
-        let appStore: AppStoreState = undefined;
-        let userPreferences: UserPreferencesStoreState = undefined;
-
-        let appStoreState: any = undefined;
-        let userPreferencesStoreState: any = undefined;
-
-        if (serverChanges)
-        {
-            for (let i = 0; i < serverChanges.allChanges.length; i++)
-            {
-                lastLoadedVersion = serverChanges.allChanges[i].version;
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(serverChanges.allChanges[i].changes);
-
-                if (parsedChanges[StoreType.App])
-                {
-                    if (!appStoreState)
-                    {
-                        const currentAppStoreState = await environment.repositories.appStoreStates.retrieveAndVerify(masterKey,
-                            (repository) => repository.findOneBy({
-                                userID: currentUser.userID
-                            }));
-
-                        if (!currentAppStoreState)
-                        {
-                            return;
-                        }
-
-                        appStore = currentAppStoreState[1].makeReactive();
-                        appStoreState = JSON.parse(appStore.state);
-                    }
-
-                    mergeChanges(StoreType.App, appStoreState, parsedChanges[StoreType.App], serverChanges.allChanges[i].changeTime, false);
-                }
-
-                if (parsedChanges[StoreType.UserPreferences])
-                {
-                    if (!userPreferencesStoreState)
-                    {
-                        const currentUserPreferences = await environment.repositories.userPreferencesStoreStates.retrieveAndVerify(masterKey,
-                            (repository) => repository.findOneBy({
-                                userID: currentUser.userID
-                            }));
-
-                        if (!currentUserPreferences)
-                        {
-                            return;
-                        }
-
-                        userPreferences = currentUserPreferences[1].makeReactive();
-                        userPreferencesStoreState = JSON.parse(userPreferences.state);
-                    }
-
-                    mergeChanges(StoreType.UserPreferences, userPreferencesStoreState, parsedChanges[StoreType.UserPreferences], serverChanges.allChanges[i].changeTime, false);
-                }
-            }
-        }
-
+        const states: StoreRetriever = this.getStoreRetriever(masterKey, currentUser.userID);
         const clientUserChangesToPush: ClientUserChangeTrackings =
         {
             userID: currentUser.userID,
-            lastLoadedChangeVersion: lastLoadedVersion,
+            lastLoadedChangeVersion: currentUser.lastLoadedChangeVersion,
             allChanges: []
         };
 
-        let needsToRePushAppState = false;
-        let needsToRePushUserPreferences = false;
-
-        // We already applied these changes once but failed to backup because someone else backed up before we could.
-        // We just need to check to see if they updated the same property as us and remove them if necessary
-        if (existingUserChanges)
-        {
-            for (let i = 0; i < existingUserChanges.allChanges.length; i++)
-            {
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(existingUserChanges.allChanges[i].changes);
-                if (parsedChanges[StoreType.App])
-                {
-                    checkRemoveDuplicatesFromChanges(StoreType.App, parsedChanges[StoreType.App], existingUserChanges.allChanges[i].changeTime);
-                }
-
-                if (parsedChanges[StoreType.UserPreferences])
-                {
-                    checkRemoveDuplicatesFromChanges(StoreType.UserPreferences, parsedChanges[StoreType.UserPreferences], existingUserChanges.allChanges[i].changeTime);
-                }
-
-                clientUserChangesToPush.lastLoadedChangeVersion += 1;
-                const clientChange: ClientChange =
-                {
-                    changes: JSON.stringify(parsedChanges),
-                    changeTime: localChanges[i].changeTime,
-                    version: clientUserChangesToPush.lastLoadedChangeVersion
-                };
-
-                clientUserChangesToPush.allChanges.push(clientChange);
-            }
-        }
-        // First time calculating changes
-        else 
-        {
-            for (let i = 0; i < localChanges.length; i++)
-            {
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(localChanges[i].changes);
-                if (parsedChanges[StoreType.App])
-                {
-                    if (!appStoreState)
-                    {
-                        const currentAppStoreState = await environment.repositories.appStoreStates.retrieveAndVerify(masterKey,
-                            (repository) => repository.findOneBy({
-                                userID: currentUser.userID
-                            }));
-
-                        if (!currentAppStoreState)
-                        {
-                            return;
-                        }
-
-                        appStore = currentAppStoreState[1].makeReactive();
-                        appStoreState = JSON.parse(appStore.state);
-                    }
-
-                    mergeChanges(StoreType.App, appStoreState, parsedChanges[StoreType.App], localChanges[i].changeTime, true);
-                    needsToRePushAppState = true;
-                }
-
-                if (parsedChanges[StoreType.UserPreferences])
-                {
-                    if (!userPreferencesStoreState)
-                    {
-                        const currentUserPreferences = await environment.repositories.userPreferencesStoreStates.retrieveAndVerify(masterKey,
-                            (repository) => repository.findOneBy({
-                                userID: currentUser.userID
-                            }));
-
-                        if (!currentUserPreferences)
-                        {
-                            return;
-                        }
-
-                        userPreferences = currentUserPreferences[1].makeReactive();
-                        userPreferencesStoreState = JSON.parse(userPreferences.state);
-                    }
-
-                    mergeChanges(StoreType.UserPreferences, userPreferencesStoreState, parsedChanges[StoreType.UserPreferences], localChanges[i].changeTime, true);
-                    needsToRePushUserPreferences = true;
-                }
-
-                clientUserChangesToPush.lastLoadedChangeVersion += 1;
-                const clientChange: ClientChange =
-                {
-                    changes: JSON.stringify(parsedChanges),
-                    changeTime: localChanges[i].changeTime,
-                    version: clientUserChangesToPush.lastLoadedChangeVersion
-                };
-
-                clientUserChangesToPush.allChanges.push(clientChange);
-            }
-
-            if (appStore)
-            {
-                appStore.state = JSON.stringify(appStoreState);
-                transaction.updateEntity(appStore, masterKey, () => environment.repositories.appStoreStates);
-            }
-
-            if (userPreferences)
-            {
-                userPreferences.state = JSON.stringify(userPreferencesStoreState);
-                transaction.updateEntity(userPreferences, masterKey, () => environment.repositories.userPreferencesStoreStates);
-            }
-
-        }
-
-        return { needsToRePushAppState, needsToRePushUserPreferences, clientUserChangesToPush };
-
-        function mergeChanges(type: StoreType, current: any, pathChanges: { [key: string]: PathChange[] }, changeTime: number, forClient: boolean)
-        {
-            const paths = Object.keys(pathChanges);
-            for (let i = 0; i < paths.length; i++)
-            {
-                const pathChange = pathChanges[paths[i]];
-                for (let j = 0; j < pathChange.length; j++)
-                {
-                    // Most likely an array
-                    if (!pathChange[j].p)
-                    {
-                        const obj = getObjectFromPath(paths[i], current);
-                        if (!obj)
-                        {
-                            if (forClient)
-                            {
-                                // The object was delete on another device, don't include changes to it
-                                delete pathChanges[paths[i]];
-                            }
-                        }
-
-                        if (!Array.isArray(obj))
-                        {
-                            // don't know how to handle objects that don't have a property and aren't an array
-                            continue;
-                        }
-
-                        switch (pathChange[j].t)
-                        {
-                            case StoreStateChangeType.Add:
-                                obj.push(pathChange[j].v);
-                                break;
-                            case StoreStateChangeType.Delete:
-                                obj.splice(0, 1);
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        const path = `${paths[i]}.${pathChange[j].p}`;
-                        if (forClient)
-                        {
-                            const serverChangeTime = seenServerChanges.get(type)?.get(path);
-                            if (serverChangeTime && serverChangeTime > changeTime)
-                            {
-                                // TODO: test to make sure this works
-                                // The value was updated on the server after we updted it locally, making the server value the newest.
-                                // We don't want to apply this change, nor do we want any other devices to apply it
-                                delete pathChanges[paths[i]];
-                                continue;
-                            }
-                        }
-
-                        const obj = getObjectFromPath(paths[i], current);
-                        if (!obj)
-                        {
-                            if (forClient)
-                            {
-                                // The object was delete on another device, don't include changes to it
-                                delete pathChanges[paths[i]];
-                            }
-                        }
-
-                        const manager = PropertyManagerConstructor.getFor(obj);
-                        switch (pathChange[j].t)
-                        {
-                            case StoreStateChangeType.Add:
-                                manager.set(pathChange[j].p, pathChange[j].v, obj);
-                                break;
-                            case StoreStateChangeType.Update:
-                                manager.set(pathChange[j].p, pathChange[j].v, obj);
-                                updateSeen();
-                                break;
-                            case StoreStateChangeType.Delete:
-                                manager.delete(pathChange[j].p, obj);
-                                break;
-                        }
-
-                        function updateSeen()
-                        {
-                            if (!forClient)
-                            {
-                                if (!seenServerChanges.has(type))
-                                {
-                                    const seenChange = new Map();
-                                    seenChange.set(path, changeTime);
-
-                                    seenServerChanges.set(type, seenChange);
-                                }
-                                else
-                                {
-                                    seenServerChanges.get(type).set(path, changeTime)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        function checkRemoveDuplicatesFromChanges(type: StoreType, pathChanges: { [key: string]: PathChange[] }, changeTime: number)
-        {
-            const paths = Object.keys(pathChanges);
-            for (let i = 0; i < paths.length; i++)
-            {
-                const pathChange = pathChanges[paths[i]];
-                for (let j = 0; j < pathChange.length; j++)
-                {
-                    // Most likely an array
-                    if (!pathChange[j].p)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        const path = `${paths[i]}.${pathChange[j].p}`;
-
-                        const serverChangeTime = seenServerChanges.get(type)?.get(path);
-                        if (serverChangeTime && serverChangeTime > changeTime)
-                        {
-                            // TODO: test to make sure this works
-                            // The value was updated on the server after we updted it locally, making the server value the newest.
-                            // We don't want to apply this change, nor do we want any other devices to apply it
-                            delete pathChanges[path[i]];
-                            continue;
-                        }
-                    }
-                }
-            }
-        }
+        const response = await StoreStateRepository.mergeData(masterKey, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
+        return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
 
     public async getStoreStates(masterKey: string, storeStatesToRetrieve: UserData): Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>
@@ -1115,6 +823,40 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             return TypedMethodResponse.success(userData);
         }
+    }
+
+    private getStoreRetriever(masterKey: string, userID: number): StoreRetriever
+    {
+        const states: StoreRetriever = {};
+        states[StoreType.App] =
+        {
+            repository: environment.repositories.appStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.appStoreStates.retrieveAndVerify(masterKey,
+                    (repository) => repository.findOneBy({
+                        userID: userID
+                    }));
+
+                return state[1];
+            }
+        };
+
+        states[StoreType.UserPreferences] =
+        {
+            repository: environment.repositories.userPreferencesStoreStates,
+            getState: async () =>
+            {
+                const state = await environment.repositories.userPreferencesStoreStates.retrieveAndVerify(masterKey,
+                    (repository) => repository.findOneBy({
+                        userID: userID
+                    }));
+
+                return state[1];
+            }
+        }
+
+        return states;
     }
 }
 

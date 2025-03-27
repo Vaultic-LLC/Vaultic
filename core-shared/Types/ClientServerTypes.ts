@@ -175,7 +175,7 @@ export enum ClientChangeTrackingType
     Vault
 }
 
-interface ClientChangeTrackingObject
+export interface ClientChangeTrackingObject
 {
     lastLoadedChangeVersion: number;
     allChanges: ClientChange[];
@@ -190,7 +190,6 @@ export interface ClientUserVaultChangeTrackings extends ClientChangeTrackingObje
 {
     userOrganizationID: number;
     userVaultID: number;
-    permissions: ServerPermissions;
 }
 
 export interface ClientVaultChangeTrackings extends ClientChangeTrackingObject
