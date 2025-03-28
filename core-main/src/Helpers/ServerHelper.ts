@@ -100,7 +100,7 @@ async function logUserIn(masterKey: string, email: string,
             };
 
             masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
-            currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
+            //currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
         }
 
         let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
@@ -112,35 +112,35 @@ async function logUserIn(masterKey: string, email: string,
             {
                 // Don't have to worry about shared vaults not being e2e encrypted when they are first shared since only display
                 // vaults of them run through here
-                const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
-                if (!result.success)
-                {
-                    return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
-                }
+                // const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
+                // if (!result.success)
+                // {
+                //     return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
+                // }
 
-                if (!masterKeyVaulticKey)
-                {
-                    const masterKeyEncryptedAlgorithm =
-                        (result.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
-                        Algorithm.XCHACHA20_POLY1305;
+                // if (!masterKeyVaulticKey)
+                // {
+                //     const masterKeyEncryptedAlgorithm =
+                //         (result.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
+                //         Algorithm.XCHACHA20_POLY1305;
 
-                    const vaulticKey: VaulticKey =
-                    {
-                        algorithm: masterKeyEncryptedAlgorithm,
-                        key: masterKey
-                    };
+                //     const vaulticKey: VaulticKey =
+                //     {
+                //         algorithm: masterKeyEncryptedAlgorithm,
+                //         key: masterKey
+                //     };
 
-                    masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
-                }
+                //     masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+                // }
 
-                if (reloadAllData)
-                {
-                    await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);
-                }
-                else
-                {
-                    await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
-                }
+                // if (reloadAllData)
+                // {
+                //     await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);
+                // }
+                // else
+                // {
+                //     await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
+                // }
 
                 // This has to go after merging in the event that the user isn't in the local data yet
                 await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
@@ -159,7 +159,7 @@ async function logUserIn(masterKey: string, email: string,
         }
 
         environment.cache.clearLoginData();
-        finishResponse.masterKey = masterKeyVaulticKey ?? JSON.vaulticStringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: masterKey });
+        finishResponse.masterKey = masterKeyVaulticKey;
         return TypedMethodResponse.success(finishResponse);
     }
 }

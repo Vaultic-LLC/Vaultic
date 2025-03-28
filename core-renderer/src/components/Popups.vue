@@ -102,6 +102,11 @@
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+                <SyncingPopup v-if="popupStore.syncingPopupIsShowing" :finish="popupStore.syncingPopupIsFinished" />
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -123,6 +128,7 @@ import EmergencyDeactivationView from './Account/EmergencyDeactivationView.vue';
 import ClearBreachesView from './BreachedPasswords/ClearBreachesView.vue';
 import ShowMFAKeyView from './Account/ShowMFAKeyView.vue';
 import DeviceView from './ObjectViews/DeviceView.vue';
+import SyncingPopup from './Loading/SyncingPopup.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -146,7 +152,8 @@ export default defineComponent({
         EmergencyDeactivationView,
         ClearBreachesView,
         ShowMFAKeyView,
-        DeviceView
+        DeviceView,
+        SyncingPopup
     },
     setup()
     {

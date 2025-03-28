@@ -213,7 +213,7 @@ export default defineComponent({
             //     transaction.updateVaultStore(app.currentVault, state);
             // }
 
-            const succeeded = await transaction.commit(masterKey, app.isOnline);
+            const succeeded = await transaction.commit(masterKey);
             if (succeeded && 
                 originalTemporarilyStoreMasterKey != app.settings.value.temporarilyStoreMasterKey.value)
             {

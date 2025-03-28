@@ -46,10 +46,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         });
     }
 
-    async addNameValuePair(masterKey: string, value: NameValuePair, backup?: boolean): Promise<boolean>
+    async addNameValuePair(masterKey: string, value: NameValuePair): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const pendingValueStoreState = this.cloneState();
         const pendingFilterStoreState = this.vault.filterStore.cloneState();
         const pendingGroupStoreState = this.vault.groupStore.cloneState();
@@ -64,7 +62,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
-        return await transaction.commit(masterKey, backup);
+        return await transaction.commit(masterKey);
     }
 
     async addNameValuePairToStores(masterKey: string, value: NameValuePair, pendingValueStoreState: IValueStoreState,

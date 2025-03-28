@@ -92,7 +92,7 @@ export default function setupIPC()
 	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, updateVaultData: string) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, updateVaultData)));
 	ipcMain.handle('vaultRepository:getStoreStates', (e, masterKey: string, userVaultID: number, storeStatesToRetrive: CondensedVaultData) => validateSender(e, () => environment.repositories.vaults.getStoreStates(masterKey, userVaultID, storeStatesToRetrive)));
 	ipcMain.handle('vaultRepository:deleteVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.deleteVault(masterKey, userVaultID)));
-	ipcMain.handle('vaultRepository:syncVaults', (e, masterKey: string) => validateSender(e, () => environment.repositories.vaults.syncVaults(masterKey)));
+	ipcMain.handle('vaultRepository:syncVaults', (e, email: string, masterKey?: string) => validateSender(e, () => environment.repositories.vaults.syncVaults(email, masterKey)));
 
 	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, newData: string, currentData: string) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, newData, currentData)));
 	ipcMain.handle('userVaultRepository:getStoreStates', (e, masterKey: string, userVaultID: number, storeStatesToRetrive: CondensedVaultData) => validateSender(e, () => environment.repositories.userVaults.getStoreStates(masterKey, userVaultID, storeStatesToRetrive)));

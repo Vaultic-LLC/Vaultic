@@ -560,7 +560,7 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
             transaction.updateVaultStore(app.currentVault.groupStore, this.pendingGroupStoreState);
             transaction.updateVaultStore(app.currentVault.filterStore, this.pendingFilterStoreState);
 
-            if (!await transaction.commit(masterKey, app.isOnline))
+            if (!await transaction.commit(masterKey))
             {
                 this.didFailToSave = true;
             }

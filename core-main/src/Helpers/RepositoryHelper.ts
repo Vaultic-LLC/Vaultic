@@ -251,6 +251,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 {
     if (!serverUserDataPayload)
     {
+        console.log('no server data');
         return false;
     }
 
@@ -270,6 +271,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
             if (!(await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction)))
             {
+                console.log('failed to add user from server');
                 return false;
             }
         }
@@ -446,6 +448,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
     if (!(await transaction.commit()))
     {
+        console.log('failed to commit transaction');
         return false;
     }
 

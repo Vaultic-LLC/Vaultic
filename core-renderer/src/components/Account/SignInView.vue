@@ -157,12 +157,26 @@ export default defineComponent({
                 {
                     mfaIsShowing.value = false;
                     app.isOnline = true;
-                    
-                    if (await app.loadUserData(response.value?.masterKey!))
+
+                    if (response.value?.masterKey)
                     {
-                        console.timeEnd('loggingIn');
-                        ctx.emit('onKeySuccess');
+                        if (await app.loadUserData(response.value?.masterKey!))
+                        {
+                            app.popups.hideLoadingIndicator();
+                            app.syncVaults(response.value?.masterKey!, email.value);
+    
+                            console.timeEnd('loggingIn');
+                            ctx.emit('onKeySuccess');
+                        }             
                     }
+                    else
+                    {
+                        if (await app.syncAndLoadUserData(masterKey.value, email.value))
+                        {
+                            console.timeEnd('loggingIn');
+                            ctx.emit('onKeySuccess');
+                        }   
+                    }     
                 }
                 else if (response.value?.FailedMFA)
                 {

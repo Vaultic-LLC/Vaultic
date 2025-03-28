@@ -22,12 +22,15 @@ import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IVaultRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
-import { VaultsAndKeys } from "../../Types/Responses";
+import { CurrentSignaturesVaultKeys, VaultsAndKeys } from "../../Types/Responses";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultMembersInfo, ModifiedOrgMember, ServerPermissions, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { VaultStoreStates } from "@vaultic/shared/Types/Stores";
+import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import { userDataE2EEncryptedFieldTree } from "../../Types/FieldTree";
+import axiosHelper from "../../Server/AxiosHelper";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -971,39 +974,89 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async syncVaults(masterKey: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async syncVaults(email: string, plainMasterKey?: string): Promise<TypedMethodResponse<string | undefined>>
     {
         return await safetifyMethod(this, internalSyncVaults);
 
-        async function internalSyncVaults(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
+        async function internalSyncVaults(this: VaultRepository): Promise<TypedMethodResponse<string>>
         {
-            const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-            if (!currentUser)
+            try
             {
-                return TypedMethodResponse.fail(errorCodes.NO_USER);
+                let currentSignatures: CurrentSignaturesVaultKeys = { signatures: {}, keys: [] };
+                let masterKeyVaulticKey: string | undefined = undefined;
+
+                if (!plainMasterKey)
+                {
+                    if (environment.cache.masterKey)
+                    {
+                        masterKeyVaulticKey = environment.cache.masterKey;
+                        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKeyVaulticKey);
+                        if (!currentUser)
+                        {
+                            return TypedMethodResponse.fail(errorCodes.NO_USER);
+                        }
+
+                        currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
+                    }
+                }
+
+                const result = await vaulticServer.vault.syncVaults(currentSignatures.signatures);
+                if (!result.Success)
+                {
+                    return TypedMethodResponse.fail();
+                }
+
+                const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
+                if (!decryptedResponse.success)
+                {
+                    console.log('failed to e2e decrypt');
+                    return TypedMethodResponse.fail();
+                }
+
+                // no changes
+                if (!result.userDataPayload)
+                {
+                    return TypedMethodResponse.success();
+                }
+
+                // We weren't passed a master key because we don't have a user, get it from the payload
+                if (plainMasterKey)
+                {
+                    const masterKeyEncryptedAlgorithm =
+                        (decryptedResponse.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
+                        Algorithm.XCHACHA20_POLY1305;
+
+                    const vaulticKey: VaulticKey =
+                    {
+                        algorithm: masterKeyEncryptedAlgorithm,
+                        key: plainMasterKey
+                    };
+
+                    masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+                }
+
+                const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.signatures, decryptedResponse.value.userDataPayload);
+                if (!success)
+                {
+                    console.log('failed to merge data');
+                    return TypedMethodResponse.fail();
+                }
+
+                if (!environment.cache.currentUser)
+                {
+                    const currentUserResponse = await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
+                    if (!currentUserResponse.success)
+                    {
+                        return currentUserResponse;
+                    }
+                }
+
+                return TypedMethodResponse.success(masterKeyVaulticKey);
             }
-
-            const signatures = await getUserDataSignatures(masterKey, currentUser);
-            const result = await vaulticServer.vault.syncVaults(signatures.signatures);
-
-            if (!result.Success)
+            catch (e)
             {
-                return TypedMethodResponse.fail();
+                console.log(e);
             }
-
-            // no changes
-            if (!result.userDataPayload)
-            {
-                return TypedMethodResponse.success();
-            }
-
-            const success = await checkMergeMissingData(masterKey, currentUser.email, signatures.keys, signatures.signatures, result.userDataPayload);
-            if (!success)
-            {
-                return TypedMethodResponse.fail();
-            }
-
-            return TypedMethodResponse.success();
         }
     }
 }

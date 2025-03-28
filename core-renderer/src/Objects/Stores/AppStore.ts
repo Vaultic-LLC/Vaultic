@@ -295,28 +295,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        this.lastSessionExtendTime = Date.now();
-        this.internaLoadedUser.value = true;
-        this.internalActiveAppView.value = AppView.Vault;
-
-        if (this.isOnline)
-        {
-            // don't bother waiting for these, just trigger them so they are there if we need them
-            app.devices.getDevices();
-            app.organizations.getOrganizations();
-            this.getUserInfo();
-        }
-
-        if (this.state.settings.value.temporarilyStoreMasterKey.value)
-        {
-            const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
-            if (!setMasterKeyResponse.success)
-            {
-                defaultHandleFailedResponse(setMasterKeyResponse);
-            }
-        }
-
-        return true;
+        return this.internalFinishLoadUserData(masterKey);
     }
 
     async createNewVault(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
@@ -505,20 +484,61 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return true;
     }
 
-    async syncVaults(masterKey: string): Promise<boolean>
+    /** Only called when signing into and online. This is to handle when there 
+     * isn't any local data
+     */
+    async syncAndLoadUserData(masterKey: string, email: string): Promise<boolean>
+    {
+        if (!this.isOnline || this.internaLoadedUser.value)
+        {
+            return false;
+        }
+
+        this.popups.showSyncingPopup();
+        const result = await api.repositories.vaults.syncVaults(email, masterKey);
+        if (!result.success)
+        {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Sync Data", false);
+            this.lock();
+
+            return false;
+        }
+
+        const loadResult = await this.internalLoadUserData(result.value!);
+        if (!loadResult)
+        {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Load Data", false);
+            this.lock();
+
+            return false;
+        }
+
+        this.popups.finishSyncingPopup();
+        return this.internalFinishLoadUserData(result.value!);
+    }
+
+    async syncVaults(masterKey: string, email: string): Promise<boolean>
     {
         if (!this.isOnline)
         {
             return false;
         }
 
-        const result = await api.repositories.vaults.syncVaults(masterKey);
+        this.popups.showSyncingPopup();
+        const result = await api.repositories.vaults.syncVaults(email);
         if (!result.success)
         {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Sync Data", false);
             return false;
         }
 
-        return await this.internalLoadUserData(masterKey);
+        const loadResult = await this.internalLoadUserData(masterKey);
+        this.popups.finishSyncingPopup();
+
+        return loadResult;
     }
 
     public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
@@ -560,6 +580,33 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalUserVaults.value = parsedUserData.displayVaults!;
 
         await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
+        return true;
+    }
+
+    private async internalFinishLoadUserData(masterKey: string): Promise<boolean>
+    {
+        this.lastSessionExtendTime = Date.now();
+        this.internaLoadedUser.value = true;
+        this.internalActiveAppView.value = AppView.Vault;
+
+        if (this.isOnline)
+        {
+            // don't bother waiting for these, just trigger them so they are there if we need them
+            app.devices.getDevices();
+            app.organizations.getOrganizations();
+            this.getUserInfo();
+        }
+
+        if (this.state.settings.value.temporarilyStoreMasterKey.value)
+        {
+            const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
+            if (!setMasterKeyResponse.success)
+            {
+                defaultHandleFailedResponse(setMasterKeyResponse);
+                return false;
+            }
+        }
+
         return true;
     }
 

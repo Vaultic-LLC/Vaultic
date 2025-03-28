@@ -52,11 +52,9 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
         });
     }
 
-    async addGroup(masterKey: string, group: Group, backup?: boolean): Promise<boolean>
+    async addGroup(masterKey: string, group: Group): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        backup = backup ?? app.isOnline;
-
         if (group.type.value == DataType.Passwords)
         {
             const pendingGroupStoreState = this.cloneState();
@@ -77,7 +75,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
         }
 
-        return await transaction.commit(masterKey, backup);
+        return await transaction.commit(masterKey);
     }
 
     async addGroupToStores(group: Group, pendingGroupStoreState: IGroupStoreState, pendingFilterStoreState: IFilterStoreState,

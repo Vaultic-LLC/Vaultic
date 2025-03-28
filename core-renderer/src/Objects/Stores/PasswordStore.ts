@@ -49,7 +49,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         });
     }
 
-    async addPassword(masterKey: string, password: Password, backup?: boolean): Promise<boolean>
+    async addPassword(masterKey: string, password: Password): Promise<boolean>
     {
         const passwordStoreState = this.cloneState();
         const filterStoreState = app.currentVault.filterStore.cloneState();
@@ -60,21 +60,19 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        return await this.commitPasswordEdits(masterKey, [password], passwordStoreState, filterStoreState, groupStoreState, backup);
+        return await this.commitPasswordEdits(masterKey, [password], passwordStoreState, filterStoreState, groupStoreState);
     }
 
     async commitPasswordEdits(masterKey: string, addedPasswords: Password[], pendingPasswordStoreState: IPasswordStoreState, pendingFilterStoreState: IFilterStoreState,
-        pendingGroupStoreState: IGroupStoreState, backup?: boolean): Promise<boolean>
+        pendingGroupStoreState: IGroupStoreState): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
         transaction.updateVaultStore(this, pendingPasswordStoreState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
-        if (!(await transaction.commit(masterKey, backup)))
+        if (!(await transaction.commit(masterKey)))
         {
             return false;
         }
@@ -123,10 +121,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
     }
 
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
-        updatedSecurityQuestionAnswers: string[], backup?: boolean): Promise<boolean>
+        updatedSecurityQuestionAnswers: string[]): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
@@ -202,7 +198,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
-        if (!(await transaction.commit(masterKey, backup)))
+        if (!(await transaction.commit(masterKey)))
         {
             return false;
         }
