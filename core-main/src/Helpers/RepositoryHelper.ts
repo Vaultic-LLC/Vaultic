@@ -323,7 +323,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
             if (userVaultIndex >= 0)
             {
-                if (await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, changeTrackings, transaction))
+                if (await environment.repositories.userVaults.updateFromServer(masterKey, clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, changeTrackings, transaction))
                 {
                     needsToRePushData = true;
                 }
@@ -382,7 +382,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
                 const userVaultIndex = clientUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID) ?? -1;
                 if (userVaultIndex >= 0)
                 {
-                    if (await environment.repositories.userVaults.updateFromServer(clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, changeTrackings, transaction))
+                    if (await environment.repositories.userVaults.updateFromServer(masterKey, clientUserDataPayload.userVaults![userVaultIndex], serverUserVault, changeTrackings, transaction))
                     {
                         needsToRePushData = true;
                     }
@@ -404,11 +404,15 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
             }
             else
             {
-                const decryptedPrivateEncryptingKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, privateEncryptingKey);
-                if (decryptedPrivateEncryptingKey.success)
+                try
                 {
-                    await environment.repositories.userVaults.setupSharedUserVaults(masterKey, decryptedPrivateEncryptingKey.value, allSenderUserIDs, serverVaultsToSetup, transaction);
+                    const decryptedPrivateEncryptingKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, privateEncryptingKey);
+                    if (decryptedPrivateEncryptingKey.success)
+                    {
+                        await environment.repositories.userVaults.setupSharedUserVaults(masterKey, decryptedPrivateEncryptingKey.value, allSenderUserIDs, serverVaultsToSetup, transaction);
+                    }
                 }
+                catch { }
             }
         }
     }
@@ -446,6 +450,7 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
 
     if (!(await transaction.commit()))
     {
+        console.log('failed to commit transaction');
         return false;
     }
 
@@ -467,4 +472,29 @@ export async function reloadAllUserData(masterKey: string, email: string, userDa
     transaction.raw("DELETE FROM changeTrackings");
 
     return await checkMergeMissingData(masterKey, email, [], {}, userDataPayload, transaction);
+}
+
+export async function handleUserLogOut()
+{
+    if (environment.cache.isSyncing)
+    {
+        const interval = setInterval(() =>
+        {
+            if (environment.cache.isSyncing)
+            {
+                return;
+            }
+
+            environment.cache.clear();
+            clearInterval(interval);
+        }, 500);
+    }
+    else
+    {
+        if (environment.cache.currentUser)
+        {
+            await environment.repositories.vaults.syncVaults(environment.cache.currentUser.email!);
+            environment.cache.clear();
+        }
+    }
 }

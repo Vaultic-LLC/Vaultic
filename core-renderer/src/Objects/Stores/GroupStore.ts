@@ -1,15 +1,14 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { SecondaryDataTypeStore, StoreState } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import app from "./AppStore";
 import { api } from "../../API";
 import { DataType, IGroupable, AtRiskType, Group, RelatedDataTypeChanges } from "../../Types/DataTypes";
-import { Field, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
-import { FieldTreeUtility } from "../../Types/Tree";
+import { Field, FieldTreeUtility, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IPasswordStoreState } from "./PasswordStore";
 import { IValueStoreState } from "./ValueStore";
 import { IFilterStoreState } from "./FilterStore";
+import { defaultGroupStoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IGroupStoreState extends StoreState
 {
@@ -41,22 +40,12 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
     protected defaultState()
     {
-        return FieldTreeUtility.setupIDs<IGroupStoreState>({
-            version: Field.create(0),
-            passwordGroupsByID: Field.create(new Map<string, Field<Group>>()),
-            valueGroupsByID: Field.create(new Map<string, Field<Group>>()),
-            emptyPasswordGroups: Field.create(new Map<string, Field<string>>()),
-            emptyValueGroups: Field.create(new Map<string, Field<string>>()),
-            duplicatePasswordGroups: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            duplicateValueGroups: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-        });
+        return defaultGroupStoreState;
     }
 
-    async addGroup(masterKey: string, group: Group, backup?: boolean): Promise<boolean>
+    async addGroup(masterKey: string, group: Group): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        backup = backup ?? app.isOnline;
-
         if (group.type.value == DataType.Passwords)
         {
             const pendingGroupStoreState = this.cloneState();
@@ -77,7 +66,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState>
 
         }
 
-        return await transaction.commit(masterKey, backup);
+        return await transaction.commit(masterKey);
     }
 
     async addGroupToStores(group: Group, pendingGroupStoreState: IGroupStoreState, pendingFilterStoreState: IFilterStoreState,

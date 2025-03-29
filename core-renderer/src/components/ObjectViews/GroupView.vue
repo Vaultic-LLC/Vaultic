@@ -1,6 +1,6 @@
 <template>
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.name.value"
             :width="'50%'" :maxWidth="''" />
         <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.color.value"
@@ -52,6 +52,8 @@ export default defineComponent({
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const gridDefinition: GridDefinition =
         {
@@ -221,6 +223,7 @@ export default defineComponent({
             selectLabel,
             selectedIcon,
             allIcons,
+            readOnly,
             onSave,
             onIconSelected
         };

@@ -1,6 +1,6 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Error Color'" :color="color"
                 v-model="colorPaletteState.errorColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
@@ -60,8 +60,8 @@ import ToolTip from '../ToolTip.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { GridDefinition } from '../../Types/Models';
-import { ColorPalette } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: "ColorPaletteView",
@@ -78,6 +78,8 @@ export default defineComponent({
         const colorPaletteState: Ref<ColorPalette> = ref(props.model);
         const color: ComputedRef<string> = computed(() => '#d0d0d0');
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -130,6 +132,7 @@ export default defineComponent({
             color,
             refreshKey,
             gridDefinition,
+            readOnly,
             onSave
         };
     },

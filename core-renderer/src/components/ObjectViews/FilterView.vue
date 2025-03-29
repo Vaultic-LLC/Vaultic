@@ -1,6 +1,6 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
             <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
@@ -60,6 +60,8 @@ export default defineComponent({
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const emptyMessage: Ref<string> = ref(getEmptyTableMessage("Filter Conditions"));
 
@@ -235,6 +237,7 @@ export default defineComponent({
             headerTabs,
             tableColumns,
             tableDataSources,
+            readOnly,
             onSave,
             onAdd,
             onDelete

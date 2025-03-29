@@ -54,7 +54,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             return false;
         }
 
-        try 
+        try
         {
             const updatedState = this.mergeStoreStates(Field.create(JSON.vaulticParse(currentStateToUse.value)),
                 Field.create(JSON.vaulticParse(newStateToUse.value)), changeTrackings, true);

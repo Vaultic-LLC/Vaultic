@@ -5,13 +5,12 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
-import app from "./AppStore";
-import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges } from "../../Types/DataTypes";
+import { NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
-import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
+import { CurrentAndSafeStructure, defaultValueStoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IValueStoreState extends StoreState
 {
@@ -37,19 +36,11 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
 
     protected defaultState()
     {
-        return FieldTreeUtility.setupIDs<IValueStoreState>({
-            version: Field.create(0),
-            valuesByID: Field.create(new Map<string, Field<ReactiveValue>>()),
-            duplicateValues: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            currentAndSafeValues: Field.create(new CurrentAndSafeStructure()),
-            valuesByHash: Field.create(new Map<string, Field<Map<string, Field<string>>>>())
-        });
+        return defaultValueStoreState;
     }
 
-    async addNameValuePair(masterKey: string, value: NameValuePair, backup?: boolean): Promise<boolean>
+    async addNameValuePair(masterKey: string, value: NameValuePair): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const pendingValueStoreState = this.cloneState();
         const pendingFilterStoreState = this.vault.filterStore.cloneState();
         const pendingGroupStoreState = this.vault.groupStore.cloneState();
@@ -64,7 +55,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState>
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
-        return await transaction.commit(masterKey, backup);
+        return await transaction.commit(masterKey);
     }
 
     async addNameValuePairToStores(masterKey: string, value: NameValuePair, pendingValueStoreState: IValueStoreState,

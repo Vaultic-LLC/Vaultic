@@ -8,7 +8,7 @@ export interface ClientUserRepository
 {
     getLastUsedUserInfo: () => Promise<Partial<IUser> | null>;
     getLastUsedUserPreferences: () => Promise<string | null>;
-    createUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    createUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<TypedMethodResponse<string | undefined>>;
     setCurrentUser: (masterKey: string, email: string) => Promise<TypedMethodResponse<undefined>>;
     getCurrentUserData: (masterKey: string) => Promise<TypedMethodResponse<string | undefined>>;
     verifyUserMasterKey: (masterKey: string, email?: string, isVaulticKey?: boolean) => Promise<TypedMethodResponse<VerifyUserMasterKeyResponse | undefined>>;
@@ -45,7 +45,7 @@ export interface ClientVaultRepository
     createNewVaultForUser: (masterKey: string, updateVaultData: string) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     getStoreStates: (masterKey: string, userVaultID: number, storesToRetrieve: CondensedVaultData) => Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>;
     deleteVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<boolean | undefined>>;
-    syncVaults: (masterKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    syncVaults: (email: string, masterKey?: string) => Promise<TypedMethodResponse<string | undefined>>;
 }
 
 export interface ClientUserVaultRepository

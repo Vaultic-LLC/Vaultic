@@ -6,12 +6,12 @@ import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
-import { AtRiskType, CurrentAndSafeStructure, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
+import { AtRiskType, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
-import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
+import { CurrentAndSafeStructure, defaultPasswordStoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IPasswordStoreState extends StoreState
 {
@@ -39,18 +39,12 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     protected defaultState()
     {
-        return FieldTreeUtility.setupIDs<IPasswordStoreState>({
-            version: Field.create(0),
-            passwordsByID: Field.create(new Map<string, Field<ReactivePassword>>()),
-            passwordsByDomain: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            duplicatePasswords: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            currentAndSafePasswords: Field.create(new CurrentAndSafeStructure()),
-            passwordsByHash: Field.create(new Map<string, Field<Map<string, Field<string>>>>())
-        });
+        return defaultPasswordStoreState;
     }
 
-    async addPassword(masterKey: string, password: Password, backup?: boolean): Promise<boolean>
+    async addPassword(masterKey: string, password: Password): Promise<boolean>
     {
+        console.time('password store work');
         const passwordStoreState = this.cloneState();
         const filterStoreState = app.currentVault.filterStore.cloneState();
         const groupStoreState = app.currentVault.groupStore.cloneState();
@@ -60,25 +54,25 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        return await this.commitPasswordEdits(masterKey, [password], passwordStoreState, filterStoreState, groupStoreState, backup);
+        return await this.commitPasswordEdits(masterKey, [password], passwordStoreState, filterStoreState, groupStoreState);
     }
 
     async commitPasswordEdits(masterKey: string, addedPasswords: Password[], pendingPasswordStoreState: IPasswordStoreState, pendingFilterStoreState: IFilterStoreState,
-        pendingGroupStoreState: IGroupStoreState, backup?: boolean): Promise<boolean>
+        pendingGroupStoreState: IGroupStoreState): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
         transaction.updateVaultStore(this, pendingPasswordStoreState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
-        if (!(await transaction.commit(masterKey, backup)))
+        console.timeEnd('password store work');
+        console.time('committing password');
+        if (!(await transaction.commit(masterKey)))
         {
             return false;
         }
-
+        console.timeEnd('committing password');
         app.currentVault.passwordsByDomain = this.state.passwordsByDomain;
 
         // too difficult to store some state and re check all data breaches against a new password 
@@ -123,10 +117,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
     }
 
     async updatePassword(masterKey: string, updatingPassword: Password, passwordWasUpdated: boolean, updatedSecurityQuestionQuestions: string[],
-        updatedSecurityQuestionAnswers: string[], backup?: boolean): Promise<boolean>
+        updatedSecurityQuestionAnswers: string[]): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.cloneState();
 
@@ -202,7 +194,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
 
-        if (!(await transaction.commit(masterKey, backup)))
+        if (!(await transaction.commit(masterKey)))
         {
             return false;
         }

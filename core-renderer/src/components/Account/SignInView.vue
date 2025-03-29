@@ -157,12 +157,31 @@ export default defineComponent({
                 {
                     mfaIsShowing.value = false;
                     app.isOnline = true;
-                    
-                    if (await app.loadUserData(response.value?.masterKey!))
+                    app.isSyncingVal = true;
+
+                    if (response.value?.masterKey)
                     {
-                        console.timeEnd('loggingIn');
-                        ctx.emit('onKeySuccess');
+                        if (await app.loadUserData(response.value?.masterKey!))
+                        {
+                            app.popups.hideLoadingIndicator();
+                            app.syncVaults(response.value?.masterKey!, email.value, true);
+    
+                            console.timeEnd('loggingIn');
+                            ctx.emit('onKeySuccess');
+                        }             
                     }
+                    else
+                    {
+                        if (await app.syncAndLoadUserData(masterKey.value, email.value))
+                        {
+                            console.timeEnd('loggingIn');
+                            ctx.emit('onKeySuccess');
+                        }   
+                    }     
+                }
+                else if (response.value?.isSyncing)
+                {
+                    app.popups.showAlert("Unable to Login", "Syncing is in progress. To prevent data corruption, you will not be able to log in until completed. Please try again in a few seconds. If this persists", true);
                 }
                 else if (response.value?.FailedMFA)
                 {
@@ -349,7 +368,7 @@ export default defineComponent({
             // request failed and we navivated back to the sign in page
             if (props.clearAllDataOnLoad !== false)
             {
-                await app.lock(false);
+                await app.lock(false, true, false);
             }
             else
             {

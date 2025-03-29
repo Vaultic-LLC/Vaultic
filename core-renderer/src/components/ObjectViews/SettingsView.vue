@@ -1,5 +1,5 @@
 <template>
-    <ObjectView ref="objectView" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
+    <ObjectView ref="objectView" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey" :hideButtons="readOnly">
         <VaulticAccordion :value="'0'">
             <VaulticAccordionPanel :value="'0'">
                 <VaulticAccordionHeader :title="'App'" />
@@ -110,17 +110,16 @@ import VaulticAccordionPanel from '../Accordion/VaulticAccordionPanel.vue';
 import VaulticAccordionHeader from '../Accordion/VaulticAccordionHeader.vue';
 import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
 
-import { AutoLockTime } from '../../Types/App';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import { VaultSettings } from "../../Objects/Stores/VaultStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
-import { FilterStatus } from '../../Types/DataTypes';
 import { AllowSharingFrom, ServerAllowSharingFrom, ServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { InputComponent, MemberChanges, MemberTableComponent, ObjectViewComponent } from '../../Types/Components';
 import { Member } from '@vaultic/shared/Types/DataTypes';
 import { DisplayRequireMFAOn, displayRequireMFAOnToRequireMFAOn, RequireMFAOn, reuireMFAOnToDisplay } from '@vaultic/shared/Types/Device';
+import { AutoLockTime, FilterStatus } from '@vaultic/shared/Types/Stores';
 
 export default defineComponent({
     name: "SettingsView",
@@ -155,7 +154,7 @@ export default defineComponent({
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
-        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const originalAllowSharedVaultsFromOthers: Ref<boolean> = ref(false);
         const originalUsername: Ref<string> = ref('');
@@ -213,7 +212,7 @@ export default defineComponent({
             //     transaction.updateVaultStore(app.currentVault, state);
             // }
 
-            const succeeded = await transaction.commit(masterKey, app.isOnline);
+            const succeeded = await transaction.commit(masterKey);
             if (succeeded && 
                 originalTemporarilyStoreMasterKey != app.settings.value.temporarilyStoreMasterKey.value)
             {
