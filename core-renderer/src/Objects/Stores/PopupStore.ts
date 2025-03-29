@@ -110,6 +110,9 @@ export function createPopupStore()
     const devicePopupIsShowing: Ref<boolean> = ref(false);
     const deviceModel: Ref<ClientDevice | undefined> = ref(undefined);
 
+    const syncingPopupIsShowing: Ref<boolean> = ref(false);
+    const syncingPopupIsFinished: Ref<boolean> = ref(false);
+
     function addOnEnterHandler(index: number, callback: () => void)
     {
         onEnterHandlers[index] = callback;
@@ -210,7 +213,7 @@ export function createPopupStore()
 
     function showSessionExpired()
     {
-        app.lock(false, false);
+        app.lock(false, false, false);
         showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'", undefined, false);
     }
 
@@ -382,6 +385,22 @@ export function createPopupStore()
         devicePopupIsShowing.value = false;
     }
 
+    function showSyncingPopup()
+    {
+        syncingPopupIsShowing.value = true;
+    }
+
+    function finishSyncingPopup()
+    {
+        syncingPopupIsFinished.value = true;
+    }
+
+    function hideSyncingPopup()
+    {
+        syncingPopupIsShowing.value = false;
+        setTimeout(() => syncingPopupIsFinished.value = false, 100);
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -423,6 +442,8 @@ export function createPopupStore()
         get showMFAKeyIsShowing() { return showMFAKeyIsShowing.value },
         get devicePopupIsShowing() { return devicePopupIsShowing.value; },
         get deviceModel() { return deviceModel.value; },
+        get syncingPopupIsShowing() { return syncingPopupIsShowing.value },
+        get syncingPopupIsFinished() { return syncingPopupIsFinished },
         closeAllPopupsOnLock,
         addOnEnterHandler,
         removeOnEnterHandler,
@@ -454,6 +475,9 @@ export function createPopupStore()
         showMFAKeyPopup,
         hideMFAKeyPopup,
         showDevicePopup,
-        hideDevicePopup
+        hideDevicePopup,
+        showSyncingPopup,
+        finishSyncingPopup,
+        hideSyncingPopup
     }
 }

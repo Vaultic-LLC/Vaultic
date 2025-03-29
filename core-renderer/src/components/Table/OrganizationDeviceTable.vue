@@ -1,8 +1,8 @@
 <template>
     <div class="organizationDevicesTableContainer">
         <VaulticTable ref="tableRef" id="organizationDevicesTable" :color="color" :columns="tableColumns" 
-            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" :allowPinning="!devicesAreSelected"
-            :searchBarSizeModel="searchBarSizeModel"
+            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" 
+            :allowPinning="!devicesAreSelected && !readOnly" :searchBarSizeModel="searchBarSizeModel"
             :onPin="onPinOrganization" :onEdit="devicesAreSelected ? onEditDevice : onEditOrganization" 
             :onDelete="devicesAreSelected ? onDeleteDevice : onDeleteOrganization">
             <template #tableControls>
@@ -38,6 +38,7 @@ export default defineComponent({
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
         const devices: SortedCollection = new SortedCollection([], () => app.devices.devicesByID, "Name");
         
@@ -270,6 +271,7 @@ export default defineComponent({
             tableDataSources,
             showAdd,
             searchBarSizeModel,
+            readOnly,
             onAdd,
             onEditDevice,
             onPinOrganization,

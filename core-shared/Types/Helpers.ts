@@ -25,4 +25,5 @@ export interface ServerHelper
 export interface RepositoryHelper 
 {
     backupData: (masterKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    handleUserLogOut: () => Promise<void>;
 }

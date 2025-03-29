@@ -25,12 +25,6 @@ export enum DataType
     Organizations
 }
 
-export enum FilterStatus
-{
-    And = "And",
-    Or = "Or"
-}
-
 export interface IPrimaryDataObject extends IFilterable, IIdentifiable, IGroupable, SecondaryDataObjectCollectionType
 {
     [key: string]: any;

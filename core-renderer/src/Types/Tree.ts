@@ -158,37 +158,3 @@ export class TreeNodeListManager
         }
     }
 }
-
-export class FieldTreeUtility
-{
-    static setupIDs<T extends { [key: string]: any }>(obj: T): T
-    {
-        const properties = Object.keys(obj);
-        for (let i = 0; i < properties.length; i++)
-        {
-            this.internalSetIDs(obj[properties[i]])
-        }
-
-        return obj;
-    }
-
-    private static internalSetIDs(obj: Field<any>, parent?: Field<any>)
-    {
-        if (parent)
-        {
-            obj.p = parent;
-            obj.pID = parent.id;
-        }
-
-        if (typeof obj.value === "object")
-        {
-            const manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(obj.value);
-            const keys = manager.keys(obj.value);
-
-            for (let i = 0; i < keys.length; i++)
-            {
-                this.internalSetIDs(manager.get(keys[i], obj.value), obj);
-            }
-        }
-    }
-}

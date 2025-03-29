@@ -11,9 +11,9 @@
 
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from "vue";
-import { ColorPalette } from '../../Types/Colors';
 import ColorPaletteDisplay from "./ColorPaletteDisplay.vue";
 import app from "../../Objects/Stores/AppStore";
+import { ColorPalette } from "@vaultic/shared/Types/Color";
 
 export default defineComponent({
     name: "ColorPaletteContainer",

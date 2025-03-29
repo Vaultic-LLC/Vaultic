@@ -27,8 +27,9 @@ class ErrorCodes
 
     verificationFailed(errorCode: number): boolean
     {
-        return errorCode >= this.NO_SIGNATURE &&
-            errorCode <= this.NESTED_OBJECT_DOES_NOT_EXIST;
+        return (errorCode >= this.NO_SIGNATURE &&
+            errorCode <= this.NESTED_OBJECT_DOES_NOT_EXIST) ||
+            errorCode == this.DECRYPTION_FAILED;
     }
 
     userFailedToSave(errorCode?: number): boolean

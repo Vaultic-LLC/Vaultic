@@ -4,6 +4,7 @@ import { api } from "../API";
 import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
 import { Store, StoreEvents } from "./Stores/Base";
 import { PendingStoreState, StateKeys, StoreState } from "@vaultic/shared/Types/Stores";
+import app from "./Stores/AppStore";
 
 export enum Entity
 {
@@ -72,6 +73,11 @@ export default class StoreUpdateTransaction
 
     private async saveStoreChanges(masterKey: string, entity: Entity, updateStoreStates: Dictionary<StoreUpdateState>)
     {
+        if (app.isSyncing.value)
+        {
+            return false;
+        }
+
         const changes: { [key: string]: any } = {};
         const stores = Object.keys(updateStoreStates);
 
@@ -110,8 +116,8 @@ export default class StoreUpdateTransaction
 
     private async commitStoreStates(storeUpdateStates: Dictionary<StoreUpdateState>)
     {
-        const stores = Object.values(storeUpdateStates);
-        if (stores.length == 0)
+        const storeUpdateStateValues = Object.values(storeUpdateStates);
+        for (let i = 0; i < storeUpdateStateValues.length; i++)
         {
             return true;
         }

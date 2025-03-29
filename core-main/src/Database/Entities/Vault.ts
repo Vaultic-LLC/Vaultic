@@ -74,7 +74,6 @@ export class Vault extends VaulticEntity implements IVault
     {
         return [
             nameof<Vault>("vaultID"),
-            nameof<Vault>("name"),
             nameof<Vault>("shared"),
             nameof<Vault>("isArchived")
         ];

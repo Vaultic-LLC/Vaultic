@@ -1,7 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { PrimarydataTypeStoreStateKeys, SecondaryDataTypeStore, SecondarydataTypeStoreStateKeys } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import app from "./AppStore";
 import { api } from "../../API";
 import { DataType, IGroupable, AtRiskType, Group, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";

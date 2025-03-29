@@ -39,7 +39,6 @@ import SelectorButton from "../InputFields/SelectorButton.vue";
 import IonIcon from "../Icons/IonIcon.vue";
 import EditColorPalettePopup from "../ObjectPopups/EditPopups/EditColorPalettePopup.vue";
 
-import { ColorPalette } from "../../Types/Colors";
 import { SelectorButtonModel } from "../../Types/Models";
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import { getLinearGradientFromColor } from "../../Helpers/ColorHelper";
@@ -47,6 +46,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import app from "../../Objects/Stores/AppStore";
+import { ColorPalette } from "@vaultic/shared/Types/Color";
 
 export default defineComponent({
     name: "ColorPaletteDisplay",

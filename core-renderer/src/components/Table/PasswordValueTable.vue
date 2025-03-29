@@ -2,7 +2,8 @@
     <div class="passwordValueTableContainer">
         <VaulticTable ref="tableRef" id="passwordValueTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
-            :searchBarSizeModel="searchBarSizeModel" :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete">
+            :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly" :onPin="onPin" :onEdit="onEdit" 
+            :onDelete="onDelete">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />

@@ -2,7 +2,8 @@
     <div id="filterGroupTableContainer">
         <VaulticTable ref="tableRef" id="filterTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
-            :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete" :searchBarSizeModel="searchBarSizeModel">
+            :allowPinning="!readOnly" :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete" 
+            :searchBarSizeModel="searchBarSizeModel">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />

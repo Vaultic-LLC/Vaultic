@@ -108,8 +108,6 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>,
         backup?: boolean): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
         transaction.updateVaultStore(this, pendingPasswordStoreState);

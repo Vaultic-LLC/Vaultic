@@ -6,6 +6,7 @@ import { ml_kem1024 } from '@noble/post-quantum/ml-kem';
 import { ml_dsa87 } from '@noble/post-quantum/ml-dsa';
 import { PublicPrivateKey, Algorithm, VaulticKey, MLKEM1024KeyResult, SignedVaultKey, AsymmetricVaulticKey } from '@vaultic/shared/Types/Keys';
 import { ClientCryptUtility } from '@vaultic/shared/Types/Utilities';
+import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 
 export class CoreCryptUtility implements ClientCryptUtility
 {
@@ -149,7 +150,10 @@ export class CoreCryptUtility implements ClientCryptUtility
             await environment.repositories.logs.log(undefined, e.toString());
         }
 
-        return TypedMethodResponse.fail();
+        // Failed to decrypt. Most of the time this should never happen unless the cipher was tampered with.
+        // In that case we want to re fresh all data. The only time we don't want to do that is when checking if the 
+        // master key is valid, but we catch this error to prevent refreshing all data
+        throw TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
     }
 
     public async asymmeticEncrypt(recipientsPublicEncryptingKey: string, value: string): Promise<TypedMethodResponse<MLKEM1024KeyResult | string | undefined>>
@@ -205,7 +209,7 @@ export class CoreCryptUtility implements ClientCryptUtility
         {
         }
 
-        return TypedMethodResponse.fail();
+        return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
     }
 
     public async sign(sendersPrivateSigningKey: string, message: string): Promise<TypedMethodResponse<string | undefined>>

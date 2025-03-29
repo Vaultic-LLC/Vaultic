@@ -6,7 +6,7 @@ import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
 import { environment } from "./Core/Environment";
 import serverHelper from "./Core/Helpers/ServerHelper";
-import { safeBackupData } from "./Core/Helpers/RepositoryHelper";
+import { handleUserLogOut, safeBackupData } from "./Core/Helpers/RepositoryHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
@@ -75,6 +75,7 @@ export default function setupIPC()
 	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData, mfaCode)));
 
 	ipcMain.handle('repositoryHelper:backupData', (e, masterKey: string) => validateSender(e, () => safeBackupData(masterKey)));
+	ipcMain.handle('repositoryHelper:handleUserLogOut', (e) => validateSender(e, () => handleUserLogOut()));
 
 	ipcMain.handle('userRepository:getLastUsedUserInfo', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserInfo()));
 	ipcMain.handle('userRepository:getLastUsedUserPreferences', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserPreferences()));
@@ -92,7 +93,7 @@ export default function setupIPC()
 	ipcMain.handle('vaultRepository:createNewVaultForUser', (e, masterKey: string, updateVaultData: string) => validateSender(e, () => environment.repositories.vaults.createNewVaultForUser(masterKey, updateVaultData)));
 	ipcMain.handle('vaultRepository:getStoreStates', (e, masterKey: string, userVaultID: number, storeStatesToRetrive: CondensedVaultData) => validateSender(e, () => environment.repositories.vaults.getStoreStates(masterKey, userVaultID, storeStatesToRetrive)));
 	ipcMain.handle('vaultRepository:deleteVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.deleteVault(masterKey, userVaultID)));
-	ipcMain.handle('vaultRepository:syncVaults', (e, masterKey: string) => validateSender(e, () => environment.repositories.vaults.syncVaults(masterKey)));
+	ipcMain.handle('vaultRepository:syncVaults', (e, email: string, masterKey?: string) => validateSender(e, () => environment.repositories.vaults.syncVaults(email, masterKey)));
 
 	ipcMain.handle('userVaultRepository:saveUserVault', (e, masterKey: string, userVaultID: number, changes: string) => validateSender(e, () => environment.repositories.userVaults.saveUserVault(masterKey, userVaultID, changes)));
 	ipcMain.handle('userVaultRepository:getStoreStates', (e, masterKey: string, userVaultID: number, storeStatesToRetrive: CondensedVaultData) => validateSender(e, () => environment.repositories.userVaults.getStoreStates(masterKey, userVaultID, storeStatesToRetrive)));
