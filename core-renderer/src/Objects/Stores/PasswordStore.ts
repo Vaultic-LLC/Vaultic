@@ -44,6 +44,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     async addPassword(masterKey: string, password: Password): Promise<boolean>
     {
+        console.time('password store work');
         const passwordStoreState = this.cloneState();
         const filterStoreState = app.currentVault.filterStore.cloneState();
         const groupStoreState = app.currentVault.groupStore.cloneState();
@@ -65,11 +66,13 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupStoreState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterStoreState);
 
+        console.timeEnd('password store work');
+        console.time('committing password');
         if (!(await transaction.commit(masterKey)))
         {
             return false;
         }
-
+        console.timeEnd('committing password');
         app.currentVault.passwordsByDomain = this.state.passwordsByDomain;
 
         // too difficult to store some state and re check all data breaches against a new password 

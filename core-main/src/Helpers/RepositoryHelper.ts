@@ -183,17 +183,17 @@ export async function backupData(masterKey: string)
     }
     else
     {
-        //console.time("9");
-        //console.time("9a");
+        console.time("9");
+        console.time("9a");
         const transaction = new Transaction();
         if (userToBackup.value)
         {
             console.log('UserToBackup');
             await environment.repositories.users.postBackupEntityUpdates(masterKey, userToBackup.value, transaction);
         }
-        //console.timeEnd("9a");
+        console.timeEnd("9a");
 
-        //console.time("9b");
+        console.time("9b");
         if (userVaultsToBackup.value && userVaultsToBackup.value.length > 0) 
         {
             console.log('UserVaultsToBackup');
@@ -201,26 +201,26 @@ export async function backupData(masterKey: string)
         }
         console.timeEnd("9b");
 
-        //console.time("9c");
+        console.time("9c");
         if (vaultsToBackup.value?.vaults && vaultsToBackup.value?.vaults?.length > 0)
         {
             console.log('VaultsToBackup');
             await environment.repositories.vaults.postBackupEntitiesUpdates(masterKey, vaultsToBackup.value.vaults, transaction);
         }
 
-        //console.timeEnd("9c");
+        console.timeEnd("9c");
         // all data succesfully backed up, no need for change trackings anymore
-        //console.time("9d");
+        console.time("9d");
         await environment.repositories.changeTrackings.clearChangeTrackings(masterKey, transaction);
         console.timeEnd("9d");
 
-        //console.time("9e");
+        console.time("9e");
         if (!await transaction.commit())
         {
             return false;
         }
-        //console.timeEnd("9e");
-        //console.timeEnd("9");
+        console.timeEnd("9e");
+        console.timeEnd("9");
     }
 
     return true;
@@ -404,11 +404,15 @@ export async function checkMergeMissingData(masterKey: string, email: string, va
             }
             else
             {
-                const decryptedPrivateEncryptingKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, privateEncryptingKey);
-                if (decryptedPrivateEncryptingKey.success)
+                try
                 {
-                    await environment.repositories.userVaults.setupSharedUserVaults(masterKey, decryptedPrivateEncryptingKey.value, allSenderUserIDs, serverVaultsToSetup, transaction);
+                    const decryptedPrivateEncryptingKey = await environment.utilities.crypt.symmetricDecrypt(masterKey, privateEncryptingKey);
+                    if (decryptedPrivateEncryptingKey.success)
+                    {
+                        await environment.repositories.userVaults.setupSharedUserVaults(masterKey, decryptedPrivateEncryptingKey.value, allSenderUserIDs, serverVaultsToSetup, transaction);
+                    }
                 }
+                catch { }
             }
         }
     }

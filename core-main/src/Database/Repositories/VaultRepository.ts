@@ -412,6 +412,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalSaveVaultData(this: VaultRepository): Promise<TypedMethodResponse<boolean>>
         {
+            console.time('saving vault data');
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [userVaultID]);
             if (userVaults[0].length != 1)
             {
@@ -501,6 +502,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.transactionFail();
             }
 
+            console.timeEnd('saving vault data');
             return TypedMethodResponse.success();
         }
     }
@@ -983,83 +985,74 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         {
             environment.cache.isSyncing = true;
 
-            try
+            let currentSignatures: CurrentSignaturesVaultKeys = { signatures: {}, keys: [] };
+            let masterKeyVaulticKey: string | undefined = undefined;
+
+            if (!plainMasterKey)
             {
-                let currentSignatures: CurrentSignaturesVaultKeys = { signatures: {}, keys: [] };
-                let masterKeyVaulticKey: string | undefined = undefined;
-
-                if (!plainMasterKey)
+                if (environment.cache.masterKey)
                 {
-                    if (environment.cache.masterKey)
+                    masterKeyVaulticKey = environment.cache.masterKey;
+                    const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKeyVaulticKey);
+                    if (!currentUser)
                     {
-                        masterKeyVaulticKey = environment.cache.masterKey;
-                        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKeyVaulticKey);
-                        if (!currentUser)
-                        {
-                            return TypedMethodResponse.fail(errorCodes.NO_USER);
-                        }
-
-                        currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
+                        return TypedMethodResponse.fail(errorCodes.NO_USER);
                     }
+
+                    currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
                 }
-
-                console.log(JSON.stringify(currentSignatures));
-                const result = await vaulticServer.vault.syncVaults(currentSignatures.signatures);
-                if (!result.Success)
-                {
-                    return TypedMethodResponse.fail();
-                }
-
-                const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
-                if (!decryptedResponse.success)
-                {
-                    return TypedMethodResponse.fail();
-                }
-
-                // no changes
-                if (!result.userDataPayload)
-                {
-                    return TypedMethodResponse.success();
-                }
-
-                // We weren't passed a master key because we don't have a user, get it from the payload
-                if (plainMasterKey)
-                {
-                    const masterKeyEncryptedAlgorithm =
-                        (decryptedResponse.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
-                        Algorithm.XCHACHA20_POLY1305;
-
-                    const vaulticKey: VaulticKey =
-                    {
-                        algorithm: masterKeyEncryptedAlgorithm,
-                        key: plainMasterKey
-                    };
-
-                    masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
-                }
-
-                console.log(decryptedResponse.value.userDataPayload);
-                const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.signatures, decryptedResponse.value.userDataPayload);
-                if (!success)
-                {
-                    return TypedMethodResponse.fail();
-                }
-
-                if (!environment.cache.currentUser)
-                {
-                    const currentUserResponse = await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
-                    if (!currentUserResponse.success)
-                    {
-                        return currentUserResponse;
-                    }
-                }
-
-                return TypedMethodResponse.success(masterKeyVaulticKey);
             }
-            catch (e)
+
+            const result = await vaulticServer.vault.syncVaults(currentSignatures.signatures);
+            if (!result.Success)
             {
-                console.log(e);
+                return TypedMethodResponse.fail();
             }
+
+            const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
+            if (!decryptedResponse.success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            // no changes
+            if (!result.userDataPayload)
+            {
+                return TypedMethodResponse.success();
+            }
+
+            // We weren't passed a master key because we don't have a user, get it from the payload
+            if (plainMasterKey)
+            {
+                const masterKeyEncryptedAlgorithm =
+                    (decryptedResponse.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
+                    Algorithm.XCHACHA20_POLY1305;
+
+                const vaulticKey: VaulticKey =
+                {
+                    algorithm: masterKeyEncryptedAlgorithm,
+                    key: plainMasterKey
+                };
+
+                masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+            }
+
+            const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.signatures, decryptedResponse.value.userDataPayload);
+            if (!success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            if (!environment.cache.currentUser)
+            {
+                const currentUserResponse = await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
+                if (!currentUserResponse.success)
+                {
+                    return currentUserResponse;
+                }
+            }
+
+            return TypedMethodResponse.success(masterKeyVaulticKey);
         }
     }
 }

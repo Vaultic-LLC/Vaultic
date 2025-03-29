@@ -257,22 +257,24 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         {
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE);
         }
+
         let signatureMakeup = this.getSignatureMakeup();
         if (!signatureMakeup)
         {
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_MAKEUP);
         }
 
-        //console.time("19");
+        console.time("19");
         const serializedMakeup = JSON.stringify(signatureMakeup);
-        //console.timeEnd("19");
-        //console.time("20");
+        console.timeEnd("19");
+        console.time("20");
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);
         if (!hashedEntity.success)
         {
             return TypedMethodResponse.fail();
         }
 
+        console.timeEnd("20");
         try
         {
             let keyToUse = key;
@@ -283,7 +285,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             }
             catch { }
 
-            //console.timeEnd("20");
             const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse);
             if (!hashedKey.success)
             {

@@ -38,19 +38,16 @@ export class ChangeTracking extends VaulticEntity
 
     protected internalGetSignableProperties(): string[]
     {
-        return [
-            nameof<ChangeTracking>("objectID"),
-            nameof<ChangeTracking>("objectState"),
-            nameof<ChangeTracking>("userID")
-        ];
+        return [];
     }
 
     public getEncryptableProperties(): string[]
     {
         return [
+            nameof<ChangeTracking>("userID"),
             nameof<ChangeTracking>("objectID"),
             nameof<ChangeTracking>("objectState"),
-            nameof<ChangeTracking>("userID")
+            nameof<ChangeTracking>("lastModifiedTime")
         ];
     }
 

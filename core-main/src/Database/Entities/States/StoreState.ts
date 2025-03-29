@@ -20,9 +20,11 @@ export class StoreState extends VaulticEntity implements IStoreState
 
     protected internalGetSignableProperties(): string[] 
     {
-        return [
-            nameof<StoreState>("state")
-        ];
+        // don't include state since its already encrypted
+        return [];
+        // return [
+        //     nameof<StoreState>("state")
+        // ];
     }
 
     protected neededBackupProperties(): string[]
@@ -93,15 +95,15 @@ export class StoreState extends VaulticEntity implements IStoreState
             const result = await environment.utilities.crypt.symmetricDecrypt(key, state);
             if (!result.success)
             {
-                return result;
+                throw result;
             }
 
             value = result.value;
         }
 
-        //console.time('uncompress');
+        console.time('uncompress');
         const decompressed = await environment.utilities.data.uncompress(value!);
-        //console.timeEnd('uncompress');
+        console.timeEnd('uncompress');
         if (!decompressed)
         {
             return TypedMethodResponse.fail();

@@ -175,11 +175,9 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         const result = await StoreState.getUsableState('', lastUsedUser.userPreferencesStoreState.state);
         if (!result.success)
         {
-            console.log(`unable to get preferences`)
             return null;
         }
 
-        console.log(`last used preferences: ${result.value}`)
         return result.value;
     }
 
@@ -367,32 +365,39 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 keyToUse = JSON.vaulticStringify(vaulticKey);
             }
 
-            const decryptedHashResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeyHash);
-            if (!decryptedHashResponse.success)
+            try
             {
-                return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "Hash");
-            }
+                const decryptedHashResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeyHash);
+                if (!decryptedHashResponse.success)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Hash");
+                }
 
-            const decryptedSaltResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeySalt);
-            if (!decryptedSaltResponse.success)
-            {
-                return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "Salt");
-            }
+                const decryptedSaltResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeySalt);
+                if (!decryptedSaltResponse.success)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Salt");
+                }
 
-            // TODO: switch to Argon2id
-            const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, decryptedSaltResponse.value!);
-            if (!hash.success)
+                // TODO: switch to Argon2id
+                const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, decryptedSaltResponse.value!);
+                if (!hash.success)
+                {
+                    return TypedMethodResponse.fail();
+                }
+
+                const response: VerifyUserMasterKeyResponse =
+                {
+                    isValid: environment.utilities.hash.compareHashes(decryptedHashResponse.value!, hash.value),
+                    keyAlgorithm: user.masterKeyEncryptionAlgorithm
+                };
+
+                return TypedMethodResponse.success(response);
+            }
+            catch 
             {
                 return TypedMethodResponse.fail();
             }
-
-            const response: VerifyUserMasterKeyResponse =
-            {
-                isValid: environment.utilities.hash.compareHashes(decryptedHashResponse.value!, hash.value),
-                keyAlgorithm: user.masterKeyEncryptionAlgorithm
-            };
-
-            return TypedMethodResponse.success(response);
         }
     }
 
@@ -470,7 +475,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
                 if (!decryptedAppStoreState)
                 {
-                    return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED, undefined, "AppStoreState");
+                    return decryptedAppStoreState.addToErrorMessage("AppStoreState");
                 }
 
                 const usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);

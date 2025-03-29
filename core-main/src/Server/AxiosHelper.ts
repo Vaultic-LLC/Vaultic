@@ -301,8 +301,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 const response = await environment.utilities.crypt.symmetricEncrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
-                    response.addToErrorMessage(`Prop: ${fieldTree.properties[i]}`);
-                    return response;
+                    return response.addToErrorMessage(`Prop: ${fieldTree.properties[i]}`);
                 }
 
                 data[fieldTree.properties[i]] = response.value!;
@@ -380,13 +379,20 @@ class APIAxiosWrapper extends AxiosWrapper
                     continue;
                 }
 
-                const response = await environment.utilities.crypt.symmetricDecrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
-                if (!response.success)
+                try
                 {
-                    return response;
-                }
+                    const response = await environment.utilities.crypt.symmetricDecrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
+                    if (!response.success)
+                    {
+                        return TypedMethodResponse.fail();
+                    }
 
-                data[fieldTree.properties[i]] = response.value!;
+                    data[fieldTree.properties[i]] = response.value!;
+                }
+                catch 
+                {
+                    return TypedMethodResponse.fail();
+                }
             }
         }
 
@@ -498,7 +504,7 @@ class APIAxiosWrapper extends AxiosWrapper
             const decryptedResponse = await environment.utilities.crypt.symmetricDecrypt(environment.cache.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
-                return TypedMethodResponse.propagateFail(decryptedResponse, "handleResponse");
+                return TypedMethodResponse.fail(undefined, "Handle Response");
             }
 
             responseData = JSON.vaulticParse(decryptedResponse.value!) as T;
