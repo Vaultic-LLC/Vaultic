@@ -110,7 +110,8 @@ const serverHelper: ServerHelper =
 
 const repositoryHelepr: RepositoryHelper =
 {
-    backupData: (masterKey: string) => ipcRenderer.invoke('repositoryHelper:backupData', masterKey)
+    backupData: (masterKey: string) => ipcRenderer.invoke('repositoryHelper:backupData', masterKey),
+    handleUserLogOut: () => ipcRenderer.invoke('repositoryHelper:handleUserLogOut')
 }
 
 const environment: ClientEnvironment =

@@ -6,7 +6,7 @@ import validationHelper from "./Core/Helpers/ValidationHelper";
 import vaulticHelper from "./Helpers/VaulticHelper";
 import { environment } from "./Core/Environment";
 import serverHelper from "./Core/Helpers/ServerHelper";
-import { safeBackupData } from "./Core/Helpers/RepositoryHelper";
+import { handleUserLogOut, safeBackupData } from "./Core/Helpers/RepositoryHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
@@ -75,6 +75,7 @@ export default function setupIPC()
 	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData, mfaCode)));
 
 	ipcMain.handle('repositoryHelper:backupData', (e, masterKey: string) => validateSender(e, () => safeBackupData(masterKey)));
+	ipcMain.handle('repositoryHelper:handleUserLogOut', (e) => validateSender(e, () => handleUserLogOut()));
 
 	ipcMain.handle('userRepository:getLastUsedUserInfo', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserInfo()));
 	ipcMain.handle('userRepository:getLastUsedUserPreferences', (e) => validateSender(e, () => environment.repositories.users.getLastUsedUserPreferences()));

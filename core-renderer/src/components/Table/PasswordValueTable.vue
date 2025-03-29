@@ -2,7 +2,8 @@
     <div class="passwordValueTableContainer">
         <VaulticTable ref="tableRef" id="passwordValueTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
-            :searchBarSizeModel="searchBarSizeModel" :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete">
+            :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly" :onPin="onPin" :onEdit="onEdit" 
+            :onDelete="onDelete">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
@@ -44,8 +45,9 @@ import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DataType, Filter, FilterStatus, IFilterable, IGroupable } from '../../Types/DataTypes';
+import { DataType, Filter, IFilterable, IGroupable } from '../../Types/DataTypes';
 import { Field, IIdentifiable } from '@vaultic/shared/Types/Fields';
+import { FilterStatus } from '@vaultic/shared/Types/Stores';
 
 export default defineComponent({
     name: "PasswordValueTable",

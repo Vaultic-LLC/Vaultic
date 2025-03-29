@@ -117,7 +117,7 @@ export default defineComponent({
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
                 if (loginResponse.success && loginResponse.value!.Success)
                 {
-                    const createUserResult = await api.repositories.users.createUser(loginResponse.value?.masterKey!, account.value.email, account.value.firstName, account.value.lastName);
+                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email, account.value.firstName, account.value.lastName);
                     if (!createUserResult.success)
                     {
                         app.popups.hideLoadingIndicator();
@@ -130,7 +130,7 @@ export default defineComponent({
                     }
 
                     app.isOnline = true;
-                    if (!(await app.loadUserData(loginResponse.value?.masterKey!)))
+                    if (!(await app.loadUserData(createUserResult.value!)))
                     {
                         app.popups.hideLoadingIndicator();
                         showAlertMessage("An unexpected error occured when trying to load data. Please try signing in. If the issue persists", "Unable to load data", true);
@@ -148,7 +148,7 @@ export default defineComponent({
                     password.passwordFor.value = "Vaultic Password Manager";
                     password.additionalInformation.value = "Email used to log into your Vaultic Password Manager account.";
 
-                    await app.currentVault.passwordStore.addPassword(loginResponse.value?.masterKey!, password);
+                    await app.currentVault.passwordStore.addPassword(createUserResult.value!, password);
                     ctx.emit('onSuccess');
 
                     return;

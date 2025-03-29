@@ -73,9 +73,9 @@ export class VaulticRepository<T extends VaulticEntity>
         const properties = entity.getCompressableProperties();
         for (let i = 0; i < properties.length; i++)
         {
-            console.time('compress');
+            //console.time('compress');
             entity[properties[i]] = await environment.utilities.data.compress(entity[properties[i]]);
-            console.timeEnd('compress');
+            //console.timeEnd('compress');
         }
 
         return this.encryptUpdatedProperties(key, entity);

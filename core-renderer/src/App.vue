@@ -63,10 +63,10 @@ import ConfirmDialog from "primevue-vaultic/confirmdialog";
 import AccountInfoWidget from './components/Widgets/AccountInfoWidget.vue';
 
 import { AccountSetupView } from './Types/Models';
-import { ColorPalette } from './Types/Colors';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import app from "./Objects/Stores/AppStore";
 import { AppView } from './Types/App';
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: 'App',

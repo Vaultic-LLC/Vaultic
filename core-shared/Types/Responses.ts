@@ -173,6 +173,7 @@ export interface FinishLoginResponse extends UserDataPayloadResponse, OpaqueResp
 
 export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse 
 {
+    isSyncing?: boolean;
 }
 
 export interface CreateVaultResponse extends BaseResponse

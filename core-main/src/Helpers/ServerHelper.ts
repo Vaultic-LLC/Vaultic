@@ -1,15 +1,12 @@
 import * as opaque from "@serenity-kit/opaque";
 import { stsServer } from "../Server/VaulticServer";
-import axiosHelper from "../Server/AxiosHelper";
 import { environment } from "../Environment";
-import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { checkMergeMissingData, getUserDataSignatures, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
+import { safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
@@ -43,6 +40,10 @@ async function registerUser(masterKey: string, pendingUserToken: string, firstNa
 async function logUserIn(masterKey: string, email: string,
     firstLogin: boolean = false, reloadAllData: boolean = false, mfaCode?: string): Promise<TypedMethodResponse<LogUserInResponse | undefined>>
 {
+    if (environment.cache.isSyncing)
+    {
+        return TypedMethodResponse.failWithValue({ Success: false, isSyncing: true });
+    }
     // clear the cache if we fail in case we failed after setting the current user
     return await safetifyMethod(this, internalLogUserIn, async () => environment.cache.clear());
 
@@ -100,7 +101,6 @@ async function logUserIn(masterKey: string, email: string,
             };
 
             masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
-            //currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
         }
 
         let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
@@ -110,51 +110,7 @@ async function logUserIn(masterKey: string, email: string,
 
             if (!firstLogin)
             {
-                // Don't have to worry about shared vaults not being e2e encrypted when they are first shared since only display
-                // vaults of them run through here
-                // const result = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, finishResponse);
-                // if (!result.success)
-                // {
-                //     return TypedMethodResponse.failWithValue({ Success: false, message: result.errorMessage });
-                // }
-
-                // if (!masterKeyVaulticKey)
-                // {
-                //     const masterKeyEncryptedAlgorithm =
-                //         (result.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
-                //         Algorithm.XCHACHA20_POLY1305;
-
-                //     const vaulticKey: VaulticKey =
-                //     {
-                //         algorithm: masterKeyEncryptedAlgorithm,
-                //         key: masterKey
-                //     };
-
-                //     masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
-                // }
-
-                // if (reloadAllData)
-                // {
-                //     await reloadAllUserData(masterKeyVaulticKey, email, result.value.userDataPayload);
-                // }
-                // else
-                // {
-                //     await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures?.keys ?? [], currentSignatures?.signatures ?? {}, result.value.userDataPayload);
-                // }
-
-                // This has to go after merging in the event that the user isn't in the local data yet
                 await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
-
-
-                // const payload = await decyrptUserDataPayloadVaults(masterKey, finishResponse.userDataPayload);
-                // if (!payload)
-                // {
-                //     return TypedMethodResponse.fail(undefined, undefined, "Failed to decrypt UserDataPayloadVaults");
-                // }
-                // else
-                // {
-                //     finishResponse.userDataPayload = payload as UserDataPayload;
-                // }
             }
         }
 
@@ -163,46 +119,6 @@ async function logUserIn(masterKey: string, email: string,
         return TypedMethodResponse.success(finishResponse);
     }
 }
-
-// TODO: this shouldn't be needed until I return displayVaults from the server again
-// async function decyrptUserDataPayloadVaults(masterKey: string, payload?: UserDataPayload): Promise<boolean | UserDataPayload | undefined>
-// {
-//     const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKey);
-//     if (!currentUser)
-//     {
-//         return false;
-//     }
-
-//     for (let i = 0; i < (payload?.archivedVaults?.length ?? 0); i++)
-//     {
-//         await decryptAndSetName(payload!.archivedVaults[i]);
-//     }
-
-//     for (let i = 0; i < (payload?.sharedVaults?.length ?? 0); i++)
-//     {
-//         await decryptAndSetName(payload!.sharedVaults[i]);
-//     }
-
-//     return payload;
-
-//     async function decryptAndSetName(vault: ServerDisplayVault)
-//     {
-//         Not correct anymore
-//         const vaultKey = await vaultHelper.decryptVaultKey(masterKey, currentUser.privateKey, true, vault.vaultKey!, vault.isSetup);
-//         if (!vaultKey.success)
-//         {
-//             return false;
-//         }
-
-//         const decryptedName = await environment.utilities.crypt.decrypt(vaultKey.value!, vault.name!);
-//         if (!decryptedName.success)
-//         {
-//             return false;
-//         }
-
-//         vault.name = decryptedName.value;
-//     }
-// }
 
 const serverHelper: ServerHelper =
 {

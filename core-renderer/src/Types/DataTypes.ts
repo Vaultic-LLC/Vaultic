@@ -22,12 +22,6 @@ export enum DataType
     Organizations
 }
 
-export enum FilterStatus
-{
-    And = "And",
-    Or = "Or"
-}
-
 export interface IPrimaryDataObject extends IFilterable, IIdentifiable, IGroupable, SecondaryDataObjectCollectionType
 {
     [key: string]: any;
@@ -77,21 +71,6 @@ export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
     lastModifiedTime: Field<string>;
     isWeak: Field<boolean>;
     isWeakMessage: Field<string>;
-}
-
-export class CurrentAndSafeStructure extends FieldedObject
-{
-    current: Field<Map<string, Field<number>>>;
-    safe: Field<Map<string, Field<number>>>;
-
-    constructor()
-    {
-        super();
-
-        this.id = Field.create("");
-        this.current = Field.create(new Map());
-        this.safe = Field.create(new Map());
-    }
 }
 
 export enum AtRiskType

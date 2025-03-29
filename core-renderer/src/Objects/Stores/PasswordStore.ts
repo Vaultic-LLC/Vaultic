@@ -6,12 +6,12 @@ import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
-import { AtRiskType, CurrentAndSafeStructure, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
+import { AtRiskType, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
 import { Field, IFieldedObject, KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
-import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState } from "./FilterStore";
 import { IGroupStoreState } from "./GroupStore";
+import { CurrentAndSafeStructure, defaultPasswordStoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IPasswordStoreState extends StoreState
 {
@@ -39,14 +39,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     protected defaultState()
     {
-        return FieldTreeUtility.setupIDs<IPasswordStoreState>({
-            version: Field.create(0),
-            passwordsByID: Field.create(new Map<string, Field<ReactivePassword>>()),
-            passwordsByDomain: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            duplicatePasswords: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            currentAndSafePasswords: Field.create(new CurrentAndSafeStructure()),
-            passwordsByHash: Field.create(new Map<string, Field<Map<string, Field<string>>>>())
-        });
+        return defaultPasswordStoreState;
     }
 
     async addPassword(masterKey: string, password: Password): Promise<boolean>

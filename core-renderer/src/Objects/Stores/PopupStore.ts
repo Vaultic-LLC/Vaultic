@@ -213,7 +213,7 @@ export function createPopupStore()
 
     function showSessionExpired()
     {
-        app.lock(false, false);
+        app.lock(false, false, false);
         showAccountSetup(AccountSetupView.SignIn, "Your session has expired. Please re sign in to continue using online functionality, or click 'Continue in Offline Mode'", undefined, false);
     }
 

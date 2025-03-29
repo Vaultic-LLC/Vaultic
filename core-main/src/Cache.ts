@@ -14,6 +14,8 @@ export class VaulticCache
     private internalPasswordHash: string | undefined;
     private internalClientLoginState: string | undefined;
 
+    private internalIsSyncing: boolean | undefined;
+
     get currentUser() { return this.internalCurrentUser; }
     get sessionKey() { return this.internalSessionKey; }
     get exportKey() { return this.internalExportKey; }
@@ -22,6 +24,9 @@ export class VaulticCache
     get startLoginRequest() { return this.internalStartLoginRequest; }
     get passwordHash() { return this.internalPasswordHash; }
     get clientLoginState() { return this.internalClientLoginState; }
+
+    get isSyncing() { return this.internalIsSyncing; }
+    set isSyncing(value: boolean) { this.internalIsSyncing = value; }
 
     constructor()
     {
@@ -58,6 +63,7 @@ export class VaulticCache
         this.internalCurrentUser =
         {
             userID: user.userID,
+            email: user.email,
             privateSigningKey: user.privateSigningKey,
             privateEncryptingKey: user.privateEncryptingKey
         };

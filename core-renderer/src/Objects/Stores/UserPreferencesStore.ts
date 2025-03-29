@@ -1,6 +1,6 @@
-import { ColorPalette, defaultColorPalettes, emptyColorPalette } from "../../Types/Colors";
+import { emptyColorPalette } from "../../Types/Colors";
 import { Store, StoreState } from "./Base";
-import { computed, ComputedRef, Ref, ref, watch } from "vue";
+import { Ref, ref, watch } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
 import app, { AppStore } from "./AppStore";
@@ -8,16 +8,9 @@ import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
-import { FieldTreeUtility } from "../../Types/Tree";
-
-export interface PinnedDataTypes extends IFieldedObject
-{
-    pinnedFilters: Field<Map<string, Field<string>>>;
-    pinnedGroups: Field<Map<string, Field<string>>>;
-    pinnedPasswords: Field<Map<string, Field<string>>>;
-    pinnedValues: Field<Map<string, Field<string>>>;
-}
+import { Field, FieldTreeUtility, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { ColorPalette } from "@vaultic/shared/Types/Color";
+import { defaultUserPreferencesState, PinnedDataTypes } from "@vaultic/shared/Types/Stores";
 
 // just used for validation
 const emptyDataTypes: Field<PinnedDataTypes> = Field.create(
@@ -176,20 +169,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
     protected defaultState(): UserPreferencesStoreState
     {
-        const defaultPinnedDataTypes = Field.create(new Map<number, Field<PinnedDataTypes>>());
-        if (this.initalized?.value && app.currentVault.userVaultID)
-        {
-            this.setDefaultPinnedDataTypes(app.currentVault.userVaultID, defaultPinnedDataTypes);
-        }
-
-        return FieldTreeUtility.setupIDs<IUserPreferencesStoreState>({
-            version: Field.create(0),
-            currentColorPalette: defaultColorPalettes.entries().next().value![1],
-            pinnedDataTypes: defaultPinnedDataTypes,
-            pinnedDesktopDevices: Field.create(new Map()),
-            pinnedMobileDevices: Field.create(new Map()),
-            pinnedOrganizations: Field.create(new Map())
-        });
+        return defaultUserPreferencesState;
     }
 
     protected setDefaultPinnedDataTypes(userVaultID: number, pinnedDataTypes: Field<Map<number, Field<PinnedDataTypes>>>)

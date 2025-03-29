@@ -7,9 +7,10 @@ import { PasswordStore, PasswordStoreState, ReactivePasswordStore } from "./Pass
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { Field, FieldTreeUtility, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { FieldTreeUtility } from "../../Types/Tree";
+import app from "./AppStore";
+import { defaultVaultStoreState } from "@vaultic/shared/Types/Stores";
 
 const MAX_LOGIN_RECORDS = 500;
 export interface VaultSettings extends IFieldedObject { }
@@ -30,6 +31,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalIsArchived: boolean;
     protected internalIsOwner: boolean;
     protected internalIsReadOnly: Ref<boolean>;
+    protected internalReadOnlyComputed: ComputedRef<boolean>;
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
     protected internalVaultID: number;
@@ -45,7 +47,7 @@ export class BaseVaultStore<V extends PasswordStore,
     get shared() { return this.internalShared; }
     get isArchived() { return this.internalIsArchived; }
     get isOwner() { return this.internalIsOwner; }
-    get isReadOnly() { return this.internalIsReadOnly; }
+    get isReadOnly() { return this.internalReadOnlyComputed; }
     get userOrganizationID() { return this.internalUserOrganizationID; }
     get userVaultID() { return this.internalUserVaultID; }
     get vaultID() { return this.internalVaultID; }
@@ -64,6 +66,7 @@ export class BaseVaultStore<V extends PasswordStore,
     {
         super("vaultStoreState");
         this.internalIsReadOnly = ref(false);
+        this.internalReadOnlyComputed = computed(() => this.internalIsReadOnly.value || app.isSyncing.value);
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
 
@@ -84,16 +87,7 @@ export class BaseVaultStore<V extends PasswordStore,
 
     protected defaultState(): VaultStoreState 
     {
-        return FieldTreeUtility.setupIDs<IVaultStoreState>({
-            version: Field.create(0),
-            settings: Field.create(
-                {
-                    id: Field.create(""),
-                    loginRecordsToStorePerDay: Field.create(13),
-                    numberOfDaysToStoreLoginRecords: Field.create(30)
-                }),
-            loginHistory: Field.create(new Map<number, Field<number>>())
-        });
+        return defaultVaultStoreState;
     }
 }
 
@@ -150,7 +144,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         this.internalGroupStore = new ReactiveGroupStore(this);
     }
 
-    public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData)
+    public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData, secondLoad: boolean)
     {
         await super.setBaseVaultStoreData(data);
 
@@ -159,7 +153,10 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         await this.internalFilterStore.initalizeNewStateFromJSON(data.filterStoreState);
         await this.internalGroupStore.initalizeNewStateFromJSON(data.groupStoreState);
 
-        await this.updateLogins(masterKey);
+        if (!secondLoad)
+        {
+            await this.updateLogins(masterKey);
+        }
     }
 
     public async setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)

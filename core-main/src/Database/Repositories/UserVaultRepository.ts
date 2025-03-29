@@ -179,7 +179,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                     currentVaultPreferences, transaction);
 
                 if (!(await environment.repositories.vaultPreferencesStoreStates.updateState(
-                    oldUserVault.userVaultID, "", state, transaction)))
+                    oldUserVault.userVaultID, masterKey, state, transaction)))
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "VaultPreferencesStoreState Update Failed");
                 }
@@ -274,7 +274,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             transaction.resetTracking(userVault[0], key, () => this);
             if (entities[i].vaultPreferencesStoreState)
             {
-                transaction.resetTracking(userVault[0].vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+                transaction.resetTracking(userVault[0].vaultPreferencesStoreState, key, () => environment.repositories.vaultPreferencesStoreStates);
             }
         }
 
@@ -294,7 +294,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return true;
     }
 
-    public async updateFromServer(currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>,
+    public async updateFromServer(masterKey: string, currentUserVault: DeepPartial<UserVault>, newUserVault: DeepPartial<UserVault>,
         changeTrackings: Dictionary<ChangeTracking>, transaction: Transaction)
     {
         if (!newUserVault.userVaultID)
@@ -336,7 +336,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         {
             if (currentUserVault.vaultPreferencesStoreState?.entityState == EntityState.Updated)
             {
-                if (!await (environment.repositories.vaultPreferencesStoreStates.mergeStates("", currentUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
+                if (!await (environment.repositories.vaultPreferencesStoreStates.mergeStates(masterKey, currentUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
                     newUserVault.vaultPreferencesStoreState, changeTrackings, transaction, false)))
                 {
                     return;
@@ -375,7 +375,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                 return TypedMethodResponse.fail(undefined, "", "No user vaults");
             }
 
-            const result = await StoreState.getUsableState('', condensedVaults[0][0].vaultPreferencesStoreState.state);
+            const result = await StoreState.getUsableState(masterKey, condensedVaults[0][0].vaultPreferencesStoreState.state);
             if (!result.success)
             {
                 return TypedMethodResponse.fail(undefined, "", "Failed to get usable vault preferences store");
@@ -446,7 +446,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             newUserVault.vaultPreferencesStoreState.state = "{}";
 
             transaction.insertEntity(newUserVault, masterKey, () => this);
-            transaction.insertEntity(newUserVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+            transaction.insertEntity(newUserVault.vaultPreferencesStoreState, masterKey, () => environment.repositories.vaultPreferencesStoreStates);
         }
     }
 }

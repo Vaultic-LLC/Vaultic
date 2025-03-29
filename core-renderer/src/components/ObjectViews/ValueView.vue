@@ -1,6 +1,6 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
             <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name.value" :width="'50%'"
                 :maxWidth="''" />
@@ -88,6 +88,8 @@ export default defineComponent({
             valuesState.value.valueType?.value == NameValuePairType.Passcode || valuesState.value.valueType?.value == NameValuePairType.Other);
         const randomValueType: ComputedRef<string> = computed(() => 
             valuesState.value.valueType?.value == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const gridDefinition: GridDefinition = 
         {
@@ -226,6 +228,7 @@ export default defineComponent({
             randomValueType,
             groupOptions,
             selectedGroups,
+            readOnly,
             onSave,
             onAuthenticationSuccessful
         };

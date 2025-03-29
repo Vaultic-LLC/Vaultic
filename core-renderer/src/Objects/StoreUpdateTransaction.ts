@@ -3,6 +3,7 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { api } from "../API";
 import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
 import { Store, StoreEvents } from "./Stores/Base";
+import app from "./Stores/AppStore";
 
 export enum Entity
 {
@@ -69,6 +70,11 @@ export default class StoreUpdateTransaction
 
     private async saveStoreStates(masterKey: string, entity: Entity, updateStoreStates: Dictionary<StoreUpdateState>)
     {
+        if (app.isSyncing.value)
+        {
+            return false;
+        }
+
         const newStates: { [key: string]: any } = {};
         const currentStates: { [key: string]: any } = {};
         const stores = Object.values(updateStoreStates);

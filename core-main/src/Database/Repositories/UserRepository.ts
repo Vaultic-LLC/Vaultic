@@ -18,7 +18,7 @@ import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
-import { SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
+import { defaultAppStoreState, defaultUserPreferencesState, SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
 import { Field } from "@vaultic/shared/Types/Fields";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
@@ -175,9 +175,11 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         const result = await StoreState.getUsableState('', lastUsedUser.userPreferencesStoreState.state);
         if (!result.success)
         {
+            console.log(`unable to get preferences`)
             return null;
         }
 
+        console.log(`last used preferences: ${result.value}`)
         return result.value;
     }
 
@@ -197,11 +199,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         return undefined;
     }
 
-    public async createUser(masterKey: string, email: string, firstName: string, lastName: string, transaction?: Transaction): Promise<TypedMethodResponse<boolean | undefined>>
+    public async createUser(masterKey: string, email: string, firstName: string, lastName: string, transaction?: Transaction):
+        Promise<TypedMethodResponse<string | undefined>>
     {
         return await safetifyMethod(this, internalCreateUser);
 
-        async function internalCreateUser(this: UserRepository): Promise<TypedMethodResponse<boolean>>
+        async function internalCreateUser(this: UserRepository): Promise<TypedMethodResponse<string>>
         {
             const response = await vaulticServer.user.getUserIDs();
             if (!response.Success)
@@ -211,6 +214,37 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             const sigKeys = environment.utilities.crypt.generatePublicPrivateKeys(Algorithm.ML_DSA_87);
             const encKeys = environment.utilities.crypt.generatePublicPrivateKeys(Algorithm.ML_KEM_1024);
+
+            let serializedMasterKey = masterKey;
+            if (serializedMasterKey)
+            {
+                try 
+                {
+                    JSON.parse(serializedMasterKey);
+                }
+                catch (e) 
+                {
+                    const masterKeyVaulticKey: VaulticKey =
+                    {
+                        key: masterKey,
+                        algorithm: Algorithm.XCHACHA20_POLY1305
+                    };
+
+                    serializedMasterKey = JSON.stringify(masterKeyVaulticKey);
+                }
+            }
+            else
+            {
+                const masterKeyVaulticKey: VaulticKey =
+                {
+                    key: masterKey,
+                    algorithm: Algorithm.XCHACHA20_POLY1305
+                };
+
+                serializedMasterKey = JSON.stringify(masterKeyVaulticKey);
+            }
+
+            console.log(serializedMasterKey);
 
             const user = new User().makeReactive();
             user.userID = response.UserID!;
@@ -225,21 +259,21 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             user.privateEncryptingKey = encKeys.private;
             user.userVaults = [];
 
-            await this.setMasterKey(masterKey, user, false);
+            await this.setMasterKey(serializedMasterKey, user, false);
 
             const appStoreState = new AppStoreState().makeReactive();
             appStoreState.appStoreStateID = response.AppStoreStateID!;
             appStoreState.userID = response.UserID!;
-            appStoreState.state = "{}";
+            appStoreState.state = JSON.vaulticStringify(defaultAppStoreState);
             user.appStoreState = appStoreState;
 
             const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
             userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
             userPreferencesStoreState.userID = response.UserID!;
-            userPreferencesStoreState.state = "{}"
+            userPreferencesStoreState.state = JSON.vaulticStringify(defaultUserPreferencesState);
             user.userPreferencesStoreState = userPreferencesStoreState;
 
-            const vaults = await environment.repositories.vaults.createNewVault(masterKey, "Personal", false);
+            const vaults = await environment.repositories.vaults.createNewVault(serializedMasterKey, "Personal", false);
             if (!vaults)
             {
                 return TypedMethodResponse.fail(errorCodes.FAILED_TO_CREATE_NEW_VAULT, undefined, "Create new Vault");
@@ -255,9 +289,9 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             // Order matters here
             transaction = transaction ?? new Transaction();
-            transaction.insertEntity(user, masterKey, () => this);
-            transaction.insertEntity(user.appStoreState, masterKey, () => environment.repositories.appStoreStates);
-            transaction.insertEntity(user.userPreferencesStoreState, "", () => environment.repositories.userPreferencesStoreStates);
+            transaction.insertEntity(user, serializedMasterKey, () => this);
+            transaction.insertEntity(user.appStoreState, serializedMasterKey, () => environment.repositories.appStoreStates);
+            transaction.insertEntity(user.userPreferencesStoreState, '', () => environment.repositories.userPreferencesStoreStates);
 
             transaction.insertEntity(vault, userVault.vaultKey, () => environment.repositories.vaults);
             transaction.insertEntity(vault.vaultStoreState, userVault.vaultKey, () => environment.repositories.vaultStoreStates);
@@ -266,8 +300,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             transaction.insertEntity(vault.filterStoreState, userVault.vaultKey, () => environment.repositories.filterStoreStates);
             transaction.insertEntity(vault.groupStoreState, userVault.vaultKey, () => environment.repositories.groupStoreStates);
 
-            transaction.insertEntity(userVault, masterKey, () => environment.repositories.userVaults);
-            transaction.insertEntity(userVault.vaultPreferencesStoreState, "", () => environment.repositories.vaultPreferencesStoreStates);
+            transaction.insertEntity(userVault, serializedMasterKey, () => environment.repositories.userVaults);
+            transaction.insertEntity(userVault.vaultPreferencesStoreState, serializedMasterKey, () => environment.repositories.vaultPreferencesStoreStates);
 
             const lastUsedUser = await this.getLastUsedUser();
             if (lastUsedUser)
@@ -286,13 +320,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             // set before backing up
             environment.cache.setCurrentUser(user);
 
-            const backupResponse = await backupData(masterKey);
+            const backupResponse = await backupData(serializedMasterKey);
             if (!backupResponse)
             {
                 return TypedMethodResponse.backupFail();
             }
 
-            return TypedMethodResponse.success();
+            return TypedMethodResponse.success(serializedMasterKey);
         }
     }
 
@@ -587,7 +621,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, "", JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
 
                     if (!await (environment.repositories.userPreferencesStoreStates.updateState(
-                        user.userPreferencesStoreState.userPreferencesStoreStateID, "", state, transaction)))
+                        user.userPreferencesStoreState.userPreferencesStoreStateID, '', state, transaction)))
                     {
                         return TypedMethodResponse.fail(undefined, undefined, "Failed To Update UserPreferencesStoreState");
                     }
@@ -676,7 +710,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             return false;
         }
 
-        transaction.resetTracking(currentUser, "", () => this)
+        transaction.resetTracking(currentUser, key, () => this)
 
         // TODO: what to do if updating previousSignatures on store states fails? The server has been updated
         // so the client will no longer be able to update. Detect and force update data from server? Should be handled
@@ -689,7 +723,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         if (entity.userPreferencesStoreState)
         {
-            transaction.resetTracking(currentUser.userPreferencesStoreState, "", () => environment.repositories.userPreferencesStoreStates);
+            transaction.resetTracking(currentUser.userPreferencesStoreState, key, () => environment.repositories.userPreferencesStoreStates);
         }
 
         return true;
@@ -801,7 +835,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         {
             if (currentUser?.userPreferencesStoreState?.entityState == EntityState.Updated)
             {
-                if (!await (environment.repositories.appStoreStates.mergeStates("", currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
+                if (!await (environment.repositories.userPreferencesStoreStates.mergeStates("", currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
                     changeTrackings, transaction, false)))
                 {
                     return;

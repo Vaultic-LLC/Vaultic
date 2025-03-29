@@ -1,6 +1,6 @@
 <template>
     <ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
                 v-model="passwordState.passwordFor.value" :width="'50%'" :maxWidth="''" :maxHeight="''" />
@@ -99,6 +99,8 @@ export default defineComponent({
 
         const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
         const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -339,6 +341,7 @@ export default defineComponent({
             tableColumns,
             selectedGroups,
             groupOptions,
+            readOnly,
             onAuthenticationSuccessful,
             onAuthenticationCanceled,
             onSave,

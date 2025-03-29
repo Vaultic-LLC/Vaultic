@@ -24,9 +24,9 @@ import { defineComponent, ComputedRef, computed, ref, Ref } from 'vue';
 import ColorPaletteView from '../../../components/ObjectViews/ColorPaletteView.vue';
 import ColorPalettePill from "../../ColorPalette/ColorPalettePill.vue"
 
-import { ColorPalette } from '../../../Types/Colors';
 import app from "../../../Objects/Stores/AppStore";
 import { Field } from '@vaultic/shared/Types/Fields';
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: "EditColorPalettePopup",

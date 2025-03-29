@@ -7,8 +7,8 @@ import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, 
 import { Field, IFieldObject, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
-import { FieldTreeUtility } from "../../Types/Tree";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
+import { defaultFilterStoreState } from "@vaultic/shared/Types/Stores";
 
 export interface IFilterStoreState extends StoreState
 {
@@ -31,15 +31,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
 
     protected defaultState()
     {
-        return FieldTreeUtility.setupIDs<IFilterStoreState>({
-            version: Field.create(0),
-            passwordFiltersByID: Field.create(new Map<string, Field<Filter>>()),
-            valueFiltersByID: Field.create(new Map<string, Field<Filter>>()),
-            emptyPasswordFilters: Field.create(new Map<string, Field<string>>()),
-            emptyValueFilters: Field.create(new Map<string, Field<string>>()),
-            duplicatePasswordFilters: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-            duplicateValueFilters: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-        });
+        return defaultFilterStoreState;
     }
 
     async toggleFilter(id: string): Promise<undefined>

@@ -2,11 +2,11 @@ import { environment } from "../../Environment";
 import * as jose from 'jose'
 import { Column, ObjectLiteral, AfterLoad } from "typeorm"
 import { StoreState } from "./States/StoreState";
-import { EntityState, IVaulticEntity } from "@vaultic/shared/Types/Entities";
+import { EntityState, IVaulticEntity, VaultType } from "@vaultic/shared/Types/Entities";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { Algorithm } from "@vaultic/shared/Types/Keys";
+import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 
 const VaulticHandler =
 {
@@ -215,23 +215,40 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return false;
         }
 
-        const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, key);
-        if (!hashedKey.success)
+        try 
         {
-            return false;
+            let keyToUse = key;
+            try 
+            {
+                const vaulticKey: VaulticKey = JSON.parse(key);
+                keyToUse = vaulticKey.key;
+            }
+            catch { }
+
+            const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse);
+            if (!hashedKey.success)
+            {
+                return false;
+            }
+
+            const keyBytes = environment.utilities.crypt.hexToBytes(hashedKey.value);
+            const jwt = await new jose.EncryptJWT({ entity: hashedEntity.value })
+                .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+                .setIssuedAt()
+                .setIssuer('vaultic')
+                .setAudience('vaulticUser')
+                .setExpirationTime('999y')
+                .encrypt(keyBytes);
+
+            this.currentSignature = jwt;
+            return true;
+        }
+        catch (e)
+        {
+
         }
 
-        const keyBytes = environment.utilities.crypt.hexToBytes(hashedKey.value);
-        const jwt = await new jose.EncryptJWT({ entity: hashedEntity.value })
-            .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
-            .setIssuedAt()
-            .setIssuer('vaultic')
-            .setAudience('vaulticUser')
-            .setExpirationTime('999y')
-            .encrypt(keyBytes);
-
-        this.currentSignature = jwt;
-        return true;
+        return false;
     }
 
     protected async internalVerify(key: string): Promise<TypedMethodResponse<any>>
@@ -246,27 +263,34 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_MAKEUP);
         }
 
-        console.time("19");
+        //console.time("19");
         const serializedMakeup = JSON.stringify(signatureMakeup);
-        console.timeEnd("19");
-        console.time("20");
+        //console.timeEnd("19");
+        //console.time("20");
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);
         if (!hashedEntity.success)
         {
             return TypedMethodResponse.fail();
         }
 
-        console.timeEnd("20");
-        const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, key);
-        if (!hashedKey.success)
-        {
-            return TypedMethodResponse.fail();
-        }
-
-        const keyBytes = environment.utilities.crypt.hexToBytes(hashedKey.value);
-
         try
         {
+            let keyToUse = key;
+            try
+            {
+                const vaulticKey: VaulticKey = JSON.parse(key);
+                keyToUse = vaulticKey.key;
+            }
+            catch { }
+
+            //console.timeEnd("20");
+            const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse);
+            if (!hashedKey.success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            const keyBytes = environment.utilities.crypt.hexToBytes(hashedKey.value);
             const response = await jose.jwtDecrypt(this.currentSignature, keyBytes, {
                 issuer: 'vaultic',
                 audience: 'vaulticUser',
