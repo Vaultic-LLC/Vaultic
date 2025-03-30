@@ -17,6 +17,9 @@ export class ChangeTracking extends VaulticEntity
     userID: number;
 
     @Column("integer")
+    userVaultID?: number;
+
+    @Column("integer")
     vaultID?: number;
 
     @Column('integer')
@@ -66,12 +69,13 @@ export class ChangeTracking extends VaulticEntity
         ];
     }
 
-    public static creteAndInsert(key: string, clientTrackingType: ClientChangeTrackingType, changes: string, transaction: Transaction, userID: number, vaultID?: number)
+    public static creteAndInsert(key: string, clientTrackingType: ClientChangeTrackingType, changes: string, transaction: Transaction, userID: number, userVaultID?: number, vaultID?: number)
     {
         const changeTracking = new ChangeTracking();
         changeTracking.clientTrackingType = clientTrackingType;
         changeTracking.changes = changes;
         changeTracking.userID = userID;
+        changeTracking.userVaultID = userVaultID;
         changeTracking.vaultID = vaultID;
         changeTracking.changeTime = Date.now();
 

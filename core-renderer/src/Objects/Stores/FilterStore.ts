@@ -3,12 +3,12 @@ import { PrimarydataTypeStoreStateKeys, SecondaryDataTypeStore, SecondarydataTyp
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
-import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType, FilterCondition, IPrimaryDataObject } from "../../Types/DataTypes";
-import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, PrimaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType, FilterCondition } from "../../Types/DataTypes";
+import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultFilterStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
 import { ValueStoreState } from "./ValueStore";
@@ -68,15 +68,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
 
     protected defaultState()
     {
-        return {
-            version: 0,
-            p: {},
-            v: {},
-            w: {},
-            l: {},
-            o: {},
-            u: {},
-        };
+        return defaultFilterStoreState;
     }
 
     async toggleFilter(id: string): Promise<undefined>
@@ -348,7 +340,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
     {
         OH.forEachValue(allFilters, (v) =>
         {
-            if (v[primaryDataObjectCollection].has(primaryObjectID))
+            if (OH.has(v[primaryDataObjectCollection], primaryObjectID))
             {
                 pendingFilterStore.deleteValue(pathToPrimaryDataObjects, primaryObjectID, v.id);
             }
@@ -363,7 +355,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         // if we don't have any conditions, then default to false so 
         // objects don't get included by default
         let allFilterConditionsApply: boolean = OH.size(filter.c) > 0;
-        const groupsForObject: Group[] = OH.mapWhere(groups, (k, v) => dataObject.g.has(k), (k, v) => v);
+        const groupsForObject: Group[] = OH.mapWhere(groups, (k, v) => OH.has(dataObject.g, k), (k, v) => v);
 
         OH.forEachValue(filter.c, fc =>
         {
@@ -456,24 +448,24 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
             {
                 if (this.filterAppliesToDataObject(f, v, allGroups))
                 {
-                    if (!v.i.has(f.id))
+                    if (!OH.has(v.i, f.id))
                     {
                         primaryDataObjectPendingStoreState.addValue(pathToSecondaryObjectsOnPrimaryObject, f.id, true, v.id);
                     }
 
-                    if (!f[primaryDataObjectCollection].has(v.id))
+                    if (!OH.has(f[primaryDataObjectCollection], v.id))
                     {
                         pendingFilterStoreState.addValue(pathToPrimaryDataObjectOnSecondaryObject, v.id, true, f.id);
                     }
                 }
                 else
                 {
-                    if (v.i.has(f.id))
+                    if (OH.has(v.i, f.id))
                     {
                         primaryDataObjectPendingStoreState.deleteValue(pathToSecondaryObjectsOnPrimaryObject, f.id, v.id);
                     }
 
-                    if (f[primaryDataObjectCollection].has(v.id))
+                    if (OH.has(f[primaryDataObjectCollection], v.id))
                     {
                         pendingFilterStoreState.deleteValue(pathToPrimaryDataObjectOnSecondaryObject, v.id, f.id);
                     }

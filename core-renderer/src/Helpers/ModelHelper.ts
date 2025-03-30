@@ -105,7 +105,7 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
 
         if (groupFilterType == DataType.Filters)
         {
-            if (app.userPreferences.pinnedFilters.has(v.id))
+            if (OH.has(app.userPreferences.pinnedFilters, v.id))
             {
                 pinnedModels.push(new TableRowModel(v.id, true, atRiskModel))
             }
@@ -123,7 +123,7 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
                 color: group.c
             }];
 
-            if (app.userPreferences.pinnedGroups.has(v.id))
+            if (OH.has(app.userPreferences.pinnedGroups, v.id))
             {
                 pinnedModels.push(new TableRowModel(v.id, true, atRiskModel, {
                     groupModels: groupModels
@@ -253,7 +253,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                 addToModels(groupModels, group);
             });
 
-            if (app.userPreferences.pinnedPasswords.has(v.id))
+            if (OH.has(app.userPreferences.pinnedPasswords, v.id))
             {
                 pinnedModels.push(new TableRowModel(v.id, true, atRiskModel, {
                     groupModels: groupModels
@@ -279,7 +279,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                 addToModels(groupModels, group);
             });
 
-            if (app.userPreferences.pinnedValues.has(v.id))
+            if (OH.has(app.userPreferences.pinnedValues, v.id))
             {
                 pinnedModels.push(new TableRowModel(v.id, true, atRiskModel, {
                     groupModels: groupModels

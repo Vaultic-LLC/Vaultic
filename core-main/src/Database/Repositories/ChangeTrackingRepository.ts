@@ -4,6 +4,7 @@ import { environment } from "../../Environment";
 import Transaction from "../Transaction";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { ChangeTrackingsByType } from "../../Types/Responses";
+import { ClientChangeTrackingType } from "@vaultic/shared/Types/ClientServerTypes";
 
 class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 {
@@ -23,8 +24,6 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
             return changeTrackingByStore;
         }
 
-        // TODO: these should order by changeTrackingID ascending so that the most recent one will
-        // be left in the dictionar if there are multiple
         let recievedChangeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find(
             {
                 where: {
@@ -45,16 +44,48 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         {
             if (!changeTrackingByStore[changeTrackings[i].clientTrackingType])
             {
-                changeTrackingByStore[changeTrackings[i].clientTrackingType] = [];
+                switch (changeTrackings[i].clientTrackingType)
+                {
+                    case ClientChangeTrackingType.User:
+                        changeTrackingByStore[ClientChangeTrackingType.User] = [];
+                        break;
+                    case ClientChangeTrackingType.UserVault:
+                        changeTrackingByStore[ClientChangeTrackingType.UserVault] = {};
+                        break;
+                    case ClientChangeTrackingType.Vault:
+                        changeTrackingByStore[ClientChangeTrackingType.Vault] = {};
+                        break;
+                }
             }
 
-            changeTrackingByStore[changeTrackings[i].clientTrackingType].push(changeTrackings[i]);
+            switch (changeTrackings[i].clientTrackingType)
+            {
+                case ClientChangeTrackingType.User:
+                    changeTrackingByStore[ClientChangeTrackingType.User].push(changeTrackings[i]);
+                    break;
+                case ClientChangeTrackingType.UserVault:
+                    if (!changeTrackingByStore[ClientChangeTrackingType.UserVault][changeTrackings[i].userVaultID])
+                    {
+                        changeTrackingByStore[ClientChangeTrackingType.UserVault][changeTrackings[i].userVaultID] = [];
+                    }
+
+                    changeTrackingByStore[ClientChangeTrackingType.UserVault][changeTrackings[i].userVaultID].push(changeTrackings[i]);
+                    break;
+                case ClientChangeTrackingType.Vault:
+                    if (!changeTrackingByStore[ClientChangeTrackingType.Vault][changeTrackings[i].vaultID])
+                    {
+                        changeTrackingByStore[ClientChangeTrackingType.Vault][changeTrackings[i].vaultID] = [];
+                    }
+
+                    changeTrackingByStore[ClientChangeTrackingType.Vault][changeTrackings[i].vaultID].push(changeTrackings[i]);
+                    break;
+            }
         }
 
         return changeTrackingByStore;
     }
 
-    public async clearChangeTrackings(transaction: Transaction)
+    public clearChangeTrackings(transaction: Transaction)
     {
         // user will be undefined if we are adding it from the server. no change trackings to clear then obviously
         if (environment.cache.currentUser?.userID)

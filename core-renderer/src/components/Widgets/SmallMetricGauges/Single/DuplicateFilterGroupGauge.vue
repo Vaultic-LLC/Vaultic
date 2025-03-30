@@ -12,6 +12,7 @@ import SmallMetricGauge from "../../../Dashboard/SmallMetricGauge.vue"
 import { SmallMetricGaugeModel } from "../../../../Types/Models"
 import app from "../../../../Objects/Stores/AppStore";
 import { DataType, AtRiskType } from '../../../../Types/DataTypes';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "DuplicateFilterGroupGauge",
@@ -29,10 +30,11 @@ export default defineComponent({
                     switch (app.activeFilterGroupsTable)
                     {
                         case DataType.Groups:
+                            const vGSize = OH.size(app.currentVault.groupStore.duplicateValueGroups);
                             return {
-                                key: `vgdup${app.currentVault.groupStore.duplicateValueGroups.size}${app.currentVault.groupStore.valuesGroups.length}`,
+                                key: `vgdup${vGSize}${app.currentVault.groupStore.valuesGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.groupStore.duplicateValueGroups.size,
+                                filledAmount: vGSize,
                                 totalAmount: app.currentVault.groupStore.valuesGroups.length,
                                 color: app.userPreferences.currentColorPalette.g,
                                 active: app.currentVault.groupStore.activeAtRiskValueGroupType == AtRiskType.Duplicate,
@@ -43,10 +45,11 @@ export default defineComponent({
                             };
                         case DataType.Filters:
                         default:
+                            const vFSize = OH.size(app.currentVault.filterStore.duplicateValueFilters);
                             return {
-                                key: `vfdup${app.currentVault.filterStore.duplicateValueFilters.size}${app.currentVault.filterStore.nameValuePairFilters.length}`,
+                                key: `vfdup${vFSize}${app.currentVault.filterStore.nameValuePairFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.filterStore.duplicateValueFilters.size,
+                                filledAmount: vFSize,
                                 totalAmount: app.currentVault.filterStore.nameValuePairFilters.length,
                                 color: app.userPreferences.currentColorPalette.f,
                                 active: app.currentVault.filterStore.activeAtRiskValueFilterType == AtRiskType.Duplicate,
@@ -61,8 +64,9 @@ export default defineComponent({
                     switch (app.activeFilterGroupsTable)
                     {
                         case DataType.Groups:
+                            const pgSize = OH.size(app.currentVault.groupStore.duplicatePasswordGroups);
                             return {
-                                key: `pgdup${app.currentVault.groupStore.duplicatePasswordGroups.size}${app.currentVault.groupStore.passwordGroups.length}`,
+                                key: `pgdup${pgSize}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Duplicate',
                                 filledAmount: app.currentVault.groupStore.duplicatePasswordGroups.size,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
@@ -75,10 +79,11 @@ export default defineComponent({
                             };
                         case DataType.Filters:
                         default:
+                            const pFSize = OH.size(app.currentVault.filterStore.duplicatePasswordFilters);
                             return {
-                                key: `pfdup${app.currentVault.filterStore.duplicatePasswordFilters.size}${app.currentVault.filterStore.passwordFilters.length}`,
+                                key: `pfdup${pFSize}${app.currentVault.filterStore.passwordFilters.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.filterStore.duplicatePasswordFilters.size,
+                                filledAmount: pFSize,
                                 totalAmount: app.currentVault.filterStore.passwordFilters.length,
                                 color: app.userPreferences.currentColorPalette.f,
                                 active: app.currentVault.filterStore.activeAtRiskPasswordFilterType == AtRiskType.Duplicate,

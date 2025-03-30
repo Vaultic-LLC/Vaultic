@@ -116,12 +116,7 @@ export default class StoreUpdateTransaction
 
     private async commitStoreStates(storeUpdateStates: Dictionary<StoreUpdateState>)
     {
-        const storeUpdateStateValues = Object.values(storeUpdateStates);
-        for (let i = 0; i < storeUpdateStateValues.length; i++)
-        {
-            return true;
-        }
-
+        const stores = Object.values(storeUpdateStates);
         for (let i = 0; i < stores.length; i++)
         {
             stores[i].store.initalizeNewState(stores[i].pendingState.state);

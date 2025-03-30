@@ -1,5 +1,34 @@
 import { getObjectFromPath, PropertyManagerConstructor } from "../Utilities/PropertyManagers";
+import { defaultColorPalettes, emptyUserColorPalettes } from "./Color";
 import { Field, FieldMap, IFieldedObject, NonArrayType, Primitive } from "./Fields";
+
+export enum AutoLockTime
+{
+    OneMinute = "1 Minute",
+    FiveMinutes = "5 Minuts",
+    FifteenMinutes = "15 Minutes",
+    ThirtyMinutes = "30 Minutes"
+}
+
+export enum FilterStatus
+{
+    And = "And",
+    Or = "Or"
+}
+
+export class CurrentAndSafeStructure
+{
+    /** Current */
+    c: number[];
+    /** Safe */
+    s: number[];
+
+    constructor()
+    {
+        this.c = [];
+        this.s = [];
+    }
+}
 
 export enum StoreType
 {
@@ -220,3 +249,78 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
         };
     }
 }
+
+export const defaultAppStoreState =
+{
+    version: 0,
+    s: {
+        c: emptyUserColorPalettes,
+        a: AutoLockTime.OneMinute,
+        f: FilterStatus.Or,
+        o: 365,
+        p: 1,
+        v: 25,
+        r: 7,
+        n: true,
+        s: true,
+        m: true,
+        e: '-',
+        t: true
+    }
+};
+
+export const defaultUserPreferencesStoreState =
+{
+    version: 0,
+    c: { p: defaultColorPalettes.get('m84ezgwm3')! },
+    t: {},
+    o: {}
+};
+
+export const defaultVaultStoreState =
+{
+    version: 0,
+    s: {},
+    l: []
+};
+
+export const defaultPasswordStoreState =
+{
+    version: 0,
+    p: {},
+    o: {},
+    d: {},
+    c: new CurrentAndSafeStructure(),
+    h: {}
+};
+
+export const defaultValueStoreState =
+{
+    version: 0,
+    v: {},
+    d: {},
+    c: new CurrentAndSafeStructure(),
+    h: {}
+};
+
+export const defaultFilterStoreState =
+{
+    version: 0,
+    p: {},
+    v: {},
+    w: {},
+    l: {},
+    o: {},
+    u: {},
+};
+
+export const defaultGroupStoreState =
+{
+    version: 0,
+    p: {},
+    v: {},
+    w: {},
+    l: {},
+    o: {},
+    u: {},
+};

@@ -168,7 +168,7 @@ export default defineComponent({
     
                             console.timeEnd('loggingIn');
                             ctx.emit('onKeySuccess');
-                        }             
+                        }
                     }
                     else
                     {

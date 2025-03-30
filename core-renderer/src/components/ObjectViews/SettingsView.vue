@@ -94,7 +94,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, ref, onMounted, Ref, watch } from 'vue';
+import { ComputedRef, defineComponent, computed, ref, onMounted, Ref, watch, reactive, Reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -142,8 +142,8 @@ export default defineComponent({
 
         const appStoreState = app.getPendingState()!;
         // copy the objects so that we don't edit the original one. Also needed for change tracking
-        const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
-        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const originalAppSettings: Reactive<AppSettings> = reactive(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        let appSettings: Reactive<AppSettings> = reactive(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
 
         // const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
         // const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
@@ -191,9 +191,9 @@ export default defineComponent({
             }
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-            if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
+            if (JSON.vaulticStringify(originalAppSettings) != JSON.vaulticStringify(appSettings))
             {
-                appStoreState.commitProxyObject('settings', appSettings.value);
+                appStoreState.commitProxyObject('settings', appSettings);
                 transaction.updateUserStore(app, appStoreState);
 
                 if (!(await transaction.commit(masterKey)))
@@ -400,7 +400,7 @@ export default defineComponent({
 
         onMounted(async () => 
         {
-            appSettings.value = appStoreState.proxifyObject('settings', appSettings.value);
+            appSettings = appStoreState.proxifyObject('settings', appSettings);
 
             if (isOnline.value)
             {

@@ -5,10 +5,10 @@ import { api } from "../../API";
 import { DataType, IGroupable, AtRiskType, Group, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { IPasswordStoreState, PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
-import { IValueStoreState, ValueStoreState } from "./ValueStore";
-import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
+import { ValueStoreState } from "./ValueStore";
+import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
+import { defaultGroupStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IGroupStoreState extends StoreState
@@ -63,26 +63,15 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
     protected defaultState()
     {
-        return {
-            version: 0,
-            p: {},
-            v: {},
-            w: {},
-            l: {},
-            o: {},
-            u: {},
-        };
+        return defaultGroupStoreState;
     }
 
     async addGroup(
         masterKey: string,
         group: Group,
-        pendingStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>,
-        backup?: boolean): Promise<boolean>
+        pendingStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        backup = backup ?? app.isOnline;
-
         if (group.t == DataType.Passwords)
         {
             const pendingPasswordStoreState = this.vault.passwordStore.getPendingState()!;
@@ -236,7 +225,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         const pendingState = this.getPendingState()!;
 
-        if (!pendingState.state.p.has(group.id) && !pendingState.state.v.has(group.id))
+        if (!OH.has(pendingState.state.p, group.id) && !OH.has(pendingState.state.v, group.id))
         {
             await api.repositories.logs.log(undefined, `No Group`, "GroupStore.Delete")
             return false;
@@ -317,7 +306,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
                 return;
             }
 
-            if (!group[primaryDataObjectCollection].has(primaryObjectID))
+            if (!OH.has(group[primaryDataObjectCollection], primaryObjectID))
             {
                 pendingGroupState.addValue(pathToSecondaryObjectsOnGroup, primaryObjectID, true, group.id);
             }
@@ -337,7 +326,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
                 return;
             }
 
-            if (group[primaryDataObjectCollection].has(primaryObjectID))
+            if (OH.has(group[primaryDataObjectCollection], primaryObjectID))
             {
                 pendingGroupState.deleteValue(pathToSecondaryObjectsOnGroup, primaryObjectID, group.id);
             }

@@ -342,6 +342,11 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "integer"
                 },
                 {
+                    name: "userVaultID",
+                    type: "interger",
+                    isNullable: true
+                },
+                {
                     name: "vaultID",
                     type: "integer",
                     isNullable: true

@@ -3,11 +3,11 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { AtRiskType, CurrentAndSafeStructure, DataType, Filter, Group, IPrimaryDataObject, ISecondaryDataObject, MAX_CURRENT_AND_SAFE_SIZE, RelatedDataTypeChanges } from "../../Types/DataTypes";
+import { AtRiskType, DataType, Filter, Group, IPrimaryDataObject, ISecondaryDataObject, MAX_CURRENT_AND_SAFE_SIZE, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
-import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, SecondaryDataObjectCollection, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, SecondaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export type StoreEvents = "onChanged";
@@ -225,7 +225,7 @@ export class DataTypeStore<T extends KnownMappedFields<StoreState>, K extends St
         for (let i = 0; i < currentKeys.length; i++)
         {
             // in both, it was unchagned
-            if (newRelated.has(currentKeys[i]))
+            if (OH.has(newRelated, currentKeys[i]))
             {
                 unchanged[currentKeys[i]] = currentRelated[currentKeys[i]];
                 newKeys.splice(newKeys.indexOf(currentKeys[i]), 1);
@@ -273,7 +273,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
         const pendingState = this.getPendingState()!;
         OH.forEachValue(this.getPrimaryDataTypesByID(pendingState.state), (v => 
         {
-            if (!v[secondaryDataObjectCollection].has(secondaryObjectID))
+            if (!OH.has(v[secondaryDataObjectCollection], secondaryObjectID))
             {
                 return;
             }
@@ -338,27 +338,27 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
                 if (response.value == primaryDataObject[secretProperty])
                 {
                     // updating the list for the current primaryObject to include the duplicate primaryObjects id
-                    if (!allDuplicates.has(primaryDataObject.id))
+                    if (!OH.has(allDuplicates, primaryDataObject.id))
                     {
                         const newDuplicate: DictionaryAsList = {};
                         newDuplicate[currentId] = true;
 
                         pendingStoreState.addValue('duplicateDataTypes', primaryDataObject.id, newDuplicate);
                     }
-                    else if (!allDuplicates[primaryDataObject.id].has(currentId))
+                    else if (!OH.has(allDuplicates[primaryDataObject.id], currentId))
                     {
                         pendingStoreState.addValue('duplicateDataTypes.dataTypes', currentId, true, primaryDataObject.id);
                     }
 
                     // updating the duplciate primaryObjects list to include the current primaryObjects id
-                    if (!allDuplicates.has(currentId))
+                    if (!OH.has(allDuplicates, currentId))
                     {
                         const newDuplicate: DictionaryAsList = {};
                         newDuplicate[primaryDataObject.id] = true;
 
                         pendingStoreState.addValue('duplicateDataTypes', currentId, newDuplicate);
                     }
-                    else if (!allDuplicates[currentId].has(primaryDataObject.id))
+                    else if (!OH.has(allDuplicates[currentId], primaryDataObject.id))
                     {
                         pendingStoreState.addValue('duplicateDataTypes.dataTypes', primaryDataObject.id, true, currentId);
                     }
@@ -369,7 +369,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
                     // of them in which case we want to just delete the object
                     removedDuplicates.push(currentId);
 
-                    if (allDuplicates.has(currentId) && allDuplicates[currentId].has(primaryDataObject.id))
+                    if (OH.has(allDuplicates, currentId) && OH.has(allDuplicates[currentId], primaryDataObject.id))
                     {
                         // remove temp primary objects list since it no longer has any duplicates
                         if (OH.size(allDuplicates[currentId]) == 1)
@@ -406,14 +406,14 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
         pendingStoreState: PendingStoreState<T, K>)
     {
         const allDuplicates: DoubleKeyedObject = pendingStoreState.getObject('duplicateDataTypes');
-        if (!allDuplicates.has(primaryDataObject.id))
+        if (!OH.has(allDuplicates, primaryDataObject.id))
         {
             return;
         }
 
         OH.forEachKey(allDuplicates[primaryDataObject.id], (k) =>
         {
-            if (!allDuplicates.has(k))
+            if (!OH.has(allDuplicates, k))
             {
                 return;
             }
@@ -449,7 +449,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
                 return;
             }
 
-            if (!dataTypesByHash.has(hashID))
+            if (!OH.has(dataTypesByHash, hashID))
             {
                 const newHashEntry: DictionaryAsList = {};
                 newHashEntry[newValue.id] = true;
@@ -459,7 +459,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
             else
             {
                 const valuesForHash = dataTypesByHash[hashID];
-                if (!valuesForHash!.has(newValue.id))
+                if (!OH.has(valuesForHash, newValue.id))
                 {
                     pendingStoreState.addValue('dataTypesByHash.dataTypes', newValue.id, true, hashID);
                 }
@@ -476,7 +476,7 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
             }
 
             const valuesForHash = dataTypesByHash[hashID];
-            if (valuesForHash && valuesForHash.has(currentValue.id))
+            if (valuesForHash && OH.has(valuesForHash, currentValue.id))
             {
                 // We are deleting the last value, delete everything
                 if (OH.size(valuesForHash) == 1)
@@ -559,7 +559,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
             }
 
             // only grap the secondary objects with values that match our current one
-            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter(v => v[primaryDataObjectCollection].has(key));
+            potentiallyDuplicateObjects = potentiallyDuplicateObjects.filter(v => OH.has(v[primaryDataObjectCollection], key));
         }
 
         return potentiallyDuplicateObjects.map(v => v.id);
@@ -588,7 +588,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
         const potentiallyNewDuplicateSecondaryObject: string[] =
             this.getSecondaryDataObjectDuplicates(secondaryDataObject, primaryDataObjectCollection, allSecondaryDataObjects);
 
-        const hasDuplicatesForCurrentScondaryObject = currentDuplicateSecondaryObjects.has(secondaryDataObject.id);
+        const hasDuplicatesForCurrentScondaryObject = OH.has(currentDuplicateSecondaryObjects, secondaryDataObject.id);
 
         // there are no duplicate secondary objects anywhere, so nothing to do
         if (potentiallyNewDuplicateSecondaryObject.length == 0 &&
@@ -598,7 +598,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
         }
 
         const addedDuplicateSeconaryObjects: string[] = potentiallyNewDuplicateSecondaryObject.filter(
-            o => !hasDuplicatesForCurrentScondaryObject || !currentDuplicateSecondaryObjects[secondaryDataObject.id].has(o));
+            o => !hasDuplicatesForCurrentScondaryObject || !OH.has(currentDuplicateSecondaryObjects[secondaryDataObject.id], o));
 
         const removedDuplicateSecondaryObjects: string[] | undefined = !hasDuplicatesForCurrentScondaryObject ? [] :
             OH.mapWhere(currentDuplicateSecondaryObjects[secondaryDataObject.id], (k, _) => !potentiallyNewDuplicateSecondaryObject.includes(k), (k, _) => k);
@@ -620,7 +620,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
                 pendingStoreState.deleteValue(duplicateDataTypesDataTypesPath, o, secondaryDataObject.id);
             }
 
-            if (!currentDuplicateSecondaryObjects.has(o))
+            if (!OH.has(currentDuplicateSecondaryObjects, o))
             {
                 return;
             }
@@ -638,7 +638,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
 
 
         let alreadyAddedAllDupsForThisSecondaryObject = false;
-        if (!currentDuplicateSecondaryObjects.has(secondaryDataObject.id))
+        if (!OH.has(currentDuplicateSecondaryObjects, secondaryDataObject.id))
         {
             alreadyAddedAllDupsForThisSecondaryObject = true;
             const dups: DictionaryAsList = {};
@@ -659,7 +659,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
             }
 
             // need to create a list for the added secondary object if it doesn't exist. Duplicate secondary objects go both ways
-            if (!currentDuplicateSecondaryObjects.has(o))
+            if (!OH.has(currentDuplicateSecondaryObjects, o))
             {
                 const dups: DictionaryAsList = {};
                 dups[secondaryDataObject.id] = true;
@@ -680,7 +680,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
         pendingStoreState: PendingStoreState<T, K>)
     {
         const emptyDataTypes: DictionaryAsList = pendingStoreState.getObject(emptyDataTypesPath);
-        if (!emptyDataTypes.has(secondaryObjectID))
+        if (!OH.has(emptyDataTypes, secondaryObjectID))
         {
             return;
         }
@@ -707,7 +707,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
         if (OH.size(primaryObjectIDsForSecondaryObject) == 0)
         {
             // if it doesn't, then add it to the list of empty filters
-            if (!currentEmptySecondaryObjects.has(secondaryObjectID))
+            if (!OH.has(currentEmptySecondaryObjects, secondaryObjectID))
             {
                 pendingState.addValue(emptyDataTypePath, secondaryObjectID, true);
             }
@@ -726,14 +726,14 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
         pendingStoreState: PendingStoreState<T, K>)
     {
         const currentDuplicateSecondaryDataObjects: DoubleKeyedObject = pendingStoreState.getObject(duplicateDataTypesPath);
-        if (!currentDuplicateSecondaryDataObjects.has(secondaryDataObjectID))
+        if (!OH.has(currentDuplicateSecondaryDataObjects, secondaryDataObjectID))
         {
             return;
         }
 
         OH.forEachKey(currentDuplicateSecondaryDataObjects[secondaryDataObjectID], (k) =>
         {
-            if (!currentDuplicateSecondaryDataObjects.has(k))
+            if (!OH.has(currentDuplicateSecondaryDataObjects, k))
             {
                 return;
             }

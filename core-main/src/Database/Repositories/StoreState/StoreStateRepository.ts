@@ -6,6 +6,7 @@ import { ClientChange, ClientChangeTrackingObject } from "@vaultic/shared/Types/
 import { getObjectFromPath, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
 import { ChangeTracking } from "../../Entities/ChangeTracking";
 import { StoreRetriever } from "../../../Types/Parameters";
+import { environment } from "../../../Environment";
 
 export class StoreStateRepository<T extends StoreState> extends VaulticRepository<T>
 {
@@ -52,7 +53,9 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             for (let i = 0; i < serverChanges.allChanges.length; i++)
             {
                 clientChangesToPushAfter.lastLoadedChangeVersion = serverChanges.allChanges[i].version;
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(serverChanges.allChanges[i].changes);
+
+                const uncompressed = await environment.utilities.data.uncompress(serverChanges.allChanges[i].changes);
+                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(uncompressed);
 
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
                 for (let j = 0; j < storeTypes.length; j++)
@@ -82,7 +85,8 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         {
             for (let i = 0; i < alreadyMergedLocalChanges.allChanges.length; i++)
             {
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(alreadyMergedLocalChanges.allChanges[i].changes);
+                const uncompressed = await environment.utilities.data.uncompress(alreadyMergedLocalChanges.allChanges[i].changes);
+                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
                 for (let j = 0; j < storeTypes.length; j++)
@@ -100,7 +104,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.lastLoadedChangeVersion += 1;
                 const clientChange: ClientChange =
                 {
-                    changes: JSON.stringify(parsedChanges),
+                    changes: await environment.utilities.data.compress(JSON.stringify(parsedChanges)),
                     changeTime: alreadyMergedLocalChanges.allChanges[i].changeTime,
                     version: clientChangesToPushAfter.lastLoadedChangeVersion
                 };
@@ -115,7 +119,9 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             {
                 needsToRePushStoreStates = true;
 
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(localChangesToMerge[i].changes);
+                const uncompressed = await environment.utilities.data.uncompress(localChangesToMerge[i].changes);
+                console.log(`Uncompressed Change: ${uncompressed}`);
+                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
                 for (let j = 0; j < storeTypes.length; j++)
@@ -138,7 +144,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.lastLoadedChangeVersion += 1;
                 const clientChange: ClientChange =
                 {
-                    changes: JSON.stringify(parsedChanges),
+                    changes: await environment.utilities.data.compress(JSON.stringify(parsedChanges)),
                     changeTime: localChangesToMerge[i].changeTime,
                     version: clientChangesToPushAfter.lastLoadedChangeVersion
                 };

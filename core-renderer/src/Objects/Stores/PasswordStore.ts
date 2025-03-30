@@ -6,12 +6,12 @@ import { api } from "../../API";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
-import { AtRiskType, CurrentAndSafeStructure, IPrimaryDataObject, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
-import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { AtRiskType, IPrimaryDataObject, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
+import { KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
-import { GroupStoreState, IGroupStoreState } from "./GroupStore";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
+import { GroupStoreState } from "./GroupStore";
+import { CurrentAndSafeStructure, defaultPasswordStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IPasswordStoreState extends StoreState
@@ -72,14 +72,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     protected defaultState()
     {
-        return {
-            version: 0,
-            p: {},
-            o: {},
-            d: {},
-            c: new CurrentAndSafeStructure(),
-            h: {}
-        };
+        return defaultPasswordStoreState;
     }
 
     async addPassword(
@@ -330,7 +323,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const passwordsByDomain: DoubleKeyedObject = pendingPasswordState.getObject('passwordsByDomain');
         if (newDomain)
         {
-            if (!passwordsByDomain.has(newDomain))
+            if (!OH.has(passwordsByDomain, newDomain))
             {
                 const newDomainObject: DictionaryAsList = {};
                 newDomainObject[id] = true;
@@ -345,7 +338,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         if (oldDomain)
         {
-            if (!passwordsByDomain.has(oldDomain))
+            if (!OH.has(passwordsByDomain, oldDomain))
             {
                 return;
             }
@@ -364,7 +357,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     private passwordIsSafe(duplicateDataTypes: DoubleKeyedObject, password: ReactivePassword)
     {
-        return !password.isOld() && !password.c && !password.w && !duplicateDataTypes.has(password.id);
+        return !password.isOld() && !password.c && !password.w && !OH.has(duplicateDataTypes, password.id);
     }
 
     private async setPasswordProperties(masterKey: string, password: Password): Promise<boolean>

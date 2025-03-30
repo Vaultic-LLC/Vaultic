@@ -1,181 +1,164 @@
 import { Field, IFieldedObject } from "./Fields";
 
-export interface TableColorScheme extends IFieldedObject
+export interface TableColorScheme
 {
-    primaryColor: Field<string>;
-    secondaryColorOne: Field<string>;
-    secondaryColorTwo: Field<string>;
+    /** Primary Color */
+    p: string;
+    /** Seconday Color One */
+    o: string;
+    /** Secondary Color Two */
+    t: string;
 }
 
-export interface ColorPalette extends IFieldedObject
+export interface ColorPalette
 {
-    id: Field<string>;
-    active: Field<boolean>;
-    isCreated: Field<boolean>;
-    editable: Field<boolean>;
-    passwordsColor: Field<TableColorScheme>;
-    valuesColor: Field<TableColorScheme>;
-    filtersColor: Field<string>;
-    groupsColor: Field<string>;
-    backgroundColor: Field<string>;
-    tableColor: Field<string>;
-    widgetColor: Field<string>;
-    errorColor: Field<string>;
-    successColor: Field<string>;
+    id: string;
+    /** Active */
+    a: boolean;
+    /** Is Created */
+    i: boolean;
+    /** Editable */
+    e: boolean;
+    /** Password Color */
+    p: TableColorScheme;
+    /** Value Colors */
+    v: TableColorScheme;
+    /** Filter Color */
+    f: string;
+    /** Group Color */
+    g: string;
+    /** Error Color */
+    r: string;
+    /** Success Color */
+    s: string;
 }
 
-export const defaultColorPalettes: Map<string, Field<ColorPalette>> = new Map([
-    ["m84ezgwm3", Field.create({
-        id: Field.create("m84ezgwm3"),
-        active: Field.create(false),
-        isCreated: Field.create(true),
-        editable: Field.create(false),
-        passwordsColor: Field.create({
-            id: Field.create("m84ezgwm5"),
-            primaryColor: Field.create("#bb29ff"),
-            secondaryColorOne: Field.create("#6612ec"),
-            secondaryColorTwo: Field.create("#2419bf"),
-        }),
-        valuesColor: Field.create({
-            id: Field.create("m84ezgwm6"),
-            primaryColor: Field.create("#03C4A1"),
-            secondaryColorOne: Field.create("#03a7c4"),
-            secondaryColorTwo: Field.create("#0374c4"),
-        }),
-        filtersColor: Field.create("#7752FE"),
-        groupsColor: Field.create("#19A7CE"),
-        backgroundColor: Field.create("#0f111d"),
-        tableColor: Field.create("#161e29"),
-        widgetColor: Field.create("#2c2c3329"),
-        errorColor: Field.create("#ef4444"),
-        successColor: Field.create("#45d741")
-    })],
-    ["m84ezgwm7", Field.create({
-        id: Field.create("m84ezgwm7"),
-        active: Field.create(true),
-        isCreated: Field.create(true),
-        editable: Field.create(false),
-        passwordsColor: Field.create({
-            id: Field.create("m84ezgwm8"),
-            primaryColor: Field.create("#9A031E"),
-            secondaryColorOne: Field.create("#a712ec"),
-            secondaryColorTwo: Field.create("#530101"),
-        }),
-        valuesColor: Field.create({
-            id: Field.create("m84ezgwn0"),
-            primaryColor: Field.create("#BF3131"),
-            secondaryColorOne: Field.create("#5d0ca6"),
-            secondaryColorTwo: Field.create("#a712ec"),
-        }),
-        filtersColor: Field.create("#FB8B24"),
-        groupsColor: Field.create("#E36414"),
-        backgroundColor: Field.create("#0f111d"),
-        tableColor: Field.create("#161e29"),
-        widgetColor: Field.create("#2c2c3329"),
-        errorColor: Field.create("#ef4444"),
-        successColor: Field.create("#45d741")
-    })],
-    ["m84ezgwn1", Field.create({
-        id: Field.create("m84ezgwn1"),
-        active: Field.create(false),
-        isCreated: Field.create(true),
-        editable: Field.create(false),
-        passwordsColor: Field.create({
-            id: Field.create("m84ezgwn2"),
-            primaryColor: Field.create("#777777"),
-            secondaryColorOne: Field.create("#bbbbbb"),
-            secondaryColorTwo: Field.create("#111111"),
-        }),
-        valuesColor: Field.create({
-            id: Field.create("m84ezgwn3"),
-            primaryColor: Field.create("#888888"),
-            secondaryColorOne: Field.create("#bbbbbb"),
-            secondaryColorTwo: Field.create("#111111"),
-        }),
-        filtersColor: Field.create("#a9b3bb"),
-        groupsColor: Field.create("#8e9a98"),
-        backgroundColor: Field.create("#0f111d"),
-        tableColor: Field.create("#161e29"),
-        widgetColor: Field.create("#2c2c3329"),
-        errorColor: Field.create("#FFFFFF"),
-        successColor: Field.create("#FFFFFF")
-    })]
+export const defaultColorPalettes: Map<string, ColorPalette> = new Map([
+    ["m84ezgwm3", {
+        id: "m84ezgwm3",
+        a: false,
+        i: true,
+        e: false,
+        p: {
+            p: "#bb29ff",
+            o: "#6612ec",
+            t: "#2419bf",
+        },
+        v: {
+            p: "#03C4A1",
+            o: "#03a7c4",
+            t: "#0374c4",
+        },
+        f: "#7752FE",
+        g: "#19A7CE",
+        r: "#ef4444",
+        s: "#45d741"
+    }],
+    ["m84ezgwm7", {
+        id: "m84ezgwm7",
+        a: true,
+        i: true,
+        e: false,
+        p: {
+            p: "#9A031E",
+            o: "#a712ec",
+            t: "#530101",
+        },
+        v: {
+            p: "#BF3131",
+            o: "#5d0ca6",
+            t: "#a712ec",
+        },
+        f: "#FB8B24",
+        g: "#E36414",
+        r: "#ef4444",
+        s: "#45d741"
+    }],
+    ["m84ezgwn1", {
+        id: "m84ezgwn1",
+        a: false,
+        i: true,
+        e: false,
+        p: {
+            p: "#777777",
+            o: "#bbbbbb",
+            t: "#111111",
+        },
+        v: {
+            p: "#888888",
+            o: "#bbbbbb",
+            t: "#111111",
+        },
+        f: "#a9b3bb",
+        g: "#8e9a98",
+        r: "#FFFFFF",
+        s: "#FFFFFF"
+    }]
 ]);
 
-export const emptyUserColorPalettes: Map<string, Field<ColorPalette>> = new Map([
-    ["m84ezgwn4", Field.create({
-        id: Field.create("m84ezgwn4"),
-        active: Field.create(false),
-        isCreated: Field.create(false),
-        editable: Field.create(false),
-        passwordsColor: Field.create({
-            id: Field.create("m84ezgwn5"),
-            primaryColor: Field.create(""),
-            secondaryColorOne: Field.create(""),
-            secondaryColorTwo: Field.create(""),
-        }),
-        valuesColor: Field.create({
-            id: Field.create("m84ezgwn6"),
-            primaryColor: Field.create(""),
-            secondaryColorOne: Field.create(""),
-            secondaryColorTwo: Field.create(""),
-        }),
-        filtersColor: Field.create(""),
-        groupsColor: Field.create(""),
-        backgroundColor: Field.create("#0f111d"),
-        tableColor: Field.create("#161e29"),
-        widgetColor: Field.create("#2c2c3329"),
-        errorColor: Field.create(""),
-        successColor: Field.create("")
-    })],
-    ["m84ezgwn7", Field.create({
-        id: Field.create("m84ezgwn7"),
-        active: Field.create(false),
-        isCreated: Field.create(false),
-        editable: Field.create(false),
-        passwordsColor: Field.create({
-            id: Field.create("m84ezgwn8"),
-            primaryColor: Field.create(""),
-            secondaryColorOne: Field.create(""),
-            secondaryColorTwo: Field.create(""),
-        }),
-        valuesColor: Field.create({
-            id: Field.create("m84ezgwn9"),
-            primaryColor: Field.create(""),
-            secondaryColorOne: Field.create(""),
-            secondaryColorTwo: Field.create(""),
-        }),
-        filtersColor: Field.create(""),
-        groupsColor: Field.create(""),
-        backgroundColor: Field.create("#0f111d"),
-        tableColor: Field.create("#161e29"),
-        widgetColor: Field.create("#2c2c3329"),
-        errorColor: Field.create(""),
-        successColor: Field.create("")
-    })],
-    ["m84ezgwn10", Field.create({
-        id: Field.create("m84ezgwn10"),
-        active: Field.create(false),
-        isCreated: Field.create(false),
-        editable: Field.create(false),
-        passwordsColor: Field.create({
-            id: Field.create("m84ezgwn11"),
-            primaryColor: Field.create(""),
-            secondaryColorOne: Field.create(""),
-            secondaryColorTwo: Field.create(""),
-        }),
-        valuesColor: Field.create({
-            id: Field.create("m84ezgwn12"),
-            primaryColor: Field.create(""),
-            secondaryColorOne: Field.create(""),
-            secondaryColorTwo: Field.create(""),
-        }),
-        filtersColor: Field.create(""),
-        groupsColor: Field.create(""),
-        backgroundColor: Field.create("#0f111d"),
-        tableColor: Field.create("#161e29"),
-        widgetColor: Field.create("#2c2c3329"),
-        errorColor: Field.create(""),
-        successColor: Field.create("")
-    })]
-]);
+export const emptyUserColorPalettes: { [key: string]: ColorPalette } = {};
+emptyUserColorPalettes["m84ezgwn4"] =
+{
+    id: "m84ezgwn4",
+    a: false,
+    i: false,
+    e: false,
+    p: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    v: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    f: "",
+    g: "",
+    r: "",
+    s: ""
+};
+
+emptyUserColorPalettes["m84ezgwn7"] =
+{
+    id: "m84ezgwn7",
+    a: false,
+    i: false,
+    e: false,
+    p: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    v: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    f: "",
+    g: "",
+    r: "",
+    s: ""
+};
+
+emptyUserColorPalettes["m84ezgwn10"] =
+{
+    id: "m84ezgwn10",
+    a: false,
+    i: false,
+    e: false,
+    p: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    v: {
+        p: "",
+        o: "",
+        t: "",
+    },
+    f: "",
+    g: "",
+    r: "",
+    s: ""
+};

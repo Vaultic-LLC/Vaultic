@@ -175,7 +175,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const transaction = new Transaction();
 
             ChangeTracking.creteAndInsert(masterKey, ClientChangeTrackingType.UserVault, changes, transaction,
-                environment.cache.currentUser.userID, userVaults[0].vaultID);
+                environment.cache.currentUser.userID, userVaults[0].userVaultID, userVaults[0].vaultID);
 
             const saved = await transaction.commit();
             if (!saved)
@@ -286,14 +286,9 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return true;
     }
 
-    public async updateFromServer(
-        masterKey: string,
-        currentUserVault: DeepPartial<UserVault>,
+    public async updateUserVaultFromServer(
         newUserVault: DeepPartial<UserVault>,
-        serverChanges: ClientUserVaultChangeTrackings | undefined,
-        localChanges: ChangeTracking[],
-        existingUserChanges: ClientUserVaultChangeTrackings | undefined,
-        transaction: Transaction): Promise<UpdateFromServerResponse<ClientUserVaultChangeTrackings>>
+        transaction: Transaction)
     {
         if (!newUserVault.userVaultID)
         {
@@ -333,8 +328,6 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             transaction.overrideEntity(newUserVault.userVaultID, partialUserVault, () => this);
         }
 
-        let needsToRePushData = false;
-
         // Shouldn't ever happen since we don't use the vault preferences anymore atm
         if (newUserVault.vaultPreferencesStoreState && newUserVault.vaultPreferencesStoreState.vaultPreferencesStoreStateID)
         {
@@ -345,7 +338,16 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
                     partialVaultPreferencesStoreState, () => environment.repositories.vaultPreferencesStoreStates);
             }
         }
+    }
 
+    public async updateUserVaultChanges(
+        masterKey: string,
+        currentUserVault: DeepPartial<UserVault>,
+        serverChanges: ClientUserVaultChangeTrackings | undefined,
+        localChanges: ChangeTracking[],
+        existingUserChanges: ClientUserVaultChangeTrackings | undefined,
+        transaction: Transaction): Promise<UpdateFromServerResponse<ClientUserVaultChangeTrackings>>
+    {
         const states: StoreRetriever = {};
         states[StoreType.VaultPreferences] =
         {

@@ -20,6 +20,16 @@ export class PropertyManagerConstructor
 /** Typed Object Helper Methods */
 export class OH
 {
+    static has<T extends { [key: string]: any }>(obj: T, prop: string): boolean
+    {
+        if (!obj)
+        {
+            return false;
+        }
+
+        return Object.hasOwn(obj, prop);
+    }
+
     static size<T extends { [key: string]: any }>(obj: T): number
     {
         return Object.keys(obj).length;
@@ -28,7 +38,7 @@ export class OH
     static filter<T extends { [key: string]: any }>(obj: T, predicate: (key: string, value: T[keyof T]) => boolean): T
     {
         const temp: { [key: string]: any } = {};
-        for (const [key, value] of obj.entries())
+        for (const [key, value] of Object.entries(obj))
         {
             if (predicate(key, value))
             {
@@ -42,7 +52,7 @@ export class OH
     static map<T extends { [key: string]: any }>(obj: T, predicate: (key: string, value: T[keyof T]) => boolean): T
     {
         const temp: { [key: string]: any } = {};
-        for (const [key, value] of obj.entries())
+        for (const [key, value] of Object.entries(obj))
         {
             if (predicate(key, value))
             {
@@ -56,7 +66,7 @@ export class OH
     static mapWhere<T extends { [key: string]: any }, U>(obj: T, predicate: (key: string, value: T[keyof T]) => boolean, select: (key: string, value: T[keyof T]) => U): U[]
     {
         const values: U[] = [];
-        for (const [key, value] of obj.entries())
+        for (const [key, value] of Object.entries(obj))
         {
             if (predicate(key, value))
             {
@@ -83,7 +93,7 @@ export class OH
 
     static forEach<T extends { [key: string]: any }>(obj: T, predicate: (key: string, value: T[keyof T]) => void)
     {
-        for (const [key, value] of obj.entries())
+        for (const [key, value] of Object.entries(obj))
         {
             predicate(key, value);
         }

@@ -26,6 +26,7 @@ import { ClientDevice } from '@vaultic/shared/Types/Device';
 import { SortedCollection, VaultListSortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Organization } from '@vaultic/shared/Types/DataTypes';
 import { DataType } from '../../Types/DataTypes';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "OrganizationDeviceTable",
@@ -162,7 +163,7 @@ export default defineComponent({
 
                 app.organizations.organizationsByID.forEach((v, k, map) =>
                 {
-                    if (app.userPreferences.pinnedOrganizations.has(k.toString()))
+                    if (OH.has(app.userPreferences.pinnedOrganizations, k.toString()))
                     {
                         newPinnedOrganizationModels.push(new TableRowModel(k, true));
                     }

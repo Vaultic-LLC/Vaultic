@@ -11,7 +11,7 @@ import { PasswordStoreState } from "../Entities/States/PasswordStoreState";
 import { ValueStoreState } from "../Entities/States/ValueStoreState";
 import { FilterStoreState } from "../Entities/States/FilterStoreState";
 import { GroupStoreState } from "../Entities/States/GroupStoreState";
-import { backupData, checkMergeMissingData } from "../../Helpers/RepositoryHelper";
+import { backupData, checkMergeMissingData, getCurrentUserDataIdentifiersAndKeys } from "../../Helpers/RepositoryHelper";
 import { StoreState } from "../Entities/States/StoreState";
 import { User } from "../Entities/User";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
@@ -20,16 +20,18 @@ import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { CondensedVaultData, EntityState } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IVaultRepository } from "../../Types/Repositories";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
-import { CurrentSignaturesVaultKeys, VaultsAndKeys } from "../../Types/Responses";
+import { CurrentUserDataIdentifiersAndKeys, VaultsAndKeys } from "../../Types/Responses";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
-import { AddedOrgInfo, AddedVaultMembersInfo, ClientChangeTrackingType, ClientVaultChangeTrackings, ModifiedOrgMember, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultMembersInfo, ClientChangeTrackingType, ClientVaultChangeTrackings, ModifiedOrgMember, ServerPermissions, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { memberArrayToModifiedOrgMemberWithoutVaultKey, memberArrayToUserIDArray, organizationArrayToOrganizationIDArray, vaultAddedMembersToOrgMembers, vaultAddedOrgsToAddedOrgInfo } from "../../Helpers/MemberHelper";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
-import { StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
+import { defaultFilterStoreState, defaultGroupStoreState, defaultPasswordStoreState, defaultValueStoreState, defaultVaultStoreState, StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
 import { StoreStateRepository } from "./StoreState/StoreStateRepository";
 import { StoreRetriever } from "../../Types/Parameters";
+import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import axiosHelper from "../../Server/AxiosHelper";
+import { userDataE2EEncryptedFieldTree } from "../../Types/FieldTree";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
 {
@@ -428,7 +430,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const transaction = new Transaction();
 
             ChangeTracking.creteAndInsert(vaultKey, ClientChangeTrackingType.Vault, changes, transaction, environment.cache.currentUser.userID,
-                userVaults[0][0].vaultID);
+                userVaults[0][0].userVaultID, userVaults[0][0].vaultID);
 
             const saved = await transaction.commit();
             if (!saved)
@@ -687,15 +689,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         return true;
     }
 
-    public async updateFromServer(
-        key: string,
-        currentVault: DeepPartial<Vault>,
-        userVaultID: number,
-        userOrganizationID: number,
+    public async updateVaultFromServer(
         newVault: DeepPartial<Vault>,
-        serverChanges: ClientVaultChangeTrackings | undefined,
-        localChanges: ChangeTracking[],
-        existingUserChanges: ClientVaultChangeTrackings | undefined,
         transaction: Transaction)
     {
         if (!newVault.vaultID)
@@ -785,14 +780,23 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 transaction.overrideEntity(newVault.groupStoreState.groupStoreStateID, partialGroupStoreState, () => environment.repositories.groupStoreStates);
             }
         }
+    }
 
-        const states = this.getStoreRetriever(key, currentVault.vaultID);
+    public async updateVaultChanges(
+        key: string,
+        vault: ClientVaultChangeTrackings,
+        serverChanges: ClientVaultChangeTrackings | undefined,
+        localChanges: ChangeTracking[],
+        existingUserChanges: ClientVaultChangeTrackings | undefined,
+        transaction: Transaction)
+    {
+        const states = this.getStoreRetriever(key, vault.vaultID);
         const clientUserChangesToPush: ClientVaultChangeTrackings =
         {
-            userVaultID: userVaultID,
-            userOrganizationID: userOrganizationID,
-            vaultID: currentVault.vaultID,
-            lastLoadedChangeVersion: currentVault.lastLoadedChangeVersion,
+            userVaultID: vault.userVaultID,
+            userOrganizationID: vault.userOrganizationID,
+            vaultID: vault.vaultID,
+            lastLoadedChangeVersion: vault.lastLoadedChangeVersion,
             allChanges: []
         };
 
@@ -875,76 +879,86 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         async function internalSyncVaults(this: VaultRepository): Promise<TypedMethodResponse<string>>
         {
-            environment.cache.isSyncing = true;
-
-            let currentSignatures: CurrentSignaturesVaultKeys = { signatures: {}, keys: [] };
-            let masterKeyVaulticKey: string | undefined = undefined;
-
-            if (!plainMasterKey)
+            try
             {
-                if (environment.cache.masterKey)
+                environment.cache.isSyncing = true;
+
+                let currentSignatures: CurrentUserDataIdentifiersAndKeys = { identifiers: {}, keys: [] };
+                let masterKeyVaulticKey: string | undefined = undefined;
+
+                if (!plainMasterKey)
                 {
-                    masterKeyVaulticKey = environment.cache.masterKey;
-                    const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKeyVaulticKey);
-                    if (!currentUser)
+                    if (environment.cache.masterKey)
                     {
-                        return TypedMethodResponse.fail(errorCodes.NO_USER);
+                        masterKeyVaulticKey = environment.cache.masterKey;
+                        const currentUser = await environment.repositories.users.getVerifiedCurrentUser(masterKeyVaulticKey);
+                        if (!currentUser)
+                        {
+                            return TypedMethodResponse.fail(errorCodes.NO_USER);
+                        }
+
+                        currentSignatures = await getCurrentUserDataIdentifiersAndKeys(masterKeyVaulticKey, currentUser);
+                    }
+                }
+
+                const result = await vaulticServer.vault.syncVaults(currentSignatures.identifiers);
+                if (!result.Success)
+                {
+                    return TypedMethodResponse.fail();
+                }
+
+                const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
+                if (!decryptedResponse.success)
+                {
+                    return TypedMethodResponse.fail();
+                }
+
+                // no changes
+                if (!result.userDataPayload)
+                {
+                    return TypedMethodResponse.success();
+                }
+
+                // We weren't passed a master key because we don't have a user, get it from the payload
+                if (plainMasterKey)
+                {
+                    let alg = (decryptedResponse.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm;
+                    if (!alg)
+                    {
+                        alg = Algorithm.XCHACHA20_POLY1305;
                     }
 
-                    currentSignatures = await getUserDataSignatures(masterKeyVaulticKey, currentUser);
+                    const vaulticKey: VaulticKey =
+                    {
+                        algorithm: alg,
+                        key: plainMasterKey
+                    };
+
+                    masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
                 }
-            }
 
-            const result = await vaulticServer.vault.syncVaults(currentSignatures.signatures);
-            if (!result.Success)
-            {
-                return TypedMethodResponse.fail();
-            }
-
-            const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
-            if (!decryptedResponse.success)
-            {
-                return TypedMethodResponse.fail();
-            }
-
-            // no changes
-            if (!result.userDataPayload)
-            {
-                return TypedMethodResponse.success();
-            }
-
-            // We weren't passed a master key because we don't have a user, get it from the payload
-            if (plainMasterKey)
-            {
-                const masterKeyEncryptedAlgorithm =
-                    (decryptedResponse.value.userDataPayload as UserDataPayload).user?.masterKeyEncryptionAlgorithm ??
-                    Algorithm.XCHACHA20_POLY1305;
-
-                const vaulticKey: VaulticKey =
+                const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.identifiers, decryptedResponse.value.userDataPayload);
+                if (!success)
                 {
-                    algorithm: masterKeyEncryptedAlgorithm,
-                    key: plainMasterKey
-                };
-
-                masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
-            }
-
-            const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.signatures, decryptedResponse.value.userDataPayload);
-            if (!success)
-            {
-                return TypedMethodResponse.fail();
-            }
-
-            if (!environment.cache.currentUser)
-            {
-                const currentUserResponse = await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
-                if (!currentUserResponse.success)
-                {
-                    return currentUserResponse;
+                    return TypedMethodResponse.fail();
                 }
-            }
 
-            return TypedMethodResponse.success(masterKeyVaulticKey);
+                if (!environment.cache.currentUser)
+                {
+                    const currentUserResponse = await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
+                    if (!currentUserResponse.success)
+                    {
+                        return currentUserResponse;
+                    }
+                }
+
+                return TypedMethodResponse.success(masterKeyVaulticKey);
+
+            }
+            catch (e)
+            {
+                console.log(e);
+            }
         }
     }
 

@@ -29,10 +29,15 @@ declare global
     }
 }
 
-Object.prototype.has = function (this: Object, prop: string): boolean
-{
-    return Object.hasOwn(this, prop);
-}
+// Object.prototype.has = function (this: Object, prop: string): boolean
+// {
+//     if (!this)
+//     {
+//         return false;
+//     }
+
+//     return Object.hasOwn(this, prop);
+// }
 
 Map.prototype.difference = function (this: Map<any, any>, other: Map<any, any>)
 {

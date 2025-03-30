@@ -98,20 +98,6 @@ export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
 
 export const MAX_CURRENT_AND_SAFE_SIZE = 200;
 
-export class CurrentAndSafeStructure
-{
-    /** Current */
-    c: number[];
-    /** Safe */
-    s: number[];
-
-    constructor()
-    {
-        this.c = [];
-        this.s = [];
-    }
-}
-
 export enum AtRiskType
 {
     Old,

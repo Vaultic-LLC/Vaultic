@@ -1,4 +1,4 @@
-import { ColorPalette, defaultColorPalettes, emptyColorPalette } from "../../Types/Colors";
+import { emptyColorPalette } from "../../Types/Colors";
 import { Store } from "./Base";
 import { Ref, ref, watch } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -8,7 +8,9 @@ import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { DictionaryAsList, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultUserPreferencesStoreState, DictionaryAsList, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { ColorPalette } from "@vaultic/shared/Types/Color";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 type PinnedDataTypeProperty = keyof PinnedDataTypes;
 
@@ -188,24 +190,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
 
     protected defaultState(): UserPreferencesStoreState
     {
-        const defaultPinnedDataTypes: { [key: string]: PinnedDataTypes } = {};
-        if (this.initalized?.value && app.currentVault.userVaultID)
-        {
-            defaultPinnedDataTypes[app.currentVault.userVaultID.toString()] =
-            {
-                f: {},
-                g: {},
-                p: {},
-                v: {},
-            };
-        }
-
-        return {
-            version: 0,
-            c: { p: defaultColorPalettes.get('m84ezgwm3')! },
-            t: defaultPinnedDataTypes,
-            o: {}
-        };
+        return defaultUserPreferencesStoreState;
     }
 
     protected getPinnedDataTypes(dataType: DataType)
@@ -215,7 +200,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
             return undefined;
         }
 
-        if (!this.state.t.has(app.currentVault.userVaultID.toString()))
+        if (!OH.has(this.state.t, app.currentVault.userVaultID.toString()))
         {
             return {};
         }
@@ -289,7 +274,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
         const pendingUserPreferencesState = this.getPendingState()!;
 
         const idString = app.currentVault.userVaultID.toString();
-        if (pinnedDataTypeProperty && !pendingUserPreferencesState.state.t.has(idString))
+        if (pinnedDataTypeProperty && !OH.has(pendingUserPreferencesState.state.t, idString))
         {
             const dataTypes: PinnedDataTypes = {
                 f: {},
@@ -314,7 +299,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
 
     private async removePinnedDataType(path: keyof UserPreferencesStateKeys, id: string)
     {
-        if (!this.state.t.has(app.currentVault.userVaultID.toString()))
+        if (!OH.has(this.state.t, app.currentVault.userVaultID.toString()))
         {
             return;
         }
@@ -371,7 +356,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
     public async addPinnedOrganization(id: number)
     {
         const stringID = id.toString();
-        if (!this.state.o.has(stringID))
+        if (!OH.has(this.state.o, stringID))
         {
             await this.addPinnedDataType(stringID, 'pinnedOrganizations');
         }
@@ -380,7 +365,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
     public async removePinnedOrganization(id: number)
     {
         const stringID = id.toString();
-        if (this.state.o.has(stringID))
+        if (OH.has(this.state.o, stringID))
         {
             await this.removePinnedDataType('pinnedOrganizations', stringID);
         }

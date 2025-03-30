@@ -15,14 +15,15 @@ import { VaultDataBreachStore } from "./VaultDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, IUser, UserData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
-import { FilterStatus, DataType } from "../../Types/DataTypes";
+import { DataType } from "../../Types/DataTypes";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
-import { PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { AutoLockTime, defaultAppStoreState, FilterStatus, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { ColorPalette, defaultColorPalettes } from "@vaultic/shared/Types/Color";
 
 export interface AppSettings
 {
@@ -214,23 +215,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
     protected defaultState()
     {
-        return {
-            version: 0,
-            s: {
-                c: emptyUserColorPalettes,
-                a: AutoLockTime.OneMinute,
-                f: FilterStatus.Or,
-                o: 365,
-                p: 1,
-                v: 25,
-                r: 7,
-                n: true,
-                s: true,
-                m: true,
-                e: '-',
-                t: true
-            }
-        };
+        return defaultAppStoreState;
     }
 
     private calcAutolockTime(time: AutoLockTime): number
@@ -550,8 +535,20 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             return false;
         }
 
+        const finishLoadingResponse = await this.internalFinishLoadUserData(result.value!);
+        if (!finishLoadingResponse)
+        {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Load Data", false);
+            this.lock();
+            this.internalIsSyncing.value = false;
+
+            return false;
+        }
+
+        this.internalIsSyncing.value = false;
         this.popups.finishSyncingPopup();
-        return this.internalFinishLoadUserData(result.value!);
+        return true;
     }
 
     /**
@@ -649,14 +646,11 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             this.getUserInfo();
         }
 
-        if (this.state.settings.value.temporarilyStoreMasterKey.value)
+        const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
+        if (!setMasterKeyResponse.success)
         {
-            const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
-            if (!setMasterKeyResponse.success)
-            {
-                defaultHandleFailedResponse(setMasterKeyResponse);
-                return false;
-            }
+            defaultHandleFailedResponse(setMasterKeyResponse);
+            return false;
         }
 
         return true;

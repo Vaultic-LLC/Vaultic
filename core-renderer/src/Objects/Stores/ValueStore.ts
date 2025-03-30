@@ -6,12 +6,12 @@ import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import app from "./AppStore";
-import { CurrentAndSafeStructure, NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges, IPrimaryDataObject } from "../../Types/DataTypes";
-import { KnownMappedFields, SecondaryDataObjectCollectionType } from "@vaultic/shared/Types/Fields";
+import { NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges, IPrimaryDataObject } from "../../Types/DataTypes";
+import { KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "./FilterStore";
-import { GroupStoreState, IGroupStoreState } from "./GroupStore";
-import { DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
+import { GroupStoreState } from "./GroupStore";
+import { CurrentAndSafeStructure, defaultValueStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IValueStoreState extends StoreState
@@ -57,13 +57,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
     protected defaultState()
     {
-        return {
-            version: 0,
-            v: {},
-            d: {},
-            c: new CurrentAndSafeStructure(),
-            h: {}
-        };
+        return defaultValueStoreState;
     }
 
     async addNameValuePair(
@@ -254,7 +248,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
     private valueIsSafe(allDuplicates: DoubleKeyedObject, value: ReactiveValue)
     {
-        return !value.isOld() && !value.w && !allDuplicates.has(value.id);
+        return !value.isOld() && !value.w && !OH.has(allDuplicates, value.id);
     }
 }
 

@@ -15,13 +15,22 @@ export class VaultsAndKeys
     }
 }
 
-export interface LastLoadedLedgerVersionsAndVaultKeys 
+export interface CurrentUserDataIdentifiersAndKeys 
 {
-    versions: UserDataPayload;
+    identifiers: UserDataPayload;
     keys: string[];
 }
 
-export type ChangeTrackingsByType = Partial<Record<ClientChangeTrackingType, ChangeTracking[]>>;
+// Keep in sync with ClientChangeTrackingType
+export interface ChangeTrackingsByType
+{
+    /** User */
+    0?: ChangeTracking[];
+    /** UserVault */
+    1?: { [key: number]: ChangeTracking[] };
+    /** Vault */
+    2?: { [key: number]: ChangeTracking[] };
+}
 
 export interface UpdateFromServerResponse<T extends ClientChangeTrackingObject>
 {

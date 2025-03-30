@@ -1,14 +1,11 @@
 import * as opaque from "@serenity-kit/opaque";
 import { stsServer } from "../Server/VaulticServer";
 import { environment } from "../Environment";
-import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
-import { checkMergeMissingData, getLastLoadedLedgerVersionsAndKeys, reloadAllUserData, safetifyMethod } from "../Helpers/RepositoryHelper";
+import { safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
-import { LastLoadedLedgerVersionsAndVaultKeys } from "../Types/Responses";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
@@ -91,7 +88,6 @@ async function logUserIn(masterKey: string, email: string,
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
         const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
-        let versionsAndKeys: LastLoadedLedgerVersionsAndVaultKeys = { versions: {}, keys: [] }
         let masterKeyVaulticKey: string | undefined;
 
         if (!firstLogin && !reloadAllData && currentUser)
@@ -105,7 +101,7 @@ async function logUserIn(masterKey: string, email: string,
             masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
         }
 
-        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, versionsAndKeys?.versions ?? {});
+        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest);
         if (finishResponse.Success)
         {
             await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);

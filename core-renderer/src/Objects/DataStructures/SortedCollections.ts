@@ -1,3 +1,4 @@
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import app from "../../Objects/Stores/AppStore";
 import { DataType, Group } from "../../Types/DataTypes";
 import { TableRowModel } from "../../Types/Models";
@@ -276,7 +277,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
 
     private internalGroupSearch(search: string, groupIds: Map<string, string>, allGroups: Group[]): boolean
     {
-        const groups: Group[] = allGroups.filter(g => groupIds.has(g.id));
+        const groups: Group[] = allGroups.filter(g => OH.has(groupIds, g.id));
         if (groups.length == 0)
         {
             return false;

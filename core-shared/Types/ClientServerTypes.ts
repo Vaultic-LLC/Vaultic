@@ -168,6 +168,7 @@ export enum ServerAllowSharingFrom
     SpecificUsers
 }
 
+// Keep in sync with ChangeTrackingsByType
 export enum ClientChangeTrackingType
 {
     User,

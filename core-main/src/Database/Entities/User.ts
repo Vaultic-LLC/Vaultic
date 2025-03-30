@@ -107,7 +107,9 @@ export class User extends VaulticEntity implements IUser
             nameof<User>("lastName"),
             nameof<User>("masterKeyEncryptionAlgorithm"),
             nameof<User>("publicSigningKey"),
-            nameof<User>("publicEncryptingKey")
+            nameof<User>("privateSigningKey"),
+            nameof<User>("publicEncryptingKey"),
+            nameof<User>("privateEncryptingKey")
         ];
     }
 

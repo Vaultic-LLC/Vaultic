@@ -16,7 +16,7 @@ import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { EntityState, getVaultType, IUser, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
-import { PathChange, SimplifiedPasswordStore, StoreStateChangeType, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultAppStoreState, defaultUserPreferencesStoreState, PathChange, SimplifiedPasswordStore, StoreStateChangeType, StoreType } from "@vaultic/shared/Types/Stores";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
 import { ChangeTracking } from "../Entities/ChangeTracking";
@@ -272,7 +272,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
             userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
             userPreferencesStoreState.userID = response.UserID!;
-            userPreferencesStoreState.state = JSON.vaulticStringify(defaultUserPreferencesState);
+            userPreferencesStoreState.state = JSON.vaulticStringify(defaultUserPreferencesStoreState);
             user.userPreferencesStoreState = userPreferencesStoreState;
 
             const vaults = await environment.repositories.vaults.createNewVault(serializedMasterKey, "Personal", false);

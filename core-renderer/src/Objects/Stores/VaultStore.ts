@@ -8,7 +8,8 @@ import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultVaultStoreState, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import app from "./AppStore";
 
 const MAX_LOGIN_RECORDS = 500;
 export interface VaultSettings { }
@@ -97,11 +98,7 @@ export class BaseVaultStore<V extends PasswordStore,
 
     protected defaultState(): VaultStoreState 
     {
-        return {
-            version: 0,
-            s: {},
-            l: []
-        };
+        return defaultVaultStoreState;
     }
 }
 

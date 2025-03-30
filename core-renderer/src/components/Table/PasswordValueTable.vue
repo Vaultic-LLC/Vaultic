@@ -45,8 +45,10 @@ import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { ReactiveValue } from '../../Objects/Stores/ReactiveValue';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DataType, Filter, FilterStatus, IFilterable, IGroupable } from '../../Types/DataTypes';
+import { DataType, Filter, IFilterable, IGroupable } from '../../Types/DataTypes';
 import { IIdentifiable } from '@vaultic/shared/Types/Fields';
+import { FilterStatus } from '@vaultic/shared/Types/Stores';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "PasswordValueTable",
@@ -181,7 +183,7 @@ export default defineComponent({
                 let temp: T[] = [];
                 newValue.forEach(f =>
                 {
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.i.has(f.id)));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && OH.has(p.i, f.id)))
                 });
 
                 const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
@@ -197,13 +199,13 @@ export default defineComponent({
                     const filtersActivated: Filter[] = newValue.filter(f => !oldValue.includes(f));
                     filtersActivated.forEach(f =>
                     {
-                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && p.i.has(f.id)));
+                        temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && OH.has(p.i, f.id)));
                     });
                 }
                 else if (app.settings.f == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.i.has(f.id))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => OH.has(p.i, f.id))));
                 }
 
                 const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
@@ -223,20 +225,20 @@ export default defineComponent({
                         temp = temp.filter(v =>
                         {
                             // keep values that the removed filter doesn't apply to
-                            if (!v.i.has(f.id))
+                            if (!OH.has(v.i, f.id))
                             {
                                 return true;
                             }
 
                             // remove value if it doesn't have a current active filter
-                            return newValue.filter(nv => v.i.has(nv.id)).length > 0;
+                            return newValue.filter(nv => OH.has(v.i, nv.id)).length > 0;
                         });
                     });
                 }
                 else if (app.settings.f == FilterStatus.And)
                 {
                     temp = [];
-                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => p.i.has(f.id))));
+                    temp = temp.concat(originalVariable.filter(p => !temp.includes(p) && newValue.every(f => OH.has(p.i, f.id))));
                 }
 
                 const [models, _] = getPasswordValueTableRowModels(color.value, dataType, temp);
@@ -426,7 +428,7 @@ export default defineComponent({
                 let activeFilters: Filter[] = app.currentVault.filterStore.activePasswordFilters;
 
                 // password isn't in current filters, remove it
-                if (activeFilters.length > 0 && activeFilters.filter(f => value.i.has(f.id)).length > 0)
+                if (activeFilters.length > 0 && activeFilters.filter(f => OH.has(value.i, f.id)).length > 0)
                 {
                     passwords.remove(value.id);
                 }
@@ -447,7 +449,7 @@ export default defineComponent({
                 let activeFilters: Filter[] = app.currentVault.filterStore.activeNameValuePairFilters;
 
                 // values isn't in current filters, remove it
-                if (activeFilters.length > 0 && activeFilters.filter(f => value.i.has(f.id)).length > 0)
+                if (activeFilters.length > 0 && activeFilters.filter(f => OH.has(value.i, f.id)).length > 0)
                 {
                     nameValuePairs.remove(value.id);
                 }

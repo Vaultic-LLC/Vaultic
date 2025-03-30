@@ -6,8 +6,7 @@ import vaulticServer from "../Server/VaulticServer";
 import { ClientChangeTrackingType, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { Algorithm, SignedVaultKey } from "@vaultic/shared/Types/Keys";
-import { LastLoadedLedgerVersionsAndVaultKeys } from "../Types/Responses";
-import { server } from "@serenity-kit/opaque";
+import { CurrentUserDataIdentifiersAndKeys } from "../Types/Responses";
 
 export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedMethodResponse<T>>, onFail?: () => Promise<any>, onSucceed?: () => Promise<any>): Promise<TypedMethodResponse<T | undefined>>
 {
@@ -48,9 +47,15 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
     return TypedMethodResponse.fail();
 }
 
-export async function getLastLoadedLedgerVersionsAndKeys(masterKey: string, user: User): Promise<LastLoadedLedgerVersionsAndVaultKeys>
+export async function getCurrentUserDataIdentifiersAndKeys(masterKey: string, user: User): Promise<CurrentUserDataIdentifiersAndKeys>
 {
     let userData = {}
+    userData["user"] =
+    {
+        userID: user.userID,
+        currentSignature: user.currentSignature,
+    };
+
     userData["userChanges"] =
     {
         userID: user.userID,
@@ -60,6 +65,9 @@ export async function getLastLoadedLedgerVersionsAndKeys(masterKey: string, user
     const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, undefined, user.userID);
     if (userVaults[0].length > 0)
     {
+        userData["userVaults"] = [];
+        userData["vaults"] = [];
+
         userData["userVaultChanges"] = [];
         userData["vaultChanges"] = [];
 
@@ -67,14 +75,29 @@ export async function getLastLoadedLedgerVersionsAndKeys(masterKey: string, user
         {
             const userVault = userVaults[0][i];
 
-            userData["userVaultLedgers"].push({
+            userData["userVaults"].push({
                 userOrganizationID: userVault.userOrganizationID,
                 userVaultID: userVault.userVaultID,
+                currentSignature: userVault.currentSignature,
+                entityState: userVault.entityState,
                 permissions: userVault.permissions,
+            });
+
+            userData["vaults"].push({
+                userOrganizationID: userVault.userOrganizationID,
+                userVaultID: userVault.userVaultID,
+                vaultID: userVault.vault.vaultID,
+                currentSignature: userVault.vault.currentSignature,
+                entityState: userVault.vault.entityState,
+            });
+
+            userData["userVaultChanges"].push({
+                userOrganizationID: userVault.userOrganizationID,
+                userVaultID: userVault.userVaultID,
                 lastLoadedChangeVersion: userVault.lastLoadedChangeVersion
             });
 
-            userData["vaultLedgers"].push({
+            userData["vaultChanges"].push({
                 userOrganizationID: userVault.userOrganizationID,
                 userVaultID: userVault.userVaultID,
                 vaultID: userVault.vault.vaultID,
@@ -83,11 +106,11 @@ export async function getLastLoadedLedgerVersionsAndKeys(masterKey: string, user
         }
     }
 
-    return { versions: userData, keys: userVaults[1] };
+    return { identifiers: userData, keys: userVaults[1] };
 }
 
 // Only call within a method wrapped in safetifyMethod
-export async function backupData(masterKey: string, currentUser?: Partial<User>, dataToBackup?: UserDataPayload)
+export async function backupData(masterKey: string, dataToBackup?: UserDataPayload)
 {
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: (dataToBackup ?? {}) };
     console.time("6");
@@ -131,7 +154,7 @@ export async function backupData(masterKey: string, currentUser?: Partial<User>,
     if (!backupResponse.Success)
     {
         console.time("8");
-        const s = await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload, undefined, currentUser);
+        const s = await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload, undefined);
         console.timeEnd("8");
         return s;
     }
@@ -208,8 +231,7 @@ export async function checkMergeMissingData(
     currentLocalData: UserDataPayload,
     serverUserDataPayload: UserDataPayload,
     transaction?: Transaction,
-    backingUpData?: UserDataPayload,
-    currentUser?: Partial<User>): Promise<boolean>
+    backingUpData?: UserDataPayload): Promise<boolean>
 {
     if (!serverUserDataPayload)
     {
@@ -222,7 +244,7 @@ export async function checkMergeMissingData(
     let needsToRePushData = false;
     const dataToBackup: UserDataPayload = backingUpData ?? {};
 
-    if (serverUserDataPayload.user)
+    if (serverUserDataPayload.user || changeTrackings[ClientChangeTrackingType.User])
     {
         if (!currentLocalData.user)
         {
@@ -239,7 +261,7 @@ export async function checkMergeMissingData(
         }
         else
         {
-            const response = await environment.repositories.users.updateFromServer(masterKey, currentUser, serverUserDataPayload.user, serverUserDataPayload.userChanges,
+            const response = await environment.repositories.users.updateFromServer(masterKey, currentLocalData.userChanges, serverUserDataPayload.user ?? {}, serverUserDataPayload.userChanges,
                 changeTrackings[ClientChangeTrackingType.User], dataToBackup.userChanges, transaction);
 
             if (response?.needsToRePushData)
@@ -278,9 +300,70 @@ export async function checkMergeMissingData(
                 const vaultIndex = currentLocalData.vaults?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
                 if (vaultIndex >= 0)
                 {
-                    if (await environment.repositories.vaults.updateFromServer(vaultKeys[vaultIndex], currentLocalData.vaults![vaultIndex], serverVault, changeTrackings, transaction))
+                    await environment.repositories.vaults.updateVaultFromServer(serverVault, transaction);
+                }
+            }
+        }
+    }
+
+    // do these seperately from userVaults since they don't match 1-1, i.e. you can have the entire store from one userVault but only some changes for another
+    if (serverUserDataPayload.vaultChanges)
+    {
+        for (let i = 0; i < serverUserDataPayload.vaultChanges.length; i++)
+        {
+            const serverVault = serverUserDataPayload.vaultChanges[i];
+            const vaultIndex = currentLocalData.vaultChanges?.findIndex(v => v.vaultID == serverVault.vaultID) ?? -1;
+            if (vaultIndex >= 0)
+            {
+                const vaultToBackup = dataToBackup.vaultChanges.findIndex(v => v.vaultID == currentLocalData.vaultChanges![vaultIndex].vaultID);
+                const response = await environment.repositories.vaults.updateVaultChanges(vaultKeys[vaultIndex], currentLocalData.vaultChanges![vaultIndex],
+                    serverVault, changeTrackings[ClientChangeTrackingType.Vault][serverVault.vaultID], dataToBackup.vaultChanges[vaultToBackup], transaction);
+
+                if (response.needsToRePushData)
+                {
+                    needsToRePushData = true;
+                }
+
+                if (response?.changes?.allChanges?.length > 0)
+                {
+                    if (vaultToBackup >= 0)
                     {
-                        needsToRePushData = true;
+                        dataToBackup.vaultChanges[vaultToBackup] = response.changes;
+                    }
+                    else
+                    {
+                        dataToBackup.vaultChanges.push(response.changes);
+                    }
+                }
+            }
+        }
+    }
+    else if (changeTrackings[ClientChangeTrackingType.Vault])
+    {
+        const vaultIDs = Object.keys(changeTrackings[ClientChangeTrackingType.Vault]);
+        for (let i = 0; i < vaultIDs.length; i++)
+        {
+            const currentVaultIndex = currentLocalData.vaultChanges.findIndex(v => v.vaultID.toString() == vaultIDs[i]);
+            if (currentVaultIndex >= 0)
+            {
+                const vaultToBackup = dataToBackup.vaultChanges.findIndex(v => v.vaultID == currentLocalData.vaultChanges![currentVaultIndex].vaultID);
+                const response = await environment.repositories.vaults.updateVaultChanges(vaultKeys[currentVaultIndex], currentLocalData.vaultChanges![currentVaultIndex],
+                    undefined, changeTrackings[ClientChangeTrackingType.Vault][vaultIDs[i]], dataToBackup.vaultChanges[vaultToBackup], transaction);
+
+                if (response.needsToRePushData)
+                {
+                    needsToRePushData = true;
+                }
+
+                if (response?.changes?.allChanges?.length > 0)
+                {
+                    if (vaultToBackup >= 0)
+                    {
+                        dataToBackup.vaultChanges[vaultToBackup] = response.changes;
+                    }
+                    else
+                    {
+                        dataToBackup.vaultChanges.push(response.changes);
                     }
                 }
             }
@@ -295,13 +378,7 @@ export async function checkMergeMissingData(
             const userVaultIndex = currentLocalData.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID) ?? -1;
             if (userVaultIndex >= 0)
             {
-                const response = await environment.repositories.userVaults.updateFromServer(masterKey, currentLocalData.userVaults![userVaultIndex], serverUserVault,
-                    undefined, undefined, undefined, transaction);
-
-                if (response.needsToRePushData)
-                {
-                    needsToRePushData = true;
-                }
+                await environment.repositories.userVaults.updateUserVaultFromServer(serverUserVault, transaction);
             }
             else
             {
@@ -319,13 +396,44 @@ export async function checkMergeMissingData(
     {
         for (let i = 0; i < serverUserDataPayload.userVaultChanges.length; i++)
         {
-            const serverUserVault = serverUserDataPayload.userVaultChanges[i];
-            const userVaultIndex = currentLocalData.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID) ?? -1;
-            if (userVaultIndex >= 0)
+            const serverUserVaultChanges = serverUserDataPayload.userVaultChanges[i];
+            const userVaultChangesIndex = currentLocalData.userVaultChanges?.findIndex(uv => uv.userVaultID == serverUserVaultChanges.userVaultID) ?? -1;
+            if (userVaultChangesIndex >= 0)
             {
-                const userVaultToBackup = dataToBackup.userVaultChanges.findIndex(uv => uv.userVaultID == currentLocalData.userVaults![userVaultIndex].userVaultID);
-                const response = await environment.repositories.userVaults.updateFromServer(masterKey, currentLocalData.userVaults![userVaultIndex], undefined,
-                    serverUserDataPayload.userVaultChanges[i], changeTrackings[ClientChangeTrackingType.UserVault], dataToBackup.userVaultChanges[userVaultToBackup], transaction);
+                const userVaultToBackupIndex = dataToBackup.userVaultChanges.findIndex(uv => uv.userVaultID == currentLocalData.userVaultChanges![userVaultChangesIndex].userVaultID);
+                const response = await environment.repositories.userVaults.updateUserVaultChanges(masterKey, currentLocalData.userVaultChanges![userVaultChangesIndex], serverUserVaultChanges,
+                    changeTrackings[ClientChangeTrackingType.UserVault][serverUserVaultChanges.userVaultID], dataToBackup.userVaultChanges[userVaultToBackupIndex], transaction);
+
+                if (response.needsToRePushData)
+                {
+                    needsToRePushData = true;
+                }
+
+                if (response?.changes?.allChanges?.length > 0)
+                {
+                    if (userVaultToBackupIndex >= 0)
+                    {
+                        dataToBackup.userVaultChanges[userVaultToBackupIndex] = response.changes;
+                    }
+                    else
+                    {
+                        dataToBackup.userVaultChanges.push(response.changes);
+                    }
+                }
+            }
+        }
+    }
+    else if (changeTrackings[ClientChangeTrackingType.UserVault])
+    {
+        const userVaultIDs = Object.keys(changeTrackings[ClientChangeTrackingType.UserVault]);
+        for (let i = 0; i < userVaultIDs.length; i++)
+        {
+            const currentUserVaultIndex = currentLocalData.userVaultChanges.findIndex(v => v.userVaultID.toString() == userVaultIDs[i]);
+            if (currentUserVaultIndex >= 0)
+            {
+                const userVaultToBackup = dataToBackup.userVaultChanges.findIndex(v => v.userVaultID == currentLocalData.userVaultChanges![currentUserVaultIndex].userVaultID);
+                const response = await environment.repositories.userVaults.updateUserVaultChanges(masterKey, currentLocalData.userVaultChanges![currentUserVaultIndex],
+                    undefined, changeTrackings[ClientChangeTrackingType.UserVault][userVaultIDs[i]], dataToBackup.vaultChanges[userVaultToBackup], transaction);
 
                 if (response.needsToRePushData)
                 {
@@ -390,10 +498,7 @@ export async function checkMergeMissingData(
                 const userVaultIndex = currentLocalData.userVaults?.findIndex(uv => uv.userVaultID == serverUserVault.userVaultID) ?? -1;
                 if (userVaultIndex >= 0)
                 {
-                    if (await environment.repositories.userVaults.updateFromServer(currentLocalData.userVaults![userVaultIndex], serverUserVault, changeTrackings, transaction))
-                    {
-                        needsToRePushData = true;
-                    }
+                    environment.repositories.userVaults.updateUserVaultFromServer(serverUserVault, transaction);
                 }
             }
         }
@@ -454,7 +559,7 @@ export async function checkMergeMissingData(
     }
 
     // we've handled all trackedChanges. Clear them
-    await environment.repositories.changeTrackings.clearChangeTrackings(transaction);
+    environment.repositories.changeTrackings.clearChangeTrackings(transaction);
 
     if (!(await transaction.commit()))
     {
@@ -464,13 +569,13 @@ export async function checkMergeMissingData(
 
     if (needsToRePushData)
     {
-        return await backupData(masterKey, currentUser, dataToBackup);
+        return await backupData(masterKey, dataToBackup);
     }
 
     return true;
 }
 
-export async function reloadAllUserData(masterKey: string, email: string, userDataPayload: UserDataPayload, currentUser?: User): Promise<boolean>
+export async function reloadAllUserData(masterKey: string, email: string, userDataPayload: UserDataPayload): Promise<boolean>
 {
     // Yeet all data so we don't have to worry about different users data potentially being tangled
     const transaction = new Transaction();
@@ -479,7 +584,7 @@ export async function reloadAllUserData(masterKey: string, email: string, userDa
     transaction.raw("DELETE FROM userVaults");
     transaction.raw("DELETE FROM changeTrackings");
 
-    return await checkMergeMissingData(masterKey, email, [], {}, userDataPayload, transaction, currentUser);
+    return await checkMergeMissingData(masterKey, email, [], {}, userDataPayload, transaction);
 }
 
 export async function handleUserLogOut()
