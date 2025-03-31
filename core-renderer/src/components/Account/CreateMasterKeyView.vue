@@ -139,6 +139,8 @@ export default defineComponent({
                         return;
                     }
 
+                    const pendingPasswordStore = app.currentVault.passwordStore.getPendingState()!;
+
                     const password: Password = defaultPassword();
                     password.v = true;
                     password.p = key.value;
@@ -148,7 +150,7 @@ export default defineComponent({
                     password.f = "Vaultic Password Manager";
                     password.additionalInformation = "Email used to log into your Vaultic Password Manager account.";
 
-                    await app.currentVault.passwordStore.addPassword(createUserResult.value!, password);
+                    await app.currentVault.passwordStore.addPassword(createUserResult.value!, password, [], pendingPasswordStore);
                     ctx.emit('onSuccess');
 
                     return;

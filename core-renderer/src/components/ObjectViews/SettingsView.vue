@@ -6,7 +6,7 @@
                 <VaulticAccordionContent>
                     <div class="settingsView__inputSection">
                         <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
-                            v-model="appSettings.a" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
+                            v-model="reactiveAppSettings.a" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
                             :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
                         <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
                             :color="color" v-model="appSettings.f" :optionsEnum="FilterStatus"
@@ -94,7 +94,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, ref, onMounted, Ref, watch, reactive, Reactive } from 'vue';
+import { ComputedRef, defineComponent, computed, ref, onMounted, Ref, watch, reactive, Reactive, toRefs } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -142,8 +142,9 @@ export default defineComponent({
 
         const appStoreState = app.getPendingState()!;
         // copy the objects so that we don't edit the original one. Also needed for change tracking
-        const originalAppSettings: Reactive<AppSettings> = reactive(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
-        let appSettings: Reactive<AppSettings> = reactive(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const reactiveAppSettings = appStoreState.createCustomRef("settings", appSettings.value);
 
         // const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
         // const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
@@ -191,9 +192,9 @@ export default defineComponent({
             }
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-            if (JSON.vaulticStringify(originalAppSettings) != JSON.vaulticStringify(appSettings))
+            if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(reactiveAppSettings))
             {
-                appStoreState.commitProxyObject('settings', appSettings);
+                appStoreState.commitProxyObject('settings', reactiveAppSettings);
                 transaction.updateUserStore(app, appStoreState);
 
                 if (!(await transaction.commit(masterKey)))
@@ -400,7 +401,8 @@ export default defineComponent({
 
         onMounted(async () => 
         {
-            appSettings = appStoreState.proxifyObject('settings', appSettings);
+            appSettings.value = appStoreState.proxifyObject('settings', appSettings.value);
+            appSettings.value.p = 20;
 
             if (isOnline.value)
             {
@@ -485,6 +487,7 @@ export default defineComponent({
             currentAllowUsersToShare,
             requireMFAOn,
             DisplayRequireMFAOn,
+            reactiveAppSettings,
             onSave,
             onAuthenticationSuccessful,
             enforceLoginRecordsPerDay,

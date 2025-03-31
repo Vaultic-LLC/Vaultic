@@ -1,6 +1,7 @@
 import { getObjectFromPath, PropertyManagerConstructor } from "../Utilities/PropertyManagers";
 import { defaultColorPalettes, emptyUserColorPalettes } from "./Color";
 import { Field, FieldMap, IFieldedObject, NonArrayType, Primitive } from "./Fields";
+import { computed, Reactive, reactive, ref } from "vue";
 
 export enum AutoLockTime
 {
@@ -126,7 +127,44 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
     proxifyObject(identifier: keyof U, obj: any, ...ids: string[])
     {
         const path = this.retriever[identifier](...ids);
-        return new Proxy(obj, this.getHandler(path, this.objProxyChanges));
+        return new Proxy(obj, this.getHandler(path));
+    }
+
+    /**
+     * Used to create a custom Reactive value for binding in vue. Needed since Ref and Reactive use their own proxy
+     * and we still want to have our own as well. This allows both
+     * @param identifier The path to the object
+     * @param obj The object to make a custom ref for
+     * @param ids Ids to the path of the object
+     * @returns 
+     */
+    createCustomRef<T extends { [key: string]: any }>(identifier: keyof U, obj: T, ...ids: string[]): Reactive<T>
+    {
+        const path = this.retriever[identifier](...ids);
+
+        const _crObj: { [key: string]: any } = {}
+        const keys = Object.keys(obj);
+
+        const temp: { [key: string]: any } = {}
+
+        const onSet = (prop: string) => this.onObjPropertySet(path, prop);
+        for (let i = 0; i < keys.length; i++)
+        {
+            _crObj[keys[i]] = ref(obj[keys[i]]);
+            temp[keys[i]] = computed({
+                get() 
+                {
+                    return _crObj[keys[i]].value;
+                },
+                set(val)
+                {
+                    onSet(keys[i]);
+                    _crObj[keys[i]].value = val;
+                }
+            });
+        }
+
+        return reactive(temp) as Reactive<T>;
     }
 
     commitProxyObject(identifier: keyof U, updatedObj: any, ...ids: string[])
@@ -223,8 +261,9 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
         manager.delete(property, obj);
     }
 
-    private getHandler(path: string, objProxyChanges: Map<string, string[]>)
+    private getHandler(path: string)
     {
+        const onSet = (prop: string) => this.onObjPropertySet(path, prop);
         return {
             get(target: any, prop: any, receiver: any)
             {
@@ -232,21 +271,26 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
             },
             set(obj: any, prop: string, newValue: any)
             {
-                if (!objProxyChanges.has(path))
-                {
-                    objProxyChanges.set(path, []);
-                }
-
-                const changes = objProxyChanges.get(path);
-                if (changes?.indexOf(prop) == -1)
-                {
-                    objProxyChanges.get(path)?.push(prop);
-                }
-
                 obj[prop] = newValue;
-                return true;
+                return onSet(prop);
             }
         };
+    }
+
+    private onObjPropertySet(path: string, prop: string)
+    {
+        if (!this.objProxyChanges.has(path))
+        {
+            this.objProxyChanges.set(path, []);
+        }
+
+        const changes = this.objProxyChanges.get(path);
+        if (changes?.indexOf(prop) == -1)
+        {
+            this.objProxyChanges.get(path)?.push(prop);
+        }
+
+        return true;
     }
 }
 

@@ -55,9 +55,9 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.lastLoadedChangeVersion = serverChanges.allChanges[i].version;
 
                 const uncompressed = await environment.utilities.data.uncompress(serverChanges.allChanges[i].changes);
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(uncompressed);
-
+                const parsedChanges: { [key in StoreType]: string } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
+
                 for (let j = 0; j < storeTypes.length; j++)
                 {
                     if (!loadedStoreStates[storeTypes[j]])
@@ -68,10 +68,16 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             return;
                         }
 
-                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(stateEntity.state) };
+                        const usableState = await StoreState.getUsableState(key, stateEntity.state);
+                        if (!usableState.success)
+                        {
+                            return;;
+                        }
+
+                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(usableState.value) };
                     }
 
-                    this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
+                    parsedChanges[storeTypes[j]] = this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
                         serverChanges.allChanges[i].changeTime, false, seenServerChanges);
                 }
             }
@@ -86,7 +92,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             for (let i = 0; i < alreadyMergedLocalChanges.allChanges.length; i++)
             {
                 const uncompressed = await environment.utilities.data.uncompress(alreadyMergedLocalChanges.allChanges[i].changes);
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(uncompressed);
+                const parsedChanges: { [key in StoreType]: string } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
                 for (let j = 0; j < storeTypes.length; j++)
@@ -97,7 +103,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         continue;
                     }
 
-                    this.checkUpdatAlreadyAppliedChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
+                    parsedChanges[storeTypes[j]] = this.checkUpdatAlreadyAppliedChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
                         alreadyMergedLocalChanges.allChanges[i].changeTime, seenServerChanges);
                 }
 
@@ -120,8 +126,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 needsToRePushStoreStates = true;
 
                 const uncompressed = await environment.utilities.data.uncompress(localChangesToMerge[i].changes);
-                console.log(`Uncompressed Change: ${uncompressed}`);
-                const parsedChanges: { [key in StoreType]: { [key: string]: PathChange[] } } = JSON.parse(uncompressed);
+                const parsedChanges: { [key in StoreType]: string } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
                 for (let j = 0; j < storeTypes.length; j++)
@@ -134,10 +139,16 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             return;
                         }
 
-                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(stateEntity.state) };
+                        const usableState = await StoreState.getUsableState(key, stateEntity.state);
+                        if (!usableState.success)
+                        {
+                            return;;
+                        }
+
+                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(usableState.value) };
                     }
 
-                    this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
+                    parsedChanges[storeTypes[j]] = this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
                         localChangesToMerge[i].changeTime, true, seenServerChanges);
                 }
 
@@ -166,15 +177,17 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
     private static mergeChanges(
         type: StoreType,
         current: any,
-        pathChanges: { [key: string]: PathChange[] },
+        pathChanges: string,
         changeTime: number,
         forClient: boolean,
-        seenServerChanges: Map<StoreType, Map<string, number>>)
+        seenServerChanges: Map<StoreType, Map<string, number>>): string
     {
-        const paths = Object.keys(pathChanges);
+        const parsedChanges: { [key: string]: PathChange[] } = JSON.parse(pathChanges);
+        const paths = Object.keys(parsedChanges);
+
         for (let i = 0; i < paths.length; i++)
         {
-            const pathChange = pathChanges[paths[i]];
+            const pathChange = parsedChanges[paths[i]];
             for (let j = 0; j < pathChange.length; j++)
             {
                 // Most likely an array
@@ -186,7 +199,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         if (forClient)
                         {
                             // The object was delete on another device, don't include changes to it
-                            delete pathChanges[paths[i]];
+                            delete parsedChanges[paths[i]];
                         }
                     }
 
@@ -217,7 +230,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             // TODO: test to make sure this works
                             // The value was updated on the server after we updted it locally, making the server value the newest.
                             // We don't want to apply this change, nor do we want any other devices to apply it
-                            delete pathChanges[paths[i]];
+                            delete parsedChanges[paths[i]];
                             continue;
                         }
                     }
@@ -228,7 +241,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         if (forClient)
                         {
                             // The object was delete on another device, don't include changes to it
-                            delete pathChanges[paths[i]];
+                            delete parsedChanges[paths[i]];
                         }
                     }
 
@@ -267,16 +280,20 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 }
             }
         }
+
+        return JSON.stringify(parsedChanges);
     }
 
     private static checkUpdatAlreadyAppliedChanges(
         type: StoreType,
         current: any,
-        pathChanges: { [key: string]: PathChange[] },
+        pathChanges: string,
         changeTime: number,
-        seenServerChanges: Map<StoreType, Map<string, number>>)
+        seenServerChanges: Map<StoreType, Map<string, number>>): string
     {
+        const parsedPathChanges: { [key: string]: PathChange[] } = JSON.parse(pathChanges);
         const paths = Object.keys(pathChanges);
+
         for (let i = 0; i < paths.length; i++)
         {
             const pathChange = pathChanges[paths[i]];
@@ -325,5 +342,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 }
             }
         }
+
+        return JSON.stringify(parsedPathChanges);
     }
 }

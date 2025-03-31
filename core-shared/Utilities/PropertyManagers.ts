@@ -32,6 +32,11 @@ export class OH
 
     static size<T extends { [key: string]: any }>(obj: T): number
     {
+        if (!obj)
+        {
+            return 0;
+        }
+
         return Object.keys(obj).length;
     }
 

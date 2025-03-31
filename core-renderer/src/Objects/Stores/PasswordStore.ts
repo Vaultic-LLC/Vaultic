@@ -79,8 +79,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         masterKey: string,
         password: Password,
         addedSecurityQuestions: SecurityQuestion[],
-        pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        backup?: boolean): Promise<boolean>
+        pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>): Promise<boolean>
     {
         const filterStoreState = app.currentVault.filterStore.getPendingState()!;
         const groupStoreState = app.currentVault.groupStore.getPendingState()!;
@@ -90,7 +89,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        return await this.commitPasswordEdits(masterKey, [password], pendingPasswordStoreState, filterStoreState, groupStoreState, backup);
+        return await this.commitPasswordEdits(masterKey, [password], pendingPasswordStoreState, filterStoreState, groupStoreState);
     }
 
     async commitPasswordEdits(
@@ -98,8 +97,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         addedPasswords: Password[],
         pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
         pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
-        pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>,
-        backup?: boolean): Promise<boolean>
+        pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
@@ -169,11 +167,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         updatedSecurityQuestionAnswers: SecurityQuestion[],
         deletedSecurityQuestions: string[],
         groups: DictionaryAsList,
-        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        backup?: boolean): Promise<boolean>
+        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
-
         const currentPassword: ReactivePassword | undefined = pendingPasswordState.getObject('dataTypesByID.dataType', updatingPassword.id);
         if (!currentPassword)
         {

@@ -88,7 +88,20 @@ export default class StoreUpdateTransaction
 
         for (let i = 0; i < stores.length; i++)
         {
+            // can happen if the user didn't actually change anything
+            const keys = Object.keys(updateStoreStates[stores[i]].pendingState.changes);
+            if (keys.length == 0)
+            {
+                continue;
+            }
+
             changes[stores[i]] = JSON.stringify(updateStoreStates[stores[i]].pendingState.changes);
+        }
+
+        // nothing was updated, nothing to do
+        if (Object.keys(changes).length == 0)
+        {
+            return true;
         }
 
         let response: TypedMethodResponse<any>;

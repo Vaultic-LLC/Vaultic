@@ -38,7 +38,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch } from 'vue';
+import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch, Reactive, reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -76,11 +76,11 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
-        const pendingState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys> = app.currentVault.valueStore.getPendingState()!;
+        let pendingState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys> = app.currentVault.valueStore.getPendingState()!;
         
         const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const valuesState: Ref<NameValuePair> = ref(props.model);
+        let valuesState: Reactive<NameValuePair> = props.creating ? reactive(props.model) : pendingState.createCustomRef('dataTypesByID.dataType', props.model, props.model.id);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.v.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
@@ -89,11 +89,11 @@ export default defineComponent({
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
 
-        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.y == NameValuePairType.Passcode);
-        const showRandom: ComputedRef<boolean> = computed(() => valuesState.value.y == NameValuePairType.Passphrase ||
-            valuesState.value.y == NameValuePairType.Passcode || valuesState.value.y == NameValuePairType.Other);
+        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.y == NameValuePairType.Passcode);
+        const showRandom: ComputedRef<boolean> = computed(() => valuesState.y == NameValuePairType.Passphrase ||
+            valuesState.y == NameValuePairType.Passcode || valuesState.y == NameValuePairType.Other);
         const randomValueType: ComputedRef<string> = computed(() => 
-            valuesState.value.y == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
+            valuesState.y == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
 
         const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
@@ -127,16 +127,14 @@ export default defineComponent({
             {
                 selectedGroups.value.forEach(g => 
                 {
-                    valuesState.value.g[g.backingObject!.id] = true;
+                    valuesState.g[g.backingObject!.id] = true;
                 });
 
-                if (await app.currentVault.valueStore.addNameValuePair(key, valuesState.value, pendingState))
+                if (await app.currentVault.valueStore.addNameValuePair(key, valuesState, pendingState))
                 {
-                    valuesState.value = defaultValue();
-                    selectedGroups.value = [];
-                    refreshKey.value = Date.now().toString();
-
+                    reset();
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -152,7 +150,7 @@ export default defineComponent({
                     newGroups[g.backingObject!.id] = true;
                 });
 
-                if (await app.currentVault.valueStore.updateNameValuePair(key, valuesState.value, valueIsDirty.value, newGroups,
+                if (await app.currentVault.valueStore.updateNameValuePair(key, valuesState, valueIsDirty.value, newGroups,
                     pendingState))
                 {
                     handleSaveResponse(true);
@@ -190,6 +188,14 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        function reset()
+        {
+            Object.assign(valuesState, defaultValue());
+            pendingState = app.currentVault.valueStore.getPendingState()!;
+            selectedGroups.value = [];
+            refreshKey.value = Date.now().toString();
+        }
+
         onMounted(() =>
         {
             groupOptions.value = app.currentVault.groupStore.valuesGroups.map(g => 
@@ -205,7 +211,7 @@ export default defineComponent({
                 return option
             });
 
-            OH.forEachKey(valuesState.value.g, (k) => 
+            OH.forEachKey(valuesState.g, (k) => 
             {
                 const group = app.currentVault.groupStore.valueGroupsByID[k];
                 if (!group)
@@ -220,14 +226,9 @@ export default defineComponent({
                     color: group.c
                 });
             });
-
-            if (!props.creating)
-            {
-                valuesState.value = pendingState.proxifyObject('dataTypesByID.dataType', valuesState.value, valuesState.value.id);
-            }
         });
 
-        watch(() => valuesState.value.y, (newValue) =>
+        watch(() => valuesState.y, (newValue) =>
         {
             showNotifyIfWeak.value = newValue == NameValuePairType.Passcode;
         });

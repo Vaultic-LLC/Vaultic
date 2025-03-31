@@ -233,18 +233,13 @@ export async function checkMergeMissingData(
     transaction?: Transaction,
     backingUpData?: UserDataPayload): Promise<boolean>
 {
-    if (!serverUserDataPayload)
-    {
-        return false;
-    }
-
     transaction = transaction ?? new Transaction();
     const changeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsByStoreType(masterKey, email);
 
     let needsToRePushData = false;
     const dataToBackup: UserDataPayload = backingUpData ?? {};
 
-    if (serverUserDataPayload.user || changeTrackings[ClientChangeTrackingType.User])
+    if (serverUserDataPayload?.user || changeTrackings[ClientChangeTrackingType.User])
     {
         if (!currentLocalData.user)
         {
@@ -278,7 +273,7 @@ export async function checkMergeMissingData(
     }
 
     // Needs to be done before userVaults for when adding a new vault + userVault. Vault has to be saved before userVault.
-    if (serverUserDataPayload.vaults)
+    if (serverUserDataPayload?.vaults)
     {
         const allLocalVaults = await environment.repositories.vaults.getAllVaultIDs();
         for (let i = 0; i < serverUserDataPayload.vaults.length; i++)
@@ -307,7 +302,7 @@ export async function checkMergeMissingData(
     }
 
     // do these seperately from userVaults since they don't match 1-1, i.e. you can have the entire store from one userVault but only some changes for another
-    if (serverUserDataPayload.vaultChanges)
+    if (serverUserDataPayload?.vaultChanges)
     {
         for (let i = 0; i < serverUserDataPayload.vaultChanges.length; i++)
         {
@@ -370,7 +365,7 @@ export async function checkMergeMissingData(
         }
     }
 
-    if (serverUserDataPayload.userVaults)
+    if (serverUserDataPayload?.userVaults)
     {
         for (let i = 0; i < serverUserDataPayload.userVaults.length; i++)
         {
@@ -392,7 +387,7 @@ export async function checkMergeMissingData(
     }
 
     // do these seperately from userVaults since they don't match 1-1, i.e. you can have the entire store from one userVault but only some changes for another
-    if (serverUserDataPayload.userVaultChanges)
+    if (serverUserDataPayload?.userVaultChanges)
     {
         for (let i = 0; i < serverUserDataPayload.userVaultChanges.length; i++)
         {
@@ -455,7 +450,7 @@ export async function checkMergeMissingData(
         }
     }
 
-    if (serverUserDataPayload.sharedUserVaults)
+    if (serverUserDataPayload?.sharedUserVaults)
     {
         const serverVaultsToSetup: UnsetupSharedClientUserVault[] = [];
         const allSenderUserIDs: number[] = [];
@@ -530,7 +525,7 @@ export async function checkMergeMissingData(
         }
     }
 
-    if (serverUserDataPayload.removedUserVaults)
+    if (serverUserDataPayload?.removedUserVaults)
     {
         for (let i = 0; i < serverUserDataPayload.removedUserVaults.length; i++)
         {
@@ -544,7 +539,7 @@ export async function checkMergeMissingData(
         }
     }
 
-    if (serverUserDataPayload.removedVaults)
+    if (serverUserDataPayload?.removedVaults)
     {
         for (let i = 0; i < serverUserDataPayload.removedVaults.length; i++)
         {

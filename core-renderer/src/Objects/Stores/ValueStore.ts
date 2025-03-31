@@ -63,10 +63,8 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
     async addNameValuePair(
         masterKey: string,
         value: NameValuePair,
-        pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>,
-        backup?: boolean): Promise<boolean>
+        pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
     {
-        backup = backup ?? app.isOnline;
 
         const pendingFilterStoreState = this.vault.filterStore.getPendingState()!;
         const pendingGroupStoreState = this.vault.groupStore.getPendingState()!;
@@ -104,7 +102,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         }
 
         const reactiveValue = createReactiveValue(value);
-        pendingValueStoreState.addValue('duplicateDataTypes', reactiveValue.id, reactiveValue);
+        pendingValueStoreState.addValue('dataTypesByID', reactiveValue.id, reactiveValue);
 
         await this.incrementCurrentAndSafe(pendingValueStoreState, this.valueIsSafe);
 
@@ -122,7 +120,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         groups: DictionaryAsList,
         pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
     {
-        let currentValue: ReactiveValue | undefined = pendingValueStoreState.getObject('dataTypesByID', updatedValue.id);
+        let currentValue: ReactiveValue | undefined = pendingValueStoreState.getObject('dataTypesByID.dataType', updatedValue.id);
         if (!currentValue)
         {
             await api.repositories.logs.log(undefined, `No Value`, "ValueStore.Upate")

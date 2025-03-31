@@ -913,12 +913,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     return TypedMethodResponse.fail();
                 }
 
-                // no changes
-                if (!result.userDataPayload)
-                {
-                    return TypedMethodResponse.success();
-                }
-
                 // We weren't passed a master key because we don't have a user, get it from the payload
                 if (plainMasterKey)
                 {
