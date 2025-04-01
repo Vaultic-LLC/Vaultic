@@ -52,7 +52,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted, Reactive, reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
@@ -77,7 +77,7 @@ export default defineComponent({
         const appStoreState = app.getPendingState()!;
 
         const refreshKey: Ref<string> = ref("");
-        const colorPaletteState: Ref<ColorPalette> = ref(props.model);
+        let colorPaletteState: Reactive<ColorPalette> = props.creating ? reactive(props.model) : getCustomRef(props.model);
         const color: ComputedRef<string> = computed(() => '#d0d0d0');
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
@@ -107,10 +107,10 @@ export default defineComponent({
         async function doSave(key: string)
         {
             app.popups.showLoadingIndicator(primaryColor.value, "Saving Color Palette");
-            colorPaletteState.value.i = true;
-            colorPaletteState.value.e = true;
+            colorPaletteState.i = true;
+            colorPaletteState.e = true;
 
-            await app.updateColorPalette(key, colorPaletteState.value, appStoreState);
+            await app.updateColorPalette(key, colorPaletteState, appStoreState);
 
             refreshKey.value = Date.now().toString();
 
@@ -123,22 +123,21 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        function getCustomRef(colorPalette: ColorPalette)
+        {
+            colorPalette.p = appStoreState.createCustomRef('colorPalette.passwordColors', colorPalette.p, colorPalette.id);
+            colorPalette.v = appStoreState.createCustomRef('colorPalette.valueColors', colorPalette.v, colorPalette.id);
+
+            // Do this last so that editing p and v don't get tracked as actual changes
+            const customRef = appStoreState.createCustomRef('colorPalettes.palette', colorPalette, colorPalette.id);
+
+            return customRef;
+        }
+
         watch(() => props.model, (newValue) =>
         {
-            colorPaletteState.value = newValue;
+            Object.assign(colorPaletteState, newValue);
             refreshKey.value = Date.now().toString();
-        });
-
-        onMounted(() =>
-        {
-            colorPaletteState.value = appStoreState.proxifyObject('colorPalettes.palette', 
-                colorPaletteState.value, colorPaletteState.value.id);
-
-            colorPaletteState.value.p = appStoreState.proxifyObject('colorPalette.passwordColors', 
-                colorPaletteState.value.p, colorPaletteState.value.id);
-
-            colorPaletteState.value.v = appStoreState.proxifyObject('colorPalette.valueColors', 
-                colorPaletteState.value.v, colorPaletteState.value.id);
         });
 
         return {

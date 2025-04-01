@@ -1,9 +1,8 @@
-import { Repository } from "typeorm";
+import { In, Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
 import { environment } from "../../Environment";
 import Transaction from "../Transaction";
 import { ChangeTracking } from "../Entities/ChangeTracking";
-import { ChangeTrackingsByType } from "../../Types/Responses";
 import { ClientChangeTrackingType } from "@vaultic/shared/Types/ClientServerTypes";
 
 class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
@@ -13,21 +12,13 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         return environment.databaseDataSouce.getRepository(ChangeTracking);
     }
 
-    public async getChangeTrackingsByStoreType(masterKey: string, email: string): Promise<ChangeTrackingsByType>
+    public async getChangeTrackingsForUser(masterKey: string, userID: number): Promise<ChangeTracking[]>
     {
-        const changeTrackingByStore: ChangeTrackingsByType = {};
-
-        // do findByEmail instead of current since we can't set our currentUser until after merging is done in serverHelper.logIn.
-        const user = await environment.repositories.users.findByEmail(masterKey, email);
-        if (!user)
-        {
-            return changeTrackingByStore;
-        }
-
         let recievedChangeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find(
             {
                 where: {
-                    userID: user.userID
+                    userID: userID,
+                    clientTrackingType: ClientChangeTrackingType.User
                 },
                 order: {
                     changeTrackingID: "ASC"
@@ -36,53 +27,55 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
 
         if (!recievedChangeTrackings)
         {
-            return changeTrackingByStore;
+            return [];
         }
 
-        const changeTrackings = recievedChangeTrackings as ChangeTracking[];
-        for (let i = 0; i < changeTrackings.length; i++)
-        {
-            if (!changeTrackingByStore[changeTrackings[i].clientTrackingType])
+        return recievedChangeTrackings as ChangeTracking[];
+    }
+
+    public async getChangeTrackingsForUserVault(masterKey: string, userID: number, userVaultIDs: number[]): Promise<{ [key: number]: ChangeTracking[] }>
+    {
+        let recievedChangeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find(
             {
-                switch (changeTrackings[i].clientTrackingType)
-                {
-                    case ClientChangeTrackingType.User:
-                        changeTrackingByStore[ClientChangeTrackingType.User] = [];
-                        break;
-                    case ClientChangeTrackingType.UserVault:
-                        changeTrackingByStore[ClientChangeTrackingType.UserVault] = {};
-                        break;
-                    case ClientChangeTrackingType.Vault:
-                        changeTrackingByStore[ClientChangeTrackingType.Vault] = {};
-                        break;
+                where: {
+                    userID: userID,
+                    userVaultID: In(userVaultIDs),
+                    clientTrackingType: ClientChangeTrackingType.UserVault
+                },
+                order: {
+                    changeTrackingID: "ASC"
                 }
-            }
+            }));
 
-            switch (changeTrackings[i].clientTrackingType)
-            {
-                case ClientChangeTrackingType.User:
-                    changeTrackingByStore[ClientChangeTrackingType.User].push(changeTrackings[i]);
-                    break;
-                case ClientChangeTrackingType.UserVault:
-                    if (!changeTrackingByStore[ClientChangeTrackingType.UserVault][changeTrackings[i].userVaultID])
-                    {
-                        changeTrackingByStore[ClientChangeTrackingType.UserVault][changeTrackings[i].userVaultID] = [];
-                    }
-
-                    changeTrackingByStore[ClientChangeTrackingType.UserVault][changeTrackings[i].userVaultID].push(changeTrackings[i]);
-                    break;
-                case ClientChangeTrackingType.Vault:
-                    if (!changeTrackingByStore[ClientChangeTrackingType.Vault][changeTrackings[i].vaultID])
-                    {
-                        changeTrackingByStore[ClientChangeTrackingType.Vault][changeTrackings[i].vaultID] = [];
-                    }
-
-                    changeTrackingByStore[ClientChangeTrackingType.Vault][changeTrackings[i].vaultID].push(changeTrackings[i]);
-                    break;
-            }
+        if (!recievedChangeTrackings)
+        {
+            return [];
         }
 
-        return changeTrackingByStore;
+        return this.groupChangeTrackingsByID("userVaultID", recievedChangeTrackings as ChangeTracking[]);
+    }
+
+    public async getChangeTrackingsForVault(key: string, userID: number, userVaultID: number, vaultID: number): Promise<ChangeTracking[]>
+    {
+        let recievedChangeTrackings = await this.retrieveAndVerifyAll(key, (repository) => repository.find(
+            {
+                where: {
+                    userID: userID,
+                    userVaultID: userVaultID,
+                    vaultID: vaultID,
+                    clientTrackingType: ClientChangeTrackingType.Vault
+                },
+                order: {
+                    changeTrackingID: "ASC"
+                }
+            }));
+
+        if (!recievedChangeTrackings)
+        {
+            return [];
+        }
+
+        return recievedChangeTrackings as ChangeTracking[];
     }
 
     public clearChangeTrackings(transaction: Transaction)
@@ -92,6 +85,22 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         {
             transaction.deleteEntity<ChangeTracking>({ userID: environment.cache.currentUser.userID }, () => environment.repositories.changeTrackings);
         }
+    }
+
+    private groupChangeTrackingsByID(idField: "userVaultID" | "vaultID", changeTrackings: ChangeTracking[]): { [key: number]: ChangeTracking[] }
+    {
+        const groupedChangeTrackings: { [key: number]: ChangeTracking[] } = {};
+        for (let i = 0; i < changeTrackings.length; i++)
+        {
+            if (!groupedChangeTrackings[changeTrackings[i][idField]])
+            {
+                groupedChangeTrackings[changeTrackings[i][idField]] = [];
+            }
+
+            groupedChangeTrackings[changeTrackings[i][idField]].push(changeTrackings[i]);
+        }
+
+        return groupedChangeTrackings;
     }
 }
 

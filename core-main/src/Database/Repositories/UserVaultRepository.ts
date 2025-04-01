@@ -343,6 +343,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
     public async updateUserVaultChanges(
         masterKey: string,
         currentUserVault: DeepPartial<UserVault>,
+        serverUserVault: DeepPartial<UserVault> | undefined,
         serverChanges: ClientUserVaultChangeTrackings | undefined,
         localChanges: ChangeTracking[],
         existingUserChanges: ClientUserVaultChangeTrackings | undefined,
@@ -352,6 +353,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         states[StoreType.VaultPreferences] =
         {
             repository: environment.repositories.vaultPreferencesStoreStates,
+            serverState: serverUserVault?.vaultPreferencesStoreState?.state,
             getState: async () =>
             {
                 const state = await environment.repositories.vaultPreferencesStoreStates.retrieveAndVerify(masterKey,

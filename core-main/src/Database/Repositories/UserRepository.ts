@@ -782,12 +782,18 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             transaction.overrideEntity(newUser.userID, partialUser, () => this);
         }
 
+        const serverStates: Partial<{ [key in StoreType]: string }> = {}
+
         if (newUser.appStoreState && newUser.appStoreState.appStoreStateID)
         {
             const partialAppStoreState: Partial<AppStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
             if (Object.keys(partialAppStoreState).length > 0)
             {
                 transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
+                if (partialAppStoreState.state)
+                {
+                    serverStates[StoreType.App] = newUser.appStoreState.state;
+                }
             }
         }
 
@@ -800,10 +806,15 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     newUser.userPreferencesStoreState.userPreferencesStoreStateID,
                     partialUserPreferencesStoreState,
                     () => environment.repositories.userPreferencesStoreStates);
+
+                if (partialUserPreferencesStoreState.state)
+                {
+                    serverStates[StoreType.App] = newUser.appStoreState.state;
+                }
             }
         }
 
-        const states: StoreRetriever = this.getStoreRetriever(masterKey, currentUser.userID);
+        const states: StoreRetriever = this.getStoreRetriever(masterKey, currentUser.userID, serverStates);
         const clientUserChangesToPush: ClientUserChangeTrackings =
         {
             userID: currentUser.userID,
@@ -866,12 +877,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
     }
 
-    private getStoreRetriever(masterKey: string, userID: number): StoreRetriever
+    private getStoreRetriever(masterKey: string, userID: number, serverStates: Partial<{ [key in StoreType]: string }>): StoreRetriever
     {
         const states: StoreRetriever = {};
         states[StoreType.App] =
         {
             repository: environment.repositories.appStoreStates,
+            serverState: serverStates[StoreType.App],
             getState: async () =>
             {
                 const state = await environment.repositories.appStoreStates.retrieveAndVerify(masterKey,
@@ -886,6 +898,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         states[StoreType.UserPreferences] =
         {
             repository: environment.repositories.userPreferencesStoreStates,
+            serverState: serverStates[StoreType.UserPreferences],
             getState: async () =>
             {
                 const state = await environment.repositories.userPreferencesStoreStates.retrieveAndVerify(masterKey,

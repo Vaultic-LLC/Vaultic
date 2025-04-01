@@ -54,7 +54,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             {
                 clientChangesToPushAfter.lastLoadedChangeVersion = serverChanges.allChanges[i].version;
 
-                const uncompressed = await environment.utilities.data.uncompress(serverChanges.allChanges[i].changes);
+                const uncompressed = await environment.utilities.data.decryptAndUncompress(key, serverChanges.allChanges[i].changes);
                 const parsedChanges: { [key in StoreType]: string } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
@@ -62,13 +62,19 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 {
                     if (!loadedStoreStates[storeTypes[j]])
                     {
+                        let state = states[storeTypes[j]].serverState;
                         const stateEntity = await states[storeTypes[j]].getState();
                         if (!stateEntity)
                         {
                             return;
                         }
 
-                        const usableState = await StoreState.getUsableState(key, stateEntity.state);
+                        if (!state)
+                        {
+                            state = stateEntity.state;
+                        }
+
+                        const usableState = await StoreState.getUsableState(key, state);
                         if (!usableState.success)
                         {
                             return;;
@@ -91,7 +97,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         {
             for (let i = 0; i < alreadyMergedLocalChanges.allChanges.length; i++)
             {
-                const uncompressed = await environment.utilities.data.uncompress(alreadyMergedLocalChanges.allChanges[i].changes);
+                const uncompressed = await environment.utilities.data.decryptAndUncompress(key, alreadyMergedLocalChanges.allChanges[i].changes);
                 const parsedChanges: { [key in StoreType]: string } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
@@ -110,7 +116,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.lastLoadedChangeVersion += 1;
                 const clientChange: ClientChange =
                 {
-                    changes: await environment.utilities.data.compress(JSON.stringify(parsedChanges)),
+                    changes: await environment.utilities.data.compressAndEncrypt(key, JSON.stringify(parsedChanges)),
                     changeTime: alreadyMergedLocalChanges.allChanges[i].changeTime,
                     version: clientChangesToPushAfter.lastLoadedChangeVersion
                 };
@@ -125,7 +131,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             {
                 needsToRePushStoreStates = true;
 
-                const uncompressed = await environment.utilities.data.uncompress(localChangesToMerge[i].changes);
+                const uncompressed = await environment.utilities.data.decryptAndUncompress(key, localChangesToMerge[i].changes);
                 const parsedChanges: { [key in StoreType]: string } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
@@ -133,13 +139,19 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 {
                     if (!loadedStoreStates[storeTypes[j]])
                     {
+                        let state = states[storeTypes[j]].serverState;
                         const stateEntity = await states[storeTypes[j]].getState();
                         if (!stateEntity)
                         {
                             return;
                         }
 
-                        const usableState = await StoreState.getUsableState(key, stateEntity.state);
+                        if (!state)
+                        {
+                            state = stateEntity.state;
+                        }
+
+                        const usableState = await StoreState.getUsableState(key, state);
                         if (!usableState.success)
                         {
                             return;;
@@ -155,7 +167,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.lastLoadedChangeVersion += 1;
                 const clientChange: ClientChange =
                 {
-                    changes: await environment.utilities.data.compress(JSON.stringify(parsedChanges)),
+                    changes: await environment.utilities.data.compressAndEncrypt(key, JSON.stringify(parsedChanges)),
                     changeTime: localChangesToMerge[i].changeTime,
                     version: clientChangesToPushAfter.lastLoadedChangeVersion
                 };
@@ -166,6 +178,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             const updatedStateKeys = Object.keys(loadedStoreStates) as StoreType[];
             for (let i = 0; i < updatedStateKeys.length; i++)
             {
+                console.log(`Saving Updated State: ${updatedStateKeys[i]}`);
                 loadedStoreStates[updatedStateKeys[i]].entity.state = JSON.stringify(loadedStoreStates[updatedStateKeys[i]].state);
                 transaction.updateEntity(loadedStoreStates[updatedStateKeys[i]].entity, key, () => states[updatedStateKeys[i]].repository);
             }

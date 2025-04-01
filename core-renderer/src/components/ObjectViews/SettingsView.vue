@@ -9,7 +9,7 @@
                             v-model="reactiveAppSettings.a" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
                             :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
                         <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
-                            :color="color" v-model="appSettings.f" :optionsEnum="FilterStatus"
+                            :color="color" v-model="reactiveAppSettings.f" :optionsEnum="FilterStatus"
                             fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                             :disabled="readOnly" />
                     </div>                    
@@ -20,11 +20,11 @@
                 <VaulticAccordionContent>
                     <div class="settingsView__inputSection">
                         <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
-                            v-model.number="appSettings.o" :inputType="'number'" :width="'10vw'"
+                            v-model.number="reactiveAppSettings.o" :inputType="'number'" :width="'10vw'"
                             :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforceOldPasswordDays" />
                         <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
-                            :label="'% Filled Metric for Pulse'" v-model.number="appSettings.p"
+                            :label="'% Filled Metric for Pulse'" v-model.number="reactiveAppSettings.p"
                             :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                             :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
@@ -33,18 +33,18 @@
                     </div>
                     <div class="settingsView__inputSection">
                         <TextInputField :color="color"
-                            :label="'Random Password Length'" v-model.number="appSettings.v"
+                            :label="'Random Password Length'" v-model.number="reactiveAppSettings.v"
                             :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                             :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforceMinRandomPasswordLength" />
                         <TextInputField class="settingsView__randomPassphraseLength" :color="color"
-                            :label="'Random Passphrase Length'" v-model.number="appSettings.r"
+                            :label="'Random Passphrase Length'" v-model.number="reactiveAppSettings.r"
                             :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
                             :minHeight="'35px'" :disabled="readOnly"
                             :additionalValidationFunction="enforceMinRandomPassphraseLength" />
                     </div>
                     <div class="settingsView__inputSection">
-                        <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.e"
+                        <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="reactiveAppSettings.e"
                             :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
                         <EnumInputField v-if="isOnline" class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
                             :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
@@ -53,15 +53,15 @@
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                            :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.m" />
+                            :label="'Include Ambiguous Characters in Random Password'" v-model="reactiveAppSettings.m" />
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Numbers in Random Passwords'" v-model="appSettings.n" />
+                                :label="'Include Numbers in Random Passwords'" v-model="reactiveAppSettings.n" />
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Special Characters in Random Password'" v-model="appSettings.s" />
+                                :label="'Include Special Characters in Random Password'" v-model="reactiveAppSettings.s" />
                     </div>               
                 </VaulticAccordionContent>
             </VaulticAccordionPanel>
@@ -143,8 +143,7 @@ export default defineComponent({
         const appStoreState = app.getPendingState()!;
         // copy the objects so that we don't edit the original one. Also needed for change tracking
         const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
-        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
-        const reactiveAppSettings = appStoreState.createCustomRef("settings", appSettings.value);
+        const reactiveAppSettings = appStoreState.createCustomRef("settings", originalAppSettings.value);
 
         // const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
         // const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
@@ -401,9 +400,6 @@ export default defineComponent({
 
         onMounted(async () => 
         {
-            appSettings.value = appStoreState.proxifyObject('settings', appSettings.value);
-            appSettings.value.p = 20;
-
             if (isOnline.value)
             {
                 isLoadingSharedData.value = true;
@@ -472,7 +468,6 @@ export default defineComponent({
             objectView,
             usernameField,
             memberTable,
-            appSettings,
             refreshKey,
             AutoLockTime,
             FilterStatus,

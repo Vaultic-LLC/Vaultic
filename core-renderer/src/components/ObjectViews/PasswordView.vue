@@ -83,10 +83,10 @@ export default defineComponent({
     {
         const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 
-        const pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
+        let pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const passwordState: Ref<Password> = ref(props.model);
+        const passwordState: Reactive<Password> = props.creating ? reactive(props.model) : pendingStoreState.createCustomRef('dataTypesByID.dataType', props.model, props.model.id);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
@@ -96,10 +96,10 @@ export default defineComponent({
         const passwordIsDirty: Ref<boolean> = ref(false);
 
         let allSecurityQuestions: { [key: string]: SecurityQuestion } = {};
-        const addedSecurityQuestions: SecurityQuestion[] = [];
-        const removedSecurityQuestions: string[] = [];
-        const dirtySecurityQuestionQuestions: SecurityQuestion[] = [];
-        const dirtySecurityQuestionAnswers: SecurityQuestion[] = [];
+        let addedSecurityQuestions: SecurityQuestion[] = [];
+        let removedSecurityQuestions: string[] = [];
+        let dirtySecurityQuestionQuestions: SecurityQuestion[] = [];
+        let dirtySecurityQuestionAnswers: SecurityQuestion[] = [];
 
         const locked: Ref<boolean> = ref(!props.creating);
 
@@ -190,19 +190,17 @@ export default defineComponent({
                 // its ok to set these since we are adding the entire object anyways
                 selectedGroups.value.forEach(g => 
                 {
-                    passwordState.value.g[g.backingObject!.id] = true;
+                    passwordState.g[g.backingObject!.id] = true;
                 });
 
                 console.time('add password');
-                if (await app.currentVault.passwordStore.addPassword(key, passwordState.value, addedSecurityQuestions, 
+                if (await app.currentVault.passwordStore.addPassword(key, passwordState, addedSecurityQuestions, 
                     pendingStoreState))
                 {
                     console.timeEnd('add password');
-                    passwordState.value = defaultPassword();
-                    refreshKey.value = Date.now().toString();
-                    selectedGroups.value = [];
-
+                    reset()
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -219,7 +217,7 @@ export default defineComponent({
                 });
 
                 if (await app.currentVault.passwordStore.updatePassword(key,
-                    passwordState.value, passwordIsDirty.value, addedSecurityQuestions, dirtySecurityQuestionQuestions,
+                    passwordState, passwordIsDirty.value, addedSecurityQuestions, dirtySecurityQuestionQuestions,
                     dirtySecurityQuestionAnswers, removedSecurityQuestions, newGroups, pendingStoreState))
                 {
                     handleSaveResponse(true);
@@ -228,6 +226,23 @@ export default defineComponent({
 
                 handleSaveResponse(false);
             }
+        }
+
+        function reset()
+        {
+            // This won't track changes within the pending store since we didn't re create the 
+            // custom ref but that's ok since we are creating
+            Object.assign(passwordState, defaultPassword());
+            pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+            allSecurityQuestions = {};
+            addedSecurityQuestions = [];
+            removedSecurityQuestions = [];
+            dirtySecurityQuestionAnswers = [];
+            dirtySecurityQuestionQuestions = [];
+
+            selectedGroups.value = [];
+            refreshKey.value = Date.now().toString();
         }
 
         function handleSaveResponse(succeeded: boolean)
@@ -339,7 +354,7 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            allSecurityQuestions = JSON.parse(JSON.stringify(passwordState.value.q));
+            allSecurityQuestions = JSON.parse(JSON.stringify(passwordState.q));
             setSecurityQuestionModels();
 
             groupOptions.value = app.currentVault.groupStore.passwordGroups.map(g => 
@@ -355,7 +370,7 @@ export default defineComponent({
                 return option
             });
 
-            OH.forEachKey(passwordState.value.g, (k) => 
+            OH.forEachKey(passwordState.g, (k) => 
             {
                 const group = app.currentVault.groupStore.passwordGroupsByID[k];
                 if (!group)
@@ -370,11 +385,6 @@ export default defineComponent({
                     color: group.c
                 });
             });
-
-            if (!props.creating)
-            {
-                passwordState.value = pendingStoreState.proxifyObject("dataTypesByID.dataType", passwordState.value, passwordState.value.id);
-            }
         });
 
         return {

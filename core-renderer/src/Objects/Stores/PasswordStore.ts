@@ -192,7 +192,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             // Don't support updating the master key at this time, set our 'new' password to our old one
             if (updatingPassword.v)
             {
-                updatingPassword.password = currentPassword.password;
+                updatingPassword.p = currentPassword.p;
             }
 
             await this.updateValuesByHash(pendingPasswordState, "p", updatingPassword, currentPassword);
@@ -208,7 +208,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         else if (!updatingPassword.v)
         {
             // need to check to see if the password contains their potentially updated username
-            const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.password);
+            const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.p);
             if (!decryptResponse.success)
             {
                 return false;
@@ -374,7 +374,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        password.password = response.value!;
+        password.p = response.value!;
         return true;
     }
 

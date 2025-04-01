@@ -209,6 +209,9 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         }
 
         const seriazliedMakeup = JSON.vaulticStringify(signatureMakeup);
+
+        console.log(`Signing: ${seriazliedMakeup}`);
+
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, seriazliedMakeup);
         if (!hashedEntity.success)
         {
@@ -266,6 +269,8 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
 
         console.time("19");
         const serializedMakeup = JSON.stringify(signatureMakeup);
+
+        console.log(`Verifying: ${serializedMakeup}`);
         console.timeEnd("19");
         console.time("20");
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);

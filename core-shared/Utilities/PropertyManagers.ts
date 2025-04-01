@@ -113,12 +113,12 @@ export class OH
         }
     }
 
-    static forEachValue<T extends { [key: string]: any }>(obj: T, predicate: (value: T[keyof T]) => void)
+    static forEachValue<T extends { [key: string]: any }>(obj: T, predicate: (value: T[keyof T], index?: number) => void)
     {
         const values = Object.values(obj);
         for (let i = 0; i < values.length; i++)
         {
-            predicate(values[i]);
+            predicate(values[i], i);
         }
     }
 }

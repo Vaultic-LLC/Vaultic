@@ -68,7 +68,7 @@ export default defineComponent({
                             return {
                                 key: `pgdup${pgSize}${app.currentVault.groupStore.passwordGroups.length}`,
                                 title: 'Duplicate',
-                                filledAmount: app.currentVault.groupStore.duplicatePasswordGroups.size,
+                                filledAmount: pgSize,
                                 totalAmount: app.currentVault.groupStore.passwordGroups.length,
                                 color: app.userPreferences.currentColorPalette.g,
                                 active: app.currentVault.groupStore.activeAtRiskPasswordGroupType == AtRiskType.Duplicate,

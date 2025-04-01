@@ -190,6 +190,8 @@ export default defineComponent({
 
         function reset()
         {
+            // This won't track changes within the pending store since we didn't re create the 
+            // custom ref but that's ok since we are creating
             Object.assign(valuesState, defaultValue());
             pendingState = app.currentVault.valueStore.getPendingState()!;
             selectedGroups.value = [];

@@ -51,18 +51,18 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
-        const filterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
+        let filterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
         
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const filterState: Ref<Filter> = ref(props.model);
+        const filterState: Reactive<Filter> = props.creating ? reactive(props.model) : setupProxies(props.model);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.f);
         const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
-        const allConditions: { [key: string]: FilterCondition } = {};
-        const addedConditions: FilterCondition[] = [];
-        const removedConditions: string[] = [];
+        let allConditions: { [key: string]: FilterCondition } = {};
+        let addedConditions: FilterCondition[] = [];
+        let removedConditions: string[] = [];
 
         const filterConditionModels: SortedCollection = new SortedCollection([], () => allConditions);
 
@@ -132,13 +132,24 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Filter");
             if (props.creating)
             {
-                if (await app.currentVault.filterStore.addFilter(key, filterState.value, filterStoreState))
+                if (await app.currentVault.filterStore.addFilter(key, filterState, filterStoreState))
                 {
-                    filterState.value = defaultFilter(filterState.value.t);
+                    // This won't track changes within the pending store since we didn't re create the 
+                    // custom ref but that's ok since we are creating
+                    filterStoreState = app.currentVault.filterStore.getPendingState()!;
+
+                    // TODO: this is causing issues since the same object reference is saved to the store later on.
+                    // Find another way to do this
+                    //Object.assign(filterState, defaultFilter(filterState.t));
+
+                    allConditions = {};
+                    addedConditions = [];
+                    removedConditions = [];
+
                     await onAdd();
                     refreshKey.value = Date.now().toString();
-
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -146,7 +157,7 @@ export default defineComponent({
             }
             else
             {
-                if (await app.currentVault.filterStore.updateFilter(key, filterState.value, addedConditions, 
+                if (await app.currentVault.filterStore.updateFilter(key, filterState, addedConditions, 
                     removedConditions, filterStoreState))
                 {
                     handleSaveResponse(true);
@@ -221,38 +232,41 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function setupProxies(dataTypePath: keyof FilterStoreStateKeys, conditionPath: keyof FilterStoreStateKeys)
+        function setupProxies(filter: Filter)
         {
-            filterState.value = filterStoreState.proxifyObject(dataTypePath, filterState.value, filterState.value.id);
+            let dataTypePath: keyof FilterStoreStateKeys | undefined;
+            let conditionPath: keyof FilterStoreStateKeys | undefined;
 
-            OH.forEachValue(filterState.value.c, (c) =>
+            if (filter.t == DataType.Passwords)
             {
-                c = filterStoreState.proxifyObject(conditionPath, c, filterState.value.id, c.id)
+                dataTypePath = 'passwordDataTypesByID.dataType';
+                conditionPath = 'passwordDataTypes.conditions.condition';
+            }
+            else
+            {
+                dataTypePath = 'valueDataTypesByID.dataType';
+                conditionPath = 'valueDataTypes.conditions.condition';
+            }
+
+            OH.forEachValue(filter.c, (c, i) =>
+            {
+                filter.c[i!] = filterStoreState.createCustomRef(conditionPath, c, filter.id, c.id);
             });
+            
+            // Do this last so that updating setting the conditions doesn't actually track them as a change
+            return filterStoreState.createCustomRef(dataTypePath, filter, filter.id);
         }
 
         onMounted(() =>
         {
-            if (!props.creating)
-            {
-                if (filterState.value.t == DataType.Passwords)
-                {
-                    setupProxies('passwordDataTypesByID.dataType', 'passwordDataTypes.conditions.condition')
-                }
-                else
-                {
-                    setupProxies('valueDataTypesByID.dataType', 'valueDataTypes.conditions.condition')
-                }
-            }
-
-            if (OH.size(filterState.value.c) == 0)
+            if (OH.size(filterState.c) == 0)
             {
                 onAdd();
             }
             else
             {
                 let models: TableRowModel[] = [];
-                OH.forEach(filterState.value.c, (k, v)  =>
+                OH.forEach(filterState.c, (k, v)  =>
                 {
                     allConditions[k] = v;
 

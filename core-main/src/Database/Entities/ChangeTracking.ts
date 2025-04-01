@@ -1,7 +1,6 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 import { VaulticEntity } from "./VaulticEntity";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { StoreType } from "@vaultic/shared/Types/Stores";
 import Transaction from "../Transaction";
 import { environment } from "../../Environment";
 import { ClientChangeTrackingType } from "@vaultic/shared/Types/ClientServerTypes";
@@ -38,7 +37,7 @@ export class ChangeTracking extends VaulticEntity
 
     entityName(): string 
     {
-        return "ledger";
+        return "changeTracking";
     }
 
     protected createNew(): VaulticEntity
@@ -48,7 +47,13 @@ export class ChangeTracking extends VaulticEntity
 
     protected internalGetSignableProperties(): string[]
     {
-        return [];
+        return [
+            nameof<ChangeTracking>("userID"),
+            nameof<ChangeTracking>("userVaultID"),
+            nameof<ChangeTracking>("vaultID"),
+            nameof<ChangeTracking>("clientTrackingType"),
+            nameof<ChangeTracking>('changeTime')
+        ];
     }
 
     public getCompressableProperties(): string[]
@@ -61,22 +66,18 @@ export class ChangeTracking extends VaulticEntity
     public getEncryptableProperties(): string[]
     {
         return [
-            nameof<ChangeTracking>("userID"),
-            nameof<ChangeTracking>("vaultID"),
-            nameof<ChangeTracking>("clientTrackingType"),
-            nameof<ChangeTracking>("changeTime"),
             nameof<ChangeTracking>("changes"),
         ];
     }
 
     public static creteAndInsert(key: string, clientTrackingType: ClientChangeTrackingType, changes: string, transaction: Transaction, userID: number, userVaultID?: number, vaultID?: number)
     {
-        const changeTracking = new ChangeTracking();
+        const changeTracking = new ChangeTracking().makeReactive();
         changeTracking.clientTrackingType = clientTrackingType;
         changeTracking.changes = changes;
         changeTracking.userID = userID;
-        changeTracking.userVaultID = userVaultID;
-        changeTracking.vaultID = vaultID;
+        changeTracking.userVaultID = userVaultID ?? -1;
+        changeTracking.vaultID = vaultID ?? -1;
         changeTracking.changeTime = Date.now();
 
         transaction.insertEntity(changeTracking, key, () => environment.repositories.changeTrackings);

@@ -785,12 +785,13 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
     public async updateVaultChanges(
         key: string,
         vault: ClientVaultChangeTrackings,
+        serverVault: DeepPartial<Vault> | undefined,
         serverChanges: ClientVaultChangeTrackings | undefined,
         localChanges: ChangeTracking[],
         existingUserChanges: ClientVaultChangeTrackings | undefined,
         transaction: Transaction)
     {
-        const states = this.getStoreRetriever(key, vault.vaultID);
+        const states = this.getStoreRetriever(key, vault.vaultID, serverVault);
         const clientUserChangesToPush: ClientVaultChangeTrackings =
         {
             userVaultID: vault.userVaultID,
@@ -956,12 +957,13 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    private getStoreRetriever(vaultKey: string, vaultID: number): StoreRetriever
+    private getStoreRetriever(vaultKey: string, vaultID: number, serverVault: DeepPartial<Vault> | undefined): StoreRetriever
     {
         const states: StoreRetriever = {};
         states[StoreType.Vault] =
         {
             repository: environment.repositories.vaultStoreStates,
+            serverState: serverVault?.vaultStoreState?.state,
             getState: async () =>
             {
                 const state = await environment.repositories.vaultStoreStates.retrieveAndVerify(vaultKey,
@@ -976,6 +978,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         states[StoreType.Password] =
         {
             repository: environment.repositories.passwordStoreStates,
+            serverState: serverVault?.passwordStoreState?.state,
             getState: async () =>
             {
                 const state = await environment.repositories.passwordStoreStates.retrieveAndVerify(vaultKey,
@@ -990,6 +993,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         states[StoreType.Value] =
         {
             repository: environment.repositories.valueStoreStates,
+            serverState: serverVault?.valueStoreState?.state,
             getState: async () =>
             {
                 const state = await environment.repositories.valueStoreStates.retrieveAndVerify(vaultKey,
@@ -1004,6 +1008,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         states[StoreType.Filter] =
         {
             repository: environment.repositories.filterStoreStates,
+            serverState: serverVault?.filterStoreState?.state,
             getState: async () =>
             {
                 const state = await environment.repositories.filterStoreStates.retrieveAndVerify(vaultKey,
@@ -1018,6 +1023,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         states[StoreType.Group] =
         {
             repository: environment.repositories.groupStoreStates,
+            serverState: serverVault?.groupStoreState?.state,
             getState: async () =>
             {
                 const state = await environment.repositories.groupStoreStates.retrieveAndVerify(vaultKey,
