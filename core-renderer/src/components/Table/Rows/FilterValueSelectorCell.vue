@@ -34,8 +34,14 @@ export default defineComponent({
         const inputType: ComputedRef<PropertyType> = computed(() => props.state["inputType"]);
         const inputEnumType: ComputedRef<any> = computed(() => state.value.inputEnumType);
 
+        watch(() => modelField.value, (newValue) =>
+        {
+            props.model[props.field] = newValue;
+        });
+
         watch(() => inputType.value, () =>
         {
+            props.model[props.field] = "";
             modelField.value.value = "";
         });
 

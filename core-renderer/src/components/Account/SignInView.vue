@@ -157,7 +157,9 @@ export default defineComponent({
                 {
                     mfaIsShowing.value = false;
                     app.isOnline = true;
-                    app.isSyncingVal = true;
+
+                    // used to hide the editing UI components so its not as glitchy when logging in
+                    app.forceReadOnlyVal = true;
 
                     if (response.value?.masterKey)
                     {
@@ -177,7 +179,9 @@ export default defineComponent({
                             console.timeEnd('loggingIn');
                             ctx.emit('onKeySuccess');
                         }   
-                    }     
+                    } 
+                    
+                    app.forceReadOnlyVal = false;
                 }
                 else if (response.value?.isSyncing)
                 {
@@ -205,7 +209,7 @@ export default defineComponent({
                         key: masterKey.value
                     };
 
-                    const vaulticMasterKey = JSON.vaulticStringify(vaulticKey);
+                    const vaulticMasterKey = JSON.stringify(vaulticKey);
                     // check if key is correct
                     if (response.value)
                     {

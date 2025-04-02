@@ -192,7 +192,7 @@ export default defineComponent({
 
         const randomPasswordPreview: Ref<string> = ref('');
         const randomValueType: Ref<RandomValueType> = ref(props.randomValueType ?? RandomValueType.Password);
-        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const appSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
 
         const length: ComputedRef<number> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.v : appSettings.value.r);
 

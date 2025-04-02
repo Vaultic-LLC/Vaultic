@@ -77,7 +77,7 @@ export class BaseVaultStore<V extends PasswordStore,
     {
         super(StoreType.Vault, VaultStorePathRetriever);
         this.internalIsReadOnly = ref(false);
-        this.internalReadOnlyComputed = computed(() => this.internalIsReadOnly.value || app.isSyncing.value);
+        this.internalReadOnlyComputed = computed(() => this.internalIsReadOnly.value || app.isSyncing.value || app.forceReadOnly.value);
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
 
@@ -90,7 +90,7 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
         this.internalShared = data.shared;
         this.internalIsArchived = data.isArchived;
-        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Map();
+        this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Map();
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);

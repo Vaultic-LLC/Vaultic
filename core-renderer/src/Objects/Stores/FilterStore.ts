@@ -346,7 +346,8 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
             }
 
             this.checkUpdateEmptySecondaryObject(v.id, v[primaryDataObjectCollection], "emptyPasswordDataTypes", allEmptyFilters, pendingFilterStore);
-            this.checkUpdateDuplicateSecondaryObjects(v, primaryDataObjectCollection, allDuplicateFilters, allFilters, duplicateDataTypesPath, duplicateDataTypesDataTypesPath, pendingFilterStore);
+            this.checkUpdateDuplicateSecondaryObjects(v.id, v[primaryDataObjectCollection], primaryDataObjectCollection, allDuplicateFilters, allFilters,
+                duplicateDataTypesPath, duplicateDataTypesDataTypesPath, pendingFilterStore);
         });
     }
 
@@ -472,8 +473,12 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
                 }
             });
 
-            this.checkUpdateEmptySecondaryObject(f.id, f[primaryDataObjectCollection], emptySecondaryDataObjectPath, currentEmptyFilters, pendingFilterStoreState);
-            this.checkUpdateDuplicateSecondaryObjects(f, primaryDataObjectCollection, currentDuplicateFilters, allFilters, duplicateDataTypesPath, duplicateDataTypesDataTypePath, pendingFilterStoreState);
+            // Retrieve these instead of using f[primaryDataObjectCollection] since the new ones won't be set there
+            const primaryDataObjectsOnFilter = pendingFilterStoreState.getObject(pathToPrimaryDataObjectOnSecondaryObject, f.id);
+
+            this.checkUpdateEmptySecondaryObject(f.id, primaryDataObjectsOnFilter, emptySecondaryDataObjectPath, currentEmptyFilters, pendingFilterStoreState);
+            this.checkUpdateDuplicateSecondaryObjects(f.id, primaryDataObjectsOnFilter, primaryDataObjectCollection, currentDuplicateFilters, allFilters,
+                duplicateDataTypesPath, duplicateDataTypesDataTypePath, pendingFilterStoreState);
         });
     }
 }

@@ -142,11 +142,11 @@ export default defineComponent({
 
         const appStoreState = app.getPendingState()!;
         // copy the objects so that we don't edit the original one. Also needed for change tracking
-        const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const originalAppSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
         const reactiveAppSettings = appStoreState.createCustomRef("settings", originalAppSettings.value);
 
-        // const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
-        // const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
+        // const originalVaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings.value)));
+        // const vaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings.value)));
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
@@ -191,7 +191,7 @@ export default defineComponent({
             }
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-            if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(reactiveAppSettings))
+            if (JSON.stringify(originalAppSettings.value) != JSON.stringify(reactiveAppSettings))
             {
                 appStoreState.commitProxyObject('settings', reactiveAppSettings);
                 transaction.updateUserStore(app, appStoreState);
@@ -202,7 +202,7 @@ export default defineComponent({
                 }
             }
 
-            // if (JSON.vaulticStringify(originalVaultSettings.value) != JSON.vaulticStringify(vaultSettings.value))
+            // if (JSON.stringify(originalVaultSettings.value) != JSON.stringify(vaultSettings.value))
             // {
             //     const state = app.currentVault.cloneState();
             //     state.settings.value = vaultSettings.value;

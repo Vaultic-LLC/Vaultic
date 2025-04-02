@@ -108,13 +108,13 @@ export default class StoreUpdateTransaction
         switch (entity)
         {
             case Entity.User:
-                response = await api.repositories.users.saveUser(masterKey, JSON.vaulticStringify(changes));
+                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(changes));
                 break;
             case Entity.UserVault:
-                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.vaulticStringify(changes));
+                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(changes));
                 break;
             case Entity.Vault:
-                response = await api.repositories.vaults.saveVaultData(masterKey, this.userVaultID!, JSON.vaulticStringify(changes));
+                response = await api.repositories.vaults.saveVaultData(masterKey, this.userVaultID!, JSON.stringify(changes));
                 break;
         }
 

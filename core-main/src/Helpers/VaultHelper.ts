@@ -25,7 +25,7 @@ class VaultHelper
             vaultKey: keyResult.value
         };
 
-        const signature = await environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.vaulticStringify(message));
+        const signature = await environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.stringify(message));
         if (!signature.success)
         {
             return TypedMethodResponse.propagateFail(signature);

@@ -119,7 +119,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
             if (OH.size(group.p) == 0)
             {
                 pendingGroupStoreState.addValue("emptyPasswordDataTypes", group.id, true);
-                this.checkUpdateDuplicateSecondaryObjects(group, "p", pendingGroupStoreState.state.o, pendingGroupStoreState.state.p,
+                this.checkUpdateDuplicateSecondaryObjects(group.id, group.p, "p", pendingGroupStoreState.state.o, pendingGroupStoreState.state.p,
                     "duplicatePasswordDataTypes", "duplicatePasswordDataTypes.dataTypes", pendingGroupStoreState);
             }
             else
@@ -141,7 +141,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
             if (OH.size(group.p) == 0)
             {
                 pendingGroupStoreState.addValue("emptyValueDataTypes", group.id, true);
-                this.checkUpdateDuplicateSecondaryObjects(group, "v", pendingGroupStoreState.state.u, pendingGroupStoreState.state.v,
+                this.checkUpdateDuplicateSecondaryObjects(group.id, group.v, "v", pendingGroupStoreState.state.u, pendingGroupStoreState.state.v,
                     "duplicateValueDataTypes", "duplicateValueDataTypes.dataTypes", pendingGroupStoreState);
             }
             else
@@ -292,7 +292,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
         currentEmptyGroups: DictionaryAsList,
         currentDuplicateSecondaryObjects: DoubleKeyedObject,
         allSecondaryObjects: { [key: string]: Group },
-        pathToSecondaryObjectsOnGroup: keyof SecondarydataTypeStoreStateKeys,
+        pathToPrimaryObjectsOnGroup: keyof SecondarydataTypeStoreStateKeys,
         pathToEmptySecondaryObjects: keyof SecondarydataTypeStoreStateKeys,
         pathToDuplicateDataTypes: keyof SecondarydataTypeStoreStateKeys,
         pathToDuplicateDataTypesDataTypes: keyof SecondarydataTypeStoreStateKeys,
@@ -308,13 +308,15 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
             if (!OH.has(group[primaryDataObjectCollection], primaryObjectID))
             {
-                pendingGroupState.addValue(pathToSecondaryObjectsOnGroup, primaryObjectID, true, group.id);
+                pendingGroupState.addValue(pathToPrimaryObjectsOnGroup, primaryObjectID, true, group.id);
             }
 
-            this.checkUpdateEmptySecondaryObject(
-                group.id, group[primaryDataObjectCollection], pathToEmptySecondaryObjects, currentEmptyGroups, pendingGroupState);
+            const primaryCollectionForSecondaryObject = pendingGroupState.getObject(pathToPrimaryObjectsOnGroup, group.id);
 
-            this.checkUpdateDuplicateSecondaryObjects(group, primaryDataObjectCollection,
+            this.checkUpdateEmptySecondaryObject(
+                group.id, primaryCollectionForSecondaryObject, pathToEmptySecondaryObjects, currentEmptyGroups, pendingGroupState);
+
+            this.checkUpdateDuplicateSecondaryObjects(group.id, primaryCollectionForSecondaryObject, primaryDataObjectCollection,
                 currentDuplicateSecondaryObjects, allSecondaryObjects, pathToDuplicateDataTypes, pathToDuplicateDataTypesDataTypes, pendingGroupState)
         });
 
@@ -328,13 +330,15 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
             if (OH.has(group[primaryDataObjectCollection], primaryObjectID))
             {
-                pendingGroupState.deleteValue(pathToSecondaryObjectsOnGroup, primaryObjectID, group.id);
+                pendingGroupState.deleteValue(pathToPrimaryObjectsOnGroup, primaryObjectID, group.id);
             }
 
-            this.checkUpdateEmptySecondaryObject(
-                group.id, group[primaryDataObjectCollection], pathToEmptySecondaryObjects, currentEmptyGroups, pendingGroupState);
+            const primaryCollectionForSecondaryObject = pendingGroupState.getObject(pathToPrimaryObjectsOnGroup, group.id);
 
-            this.checkUpdateDuplicateSecondaryObjects(group, primaryDataObjectCollection,
+            this.checkUpdateEmptySecondaryObject(
+                group.id, primaryCollectionForSecondaryObject, pathToEmptySecondaryObjects, currentEmptyGroups, pendingGroupState);
+
+            this.checkUpdateDuplicateSecondaryObjects(group.id, primaryCollectionForSecondaryObject, primaryDataObjectCollection,
                 currentDuplicateSecondaryObjects, allSecondaryObjects, pathToDuplicateDataTypes, pathToDuplicateDataTypesDataTypes, pendingGroupState);
         });
     }
@@ -400,8 +404,10 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
             }
         });
 
-        this.checkUpdateEmptySecondaryObject(group.id, group[primaryDataObjectCollection], pathToEmptySecondaryObjects, currentEmptyGroups, pendingGroupState);
-        this.checkUpdateDuplicateSecondaryObjects(group, primaryDataObjectCollection, currentDuplicateGroups, allSecondaryObjects, duplicateDataTypesPath,
+        const primaryCollectionOnSecondaryObject = pendingGroupState.getObject(pathToPrimaryDataObjectOnSecondaryDataObject, group.id);
+
+        this.checkUpdateEmptySecondaryObject(group.id, primaryCollectionOnSecondaryObject, pathToEmptySecondaryObjects, currentEmptyGroups, pendingGroupState);
+        this.checkUpdateDuplicateSecondaryObjects(group.id, primaryCollectionOnSecondaryObject, primaryDataObjectCollection, currentDuplicateGroups, allSecondaryObjects, duplicateDataTypesPath,
             duplicateDataTypesDataTypesPath, pendingGroupState);
     }
 }

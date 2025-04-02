@@ -147,7 +147,7 @@ export default defineComponent({
                     key: key.value
                 };
 
-                ctx.emit("onAuthenticationSuccessful", JSON.vaulticStringify(vaulticKey));
+                ctx.emit("onAuthenticationSuccessful", JSON.stringify(vaulticKey));
             }
         }
 

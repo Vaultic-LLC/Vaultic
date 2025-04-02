@@ -126,7 +126,7 @@ export class OrganizationStore extends Store<StoreState, StateKeys>
             addedMembers
         };
 
-        const response = await api.server.organization.createOrganization(masterKey, JSON.vaulticStringify(data));
+        const response = await api.server.organization.createOrganization(masterKey, JSON.stringify(data));
         if (!response.success || !response.value?.Success)
         {
             defaultHandleFailedResponse(response);
@@ -178,7 +178,7 @@ export class OrganizationStore extends Store<StoreState, StateKeys>
             removedMembers
         };
 
-        const response = await api.server.organization.updateOrganization(masterKey, JSON.vaulticStringify(updateOrganizationData));
+        const response = await api.server.organization.updateOrganization(masterKey, JSON.stringify(updateOrganizationData));
         if (!response.success || !response.value?.Success)
         {
             defaultHandleFailedResponse(response);

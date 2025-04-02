@@ -13,6 +13,7 @@ import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
 import { GroupStoreState } from "./GroupStore";
 import { CurrentAndSafeStructure, defaultValueStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import { isOld } from "../../Helpers/DataTypeHelper";
 
 export interface IValueStoreState extends StoreState
 {
@@ -246,7 +247,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
     private valueIsSafe(allDuplicates: DoubleKeyedObject, value: ReactiveValue)
     {
-        return !value.isOld() && !value.w && !OH.has(allDuplicates, value.id);
+        return !isOld(value.t) && !value.w && !OH.has(allDuplicates, value.id);
     }
 }
 
@@ -279,7 +280,7 @@ export class ReactiveValueStore extends ValueStore
 
         this.internalNameValuePairs = computed(() => Object.values(this.state.v));
 
-        this.internalOldNameValuePairs = computed(() => OH.mapWhere(this.state.v, (_, v) => v.isOld(), (k, _) => k));
+        this.internalOldNameValuePairs = computed(() => OH.mapWhere(this.state.v, (_, v) => isOld(v.t), (k, _) => k));
 
         this.internalWeakPassphraseValues = computed(() =>
             OH.mapWhere(this.state.v, (_, v) => v.y == NameValuePairType.Passphrase && v.w, (k, _) => k));

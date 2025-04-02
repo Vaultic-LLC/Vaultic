@@ -51,7 +51,7 @@ export default defineComponent({
     setup(props)
     {
         const refreshKey: Ref<string> = ref("");
-        const deviceState: Ref<ClientDevice> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultClientDevice());
+        const deviceState: Ref<ClientDevice> = ref(props.model ? JSON.parse(JSON.stringify(props.model)) : defaultClientDevice());
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
 
         const buttonText: ComputedRef<string> = computed(() => props.creating ? 'Register': 'Save');

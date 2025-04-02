@@ -100,7 +100,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 key: masterKey
             };
 
-            masterKeyToUse = JSON.vaulticStringify(vaulticKey);
+            masterKeyToUse = JSON.stringify(vaulticKey);
         }
 
         if (await user.verify(masterKeyToUse))
@@ -131,7 +131,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 key: masterKey
             };
 
-            masterKeyToUse = JSON.vaulticStringify(vaulticKey);
+            masterKeyToUse = JSON.stringify(vaulticKey);
         }
 
         if (await user.verify(masterKeyToUse))
@@ -266,13 +266,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const appStoreState = new AppStoreState().makeReactive();
             appStoreState.appStoreStateID = response.AppStoreStateID!;
             appStoreState.userID = response.UserID!;
-            appStoreState.state = JSON.vaulticStringify(defaultAppStoreState);
+            appStoreState.state = JSON.stringify(defaultAppStoreState);
             user.appStoreState = appStoreState;
 
             const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
             userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
             userPreferencesStoreState.userID = response.UserID!;
-            userPreferencesStoreState.state = JSON.vaulticStringify(defaultUserPreferencesStoreState);
+            userPreferencesStoreState.state = JSON.stringify(defaultUserPreferencesStoreState);
             user.userPreferencesStoreState = userPreferencesStoreState;
 
             const vaults = await environment.repositories.vaults.createNewVault(serializedMasterKey, "Personal", false);
@@ -366,7 +366,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     key: masterKey
                 };
 
-                keyToUse = JSON.vaulticStringify(vaulticKey);
+                keyToUse = JSON.stringify(vaulticKey);
             }
 
             try
@@ -532,7 +532,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                         isArchived: userVaults[i].isArchived,
                         lastUsed: userVaults[i].lastUsed,
                         type: getVaultType(userVaults[i]),
-                        passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).o ?? {}
+                        passwordsByDomain: (JSON.parse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).o ?? {}
                     });
                 }
 
@@ -547,7 +547,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 }
 
                 userData.success = true;
-                return TypedMethodResponse.success(JSON.vaulticStringify(userData));
+                return TypedMethodResponse.success(JSON.stringify(userData));
 
                 // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
                 async function setCurrentVault(id: number, setAsLastUsed: boolean)

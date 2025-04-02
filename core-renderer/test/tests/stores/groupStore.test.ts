@@ -212,7 +212,7 @@ groupStoreSuite.tests.push({
             ctx.assertTruthy(`Group Exists for type ${type}`, retrievedGroup);
             ctx.assertTruthy(`${type} has group`, retrievedPrimaryObject.value.groups.value.has(group.id.value));
 
-            const groupWithoutPrimaryObject: Group = JSON.vaulticParse(JSON.vaulticStringify(group));
+            const groupWithoutPrimaryObject: Group = JSON.parse(JSON.stringify(group));
             groupWithoutPrimaryObject[property].value = new Map();
 
             await app.currentVault.groupStore.updateGroup(masterKey, groupWithoutPrimaryObject);
@@ -223,7 +223,7 @@ groupStoreSuite.tests.push({
             ctx.assertTruthy(`Group doesn't have ${type} id`, !retrievedGroup.value[property].value.has(retrievedPrimaryObject.value.id.value));
             ctx.assertTruthy(`${type} doesn't have group id`, !retrievedPrimaryObject.value.groups.value.has(group.id.value));
 
-            const groupWithPrimaryObject: Group = JSON.vaulticParse(JSON.vaulticStringify(groupWithoutPrimaryObject));
+            const groupWithPrimaryObject: Group = JSON.parse(JSON.stringify(groupWithoutPrimaryObject));
             groupWithPrimaryObject[property].value.set(primaryObject.id.value, Field.create(primaryObject.id.value));
 
             await app.currentVault.groupStore.updateGroup(masterKey, groupWithPrimaryObject);

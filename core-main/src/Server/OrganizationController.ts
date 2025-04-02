@@ -24,7 +24,7 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
                 return TypedMethodResponse.fail();
             }
 
-            const orgData: CreateOrganizationData = JSON.vaulticParse(createOrganizationData);
+            const orgData: CreateOrganizationData = JSON.parse(createOrganizationData);
             const addedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, environment.cache.currentUser.userID,
                 environment.cache.currentUser.privateSigningKey, orgData.addedVaults.map(v => v.userVaultID), orgData.addedMembers);
 
@@ -46,7 +46,7 @@ export function createOrganizationController(axiosHelper: AxiosHelper): Organiza
                 return TypedMethodResponse.fail();
             }
 
-            const parsedUpdatedOrgData: UpdateOrganizationData = JSON.vaulticParse(updateOrganizationData);
+            const parsedUpdatedOrgData: UpdateOrganizationData = JSON.parse(updateOrganizationData);
 
             let addedVaultModifiedOrgMembers: AddedVaultInfo;
             let removedVaultIDs: number[] = [];

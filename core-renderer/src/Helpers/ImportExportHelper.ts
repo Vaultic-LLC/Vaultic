@@ -21,7 +21,7 @@ export async function exportLogs(color: string)
 {
     app.popups.showLoadingIndicator(color, "Exporting Logs");
 
-    const data = JSON.vaulticParse(await api.repositories.logs.getExportableLogData());
+    const data = JSON.parse(await api.repositories.logs.getExportableLogData());
     const formattedData = await exportData(data);
 
     const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);

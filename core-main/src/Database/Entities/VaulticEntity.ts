@@ -25,7 +25,7 @@ const VaulticHandler =
         if (typeof newValue != 'object' && !obj.propertiesToSync.includes(prop) && obj.backupableProperties().includes(prop))
         {
             obj.propertiesToSync.push(prop);
-            obj.serializedPropertiesToSync = JSON.vaulticStringify(obj.updatedProperties);
+            obj.serializedPropertiesToSync = JSON.stringify(obj.updatedProperties);
         }
 
         obj[prop] = newValue;
@@ -65,7 +65,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     @AfterLoad()
     afterLoad()
     {
-        this.propertiesToSync = JSON.vaulticParse(this.serializedPropertiesToSync);
+        this.propertiesToSync = JSON.parse(this.serializedPropertiesToSync);
     }
 
     identifier(): number 
@@ -208,9 +208,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return false;
         }
 
-        const seriazliedMakeup = JSON.vaulticStringify(signatureMakeup);
-
-        console.log(`Signing: ${seriazliedMakeup}`);
+        const seriazliedMakeup = JSON.stringify(signatureMakeup);
 
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, seriazliedMakeup);
         if (!hashedEntity.success)
@@ -270,7 +268,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         console.time("19");
         const serializedMakeup = JSON.stringify(signatureMakeup);
 
-        console.log(`Verifying: ${serializedMakeup}`);
         console.timeEnd("19");
         console.time("20");
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);

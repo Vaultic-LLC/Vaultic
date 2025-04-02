@@ -41,7 +41,7 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
         }
 
         const callStack = `${method.name}\n${Error().stack}`;
-        await environment.repositories.logs.log(undefined, `Exception: ${JSON.vaulticStringify(e)}`, callStack);
+        await environment.repositories.logs.log(undefined, `Exception: ${JSON.stringify(e)}`, callStack);
     }
 
     await onFail?.();
@@ -113,8 +113,6 @@ export async function getCurrentUserDataIdentifiersAndKeys(masterKey: string, us
 // Only call within a method wrapped in safetifyMethod
 export async function backupData(masterKey: string, dataToBackup?: UserDataPayload)
 {
-    // TODO: won't this get overriden by the methods below? That probably isn't a big deal since dataToBackup is only applied 
-    // if we are re backing up so there can't be any new changes, but still kind of wack
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: (dataToBackup ?? {}) };
     console.time("6");
     const userToBackup = await environment.repositories.users.getEntityThatNeedsToBeBackedUp(masterKey);
@@ -236,6 +234,8 @@ export async function checkMergeMissingData(
     transaction?: Transaction,
     backingUpData?: UserDataPayload): Promise<boolean>
 {
+    console.log(JSON.stringify(currentLocalData));
+    console.log(`\n${JSON.stringify(serverUserDataPayload)}`);
     transaction = transaction ?? new Transaction();
     const user: User | null = await environment.repositories.users.findByEmail(masterKey, email);
 
@@ -243,6 +243,7 @@ export async function checkMergeMissingData(
     if (user)
     {
         userChangeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsForUser(masterKey, user.userID);
+        console.log(`User change trackings: ${JSON.stringify(userChangeTrackings)}`);
     }
 
     let needsToRePushData = false;
@@ -255,6 +256,7 @@ export async function checkMergeMissingData(
             // The user was never successfully created
             if (!User.isValid(serverUserDataPayload.user))
             {
+                console.log(`Creating new user: ${JSON.stringify(serverUserDataPayload.user)}`);
                 return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, transaction)).success;
             }
 
@@ -265,7 +267,7 @@ export async function checkMergeMissingData(
         }
         else
         {
-            const response = await environment.repositories.users.updateFromServer(masterKey, currentLocalData.userChanges, serverUserDataPayload.user ?? {}, serverUserDataPayload.userChanges,
+            const response = await environment.repositories.users.updateFromServer(masterKey, currentLocalData.userChanges, serverUserDataPayload?.user ?? {}, serverUserDataPayload?.userChanges,
                 userChangeTrackings, dataToBackup.userChanges, transaction);
 
             if (response?.needsToRePushData)
@@ -310,7 +312,7 @@ export async function checkMergeMissingData(
         }
     }
 
-    console.log(`merging vault changes: ${JSON.stringify(serverUserDataPayload.vaultChanges)}`);
+    console.log(`merging vault changes: ${JSON.stringify(serverUserDataPayload?.vaultChanges)}`);
     // do these seperately from userVaults since they don't match 1-1, i.e. you can have the entire store from one userVault but only some changes for another
     if (serverUserDataPayload?.vaultChanges && serverUserDataPayload.vaultChanges.length > 0)
     {
@@ -320,8 +322,8 @@ export async function checkMergeMissingData(
             const vaultIndex = currentLocalData.vaultChanges?.findIndex(v => v.vaultID == serverVaultChanges.vaultID) ?? -1;
             if (vaultIndex >= 0)
             {
-                const serverVaultIndex = serverUserDataPayload.vaults?.findIndex(v => v.vaultID == serverVaultChanges.vaultID) ?? -1;
-                let serverVault = serverVaultIndex >= 0 ? serverUserDataPayload.vaults[serverVaultIndex] : undefined;
+                const serverVaultIndex = serverUserDataPayload?.vaults?.findIndex(v => v.vaultID == serverVaultChanges.vaultID) ?? -1;
+                let serverVault = serverVaultIndex >= 0 ? serverUserDataPayload?.vaults?.[serverVaultIndex] : undefined;
 
                 let changeTrackings: ChangeTracking[] = [];
                 if (user)
@@ -368,15 +370,16 @@ export async function checkMergeMissingData(
     else
     {
         console.log('no server vault changes');
-        const vaultIDs = currentLocalData.vaults.map(v => v.vaultID);
+        const vaultIDs = currentLocalData.vaults?.map(v => v.vaultID) ?? [];
+        console.log(`Vaults: ${vaultIDs}`);
         for (let i = 0; i < vaultIDs.length; i++)
         {
             const currentVaultIndex = currentLocalData.vaultChanges?.findIndex(v => v.vaultID == vaultIDs[i]) ?? -1;
             if (currentVaultIndex >= 0)
             {
                 const currentVaultChanges = currentLocalData.vaultChanges![currentVaultIndex];
-                const serverVaultIndex = serverUserDataPayload.vaults?.findIndex(v => v.vaultID == vaultIDs[i]) ?? -1;
-                let serverVault = serverVaultIndex >= 0 ? serverUserDataPayload.vaults[serverVaultIndex] : undefined;
+                const serverVaultIndex = serverUserDataPayload?.vaults?.findIndex(v => v.vaultID == vaultIDs[i]) ?? -1;
+                let serverVault = serverVaultIndex >= 0 ? serverUserDataPayload?.vaults?.[serverVaultIndex] : undefined;
 
                 let changeTrackings: ChangeTracking[] = [];
                 if (user)
@@ -448,7 +451,7 @@ export async function checkMergeMissingData(
     let userVaultChanges: { [key: number]: ChangeTracking[] } | undefined = undefined;
     if (user)
     {
-        const userVaults = currentLocalData.userVaults.map(uv => uv.userVaultID);
+        const userVaults = currentLocalData.userVaults?.map(uv => uv.userVaultID) ?? [];
         if (userVaults.length > 0)
         {
             userVaultChanges = await environment.repositories.changeTrackings.getChangeTrackingsForUserVault(masterKey, user.userID, userVaults);
@@ -465,8 +468,8 @@ export async function checkMergeMissingData(
 
             if (userVaultChangesIndex >= 0)
             {
-                const serverUserVaultIndex = serverUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID == serverUserVaultChanges.userVaultID) ?? -1;
-                let serverUserVault = serverUserVaultIndex >= 0 ? serverUserDataPayload.userVaults[serverUserVaultIndex] : undefined;
+                const serverUserVaultIndex = serverUserDataPayload?.userVaults?.findIndex(uv => uv.userVaultID == serverUserVaultChanges.userVaultID) ?? -1;
+                let serverUserVault = serverUserVaultIndex >= 0 ? serverUserDataPayload?.userVaults[serverUserVaultIndex] : undefined;
 
                 let currentUserVaultToBackupIndex = dataToBackup.userVaultChanges?.findIndex(uv => uv.userVaultID == currentLocalData.userVaultChanges![userVaultChangesIndex].userVaultID) ?? -1;
                 let currentUserVaultToBackup = undefined;
@@ -511,8 +514,8 @@ export async function checkMergeMissingData(
             const currentUserVaultIndex = currentLocalData.userVaultChanges?.findIndex(v => v.userVaultID.toString() == userVaultIDs[i]) ?? -1;
             if (currentUserVaultIndex >= 0)
             {
-                const serverUserVaultIndex = serverUserDataPayload.userVaults?.findIndex(uv => uv.userVaultID.toString() == userVaultIDs[i]) ?? -1;
-                let serverUserVault = serverUserVaultIndex >= 0 ? serverUserDataPayload.userVaults[serverUserVaultIndex] : undefined;
+                const serverUserVaultIndex = serverUserDataPayload?.userVaults?.findIndex(uv => uv.userVaultID.toString() == userVaultIDs[i]) ?? -1;
+                let serverUserVault = serverUserVaultIndex >= 0 ? serverUserDataPayload?.userVaults[serverUserVaultIndex] : undefined;
 
                 let currentUserVaultToBackupIndex = dataToBackup.userVaultChanges?.findIndex(uv => uv.userVaultID == currentLocalData.userVaultChanges![currentUserVaultIndex].userVaultID) ?? -1;
                 let currentUserVaultToBackup = undefined;
@@ -565,7 +568,7 @@ export async function checkMergeMissingData(
                 const userVault = currentLocalData.userVaults?.filter(uv => uv.userVaultID == serverUserVault.userVaultID);
                 if (!userVault || userVault.length == 0)
                 {
-                    const parsedVaultKey: SignedVaultKey = JSON.vaulticParse(serverUserVault.vaultKey);
+                    const parsedVaultKey: SignedVaultKey = JSON.parse(serverUserVault.vaultKey);
 
                     // something went wrong
                     if (parsedVaultKey.algorithm != Algorithm.Vaultic_Key_Share)
@@ -655,7 +658,6 @@ export async function checkMergeMissingData(
 
     // we've handled all trackedChanges. Clear them
     environment.repositories.changeTrackings.clearChangeTrackings(transaction);
-
     if (!(await transaction.commit()))
     {
         console.log('failed to commit transaction');

@@ -120,6 +120,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     private internalActiveDataType: ComputedRef<DataType>;
 
     private internalIsSyncing: Ref<boolean>;
+    private internalForceReadOnly: Ref<boolean>;
 
     get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.s; }
@@ -154,6 +155,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     get activeDataType() { return this.internalActiveDataType.value; }
     get isSyncing() { return this.internalIsSyncing; }
     set isSyncingVal(val: boolean) { this.internalIsSyncing.value = val; }
+    get forceReadOnly() { return this.internalForceReadOnly; }
+    set forceReadOnlyVal(val: boolean) { this.internalForceReadOnly.value = val; }
 
     constructor()
     {
@@ -211,6 +214,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         this.internalActiveDataType = computed(() => app.isVaultView ? app.activePasswordValuesTable : app.activeDeviceOrganizationsTable);
 
         this.internalIsSyncing = ref(false);
+        this.internalForceReadOnly = ref(false);
     }
 
     protected defaultState()
@@ -331,7 +335,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             addedMembers
         };
 
-        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.vaulticStringify(updateVaultData));
+        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.stringify(updateVaultData));
         if (!result.success)
         {
             defaultHandleFailedResponse(result);
@@ -360,7 +364,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             isReadOnly: vaultData.isReadOnly,
             lastUsed: setAsActive,
             type: getVaultType(vaultData),
-            passwordsByDomain: (JSON.vaulticParse(vaultData.passwordStoreState) as PasswordStoreState).o
+            passwordsByDomain: (JSON.parse(vaultData.passwordStoreState) as PasswordStoreState).o
         });
 
         this.internalUserVaults.value = temp;
@@ -388,7 +392,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             removedMembers: removedMembers,
         };
 
-        const success = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
+        const success = await api.repositories.vaults.updateVault(masterKey, JSON.stringify(updateVaultData));
         if (!success)
         {
             return false;
@@ -427,7 +431,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             isArchived: isArchived
         };
 
-        const response = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
+        const response = await api.repositories.vaults.updateVault(masterKey, JSON.stringify(updateVaultData));
         if (!response.success)
         {
             defaultHandleFailedResponse(response);
@@ -620,7 +624,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             return false;
         }
 
-        const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
+        const parsedUserData: UserData = JSON.parse(userData.value!);
 
         this.internalUserInfo.value = parsedUserData.userInfo;
         await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);

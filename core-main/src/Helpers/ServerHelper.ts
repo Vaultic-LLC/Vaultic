@@ -98,7 +98,7 @@ async function logUserIn(masterKey: string, email: string,
                 key: masterKey
             };
 
-            masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+            masterKeyVaulticKey = JSON.stringify(vaulticKey);
         }
 
         let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest);

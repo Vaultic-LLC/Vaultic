@@ -90,7 +90,7 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
             postData.Vaults.push(vaultPostData);
         }
 
-        const response = await api.server.vault.getVaultDataBreaches(JSON.vaulticStringify(postData));
+        const response = await api.server.vault.getVaultDataBreaches(JSON.stringify(postData));
         if (!response.Success)
         {
             this.internalFailedToLoadDataBreaches.value = true;
@@ -131,7 +131,7 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
             })
         };
 
-        const response = await api.server.vault.checkPasswordsForBreach(JSON.vaulticStringify(checkPasswordsForBreachData));
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.stringify(checkPasswordsForBreachData));
         if (!response.Success)
         {
             return false;
@@ -168,7 +168,7 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
                 }]
         };
 
-        const response = await api.server.vault.checkPasswordsForBreach(JSON.vaulticStringify(checkPasswordForBreachData));
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.stringify(checkPasswordForBreachData));
         if (!response.Success)
         {
             return false;

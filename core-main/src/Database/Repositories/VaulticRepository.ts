@@ -111,7 +111,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to insert entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to insert entity\n ${e}`);
             return false;
@@ -132,7 +132,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert existing entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to insert existing entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to insert existing entity\n ${e}`);
             return false;
@@ -187,7 +187,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to update entity\n ${e}`);
         }
@@ -204,7 +204,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to override entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to override entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to override entity\n ${JSON.stringify(entity)}, \n${e}`);
             return false;
@@ -239,7 +239,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to reset tracking entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to reset tracking entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to reset tracking\n ${e}`);
         }
@@ -258,7 +258,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to delete entity: ${JSON.vaulticStringify(findBy)}`)
+            console.log(`Filed to delete entity: ${JSON.stringify(findBy)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to delete entity\n ${e}`);
         }

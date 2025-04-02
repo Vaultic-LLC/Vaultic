@@ -51,7 +51,7 @@ export default defineComponent({
         const memberTable: Ref<MemberTableComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref('');
 
-        const orgState: Ref<Organization> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultOrganization());
+        const orgState: Ref<Organization> = ref(props.model ? JSON.parse(JSON.stringify(props.model)) : defaultOrganization());
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.v.p);
         
         const emptyMessage: Ref<string> = ref(`You currently don't have any Members in this Organization. Click '+' to add one`);

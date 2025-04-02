@@ -39,12 +39,12 @@ export default defineComponent({
     {
         const hoveringColorPalette: Ref<number> = ref(-1);
         // copy the object so that we don't edit the original one. Also needed for change tracking
-        const colorPaletteModel: Ref<ColorPalette> = ref(JSON.vaulticParse(JSON.vaulticStringify(props.model)));
+        const colorPaletteModel: Ref<ColorPalette> = ref(JSON.parse(JSON.stringify(props.model)));
         const currentColorPalettes: ComputedRef<ColorPalette[]> = computed(() => app.colorPalettes.filter(cp => cp.i));
 
         function cloneColorPalette(colorPalette: ColorPalette)
         {
-            colorPaletteModel.value = JSON.vaulticParse(JSON.vaulticStringify(colorPalette));
+            colorPaletteModel.value = JSON.parse(JSON.stringify(colorPalette));
             colorPaletteModel.value.id = props.model.id;
         }
 

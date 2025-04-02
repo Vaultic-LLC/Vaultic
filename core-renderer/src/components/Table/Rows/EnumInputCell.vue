@@ -6,7 +6,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
 
 import EnumInputField from '../../InputFields/EnumInputField.vue';
 
@@ -19,7 +19,7 @@ export default defineComponent({
 	props: ["model", "field", "data", "state", "isFielded"],
 	setup(props)
 	{
-        const modelField: Ref<any> = ref(props.isFielded === false ? props.model[props.field] : props.model[props.field]);
+        const modelField: Ref<any> = ref(props.model[props.field]);
         const color: ComputedRef<string> = computed(() => props.data["color"]);
         const state: ComputedRef<any> = computed(() => props.state);
         const label: ComputedRef<string> = computed(() => props.data["label"]);
@@ -28,6 +28,11 @@ export default defineComponent({
         {
             state.value.filterType = val;
         }
+
+        watch(() => modelField.value, (newValue) =>
+        {
+            props.model[props.field] = newValue;
+        });
 
 		return {
             color,

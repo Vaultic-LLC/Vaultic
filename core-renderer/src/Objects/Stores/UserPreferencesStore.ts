@@ -223,7 +223,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
         const state = await api.repositories.users.getLastUsedUserPreferences();
         if (state)
         {
-            const parsedState: UserPreferencesStoreState = JSON.vaulticParse(state);
+            const parsedState: UserPreferencesStoreState = JSON.parse(state);
             if (parsedState.c)
             {
                 Object.assign(this.state, parsedState);

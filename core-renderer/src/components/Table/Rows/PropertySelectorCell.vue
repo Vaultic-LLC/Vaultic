@@ -51,6 +51,11 @@ export default defineComponent({
             }
         }
 
+        watch(() => modelField.value, (newValue) =>
+        {
+            props.model[props.field] = newValue;
+        });
+
 		return {
             color,
             modelField,

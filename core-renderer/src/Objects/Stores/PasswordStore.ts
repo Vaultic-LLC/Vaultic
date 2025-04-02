@@ -13,6 +13,7 @@ import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
 import { GroupStoreState } from "./GroupStore";
 import { CurrentAndSafeStructure, defaultPasswordStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import { isOld } from "../../Helpers/DataTypeHelper";
 
 export interface IPasswordStoreState extends StoreState
 {
@@ -352,7 +353,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     private passwordIsSafe(duplicateDataTypes: DoubleKeyedObject, password: ReactivePassword)
     {
-        return !password.isOld() && !password.c && !password.w && !OH.has(duplicateDataTypes, password.id);
+        return !isOld(password.t) && !password.c && !password.w && !OH.has(duplicateDataTypes, password.id);
     }
 
     private async setPasswordProperties(masterKey: string, password: Password): Promise<boolean>
@@ -456,7 +457,7 @@ export class ReactivePasswordStore extends PasswordStore
 
         this.internalPasswords = computed(() => Object.values(this.state.p));
 
-        this.internalOldPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.isOld(), (k, _) => k));
+        this.internalOldPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => isOld(v.t), (k, _) => k));
         this.internalWeakPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.w, (k, _) => k));
         this.internalContainsLoginPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.c, (k, _) => k));
 

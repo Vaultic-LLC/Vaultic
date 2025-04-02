@@ -132,7 +132,7 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
 
     /**
      * Used to create a custom Reactive value for binding in vue. Needed since Ref and Reactive use their own proxy
-     * and we still want to have our own as well. This allows both
+     * but we still want to have our own to track changes as well. This allows both
      * @param identifier The path to the object
      * @param obj The object to make a custom ref for
      * @param ids Ids to the path of the object
@@ -177,17 +177,19 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
             return;
         }
 
+        const objToUes = this.checkCleanObject(updatedObj);
+
         const currentObj = getObjectFromPath(path, this.state);
         const manager = PropertyManagerConstructor.getFor(currentObj);
 
         for (let i = 0; i < proxyChanges.length; i++)
         {
-            if (manager.get(proxyChanges[i], currentObj) === manager.get(proxyChanges[i], updatedObj))
+            if (manager.get(proxyChanges[i], currentObj) === manager.get(proxyChanges[i], objToUes))
             {
                 continue;
             }
 
-            manager.set(proxyChanges[i], manager.get(proxyChanges[i], updatedObj), currentObj);
+            manager.set(proxyChanges[i], manager.get(proxyChanges[i], objToUes), currentObj);
 
             if (!this.changes[path])
             {
@@ -196,7 +198,7 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
 
             this.changes[path].push({
                 t: StoreStateChangeType.Update,
-                v: manager.get(proxyChanges[i], updatedObj),
+                v: manager.get(proxyChanges[i], objToUes),
                 p: proxyChanges[i]
             });
         }
@@ -210,16 +212,18 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
             this.changes[path] = [];
         }
 
+        const valueToUse = this.checkCleanObject(value);
+
         this.changes[path].push({
             t: StoreStateChangeType.Add,
-            v: value,
+            v: valueToUse,
             p: property
         });
 
         const obj = getObjectFromPath(path, this.state);
         const manager = PropertyManagerConstructor.getFor(obj);
 
-        manager.set(property, value, obj);
+        manager.set(property, valueToUse, obj);
     }
 
     updateValue(identifier: keyof U, property: string, value: any, ...ids: string[])
@@ -230,16 +234,18 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
             this.changes[path] = [];
         }
 
+        const valueToUse = this.checkCleanObject(value);
+
         this.changes[path].push({
             t: StoreStateChangeType.Update,
-            v: value,
+            v: valueToUse,
             p: property
         });
 
         const obj = getObjectFromPath(path, this.state);
         const manager = PropertyManagerConstructor.getFor(obj);
 
-        manager.set(property, value, obj);
+        manager.set(property, valueToUse, obj);
     }
 
     deleteValue(identifier: keyof U, property: string, ...ids: string[])
@@ -291,6 +297,18 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
         }
 
         return true;
+    }
+
+    private checkCleanObject(value: any): any
+    {
+        if (typeof value === "object")
+        {
+            // Break any references to this object so that any updates done after adding it
+            // don't accidentally alter the object in the store state
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        return value;
     }
 }
 

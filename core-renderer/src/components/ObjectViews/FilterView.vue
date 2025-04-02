@@ -132,6 +132,9 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Filter");
             if (props.creating)
             {
+                // just add all our conditions here so that the entire filter object can get tracked as an add
+                addedConditions.forEach(c => filterState.c[c.id] = c);
+
                 if (await app.currentVault.filterStore.addFilter(key, filterState, filterStoreState))
                 {
                     // This won't track changes within the pending store since we didn't re create the 
@@ -140,7 +143,7 @@ export default defineComponent({
 
                     // TODO: this is causing issues since the same object reference is saved to the store later on.
                     // Find another way to do this
-                    //Object.assign(filterState, defaultFilter(filterState.t));
+                    Object.assign(filterState, defaultFilter(filterState.t));
 
                     allConditions = {};
                     addedConditions = [];
@@ -248,9 +251,9 @@ export default defineComponent({
                 conditionPath = 'valueDataTypes.conditions.condition';
             }
 
-            OH.forEachValue(filter.c, (c, i) =>
+            OH.forEachValue(filter.c, (c) =>
             {
-                filter.c[i!] = filterStoreState.createCustomRef(conditionPath, c, filter.id, c.id);
+                filter.c[c.id] = filterStoreState.createCustomRef(conditionPath, c, filter.id, c.id);
             });
             
             // Do this last so that updating setting the conditions doesn't actually track them as a change

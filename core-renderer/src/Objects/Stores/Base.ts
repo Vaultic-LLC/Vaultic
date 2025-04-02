@@ -9,6 +9,7 @@ import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, Secondar
 import { Algorithm } from "@vaultic/shared/Types/Keys";
 import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import app from "./AppStore";
 
 export type StoreEvents = "onChanged";
 
@@ -38,14 +39,14 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
     public getBackupableState(): any
     {
         const state: { [key: string]: any } = {};
-        state[this.internalStoreType] = JSON.vaulticStringify(this.getState());
+        state[this.internalStoreType] = JSON.stringify(this.getState());
 
         return state;
     }
 
     public cloneState(): T
     {
-        const state: T = JSON.vaulticParse(JSON.vaulticStringify(this.getState()));
+        const state: T = JSON.parse(JSON.stringify(this.getState()));
         this.preAssignState(state);
 
         return state;
@@ -93,7 +94,7 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
     {
         try
         {
-            const state = JSON.vaulticParse(jsonString);
+            const state = JSON.parse(jsonString);
             this.initalizeNewState(state);
 
             return;
@@ -535,22 +536,23 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
     extends DataTypeStore<T, K, U>
 {
     private getSecondaryDataObjectDuplicates<T extends ISecondaryDataObject>(
-        secondaryDataObject: T,
+        currentSecondaryDataObjectID: string,
+        currentSecondaryDataObjectPrimaryObjects: DictionaryAsList,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         allSecondaryDataObjects: { [key: string]: T }): string[]
     {
         // we don't have any primary objects so grab others that are also empty
-        if (OH.size(secondaryDataObject[primaryDataObjectCollection]) == 0)
+        if (OH.size(currentSecondaryDataObjectPrimaryObjects) == 0)
         {
             return OH.mapWhere(allSecondaryDataObjects,
-                (k, v) => k != secondaryDataObject.id && OH.size(v[primaryDataObjectCollection]) == 0, (k) => k);
+                (k, v) => k != currentSecondaryDataObjectID && OH.size(v[primaryDataObjectCollection]) == 0, (k) => k);
         }
 
         // only need to check others that have the same length
         let potentiallyDuplicateObjects: T[] = OH.mapWhere(allSecondaryDataObjects,
-            (_, v) => v[primaryDataObjectCollection].size == secondaryDataObject[primaryDataObjectCollection].size, (_, v) => v);
+            (k, v) => k != currentSecondaryDataObjectID && OH.size(v[primaryDataObjectCollection]) == OH.size(currentSecondaryDataObjectPrimaryObjects), (_, v) => v);
 
-        for (const [key, _] of Object.entries(secondaryDataObject[primaryDataObjectCollection]))
+        for (const [key, _] of Object.entries(currentSecondaryDataObjectPrimaryObjects))
         {
             // we've filtered out all secondary objects, aka there aren't any duplicates. We can stop checking
             if (potentiallyDuplicateObjects.length == 0)
@@ -567,7 +569,8 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
 
     /**
      * checks / handles duplicates for a single filter or group
-     * @param secondaryDataObject The current secondary object we are checking duplicates for
+     * @param currentSecondaryDataObjectID The ID of the secondary object we are checking duplicates for
+     * @param currentSecondaryDataObjectPrimaryObjects The primary objects of the secondary object we are checking duplicates for
      * @param primaryDataObjectCollection The collection of primary objects we are checking duplicate for, either "p" or "v"
      * @param currentDuplicateSecondaryObjects All the current duplicate secondary objects, either duplicatePasswordDataTypes or duplicateValueDataTypes
      * @param allSecondaryDataObjects All current secondary objects, either passwordDataTypes or valueDataTypes
@@ -577,7 +580,8 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
      * @returns 
      */
     protected checkUpdateDuplicateSecondaryObjects<D extends Filter | Group>(
-        secondaryDataObject: D,
+        currentSecondaryDataObjectID: string,
+        currentSecondaryDataObjectPrimaryObjects: DictionaryAsList,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
         currentDuplicateSecondaryObjects: DoubleKeyedObject,
         allSecondaryDataObjects: { [key: string]: D },
@@ -586,30 +590,30 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
         pendingStoreState: PendingStoreState<T, K>)
     {
         const potentiallyNewDuplicateSecondaryObject: string[] =
-            this.getSecondaryDataObjectDuplicates(secondaryDataObject, primaryDataObjectCollection, allSecondaryDataObjects);
+            this.getSecondaryDataObjectDuplicates(currentSecondaryDataObjectID, currentSecondaryDataObjectPrimaryObjects, primaryDataObjectCollection, allSecondaryDataObjects);
 
-        const hasDuplicatesForCurrentScondaryObject = OH.has(currentDuplicateSecondaryObjects, secondaryDataObject.id);
+        const hasDuplicatesForCurrentScondaryObject = OH.has(currentDuplicateSecondaryObjects, currentSecondaryDataObjectID);
 
         // there are no duplicate secondary objects anywhere, so nothing to do
         if (potentiallyNewDuplicateSecondaryObject.length == 0 &&
-            (!hasDuplicatesForCurrentScondaryObject || OH.size(currentDuplicateSecondaryObjects[secondaryDataObject.id]) == 0))
+            (!hasDuplicatesForCurrentScondaryObject || OH.size(currentDuplicateSecondaryObjects[currentSecondaryDataObjectID]) == 0))
         {
             return;
         }
 
         const addedDuplicateSeconaryObjects: string[] = potentiallyNewDuplicateSecondaryObject.filter(
-            o => !hasDuplicatesForCurrentScondaryObject || !OH.has(currentDuplicateSecondaryObjects[secondaryDataObject.id], o));
+            o => !hasDuplicatesForCurrentScondaryObject || !OH.has(currentDuplicateSecondaryObjects[currentSecondaryDataObjectID], o));
 
         const removedDuplicateSecondaryObjects: string[] | undefined = !hasDuplicatesForCurrentScondaryObject ? [] :
-            OH.mapWhere(currentDuplicateSecondaryObjects[secondaryDataObject.id], (k, _) => !potentiallyNewDuplicateSecondaryObject.includes(k), (k, _) => k);
+            OH.mapWhere(currentDuplicateSecondaryObjects[currentSecondaryDataObjectID], (k, _) => !potentiallyNewDuplicateSecondaryObject.includes(k), (k, _) => k);
 
 
         let deleteAllForThisDuplicates = false;
         // we don't have any duplicates left, delete the entire object for this secondary data object
-        if ((addedDuplicateSeconaryObjects.length + OH.size(currentDuplicateSecondaryObjects[secondaryDataObject.id]) - removedDuplicateSecondaryObjects.length) == 0)
+        if ((addedDuplicateSeconaryObjects.length + OH.size(currentDuplicateSecondaryObjects[currentSecondaryDataObjectID]) - removedDuplicateSecondaryObjects.length) == 0)
         {
             deleteAllForThisDuplicates = true;
-            pendingStoreState.deleteValue(duplicateDataTypesPath, secondaryDataObject.id);
+            pendingStoreState.deleteValue(duplicateDataTypesPath, currentSecondaryDataObjectID);
         }
 
         removedDuplicateSecondaryObjects?.forEach(o =>
@@ -617,7 +621,7 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
             if (!deleteAllForThisDuplicates)
             {
                 // remove removed secondary object from current secondary object's duplicate list
-                pendingStoreState.deleteValue(duplicateDataTypesDataTypesPath, o, secondaryDataObject.id);
+                pendingStoreState.deleteValue(duplicateDataTypesDataTypesPath, o, currentSecondaryDataObjectID);
             }
 
             if (!OH.has(currentDuplicateSecondaryObjects, o))
@@ -632,13 +636,13 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
             }
             else
             {
-                pendingStoreState.deleteValue(duplicateDataTypesDataTypesPath, secondaryDataObject.id, o);
+                pendingStoreState.deleteValue(duplicateDataTypesDataTypesPath, currentSecondaryDataObjectID, o);
             }
         });
 
 
         let alreadyAddedAllDupsForThisSecondaryObject = false;
-        if (!OH.has(currentDuplicateSecondaryObjects, secondaryDataObject.id))
+        if (!OH.has(currentDuplicateSecondaryObjects, currentSecondaryDataObjectID))
         {
             alreadyAddedAllDupsForThisSecondaryObject = true;
             const dups: DictionaryAsList = {};
@@ -648,28 +652,28 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
                 dups[addedDuplicateSeconaryObjects[i]] = true;
             }
 
-            pendingStoreState.addValue(duplicateDataTypesPath, secondaryDataObject.id, dups);
+            pendingStoreState.addValue(duplicateDataTypesPath, currentSecondaryDataObjectID, dups);
         }
 
         addedDuplicateSeconaryObjects.forEach(o =>
         {
             if (!alreadyAddedAllDupsForThisSecondaryObject)
             {
-                pendingStoreState.addValue(duplicateDataTypesDataTypesPath, o, true, secondaryDataObject.id);
+                pendingStoreState.addValue(duplicateDataTypesDataTypesPath, o, true, currentSecondaryDataObjectID);
             }
 
             // need to create a list for the added secondary object if it doesn't exist. Duplicate secondary objects go both ways
             if (!OH.has(currentDuplicateSecondaryObjects, o))
             {
                 const dups: DictionaryAsList = {};
-                dups[secondaryDataObject.id] = true;
+                dups[currentSecondaryDataObjectID] = true;
 
                 pendingStoreState.addValue(duplicateDataTypesPath, o, dups);
             }
             else
             {
                 // add curent secondary object to added secondary objects duplicate list
-                pendingStoreState.addValue(duplicateDataTypesDataTypesPath, secondaryDataObject.id, true, o);
+                pendingStoreState.addValue(duplicateDataTypesDataTypesPath, currentSecondaryDataObjectID, true, o);
             }
         });
     }
