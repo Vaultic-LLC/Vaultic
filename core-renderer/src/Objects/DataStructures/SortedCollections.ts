@@ -1,4 +1,4 @@
-import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import { ObjectPropertyManager, OH, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
 import app from "../../Objects/Stores/AppStore";
 import { DataType, Group } from "../../Types/DataTypes";
 import { TableRowModel } from "../../Types/Models";
@@ -8,6 +8,7 @@ export class SortedCollection
     descending: boolean | undefined;
     property: string | undefined;
     backingValues: () => { [key: string | number]: any };
+    objectPropertyManager: ObjectPropertyManager<any>;
 
     values: TableRowModel[];                // shouldn't ever be modified, kept as a source of truth
     calculatedValues: TableRowModel[];      // Calculated values to show
@@ -22,6 +23,7 @@ export class SortedCollection
         this.values = Array.from(values);
         this.calculatedValues = Array.from(values);
         this.backingValues = backingValues;
+        this.objectPropertyManager = PropertyManagerConstructor.getFor(backingValues())
         this.searchText = "";
 
         this.sort(false);
@@ -29,7 +31,7 @@ export class SortedCollection
 
     public getBackingObject(id: any)
     {
-        return this.backingValues()?.[id]
+        return this.objectPropertyManager.get(id, this.backingValues());
     }
 
     public getBackingObjectProperty(id: string | number, prop: string)

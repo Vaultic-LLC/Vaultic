@@ -433,6 +433,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             newUserVault.userOrganizationID = unsetupUserVault.userOrganizationID;
             newUserVault.isOwner = false;
             newUserVault.permissions = unsetupUserVault.permissions;
+            newUserVault.lastLoadedChangeVersion = unsetupUserVault.lastLoadedChangeVersion;
 
             try
             {

@@ -3,7 +3,7 @@ import { User } from "../Database/Entities/User";
 import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
-import { ClientChangeTrackingType, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { Algorithm, SignedVaultKey } from "@vaultic/shared/Types/Keys";
 import { CurrentUserDataIdentifiersAndKeys } from "../Types/Responses";
@@ -234,8 +234,6 @@ export async function checkMergeMissingData(
     transaction?: Transaction,
     backingUpData?: UserDataPayload): Promise<boolean>
 {
-    console.log(JSON.stringify(currentLocalData));
-    console.log(`\n${JSON.stringify(serverUserDataPayload)}`);
     transaction = transaction ?? new Transaction();
     const user: User | null = await environment.repositories.users.findByEmail(masterKey, email);
 
@@ -286,6 +284,7 @@ export async function checkMergeMissingData(
     // Needs to be done before userVaults for when adding a new vault + userVault. Vault has to be saved before userVault.
     if (serverUserDataPayload?.vaults)
     {
+        console.log(`Updating Vaults: ${JSON.stringify(serverUserDataPayload.vaults)}`)
         const allLocalVaults = await environment.repositories.vaults.getAllVaultIDs();
         for (let i = 0; i < serverUserDataPayload.vaults.length; i++)
         {
@@ -312,10 +311,10 @@ export async function checkMergeMissingData(
         }
     }
 
-    console.log(`merging vault changes: ${JSON.stringify(serverUserDataPayload?.vaultChanges)}`);
     // do these seperately from userVaults since they don't match 1-1, i.e. you can have the entire store from one userVault but only some changes for another
     if (serverUserDataPayload?.vaultChanges && serverUserDataPayload.vaultChanges.length > 0)
     {
+        console.log(`merging vault changes`);
         for (let i = 0; i < serverUserDataPayload.vaultChanges.length; i++)
         {
             const serverVaultChanges = serverUserDataPayload.vaultChanges[i];
@@ -603,7 +602,7 @@ export async function checkMergeMissingData(
 
         if (serverVaultsToSetup.length > 0)
         {
-            const privateEncryptingKey = serverUserDataPayload.user.privateEncryptingKey ?? (await environment.repositories.users.findByEmail(masterKey, email))?.privateEncryptingKey;
+            const privateEncryptingKey = serverUserDataPayload?.user?.privateEncryptingKey ?? (await environment.repositories.users.findByEmail(masterKey, email))?.privateEncryptingKey;
 
             // This should never happen
             if (privateEncryptingKey == null)

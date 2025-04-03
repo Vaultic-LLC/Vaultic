@@ -30,7 +30,6 @@ import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, inject } f
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
-import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 
@@ -43,7 +42,6 @@ export default defineComponent({
     components: {
         ObjectView,
         TextInputField,
-        ObjectMultiSelect,
         VaulticFieldset,
         EnumInputField
     },

@@ -7,7 +7,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
 
 import EncryptedInputField from '../../InputFields/EncryptedInputField.vue';
 import { defaultInputColorModel, InputColorModel } from '../../../Types/Models';
@@ -26,6 +26,11 @@ export default defineComponent({
         const label: ComputedRef<string> = computed(() => props.data["label"]);
         const onDirty: ComputedRef<() => void> = computed(() => () => props.data["onDirty"](props.model));
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => props.state["isInitiallyEncrypted"]);
+
+        watch(() => modelField.value, (newValue) =>
+        {
+            props.model[props.field] = newValue;
+        });
 
 		return {
             modelField,

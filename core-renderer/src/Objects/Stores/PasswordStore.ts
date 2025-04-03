@@ -143,10 +143,11 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        await this.updateSecurityQuestions(masterKey, password, addedSecurityQuestions, [], [], [], pendingPasswordState);
-
         const reactivePassword = createReactivePassword(password);
         pendingPasswordState.addValue('dataTypesByID', password.id, reactivePassword);
+
+        // Do this after adding the password since we rely on retrieving it to update security questions
+        await this.updateSecurityQuestions(masterKey, password, addedSecurityQuestions, [], [], [], pendingPasswordState);
 
         this.updatePasswordsByDomain(pendingPasswordState, reactivePassword.id, reactivePassword.d);
 

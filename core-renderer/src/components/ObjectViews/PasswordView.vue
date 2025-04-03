@@ -90,17 +90,17 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const securityQuestions: SortedCollection = new SortedCollection([], () => allSecurityQuestions);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
-
+                
         const passwordIsDirty: Ref<boolean> = ref(false);
-
+                    
         let allSecurityQuestions: { [key: string]: SecurityQuestion } = {};
         let addedSecurityQuestions: SecurityQuestion[] = [];
         let removedSecurityQuestions: string[] = [];
         let dirtySecurityQuestionQuestions: SecurityQuestion[] = [];
         let dirtySecurityQuestionAnswers: SecurityQuestion[] = [];
-
+                    
+        const securityQuestions: SortedCollection = new SortedCollection([], () => allSecurityQuestions);
         const locked: Ref<boolean> = ref(!props.creating);
 
         const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);

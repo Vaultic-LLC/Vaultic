@@ -801,6 +801,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             allChanges: []
         };
 
+        console.log(`Last loaded vault change: ${vault.lastLoadedChangeVersion}`);
         const response = await StoreStateRepository.mergeData(key, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
         return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
@@ -902,7 +903,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     }
                 }
 
-                console.log(`Data: ${JSON.stringify(currentSignatures)}`);
                 const result = await vaulticServer.vault.syncVaults(currentSignatures.identifiers);
                 if (!result.Success)
                 {

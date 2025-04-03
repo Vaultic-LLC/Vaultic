@@ -50,6 +50,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
         if (serverChanges)
         {
+            console.log(`ServerChanges: ${JSON.stringify(serverChanges)}`);
             for (let i = 0; i < serverChanges.allChanges.length; i++)
             {
                 clientChangesToPushAfter.lastLoadedChangeVersion = serverChanges.allChanges[i].version;
@@ -89,6 +90,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             }
         }
 
+        console.log(`Version after merging server data: ${clientChangesToPushAfter.lastLoadedChangeVersion}`);
         // We already applied these changes once but failed to backup because someone else backed up before we could.
         // We just need to check to see if they updated the same property as us and handle those. We need to check and handle
         // both if our local change is newer or if theirs are because they could have made the change a while ago but just now 
@@ -127,6 +129,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         // First time calculating changes
         else 
         {
+            console.log(`Local Changes to merge: ${JSON.stringify(localChangesToMerge)}`);
             for (let i = 0; i < localChangesToMerge.length; i++)
             {
                 needsToRePushStoreStates = true;
@@ -175,6 +178,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.allChanges.push(clientChange);
             }
 
+            console.log(`Version after merging local changes: ${clientChangesToPushAfter.lastLoadedChangeVersion}`);
             const updatedStateKeys = Object.keys(loadedStoreStates) as StoreType[];
             for (let i = 0; i < updatedStateKeys.length; i++)
             {

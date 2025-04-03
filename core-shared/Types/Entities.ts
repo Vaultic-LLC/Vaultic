@@ -34,6 +34,7 @@ export interface IUser extends IVaulticEntity
     privateSigningKey: string;
     publicEncryptingKey: string;
     privateEncryptingKey: string;
+    lastLoadedChangeVersion: number;
     appStoreState: IAppStoreState;
     userPreferencesStoreState: IUserPreferencesStoreState;
     userVaults: IUserVault[]
@@ -50,6 +51,7 @@ export interface IUserVault extends IVaulticEntity
     vaultKey: string;
     isOwner: boolean;
     permissions?: ServerPermissions;
+    lastLoadedChangeVersion: number;
     vaultPreferencesStoreState: IVaultPreferencesStoreState;
 };
 
@@ -59,6 +61,7 @@ export interface IVault extends IVaulticEntity
     userVaults: IUserVault[];
     name: string;
     lastUsed: boolean;
+    lastLoadedChangeVersion: number;
     vaultStoreState: IVaultStoreState;
     passwordStoreState: IPasswordStoreState;
     valueStoreState: IValueStoreState;

@@ -198,10 +198,11 @@ export default defineComponent({
             {
                 allDataObjectsOptions.value = app.currentVault.passwordStore.passwords.map(p => 
                 {
+                    const label: string = p.f;
                     const option: ObjectSelectOptionModel = 
                     {
-                        label: p.f,
-                        backingObject: p,
+                        label: label,
+                        id: p.id,
                     };
 
                     return option
@@ -215,9 +216,10 @@ export default defineComponent({
                         return;
                     }
 
+                    const label: string = password.f;
                     selectedDataObjectOptions.value.push({
-                        label: password.f,
-                        backingObject: password,
+                        label: label,
+                        id: password.id,
                     });
                 });
             }
