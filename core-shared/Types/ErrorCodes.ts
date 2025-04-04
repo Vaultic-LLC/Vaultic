@@ -8,6 +8,7 @@ class ErrorCodes
     get EC_DECRYPTION_FAILED() { return 10006; }
     get EC_ENCRYPTION_FAILED() { return 10007; }
     get INVALID_PROPERTY_WHILE_ENCRYPTING() { return 10008; }
+    get HASHING_FAILED() { return 10009; }
 
     // Entity Verification Errors
     get NO_SIGNATURE() { return 11000; }

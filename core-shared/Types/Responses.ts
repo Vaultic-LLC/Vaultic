@@ -75,6 +75,7 @@ export interface ValidateEmailResponse extends BaseResponse
 {
     PendingUserToken?: string;
     EmailIsTaken?: boolean;
+    Code?: string;
 }
 
 export interface VerifyEmailResponse extends BaseResponse

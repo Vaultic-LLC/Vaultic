@@ -6,6 +6,7 @@ import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationRespons
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
@@ -53,7 +54,7 @@ async function logUserIn(masterKey: string, email: string,
             const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
             if (!passwordHash.success)
             {
-                return TypedMethodResponse.fail();
+                return TypedMethodResponse.fail(errorCodes.HASHING_FAILED);
             }
 
             const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
@@ -82,7 +83,8 @@ async function logUserIn(masterKey: string, email: string,
 
         if (!loginResult)
         {
-            return TypedMethodResponse.failWithValue({ Success: false, RestartOpaqueProtocol: true });
+            return TypedMethodResponse.fail(undefined, undefined, "OPAQUE Finish Login", undefined,
+                undefined, { Success: false, RestartOpaqueProtocol: true });
         }
 
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
