@@ -3,29 +3,29 @@
         :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-                v-model="passwordState.passwordFor.value" :width="'50%'" :maxWidth="''" :maxHeight="''" />
-            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login.value"
+                v-model="passwordState.f" :width="'50%'" :maxWidth="''" :maxHeight="''" />
+            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.l"
                 :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
-                :label="'Password'" v-model="passwordState.password.value" :isInitiallyEncrypted="isInitiallyEncrypted" 
+                :label="'Password'" v-model="passwordState.p" :isInitiallyEncrypted="isInitiallyEncrypted" 
                 :showRandom="true" :showUnlock="true" :required="true"
                 showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
-            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain.value"
+            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.d"
                 :showToolTip="true"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
                 :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email.value"
+            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.e"
                 :width="'50%'" :isEmailField="true" :maxWidth="''" :maxHeight="''" />
             <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
                 :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset :fillSpace="true" :static="true">
             <TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
-                :label="'Additional Information'" v-model="passwordState.additionalInformation.value" :width="'50%'"
+                :label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'50%'"
                 :height="''" :minWidth="'216px'" :minHeight="''" :maxHeight="''" :maxWidth="''" />
             <VaulticTable ref="tableRef" id="passwordView__table" :color="color" :columns="tableColumns" 
                 :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :allowSearching="false"
@@ -61,8 +61,9 @@ import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
+import { DictionaryAsList } from '@vaultic/shared/Types/Stores';
 
 export default defineComponent({
     name: "PasswordView",
@@ -82,19 +83,24 @@ export default defineComponent({
     {
         const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 
+        let pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const passwordState: Ref<Password> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const passwordState: Reactive<Password> = props.creating ? reactive(props.model) : pendingStoreState.createCustomRef('dataTypesByID.dataType', props.model, props.model.id);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const securityQuestions: SortedCollection = new SortedCollection([], () => passwordState.value.securityQuestions.value);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
-
+                
         const passwordIsDirty: Ref<boolean> = ref(false);
-        const dirtySecurityQuestionQuestions: Ref<string[]> = ref([]);
-        const dirtySecurityQuestionAnswers: Ref<string[]> = ref([]);
-
+                    
+        let allSecurityQuestions: { [key: string]: SecurityQuestion } = {};
+        let addedSecurityQuestions: SecurityQuestion[] = [];
+        let removedSecurityQuestions: string[] = [];
+        let dirtySecurityQuestionQuestions: SecurityQuestion[] = [];
+        let dirtySecurityQuestionAnswers: SecurityQuestion[] = [];
+                    
+        const securityQuestions: SortedCollection = new SortedCollection([], () => allSecurityQuestions);
         const locked: Ref<boolean> = ref(!props.creating);
 
         const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
@@ -128,10 +134,10 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = [];
-            models.push(new TableColumnModel("Question", "question").setComponent("EncryptedInputCell")
+            models.push(new TableColumnModel("Question", "q").setComponent("EncryptedInputCell")
                 .setData({ color: color.value, label: 'Question', onDirty: onQuestionDirty }).setSortable(false));
 
-            models.push(new TableColumnModel("Answer", "answer").setComponent("EncryptedInputCell")
+            models.push(new TableColumnModel("Answer", "a").setComponent("EncryptedInputCell")
                 .setData({ color: color.value, label: 'Answer', onDirty: onAnswerDirty }).setSortable(false)); 
         
             return models;
@@ -152,7 +158,7 @@ export default defineComponent({
         function setSecurityQuestionModels()
         {
             const securityQuestionRows: TableRowModel[] = [];
-            passwordState.value.securityQuestions.value.forEach((v, k) => 
+            OH.forEachKey(allSecurityQuestions, (k) => 
             {
                 securityQuestionRows.push(new TableRowModel(k, false, undefined, 
                 {
@@ -179,23 +185,22 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(color.value, "Saving Password");
 
-            passwordState.value.groups.value = new Map();
-            selectedGroups.value.forEach(g => 
-            {
-                passwordState.value.groups.addMapValue(g.backingObject!.value.id.value, Field.create(g.backingObject!.value.id.value));
-            });
-
             if (props.creating)
             {
+                // its ok to set these since we are adding the entire object anyways
+                selectedGroups.value.forEach(g => 
+                {
+                    passwordState.g[g.backingObject!.id] = true;
+                });
+
                 console.time('add password');
-                if (await app.currentVault.passwordStore.addPassword(key, passwordState.value))
+                if (await app.currentVault.passwordStore.addPassword(key, passwordState, addedSecurityQuestions, 
+                    pendingStoreState))
                 {
                     console.timeEnd('add password');
-                    passwordState.value = defaultPassword();
-                    refreshKey.value = Date.now().toString();
-                    selectedGroups.value = [];
-
+                    reset()
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -203,9 +208,17 @@ export default defineComponent({
             }
             else
             {
+                // we want to pass the current selection instead of setting them so change tracking
+                // can add them properly
+                const newGroups: DictionaryAsList = {};
+                selectedGroups.value.forEach(g => 
+                {
+                    newGroups[g.backingObject!.id] = true;
+                });
+
                 if (await app.currentVault.passwordStore.updatePassword(key,
-                    passwordState.value, passwordIsDirty.value, dirtySecurityQuestionQuestions.value,
-                    dirtySecurityQuestionAnswers.value))
+                    passwordState, passwordIsDirty.value, addedSecurityQuestions, dirtySecurityQuestionQuestions,
+                    dirtySecurityQuestionAnswers, removedSecurityQuestions, newGroups, pendingStoreState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -213,6 +226,23 @@ export default defineComponent({
 
                 handleSaveResponse(false);
             }
+        }
+
+        function reset()
+        {
+            // This won't track changes within the pending store since we didn't re create the 
+            // custom ref but that's ok since we are creating
+            Object.assign(passwordState, defaultPassword());
+            pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+            allSecurityQuestions = {};
+            addedSecurityQuestions = [];
+            removedSecurityQuestions = [];
+            dirtySecurityQuestionAnswers = [];
+            dirtySecurityQuestionQuestions = [];
+
+            selectedGroups.value = [];
+            refreshKey.value = Date.now().toString();
         }
 
         function handleSaveResponse(succeeded: boolean)
@@ -242,13 +272,14 @@ export default defineComponent({
         async function onAddSecurityQuestion()
         {
             const id = uniqueIDGenerator.generate();
-            const securityQuestion: Field<SecurityQuestion> = Field.create({
-                id: Field.create(id),
-                question: Field.create(''),
-                answer: Field.create(''),
-            });
+            const securityQuestion: SecurityQuestion = {
+                id: id,
+                q: '',
+                a: '',
+            };
 
-            passwordState.value.securityQuestions.addMapValue(id, securityQuestion);
+            allSecurityQuestions[id] = securityQuestion;
+            addedSecurityQuestions.push(securityQuestion);
 
             const securityQuestionModel: TableRowModel = new TableRowModel(securityQuestion.id, undefined, undefined, {
                 isInitiallyEncrypted: false
@@ -258,68 +289,100 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function onQuestionDirty(securityQuestion: Field<SecurityQuestion>)
+        function onQuestionDirty(securityQuestion: SecurityQuestion)
         {
-            if (!dirtySecurityQuestionQuestions.value.includes(securityQuestion.value.id.value))
+            const addedIndex = addedSecurityQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (addedIndex >= 0)
             {
-                dirtySecurityQuestionQuestions.value.push(securityQuestion.value.id.value);
+                // we want to count this as an add, not an update
+                return;
+            }
+
+            const dirtyIndex = dirtySecurityQuestionQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyIndex == -1)
+            {
+                dirtySecurityQuestionQuestions.push(securityQuestion);
             }
         }
 
-        function onAnswerDirty(securityQuestion: Field<SecurityQuestion>)
+        function onAnswerDirty(securityQuestion: SecurityQuestion)
         {
-            if (!dirtySecurityQuestionAnswers.value.includes(securityQuestion.value.id.value))
+            const addedIndex = addedSecurityQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (addedIndex >= 0)
             {
-                dirtySecurityQuestionAnswers.value.push(securityQuestion.value.id.value);
+                // we want to count this as an add, not an update
+                return;
+            }
+
+            const dirtyIndex = dirtySecurityQuestionAnswers.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyIndex == -1)
+            {
+                dirtySecurityQuestionAnswers.push(securityQuestion);
             }
         }
 
-        function onDeleteSecurityQuestion(securityQuestion: Field<SecurityQuestion>)
+        function onDeleteSecurityQuestion(securityQuestion: SecurityQuestion)
         {
-            passwordState.value.securityQuestions.removeMapValue(securityQuestion.value.id.value);
-            if (dirtySecurityQuestionQuestions.value.includes(securityQuestion.value.id.value))
+            delete allSecurityQuestions[securityQuestion.id];
+
+            const addedIndex = addedSecurityQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (addedIndex >= 0)
             {
-                dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(securityQuestion.value.id.value), 1);
+                addedSecurityQuestions.splice(addedIndex, 1);
+
+                // Don't want to count this as a delete since it was never offically added
+                return;
             }
 
-            if (dirtySecurityQuestionAnswers.value.includes(securityQuestion.value.id.value))
+            const dirtyQuestionIndex = dirtySecurityQuestionQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyQuestionIndex >= 0)
             {
-                dirtySecurityQuestionAnswers.value.splice(dirtySecurityQuestionAnswers.value.indexOf(securityQuestion.value.id.value), 1);
+                dirtySecurityQuestionQuestions.splice(dirtyQuestionIndex, 1);
             }
 
-            securityQuestions.remove(securityQuestion.value.id.value);
+            const dirtyAnswerIndex = dirtySecurityQuestionAnswers.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyAnswerIndex >= 0)
+            {
+                dirtySecurityQuestionAnswers.splice(dirtyAnswerIndex, 1);
+            }
+
+            removedSecurityQuestions.push(securityQuestion.id);
+
+            securityQuestions.remove(securityQuestion.id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         onMounted(() =>
         {
+            allSecurityQuestions = JSON.parse(JSON.stringify(passwordState.q));
             setSecurityQuestionModels();
+
             groupOptions.value = app.currentVault.groupStore.passwordGroups.map(g => 
             {
                 const option: ObjectSelectOptionModel = 
                 {
-                    label: g.value.name.value,
+                    label: g.n,
                     backingObject: g,
-                    icon: g.value.icon.value,
-                    color: g.value.color.value
+                    icon: g.i,
+                    color: g.c
                 };
 
                 return option
             });
 
-            passwordState.value.groups.value.forEach((v, k) => 
+            OH.forEachKey(passwordState.g, (k) => 
             {
-                const group = app.currentVault.groupStore.passwordGroupsByID.value.get(k);
+                const group = app.currentVault.groupStore.passwordGroupsByID[k];
                 if (!group)
                 {
                     return;
                 }
 
                 selectedGroups.value.push({
-                    label: group.value.name.value,
+                    label: group.n,
                     backingObject: group,
-                    icon: group.value.icon.value,
-                    color: group.value.color.value
+                    icon: group.i,
+                    color: group.c
                 });
             });
         });

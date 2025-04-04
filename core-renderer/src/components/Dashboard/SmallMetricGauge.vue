@@ -43,7 +43,7 @@ export default defineComponent({
                 return false;
             }
 
-            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.value.percentMetricForPulse.value);
+            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.p);
         });
 
         const totalAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 1 : props.model.totalAmount);

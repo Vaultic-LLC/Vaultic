@@ -1,6 +1,7 @@
 import { ServerPermissions } from "./ClientServerTypes"
 import { Field } from "./Fields";
 import { Algorithm, SignedVaultKey } from "./Keys";
+import { DoubleKeyedObject } from "./Stores";
 
 export enum EntityState
 {
@@ -33,6 +34,7 @@ export interface IUser extends IVaulticEntity
     privateSigningKey: string;
     publicEncryptingKey: string;
     privateEncryptingKey: string;
+    lastLoadedChangeVersion: number;
     appStoreState: IAppStoreState;
     userPreferencesStoreState: IUserPreferencesStoreState;
     userVaults: IUserVault[]
@@ -49,6 +51,7 @@ export interface IUserVault extends IVaulticEntity
     vaultKey: string;
     isOwner: boolean;
     permissions?: ServerPermissions;
+    lastLoadedChangeVersion: number;
     vaultPreferencesStoreState: IVaultPreferencesStoreState;
 };
 
@@ -58,6 +61,7 @@ export interface IVault extends IVaulticEntity
     userVaults: IUserVault[];
     name: string;
     lastUsed: boolean;
+    lastLoadedChangeVersion: number;
     vaultStoreState: IVaultStoreState;
     passwordStoreState: IPasswordStoreState;
     valueStoreState: IValueStoreState;
@@ -139,7 +143,7 @@ export interface DisplayVault
     isReadOnly: boolean;
     lastUsed?: boolean;
     type?: VaultType;
-    passwordsByDomain?: Field<Map<string, Field<Map<string, Field<string>>>>>;
+    passwordsByDomain?: DoubleKeyedObject;
 }
 
 export function getVaultType(vault: DisplayVault)

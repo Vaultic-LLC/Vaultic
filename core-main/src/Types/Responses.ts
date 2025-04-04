@@ -1,6 +1,7 @@
 import { DeepPartial } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { Vault } from "../Database/Entities/Vault";
-import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { ClientChangeTrackingObject, ClientChangeTrackingType, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { ChangeTracking } from "../Database/Entities/ChangeTracking";
 
 export class VaultsAndKeys
 {
@@ -14,8 +15,25 @@ export class VaultsAndKeys
     }
 }
 
-export interface CurrentSignaturesVaultKeys 
+export interface CurrentUserDataIdentifiersAndKeys 
 {
-    signatures: UserDataPayload;
+    identifiers: UserDataPayload;
     keys: string[];
+}
+
+// Keep in sync with ClientChangeTrackingType
+export interface ChangeTrackingsByType
+{
+    /** User */
+    0?: ChangeTracking[];
+    /** UserVault */
+    1?: { [key: number]: ChangeTracking[] };
+    /** Vault */
+    2?: { [key: number]: ChangeTracking[] };
+}
+
+export interface UpdateFromServerResponse<T extends ClientChangeTrackingObject>
+{
+    needsToRePushData: boolean;
+    changes: T;
 }

@@ -78,7 +78,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         console.time("11");
         const response = await axiosHelper.api.post("User/BackupData", e2eEncryptedData.value);
         console.timeEnd("11");
-        return { ...response, message: `Post data: ${JSON.vaulticStringify(postData)}` }
+        return { ...response, message: `Post data: ${JSON.stringify(postData)}` }
     }
 
     function createCheckout(): Promise<CreateCheckoutResponse>
@@ -126,7 +126,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
 
     function searchForUsers(username: string, excludedUserIDs: string): Promise<SearchForUsersResponse>
     {
-        const userIDs: number[] = JSON.vaulticParse(excludedUserIDs);
+        const userIDs: number[] = JSON.parse(excludedUserIDs);
         return axiosHelper.api.post('User/SearchForUsers', {
             Username: username,
             ExcludedUserIDs: userIDs

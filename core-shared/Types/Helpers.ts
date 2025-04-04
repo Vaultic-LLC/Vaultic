@@ -3,7 +3,7 @@ import { FinishRegistrationResponse, GetUserDeactivationKeyResponse, LogUserInRe
 
 export interface ValidationHelper
 {
-    isWeak: (value: string, type: string) => [boolean, string];
+    isWeak: (value: string) => [boolean, number];
     containsNumber: (value: string) => boolean;
     containsSpecialCharacter: (value: string) => boolean;
     containsUppercaseAndLowercaseNumber: (value: string) => boolean;

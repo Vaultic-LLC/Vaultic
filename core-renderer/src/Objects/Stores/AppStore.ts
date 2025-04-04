@@ -4,7 +4,7 @@ PolyFills.a;
 
 import { Ref, ref, ComputedRef, computed, watch } from "vue";
 import { hideAll } from 'tippy.js';
-import { Store, StoreEvents, StoreState } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -16,42 +16,68 @@ import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, IUser, UserData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
 import { DataType } from "../../Types/DataTypes";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
-import { AutoLockTime, defaultAppStoreState, FilterStatus } from "@vaultic/shared/Types/Stores";
+import { AutoLockTime, defaultAppStoreState, FilterStatus, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { ColorPalette, defaultColorPalettes } from "@vaultic/shared/Types/Color";
 
-export interface AppSettings extends IFieldedObject
+export interface AppSettings
 {
-    userColorPalettes: Field<Map<string, Field<ColorPalette>>>;
-    autoLockTime: Field<AutoLockTime>;
-    multipleFilterBehavior: Field<FilterStatus>;
-    oldPasswordDays: Field<number>;
-    percentMetricForPulse: Field<number>;
-    randomValueLength: Field<number>;
-    randomPhraseLength: Field<number>;
-    includeNumbersInRandomPassword: Field<boolean>;
-    includeSpecialCharactersInRandomPassword: Field<boolean>;
-    includeAmbiguousCharactersInRandomPassword: Field<boolean>;
-    passphraseSeperator: Field<string>;
-    temporarilyStoreMasterKey: Field<boolean>;
+    /** User Color Palettes */
+    c: { [key: string]: ColorPalette };
+    /** Auto Lock Time */
+    a: AutoLockTime;
+    /** Multiple Filter Behavior */
+    f: FilterStatus;
+    /** Old Password Days */
+    o: number;
+    /** Percent Metric For Pulse */
+    p: number;
+    /** Random Value Length */
+    v: number;
+    /** Random Phrase Lengh */
+    r: number;
+    /** Include Numbers In Random Password */
+    n: boolean;
+    /** Include Special Characters In random Password */
+    s: boolean;
+    /** Include Ambiguous Charactesr in Random Password */
+    m: boolean;
+    /** Passphrase Seperator */
+    e: string;
 }
 
 export interface IAppStoreState extends StoreState
 {
-    settings: Field<AppSettings>;
+    /** Settings */
+    s: AppSettings;
 }
 
-export type AppStoreState = KnownMappedFields<IAppStoreState>;
+export interface AppStoreStateKeys extends StateKeys
+{
+    "settings": "";
+    "colorPalettes.palette": "";
+    "colorPalette.passwordColors": "";
+    "colorPalette.valueColors": "";
+}
+
+const AppStorePathRetriever: StorePathRetriever<AppStoreStateKeys> =
+{
+    'settings': (...ids: string[]) => `s`,
+    'colorPalettes.palette': (...ids: string[]) => `s.c.${ids[0]}`,
+    'colorPalette.passwordColors': (...ids: string[]) => `s.c.${ids[0]}.p`,
+    'colorPalette.valueColors': (...ids: string[]) => `s.c.${ids[0]}.v`
+};
+
+export type AppStoreState = IAppStoreState;
 
 export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
-export class AppStore extends Store<AppStoreState, AppStoreEvents>
+export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEvents>
 {
     private internaLoadedUser: Ref<boolean>;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
@@ -67,7 +93,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalIsOnline: Ref<boolean>;
 
-    private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
+    private internalColorPalettes: ComputedRef<ColorPalette[]>;
 
     private internalUserVaults: Ref<DisplayVault[]>;
     private internalUserVaultsByVaultID: ComputedRef<Map<number, DisplayVault>>;
@@ -94,9 +120,10 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalActiveDataType: ComputedRef<DataType>;
 
     private internalIsSyncing: Ref<boolean>;
+    private internalForceReadOnly: Ref<boolean>;
 
     get loadedUser() { return this.internaLoadedUser; }
-    get settings() { return this.state.settings; }
+    get settings() { return this.state.s; }
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
     get activeAppView() { return this.internalActiveAppView.value; }
@@ -128,10 +155,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get activeDataType() { return this.internalActiveDataType.value; }
     get isSyncing() { return this.internalIsSyncing; }
     set isSyncingVal(val: boolean) { this.internalIsSyncing.value = val; }
+    get forceReadOnly() { return this.internalForceReadOnly; }
+    set forceReadOnlyVal(val: boolean) { this.internalForceReadOnly.value = val; }
 
     constructor()
     {
-        super("appStoreState");
+        super(StoreType.App, AppStorePathRetriever);
 
         this.internaLoadedUser = ref(false);
         this.internalVaultDataBreachStore = new VaultDataBreachStore();
@@ -139,7 +168,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(this.state.settings.value.userColorPalettes.value.valueArray()))
+        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(Object.values(this.state.s.c)));
 
         this.internalUserVaults = ref([]);
         this.internalUserVaultsByVaultID = computed(() => this.internalUserVaults.value.reduce((map: Map<number, DisplayVault>, dv: DisplayVault) =>
@@ -174,7 +203,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalCanShowSubscriptionWidgets = computed(() => this.isOnline && this.internalUserLicense.value == LicenseStatus.Active);
         this.internalUserLicense = ref(LicenseStatus.Unknown);
 
-        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.value.autoLockTime.value));
+        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.s.a));
 
         watch(() => this.internalAutoLockNumberTime.value, (newValue) => 
         {
@@ -185,6 +214,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalActiveDataType = computed(() => app.isVaultView ? app.activePasswordValuesTable : app.activeDeviceOrganizationsTable);
 
         this.internalIsSyncing = ref(false);
+        this.internalForceReadOnly = ref(false);
     }
 
     protected defaultState()
@@ -234,7 +264,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalUserVaults.value = [];
         this.internalCurrentVault.resetToDefault();
 
-        if (syncData)
+        if (syncData && this.isOnline)
         {
             await api.helpers.repositories.handleUserLogOut();
         }
@@ -305,7 +335,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             addedMembers
         };
 
-        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.vaulticStringify(updateVaultData));
+        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.stringify(updateVaultData));
         if (!result.success)
         {
             defaultHandleFailedResponse(result);
@@ -334,7 +364,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             isReadOnly: vaultData.isReadOnly,
             lastUsed: setAsActive,
             type: getVaultType(vaultData),
-            passwordsByDomain: (JSON.vaulticParse(vaultData.passwordStoreState) as PasswordStoreState).passwordsByDomain
+            passwordsByDomain: (JSON.parse(vaultData.passwordStoreState) as PasswordStoreState).o
         });
 
         this.internalUserVaults.value = temp;
@@ -362,7 +392,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             removedMembers: removedMembers,
         };
 
-        const success = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
+        const success = await api.repositories.vaults.updateVault(masterKey, JSON.stringify(updateVaultData));
         if (!success)
         {
             return false;
@@ -401,7 +431,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             isArchived: isArchived
         };
 
-        const response = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
+        const response = await api.repositories.vaults.updateVault(masterKey, JSON.stringify(updateVaultData));
         if (!response.success)
         {
             defaultHandleFailedResponse(response);
@@ -477,7 +507,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     /** Only called when signing into and online. This is to handle when there 
      * isn't any local data
      */
-    async syncAndLoadUserData(masterKey: string, email: string): Promise<boolean>
+    async syncAndLoadUserData(masterKey: string, email: string, reloadAllData: boolean = false): Promise<boolean>
     {
         if (!this.isOnline || this.internaLoadedUser.value)
         {
@@ -487,7 +517,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalIsSyncing.value = true;
 
         this.popups.showSyncingPopup();
-        const result = await api.repositories.vaults.syncVaults(email, masterKey);
+        const result = await api.repositories.vaults.syncVaults(email, masterKey, reloadAllData);
         if (!result.success)
         {
             this.popups.hideSyncingPopup();
@@ -509,8 +539,20 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
+        const finishLoadingResponse = await this.internalFinishLoadUserData(result.value!);
+        if (!finishLoadingResponse)
+        {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Load Data", false);
+            this.lock();
+            this.internalIsSyncing.value = false;
+
+            return false;
+        }
+
+        this.internalIsSyncing.value = false;
         this.popups.finishSyncingPopup();
-        return this.internalFinishLoadUserData(result.value!);
+        return true;
     }
 
     /**
@@ -520,7 +562,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
      * @param secondLoad Indicates that this is the second time loading the data. Only applicatable when signing since we've alredy loaded the data
      * @returns 
      */
-    async syncVaults(masterKey: string, email: string, secondLoad: boolean = false): Promise<boolean>
+    async syncVaults(masterKey: string, email: string, secondLoad: boolean = false, reloadAllData: boolean = false): Promise<boolean>
     {
         if (!this.isOnline)
         {
@@ -547,24 +589,29 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         return loadResult;
     }
 
-    public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
+    public async updateColorPalette(
+        masterKey: string,
+        colorPalette: ColorPalette,
+        pendingStorState: PendingStoreState<AppStoreState, AppStoreStateKeys>
+    ): Promise<void>
     {
         const transaction = new StoreUpdateTransaction();
-        const pendingState = this.cloneState();
-
-        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.userColorPalettes.value.get(colorPalette.id.value);
+        let oldColorPalette: ColorPalette | undefined = pendingStorState.state.s.c[colorPalette.id];
         if (!oldColorPalette)
         {
-            return Promise.resolve();
+            return;
         }
 
-        oldColorPalette.value = colorPalette;
-        if (this.internalUsersPreferencesStore.currentColorPalette.id.value == oldColorPalette.value.id.value)
+        pendingStorState.commitProxyObject("colorPalettes.palette", colorPalette, colorPalette.id);
+        pendingStorState.commitProxyObject("colorPalette.passwordColors", colorPalette.p, colorPalette.id);
+        pendingStorState.commitProxyObject("colorPalette.valueColors", colorPalette.v, colorPalette.id);
+
+        if (this.internalUsersPreferencesStore.currentColorPalette.id == oldColorPalette.id)
         {
-            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette.value);
+            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette);
         }
 
-        transaction.updateUserStore(this, pendingState);
+        transaction.updateUserStore(this, pendingStorState);
         await transaction.commit(masterKey);
     }
 
@@ -577,7 +624,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
+        const parsedUserData: UserData = JSON.parse(userData.value!);
 
         this.internalUserInfo.value = parsedUserData.userInfo;
         await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
@@ -603,14 +650,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.getUserInfo();
         }
 
-        if (this.state.settings.value.temporarilyStoreMasterKey.value)
+        const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
+        if (!setMasterKeyResponse.success)
         {
-            const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
-            if (!setMasterKeyResponse.success)
-            {
-                defaultHandleFailedResponse(setMasterKeyResponse);
-                return false;
-            }
+            defaultHandleFailedResponse(setMasterKeyResponse);
+            return false;
         }
 
         return true;

@@ -30,12 +30,11 @@ import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, inject } f
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
-import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 
 import app from "../../Objects/Stores/AppStore";
-import { DisplayRequiresMFA, ClientDevice, requiresMFAToDisplay, displayRequiresMFAToRequiresMFA, RequiresMFA, defaultClientDevice } from '@vaultic/shared/Types/Device';
+import { DisplayRequiresMFA, ClientDevice, requiresMFAToDisplay, displayRequiresMFAToRequiresMFA, defaultClientDevice } from '@vaultic/shared/Types/Device';
 import { ClosePopupFuncctionKey } from '../../Constants/Keys';
 
 export default defineComponent({
@@ -43,7 +42,6 @@ export default defineComponent({
     components: {
         ObjectView,
         TextInputField,
-        ObjectMultiSelect,
         VaulticFieldset,
         EnumInputField
     },
@@ -51,8 +49,8 @@ export default defineComponent({
     setup(props)
     {
         const refreshKey: Ref<string> = ref("");
-        const deviceState: Ref<ClientDevice> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultClientDevice());
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const deviceState: Ref<ClientDevice> = ref(props.model ? JSON.parse(JSON.stringify(props.model)) : defaultClientDevice());
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
 
         const buttonText: ComputedRef<string> = computed(() => props.creating ? 'Register': 'Save');
         const requiresMFA: Ref<DisplayRequiresMFA> = ref(requiresMFAToDisplay(deviceState.value.RequiresMFA));

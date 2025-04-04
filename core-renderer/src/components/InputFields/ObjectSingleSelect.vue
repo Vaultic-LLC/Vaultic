@@ -106,7 +106,7 @@ export default defineComponent({
         const id = ref(useId());
         const refreshKey: Ref<string> = ref('');
 
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
         const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
 
         const computedEmptyMessage: ComputedRef<string> = computed(() => props.emptyMessage ? props.emptyMessage : 'No available options');

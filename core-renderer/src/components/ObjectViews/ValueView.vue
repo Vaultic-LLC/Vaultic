@@ -2,18 +2,18 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
-            <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.name.value" :width="'50%'"
+            <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.n" :width="'50%'"
                 :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <div class="valueView__valueTypeContainer">
-                <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.valueType.value"
+                <EnumInputField class="valueView__valueType" :label="'Type'" :color="color" v-model="valuesState.y"
                     :optionsEnum="NameValuePairType" :fadeIn="true" :width="'100%'"
                     :minWidth="'130px'" :showRandom="showRandom" :maxWidth="''" />
                 <Transition name="fade">
                     <div class="addValue__notifyIfWeakContainer" v-if="showNotifyIfWeak">
                         <CheckboxInputField class="valueView__notifyIfWeak" :label="'Notify if Weak'" :color="color"
-                            v-model="valuesState.notifyIfWeak.value" :fadeIn="false" :width="''" :height="'0.7vw'"
+                            v-model="valuesState.o" :fadeIn="false" :width="''" :height="'0.7vw'"
                             :minHeight="'12px'" />
                         <ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
                             :message="'Some Passcodes, like Garage Codes or certain Phone Codes, are only 4-6 characters long and do not fit the requirements for &quot;Weak&quot;. Tracking of these Passcodes can be turned off so they do not appear in the &quot;Weak Passcodes&quot; Metric.'" />
@@ -23,7 +23,7 @@
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
-                v-model="valuesState.value.value" :isInitiallyEncrypted="isInitiallyEncrypted"
+                v-model="valuesState.v" :isInitiallyEncrypted="isInitiallyEncrypted"
                 :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
                 :required="true" :width="'50%'" :maxWidth="''" :minWidth="'150px'" @onDirty="valueIsDirty = true"  />
         </VaulticFieldset>
@@ -32,13 +32,13 @@
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :fillSpace="true" :static="true">
             <TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
-                v-model="valuesState.additionalInformation.value" :width="'50%'" :height="''" :maxHeight="''"
+                v-model="valuesState.additionalInformation" :width="'50%'" :height="''" :maxHeight="''"
                 :minWidth="'216px'" :minHeight="''" :maxWidth="''" />
         </VaulticFieldset>
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch } from 'vue';
+import { ComputedRef, defineComponent, computed, Ref, ref, onMounted, watch, Reactive, reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -54,7 +54,11 @@ import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import app from "../../Objects/Stores/AppStore";
 import { EncryptedInputFieldComponent } from '../../Types/Components';
 import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/DataTypes';
-import { Field, RandomValueType } from '@vaultic/shared/Types/Fields';
+import {RandomValueType } from '@vaultic/shared/Types/Fields';
+import { DictionaryAsList, PendingStoreState } from '@vaultic/shared/Types/Stores';
+import { PrimarydataTypeStoreStateKeys } from '../../Objects/Stores/Base';
+import { ValueStoreState } from '../../Objects/Stores/ValueStore';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "ValueView",
@@ -72,10 +76,12 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        let pendingState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys> = app.currentVault.valueStore.getPendingState()!;
+        
         const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const valuesState: Ref<NameValuePair> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
+        let valuesState: Reactive<NameValuePair> = props.creating ? reactive(props.model) : pendingState.createCustomRef('dataTypesByID.dataType', props.model, props.model.id);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.v.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
         const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
@@ -83,11 +89,11 @@ export default defineComponent({
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
 
-        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.value.valueType?.value == NameValuePairType.Passcode);
-        const showRandom: ComputedRef<boolean> = computed(() => valuesState.value.valueType?.value == NameValuePairType.Passphrase ||
-            valuesState.value.valueType?.value == NameValuePairType.Passcode || valuesState.value.valueType?.value == NameValuePairType.Other);
+        const showNotifyIfWeak: Ref<boolean> = ref(valuesState.y == NameValuePairType.Passcode);
+        const showRandom: ComputedRef<boolean> = computed(() => valuesState.y == NameValuePairType.Passphrase ||
+            valuesState.y == NameValuePairType.Passcode || valuesState.y == NameValuePairType.Other);
         const randomValueType: ComputedRef<string> = computed(() => 
-            valuesState.value.valueType?.value == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
+            valuesState.y == NameValuePairType.Passphrase ? RandomValueType.Passphrase : RandomValueType.Password);
 
         const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
@@ -104,12 +110,6 @@ export default defineComponent({
 
         function onSave()
         {
-            valuesState.value.groups.value = new Map();
-            selectedGroups.value.forEach(g => 
-            {
-                valuesState.value.groups.addMapValue(g.backingObject!.value.id.value, Field.create(g.backingObject!.value.id.value));
-            });
-
             valueInputField.value?.toggleMask(true);
             app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
 
@@ -125,13 +125,16 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Value");
             if (props.creating)
             {
-                if (await app.currentVault.valueStore.addNameValuePair(key, valuesState.value))
+                selectedGroups.value.forEach(g => 
                 {
-                    valuesState.value = defaultValue();
-                    selectedGroups.value = [];
-                    refreshKey.value = Date.now().toString();
+                    valuesState.g[g.backingObject!.id] = true;
+                });
 
+                if (await app.currentVault.valueStore.addNameValuePair(key, valuesState, pendingState))
+                {
+                    reset();
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -139,7 +142,16 @@ export default defineComponent({
             }
             else
             {
-                if (await app.currentVault.valueStore.updateNameValuePair(key, valuesState.value, valueIsDirty.value))
+                // we want to pass the current selection instead of setting them so change tracking
+                // can add them properly
+                const newGroups: DictionaryAsList = {};
+                selectedGroups.value.forEach(g => 
+                {
+                    newGroups[g.backingObject!.id] = true;
+                });
+
+                if (await app.currentVault.valueStore.updateNameValuePair(key, valuesState, valueIsDirty.value, newGroups,
+                    pendingState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -176,39 +188,49 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        function reset()
+        {
+            // This won't track changes within the pending store since we didn't re create the 
+            // custom ref but that's ok since we are creating
+            Object.assign(valuesState, defaultValue());
+            pendingState = app.currentVault.valueStore.getPendingState()!;
+            selectedGroups.value = [];
+            refreshKey.value = Date.now().toString();
+        }
+
         onMounted(() =>
         {
             groupOptions.value = app.currentVault.groupStore.valuesGroups.map(g => 
             {
                 const option: ObjectSelectOptionModel = 
                 {
-                    label: g.value.name.value,
+                    label: g.n,
                     backingObject: g,
-                    icon: g.value.icon.value,
-                    color: g.value.color.value
+                    icon: g.i,
+                    color: g.c
                 };
 
                 return option
             });
 
-            valuesState.value.groups.value.forEach((v, k) => 
+            OH.forEachKey(valuesState.g, (k) => 
             {
-                const group = app.currentVault.groupStore.valueGroupsByID.value.get(k);
+                const group = app.currentVault.groupStore.valueGroupsByID[k];
                 if (!group)
                 {
                     return;
                 }
 
                 selectedGroups.value.push({
-                    label: group.value.name.value,
+                    label: group.n,
                     backingObject: group,
-                    icon: group.value.icon.value,
-                    color: group.value.color.value
+                    icon: group.i,
+                    color: group.c
                 });
             });
         });
 
-        watch(() => valuesState.value.valueType.value, (newValue) =>
+        watch(() => valuesState.y, (newValue) =>
         {
             showNotifyIfWeak.value = newValue == NameValuePairType.Passcode;
         });

@@ -42,13 +42,13 @@ export class CoreCryptUtility implements ClientCryptUtility
                 const encKeys = ml_kem1024.keygen(encSeed);
 
                 return {
-                    public: JSON.vaulticStringify(
+                    public: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_KEM_1024,
                             symmetricAlgorithm: Algorithm.XCHACHA20_POLY1305,
                             key: this.bytesToHex(encKeys.publicKey)
                         }),
-                    private: JSON.vaulticStringify(
+                    private: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_KEM_1024,
                             symmetricAlgorithm: Algorithm.XCHACHA20_POLY1305,
@@ -60,12 +60,12 @@ export class CoreCryptUtility implements ClientCryptUtility
                 const sigKeys = ml_dsa87.keygen(sigSeed);
 
                 return {
-                    public: JSON.vaulticStringify(
+                    public: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_DSA_87,
                             key: this.bytesToHex(sigKeys.publicKey)
                         }),
-                    private: JSON.vaulticStringify(
+                    private: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_DSA_87,
                             key: this.bytesToHex(sigKeys.secretKey)
@@ -107,7 +107,7 @@ export class CoreCryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(key);
+            const vaulticKey: VaulticKey = JSON.parse(key);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.XCHACHA20_POLY1305:
@@ -132,7 +132,7 @@ export class CoreCryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(key);
+            const vaulticKey: VaulticKey = JSON.parse(key);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.XCHACHA20_POLY1305:
@@ -160,7 +160,7 @@ export class CoreCryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: AsymmetricVaulticKey = JSON.vaulticParse(recipientsPublicEncryptingKey);
+            const vaulticKey: AsymmetricVaulticKey = JSON.parse(recipientsPublicEncryptingKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_KEM_1024:
@@ -171,7 +171,7 @@ export class CoreCryptUtility implements ClientCryptUtility
                         algorithm: vaulticKey.symmetricAlgorithm
                     };
 
-                    const encryptedVaultKey = await this.symmetricEncrypt(JSON.vaulticStringify(symmetricVaulticKey), value);
+                    const encryptedVaultKey = await this.symmetricEncrypt(JSON.stringify(symmetricVaulticKey), value);
                     if (!encryptedVaultKey.success)
                     {
                         return encryptedVaultKey;
@@ -191,7 +191,7 @@ export class CoreCryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: AsymmetricVaulticKey = JSON.vaulticParse(recipientsPrivateEncryptingKey);
+            const vaulticKey: AsymmetricVaulticKey = JSON.parse(recipientsPrivateEncryptingKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_KEM_1024:
@@ -202,7 +202,7 @@ export class CoreCryptUtility implements ClientCryptUtility
                         key: this.bytesToHex(sharedSecret)
                     };
 
-                    return environment.utilities.crypt.symmetricDecrypt(JSON.vaulticStringify(symmetricVaulticKey), value);
+                    return environment.utilities.crypt.symmetricDecrypt(JSON.stringify(symmetricVaulticKey), value);
             }
         }
         catch (e)
@@ -216,7 +216,7 @@ export class CoreCryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(sendersPrivateSigningKey);
+            const vaulticKey: VaulticKey = JSON.parse(sendersPrivateSigningKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_DSA_87:
@@ -235,11 +235,11 @@ export class CoreCryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(sendersPublicSigningKey);
+            const vaulticKey: VaulticKey = JSON.parse(sendersPublicSigningKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_DSA_87:
-                    return new TypedMethodResponse(ml_dsa87.verify(this.hexToBytes(vaulticKey.key), new TextEncoder().encode(JSON.vaulticStringify(signedVaultKey.message)),
+                    return new TypedMethodResponse(ml_dsa87.verify(this.hexToBytes(vaulticKey.key), new TextEncoder().encode(JSON.stringify(signedVaultKey.message)),
                         this.hexToBytes(signedVaultKey.signature)));
             }
         }

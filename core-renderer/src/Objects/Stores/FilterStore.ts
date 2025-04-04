@@ -1,32 +1,69 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { SecondaryDataTypeStore, StoreState } from "./Base";
+import { PrimarydataTypeStoreStateKeys, SecondaryDataTypeStore, SecondarydataTypeStoreStateKeys } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
-import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType } from "../../Types/DataTypes";
-import { Field, IFieldObject, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
+import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType, FilterCondition } from "../../Types/DataTypes";
+import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { defaultFilterStoreState } from "@vaultic/shared/Types/Stores";
+import { defaultFilterStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import { PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
+import { ValueStoreState } from "./ValueStore";
 
 export interface IFilterStoreState extends StoreState
 {
-    passwordFiltersByID: Field<Map<string, Field<Filter>>>;
-    valueFiltersByID: Field<Map<string, Field<Filter>>>;
-    emptyPasswordFilters: Field<Map<string, Field<string>>>;
-    emptyValueFilters: Field<Map<string, Field<string>>>;
-    duplicatePasswordFilters: Field<Map<string, Field<Map<string, Field<string>>>>>;
-    duplicateValueFilters: Field<Map<string, Field<Map<string, Field<string>>>>>;
+    /** Password Filters By ID */
+    p: { [key: string]: Filter };
+    /** Value Filters By ID */
+    v: { [key: string]: Filter };
+    /** Empty Password Filters */
+    w: DictionaryAsList;
+    /** Empty Value Filters */
+    l: DictionaryAsList;
+    /** Duplicate Password Filters */
+    o: DoubleKeyedObject;
+    /** Duplicate Value Filters */
+    u: DoubleKeyedObject;
 }
+
+export interface FilterStoreStateKeys extends SecondarydataTypeStoreStateKeys
+{
+    'passwordDataTypes.conditions': '';
+    'passwordDataTypes.conditions.condition': '',
+    'valueDataTypes.conditions': '';
+    'valueDataTypes.conditions.condition': ''
+}
+
+const FilterStorePathRetriever: StorePathRetriever<FilterStoreStateKeys> =
+{
+    'passwordDataTypesByID': (...ids: string[]) => `p`,
+    'passwordDataTypesByID.dataType': (...ids: string[]) => `p.${ids[0]}`,
+    'passwordDataTypesByID.dataType.passwords': (...ids: string[]) => `p.${ids[0]}.p`,
+    'passwordDataTypes.conditions': (...ids: string[]) => `p.${ids[0]}.c`,
+    'passwordDataTypes.conditions.condition': (...ids: string[]) => `p.${ids[0]}.c.${ids[1]}`,
+    'valueDataTypesByID': (...ids: string[]) => 'v',
+    'valueDataTypesByID.dataType': (...ids: string[]) => `v.${ids[0]}`,
+    'valueDataTypesByID.dataType.values': (...ids: string[]) => `v.${ids[0]}.v`,
+    'valueDataTypes.conditions': (...ids: string[]) => `v.${ids[0]}.c`,
+    'valueDataTypes.conditions.condition': (...ids: string[]) => `v.${ids[0]}.c.${ids[1]}`,
+    'emptyPasswordDataTypes': (...ids: string[]) => `w`,
+    'emptyValueDataTypes': (...ids: string[]) => `l`,
+    'duplicatePasswordDataTypes': (...ids: string[]) => `o`,
+    'duplicatePasswordDataTypes.dataTypes': (...ids: string[]) => `o.${ids[0]}`,
+    'duplicateValueDataTypes': (...ids: string[]) => `u`,
+    'duplicateValueDataTypes.dataTypes': (...ids: string[]) => `u.${ids[0]}`,
+};
 
 export type FilterStoreState = KnownMappedFields<IFilterStoreState>;
 
-export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
+export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, FilterStoreStateKeys>
 {
     constructor(vault: any)
     {
-        super(vault, "filterStoreState");
+        super(vault, StoreType.Filter, FilterStorePathRetriever);
     }
 
     protected defaultState()
@@ -36,114 +73,145 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
 
     async toggleFilter(id: string): Promise<undefined>
     {
-        let filter: Field<Filter> | undefined = this.state.passwordFiltersByID.value.get(id) ?? this.state.valueFiltersByID.value.get(id);
+        let filter: Filter | undefined = this.state.p[id] ?? this.state.v[id];
         if (!filter)
         {
             await api.repositories.logs.log(undefined, `Unable to find filter: ${id} to toggle`, "toggleFilter");
             return;
         }
 
-        filter.value.isActive.value = !filter.value.isActive.value;
+        filter.a = !filter.a;
     }
 
-    async addFilter(masterKey: string, filter: Filter): Promise<boolean>
+    async addFilter(
+        masterKey: string,
+        filter: Filter,
+        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        const pendingState = this.cloneState();
+        filter.id = uniqueIDGenerator.generate();
 
-        if (filter.type.value == DataType.Passwords)
+        const filterToSync: { [key: string]: Filter } = {};
+        filterToSync[filter.id] = filter;
+
+        if (filter.t == DataType.Passwords)
         {
-            filter.id.value = uniqueIDGenerator.generate();
-
-            const filterField = Field.create(filter);
-            pendingState.passwordFiltersByID.addMapValue(filter.id.value, filterField);
+            pendingFilterState.addValue('passwordDataTypesByID', filter.id, filter);
 
             // don't need to create a pending group store since the groups aren't actually being changed
-            const pendingPasswordState = this.syncSpecificFiltersForPasswords(new Map([[filter.id.value, filterField]]), this.vault.groupStore.getState().passwordGroupsByID,
-                pendingState, pendingState.passwordFiltersByID);
+            const pendingPasswordState = this.syncSpecificFiltersForPasswords(filterToSync, this.vault.groupStore.getState().p,
+                pendingFilterState);
 
             transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
         }
         else
         {
-            filter.id.value = uniqueIDGenerator.generate();
-
-            const filterField = Field.create(filter);
-            pendingState.valueFiltersByID.addMapValue(filter.id.value, filterField);
+            pendingFilterState.addValue('valueDataTypesByID', filter.id, filter);
 
             // don't need to create a pending group store since the groups aren't actually being changed
-            const pendingValueState = this.syncSpecificFiltersForValues(new Map([[filter.id.value, filterField]]), this.vault.groupStore.getState().valueGroupsByID,
-                pendingState, pendingState.valueFiltersByID);
+            const pendingValueState = this.syncSpecificFiltersForValues(filterToSync, this.vault.groupStore.getState().v,
+                pendingFilterState);
 
             transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
         }
 
-        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this, pendingFilterState);
         return await transaction.commit(masterKey);
     }
 
-    async updateFilter(masterKey: string, updatedFilter: Filter): Promise<boolean>
+    async updateFilter(
+        masterKey: string,
+        updatedFilter: Filter,
+        addedConditions: FilterCondition[],
+        removedConditions: string[],
+        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        const pendingState = this.cloneState();
 
-        let filter: Field<Filter> | undefined = pendingState.passwordFiltersByID.value.get(updatedFilter.id.value) ?? pendingState.valueFiltersByID.value.get(updatedFilter.id.value);
-        if (!filter)
+        const filterToSync: { [key: string]: Filter } = {};
+        filterToSync[updatedFilter.id] = updatedFilter;
+
+        if (updatedFilter.t == DataType.Passwords)
         {
-            await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Update")
-            return false;
-        }
+            let filter: Filter | undefined = pendingFilterState.state.p[updatedFilter.id];
+            if (!filter)
+            {
+                await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Update")
+                return false;
+            }
 
-        filter.value = updatedFilter;
+            this.updateFilterConditions(updatedFilter, "passwordDataTypes.conditions", "passwordDataTypes.conditions.condition",
+                addedConditions, removedConditions, pendingFilterState);
 
-        if (updatedFilter.type.value == DataType.Passwords)
-        {
-            const pendingPasswordState = this.syncSpecificFiltersForPasswords(new Map([[filter.value.id.value, filter]]), this.vault.groupStore.getState().passwordGroupsByID,
-                pendingState, pendingState.passwordFiltersByID);
+            pendingFilterState.commitProxyObject('passwordDataTypesByID.dataType', updatedFilter, updatedFilter.id);
+
+            const pendingPasswordState = this.syncSpecificFiltersForPasswords(filterToSync, this.vault.groupStore.getState().p,
+                pendingFilterState);
 
             transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
         }
-        else if (updatedFilter.type.value == DataType.NameValuePairs)
+        else if (updatedFilter.t == DataType.NameValuePairs)
         {
-            const pendingValueState = this.syncSpecificFiltersForValues(new Map([[filter.value.id.value, filter]]), this.vault.groupStore.getState().valueGroupsByID,
-                pendingState, pendingState.valueFiltersByID);
+            let filter: Filter | undefined = pendingFilterState.state.v[updatedFilter.id];
+            if (!filter)
+            {
+                await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Update")
+                return false;
+            }
+
+            this.updateFilterConditions(updatedFilter, "valueDataTypes.conditions", "valueDataTypes.conditions.condition",
+                addedConditions, removedConditions, pendingFilterState);
+
+            pendingFilterState.commitProxyObject('valueDataTypesByID.dataType', updatedFilter, updatedFilter.id);
+
+            const pendingValueState = this.syncSpecificFiltersForValues(filterToSync, this.vault.groupStore.getState().v,
+                pendingFilterState);
 
             transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
         }
 
-        transaction.updateVaultStore(this, pendingState);
+        transaction.updateVaultStore(this, pendingFilterState);
         return await transaction.commit(masterKey);
     }
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-        const pendingState = this.cloneState();
+        const pendingState = this.getPendingState()!;
 
-        const currentFilter: Field<Filter> | undefined = pendingState.passwordFiltersByID.value.get(filter.id.value) ?? pendingState.valueFiltersByID.value.get(filter.id.value);
-        if (!currentFilter)
+        if (filter.t == DataType.Passwords)
         {
-            await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Delete")
-            return false;
-        }
+            const currentFilter: Filter | undefined = pendingState.state.p[filter.id];
+            if (!currentFilter)
+            {
+                await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Delete")
+                return false;
+            }
 
-        if (filter.type.value == DataType.Passwords)
-        {
-            pendingState.passwordFiltersByID.removeMapValue(currentFilter.value.id.value);
-            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(filter.id.value, "filters");
+            pendingState.deleteValue('passwordDataTypesByID', currentFilter.id);
+            const pendingPasswordState = this.vault.passwordStore.removeSecondaryObjectFromValues(filter.id, "i", "dataTypesByID.dataType.filters");
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id.value, pendingState.emptyPasswordFilters);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id.value, pendingState.duplicatePasswordFilters);
+            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, "emptyPasswordDataTypes", pendingState);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, "duplicatePasswordDataTypes", "duplicatePasswordDataTypes.dataTypes",
+                pendingState);
 
             transaction.updateVaultStore(this.vault.passwordStore, pendingPasswordState);
         }
-        else if (filter.type.value == DataType.NameValuePairs)
+        else if (filter.t == DataType.NameValuePairs)
         {
-            pendingState.valueFiltersByID.removeMapValue(currentFilter.value.id.value);
-            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(filter.id.value, "filters");
+            const currentFilter: Filter | undefined = pendingState.state.p[filter.id];
+            if (!currentFilter)
+            {
+                await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Delete")
+                return false;
+            }
 
-            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id.value, pendingState.emptyValueFilters);
-            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id.value, pendingState.duplicateValueFilters);
+            pendingState.deleteValue('valueDataTypesByID', currentFilter.id);
+            const pendingValueState = this.vault.valueStore.removeSecondaryObjectFromValues(filter.id, "i", "dataTypesByID.dataType.filters");
+
+            this.removeSeconaryObjectFromEmptySecondaryObjects(filter.id, "emptyValueDataTypes", pendingState);
+            this.removeSecondaryDataObjetFromDuplicateSecondaryDataObjects(filter.id, "duplicateValueDataTypes", "duplicateValueDataTypes.dataTypes",
+                pendingState);
 
             transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
         }
@@ -152,105 +220,166 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         return await transaction.commit(masterKey);
     }
 
-    // called internally when adding / updating a filter to sync passwords
-    private syncSpecificFiltersForPasswords(filtersToSync: Map<string, Field<Filter>>, allGroups: Field<Map<string, Field<Group>>>, pendingState: FilterStoreState,
-        passwordFilters: Field<Map<string, Field<Filter>>>)
+    private updateFilterConditions(
+        filter: Filter,
+        allConditionsPath: keyof FilterStoreStateKeys,
+        conditionPath: keyof FilterStoreStateKeys,
+        addedConditions: FilterCondition[],
+        deletedConditions: string[],
+        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        const pendingPasswordState = this.vault.passwordStore.cloneState();
+        // commit all tracking for upated filter conditions. There were
+        // made into proxies in the FilterView so we should just be able to commit them
+        OH.forEach(filter.c, (k, v) => 
+        {
+            const deletedIndex = deletedConditions.indexOf(k);
+            if (deletedIndex >= 0)
+            {
+                // We deleted the filter, don't need to worry about updates
+                return;
+            }
 
-        this.syncFiltersForPrimaryDataObject(filtersToSync, pendingPasswordState.passwordsByID.value, "passwords", pendingState.emptyPasswordFilters,
-            pendingState.duplicatePasswordFilters, passwordFilters, allGroups, true);
+            pendingFilterStoreState.commitProxyObject(conditionPath, v, filter.id, k)
+        });
+
+        for (let i = 0; i < addedConditions.length; i++)
+        {
+            pendingFilterStoreState.addValue(allConditionsPath, addedConditions[i].id, addedConditions[i], filter.id);
+        }
+
+        for (let i = 0; i < deletedConditions.length; i++)
+        {
+            pendingFilterStoreState.deleteValue(allConditionsPath, deletedConditions[i], filter.id);
+        }
+    }
+
+    // called internally when adding / updating a filter to sync passwords
+    private syncSpecificFiltersForPasswords(
+        filtersToSync: { [key: string]: Filter },
+        allGroups: { [key: string]: Group },
+        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+    {
+        const pendingPasswordState = this.vault.passwordStore.getPendingState()!;
+
+        this.syncFiltersForPrimaryDataObject(filtersToSync, Object.values(pendingPasswordState.state.p), "p", "passwordDataTypesByID.dataType.passwords", "dataTypesByID.dataType.filters",
+            pendingPasswordState, pendingFilterState.state.w, pendingFilterState.state.o, pendingFilterState.state.p, allGroups, "emptyPasswordDataTypes", "duplicatePasswordDataTypes",
+            "duplicatePasswordDataTypes.dataTypes", pendingFilterState);
 
         return pendingPasswordState;
     }
 
     // called internally when adding / updating a filter to sync passwords
-    private syncSpecificFiltersForValues(filtersToSync: Map<string, Field<Filter>>, allGroups: Field<Map<string, Field<Group>>>, pendingState: FilterStoreState,
-        valueFilters: Field<Map<string, Field<Filter>>>)
+    private syncSpecificFiltersForValues(
+        filtersToSync: { [key: string]: Filter },
+        allGroups: { [key: string]: Group },
+        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        const pendingValueState = this.vault.valueStore.cloneState();
+        const pendingValueState = this.vault.valueStore.getPendingState()!;
 
-        this.syncFiltersForPrimaryDataObject(filtersToSync, pendingValueState.valuesByID.value, "values", pendingState.emptyValueFilters,
-            pendingState.duplicateValueFilters, valueFilters, allGroups, true);
+        this.syncFiltersForPrimaryDataObject(filtersToSync, Object.values(pendingValueState.state.v), "v", "valueDataTypesByID.dataType.values", "dataTypesByID.dataType.filters",
+            pendingValueState, pendingFilterState.state.l, pendingFilterState.state.u, pendingFilterState.state.v, allGroups, "emptyValueDataTypes", "duplicateValueDataTypes",
+            "duplicateValueDataTypes.dataTypes", pendingFilterState);
 
         return pendingValueState;
     }
 
     // called externally when adding / updating passwords 
-    syncFiltersForPasswords(passwords: Map<string, Field<ReactivePassword>>, allGroups: Field<Map<string, Field<Group>>>, updatingPassword: boolean,
-        pendingFilterStoreState: IFilterStoreState)
+    syncFiltersForPasswords(
+        passwordsToSync: ReactivePassword[],
+        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        allGroups: { [key: string]: Group },
+        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        this.syncFiltersForPrimaryDataObject(pendingFilterStoreState.passwordFiltersByID.value, passwords, "passwords", pendingFilterStoreState.emptyPasswordFilters,
-            pendingFilterStoreState.duplicatePasswordFilters, pendingFilterStoreState.passwordFiltersByID, allGroups, updatingPassword);
+        this.syncFiltersForPrimaryDataObject(pendingFilterState.state.p, passwordsToSync, "p", "passwordDataTypesByID.dataType.passwords", "dataTypesByID.dataType.filters",
+            pendingPasswordState, pendingFilterState.state.w, pendingFilterState.state.o, pendingFilterState.state.p, allGroups, "emptyPasswordDataTypes", "duplicatePasswordDataTypes",
+            "duplicatePasswordDataTypes.dataTypes", pendingFilterState);
     }
 
     // called externally when adding / updating values 
-    syncFiltersForValues(values: Map<string, Field<ReactiveValue>>, allGroups: Field<Map<string, Field<Group>>>, updatingValue: boolean,
-        pendingFilterStoreState: IFilterStoreState)
+    syncFiltersForValues(
+        valuesToSync: ReactiveValue[],
+        pendingValueState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>,
+        allGroups: { [key: string]: Group },
+        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        this.syncFiltersForPrimaryDataObject(pendingFilterStoreState.valueFiltersByID.value, values, "values",
-            pendingFilterStoreState.emptyValueFilters, pendingFilterStoreState.duplicateValueFilters, pendingFilterStoreState.valueFiltersByID, allGroups, updatingValue);
+        this.syncFiltersForPrimaryDataObject(pendingFilterState.state.v, valuesToSync, "v", "valueDataTypesByID.dataType.values", "dataTypesByID.dataType.filters",
+            pendingValueState, pendingFilterState.state.l, pendingFilterState.state.u, pendingFilterState.state.v, allGroups, "emptyValueDataTypes", "duplicateValueDataTypes",
+            "duplicateValueDataTypes.dataTypes", pendingFilterState);
     }
 
-    removePasswordFromFilters(passwordID: string, pendingFilterState: IFilterStoreState)
+    removePasswordFromFilters(passwordID: string, pendingFilterStore: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        this.removePrimaryObjectFromValues(passwordID, "passwords", pendingFilterState.emptyPasswordFilters, pendingFilterState.duplicatePasswordFilters, pendingFilterState.passwordFiltersByID);
+        this.removePrimaryObjectFromValues(passwordID, "p", "passwordDataTypesByID.dataType.passwords", pendingFilterStore.state.p,
+            pendingFilterStore.state.w, pendingFilterStore.state.o, "duplicatePasswordDataTypes", "duplicatePasswordDataTypes.dataTypes", pendingFilterStore);
     }
 
-    removeValuesFromFilters(valueID: string)
+    removeValuesFromFilters(valueID: string, pendingFilterStore: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        const pendingState = this.cloneState();
-        this.removePrimaryObjectFromValues(valueID, "values", pendingState.emptyValueFilters,
-            pendingState.duplicateValueFilters, pendingState.valueFiltersByID);
-
-        return pendingState;
+        this.removePrimaryObjectFromValues(valueID, "v", "valueDataTypesByID.dataType.values", pendingFilterStore.state.v,
+            pendingFilterStore.state.l, pendingFilterStore.state.u, "duplicateValueDataTypes", "duplicateValueDataTypes.dataTypes", pendingFilterStore);
     }
 
+    /** Removes a Password or Value from all current Filters. 
+     * 
+     * @param primaryObjectID The ID of the Password of Value
+     * @param primaryDataObjectCollection "p" | "v"
+     * @param pathToPrimaryDataObjects Path to Passwords or Values on each filter
+     * @param allFilters All current Filters
+     * @param pendingFilterStore Current pending filter store
+     */
     private removePrimaryObjectFromValues(
         primaryObjectID: string,
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        allEmptyFilters: Field<Map<string, Field<string>>>,
-        allDuplicateFilters: Field<Map<string, Field<Map<string, Field<string>>>>>,
-        allFilters: Field<Map<string, Field<Filter>>>)
+        pathToPrimaryDataObjects: keyof FilterStoreStateKeys,
+        allFilters: { [key: string]: Filter },
+        allEmptyFilters: DictionaryAsList,
+        allDuplicateFilters: DoubleKeyedObject,
+        duplicateDataTypesPath: keyof FilterStoreStateKeys,
+        duplicateDataTypesDataTypesPath: keyof FilterStoreStateKeys,
+        pendingFilterStore: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        allFilters.value.forEach((v, k, map) =>
+        OH.forEachValue(allFilters, (v) =>
         {
-            v.value[primaryDataObjectCollection].removeMapValue(primaryObjectID);
+            if (OH.has(v[primaryDataObjectCollection], primaryObjectID))
+            {
+                pendingFilterStore.deleteValue(pathToPrimaryDataObjects, primaryObjectID, v.id);
+            }
 
-            this.checkUpdateEmptySecondaryObject(v.value.id.value, v.value[primaryDataObjectCollection].value, allEmptyFilters);
-            this.checkUpdateDuplicateSecondaryObjects(v.value, primaryDataObjectCollection, allDuplicateFilters, allFilters);
+            this.checkUpdateEmptySecondaryObject(v.id, v[primaryDataObjectCollection], "emptyPasswordDataTypes", allEmptyFilters, pendingFilterStore);
+            this.checkUpdateDuplicateSecondaryObjects(v.id, v[primaryDataObjectCollection], primaryDataObjectCollection, allDuplicateFilters, allFilters,
+                duplicateDataTypesPath, duplicateDataTypesDataTypesPath, pendingFilterStore);
         });
     }
 
-    private filterAppliesToDataObject<T extends IGroupable & IFieldObject>(filter: Field<Filter>, dataObject: Field<T>, groups: Field<Map<string, Field<Group>>>): boolean
+    private filterAppliesToDataObject<T extends IGroupable & { [key: string]: any }>(filter: Filter, dataObject: T, groups: { [key: string]: Group }): boolean
     {
         // if we don't have any conditions, then default to false so 
         // objects don't get included by default
-        let allFilterConditionsApply: boolean = filter.value.conditions.value.size > 0;
-        const groupsForObject: Group[] = groups.value.mapWhere((k, v) => dataObject.value.groups.value.has(k), (k, v) => v.value);
+        let allFilterConditionsApply: boolean = OH.size(filter.c) > 0;
+        const groupsForObject: Group[] = OH.mapWhere(groups, (k, v) => OH.has(dataObject.g, k), (k, v) => v);
 
-        filter.value.conditions.value.forEach(fc =>
+        OH.forEachValue(filter.c, fc =>
         {
             if (allFilterConditionsApply == false)
             {
                 return;
             }
 
-            if (fc.value.property.value === "groups")
+            if (fc.p === "g")
             {
-                switch (fc.value.filterType.value)
+                switch (fc.t)
                 {
                     case FilterConditionType.StartsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().startsWith(fc.value.value.value.toLowerCase()));
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.n.toLowerCase().startsWith(fc.v.toLowerCase()));
                         break;
                     case FilterConditionType.EndsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().endsWith(fc.value.value.value.toLowerCase()));
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.n.toLowerCase().endsWith(fc.v.toLowerCase()));
                         break;
                     case FilterConditionType.Contains:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase().includes(fc.value.value.value.toLowerCase()));
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.n.toLowerCase().includes(fc.v.toLowerCase()));
                         break;
                     case FilterConditionType.EqualTo:
-                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.name.value.toLowerCase() == fc.value.value.value.toLowerCase());
+                        allFilterConditionsApply = allFilterConditionsApply && groupsForObject.some(g => g.n.toLowerCase() == fc.v.toLowerCase());
                         break;
                     default:
                         allFilterConditionsApply = false;
@@ -258,19 +387,19 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
             }
             else
             {
-                switch (fc.value.filterType.value)
+                switch (fc.t)
                 {
                     case FilterConditionType.StartsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase().startsWith(fc.value.value.value.toLowerCase()) ?? false);
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject[fc.p]?.toString().toLowerCase().startsWith(fc.v.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.EndsWith:
-                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase().endsWith(fc.value.value.value.toLowerCase()) ?? false);
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject[fc.p]?.toString().toLowerCase().endsWith(fc.v.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.Contains:
-                        allFilterConditionsApply = allFilterConditionsApply && (dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase().includes(fc.value.value.value.toLowerCase()) ?? false);
+                        allFilterConditionsApply = allFilterConditionsApply && (dataObject[fc.p].toString().toLowerCase().includes(fc.v.toLowerCase()) ?? false);
                         break;
                     case FilterConditionType.EqualTo:
-                        allFilterConditionsApply = allFilterConditionsApply && dataObject.value[fc.value.property.value]?.value?.toString().toLowerCase() == fc.value.value.value.toLowerCase();
+                        allFilterConditionsApply = allFilterConditionsApply && dataObject[fc.p].toString().toLowerCase() == fc.v.toLowerCase();
                         break;
                     default:
                         allFilterConditionsApply = false;
@@ -281,101 +410,116 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState>
         return allFilterConditionsApply;
     }
 
-    private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable & IFieldObject>(
-        filtersToSync: Map<string, Field<Filter>>,
-        primaryDataObjects: Map<string, Field<T>>,
+    /**
+     * Sync all Filters provided for all Primary Objects provided
+     * @param filtersToSync The filters to sync 
+     * @param primaryDataObjects The passwords or values to sync
+     * @param primaryDataObjectCollection The collection on Filters to sync, either "p" or "v"
+     * @param pathToPrimaryDataObjectOnSecondaryObject Path to Passwords or Values on Filters from the Filter store
+     * @param pathToSecondaryObjectsOnPrimaryObject  Path to Filters from Passwords or Values from the Primary Data Type store
+     * @param primaryDataObjectPendingStoreState The pending store state for the primary data objects
+     * @param currentEmptyFilters All the current empty filters for the primary object type, either emptyPasswordDataTypes or emptyValueDataTypes
+     * @param currentDuplicateFilters All the current duplicate filters for the primary object type, either duplicatePasswordDataTypes or duplicateValueDataTypes
+     * @param allFilters All password or value filters, either passwordDataTypes or valueDataTypes
+     * @param allGroups All groups, either passwordDataTypes or valueDataTypes
+     * @param emptySecondaryDataObjectPath Path to the empty filters, either "emptyPasswordDataTypes" or "emptyValueDataTypes"
+     * @param duplicateDataTypesPath Path to the duplicate filters, either "duplicatePasswordDataTypes" or "duplicateValueDataTypes"
+     * @param duplicateDataTypesDataTypePath Path to the current duplicates data types data tyeps, either "duplicatePasswordDataTypes.dataTypes" or "duplicateValueDataTypes.dataTypes"
+     * @param pendingFilterStoreState Current pending filter store state
+     */
+    private syncFiltersForPrimaryDataObject<T extends IFilterable & IIdentifiable & IGroupable & { [key: string]: any }>(
+        filtersToSync: { [key: string]: Filter },
+        primaryDataObjects: T[],
         primaryDataObjectCollection: PrimaryDataObjectCollection,
-        currentEmptyFilters: Field<Map<string, Field<string>>>,
-        currentDuplicateFilters: Field<Map<string, Field<Map<string, Field<string>>>>>,
-        allFilters: Field<Map<string, Field<Filter>>>,
-        allGroups: Field<Map<string, Field<Group>>>,
-        updatingFilterOrPrimaryDataObject: boolean)
+        pathToPrimaryDataObjectOnSecondaryObject: keyof FilterStoreStateKeys,
+        pathToSecondaryObjectsOnPrimaryObject: keyof PrimarydataTypeStoreStateKeys,
+        primaryDataObjectPendingStoreState: PendingStoreState<StoreState, PrimarydataTypeStoreStateKeys>,
+        currentEmptyFilters: DictionaryAsList,
+        currentDuplicateFilters: DoubleKeyedObject,
+        allFilters: { [key: string]: Filter },
+        allGroups: { [key: string]: Group },
+        emptySecondaryDataObjectPath: keyof FilterStoreStateKeys,
+        duplicateDataTypesPath: keyof FilterStoreStateKeys,
+        duplicateDataTypesDataTypePath: keyof FilterStoreStateKeys,
+        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
     {
-        filtersToSync.forEach((f, k, map) =>
+        OH.forEachValue(filtersToSync, f =>
         {
-            primaryDataObjects.forEach((v, k) =>
+            primaryDataObjects.forEach((v) =>
             {
                 if (this.filterAppliesToDataObject(f, v, allGroups))
                 {
-                    if (!v.value.filters.value.has(f.value.id.value))
+                    if (!OH.has(v.i, f.id))
                     {
-                        v.value.filters.addMapValue(f.value.id.value, Field.create(f.value.id.value));
-                    }
-                    // only want to forceUpdate when updating a filter, password, or value since updating a group
-                    // also calls this method, but in that case we don't want the filter to be considered updated
-                    else if (updatingFilterOrPrimaryDataObject)
-                    {
-                        // for change tracking. make sure value is updated in case it is deleted on another device
-                        v.value.filters.value.get(f.value.id.value)!.updateAndBubble();
+                        primaryDataObjectPendingStoreState.addValue(pathToSecondaryObjectsOnPrimaryObject, f.id, true, v.id);
                     }
 
-                    if (!f.value[primaryDataObjectCollection].value.has(v.value.id.value))
+                    if (!OH.has(f[primaryDataObjectCollection], v.id))
                     {
-                        f.value[primaryDataObjectCollection].addMapValue(v.value.id.value, Field.create(v.value.id.value));
-                    }
-                    else if (updatingFilterOrPrimaryDataObject)
-                    {
-                        // for change tracking. make sure value is updated in case it is deleted on another device
-                        f.value[primaryDataObjectCollection].value.get(v.value.id.value)!.updateAndBubble();
+                        pendingFilterStoreState.addValue(pathToPrimaryDataObjectOnSecondaryObject, v.id, true, f.id);
                     }
                 }
                 else
                 {
-                    if (v.value.filters.value.has(f.value.id.value))
+                    if (OH.has(v.i, f.id))
                     {
-                        v.value.filters.removeMapValue(f.value.id.value);
+                        primaryDataObjectPendingStoreState.deleteValue(pathToSecondaryObjectsOnPrimaryObject, f.id, v.id);
                     }
 
-                    if (f.value[primaryDataObjectCollection].value.has(v.value.id.value))
+                    if (OH.has(f[primaryDataObjectCollection], v.id))
                     {
-                        f.value[primaryDataObjectCollection].removeMapValue(v.value.id.value);
+                        pendingFilterStoreState.deleteValue(pathToPrimaryDataObjectOnSecondaryObject, v.id, f.id);
                     }
                 }
             });
 
-            this.checkUpdateEmptySecondaryObject(f.value.id.value, f.value[primaryDataObjectCollection].value, currentEmptyFilters);
-            this.checkUpdateDuplicateSecondaryObjects(f.value, primaryDataObjectCollection, currentDuplicateFilters, allFilters);
+            // Retrieve these instead of using f[primaryDataObjectCollection] since the new ones won't be set there
+            const primaryDataObjectsOnFilter = pendingFilterStoreState.getObject(pathToPrimaryDataObjectOnSecondaryObject, f.id);
+
+            this.checkUpdateEmptySecondaryObject(f.id, primaryDataObjectsOnFilter, emptySecondaryDataObjectPath, currentEmptyFilters, pendingFilterStoreState);
+            this.checkUpdateDuplicateSecondaryObjects(f.id, primaryDataObjectsOnFilter, primaryDataObjectCollection, currentDuplicateFilters, allFilters,
+                duplicateDataTypesPath, duplicateDataTypesDataTypePath, pendingFilterStoreState);
         });
     }
 }
 
 export class ReactiveFilterStore extends FilterStore 
 {
-    private internalPasswordFilters: ComputedRef<Field<Filter>[]>;
-    private internalActivePasswordFilters: ComputedRef<Field<Filter>[]>;
+    private internalPasswordFilters: ComputedRef<Filter[]>;
+    private internalActivePasswordFilters: ComputedRef<Filter[]>;
 
-    private internalNameValuePairFilters: ComputedRef<Field<Filter>[]>;
-    private internalActiveNameValuePairFilters: ComputedRef<Field<Filter>[]>;
+    private internalNameValuePairFilters: ComputedRef<Filter[]>;
+    private internalActiveNameValuePairFilters: ComputedRef<Filter[]>;
 
     private internalActiveAtRiskPasswordFilterType: Ref<AtRiskType>;
     private internalActiveAtRiskValueFilterType: Ref<AtRiskType>;
 
     get passwordFilters() { return this.internalPasswordFilters.value; }
-    get passwordFiltersByID() { return this.state.passwordFiltersByID; }
+    get passwordFiltersByID() { return this.state.p; }
     get activePasswordFilters() { return this.internalActivePasswordFilters.value; }
 
     get nameValuePairFilters() { return this.internalNameValuePairFilters.value; }
-    get nameValuePairFiltersByID() { return this.state.valueFiltersByID; }
+    get nameValuePairFiltersByID() { return this.state.v; }
     get activeNameValuePairFilters() { return this.internalActiveNameValuePairFilters.value; }
 
     get activeAtRiskPasswordFilterType() { return this.internalActiveAtRiskPasswordFilterType.value; }
     get activeAtRiskValueFilterType() { return this.internalActiveAtRiskValueFilterType.value; }
 
-    get emptyPasswordFilters() { return this.state.emptyPasswordFilters; }
-    get emptyValueFilters() { return this.state.emptyValueFilters; }
+    get emptyPasswordFilters() { return this.state.w; }
+    get emptyValueFilters() { return this.state.l; }
 
-    get duplicatePasswordFilters() { return this.state.duplicatePasswordFilters; }
-    get duplicateValueFilters() { return this.state.duplicateValueFilters; }
+    get duplicatePasswordFilters() { return this.state.o; }
+    get duplicateValueFilters() { return this.state.u; }
 
     constructor(vault: VaultStoreParameter)
     {
         super(vault);
 
-        this.internalPasswordFilters = computed(() => this.state.passwordFiltersByID.value.map((k, v) => v));
-        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.value.isActive.value) ?? []);
+        this.internalPasswordFilters = computed(() => Object.values(this.state.p));
+        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.a) ?? []);
 
-        this.internalNameValuePairFilters = computed(() => this.state.valueFiltersByID.value.map((k, v) => v));
-        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.value.isActive.value) ?? []);
+        this.internalNameValuePairFilters = computed(() => Object.values(this.state.v));
+        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.a) ?? []);
 
         this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);

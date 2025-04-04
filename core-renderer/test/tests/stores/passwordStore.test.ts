@@ -403,7 +403,7 @@ passwordStoreSuite.tests.push({
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
         // clone or else it won't be detected as new since it would be the same object reference
-        const addedGroupPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(password));
+        const addedGroupPassword: Password = JSON.parse(JSON.stringify(password));
         addedGroupPassword.groups.value.set(group.id.value, Field.create(group.id.value));
         await app.currentVault.passwordStore.updatePassword(masterKey, addedGroupPassword, false, [], []);
 
@@ -415,7 +415,7 @@ passwordStoreSuite.tests.push({
         ctx.assertTruthy("Password has group id", retrievedPassword.value.groups.value.has(retrievedGroup.value.id.value));
         ctx.assertTruthy("Group has password id", retrievedGroup.value.passwords.value.has(retrievedPassword.value.id.value));
 
-        const removedGroupPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(addedGroupPassword));
+        const removedGroupPassword: Password = JSON.parse(JSON.stringify(addedGroupPassword));
         removedGroupPassword.groups.value = new Map();
         await app.currentVault.passwordStore.updatePassword(masterKey, removedGroupPassword, false, [], []);
 

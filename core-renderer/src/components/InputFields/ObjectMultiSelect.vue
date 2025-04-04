@@ -4,7 +4,7 @@
             :pt="{
                 root: 'objectMultiSelectContainer__floatLabel'
             }">
-            <MultiSelect :fluid="true" :id="id" v-model="selectedItemsPlaceHolder" :options="options" optionLabel="label"
+            <MultiSelect :fluid="true" :id="id" v-model="selectedItemsPlaceHolder" :options="options" :optionLabel="'label'" :optionValue="'id'"
                 filter :virtualScrollerOptions="{ itemSize: 50 }" @selectall-change="onSelectAllChange($event)" @change="onChange($event)" :appendTo="'self'"
                 :emptyMessage="computedEmptyMessage" 
                 :pt="{
@@ -143,6 +143,11 @@ export default defineComponent({
         watch(() => props.modelValue, (newValue) =>
         {
             selectedItemsPlaceHolder.value = newValue;
+        });
+
+        watch(() => props.modelValue.length, () =>
+        {
+            selectedItemsPlaceHolder.value = props.modelValue;
         });
 
         onMounted(() =>

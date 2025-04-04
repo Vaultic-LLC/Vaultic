@@ -99,7 +99,6 @@ export default defineComponent({
         const finishedMounting: Ref<boolean> = ref(false);
 
         const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
-        let backgroundColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.backgroundColor.value);
         //let backgroundClr: Ref<string> = ref('#0f111d');
 
         const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(app.userPreferences.currentPrimaryColor.value));
@@ -140,7 +139,6 @@ export default defineComponent({
         return {
             isVaultView,
             AppView,
-            backgroundColor,
             currentColorPalette,
             clr,
             gradient,

@@ -35,6 +35,9 @@ export class Vault extends VaulticEntity implements IVault
     @Column("boolean")
     lastUsed: boolean;
 
+    @Column("integer")
+    lastLoadedChangeVersion: number
+
     @OneToOne(() => VaultStoreState, (state: VaultStoreState) => state.vault, { eager: true })
     vaultStoreState: VaultStoreState;
 
@@ -72,7 +75,9 @@ export class Vault extends VaulticEntity implements IVault
         return [
             nameof<Vault>("vaultID"),
             nameof<Vault>("shared"),
-            nameof<Vault>("isArchived")
+            nameof<Vault>("isArchived"),
+            nameof<Vault>("name"),
+            nameof<Vault>("lastLoadedChangeVersion")
         ];
     }
 

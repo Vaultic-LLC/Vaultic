@@ -5,8 +5,8 @@ import { safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
-import { CurrentSignaturesVaultKeys } from "../Types/Responses";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
@@ -54,7 +54,7 @@ async function logUserIn(masterKey: string, email: string,
             const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
             if (!passwordHash.success)
             {
-                return TypedMethodResponse.fail();
+                return TypedMethodResponse.fail(errorCodes.HASHING_FAILED);
             }
 
             const { clientLoginState, startLoginRequest } = opaque.client.startLogin({
@@ -83,32 +83,34 @@ async function logUserIn(masterKey: string, email: string,
 
         if (!loginResult)
         {
-            return TypedMethodResponse.failWithValue({ Success: false, RestartOpaqueProtocol: true });
+            return TypedMethodResponse.fail(undefined, undefined, "OPAQUE Finish Login", undefined,
+                undefined, { Success: false, RestartOpaqueProtocol: true });
         }
 
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
-        const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
-        let currentSignatures: CurrentSignaturesVaultKeys = { signatures: {}, keys: [] }
         let masterKeyVaulticKey: string | undefined;
-
-        if (!firstLogin && !reloadAllData && currentUser)
+        if (!firstLogin && !reloadAllData)
         {
-            const vaulticKey: VaulticKey =
+            const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
+            if (currentUser)
             {
-                algorithm: currentUser.masterKeyEncryptionAlgorithm,
-                key: masterKey
-            };
+                const vaulticKey: VaulticKey =
+                {
+                    algorithm: currentUser.masterKeyEncryptionAlgorithm,
+                    key: masterKey
+                };
 
-            masterKeyVaulticKey = JSON.vaulticStringify(vaulticKey);
+                masterKeyVaulticKey = JSON.stringify(vaulticKey);
+            }
         }
 
-        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest, currentSignatures?.signatures ?? {});
+        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest);
         if (finishResponse.Success)
         {
             await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
 
-            if (!firstLogin)
+            if (!firstLogin && !reloadAllData)
             {
                 await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
             }

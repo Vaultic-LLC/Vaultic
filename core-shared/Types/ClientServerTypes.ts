@@ -48,6 +48,9 @@ export interface UserDataPayload
     sharedUserVaults?: SharedClientUserVault[];
     removedUserVaults?: DeepPartial<IUserVault>[];
     removedVaults?: DeepPartial<IVault>[];
+    userChanges?: ClientUserChangeTrackings;
+    userVaultChanges?: ClientUserVaultChangeTrackings[];
+    vaultChanges?: ClientVaultChangeTrackings[];
 };
 
 export enum ServerPermissions
@@ -163,4 +166,43 @@ export enum ServerAllowSharingFrom
 {
     Everyone,
     SpecificUsers
+}
+
+// Keep in sync with ChangeTrackingsByType
+export enum ClientChangeTrackingType
+{
+    User,
+    UserVault,
+    Vault
+}
+
+export interface ClientChangeTrackingObject
+{
+    lastLoadedChangeVersion: number;
+    allChanges: ClientChange[];
+}
+
+export interface ClientUserChangeTrackings extends ClientChangeTrackingObject
+{
+    userID: number
+}
+
+export interface ClientUserVaultChangeTrackings extends ClientChangeTrackingObject
+{
+    userOrganizationID: number;
+    userVaultID: number;
+}
+
+export interface ClientVaultChangeTrackings extends ClientChangeTrackingObject
+{
+    userOrganizationID: number;
+    userVaultID: number;
+    vaultID: number;
+}
+
+export interface ClientChange
+{
+    version?: number;
+    changeTime: number;
+    changes: string;
 }

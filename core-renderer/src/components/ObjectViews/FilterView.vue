@@ -2,7 +2,7 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
-            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
+            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.n"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :end="true" :fill-space="true">
@@ -33,9 +33,11 @@ import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
 import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType } from '../../Types/Fields';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
+import { PendingStoreState } from '@vaultic/shared/Types/Stores';
+import { FilterStoreState, FilterStoreStateKeys } from '../../Objects/Stores/FilterStore';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "FilterView",
@@ -49,14 +51,20 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        let filterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
+        
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const filterState: Ref<Filter> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
+        const filterState: Reactive<Filter> = props.creating ? reactive(props.model) : setupProxies(props.model);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.f);
         const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
-        const filterConditionModels: SortedCollection = new SortedCollection([], () => filterState.value.conditions.value);
+        let allConditions: { [key: string]: FilterCondition } = {};
+        let addedConditions: FilterCondition[] = [];
+        let removedConditions: string[] = [];
+
+        const filterConditionModels: SortedCollection = new SortedCollection([], () => allConditions);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -85,13 +93,13 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const tableColumnsModels: TableColumnModel[] = [];
-            tableColumnsModels.push(new TableColumnModel("Property", "property").setComponent("PropertySelectorCell")
+            tableColumnsModels.push(new TableColumnModel("Property", "p").setComponent("PropertySelectorCell")
                 .setData({ color: color.value, properties: displayFieldOptions.value, label: "Property" }).setSortable(false));
 
-            tableColumnsModels.push(new TableColumnModel("Condition", "filterType").setComponent("EnumInputCell")
+            tableColumnsModels.push(new TableColumnModel("Condition", "t").setComponent("EnumInputCell")
                 .setData({ color: color.value, label: "Condition" }).setSortable(false));
 
-            tableColumnsModels.push(new TableColumnModel("Value", "value").setComponent("FilterValueSelectorCell")
+            tableColumnsModels.push(new TableColumnModel("Value", "v").setComponent("FilterValueSelectorCell")
                 .setData({ color: color.value }).setSortable(false));
 
             return tableColumnsModels;
@@ -124,13 +132,27 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Filter");
             if (props.creating)
             {
-                if (await app.currentVault.filterStore.addFilter(key, filterState.value))
+                // just add all our conditions here so that the entire filter object can get tracked as an add
+                addedConditions.forEach(c => filterState.c[c.id] = c);
+
+                if (await app.currentVault.filterStore.addFilter(key, filterState, filterStoreState))
                 {
-                    filterState.value = await defaultFilter(filterState.value.type.value);
+                    // This won't track changes within the pending store since we didn't re create the 
+                    // custom ref but that's ok since we are creating
+                    filterStoreState = app.currentVault.filterStore.getPendingState()!;
+
+                    // TODO: this is causing issues since the same object reference is saved to the store later on.
+                    // Find another way to do this
+                    Object.assign(filterState, defaultFilter(filterState.t));
+
+                    allConditions = {};
+                    addedConditions = [];
+                    removedConditions = [];
+
                     await onAdd();
                     refreshKey.value = Date.now().toString();
-
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -138,7 +160,8 @@ export default defineComponent({
             }
             else
             {
-                if (await app.currentVault.filterStore.updateFilter(key, filterState.value))
+                if (await app.currentVault.filterStore.updateFilter(key, filterState, addedConditions, 
+                    removedConditions, filterStoreState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -175,14 +198,15 @@ export default defineComponent({
         async function onAdd()
         {
             const id = uniqueIDGenerator.generate();
-            const filterCondition: Field<FilterCondition> = Field.create({
-                id: Field.create(id),
-                property: Field.create(''),
-                value: Field.create(''),
-                filterType: Field.create(undefined)
-            });
+            const filterCondition: FilterCondition = {
+                id,
+                p: '',
+                v: '',
+                t: undefined
+            };
 
-            filterState.value.conditions.addMapValue(id, filterCondition);
+            allConditions[id] = filterCondition;
+            addedConditions.push(filterCondition);
 
             const tableRowModel = new TableRowModel(id, false, undefined, 
             {
@@ -194,30 +218,67 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function onDelete(filterCondition: Field<FilterCondition>)
+        function onDelete(filterCondition: FilterCondition)
         {
-            filterState.value.conditions.removeMapValue(filterCondition.value.id.value);
-            filterConditionModels.remove(filterCondition.value.id.value);
+            delete allConditions[filterCondition.id];
+
+            const addedIndex = addedConditions.findIndex(c => c.id == filterCondition.id);
+            if (addedIndex >= 0)
+            {
+                addedConditions.splice(addedIndex, 1);
+                return;
+            }
+
+            removedConditions.push(filterCondition.id);
+            filterConditionModels.remove(filterCondition.id);
+
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
+        }
+
+        function setupProxies(filter: Filter)
+        {
+            let dataTypePath: keyof FilterStoreStateKeys | undefined;
+            let conditionPath: keyof FilterStoreStateKeys | undefined;
+
+            if (filter.t == DataType.Passwords)
+            {
+                dataTypePath = 'passwordDataTypesByID.dataType';
+                conditionPath = 'passwordDataTypes.conditions.condition';
+            }
+            else
+            {
+                dataTypePath = 'valueDataTypesByID.dataType';
+                conditionPath = 'valueDataTypes.conditions.condition';
+            }
+
+            OH.forEachValue(filter.c, (c) =>
+            {
+                filter.c[c.id] = filterStoreState.createCustomRef(conditionPath, c, filter.id, c.id);
+            });
+            
+            // Do this last so that updating setting the conditions doesn't actually track them as a change
+            return filterStoreState.createCustomRef(dataTypePath, filter, filter.id);
         }
 
         onMounted(() =>
         {
-            if (filterState.value.conditions.value.size == 0)
+            if (OH.size(filterState.c) == 0)
             {
                 onAdd();
             }
             else
             {
                 let models: TableRowModel[] = [];
-                filterState.value.conditions.value.forEach((v, k, map) =>
+                OH.forEach(filterState.c, (k, v)  =>
                 {
-                    const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.value.property.value)?.type ?? PropertyType.String;
+                    allConditions[k] = v;
+
+                    const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.p)?.type ?? PropertyType.String;
                     models.push(new TableRowModel(k, false, undefined, 
                     {
                         filterConditionType: propertyType == PropertyType.String ? FilterConditionType : EqualFilterConditionType,
                         inputType: propertyType,
-                        filterType: v.value.filterType.value,
+                        filterType: v.t,
                         inputEnumType: propertyType == PropertyType.Enum ? NameValuePairType : undefined    // Passwords don't have an emum selectable type
                     }));
                 });

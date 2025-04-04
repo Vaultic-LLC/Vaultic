@@ -170,7 +170,7 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingSecurityQuestionsAddTest, ctx);
 
-        let retrievedPassword: Field<Password> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
+        let retrievedPassword: Field<Password> = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         ctx.assertTruthy("Retrieved Password exists", retrievedPassword);
 
         retrievedPassword!.value.securityQuestions.value.set("1", Field.create({
@@ -186,7 +186,7 @@ mergingDataTestSuite.tests.push({
 
         await copyDatabaseAndLogIntoOnlineMode(mergingSecurityQuestionsAddTest, ctx);
 
-        retrievedPassword = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
+        retrievedPassword = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         ctx.assertEquals("Retrieved Password security question doesn't exist", retrievedPassword?.value.securityQuestions.value.size, 0);
 
         retrievedPassword!.value.securityQuestions.value.set("2", Field.create({
@@ -253,14 +253,14 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("No Passwords for Group", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)?.value.passwords.value.size, 0);
         ctx.assertEquals("No Passwords for Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)?.value.passwords.value.size, 0);
 
-        const clonedPassword: Password = JSON.vaulticParse(JSON.vaulticStringify(retrievedPassword!.value));
+        const clonedPassword: Password = JSON.parse(JSON.stringify(retrievedPassword!.value));
         clonedPassword.groups.value.set(group.id.value, Field.create(group.id.value));
 
         let updateOffline = await app.currentVault.passwordStore.updatePassword(masterKey, clonedPassword, false, [], []);
         ctx.assertTruthy("Update password offline worked", updateOffline);
         ctx.assertTruthy("Group has offline password", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)?.value.passwords.value.has(clonedPassword.id.value));
 
-        const clonedGroup: Group = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.groupStore.passwordGroupsByID.value.get(group2.id.value)!.value));
+        const clonedGroup: Group = JSON.parse(JSON.stringify(app.currentVault.groupStore.passwordGroupsByID.value.get(group2.id.value)!.value));
         clonedGroup.passwords.value.set(clonedPassword.id.value, Field.create(clonedPassword.id.value));
 
         updateOffline = await app.currentVault.groupStore.updateGroup(masterKey, clonedGroup);
@@ -340,14 +340,14 @@ mergingDataTestSuite.tests.push({
         ctx.assertEquals("No Value for Group", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)?.value.values.value.size, 0);
         ctx.assertEquals("No Value for Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(filter.id.value)?.value.values.value.size, 0);
 
-        const clonedValue: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(retrievedValue!.value));
+        const clonedValue: NameValuePair = JSON.parse(JSON.stringify(retrievedValue!.value));
         clonedValue.groups.value.set(group.id.value, Field.create(group.id.value));
 
         let updateOffline = await app.currentVault.valueStore.updateNameValuePair(masterKey, clonedValue, false);
         ctx.assertTruthy("Update Value offline worked", updateOffline);
         ctx.assertTruthy("Group has offline Value", app.currentVault.groupStore.valueGroupsByID.value.get(group.id.value)?.value.values.value.has(clonedValue.id.value));
 
-        const clonedGroup: Group = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.groupStore.valueGroupsByID.value.get(group2.id.value)!.value));
+        const clonedGroup: Group = JSON.parse(JSON.stringify(app.currentVault.groupStore.valueGroupsByID.value.get(group2.id.value)!.value));
         clonedGroup.values.value.set(clonedValue.id.value, Field.create(clonedValue.id.value));
 
         updateOffline = await app.currentVault.groupStore.updateGroup(masterKey, clonedGroup);
@@ -612,7 +612,7 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingFilterConditionsAddTest, ctx);
 
-        let retrievedFilter: Field<Filter> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
+        let retrievedFilter: Field<Filter> = JSON.parse(JSON.stringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         ctx.assertTruthy("Retrieved Filter exists", retrievedFilter);
 
         retrievedFilter!.value.conditions.value.set("1", Field.create({
@@ -627,7 +627,7 @@ mergingDataTestSuite.tests.push({
 
         await copyDatabaseAndLogIntoOnlineMode(mergingFilterConditionsAddTest, ctx);
 
-        retrievedFilter = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
+        retrievedFilter = JSON.parse(JSON.stringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         ctx.assertEquals("Retrieved offline Password security question doesn't exist", retrievedFilter?.value.conditions.value.size, 0);
 
         retrievedFilter!.value.conditions.value.set("2", Field.create({
@@ -972,7 +972,7 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingSecurityQuestionsUpdateTest, ctx);
 
-        let retrievedPassword: Field<Password> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
+        let retrievedPassword: Field<Password> = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         let securityQuestion = retrievedPassword.value.securityQuestions.value.get("1");
         securityQuestion!.value.question.value = "first";
 
@@ -981,7 +981,7 @@ mergingDataTestSuite.tests.push({
 
         await copyDatabaseAndLogIntoOnlineMode(mergingSecurityQuestionsUpdateTest, ctx);
 
-        retrievedPassword = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
+        retrievedPassword = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         let decryptResult = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value.get("1")!.value.question.value);
         ctx.assertEquals("Retrieved Password security question isn't updated", decryptResult.value, "zero");
 
@@ -1242,7 +1242,7 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingFilterConditionsUpdateTest, ctx);
 
-        let retrievedFilter: Field<Filter> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
+        let retrievedFilter: Field<Filter> = JSON.parse(JSON.stringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         let filterCondition = retrievedFilter.value.conditions.value.get("1");
         filterCondition!.value.property.value = "first";
         filterCondition!.value.filterType.value = FilterConditionType.StartsWith;
@@ -1252,7 +1252,7 @@ mergingDataTestSuite.tests.push({
 
         await copyDatabaseAndLogIntoOnlineMode(mergingFilterConditionsUpdateTest, ctx);
 
-        retrievedFilter = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
+        retrievedFilter = JSON.parse(JSON.stringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         filterCondition = retrievedFilter.value.conditions.value.get("1");
 
         ctx.assertEquals("Filter Condition property isn't updated", filterCondition?.value.property.value, "0");
@@ -1510,7 +1510,7 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingSecurityQuestionsDeleteTest, ctx);
 
-        let retrievedPassword: Field<Password> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
+        let retrievedPassword: Field<Password> = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         ctx.assertEquals("Password has 3 security questions", retrievedPassword.value.securityQuestions.value.size, 3);
 
         retrievedPassword.value.securityQuestions.value.delete("1");
@@ -1521,7 +1521,7 @@ mergingDataTestSuite.tests.push({
 
         await copyDatabaseAndLogIntoOnlineMode(mergingSecurityQuestionsDeleteTest, ctx);
 
-        retrievedPassword = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
+        retrievedPassword = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
         ctx.assertEquals("Password has 3 security questions", retrievedPassword.value.securityQuestions.value.size, 3);
 
         retrievedPassword.value.securityQuestions.value.get("2")!.value.answer.value = "updated";
@@ -2238,7 +2238,7 @@ mergingDataTestSuite.tests.push({
 
         await logIntoOfflineMode(mergingFilterConditionsDeleteTest, ctx);
 
-        let retrievedFilter: Field<Filter> = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
+        let retrievedFilter: Field<Filter> = JSON.parse(JSON.stringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         retrievedFilter.value.conditions.value.delete("1");
 
         let filterCondition = retrievedFilter.value.conditions.value.get("2");
@@ -2251,7 +2251,7 @@ mergingDataTestSuite.tests.push({
 
         await copyDatabaseAndLogIntoOnlineMode(mergingFilterConditionsDeleteTest, ctx);
 
-        retrievedFilter = JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
+        retrievedFilter = JSON.parse(JSON.stringify(app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)));
         retrievedFilter.value.conditions.value.delete("2");
 
         filterCondition = retrievedFilter.value.conditions.value.get("3");

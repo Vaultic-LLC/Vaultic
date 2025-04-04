@@ -21,6 +21,7 @@ import SmallMetricGauge from '../../../../components/Dashboard/SmallMetricGauge.
 import { SmallMetricGaugeModel } from '../../../../Types/Models';
 import app from "../../../../Objects/Stores/AppStore";
 import { DataType, AtRiskType } from '../../../../Types/DataTypes';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "PasswordValueGauges",
@@ -51,7 +52,7 @@ export default defineComponent({
                             title: 'Old',
                             filledAmount: app.currentVault.valueStore.oldNameValuePairs.value.length,
                             totalAmount: app.currentVault.valueStore.nameValuePairs.length,
-                            color: app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.v.p,
                             active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.Old,
                             onClick: function ()
                             {
@@ -60,11 +61,11 @@ export default defineComponent({
                         });
                     models.push(
                         {
-                            key: `vdup${app.currentVault.valueStore.duplicateNameValuePairs.value.size}${app.currentVault.valueStore.nameValuePairs.length}`,
+                            key: `vdup${OH.size(app.currentVault.valueStore.duplicateNameValuePairs)}${app.currentVault.valueStore.nameValuePairs.length}`,
                             title: 'Duplicate',
-                            filledAmount: app.currentVault.valueStore.duplicateNameValuePairs.value.size,
+                            filledAmount: OH.size(app.currentVault.valueStore.duplicateNameValuePairs),
                             totalAmount: app.currentVault.valueStore.nameValuePairs.length,
-                            color: app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.v.p,
                             active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.Duplicate,
                             onClick: function ()
                             {
@@ -77,7 +78,7 @@ export default defineComponent({
                             title: 'Weak Phrase',
                             filledAmount: app.currentVault.valueStore.weakPassphraseValues.value.length,
                             totalAmount: app.currentVault.valueStore.nameValuePairs.length,
-                            color: app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.v.p,
                             active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.WeakPhrase,
                             onClick: function ()
                             {
@@ -90,7 +91,7 @@ export default defineComponent({
                             title: 'Weak Passcode',
                             filledAmount: app.currentVault.valueStore.weakPasscodeValues.value.length,
                             totalAmount: app.currentVault.valueStore.nameValuePairs.length,
-                            color: app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.v.p,
                             active: app.currentVault.valueStore.activeAtRiskValueType == AtRiskType.Weak,
                             onClick: function ()
                             {
@@ -106,7 +107,7 @@ export default defineComponent({
                             title: 'Old',
                             filledAmount: app.currentVault.passwordStore.oldPasswords.value.length,
                             totalAmount: app.currentVault.passwordStore.passwords.length,
-                            color: app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.p.p,
                             active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Old,
                             onClick: function ()
                             {
@@ -115,11 +116,11 @@ export default defineComponent({
                         });
                     models.push(
                         {
-                            key: `pdup${app.currentVault.passwordStore.duplicatePasswords.value.size}${app.currentVault.passwordStore.passwords.length}`,
+                            key: `pdup${OH.size(app.currentVault.passwordStore.duplicatePasswords)}${app.currentVault.passwordStore.passwords.length}`,
                             title: 'Duplicate',
-                            filledAmount: app.currentVault.passwordStore.duplicatePasswords.value.size,
+                            filledAmount: OH.size(app.currentVault.passwordStore.duplicatePasswords),
                             totalAmount: app.currentVault.passwordStore.passwords.length,
-                            color: app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.p.p,
                             active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Duplicate,
                             onClick: function ()
                             {
@@ -132,7 +133,7 @@ export default defineComponent({
                             title: 'Weak',
                             filledAmount: app.currentVault.passwordStore.weakPasswords.value.length,
                             totalAmount: app.currentVault.passwordStore.passwords.length,
-                            color: app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.p.p,
                             active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Weak,
                             onClick: function ()
                             {
@@ -145,7 +146,7 @@ export default defineComponent({
                             title: 'Contains Username',
                             filledAmount: app.currentVault.passwordStore.containsLoginPasswords.value.length,
                             totalAmount: app.currentVault.passwordStore.passwords.length,
-                            color: app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value,
+                            color: app.userPreferences.currentColorPalette.p.p,
                             active: app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.ContainsLogin,
                             onClick: function ()
                             {

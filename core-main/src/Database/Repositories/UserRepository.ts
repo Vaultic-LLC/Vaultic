@@ -16,12 +16,14 @@ import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { EntityState, getVaultType, IUser, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { ChangeTracking } from "../Entities/ChangeTracking";
-import { defaultAppStoreState, defaultUserPreferencesState, SimplifiedPasswordStore } from "@vaultic/shared/Types/Stores";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { defaultAppStoreState, defaultUserPreferencesStoreState, SimplifiedPasswordStore, StoreType } from "@vaultic/shared/Types/Stores";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
+import { ChangeTracking } from "../Entities/ChangeTracking";
+import { ClientChangeTrackingType, ClientUserChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
+import { StoreStateRepository } from "./StoreState/StoreStateRepository";
+import { StoreRetriever } from "../../Types/Parameters";
+import { UpdateFromServerResponse } from "../../Types/Responses";
 
 class UserRepository extends VaulticRepository<User> implements IUserRepository
 {
@@ -97,7 +99,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 key: masterKey
             };
 
-            masterKeyToUse = JSON.vaulticStringify(vaulticKey);
+            masterKeyToUse = JSON.stringify(vaulticKey);
         }
 
         if (await user.verify(masterKeyToUse))
@@ -128,7 +130,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 key: masterKey
             };
 
-            masterKeyToUse = JSON.vaulticStringify(vaulticKey);
+            masterKeyToUse = JSON.stringify(vaulticKey);
         }
 
         if (await user.verify(masterKeyToUse))
@@ -242,8 +244,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 serializedMasterKey = JSON.stringify(masterKeyVaulticKey);
             }
 
-            console.log(serializedMasterKey);
-
             const user = new User().makeReactive();
             user.userID = response.UserID!;
             user.email = email;
@@ -255,6 +255,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             user.privateSigningKey = sigKeys.private;
             user.publicEncryptingKey = encKeys.public;
             user.privateEncryptingKey = encKeys.private;
+            user.lastLoadedChangeVersion = 0;
             user.userVaults = [];
 
             await this.setMasterKey(serializedMasterKey, user, false);
@@ -262,13 +263,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const appStoreState = new AppStoreState().makeReactive();
             appStoreState.appStoreStateID = response.AppStoreStateID!;
             appStoreState.userID = response.UserID!;
-            appStoreState.state = JSON.vaulticStringify(defaultAppStoreState);
+            appStoreState.state = JSON.stringify(defaultAppStoreState);
             user.appStoreState = appStoreState;
 
             const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
             userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
             userPreferencesStoreState.userID = response.UserID!;
-            userPreferencesStoreState.state = JSON.vaulticStringify(defaultUserPreferencesState);
+            userPreferencesStoreState.state = JSON.stringify(defaultUserPreferencesStoreState);
             user.userPreferencesStoreState = userPreferencesStoreState;
 
             const vaults = await environment.repositories.vaults.createNewVault(serializedMasterKey, "Personal", false);
@@ -362,7 +363,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     key: masterKey
                 };
 
-                keyToUse = JSON.vaulticStringify(vaulticKey);
+                keyToUse = JSON.stringify(vaulticKey);
             }
 
             try
@@ -464,116 +465,109 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalGetCurrentUserData(this: UserRepository): Promise<TypedMethodResponse<string | undefined>>
         {
-            try
+            const currentUser = await this.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
             {
-                const currentUser = await this.getVerifiedCurrentUser(masterKey);
-                if (!currentUser)
-                {
-                    return TypedMethodResponse.fail(errorCodes.NO_USER);
-                }
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
 
-                const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
-                if (!decryptedAppStoreState)
-                {
-                    return decryptedAppStoreState.addToErrorMessage("AppStoreState");
-                }
+            const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
+            if (!decryptedAppStoreState)
+            {
+                return decryptedAppStoreState.addToErrorMessage("AppStoreState");
+            }
 
-                const usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);
-                if (!usableUserPreferencesState.success)
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Unable to get user preferences");
-                }
+            const usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);
+            if (!usableUserPreferencesState.success)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "Unable to get user preferences");
+            }
 
-                const userData: UserData =
+            const userData: UserData =
+            {
+                success: false,
+                userInfo:
                 {
-                    success: false,
-                    userInfo:
+                    email: currentUser.email,
+                    firstName: currentUser.firstName,
+                    lastName: currentUser.lastName
+                },
+                appStoreState: decryptedAppStoreState.value!,
+                userPreferencesStoreState: usableUserPreferencesState.value,
+                displayVaults: [],
+                currentVault: undefined
+            };
+
+            const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, [nameof<Vault>("name")], ["passwordStoreState"]);
+            if (!userVaults || userVaults.length == 0)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
+            }
+
+            for (let i = 0; i < userVaults.length; i++)
+            {
+                // we only want to set our last used vault for our vaults, not ones another user 
+                // may have accessed
+                if (userVaults[i].lastUsed && userVaults[i].isOwner)
+                {
+                    if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
                     {
-                        email: currentUser.email,
-                        firstName: currentUser.firstName,
-                        lastName: currentUser.lastName
-                    },
-                    appStoreState: decryptedAppStoreState.value!,
-                    userPreferencesStoreState: usableUserPreferencesState.value,
-                    displayVaults: [],
-                    currentVault: undefined
-                };
-
-                const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, [nameof<Vault>("name")], ["passwordStoreState"]);
-                if (!userVaults || userVaults.length == 0)
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
-                }
-
-                for (let i = 0; i < userVaults.length; i++)
-                {
-                    // we only want to set our last used vault for our vaults, not ones another user 
-                    // may have accessed
-                    if (userVaults[i].lastUsed && userVaults[i].isOwner)
-                    {
-                        if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
-                        {
-                            return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Current Vault");
-                        }
+                        return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Current Vault");
                     }
-
-                    userData.displayVaults!.push({
-                        userOrganizationID: userVaults[i].userOrganizationID,
-                        userVaultID: userVaults[i].userVaultID,
-                        vaultID: userVaults[i].vaultID,
-                        name: userVaults[i].name,
-                        shared: userVaults[i].shared,
-                        isOwner: userVaults[i].isOwner,
-                        isReadOnly: userVaults[i].isReadOnly,
-                        isArchived: userVaults[i].isArchived,
-                        lastUsed: userVaults[i].lastUsed,
-                        type: getVaultType(userVaults[i]),
-                        passwordsByDomain: (JSON.vaulticParse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).passwordsByDomain ?? Field.create(new Map())
-                    });
                 }
 
-                if (!userData.currentVault)
-                {
-                    if (!(await setCurrentVault(userData.displayVaults![0].userVaultID, true)))
-                    {
-                        return TypedMethodResponse.fail(undefined, undefined, "Failed to Set Backup Current Vault");
-                    }
+                userData.displayVaults!.push({
+                    userOrganizationID: userVaults[i].userOrganizationID,
+                    userVaultID: userVaults[i].userVaultID,
+                    vaultID: userVaults[i].vaultID,
+                    name: userVaults[i].name,
+                    shared: userVaults[i].shared,
+                    isOwner: userVaults[i].isOwner,
+                    isReadOnly: userVaults[i].isReadOnly,
+                    isArchived: userVaults[i].isArchived,
+                    lastUsed: userVaults[i].lastUsed,
+                    type: getVaultType(userVaults[i]),
+                    passwordsByDomain: (JSON.parse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).o ?? {}
+                });
+            }
 
-                    userData.displayVaults![0].lastUsed = true;
+            if (!userData.currentVault)
+            {
+                if (!(await setCurrentVault(userData.displayVaults![0].userVaultID, true)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed to Set Backup Current Vault");
                 }
 
-                userData.success = true;
-                return TypedMethodResponse.success(JSON.vaulticStringify(userData));
+                userData.displayVaults![0].lastUsed = true;
+            }
 
-                // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
-                async function setCurrentVault(id: number, setAsLastUsed: boolean)
+            userData.success = true;
+            return TypedMethodResponse.success(JSON.stringify(userData));
+
+            // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
+            async function setCurrentVault(id: number, setAsLastUsed: boolean)
+            {
+                const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, undefined, [id], true);
+                if (!userVault || userVault.length == 0)
                 {
-                    const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, undefined, [id], true);
-                    if (!userVault || userVault.length == 0)
+                    return false;
+                }
+
+                if (setAsLastUsed)
+                {
+                    if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!.userID, userVault[0].userVaultID)))
                     {
                         return false;
                     }
-
-                    if (setAsLastUsed)
-                    {
-                        if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!.userID, userVault[0].userVaultID)))
-                        {
-                            return false;
-                        }
-                    }
-
-                    userData.currentVault = userVault[0];
-                    return true;
                 }
-            }
-            catch (e)
-            {
-                console.log(e);
+
+                userData.currentVault = userVault[0];
+                return true;
             }
         }
     }
 
-    public async saveUser(masterKey: string, newData: string, currentData: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveUser(masterKey: string, changes: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveUser);
 
@@ -581,56 +575,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         {
             try
             {
-                let user: User | null;
-
-                // the masterKey is "" when updating userPreferences. This isn't a concern since its the only thing that is updated
-                // when this happens.
-                if (masterKey)
-                {
-                    user = await this.getVerifiedCurrentUser(masterKey);
-                }
-                else
-                {
-                    user = await this.getCurrentUser();
-                }
-
-                if (!user)
+                if (!environment.cache.currentUser?.userID)
                 {
                     return TypedMethodResponse.fail(errorCodes.NO_USER);
                 }
 
-                const newUser: UserData = JSON.vaulticParse(newData);
                 const transaction = new Transaction();
-
-                let parsedCurrentData: UserData | undefined = undefined;
-                if (newUser.appStoreState || newUser.userPreferencesStoreState)
-                {
-                    parsedCurrentData = JSON.vaulticParse(currentData);
-                }
-
-                if (newUser.appStoreState)
-                {
-                    const currentAppStoreState = JSON.vaulticParse(parsedCurrentData.appStoreState);
-                    const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, masterKey, JSON.vaulticParse(newUser.appStoreState), currentAppStoreState, transaction);
-
-                    if (!await (environment.repositories.appStoreStates.updateState(
-                        user.appStoreState.appStoreStateID, masterKey, state, transaction)))
-                    {
-                        return TypedMethodResponse.fail(undefined, undefined, "Failed To Update AppStoreState");
-                    }
-                }
-
-                if (newUser.userPreferencesStoreState)
-                {
-                    const currentUserPreferences = JSON.vaulticParse(parsedCurrentData.userPreferencesStoreState);
-                    const state = environment.repositories.changeTrackings.trackStateDifferences(user.userID, "", JSON.vaulticParse(newUser.userPreferencesStoreState), currentUserPreferences, transaction);
-
-                    if (!await (environment.repositories.userPreferencesStoreStates.updateState(
-                        user.userPreferencesStoreState.userPreferencesStoreStateID, '', state, transaction)))
-                    {
-                        return TypedMethodResponse.fail(undefined, undefined, "Failed To Update UserPreferencesStoreState");
-                    }
-                }
+                ChangeTracking.creteAndInsert(masterKey, ClientChangeTrackingType.User, changes, transaction, environment.cache.currentUser.userID);
 
                 const saved = await transaction.commit();
                 if (!saved)
@@ -715,7 +666,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             return false;
         }
 
-        transaction.resetTracking(currentUser, key, () => this)
+        transaction.resetTracking(currentUser, key, () => this);
 
         // TODO: what to do if updating previousSignatures on store states fails? The server has been updated
         // so the client will no longer be able to update. Detect and force update data from server? Should be handled
@@ -756,16 +707,17 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         return true;
     }
 
-    public async updateFromServer(masterKey: string, currentUser: DeepPartial<User>, newUser: DeepPartial<User>, changeTrackings: Dictionary<ChangeTracking>, transaction: Transaction)
+    public async updateFromServer(
+        masterKey: string,
+        currentUser: User | undefined,
+        newUser: DeepPartial<User>,
+        serverChanges: ClientUserChangeTrackings,
+        localChanges: ChangeTracking[],
+        existingUserChanges: ClientUserChangeTrackings | undefined,
+        transaction: Transaction): Promise<UpdateFromServerResponse<ClientUserChangeTrackings>>
     {
-        if (!newUser.userID)
-        {
-            return;
-        }
-
         const partialUser: DeepPartial<User> = {};
         let updatedUser = false;
-        let needsToRePushData = false;
 
         if (newUser.email)
         {
@@ -809,59 +761,65 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             updatedUser = true;
         }
 
+        if (newUser.lastLoadedChangeVersion)
+        {
+            partialUser[nameof<User>("lastLoadedChangeVersion")] = newUser.lastLoadedChangeVersion;
+            updatedUser = true;
+        }
+
         if (updatedUser)
         {
             transaction.overrideEntity(newUser.userID, partialUser, () => this);
         }
 
+        const serverStates: Partial<{ [key in StoreType]: string }> = {}
+
         if (newUser.appStoreState && newUser.appStoreState.appStoreStateID)
         {
-            if (currentUser?.appStoreState?.entityState == EntityState.Updated)
+            const partialAppStoreState: Partial<AppStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
+            if (Object.keys(partialAppStoreState).length > 0)
             {
-                if (!await (environment.repositories.appStoreStates.mergeStates(masterKey, currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
-                    changeTrackings, transaction)))
+                transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
+                if (partialAppStoreState.state)
                 {
-                    return;
-                }
-
-                needsToRePushData = true;
-            }
-            else
-            {
-                const partialAppStoreState: Partial<AppStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.appStoreState);
-                if (Object.keys(partialAppStoreState).length > 0)
-                {
-                    transaction.overrideEntity(newUser.appStoreState.appStoreStateID, partialAppStoreState, () => environment.repositories.appStoreStates);
+                    serverStates[StoreType.App] = newUser.appStoreState.state;
                 }
             }
         }
 
         if (newUser.userPreferencesStoreState && newUser.userPreferencesStoreState.userPreferencesStoreStateID)
         {
-            if (currentUser?.userPreferencesStoreState?.entityState == EntityState.Updated)
+            const partialUserPreferencesStoreState: Partial<UserPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.userPreferencesStoreState);
+            if (Object.keys(partialUserPreferencesStoreState).length > 0)
             {
-                if (!await (environment.repositories.userPreferencesStoreStates.mergeStates("", currentUser.appStoreState.appStoreStateID, newUser.appStoreState,
-                    changeTrackings, transaction, false)))
-                {
-                    return;
-                }
+                transaction.overrideEntity(
+                    newUser.userPreferencesStoreState.userPreferencesStoreStateID,
+                    partialUserPreferencesStoreState,
+                    () => environment.repositories.userPreferencesStoreStates);
 
-                needsToRePushData = true;
-            }
-            else 
-            {
-                const partialUserPreferencesStoreState: Partial<UserPreferencesStoreState> = StoreState.getUpdatedPropertiesFromObject(newUser.userPreferencesStoreState);
-                if (Object.keys(partialUserPreferencesStoreState).length > 0)
+                if (partialUserPreferencesStoreState.state)
                 {
-                    transaction.overrideEntity(
-                        newUser.userPreferencesStoreState.userPreferencesStoreStateID,
-                        partialUserPreferencesStoreState,
-                        () => environment.repositories.userPreferencesStoreStates);
+                    serverStates[StoreType.App] = newUser.appStoreState.state;
                 }
             }
         }
 
-        return needsToRePushData;
+        const states: StoreRetriever = this.getStoreRetriever(masterKey, currentUser.userID, serverStates);
+        const clientUserChangesToPush: ClientUserChangeTrackings =
+        {
+            userID: currentUser.userID,
+            lastLoadedChangeVersion: currentUser.lastLoadedChangeVersion,
+            allChanges: []
+        };
+
+        const response = await StoreStateRepository.mergeData(masterKey, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
+        if (clientUserChangesToPush.lastLoadedChangeVersion != currentUser.lastLoadedChangeVersion)
+        {
+            currentUser.lastLoadedChangeVersion = clientUserChangesToPush.lastLoadedChangeVersion;
+            transaction.updateEntity(currentUser, masterKey, () => this);
+        }
+
+        return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
 
     public async getStoreStates(masterKey: string, storeStatesToRetrieve: UserData): Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>
@@ -913,6 +871,42 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
             return TypedMethodResponse.success(userData);
         }
+    }
+
+    private getStoreRetriever(masterKey: string, userID: number, serverStates: Partial<{ [key in StoreType]: string }>): StoreRetriever
+    {
+        const states: StoreRetriever = {};
+        states[StoreType.App] =
+        {
+            repository: environment.repositories.appStoreStates,
+            serverState: serverStates[StoreType.App],
+            getState: async () =>
+            {
+                const state = await environment.repositories.appStoreStates.retrieveAndVerify(masterKey,
+                    (repository) => repository.findOneBy({
+                        userID: userID
+                    }));
+
+                return state[1];
+            }
+        };
+
+        states[StoreType.UserPreferences] =
+        {
+            repository: environment.repositories.userPreferencesStoreStates,
+            serverState: serverStates[StoreType.UserPreferences],
+            getState: async () =>
+            {
+                const state = await environment.repositories.userPreferencesStoreStates.retrieveAndVerify(masterKey,
+                    (repository) => repository.findOneBy({
+                        userID: userID
+                    }));
+
+                return state[1];
+            }
+        }
+
+        return states;
     }
 }
 

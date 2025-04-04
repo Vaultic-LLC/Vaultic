@@ -349,7 +349,7 @@ valueStoreSuite.tests.push({
         await app.currentVault.groupStore.addGroup(masterKey, group);
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
-        const valueWithGroup: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(value));
+        const valueWithGroup: NameValuePair = JSON.parse(JSON.stringify(value));
         valueWithGroup.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithGroup, false);
@@ -362,7 +362,7 @@ valueStoreSuite.tests.push({
         ctx.assertTruthy("Value has group id", retrieveValue.value.groups.value.has(retrievedGroup.value.id.value));
         ctx.assertTruthy("Group has value id", retrievedGroup.value.values.value.has(retrieveValue.value.id.value));
 
-        const valueWithoutGroup: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(valueWithGroup));
+        const valueWithoutGroup: NameValuePair = JSON.parse(JSON.stringify(valueWithGroup));
         valueWithoutGroup.groups.value = new Map();
 
         await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithoutGroup, false);

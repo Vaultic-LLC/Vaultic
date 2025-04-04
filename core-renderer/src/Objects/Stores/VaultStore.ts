@@ -1,30 +1,41 @@
 import { computed, ComputedRef, ref, Ref } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { Store, StoreState } from "./Base";
+import { Store } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
 import { GroupStore, ReactiveGroupStore } from "./GroupStore";
 import { PasswordStore, PasswordStoreState, ReactivePasswordStore } from "./PasswordStore";
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
-import { Field, FieldTreeUtility, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
+import { defaultVaultStoreState, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import app from "./AppStore";
-import { defaultVaultStoreState } from "@vaultic/shared/Types/Stores";
 
 const MAX_LOGIN_RECORDS = 500;
-export interface VaultSettings extends IFieldedObject { }
+export interface VaultSettings { }
 
 interface IVaultStoreState extends StoreState
 {
-    settings: Field<VaultSettings>;
-    loginHistory: Field<Map<number, Field<number>>>;
+    /** Settings */
+    s: VaultSettings;
+    /** Login History */
+    l: number[];
 }
 
-export type VaultStoreState = KnownMappedFields<IVaultStoreState>;
+export interface VaultStoreStateKeys extends StateKeys
+{
+    'loginHistory': '';
+}
+
+const VaultStorePathRetriever: StorePathRetriever<VaultStoreStateKeys> =
+{
+    'loginHistory': (...ids: string[]) => `l`,
+};
+
+export type VaultStoreState = IVaultStoreState;
 
 export class BaseVaultStore<V extends PasswordStore,
-    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState>
+    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState, VaultStoreStateKeys>
 {
     protected internalName: string;
     protected internalShared: boolean;
@@ -35,7 +46,7 @@ export class BaseVaultStore<V extends PasswordStore,
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
     protected internalVaultID: number;
-    protected internalPasswordsByDomain: Field<Map<string, Field<Map<string, Field<string>>>>> | undefined;
+    protected internalPasswordsByDomain: DoubleKeyedObject | undefined;
 
     protected internalPasswordStore: V;
     protected internalValueStore: W;
@@ -54,7 +65,7 @@ export class BaseVaultStore<V extends PasswordStore,
     get passwordsByDomain() { return this.internalPasswordsByDomain; }
     set passwordsByDomain(value) { this.internalPasswordsByDomain = value; }
 
-    get settings() { return this.state.settings; }
+    get settings() { return this.state.s; }
 
     get passwordStore() { return this.internalPasswordStore; }
     get valueStore() { return this.internalValueStore; }
@@ -64,9 +75,9 @@ export class BaseVaultStore<V extends PasswordStore,
 
     constructor() 
     {
-        super("vaultStoreState");
+        super(StoreType.Vault, VaultStorePathRetriever);
         this.internalIsReadOnly = ref(false);
-        this.internalReadOnlyComputed = computed(() => this.internalIsReadOnly.value || app.isSyncing.value);
+        this.internalReadOnlyComputed = computed(() => this.internalIsReadOnly.value || app.isSyncing.value || app.forceReadOnly.value);
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
     }
 
@@ -79,7 +90,7 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
         this.internalShared = data.shared;
         this.internalIsArchived = data.isArchived;
-        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? Field.create(new Map());
+        this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Map();
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
@@ -132,7 +143,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     protected internalReactiveUserVaultID: ComputedRef<number>;
 
     get reactiveUserVaultID() { return this.internalReactiveUserVaultID.value; }
-    get loginHistory() { return this.state.loginHistory; }
+    get loginHistory() { return this.state.l; }
 
     constructor()
     {
@@ -182,7 +193,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     private async updateLogins(masterKey: string)
     {
-        const pendingState = this.cloneState();
+        const pendingState = this.getPendingState()!;
         await this.recordLogin(pendingState, Date.now());
 
         const transaction = new StoreUpdateTransaction(this.userVaultID);
@@ -191,21 +202,19 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         await transaction.commit(masterKey);
     }
 
-    private async recordLogin(pendingState: VaultStoreState, dateTime: number): Promise<void>
+    private async recordLogin(
+        pendingState: PendingStoreState<VaultStoreState, VaultStoreStateKeys>,
+        dateTime: number): Promise<void>
     {
-        if (pendingState.loginHistory.value.size >= MAX_LOGIN_RECORDS)
+        if (pendingState.state.l.length >= MAX_LOGIN_RECORDS)
         {
-            for (let i = pendingState.loginHistory.value.size - MAX_LOGIN_RECORDS; i >= 0; i--)
+            for (let i = pendingState.state.l.length - MAX_LOGIN_RECORDS; i >= 0; i--)
             {
-                const result = pendingState.loginHistory.value.entries().next();
-                if (result.value)
-                {
-                    pendingState.loginHistory.removeMapValue(result.value[0]);
-                }
+                pendingState.deleteValue("loginHistory", "");
             }
         }
 
-        pendingState.loginHistory.addMapValue(dateTime, Field.create(dateTime));
+        pendingState.addValue("loginHistory", "", dateTime);
     }
 }
 

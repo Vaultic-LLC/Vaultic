@@ -1,27 +1,7 @@
+import { getObjectFromPath, PropertyManagerConstructor } from "../Utilities/PropertyManagers";
 import { defaultColorPalettes, emptyUserColorPalettes } from "./Color";
-import { Field, FieldedObject, FieldTreeUtility, IFieldedObject } from "./Fields";
-
-export interface SimplifiedPasswordStore
-{
-    passwordsByDomain?: Field<Map<string, Field<Map<string, Field<string>>>>>;
-};
-
-export type VaultStoreStates = "vaultStoreState" | "passwordStoreState" | "valueStoreState" | "filterStoreState" | "groupStoreState";
-
-export class CurrentAndSafeStructure extends FieldedObject
-{
-    current: Field<Map<string, Field<number>>>;
-    safe: Field<Map<string, Field<number>>>;
-
-    constructor()
-    {
-        super();
-
-        this.id = Field.create("");
-        this.current = Field.create(new Map());
-        this.safe = Field.create(new Map());
-    }
-}
+import { Field, FieldMap, IFieldedObject, NonArrayType, Primitive } from "./Fields";
+import { computed, Reactive, reactive, ref } from "vue";
 
 export enum AutoLockTime
 {
@@ -37,87 +17,372 @@ export enum FilterStatus
     Or = "Or"
 }
 
-export interface PinnedDataTypes extends IFieldedObject
+export class CurrentAndSafeStructure
 {
-    pinnedFilters: Field<Map<string, Field<string>>>;
-    pinnedGroups: Field<Map<string, Field<string>>>;
-    pinnedPasswords: Field<Map<string, Field<string>>>;
-    pinnedValues: Field<Map<string, Field<string>>>;
+    /** Current */
+    c: number[];
+    /** Safe */
+    s: number[];
+
+    constructor()
+    {
+        this.c = [];
+        this.s = [];
+    }
 }
 
-export const defaultAppStoreState = FieldTreeUtility.setupIDs({
-    id: Field.create(""),
-    version: Field.create(0),
-    settings: Field.create({
-        id: Field.create(""),
-        userColorPalettes: Field.create(emptyUserColorPalettes),
-        autoLockTime: Field.create(AutoLockTime.OneMinute),
-        multipleFilterBehavior: Field.create(FilterStatus.Or),
-        oldPasswordDays: Field.create(365),
-        percentMetricForPulse: Field.create(1),
-        randomValueLength: Field.create(25),
-        randomPhraseLength: Field.create(7),
-        includeNumbersInRandomPassword: Field.create(true),
-        includeSpecialCharactersInRandomPassword: Field.create(true),
-        includeAmbiguousCharactersInRandomPassword: Field.create(true),
-        passphraseSeperator: Field.create('-'),
-        temporarilyStoreMasterKey: Field.create(true)
-    })
-});
+export enum StoreType
+{
+    App = "0",
+    UserPreferences = "1",
+    Vault = "2",
+    VaultPreferences = "3",
+    Password = "4",
+    Value = "5",
+    Filter = "6",
+    Group = "7",
+    Device = "8",
+    VaultDataBreach = "9",
+    Organization = "10"
+}
 
-export const defaultUserPreferencesState = FieldTreeUtility.setupIDs({
-    version: Field.create(0),
-    currentColorPalette: defaultColorPalettes.entries().next().value![1],
-    pinnedDataTypes: Field.create(new Map<number, Field<PinnedDataTypes>>()),
-    pinnedDesktopDevices: Field.create(new Map()),
-    pinnedMobileDevices: Field.create(new Map()),
-    pinnedOrganizations: Field.create(new Map())
-});
+// Enforced to ensure the logic to track changes always works
+// Note: Every nested Object should be wrapped in KnownMappdFields<>
+type StoreStateProperty = Field<NonArrayType<Primitive>> | FieldMap | Field<NonArrayType<IFieldedObject>>;
 
-export const defaultVaultStoreState = FieldTreeUtility.setupIDs({
-    version: Field.create(0),
-    settings: Field.create(
+export interface StoreState
+{
+    [key: string]: any;
+    version: number;
+}
+
+/** Used for when storing a list of something. We can't use arrays or change tracking since the order isn't guranteeded
+ to maintain when serializating / deserializing. Value as boolean is just the smallest type to save on space  */
+export interface DictionaryAsList
+{
+    [key: string]: boolean;
+}
+
+/** We can't use arrays or change tracking since the order isn't guranteeded
+ to maintain when serializating / deserializing and we don't want to use 
+ maps since they are slower to serialize */
+export interface DoubleKeyedObject
+{
+    [key: string]: DictionaryAsList;
+}
+
+export interface SimplifiedPasswordStore
+{
+    o?: DoubleKeyedObject;
+};
+
+export type VaultStoreStates = "vaultStoreState" | "passwordStoreState" | "valueStoreState" | "filterStoreState" | "groupStoreState";
+
+export interface StateKeys 
+{
+};
+
+export type StorePathRetriever<T extends StateKeys> = {
+    [key in keyof T]: (...ids: string[]) => string
+}
+
+export enum StoreStateChangeType
+{
+    Add,
+    Update,
+    Delete
+}
+
+export interface PathChange
+{
+    /** Type */
+    t: StoreStateChangeType;
+    /** Value - Add and Upate Only */
+    v?: any;
+    /** Property */
+    p: string;
+}
+
+export class PendingStoreState<T extends StoreState, U extends StateKeys>
+{
+    state: T;
+    retriever: StorePathRetriever<U>;
+    changes: { [key: string]: PathChange[] };
+    objProxyChanges: Map<string, string[]>;
+
+    constructor(state: T, pathRetriever: StorePathRetriever<U>)
+    {
+        this.state = state;
+        this.retriever = pathRetriever;
+        this.changes = {};
+        this.objProxyChanges = new Map();
+    }
+
+    getObject(identifier: keyof U, ...ids: string[])
+    {
+        const path = this.retriever[identifier](...ids);
+        return getObjectFromPath(path, this.state);
+    }
+
+    proxifyObject(identifier: keyof U, obj: any, ...ids: string[])
+    {
+        const path = this.retriever[identifier](...ids);
+        return new Proxy(obj, this.getHandler(path));
+    }
+
+    /**
+     * Used to create a custom Reactive value for binding in vue. Needed since Ref and Reactive use their own proxy
+     * but we still want to have our own to track changes as well. This allows both
+     * @param identifier The path to the object
+     * @param obj The object to make a custom ref for
+     * @param ids Ids to the path of the object
+     * @returns 
+     */
+    createCustomRef<T extends { [key: string]: any }>(identifier: keyof U, obj: T, ...ids: string[]): Reactive<T>
+    {
+        const path = this.retriever[identifier](...ids);
+
+        const _crObj: { [key: string]: any } = {}
+        const keys = Object.keys(obj);
+
+        const temp: { [key: string]: any } = {}
+
+        const onSet = (prop: string) => this.onObjPropertySet(path, prop);
+        for (let i = 0; i < keys.length; i++)
         {
-            id: Field.create(""),
-            loginRecordsToStorePerDay: Field.create(13),
-            numberOfDaysToStoreLoginRecords: Field.create(30)
-        }),
-    loginHistory: Field.create(new Map<number, Field<number>>())
-});
+            _crObj[keys[i]] = ref(obj[keys[i]]);
+            temp[keys[i]] = computed({
+                get() 
+                {
+                    return _crObj[keys[i]].value;
+                },
+                set(val)
+                {
+                    onSet(keys[i]);
+                    _crObj[keys[i]].value = val;
+                }
+            });
+        }
 
-export const defaultPasswordStoreState = FieldTreeUtility.setupIDs({
-    version: Field.create(0),
-    passwordsByID: Field.create(new Map<string, Field<any>>()),
-    passwordsByDomain: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-    duplicatePasswords: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-    currentAndSafePasswords: Field.create(new CurrentAndSafeStructure()),
-    passwordsByHash: Field.create(new Map<string, Field<Map<string, Field<string>>>>())
-});
+        return reactive(temp) as Reactive<T>;
+    }
 
-export const defaultValueStoreState = FieldTreeUtility.setupIDs({
-    version: Field.create(0),
-    valuesByID: Field.create(new Map<string, Field<any>>()),
-    duplicateValues: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-    currentAndSafeValues: Field.create(new CurrentAndSafeStructure()),
-    valuesByHash: Field.create(new Map<string, Field<Map<string, Field<string>>>>())
-});
+    commitProxyObject(identifier: keyof U, updatedObj: any, ...ids: string[])
+    {
+        const path = this.retriever[identifier](...ids);
+        const proxyChanges = this.objProxyChanges.get(path);
 
-export const defaultFilterStoreState = FieldTreeUtility.setupIDs({
-    version: Field.create(0),
-    passwordFiltersByID: Field.create(new Map<string, Field<any>>()),
-    valueFiltersByID: Field.create(new Map<string, Field<any>>()),
-    emptyPasswordFilters: Field.create(new Map<string, Field<string>>()),
-    emptyValueFilters: Field.create(new Map<string, Field<string>>()),
-    duplicatePasswordFilters: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-    duplicateValueFilters: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-});
+        if (!proxyChanges || proxyChanges.length == 0)
+        {
+            return;
+        }
 
-export const defaultGroupStoreState = FieldTreeUtility.setupIDs({
-    version: Field.create(0),
-    passwordGroupsByID: Field.create(new Map<string, Field<any>>()),
-    valueGroupsByID: Field.create(new Map<string, Field<any>>()),
-    emptyPasswordGroups: Field.create(new Map<string, Field<string>>()),
-    emptyValueGroups: Field.create(new Map<string, Field<string>>()),
-    duplicatePasswordGroups: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-    duplicateValueGroups: Field.create(new Map<string, Field<Map<string, Field<string>>>>()),
-});
+        const objToUes = this.checkCleanObject(updatedObj);
+
+        const currentObj = getObjectFromPath(path, this.state);
+        const manager = PropertyManagerConstructor.getFor(currentObj);
+
+        for (let i = 0; i < proxyChanges.length; i++)
+        {
+            if (manager.get(proxyChanges[i], currentObj) === manager.get(proxyChanges[i], objToUes))
+            {
+                continue;
+            }
+
+            manager.set(proxyChanges[i], manager.get(proxyChanges[i], objToUes), currentObj);
+
+            if (!this.changes[path])
+            {
+                this.changes[path] = [];
+            }
+
+            this.changes[path].push({
+                t: StoreStateChangeType.Update,
+                v: manager.get(proxyChanges[i], objToUes),
+                p: proxyChanges[i]
+            });
+        }
+    }
+
+    addValue(identifier: keyof U, property: string, value: any, ...ids: string[])
+    {
+        const path = this.retriever[identifier](...ids);
+        if (!this.changes[path])
+        {
+            this.changes[path] = [];
+        }
+
+        const valueToUse = this.checkCleanObject(value);
+
+        this.changes[path].push({
+            t: StoreStateChangeType.Add,
+            v: valueToUse,
+            p: property
+        });
+
+        const obj = getObjectFromPath(path, this.state);
+        const manager = PropertyManagerConstructor.getFor(obj);
+
+        manager.set(property, valueToUse, obj);
+    }
+
+    updateValue(identifier: keyof U, property: string, value: any, ...ids: string[])
+    {
+        const path = this.retriever[identifier](...ids);
+        if (!this.changes[path])
+        {
+            this.changes[path] = [];
+        }
+
+        const valueToUse = this.checkCleanObject(value);
+
+        this.changes[path].push({
+            t: StoreStateChangeType.Update,
+            v: valueToUse,
+            p: property
+        });
+
+        const obj = getObjectFromPath(path, this.state);
+        const manager = PropertyManagerConstructor.getFor(obj);
+
+        manager.set(property, valueToUse, obj);
+    }
+
+    deleteValue(identifier: keyof U, property: string, ...ids: string[])
+    {
+        const path = this.retriever[identifier](...ids);
+        if (!this.changes[path])
+        {
+            this.changes[path] = [];
+        }
+
+        this.changes[path].push({
+            t: StoreStateChangeType.Delete,
+            p: property
+        });
+
+        const obj = getObjectFromPath(path, this.state);
+        const manager = PropertyManagerConstructor.getFor(obj);
+
+        manager.delete(property, obj);
+    }
+
+    private getHandler(path: string)
+    {
+        const onSet = (prop: string) => this.onObjPropertySet(path, prop);
+        return {
+            get(target: any, prop: any, receiver: any)
+            {
+                return target[prop];
+            },
+            set(obj: any, prop: string, newValue: any)
+            {
+                obj[prop] = newValue;
+                return onSet(prop);
+            }
+        };
+    }
+
+    private onObjPropertySet(path: string, prop: string)
+    {
+        if (!this.objProxyChanges.has(path))
+        {
+            this.objProxyChanges.set(path, []);
+        }
+
+        const changes = this.objProxyChanges.get(path);
+        if (changes?.indexOf(prop) == -1)
+        {
+            this.objProxyChanges.get(path)?.push(prop);
+        }
+
+        return true;
+    }
+
+    private checkCleanObject(value: any): any
+    {
+        if (typeof value === "object")
+        {
+            // Break any references to this object so that any updates done after adding it
+            // don't accidentally alter the object in the store state
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        return value;
+    }
+}
+
+export const defaultAppStoreState =
+{
+    version: 0,
+    s: {
+        c: emptyUserColorPalettes,
+        a: AutoLockTime.OneMinute,
+        f: FilterStatus.Or,
+        o: 365,
+        p: 1,
+        v: 25,
+        r: 7,
+        n: true,
+        s: true,
+        m: true,
+        e: '-',
+        t: true
+    }
+};
+
+export const defaultUserPreferencesStoreState =
+{
+    version: 0,
+    c: { p: defaultColorPalettes.get('m84ezgwm3')! },
+    t: {},
+    o: {}
+};
+
+export const defaultVaultStoreState =
+{
+    version: 0,
+    s: {},
+    l: []
+};
+
+export const defaultPasswordStoreState =
+{
+    version: 0,
+    p: {},
+    o: {},
+    d: {},
+    c: new CurrentAndSafeStructure(),
+    h: {}
+};
+
+export const defaultValueStoreState =
+{
+    version: 0,
+    v: {},
+    d: {},
+    c: new CurrentAndSafeStructure(),
+    h: {}
+};
+
+export const defaultFilterStoreState =
+{
+    version: 0,
+    p: {},
+    v: {},
+    w: {},
+    l: {},
+    o: {},
+    u: {},
+};
+
+export const defaultGroupStoreState =
+{
+    version: 0,
+    p: {},
+    v: {},
+    w: {},
+    l: {},
+    o: {},
+    u: {},
+};

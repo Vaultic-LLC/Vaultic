@@ -23,7 +23,7 @@ export default defineComponent({
 		{
             const model: SelectorButtonModel = 
             {
-                isActive: ref(props.model.value.isActive.value),
+                isActive: ref(props.model.a),
                 color: ref(props.data["color"]),
                 onClick: () => props.data["onClick"](props.model)
             }

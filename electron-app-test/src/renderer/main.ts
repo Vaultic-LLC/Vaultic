@@ -10,7 +10,7 @@ import { setupCalendar } from 'v-calendar-tw';
 import PrimeVue from 'primevue-vaultic/config';
 import Aura from '@primevue/themes/aura';
 import ConfirmationService from 'primevue-vaultic/confirmationservice';
-import runAllTests, { runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/index"
+import runAllTests, { runServerHelperTests, runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/index"
 
 api.setAPI(window.api);
 
@@ -124,4 +124,10 @@ function initApp()
 
     app.use(ConfirmationService);
     app.mount("#app");
+
+    // gives time to set breakpoints if needed
+    setTimeout(() =>
+    {
+        //runServerHelperTests();
+    }, 10000);
 }

@@ -26,6 +26,7 @@ import { ClientDevice } from '@vaultic/shared/Types/Device';
 import { SortedCollection, VaultListSortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Organization } from '@vaultic/shared/Types/DataTypes';
 import { DataType } from '../../Types/DataTypes';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "OrganizationDeviceTable",
@@ -84,7 +85,7 @@ export default defineComponent({
             {
                 name: 'Registered Devices',
                 active: devicesAreSelected,
-                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.p.p),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Devices;
@@ -93,7 +94,7 @@ export default defineComponent({
             {
                 name: 'Organizations',
                 active: computed(() => !devicesAreSelected.value),
-                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.v.p),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Organizations;
@@ -162,7 +163,7 @@ export default defineComponent({
 
                 app.organizations.organizationsByID.forEach((v, k, map) =>
                 {
-                    if (app.userPreferences.pinnedOrganizations.value.has(k))
+                    if (OH.has(app.userPreferences.pinnedOrganizations, k.toString()))
                     {
                         newPinnedOrganizationModels.push(new TableRowModel(k, true));
                     }

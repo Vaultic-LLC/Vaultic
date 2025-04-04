@@ -157,7 +157,7 @@ export default defineComponent({
     },
     setup()
     {
-        const popupInfo: Popups = JSON.vaulticParse(JSON.vaulticStringify(popups));
+        const popupInfo: Popups = JSON.parse(JSON.stringify(popups));
         return {
             popupStore: app.popups,
             popupInfo,

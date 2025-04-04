@@ -44,7 +44,6 @@ import { getEmptyTableMessage, getFilterGroupTableRowModels } from '../../Helper
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
 import { Filter, DataType, Group } from '../../Types/DataTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: 'FilterGroupTable',
@@ -62,17 +61,17 @@ export default defineComponent({
         const tabToOpenOnAdd: ComputedRef<number> = computed(() => app.activeFilterGroupsTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
-        const passwordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID.value, "name");
-        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID.value, "name");
+        const passwordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "n");
+        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "n");
 
-        const passwordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID.value, "name");
-        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID.value, "name");
+        const passwordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "n");
+        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "n");
 
-        const valueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID.value,  "name");
-        const pinnedValueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID.value,  "name");
+        const valueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "n");
+        const pinnedValueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "n");
 
-        const valueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID.value, "name");
-        const pinnedValueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID.value, "name");
+        const valueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "n");
+        const pinnedValueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "n");
 
         const showEditGroupPopup: Ref<boolean> = ref(false);
         const currentlyEditingGroupModel: Ref<Group | any> = ref({});
@@ -93,10 +92,10 @@ export default defineComponent({
             switch (app.activeFilterGroupsTable)
             {
                 case DataType.Groups:
-                    return app.userPreferences.currentColorPalette.groupsColor.value;
+                    return app.userPreferences.currentColorPalette.g;
                 case DataType.Filters:
                 default:
-                    return app.userPreferences.currentColorPalette.filtersColor.value;
+                    return app.userPreferences.currentColorPalette.f;
             }
         });
 
@@ -144,20 +143,20 @@ export default defineComponent({
             {
                 name: 'Filters',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Filters),
-                color: computed(() => app.userPreferences.currentColorPalette.filtersColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.f),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Filters; }
             },
             {
                 name: 'Groups',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Groups),
-                color: computed(() => app.userPreferences.currentColorPalette.groupsColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.g),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Groups; }
             }
         ];
 
-        function toggleFilter(f: Field<Filter>)
+        function toggleFilter(f: Filter)
         {
-            app.currentVault.filterStore.toggleFilter(f.value.id.value);
+            app.currentVault.filterStore.toggleFilter(f.id);
         }
 
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() =>
@@ -165,14 +164,14 @@ export default defineComponent({
             const models: TableColumnModel[] = [];
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                models.push(new TableColumnModel("Active", "isActive").setComponent("SelectorButtonTableRowCell")
+                models.push(new TableColumnModel("Active", "a").setComponent("SelectorButtonTableRowCell")
                     .setData({ 'color': color, onClick: toggleFilter, startingWidth: '105px' }).setOnClick(toggleFilter));
 
-                models.push(new TableColumnModel("Name", "name"));
+                models.push(new TableColumnModel("Name", "n"));
             }
             else
             {
-                models.push(new TableColumnModel("Name", "name"));
+                models.push(new TableColumnModel("Name", "n"));
                 models.push(new TableColumnModel("Icon", "").setIsGroupIconCell(true).setData({ 'color': color })
                     .setSortable(false));
             }
@@ -314,63 +313,63 @@ export default defineComponent({
             }
         }
 
-        function onPinFilter(isPinned: boolean, value: Field<Filter>)
+        function onPinFilter(isPinned: boolean, value: Filter)
         {
             if (isPinned)
             {
-                app.userPreferences.removePinnedFilters(value.value.id.value);
+                app.userPreferences.removePinnedFilters(value.id);
             }
             else
             {
-                app.userPreferences.addPinnedFilter(value.value.id.value);
+                app.userPreferences.addPinnedFilter(value.id);
             }
         }
 
-        function onPinGroup(isPinned: boolean, value: Field<Group>)
+        function onPinGroup(isPinned: boolean, value: Group)
         {
             if (isPinned)
             {
-                app.userPreferences.removePinnedGroups(value.value.id.value);
+                app.userPreferences.removePinnedGroups(value.id);
             }
             else
             {
-                app.userPreferences.addPinnedGroup(value.value.id.value);
+                app.userPreferences.addPinnedGroup(value.id);
             }
         }
 
-        function onPin(isPinned: boolean, dataType: Field<Filter | Group>)
+        function onPin(isPinned: boolean, dataType: (Filter | Group))
         {
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                onPinFilter(isPinned, dataType as Field<Filter>);
+                onPinFilter(isPinned, dataType as Filter);
             }
             else if (app.activeFilterGroupsTable == DataType.Groups)
             {
-                onPinGroup(isPinned, dataType as Field<Group>);
+                onPinGroup(isPinned, dataType as Group);
             }
         }
 
-        function onEdit(dataType: Field<Filter | Group>)
+        function onEdit(dataType: (Filter | Group))
         {
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                onEditFilter(dataType.value as Filter);
+                onEditFilter(dataType as Filter);
             }
             else if (app.activeFilterGroupsTable == DataType.Groups)
             {
-                onEditGroup(dataType.value as Group);
+                onEditGroup(dataType as Group);
             }
         }
 
-        function onDelete(dataType: Field<Filter | Group>)
+        function onDelete(dataType: Filter | Group)
         {
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                onFilterDeleteInitiated(dataType.value as Filter);
+                onFilterDeleteInitiated(dataType as Filter);
             }
             else if (app.activeFilterGroupsTable == DataType.Groups)
             {
-                onGroupDeleteInitiated(dataType.value as Group);
+                onGroupDeleteInitiated(dataType as Group);
             }
         }
 

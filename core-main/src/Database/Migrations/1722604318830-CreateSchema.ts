@@ -30,6 +30,13 @@ export class CreateSchema1722604318830 implements MigrationInterface
             }
         ];
 
+        const ledgerProperties: TableColumnOptions[] = [
+            {
+                name: "lastLoadedChangeVersion",
+                type: "integer"
+            }
+        ];
+
         await queryRunner.createTable(new Table({
             name: "users",
             columns: [
@@ -82,7 +89,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "privateEncryptingKey",
                     type: "text"
-                }
+                },
+                ...ledgerProperties
             ]
         }));
 
@@ -119,7 +127,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "vaultKey",
                     type: "text"
-                }
+                },
+                ...ledgerProperties
             ]
         }));
 
@@ -147,7 +156,8 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "lastUsed",
                     type: "boolean"
-                }
+                },
+                ...ledgerProperties
             ]
         }));
 
@@ -332,15 +342,25 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     type: "integer"
                 },
                 {
-                    name: "objectID",
-                    type: "text"
+                    name: "userVaultID",
+                    type: "interger",
+                    isNullable: true
                 },
                 {
-                    name: "objectState",
+                    name: "vaultID",
+                    type: "integer",
+                    isNullable: true
+                },
+                {
+                    name: "clientTrackingType",
                     type: "integer"
                 },
                 {
-                    name: "lastModifiedTime",
+                    name: "changes",
+                    type: "text"
+                },
+                {
+                    name: "changeTime",
                     type: "integer"
                 }
             ]

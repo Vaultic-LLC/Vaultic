@@ -1,15 +1,18 @@
-import { Field, SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject } from "@vaultic/shared/Types/Fields";
+import { SecondaryDataObjectCollectionType, PrimaryDataObjectCollectionType, IIdentifiable, IFieldObject, FieldedObject } from "@vaultic/shared/Types/Fields";
 import { PasswordSecretProperty, ValueSecretProperty } from "./Fields";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
+import { DictionaryAsList } from "@vaultic/shared/Types/Stores";
 
 export interface IFilterable
 {
-    filters: Field<Map<string, Field<string>>>;
+    /** Filters */
+    i: DictionaryAsList;
 }
 
 export interface IGroupable
 {
-    groups: Field<Map<string, Field<string>>>;
+    /** Groups */
+    g: DictionaryAsList;
 }
 
 export enum DataType
@@ -30,23 +33,36 @@ export interface IPrimaryDataObject extends IFilterable, IIdentifiable, IGroupab
 export interface Password extends IPrimaryDataObject, PasswordSecretProperty
 {
     [key: string]: any;
-    isVaultic: Field<boolean>;
-    login: Field<string>;
-    domain: Field<string>;
-    email: Field<string>;
-    passwordFor: Field<string>;
-    securityQuestions: Field<Map<string, Field<SecurityQuestion>>>;
-    additionalInformation: Field<string>;
-    lastModifiedTime: Field<string>;
-    isWeak: Field<boolean>;
-    isWeakMessage: Field<string>;
-    containsLogin: Field<boolean>;
+    /** Is Vaultic */
+    v: boolean;
+    /** Login */
+    l: string;
+    /** Domain */
+    d: string;
+    /** Email */
+    e: string;
+    /** Password For */
+    f: string;
+    /** Security Questions */
+    q: { [key: string]: SecurityQuestion };
+    /** Additional Information */
+    a: string;
+    /** Last Modified Time */
+    t: string;
+    /** Is Weak */
+    w: boolean;
+    /** Is Weak Message */
+    m: number;
+    /** Contains Login */
+    c: boolean;
 }
 
-export interface SecurityQuestion extends IIdentifiable, IFieldObject
+export interface SecurityQuestion extends IIdentifiable
 {
-    question: Field<string>,
-    answer: Field<string>
+    /** Question */
+    q: string;
+    /** Answer */
+    a: string;
 }
 
 export enum NameValuePairType
@@ -64,14 +80,23 @@ export const nameValuePairTypesValues = Object.values(NameValuePairType);
 export interface NameValuePair extends IPrimaryDataObject, ValueSecretProperty
 {
     [key: string]: any;
-    name: Field<string>;
-    valueType: Field<NameValuePairType | undefined>;
-    notifyIfWeak: Field<boolean>;
-    additionalInformation: Field<string>;
-    lastModifiedTime: Field<string>;
-    isWeak: Field<boolean>;
-    isWeakMessage: Field<string>;
+    /** Name */
+    n: string;
+    /** Value Type */
+    y: NameValuePairType | undefined;
+    /** Notify If Weak */
+    o: boolean;
+    /** Additional Information */
+    a: string;
+    /** Last Modified Time */
+    t: string;
+    /** Is Weak */
+    w: boolean;
+    /** Is Weak Message */
+    m: number;
 }
+
+export const MAX_CURRENT_AND_SAFE_SIZE = 200;
 
 export enum AtRiskType
 {
@@ -95,23 +120,30 @@ export interface AtRisks
     isEmpty?: boolean;
 }
 
-export interface ISecondaryDataObject extends IIdentifiable, IFieldObject, PrimaryDataObjectCollectionType
+export interface ISecondaryDataObject extends IIdentifiable, PrimaryDataObjectCollectionType
 {
-    type: Field<DataType>;
+    /** Type */
+    t: DataType;
 }
 
 export interface Filter extends ISecondaryDataObject
 {
-    name: Field<string>;
-    isActive: Field<boolean>;
-    conditions: Field<Map<string, Field<FilterCondition>>>;
+    /** Name */
+    n: string;
+    /** Is Active */
+    a: boolean;
+    /** Conditions */
+    c: { [key: string]: FilterCondition };
 }
 
-export interface FilterCondition extends IIdentifiable, IFieldObject
+export interface FilterCondition extends IIdentifiable
 {
-    property: Field<string>;
-    filterType: Field<FilterConditionType | undefined>;
-    value: Field<string>;
+    /** Property */
+    p: string;
+    /** Filter Type */
+    t: FilterConditionType | undefined;
+    /** Value */
+    v: string;
 }
 
 export enum EqualFilterConditionType
@@ -129,22 +161,25 @@ export enum FilterConditionType
 
 export interface Group extends ISecondaryDataObject
 {
-    name: Field<string>;
-    color: Field<string>; // hex value
-    icon: Field<string>;
+    /** Name */
+    n: string;
+    /** Color as Hex */
+    c: string;
+    /** Icon */
+    i: string;
 }
 
 export class RelatedDataTypeChanges 
 {
-    added: Map<string, Field<string>>;
-    removed: Map<string, Field<string>>;
-    unchanged: Map<string, Field<string>>;
+    added: DictionaryAsList;
+    removed: DictionaryAsList;
+    unchanged: DictionaryAsList;
 
-    constructor(added?: Map<string, Field<string>>, removed?: Map<string, Field<string>>, unchanged?: Map<string, Field<string>>) 
+    constructor(added?: DictionaryAsList, removed?: DictionaryAsList, unchanged?: DictionaryAsList) 
     {
-        this.added = added ?? new Map();
-        this.removed = removed ?? new Map();
-        this.unchanged = unchanged ?? new Map();
+        this.added = added ?? {};
+        this.removed = removed ?? {};
+        this.unchanged = unchanged ?? {};
     }
 }
 
@@ -158,65 +193,64 @@ export interface VaultAndBreachCount
 export function defaultPassword(): Password
 {
     return {
-        id: Field.create(""),
-        isVaultic: Field.create(false),
-        passwordFor: Field.create(''),
-        login: Field.create(''),
-        domain: Field.create(''),
-        email: Field.create(''),
-        password: Field.create(''),
-        securityQuestions: Field.create(new Map<string, Field<SecurityQuestion>>()),
-        additionalInformation: Field.create(''),
-        lastModifiedTime: Field.create(''),
-        isWeak: Field.create(false),
-        isWeakMessage: Field.create(''),
-        containsLogin: Field.create(false),
-        filters: Field.create(new Map()),
-        groups: Field.create(new Map()),
-        checkedForBreach: Field.create(false)
+        id: "",
+        v: false,
+        f: '',
+        l: '',
+        d: '',
+        e: '',
+        p: '',
+        q: {},
+        a: '',
+        t: '',
+        w: false,
+        m: -1,
+        c: false,
+        i: {},
+        g: {}
     };
 }
 
 export function defaultValue(): NameValuePair
 {
     return {
-        id: Field.create(""),
-        name: Field.create(''),
-        value: Field.create(''),
-        valueType: Field.create(undefined),
-        notifyIfWeak: Field.create(true),
-        additionalInformation: Field.create(''),
-        lastModifiedTime: Field.create(''),
-        filters: Field.create(new Map()),
-        groups: Field.create(new Map()),
-        isWeak: Field.create(false),
-        isWeakMessage: Field.create(''),
+        id: "",
+        n: '',
+        v: '',
+        y: undefined,
+        o: true,
+        a: '',
+        t: '',
+        i: {},
+        g: {},
+        w: false,
+        m: -1,
     };
 }
 
 export function defaultFilter(type: DataType): Filter
 {
     return {
-        id: Field.create(""),
-        passwords: Field.create(new Map()),
-        values: Field.create(new Map()),
-        type: Field.create(type),
-        isActive: Field.create(false),
-        name: Field.create(''),
-        conditions: Field.create(new Map<string, Field<FilterCondition>>())
+        id: "",
+        p: {},
+        v: {},
+        t: type,
+        a: false,
+        n: '',
+        c: {}
     };
 }
 
 export function defaultGroup(type: DataType): Group
 {
     return {
-        id: Field.create(""),
-        passwords: Field.create(new Map()),
-        values: Field.create(new Map()),
-        name: Field.create(''),
-        type: Field.create(type),
-        color: Field.create(''),
-        icon: Field.create('')
+        id: "",
+        p: {},
+        v: {},
+        n: '',
+        t: type,
+        c: '',
+        i: ''
     };
 }
 

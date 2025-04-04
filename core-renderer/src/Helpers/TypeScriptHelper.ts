@@ -4,10 +4,10 @@ import { Field } from "@vaultic/shared/Types/Fields";
 // Actual must be a concrete type, i.e. any nested objects must have all properties that it can have. Otherwise this will give 
 // false negatives when comparing those nested objects
 // can do additional property validation via propertyTest
-export function validateObject(tester: Field<any>, actual: Field<any>, propertyTest?: (propName: string, propValue: any) => boolean,
+export function validateObject(tester: any, actual: any, propertyTest?: (propName: string, propValue: any) => boolean,
     mapTest?: (objName: string, propname: string, propValue: any) => boolean)
 {
-    if (actual.value instanceof Map)
+    if (actual instanceof Map)
     {
         if (!checkMap("", tester, actual, propertyTest, mapTest))
         {
@@ -17,8 +17,8 @@ export function validateObject(tester: Field<any>, actual: Field<any>, propertyT
         return true;
     }
 
-    const actualKeys = Object.keys(tester.value);
-    const expectedKeys = Object.keys(actual.value);
+    const actualKeys = Object.keys(tester);
+    const expectedKeys = Object.keys(actual);
 
     if (actualKeys.length != expectedKeys.length)
     {
@@ -40,26 +40,26 @@ export function validateObject(tester: Field<any>, actual: Field<any>, propertyT
             return false;
         }
 
-        if (typeof tester.value[expectedKeys[i]].value != typeof actual.value[expectedKeys[i]].value)
+        if (typeof tester[expectedKeys[i]] != typeof actual[expectedKeys[i]])
         {
             return false;
         }
 
-        if (typeof tester.value[expectedKeys[i]].value == 'object')
+        if (typeof tester[expectedKeys[i]] == 'object')
         {
-            if (actual.value[expectedKeys[i]].value instanceof Map)
+            if (actual[expectedKeys[i]] instanceof Map)
             {
-                if (!checkMap(expectedKeys[i], tester.value[expectedKeys[i]], actual.value[expectedKeys[i]], propertyTest, mapTest))
+                if (!checkMap(expectedKeys[i], tester[expectedKeys[i]], actual[expectedKeys[i]], propertyTest, mapTest))
                 {
                     return false;
                 }
             }
-            else if (!validateObject(tester.value[expectedKeys[i]], actual.value[expectedKeys[i]], propertyTest, mapTest))
+            else if (!validateObject(tester[expectedKeys[i]], actual[expectedKeys[i]], propertyTest, mapTest))
             {
                 return false;
             }
         }
-        else if (typeof tester.value[expectedKeys[i]].value != 'function' && propertyTest && !propertyTest(expectedKeys[i], tester.value[expectedKeys[i]].value))
+        else if (typeof tester[expectedKeys[i]] != 'function' && propertyTest && !propertyTest(expectedKeys[i], tester[expectedKeys[i]]))
         {
             return false;
         }
@@ -70,12 +70,12 @@ export function validateObject(tester: Field<any>, actual: Field<any>, propertyT
     return actualKeys.length == 0;
 }
 
-function checkMap(objName: string, tester: Field<any>, actual: Field<any>, propertyTest?: (propName: string, propValue: any) => boolean,
+function checkMap(objName: string, tester: any, actual: any, propertyTest?: (propName: string, propValue: any) => boolean,
     mapTest?: (objName: string, propname: string, propValue: any) => boolean)
 {
     if (mapTest)
     {
-        for (const [key, value] of tester.value.entries())
+        for (const [key, value] of tester.entries())
         {
             if (!mapTest(objName, key, value))
             {

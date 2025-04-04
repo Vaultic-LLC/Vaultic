@@ -1,17 +1,17 @@
-import { Store, StoreEvents, StoreState } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
 import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
 import { ref, Ref } from "vue";
 import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
-import { Field } from "@vaultic/shared/Types/Fields";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { Password } from "../../Types/DataTypes";
+import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed" | "onBreachesUpdated";
 
-export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent>
+export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreachStoreEvent>
 {
     private internalVaultDataBreaches: Ref<VaultDataBreach[]>;
     private internalVaultDataBreachesByPasswordID: Ref<Map<string, VaultDataBreach>>;
@@ -25,7 +25,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     constructor()
     {
-        super('vaultDataBreachStore');
+        super(StoreType.VaultDataBreach);
 
         this.internalVaultDataBreaches = ref([]);
         this.internalVaultDataBreachesByPasswordID = ref(new Map());
@@ -36,7 +36,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
     protected defaultState()
     {
         return {
-            version: Field.create(0)
+            version: 0
         };
     }
 
@@ -72,22 +72,25 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
                 VaultID: vault.vaultID
             };
 
-            vault.passwordsByDomain?.value.forEach((v, k, map) => 
+            if (vault.passwordsByDomain)
             {
-                limitedPasswords = limitedPasswords.concat(v.value.map((kk, vv) =>
+                Object.keys(vault.passwordsByDomain).forEach(k =>
                 {
-                    return {
-                        id: vv.value,
-                        domain: k
-                    }
-                }))
-            });
+                    limitedPasswords = limitedPasswords.concat(Object.keys(vault.passwordsByDomain![k]).map(v =>
+                    {
+                        return {
+                            id: v,
+                            domain: k
+                        }
+                    }))
+                });
+            }
 
             vaultPostData['LimitedPasswords'] = limitedPasswords;
             postData.Vaults.push(vaultPostData);
         }
 
-        const response = await api.server.vault.getVaultDataBreaches(JSON.vaulticStringify(postData));
+        const response = await api.server.vault.getVaultDataBreaches(JSON.stringify(postData));
         if (!response.Success)
         {
             this.internalFailedToLoadDataBreaches.value = true;
@@ -123,12 +126,12 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
             {
                 return {
                     id: p.id,
-                    domain: p.domain
+                    domain: p.d
                 }
             })
         };
 
-        const response = await api.server.vault.checkPasswordsForBreach(JSON.vaulticStringify(checkPasswordsForBreachData));
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.stringify(checkPasswordsForBreachData));
         if (!response.Success)
         {
             return false;
@@ -147,7 +150,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         return true;
     }
 
-    public async checkPasswordForBreach(password: Field<ReactivePassword>)
+    public async checkPasswordForBreach(password: ReactivePassword)
     {
         if (!app.isOnline)
         {
@@ -160,12 +163,12 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
             VaultID: app.currentVault.vaultID,
             LimitedPasswords:
                 [{
-                    id: password.value.id.value,
-                    domain: password.value.domain.value
+                    id: password.id,
+                    domain: password.d
                 }]
         };
 
-        const response = await api.server.vault.checkPasswordsForBreach(JSON.vaulticStringify(checkPasswordForBreachData));
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.stringify(checkPasswordForBreachData));
         if (!response.Success)
         {
             return false;
