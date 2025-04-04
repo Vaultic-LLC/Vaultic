@@ -16,12 +16,11 @@ import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { EntityState, getVaultType, IUser, UserData } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
-import { defaultAppStoreState, defaultUserPreferencesStoreState, PathChange, SimplifiedPasswordStore, StoreStateChangeType, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultAppStoreState, defaultUserPreferencesStoreState, SimplifiedPasswordStore, StoreType } from "@vaultic/shared/Types/Stores";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
 import { ChangeTracking } from "../Entities/ChangeTracking";
-import { ClientChange, ClientChangeTrackingObject, ClientChangeTrackingType, ClientUserChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
-import { getObjectFromPath, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
+import { ClientChangeTrackingType, ClientUserChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
 import { StoreStateRepository } from "./StoreState/StoreStateRepository";
 import { StoreRetriever } from "../../Types/Parameters";
 import { UpdateFromServerResponse } from "../../Types/Responses";
@@ -466,111 +465,104 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalGetCurrentUserData(this: UserRepository): Promise<TypedMethodResponse<string | undefined>>
         {
-            try
+            const currentUser = await this.getVerifiedCurrentUser(masterKey);
+            if (!currentUser)
             {
-                const currentUser = await this.getVerifiedCurrentUser(masterKey);
-                if (!currentUser)
-                {
-                    return TypedMethodResponse.fail(errorCodes.NO_USER);
-                }
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
 
-                const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
-                if (!decryptedAppStoreState)
-                {
-                    return decryptedAppStoreState.addToErrorMessage("AppStoreState");
-                }
+            const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
+            if (!decryptedAppStoreState)
+            {
+                return decryptedAppStoreState.addToErrorMessage("AppStoreState");
+            }
 
-                const usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);
-                if (!usableUserPreferencesState.success)
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Unable to get user preferences");
-                }
+            const usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);
+            if (!usableUserPreferencesState.success)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "Unable to get user preferences");
+            }
 
-                const userData: UserData =
+            const userData: UserData =
+            {
+                success: false,
+                userInfo:
                 {
-                    success: false,
-                    userInfo:
+                    email: currentUser.email,
+                    firstName: currentUser.firstName,
+                    lastName: currentUser.lastName
+                },
+                appStoreState: decryptedAppStoreState.value!,
+                userPreferencesStoreState: usableUserPreferencesState.value,
+                displayVaults: [],
+                currentVault: undefined
+            };
+
+            const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, [nameof<Vault>("name")], ["passwordStoreState"]);
+            if (!userVaults || userVaults.length == 0)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
+            }
+
+            for (let i = 0; i < userVaults.length; i++)
+            {
+                // we only want to set our last used vault for our vaults, not ones another user 
+                // may have accessed
+                if (userVaults[i].lastUsed && userVaults[i].isOwner)
+                {
+                    if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
                     {
-                        email: currentUser.email,
-                        firstName: currentUser.firstName,
-                        lastName: currentUser.lastName
-                    },
-                    appStoreState: decryptedAppStoreState.value!,
-                    userPreferencesStoreState: usableUserPreferencesState.value,
-                    displayVaults: [],
-                    currentVault: undefined
-                };
-
-                const userVaults = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, [nameof<Vault>("name")], ["passwordStoreState"]);
-                if (!userVaults || userVaults.length == 0)
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "No UserVaults");
-                }
-
-                for (let i = 0; i < userVaults.length; i++)
-                {
-                    // we only want to set our last used vault for our vaults, not ones another user 
-                    // may have accessed
-                    if (userVaults[i].lastUsed && userVaults[i].isOwner)
-                    {
-                        if (!(await setCurrentVault(userVaults[i].userVaultID, false)))
-                        {
-                            return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Current Vault");
-                        }
+                        return TypedMethodResponse.fail(undefined, undefined, "Failed To Set Current Vault");
                     }
-
-                    userData.displayVaults!.push({
-                        userOrganizationID: userVaults[i].userOrganizationID,
-                        userVaultID: userVaults[i].userVaultID,
-                        vaultID: userVaults[i].vaultID,
-                        name: userVaults[i].name,
-                        shared: userVaults[i].shared,
-                        isOwner: userVaults[i].isOwner,
-                        isReadOnly: userVaults[i].isReadOnly,
-                        isArchived: userVaults[i].isArchived,
-                        lastUsed: userVaults[i].lastUsed,
-                        type: getVaultType(userVaults[i]),
-                        passwordsByDomain: (JSON.parse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).o ?? {}
-                    });
                 }
 
-                if (!userData.currentVault)
-                {
-                    if (!(await setCurrentVault(userData.displayVaults![0].userVaultID, true)))
-                    {
-                        return TypedMethodResponse.fail(undefined, undefined, "Failed to Set Backup Current Vault");
-                    }
+                userData.displayVaults!.push({
+                    userOrganizationID: userVaults[i].userOrganizationID,
+                    userVaultID: userVaults[i].userVaultID,
+                    vaultID: userVaults[i].vaultID,
+                    name: userVaults[i].name,
+                    shared: userVaults[i].shared,
+                    isOwner: userVaults[i].isOwner,
+                    isReadOnly: userVaults[i].isReadOnly,
+                    isArchived: userVaults[i].isArchived,
+                    lastUsed: userVaults[i].lastUsed,
+                    type: getVaultType(userVaults[i]),
+                    passwordsByDomain: (JSON.parse(userVaults[i].passwordStoreState) as SimplifiedPasswordStore).o ?? {}
+                });
+            }
 
-                    userData.displayVaults![0].lastUsed = true;
+            if (!userData.currentVault)
+            {
+                if (!(await setCurrentVault(userData.displayVaults![0].userVaultID, true)))
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "Failed to Set Backup Current Vault");
                 }
 
-                userData.success = true;
-                return TypedMethodResponse.success(JSON.stringify(userData));
+                userData.displayVaults![0].lastUsed = true;
+            }
 
-                // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
-                async function setCurrentVault(id: number, setAsLastUsed: boolean)
+            userData.success = true;
+            return TypedMethodResponse.success(JSON.stringify(userData));
+
+            // TODO: why is this needed? what does retrieving the vault again give that we don't already have from the first time?
+            async function setCurrentVault(id: number, setAsLastUsed: boolean)
+            {
+                const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, undefined, [id], true);
+                if (!userVault || userVault.length == 0)
                 {
-                    const userVault = await environment.repositories.userVaults.getVerifiedAndDecryt(masterKey, undefined, undefined, [id], true);
-                    if (!userVault || userVault.length == 0)
+                    return false;
+                }
+
+                if (setAsLastUsed)
+                {
+                    if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!.userID, userVault[0].userVaultID)))
                     {
                         return false;
                     }
-
-                    if (setAsLastUsed)
-                    {
-                        if (!(await environment.repositories.vaults.setLastUsedVault(currentUser!.userID, userVault[0].userVaultID)))
-                        {
-                            return false;
-                        }
-                    }
-
-                    userData.currentVault = userVault[0];
-                    return true;
                 }
-            }
-            catch (e)
-            {
-                console.log(e);
+
+                userData.currentVault = userVault[0];
+                return true;
             }
         }
     }

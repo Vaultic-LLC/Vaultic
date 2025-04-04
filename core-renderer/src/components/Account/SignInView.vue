@@ -166,7 +166,7 @@ export default defineComponent({
                         if (await app.loadUserData(response.value?.masterKey!))
                         {
                             app.popups.hideLoadingIndicator();
-                            app.syncVaults(response.value?.masterKey!, email.value, true);
+                            app.syncVaults(response.value?.masterKey!, email.value, true, reloadAllData.value);
     
                             console.timeEnd('loggingIn');
                             ctx.emit('onKeySuccess');
@@ -174,7 +174,7 @@ export default defineComponent({
                     }
                     else
                     {
-                        if (await app.syncAndLoadUserData(masterKey.value, email.value))
+                        if (await app.syncAndLoadUserData(masterKey.value, email.value, reloadAllData.value))
                         {
                             console.timeEnd('loggingIn');
                             ctx.emit('onKeySuccess');

@@ -34,6 +34,41 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         return true;
     }
 
+    /**
+     * Merges server and client store state changes together. 
+     * @param key the key for the entity. Should be MasterKey for User and UserVault, or VaultKey for Vaults
+     * @param alreadyMergedLocalChanges The previous call to this functions clientChangesToPushAfter. This is for if we merge data, attempt to backup, 
+     * but find out there are new changes to merge again. If the server updated the same properties as some of these changes, we will remove them if the servers change 
+     * time was newer. 
+     * @param serverChanges The new changes from the server to merge
+     * @param localChangesToMerge Our local changes to merge
+     * @param states An object that defines how to retrieve store states and optionally has the new server state. The server state is used if we fail to backup since it'll
+     * @param clientChangesToPushAfter The changes to pushed after mering has been completed
+     * @param transaction the current transaction
+     * @returns 
+     * 
+     * Scenarios:
+     * Have server state and no local changes:
+     *      No merging is done as their aren’t any server or local changes
+     * 
+     * Have server state and local changes:
+     *      We would make our local changes against the server state, commit it, and then continue
+     * 
+     * Have server changes and no local changes:
+     *      We would make the server changes to our local state, commit it, and then continue
+     * 
+     * Have server changes and local changes:
+     *      We would make the server and local changes  to our local state, commit it, and then continue
+     * 
+     * Have Server state and already committed local changes:
+     *      This shouldn’t be possible. BackupData() is only called AFTER merging data locally, so its already in a valid spot to push to the server. 
+     *      The retry logic is just for if someone else slips an update in between our pushes but we should always be able to pull their changes. 
+     *      The server will only return a full state if the version changes form ours to the current don’t exist
+     * 
+     * Have server change and already committed local changes:
+     *  Merge server changes and check to see if we need to update or remove any of our local changes
+     * 
+     */
     public static async mergeData(
         key: string,
         alreadyMergedLocalChanges: ClientChangeTrackingObject,
@@ -123,6 +158,8 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
                 clientChangesToPushAfter.allChanges.push(clientChange);
             }
+
+            this.addUpdatedStoreStatesToTransaction(key, loadedStoreStates, states, transaction);
         }
         // First time calculating changes
         else 
@@ -175,15 +212,26 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.allChanges.push(clientChange);
             }
 
-            const updatedStateKeys = Object.keys(loadedStoreStates) as StoreType[];
-            for (let i = 0; i < updatedStateKeys.length; i++)
-            {
-                loadedStoreStates[updatedStateKeys[i]].entity.state = JSON.stringify(loadedStoreStates[updatedStateKeys[i]].state);
-                transaction.updateEntity(loadedStoreStates[updatedStateKeys[i]].entity, key, () => states[updatedStateKeys[i]].repository);
-            }
+            // This is fine to update now even though the request to push our changes might fail because if they do fail
+            // we'll use the new store state from the server and re calc some merges within the first check for if (alreadyMergedLocalChanges)
+            this.addUpdatedStoreStatesToTransaction(key, loadedStoreStates, states, transaction);
         }
 
         return needsToRePushStoreStates;
+    }
+
+    private static addUpdatedStoreStatesToTransaction(
+        key: string,
+        loadedStoreStates: Partial<Record<StoreType, { entity: StoreState, state: any }>>,
+        states: StoreRetriever,
+        transaction: Transaction)
+    {
+        const updatedStateKeys = Object.keys(loadedStoreStates) as StoreType[];
+        for (let i = 0; i < updatedStateKeys.length; i++)
+        {
+            loadedStoreStates[updatedStateKeys[i]].entity.state = JSON.stringify(loadedStoreStates[updatedStateKeys[i]].state);
+            transaction.updateEntity(loadedStoreStates[updatedStateKeys[i]].entity, key, () => states[updatedStateKeys[i]].repository);
+        }
     }
 
     private static mergeChanges(
@@ -344,7 +392,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             switch (pathChange[j].t)
                             {
                                 // We only care about update since that's the only one that the new changes from the server 
-                                // could have overriden
+                                // could have overriden. Adds are handled when mergeChanges() is called for the server changes
                                 case StoreStateChangeType.Update:
                                     manager.set(pathChange[j].p, pathChange[j].v, obj);
                                     break;

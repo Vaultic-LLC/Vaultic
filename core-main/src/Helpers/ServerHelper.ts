@@ -110,7 +110,7 @@ async function logUserIn(masterKey: string, email: string,
         {
             await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
 
-            if (!firstLogin)
+            if (!firstLogin && !reloadAllData)
             {
                 await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
             }

@@ -111,7 +111,7 @@ export async function getCurrentUserDataIdentifiersAndKeys(masterKey: string, us
 }
 
 // Only call within a method wrapped in safetifyMethod
-export async function backupData(masterKey: string, dataToBackup?: UserDataPayload)
+export async function backupData(masterKey: string, dataToBackup?: UserDataPayload, reloadingAllData?: boolean)
 {
     console.log(`Backing up`);
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: (dataToBackup ?? {}) };
@@ -156,7 +156,7 @@ export async function backupData(masterKey: string, dataToBackup?: UserDataPaylo
     if (!backupResponse.Success)
     {
         console.time("8");
-        const s = await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload, undefined);
+        const s = await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload, undefined, dataToBackup, reloadingAllData);
         console.timeEnd("8");
         return s;
     }
@@ -233,10 +233,16 @@ export async function checkMergeMissingData(
     currentLocalData: UserDataPayload,
     serverUserDataPayload: UserDataPayload,
     transaction?: Transaction,
-    backingUpData?: UserDataPayload): Promise<boolean>
+    backingUpData?: UserDataPayload,
+    reloadingAllData?: boolean): Promise<boolean>
 {
     transaction = transaction ?? new Transaction();
-    const user: User | null = await environment.repositories.users.findByEmail(masterKey, email);
+
+    let user: User | null = null;
+    if (!reloadingAllData)
+    {
+        user = await environment.repositories.users.findByEmail(masterKey, email);
+    }
 
     let userChangeTrackings = [];
     if (user)
@@ -666,22 +672,10 @@ export async function checkMergeMissingData(
 
     if (needsToRePushData)
     {
-        return await backupData(masterKey, dataToBackup);
+        return await backupData(masterKey, dataToBackup, reloadingAllData);
     }
 
     return true;
-}
-
-export async function reloadAllUserData(masterKey: string, email: string, userDataPayload: UserDataPayload): Promise<boolean>
-{
-    // Yeet all data so we don't have to worry about different users data potentially being tangled
-    const transaction = new Transaction();
-    transaction.raw("DELETE FROM users");
-    transaction.raw("DELETE FROM vaults");
-    transaction.raw("DELETE FROM userVaults");
-    transaction.raw("DELETE FROM changeTrackings");
-
-    return await checkMergeMissingData(masterKey, email, [], {}, userDataPayload, transaction);
 }
 
 export async function handleUserLogOut()

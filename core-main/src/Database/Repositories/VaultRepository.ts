@@ -886,7 +886,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async syncVaults(email: string, plainMasterKey?: string): Promise<TypedMethodResponse<string | undefined>>
+    public async syncVaults(email: string, plainMasterKey?: string, reloadAllData?: boolean): Promise<TypedMethodResponse<string | undefined>>
     {
         const onFinish = async () => environment.cache.isSyncing = false;
         return await safetifyMethod(this, internalSyncVaults, onFinish, onFinish);
@@ -897,10 +897,26 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             {
                 environment.cache.isSyncing = true;
 
+                if (reloadAllData)
+                {
+                    const transaction = new Transaction();
+                    transaction.raw("DELETE FROM users");
+                    transaction.raw("DELETE FROM vaults");
+                    transaction.raw("DELETE FROM userVaults");
+                    transaction.raw("DELETE FROM changeTrackings");
+
+                    if (!(await transaction.commit()))
+                    {
+                        return TypedMethodResponse.fail(undefined, undefined, "Unable to clear current data");
+                    }
+
+                    console.log(`Clearing succeeded`);
+                }
+
                 let currentSignatures: CurrentUserDataIdentifiersAndKeys = { identifiers: {}, keys: [] };
                 let masterKeyVaulticKey: string | undefined = undefined;
 
-                if (!plainMasterKey)
+                if (reloadAllData !== true && !plainMasterKey)
                 {
                     if (environment.cache.masterKey)
                     {
@@ -914,6 +930,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                         currentSignatures = await getCurrentUserDataIdentifiersAndKeys(masterKeyVaulticKey, currentUser);
                     }
                 }
+
+                console.log(`Local Identifiers: ${JSON.stringify(currentSignatures.identifiers)}`);
 
                 const result = await vaulticServer.vault.syncVaults(currentSignatures.identifiers);
                 if (!result.Success)
@@ -945,7 +963,11 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     masterKeyVaulticKey = JSON.stringify(vaulticKey);
                 }
 
-                const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.identifiers, decryptedResponse.value.userDataPayload);
+                console.log(`Server Data: ${JSON.stringify(decryptedResponse.value.userDataPayload)}`);
+
+                const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.identifiers, decryptedResponse.value.userDataPayload,
+                    undefined, undefined, reloadAllData);
+
                 if (!success)
                 {
                     return TypedMethodResponse.fail();

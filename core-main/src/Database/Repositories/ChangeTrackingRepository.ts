@@ -78,13 +78,15 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         return recievedChangeTrackings as ChangeTracking[];
     }
 
-    public clearChangeTrackings(transaction: Transaction)
+    public async clearChangeTrackings(transaction: Transaction)
     {
         // user will be undefined if we are adding it from the server. no change trackings to clear then obviously
-        if (environment.cache.currentUser?.userID)
+        if (!environment.cache.currentUser?.userID)
         {
-            transaction.deleteEntity<ChangeTracking>({ userID: environment.cache.currentUser.userID }, () => environment.repositories.changeTrackings);
+            return;
         }
+
+        transaction.deleteEntity<ChangeTracking>({ userID: environment.cache.currentUser.userID }, () => environment.repositories.changeTrackings);
     }
 
     private groupChangeTrackingsByID(idField: "userVaultID" | "vaultID", changeTrackings: ChangeTracking[]): { [key: number]: ChangeTracking[] }

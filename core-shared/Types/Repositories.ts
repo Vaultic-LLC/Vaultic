@@ -45,7 +45,7 @@ export interface ClientVaultRepository
     createNewVaultForUser: (masterKey: string, updateVaultData: string) => Promise<TypedMethodResponse<CondensedVaultData | undefined>>;
     getStoreStates: (masterKey: string, userVaultID: number, storesToRetrieve: CondensedVaultData) => Promise<TypedMethodResponse<DeepPartial<CondensedVaultData> | undefined>>;
     deleteVault: (masterKey: string, userVaultID: number) => Promise<TypedMethodResponse<boolean | undefined>>;
-    syncVaults: (email: string, masterKey?: string) => Promise<TypedMethodResponse<string | undefined>>;
+    syncVaults: (email: string, masterKey?: string, reloadAllData?: boolean) => Promise<TypedMethodResponse<string | undefined>>;
 }
 
 export interface ClientUserVaultRepository

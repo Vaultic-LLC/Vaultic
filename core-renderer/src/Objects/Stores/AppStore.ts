@@ -264,7 +264,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         this.internalUserVaults.value = [];
         this.internalCurrentVault.resetToDefault();
 
-        if (syncData)
+        if (syncData && this.isOnline)
         {
             await api.helpers.repositories.handleUserLogOut();
         }
@@ -507,7 +507,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     /** Only called when signing into and online. This is to handle when there 
      * isn't any local data
      */
-    async syncAndLoadUserData(masterKey: string, email: string): Promise<boolean>
+    async syncAndLoadUserData(masterKey: string, email: string, reloadAllData: boolean = false): Promise<boolean>
     {
         if (!this.isOnline || this.internaLoadedUser.value)
         {
@@ -517,7 +517,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         this.internalIsSyncing.value = true;
 
         this.popups.showSyncingPopup();
-        const result = await api.repositories.vaults.syncVaults(email, masterKey);
+        const result = await api.repositories.vaults.syncVaults(email, masterKey, reloadAllData);
         if (!result.success)
         {
             this.popups.hideSyncingPopup();
@@ -562,7 +562,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
      * @param secondLoad Indicates that this is the second time loading the data. Only applicatable when signing since we've alredy loaded the data
      * @returns 
      */
-    async syncVaults(masterKey: string, email: string, secondLoad: boolean = false): Promise<boolean>
+    async syncVaults(masterKey: string, email: string, secondLoad: boolean = false, reloadAllData: boolean = false): Promise<boolean>
     {
         if (!this.isOnline)
         {

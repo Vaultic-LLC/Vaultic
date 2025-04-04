@@ -128,6 +128,6 @@ function initApp()
     // gives time to set breakpoints if needed
     setTimeout(() =>
     {
-        runServerHelperTests();
+        //runServerHelperTests();
     }, 10000);
 }
