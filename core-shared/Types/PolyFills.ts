@@ -1,3 +1,5 @@
+import { Field } from "./Fields";
+
 declare global 
 {
     interface Object
@@ -88,6 +90,42 @@ Map.prototype.mapWhere = function <T>(this: Map<any, any>, predicate: (k: any, v
     });
 
     return temp;
+}
+
+const isMapIdentifier = "im";
+
+JSON.vaulticParse = (text: string) => 
+{
+    const childrenByParentID: Map<string, any[]> = new Map();
+    return JSON.parse(text, (key: string, value: any) => 
+    {
+        if (value && typeof value === "object")
+        {
+            if (isMapIdentifier in value)
+            {
+                return new Map(value.value);
+            }
+        }
+
+        return value;
+    });
+};
+
+JSON.vaulticStringify = (value: any) => 
+{
+    return JSON.stringify(value, (key: string, value: any) => 
+    {
+        if (value && typeof value === "object")
+        {
+            if (value instanceof Map)
+            {
+                // im = isMap
+                return { im: 1, value: Array.from(value.entries()) };
+            }
+        }
+
+        return value;
+    });
 }
 
 export const a = {};

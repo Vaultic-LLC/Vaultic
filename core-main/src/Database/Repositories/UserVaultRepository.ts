@@ -18,7 +18,7 @@ import { ChangeTracking } from "../Entities/ChangeTracking";
 import { Algorithm, PublicKeyType } from "@vaultic/shared/Types/Keys";
 import vaulticServer from "../../Server/VaulticServer";
 import { StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
-import { ClientChangeTrackingType, ClientUserVaultChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
+import { ClientChangeTrackingType, ClientUserVaultChangeTrackings, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { StoreRetriever } from "../../Types/Parameters";
 import { StoreStateRepository } from "./StoreState/StoreStateRepository";
 import { UpdateFromServerResponse } from "../../Types/Responses";
@@ -374,6 +374,19 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         };
 
         const response = await StoreStateRepository.mergeData(masterKey, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
+        if (clientUserChangesToPush.lastLoadedChangeVersion != currentUserVault.lastLoadedChangeVersion)
+        {
+            const currentUserVaultEntity = await this.retrieveAndVerifyReactive(masterKey, (repository) => repository.findOneBy({
+                userVaultID: currentUserVault.userVaultID
+            }));
+
+            if (currentUserVaultEntity)
+            {
+                currentUserVaultEntity.lastLoadedChangeVersion = clientUserChangesToPush.lastLoadedChangeVersion;
+                transaction.updateEntity(currentUserVaultEntity, masterKey, () => this);
+            }
+        }
+
         return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
 

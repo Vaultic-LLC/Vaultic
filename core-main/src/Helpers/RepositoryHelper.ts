@@ -113,6 +113,7 @@ export async function getCurrentUserDataIdentifiersAndKeys(masterKey: string, us
 // Only call within a method wrapped in safetifyMethod
 export async function backupData(masterKey: string, dataToBackup?: UserDataPayload)
 {
+    console.log(`Backing up`);
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: (dataToBackup ?? {}) };
     console.time("6");
     const userToBackup = await environment.repositories.users.getEntityThatNeedsToBeBackedUp(masterKey);
@@ -189,7 +190,7 @@ export async function backupData(masterKey: string, dataToBackup?: UserDataPaylo
         console.timeEnd("9c");
         // all data succesfully backed up, no need for change trackings anymore
         console.time("9d");
-        await environment.repositories.changeTrackings.clearChangeTrackings(transaction);
+        environment.repositories.changeTrackings.clearChangeTrackings(transaction);
         console.timeEnd("9d");
 
         console.time("9e");
@@ -265,7 +266,7 @@ export async function checkMergeMissingData(
         }
         else
         {
-            const response = await environment.repositories.users.updateFromServer(masterKey, currentLocalData.userChanges, serverUserDataPayload?.user ?? {}, serverUserDataPayload?.userChanges,
+            const response = await environment.repositories.users.updateFromServer(masterKey, user, serverUserDataPayload?.user ?? {}, serverUserDataPayload?.userChanges,
                 userChangeTrackings, dataToBackup.userChanges, transaction);
 
             if (response?.needsToRePushData)

@@ -76,7 +76,8 @@ export class UserVault extends VaulticEntity implements IUserVault
             nameof<UserVault>("userID"),
             nameof<UserVault>("vaultID"),
             nameof<UserVault>("isOwner"),
-            nameof<UserVault>("vaultKey")
+            nameof<UserVault>("vaultKey"),
+            nameof<UserVault>("lastLoadedChangeVersion")
         ];
     }
 

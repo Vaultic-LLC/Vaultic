@@ -73,6 +73,11 @@ export class VaulticRepository<T extends VaulticEntity>
         const properties = entity.getCompressableProperties();
         for (let i = 0; i < properties.length; i++)
         {
+            if (entity.updatedProperties.findIndex(p => p === properties[i]) == -1)
+            {
+                continue;
+            }
+
             console.time('compress');
             entity[properties[i]] = await environment.utilities.data.compress(entity[properties[i]]);
             console.timeEnd('compress');
@@ -281,6 +286,17 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         return [true, entity];
+    }
+
+    public async retrieveAndVerifyReactive(key: string, predicate: (repository: Repository<T>) => Promise<T | null>): Promise<T | null>
+    {
+        const response = await this.retrieveAndVerify(key, predicate);
+        if (response[0])
+        {
+            return response[1].makeReactive();
+        }
+
+        return null;
     }
 
     public async retrieveAndVerifyAll(key: string, predicate: (repository: Repository<T>) => Promise<T[]>): Promise<T[] | boolean>

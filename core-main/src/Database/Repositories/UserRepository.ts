@@ -245,8 +245,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 serializedMasterKey = JSON.stringify(masterKeyVaulticKey);
             }
 
-            console.log(serializedMasterKey);
-
             const user = new User().makeReactive();
             user.userID = response.UserID!;
             user.email = email;
@@ -676,7 +674,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             return false;
         }
 
-        transaction.resetTracking(currentUser, key, () => this)
+        transaction.resetTracking(currentUser, key, () => this);
 
         // TODO: what to do if updating previousSignatures on store states fails? The server has been updated
         // so the client will no longer be able to update. Detect and force update data from server? Should be handled
@@ -719,7 +717,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
     public async updateFromServer(
         masterKey: string,
-        currentUser: Partial<User> | undefined,
+        currentUser: User | undefined,
         newUser: DeepPartial<User>,
         serverChanges: ClientUserChangeTrackings,
         localChanges: ChangeTracking[],
@@ -823,6 +821,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         };
 
         const response = await StoreStateRepository.mergeData(masterKey, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
+        if (clientUserChangesToPush.lastLoadedChangeVersion != currentUser.lastLoadedChangeVersion)
+        {
+            currentUser.lastLoadedChangeVersion = clientUserChangesToPush.lastLoadedChangeVersion;
+            transaction.updateEntity(currentUser, masterKey, () => this);
+        }
+
         return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
 

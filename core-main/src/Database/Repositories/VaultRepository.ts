@@ -801,8 +801,20 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             allChanges: []
         };
 
-        console.log(`Last loaded vault change: ${vault.lastLoadedChangeVersion}`);
         const response = await StoreStateRepository.mergeData(key, existingUserChanges, serverChanges, localChanges, states, clientUserChangesToPush, transaction);
+        if (clientUserChangesToPush.lastLoadedChangeVersion != vault.lastLoadedChangeVersion)
+        {
+            const currentVaultEntity = await this.retrieveAndVerifyReactive(key, (repository) => repository.findOneBy({
+                vaultID: vault.vaultID
+            }));
+
+            if (currentVaultEntity)
+            {
+                currentVaultEntity.lastLoadedChangeVersion = clientUserChangesToPush.lastLoadedChangeVersion;
+                transaction.updateEntity(currentVaultEntity, key, () => this);
+            }
+        }
+
         return { needsToRePushData: response, changes: clientUserChangesToPush };
     }
 

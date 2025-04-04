@@ -87,18 +87,20 @@ async function logUserIn(masterKey: string, email: string,
 
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
-        const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
         let masterKeyVaulticKey: string | undefined;
-
-        if (!firstLogin && !reloadAllData && currentUser)
+        if (!firstLogin && !reloadAllData)
         {
-            const vaulticKey: VaulticKey =
+            const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
+            if (currentUser)
             {
-                algorithm: currentUser.masterKeyEncryptionAlgorithm,
-                key: masterKey
-            };
+                const vaulticKey: VaulticKey =
+                {
+                    algorithm: currentUser.masterKeyEncryptionAlgorithm,
+                    key: masterKey
+                };
 
-            masterKeyVaulticKey = JSON.stringify(vaulticKey);
+                masterKeyVaulticKey = JSON.stringify(vaulticKey);
+            }
         }
 
         let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest);

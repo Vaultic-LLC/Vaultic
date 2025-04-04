@@ -1,3 +1,4 @@
+import cryptHelper from "src/core/Helpers/cryptHelper";
 import { api } from "../../src/core/API";
 import { createTestSuite, TestContext } from "../test";
 
@@ -9,8 +10,8 @@ cryptUtilityTestSuite.tests.push({
     name: "Encrypt / Decrypt", func: async (ctx: TestContext) =>
     {
         const test = "testValue";
-        const encryptResponse = await api.utilities.crypt.encrypt(masterKey, test);
-        const decryptResponse = await api.utilities.crypt.decrypt(masterKey, encryptResponse.value!);
+        const encryptResponse = await cryptHelper.encrypt(masterKey, test);
+        const decryptResponse = await cryptHelper.decrypt(masterKey, encryptResponse.value!);
 
         ctx.assertEquals("Encryption and Decryption Work", decryptResponse.value, test);
     }
