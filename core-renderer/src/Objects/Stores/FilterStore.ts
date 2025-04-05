@@ -12,6 +12,7 @@ import { defaultFilterStoreState, DictionaryAsList, DoubleKeyedObject, PendingSt
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
 import { ValueStoreState } from "./ValueStore";
+import app from "./AppStore";
 
 export interface IFilterStoreState extends StoreState
 {
@@ -68,19 +69,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
 
     protected defaultState()
     {
-        return defaultFilterStoreState;
-    }
-
-    async toggleFilter(id: string): Promise<undefined>
-    {
-        let filter: Filter | undefined = this.state.p[id] ?? this.state.v[id];
-        if (!filter)
-        {
-            await api.repositories.logs.log(undefined, `Unable to find filter: ${id} to toggle`, "toggleFilter");
-            return;
-        }
-
-        filter.a = !filter.a;
+        return defaultFilterStoreState();
     }
 
     async addFilter(
@@ -516,7 +505,7 @@ export class ReactiveFilterStore extends FilterStore
         super(vault);
 
         this.internalPasswordFilters = computed(() => Object.values(this.state.p));
-        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => f.a) ?? []);
+        this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => app.userPreferences.activeFilters[f.id]) ?? []);
 
         this.internalNameValuePairFilters = computed(() => Object.values(this.state.v));
         this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.a) ?? []);

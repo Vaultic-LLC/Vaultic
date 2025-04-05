@@ -5,6 +5,14 @@ import { StoreState } from "../Database/Entities/States/StoreState";
 export type StoreRetriever = Partial<{ [key in StoreType]:
     {
         /**
+         * Key used to save the store state
+         */
+        saveKey: string;
+        /**
+         * whether or not the state is decryptable. Defaults to true. UserPreferencs is not
+         */
+        decryptable?: boolean;
+        /**
          *  The repository for the State Entity
          */
         repository: VaulticRepository<StoreState>,

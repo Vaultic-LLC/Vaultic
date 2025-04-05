@@ -58,7 +58,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
     protected defaultState()
     {
-        return defaultValueStoreState;
+        return defaultValueStoreState();
     }
 
     async addNameValuePair(

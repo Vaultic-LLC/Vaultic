@@ -7,7 +7,6 @@ import app, { AppStore } from "./AppStore";
 import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
-import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { defaultUserPreferencesStoreState, DictionaryAsList, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { ColorPalette } from "@vaultic/shared/Types/Color";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
@@ -43,6 +42,8 @@ interface IUserPreferencesStoreState extends StoreState
     t: { [key: string]: PinnedDataTypes };
     /** Pinned Organizations */
     o: DictionaryAsList;
+    /** Active Filters by UserVautlID */
+    a: { [key: string]: DictionaryAsList };
 }
 
 interface UserPreferencesStateKeys extends StateKeys
@@ -54,6 +55,8 @@ interface UserPreferencesStateKeys extends StateKeys
     'pinnedDataTypes.passwords': '';
     'pinnedDataTypes.values': '';
     'pinnedOrganizations': '';
+    'activeFilters': '';
+    'activeFiltersForUserVault': '';
 }
 
 const UserPreferencesPathRetriever: StorePathRetriever<UserPreferencesStateKeys> =
@@ -64,7 +67,9 @@ const UserPreferencesPathRetriever: StorePathRetriever<UserPreferencesStateKeys>
     'pinnedDataTypes.groups': (...ids: string[]) => `t.${ids[0]}.g`,
     'pinnedDataTypes.passwords': (...ids: string[]) => `t.${ids[0]}.p`,
     'pinnedDataTypes.values': (...ids: string[]) => `t.${ids[0]}.v`,
-    'pinnedOrganizations': (...ids: string[]) => 'o'
+    'pinnedOrganizations': (...ids: string[]) => 'o',
+    'activeFilters': (...ids: string[]) => `a`,
+    'activeFiltersForUserVault': (...ids: string[]) => `a.${ids[0]}`
 };
 
 export type UserPreferencesStoreState = IUserPreferencesStoreState;
@@ -83,6 +88,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
     get pinnedPasswords() { return this.getPinnedDataTypes(DataType.Passwords) ?? {}; }
     get pinnedValues() { return this.getPinnedDataTypes(DataType.NameValuePairs) ?? {}; }
     get pinnedOrganizations() { return this.state.o; }
+    get activeFilters() { return this.state.a[app.currentVault.userVaultID.toString()] ?? {} }
 
     constructor()
     {
@@ -102,31 +108,69 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
         }
         else 
         {
-            if (!validateObject(stateToUse.c, { p: emptyColorPalette }, testProperty) ||
-                !validateObject(stateToUse.t, new Map(), undefined, mapTest))
+            if (!validateObject(stateToUse.c, { p: emptyColorPalette }, testColorPaleetteProp))
             {
                 stateToUse = this.defaultState();
             }
 
-            for (const [key, value] of Object.entries(stateToUse.t))
+            if (!stateToUse.t || typeof stateToUse.t != "object")
             {
-                if (!validateObject(value, emptyDataTypes, undefined, mapTest))
+                stateToUse = this.defaultState();
+            }
+            else
+            {
+                for (const [key, value] of Object.entries(stateToUse.t))
                 {
-                    stateToUse = this.defaultState();
-                    break;
+                    if (!validateObject(value, emptyDataTypes, testPinnedProperties))
+                    {
+                        stateToUse = this.defaultState();
+                        break;
+                    }
+                }
+            }
+
+            if (!stateToUse.a || typeof stateToUse.a != "object")
+            {
+                stateToUse = this.defaultState();
+            }
+            else
+            {
+                for (const [key, value] of Object.entries(stateToUse.a))
+                {
+                    if (typeof value !== 'object')
+                    {
+                        stateToUse = this.defaultState();
+                        break;
+                    }
+                    else
+                    {
+                        const keys = Object.keys(value);
+                        if (!keys.every(k => typeof k === "string"))
+                        {
+                            stateToUse = this.defaultState();
+                            break;
+                        }
+
+                        const values = Object.values(value);
+                        if (!values.every(v => typeof v === "boolean"))
+                        {
+                            stateToUse = this.defaultState();
+                            break;
+                        }
+                    }
                 }
             }
         }
 
         super.updateState(stateToUse);
 
-        function testProperty(propName: string, propValue: any): boolean
+        function testColorPaleetteProp(propName: string, propValue: any): boolean
         {
             if (propName == 'id')
             {
-                return isGuid(propValue)
+                return typeof propValue === 'string';
             }
-            else if (propName == 'active' || propName == 'i' || propName == 'e')
+            else if (propName == 'a' || propName == 'i' || propName == 'e')
             {
                 return typeof propValue == 'boolean';
             }
@@ -136,22 +180,9 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
             }
         }
 
-        function mapTest(objName: string, propName: any, _: any)
+        function testPinnedProperties(objName: string, propValue: any)
         {
-            if (objName == nameof<PinnedDataTypes>("f") ||
-                objName == nameof<PinnedDataTypes>("g") ||
-                objName == nameof<PinnedDataTypes>("p") ||
-                objName == nameof<PinnedDataTypes>("v"))
-            {
-                return isGuid(propName);
-            }
-
-            return typeof propName == "number";
-        }
-
-        function isGuid(val: string)
-        {
-            return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+            return typeof propValue === 'string';
         }
     }
 
@@ -190,7 +221,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
 
     protected defaultState(): UserPreferencesStoreState
     {
-        return defaultUserPreferencesStoreState;
+        return defaultUserPreferencesStoreState();
     }
 
     protected getPinnedDataTypes(dataType: DataType)
@@ -288,7 +319,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
         }
         else
         {
-            pendingUserPreferencesState.addValue(path, id, true);
+            pendingUserPreferencesState.addValue(path, id, true, idString);
         }
 
         const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
@@ -299,13 +330,16 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
 
     private async removePinnedDataType(path: keyof UserPreferencesStateKeys, id: string)
     {
-        if (!OH.has(this.state.t, app.currentVault.userVaultID.toString()))
+        const state = this.getPendingState()!;
+        const userVaultIDAsString = app.currentVault.userVaultID.toString();
+        const currentPinedObject = state.getObject(path, userVaultIDAsString);
+
+        if (!currentPinedObject || !OH.has(currentPinedObject, id))
         {
             return;
         }
 
-        const state = this.getPendingState()!;
-        state.deleteValue(path, id);
+        state.deleteValue(path, id, userVaultIDAsString);
 
         const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
         transaction.updateUserStore(this, state);
@@ -369,5 +403,32 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
         {
             await this.removePinnedDataType('pinnedOrganizations', stringID);
         }
+    }
+
+    public async toggleFilter(id: string)
+    {
+        const pendingState = this.getPendingState()!;
+        const userVaultIDAsString = app.currentVault.userVaultID.toString();
+
+        if (!this.state.a[userVaultIDAsString])
+        {
+            const newActiveFilters: DictionaryAsList = {};
+            newActiveFilters[id] = true;
+
+            pendingState.addValue('activeFilters', userVaultIDAsString, newActiveFilters);
+        }
+        else if (!this.state.a[userVaultIDAsString][id])
+        {
+            pendingState.addValue('activeFiltersForUserVault', id, true, userVaultIDAsString);
+        }
+        else
+        {
+            pendingState.deleteValue('activeFiltersForUserVault', id, userVaultIDAsString);
+        }
+
+        const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+        transaction.updateUserStore(this, pendingState);
+
+        await transaction.commit('');
     }
 }

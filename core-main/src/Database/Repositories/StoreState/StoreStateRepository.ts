@@ -7,6 +7,7 @@ import { getObjectFromPath, PropertyManagerConstructor } from "@vaultic/shared/U
 import { ChangeTracking } from "../../Entities/ChangeTracking";
 import { StoreRetriever } from "../../../Types/Parameters";
 import { environment } from "../../../Environment";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 
 export class StoreStateRepository<T extends StoreState> extends VaulticRepository<T>
 {
@@ -95,29 +96,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
                 for (let j = 0; j < storeTypes.length; j++)
                 {
-                    if (!loadedStoreStates[storeTypes[j]])
-                    {
-                        let state = states[storeTypes[j]].serverState;
-                        const stateEntity = await states[storeTypes[j]].getState();
-                        if (!stateEntity)
-                        {
-                            return;
-                        }
-
-                        if (!state)
-                        {
-                            state = stateEntity.state;
-                        }
-
-                        const usableState = await StoreState.getUsableState(key, state);
-                        if (!usableState.success)
-                        {
-                            return;;
-                        }
-
-                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(usableState.value) };
-                    }
-
+                    await this.checkLoadStoreState(key, loadedStoreStates, storeTypes[j], states);
                     parsedChanges[storeTypes[j]] = this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
                         serverChanges.allChanges[i].changeTime, false, seenServerChanges);
                 }
@@ -159,7 +138,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 clientChangesToPushAfter.allChanges.push(clientChange);
             }
 
-            this.addUpdatedStoreStatesToTransaction(key, loadedStoreStates, states, transaction);
+            this.addUpdatedStoreStatesToTransaction(loadedStoreStates, states, transaction);
         }
         // First time calculating changes
         else 
@@ -174,29 +153,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
                 for (let j = 0; j < storeTypes.length; j++)
                 {
-                    if (!loadedStoreStates[storeTypes[j]])
-                    {
-                        let state = states[storeTypes[j]].serverState;
-                        const stateEntity = await states[storeTypes[j]].getState();
-                        if (!stateEntity)
-                        {
-                            return;
-                        }
-
-                        if (!state)
-                        {
-                            state = stateEntity.state;
-                        }
-
-                        const usableState = await StoreState.getUsableState(key, state);
-                        if (!usableState.success)
-                        {
-                            return;;
-                        }
-
-                        loadedStoreStates[storeTypes[j]] = { entity: stateEntity.makeReactive(), state: JSON.parse(usableState.value) };
-                    }
-
+                    await this.checkLoadStoreState(key, loadedStoreStates, storeTypes[j], states);
                     parsedChanges[storeTypes[j]] = this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
                         localChangesToMerge[i].changeTime, true, seenServerChanges);
                 }
@@ -214,14 +171,61 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
 
             // This is fine to update now even though the request to push our changes might fail because if they do fail
             // we'll use the new store state from the server and re calc some merges within the first check for if (alreadyMergedLocalChanges)
-            this.addUpdatedStoreStatesToTransaction(key, loadedStoreStates, states, transaction);
+            this.addUpdatedStoreStatesToTransaction(loadedStoreStates, states, transaction);
         }
 
         return needsToRePushStoreStates;
     }
 
-    private static addUpdatedStoreStatesToTransaction(
+    /**
+     * Loads the store state if it hasn't already been loaded
+     * @param key The key used to decrypt the store state
+     * @param loadedStoreStates Current object tracking whether a state has been loaded or not
+     * @param storeType The type to load
+     * @param states current StoreRetriever
+     * @returns 
+     */
+    private static async checkLoadStoreState(
         key: string,
+        loadedStoreStates: Partial<Record<StoreType, { entity: StoreState, state: any }>>,
+        storeType: StoreType,
+        states: StoreRetriever)
+    {
+        if (!loadedStoreStates[storeType])
+        {
+            let state = states[storeType].serverState;
+            const stateEntity = await states[storeType].getState();
+            if (!stateEntity)
+            {
+                return;
+            }
+
+            if (!state)
+            {
+                state = stateEntity.state;
+            }
+
+            let usableState: string | undefined;
+            if (states[storeType].decryptable === false)
+            {
+                usableState = await environment.utilities.data.uncompress(state);
+            }
+            else
+            {
+                const response = await StoreState.getUsableState(key, state);
+                if (!response.success)
+                {
+                    return;
+                }
+
+                usableState = response.value;
+            }
+
+            loadedStoreStates[storeType] = { entity: stateEntity.makeReactive(), state: JSON.parse(usableState) };
+        }
+    }
+
+    private static addUpdatedStoreStatesToTransaction(
         loadedStoreStates: Partial<Record<StoreType, { entity: StoreState, state: any }>>,
         states: StoreRetriever,
         transaction: Transaction)
@@ -230,7 +234,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         for (let i = 0; i < updatedStateKeys.length; i++)
         {
             loadedStoreStates[updatedStateKeys[i]].entity.state = JSON.stringify(loadedStoreStates[updatedStateKeys[i]].state);
-            transaction.updateEntity(loadedStoreStates[updatedStateKeys[i]].entity, key, () => states[updatedStateKeys[i]].repository);
+            transaction.updateEntity(loadedStoreStates[updatedStateKeys[i]].entity, states[updatedStateKeys[i]].saveKey, () => states[updatedStateKeys[i]].repository);
         }
     }
 

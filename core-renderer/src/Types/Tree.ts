@@ -157,4 +157,20 @@ export class TreeNodeListManager
             });
         }
     }
+
+    show(id: number)
+    {
+        let node: TreeNodeMember | undefined = this.nodesByID[id];
+        if (!node)
+        {
+            return;
+        }
+
+        while (node)
+        {
+            node.selected = true;
+            node.display = true;
+            node = node.parent;
+        }
+    }
 }

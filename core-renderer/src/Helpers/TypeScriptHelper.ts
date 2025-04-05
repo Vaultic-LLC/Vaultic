@@ -7,23 +7,8 @@ import { Field } from "@vaultic/shared/Types/Fields";
 export function validateObject(tester: any, actual: any, propertyTest?: (propName: string, propValue: any) => boolean,
     mapTest?: (objName: string, propname: string, propValue: any) => boolean)
 {
-    if (actual instanceof Map)
-    {
-        if (!checkMap("", tester, actual, propertyTest, mapTest))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     const actualKeys = Object.keys(tester);
     const expectedKeys = Object.keys(actual);
-
-    if (actualKeys.length != expectedKeys.length)
-    {
-        return false;
-    }
 
     // loop over expected keys since it should have empty nested objects. That way we don't have to worry about 
     // false negatives when drilling down into nested properties
@@ -47,14 +32,7 @@ export function validateObject(tester: any, actual: any, propertyTest?: (propNam
 
         if (typeof tester[expectedKeys[i]] == 'object')
         {
-            if (actual[expectedKeys[i]] instanceof Map)
-            {
-                if (!checkMap(expectedKeys[i], tester[expectedKeys[i]], actual[expectedKeys[i]], propertyTest, mapTest))
-                {
-                    return false;
-                }
-            }
-            else if (!validateObject(tester[expectedKeys[i]], actual[expectedKeys[i]], propertyTest, mapTest))
+            if (!validateObject(tester[expectedKeys[i]], actual[expectedKeys[i]], propertyTest, mapTest))
             {
                 return false;
             }
@@ -67,7 +45,7 @@ export function validateObject(tester: any, actual: any, propertyTest?: (propNam
         actualKeys.splice(index, 1);
     }
 
-    return actualKeys.length == 0;
+    return true;
 }
 
 function checkMap(objName: string, tester: any, actual: any, propertyTest?: (propName: string, propValue: any) => boolean,

@@ -95,7 +95,7 @@ export default defineComponent({
 
         async function exportPasswords()
         {
-            app.popups.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { }, true)
 
             async function doExportPasswords(masterKey: string)
             {
@@ -114,7 +114,7 @@ export default defineComponent({
 
         async function exportValues()
         {
-            app.popups.showRequestAuthentication(primaryColor.value, doExportValues, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportValues, () => { }, true)
 
             async function doExportValues(masterKey: string)
             {

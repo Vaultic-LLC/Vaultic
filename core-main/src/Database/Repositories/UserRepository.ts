@@ -36,8 +36,16 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
     {
         const salt = environment.utilities.crypt.randomStrongValue(40);
 
+        let keyToUse = masterKey;
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.parse(masterKey);
+            keyToUse = vaulticKey.key;
+        }
+        catch { }
+
         // TODO: switch to Argon2id
-        const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey, salt);
+        const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, salt);
         if (!hash.success)
         {
             return false;
@@ -263,13 +271,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const appStoreState = new AppStoreState().makeReactive();
             appStoreState.appStoreStateID = response.AppStoreStateID!;
             appStoreState.userID = response.UserID!;
-            appStoreState.state = JSON.stringify(defaultAppStoreState);
+            appStoreState.state = JSON.stringify(defaultAppStoreState());
             user.appStoreState = appStoreState;
 
             const userPreferencesStoreState = new UserPreferencesStoreState().makeReactive();
             userPreferencesStoreState.userPreferencesStoreStateID = response.UserPreferencesStoreStateID!;
             userPreferencesStoreState.userID = response.UserID!;
-            userPreferencesStoreState.state = JSON.stringify(defaultUserPreferencesStoreState);
+            userPreferencesStoreState.state = JSON.stringify(defaultUserPreferencesStoreState());
             user.userPreferencesStoreState = userPreferencesStoreState;
 
             const vaults = await environment.repositories.vaults.createNewVault(serializedMasterKey, "Personal", false);
@@ -355,26 +363,37 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             }
 
             let keyToUse = masterKey;
-            if (!isVaulticKey)
+            let vaulticKey = masterKey;
+
+            if (isVaulticKey)
             {
-                const vaulticKey: VaulticKey =
+                try
+                {
+                    const parsedVaulticKey: VaulticKey = JSON.parse(masterKey);
+                    keyToUse = parsedVaulticKey.key;
+                }
+                catch { }
+            }
+            else
+            {
+                const newVaulticKey: VaulticKey =
                 {
                     algorithm: user.masterKeyEncryptionAlgorithm,
                     key: masterKey
                 };
 
-                keyToUse = JSON.stringify(vaulticKey);
+                vaulticKey = JSON.stringify(newVaulticKey)
             }
 
             try
             {
-                const decryptedHashResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeyHash);
+                const decryptedHashResponse = await environment.utilities.crypt.symmetricDecrypt(vaulticKey, user.masterKeyHash);
                 if (!decryptedHashResponse.success)
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Hash");
                 }
 
-                const decryptedSaltResponse = await environment.utilities.crypt.symmetricDecrypt(keyToUse, user.masterKeySalt);
+                const decryptedSaltResponse = await environment.utilities.crypt.symmetricDecrypt(vaulticKey, user.masterKeySalt);
                 if (!decryptedSaltResponse.success)
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Salt");
@@ -442,7 +461,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             await environment.repositories.logs.clearOldLogs(email);
 
             // Make sure the users masterKey hasn't been tampered with. If so, update it
-            if (!(await this.verifyUserMasterKey(masterKey)).success)
+            const verifyResponse = await this.verifyUserMasterKey(masterKey);
+            if (!verifyResponse.success || !verifyResponse.value.isValid)
             {
                 await this.setMasterKey(masterKey, user, false);
 
@@ -581,7 +601,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 }
 
                 const transaction = new Transaction();
-                ChangeTracking.creteAndInsert(masterKey, ClientChangeTrackingType.User, changes, transaction, environment.cache.currentUser.userID);
+                ChangeTracking.creteAndInsert(environment.cache.masterKey, ClientChangeTrackingType.User, changes, transaction, environment.cache.currentUser.userID);
 
                 const saved = await transaction.commit();
                 if (!saved)
@@ -679,7 +699,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         if (entity.userPreferencesStoreState)
         {
-            transaction.resetTracking(currentUser.userPreferencesStoreState, key, () => environment.repositories.userPreferencesStoreStates);
+            transaction.resetTracking(currentUser.userPreferencesStoreState, '', () => environment.repositories.userPreferencesStoreStates);
         }
 
         return true;
@@ -878,6 +898,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         const states: StoreRetriever = {};
         states[StoreType.App] =
         {
+            saveKey: masterKey,
             repository: environment.repositories.appStoreStates,
             serverState: serverStates[StoreType.App],
             getState: async () =>
@@ -893,11 +914,13 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         states[StoreType.UserPreferences] =
         {
+            saveKey: "",
+            decryptable: false,
             repository: environment.repositories.userPreferencesStoreStates,
             serverState: serverStates[StoreType.UserPreferences],
             getState: async () =>
             {
-                const state = await environment.repositories.userPreferencesStoreStates.retrieveAndVerify(masterKey,
+                const state = await environment.repositories.userPreferencesStoreStates.retrieveAndVerify("",
                     (repository) => repository.findOneBy({
                         userID: userID
                     }));

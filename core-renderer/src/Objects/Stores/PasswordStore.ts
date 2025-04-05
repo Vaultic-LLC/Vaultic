@@ -73,7 +73,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
     protected defaultState()
     {
-        return defaultPasswordStoreState;
+        return defaultPasswordStoreState();
     }
 
     async addPassword(

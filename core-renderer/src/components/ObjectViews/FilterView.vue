@@ -141,16 +141,16 @@ export default defineComponent({
                     // custom ref but that's ok since we are creating
                     filterStoreState = app.currentVault.filterStore.getPendingState()!;
 
-                    // TODO: this is causing issues since the same object reference is saved to the store later on.
-                    // Find another way to do this
                     Object.assign(filterState, defaultFilter(filterState.t));
 
+                    filterConditionModels.updateValues([]);
                     allConditions = {};
                     addedConditions = [];
                     removedConditions = [];
 
-                    await onAdd();
                     refreshKey.value = Date.now().toString();
+                    
+                    setTimeout(onAdd, 50);
                     handleSaveResponse(true);
 
                     return;
@@ -226,12 +226,13 @@ export default defineComponent({
             if (addedIndex >= 0)
             {
                 addedConditions.splice(addedIndex, 1);
-                return;
+            }
+            else
+            {
+                removedConditions.push(filterCondition.id);
             }
 
-            removedConditions.push(filterCondition.id);
             filterConditionModels.remove(filterCondition.id);
-
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 

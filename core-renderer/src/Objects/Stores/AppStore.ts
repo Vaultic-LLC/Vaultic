@@ -49,6 +49,8 @@ export interface AppSettings
     m: boolean;
     /** Passphrase Seperator */
     e: string;
+    /** Require master key to view or update sensitive information */
+    q: boolean;
 }
 
 export interface IAppStoreState extends StoreState
@@ -223,7 +225,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
     protected defaultState()
     {
-        return defaultAppStoreState;
+        return defaultAppStoreState();
     }
 
     private calcAutolockTime(time: AutoLockTime): number
@@ -455,6 +457,11 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
         this.userVaults.value[index].isArchived = isArchived;
         this.userVaults.value[index].type = getVaultType(this.userVaults.value[index]);
+
+        if (this.currentVault.userVaultID == this.userVaults.value[index].userVaultID)
+        {
+            this.currentVault.isArchived = isArchived;
+        }
 
         return true;
     }

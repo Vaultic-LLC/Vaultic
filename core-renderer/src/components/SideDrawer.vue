@@ -167,7 +167,7 @@ export default defineComponent({
 
         async function onUnarchiveVault(data: Dictionary<any>)
         {
-            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { }, true);
             async function onKeySuccess(key: string)
             {
                 if (!(await app.runAsAsyncProcess(() => app.updateArchiveStatus(key, data['userVaultID'], false))))
@@ -203,7 +203,7 @@ export default defineComponent({
                 },
                 accept: () => 
                 {
-                    app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+                    app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { }, true);
                     async function onKeySuccess(key: string)
                     {
                         if (archive)
@@ -252,8 +252,14 @@ export default defineComponent({
 
             addedVault.forEach(v => 
             {
-                manager.addLeaf(parentNodeId, v.name, v.userVaultID == app.currentVault.userVaultID,
+                const selected = v.userVaultID == app.currentVault.userVaultID;
+                manager.addLeaf(parentNodeId, v.name, selected,
                     true, buttons, undefined, { userVaultID: v.userVaultID, type: type });
+
+                if (selected)
+                {
+                    manager.show(parentNodeId);
+                }
             });
 
             removedVault.forEach(v => 

@@ -39,8 +39,9 @@ export class BaseVaultStore<V extends PasswordStore,
 {
     protected internalName: string;
     protected internalShared: boolean;
-    protected internalIsArchived: boolean;
-    protected internalIsOwner: boolean;
+    protected internalIsArchived: Ref<boolean>;
+    protected internalIsOwner: Ref<boolean>;
+    protected internalPermissions: Ref<ServerPermissions | undefined>;
     protected internalIsReadOnly: Ref<boolean>;
     protected internalReadOnlyComputed: ComputedRef<boolean>;
     protected internalUserOrganizationID: number;
@@ -56,7 +57,8 @@ export class BaseVaultStore<V extends PasswordStore,
 
     get name() { return this.internalName; }
     get shared() { return this.internalShared; }
-    get isArchived() { return this.internalIsArchived; }
+    get isArchived() { return this.internalIsArchived.value; }
+    set isArchived(val: boolean) { this.internalIsArchived.value = val; }
     get isOwner() { return this.internalIsOwner; }
     get isReadOnly() { return this.internalReadOnlyComputed; }
     get userOrganizationID() { return this.internalUserOrganizationID; }
@@ -77,8 +79,13 @@ export class BaseVaultStore<V extends PasswordStore,
     {
         super(StoreType.Vault, VaultStorePathRetriever);
         this.internalIsReadOnly = ref(false);
-        this.internalReadOnlyComputed = computed(() => this.internalIsReadOnly.value || app.isSyncing.value || app.forceReadOnly.value);
+        this.internalReadOnlyComputed = computed(() => this.internalIsArchived.value || this.internalIsReadOnly.value || app.isSyncing.value || app.forceReadOnly.value ||
+            (this.internalIsOwner.value === false && this.internalPermissions.value == ServerPermissions.View));
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
+
+        this.internalIsArchived = ref(false);
+        this.internalIsOwner = ref(false);
+        this.internalPermissions = ref(ServerPermissions.View);
     }
 
     protected async setBaseVaultStoreData(data: CondensedVaultData)
@@ -86,10 +93,10 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalUserOrganizationID = data.userOrganizationID;
         this.internalUserVaultID = data.userVaultID;
         this.internalVaultID = data.vaultID;
-        this.internalIsOwner = data.isOwner;
-        this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
+        this.internalIsOwner.value = data.isOwner;
+        this.internalPermissions.value = data.permissions;
         this.internalShared = data.shared;
-        this.internalIsArchived = data.isArchived;
+        this.internalIsArchived.value = data.isArchived;
         this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Map();
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
@@ -98,7 +105,7 @@ export class BaseVaultStore<V extends PasswordStore,
 
     protected defaultState(): VaultStoreState 
     {
-        return defaultVaultStoreState;
+        return defaultVaultStoreState();
     }
 }
 

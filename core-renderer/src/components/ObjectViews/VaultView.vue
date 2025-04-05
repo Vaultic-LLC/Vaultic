@@ -79,7 +79,7 @@ export default defineComponent({
 
         function onSave()
         {
-            app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled);
+            app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled, true);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;

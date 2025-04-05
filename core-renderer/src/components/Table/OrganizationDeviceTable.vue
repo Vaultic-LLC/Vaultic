@@ -4,7 +4,7 @@
             :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" 
             :allowPinning="!devicesAreSelected && !readOnly" :searchBarSizeModel="searchBarSizeModel"
             :onPin="onPinOrganization" :onEdit="devicesAreSelected ? onEditDevice : onEditOrganization" 
-            :onDelete="devicesAreSelected ? onDeleteDevice : onDeleteOrganization">
+            :onDelete="onDelete">
             <template #tableControls>
                 <AddButton v-if="showAdd" :color="color" @click="onAdd" />
             </template>
@@ -48,6 +48,8 @@ export default defineComponent({
             
         const devicesAreSelected: ComputedRef<boolean> = computed(() => app.activeDeviceOrganizationsTable == DataType.Devices);
         const showAdd: ComputedRef<boolean> = computed(() => app.isOnline && (!devicesAreSelected.value || (devicesAreSelected.value && !app.devices.hasRegisteredCurrentDevice)));
+
+        let doDeleteValue: ((key: string) => Promise<any>) | undefined;
 
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
@@ -200,16 +202,41 @@ export default defineComponent({
             app.popups.showDevicePopup(device);
         }
 
-        async function onDeleteDevice(device: ClientDevice)
+        function onDelete(obj: ClientDevice | Organization)
         {
-            if (await app.runAsAsyncProcess(() => app.devices.deleteDevice(device.id)))
+            if (devicesAreSelected.value)
             {
-                app.popups.showToast("Device Unregistered", true);
+                doDeleteValue = async (key: string) =>
+                {
+                    if (await app.runAsAsyncProcess(() => app.devices.deleteDevice((obj as ClientDevice).id)))
+                    {
+                        app.popups.showToast("Device Unregistered", true);
+                    }
+                    else
+                    {
+                        app.popups.showToast("Unregister Failed", false);
+                    }
+                };
             }
             else
             {
-                app.popups.showToast("Unregister Failed", false);
+                doDeleteValue = async (key: string) =>
+                {
+                    app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Deleting Organization");
+                    if (await app.runAsAsyncProcess(() => app.organizations.deleteOrganization((obj as Organization).organizationID)))
+                    {
+                        app.popups.showToast("Organization Deleted", true);
+                    }
+                    else
+                    {
+                        app.popups.showToast("Delete Failed", false);
+                    }
+
+                    app.popups.hideLoadingIndicator();
+                };
             }
+
+            app.popups.showRequestAuthentication(color.value, doDeleteValue, () => { }, true);
         }
 
         function onPinOrganization(isPinned: boolean, org: Organization)
@@ -232,21 +259,6 @@ export default defineComponent({
         function onEditOrganization(organization: Organization)
         {
             app.popups.showOrganizationPopup(() => {}, organization);
-        }
-
-        async function onDeleteOrganization(organization: Organization)
-        {
-            app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Deleting Organization");
-            if (await app.runAsAsyncProcess(() => app.organizations.deleteOrganization(organization.organizationID)))
-            {
-                app.popups.showToast("Organization Deleted", true);
-            }
-            else
-            {
-                app.popups.showToast("Delete Failed", false);
-            }
-
-            app.popups.hideLoadingIndicator();
         }
 
         watch(() => app.devices.devices.length, (_, __) => 
@@ -283,9 +295,8 @@ export default defineComponent({
             onAdd,
             onEditDevice,
             onPinOrganization,
-            onDeleteDevice,
             onEditOrganization,
-            onDeleteOrganization
+            onDelete
         }
     }
 })

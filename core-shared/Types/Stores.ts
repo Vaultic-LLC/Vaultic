@@ -312,77 +312,93 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
     }
 }
 
-export const defaultAppStoreState =
+export function defaultAppStoreState()
 {
-    version: 0,
-    s: {
-        c: emptyUserColorPalettes,
-        a: AutoLockTime.OneMinute,
-        f: FilterStatus.Or,
-        o: 365,
-        p: 1,
-        v: 25,
-        r: 7,
-        n: true,
-        s: true,
-        m: true,
-        e: '-',
-        t: true
+    return {
+        version: 0,
+        s: {
+            c: emptyUserColorPalettes,
+            a: AutoLockTime.OneMinute,
+            f: FilterStatus.Or,
+            o: 365,
+            p: 1,
+            v: 25,
+            r: 7,
+            n: true,
+            s: true,
+            m: true,
+            e: '-',
+            t: true,
+            q: false
+        }
+    };
+}
+
+export function defaultUserPreferencesStoreState()
+{
+    return {
+        version: 0,
+        c: { p: defaultColorPalettes.get('m84ezgwm3')! },
+        t: {},
+        o: {},
+        a: {}
+    };
+};
+
+export function defaultVaultStoreState()
+{
+    return {
+        version: 0,
+        s: {},
+        l: []
     }
 };
 
-export const defaultUserPreferencesStoreState =
+export function defaultPasswordStoreState()
 {
-    version: 0,
-    c: { p: defaultColorPalettes.get('m84ezgwm3')! },
-    t: {},
-    o: {}
+    return {
+        version: 0,
+        p: {},
+        o: {},
+        d: {},
+        c: new CurrentAndSafeStructure(),
+        h: {}
+    }
 };
 
-export const defaultVaultStoreState =
+export function defaultValueStoreState()
 {
-    version: 0,
-    s: {},
-    l: []
+    return {
+        version: 0,
+        v: {},
+        d: {},
+        c: new CurrentAndSafeStructure(),
+        h: {}
+    }
 };
 
-export const defaultPasswordStoreState =
+export function defaultFilterStoreState()
 {
-    version: 0,
-    p: {},
-    o: {},
-    d: {},
-    c: new CurrentAndSafeStructure(),
-    h: {}
+    return {
+        version: 0,
+        p: {},
+        v: {},
+        w: {},
+        l: {},
+        o: {},
+        u: {},
+    }
 };
 
-export const defaultValueStoreState =
+export function defaultGroupStoreState()
 {
-    version: 0,
-    v: {},
-    d: {},
-    c: new CurrentAndSafeStructure(),
-    h: {}
-};
-
-export const defaultFilterStoreState =
-{
-    version: 0,
-    p: {},
-    v: {},
-    w: {},
-    l: {},
-    o: {},
-    u: {},
-};
-
-export const defaultGroupStoreState =
-{
-    version: 0,
-    p: {},
-    v: {},
-    w: {},
-    l: {},
-    o: {},
-    u: {},
+    return {
+        version: 0,
+        p: {},
+        v: {},
+        w: {},
+        l: {},
+        o: {},
+        u: {},
+    }
 };

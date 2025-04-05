@@ -43,7 +43,7 @@ export default defineComponent({
         Message
     },
     props: ['creating', 'title', 'color', 'defaultSave', 'buttonText', 'skipOnSaveFunctionality',
-        'minButtonHeight', 'hideButtons', 'popupInfoOverride'],
+        'minButtonHeight', 'hideButtons', 'popupInfoOverride', 'isSensitive'],
     setup(props)
     {
         const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupNames] : popups.defaultObjectPopup;
@@ -165,7 +165,7 @@ export default defineComponent({
             }
 
             app.popups.showRequestAuthentication(primaryColor.value,
-                onAuthenticationSuccessful, authenticationCancelled);
+                onAuthenticationSuccessful, authenticationCancelled, props.isSensitive === true);
 
             requestAuthorization.value = false;
         });

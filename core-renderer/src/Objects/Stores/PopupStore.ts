@@ -242,13 +242,16 @@ export function createPopupStore()
         accountSetupIsShowing.value = false;
     }
 
-    async function showRequestAuthentication(clr: string, doOnSucess: (key: string) => void, doOnCancl: () => void)
+    async function showRequestAuthentication(clr: string, doOnSucess: (key: string) => void, doOnCancl: () => void, isSensitive: boolean = false)
     {
-        const key: string | undefined = await api.repositories.users.getValidMasterKey();
-        if (key)
+        if (!isSensitive || !app.settings.q)
         {
-            doOnSucess(key);
-            return;
+            const key: string | undefined = await api.repositories.users.getValidMasterKey();
+            if (key)
+            {
+                doOnSucess(key);
+                return;
+            }
         }
 
         color.value = clr;

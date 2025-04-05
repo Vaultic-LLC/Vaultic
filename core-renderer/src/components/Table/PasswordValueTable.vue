@@ -373,7 +373,7 @@ export default defineComponent({
                 return await app.currentVault.passwordStore.deletePassword(key, password);
             };
 
-            app.popups.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { });
+            app.popups.showRequestAuthentication(color.value, onDeletePasswordConfirmed, () => { }, true);
         }
 
         async function onDeletePasswordConfirmed(key: string)
@@ -399,7 +399,7 @@ export default defineComponent({
                 return await app.currentVault.valueStore.deleteNameValuePair(key, value);
             };
 
-            app.popups.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { });
+            app.popups.showRequestAuthentication(color.value, onDeleteValueConfirmed, () => { }, true);
         }
 
         async function onDeleteValueConfirmed(key: string)

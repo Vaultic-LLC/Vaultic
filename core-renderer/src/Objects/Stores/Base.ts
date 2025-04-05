@@ -9,7 +9,6 @@ import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, Secondar
 import { Algorithm } from "@vaultic/shared/Types/Keys";
 import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
-import app from "./AppStore";
 
 export type StoreEvents = "onChanged";
 
@@ -105,7 +104,7 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
         }
 
         // fallback to default state
-        this.initalizeNewState(this.defaultState());
+        this.resetToDefault();
     }
 
     protected preAssignState(_: T): void { }

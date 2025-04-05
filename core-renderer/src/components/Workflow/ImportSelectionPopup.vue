@@ -80,7 +80,7 @@ export default defineComponent({
 
         function onConfirm()
         {
-            return app.popups.showRequestAuthentication(props.color, buildAndEmit, () => { });
+            return app.popups.showRequestAuthentication(props.color, buildAndEmit, () => { }, true);
         }
 
         function buildAndEmit(masterKey: string)

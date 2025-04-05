@@ -63,7 +63,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
     protected defaultState()
     {
-        return defaultGroupStoreState;
+        return defaultGroupStoreState();
     }
 
     async addGroup(

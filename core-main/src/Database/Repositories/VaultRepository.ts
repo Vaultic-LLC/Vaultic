@@ -146,19 +146,19 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         vault.vaultID = response.VaultID!;
         vault.vaultStoreState.vaultID = response.VaultID!;
         vault.vaultStoreState.vaultStoreStateID = response.VaultStoreStateID!;
-        vault.vaultStoreState.state = JSON.stringify(defaultVaultStoreState);
+        vault.vaultStoreState.state = JSON.stringify(defaultVaultStoreState());
         vault.passwordStoreState.vaultID = response.VaultID!;
         vault.passwordStoreState.passwordStoreStateID = response.PasswordStoreStateID!;
-        vault.passwordStoreState.state = JSON.stringify(defaultPasswordStoreState);
+        vault.passwordStoreState.state = JSON.stringify(defaultPasswordStoreState());
         vault.valueStoreState.vaultID = response.VaultID!;
         vault.valueStoreState.valueStoreStateID = response.ValueStoreStateID!;
-        vault.valueStoreState.state = JSON.stringify(defaultValueStoreState);
+        vault.valueStoreState.state = JSON.stringify(defaultValueStoreState());
         vault.filterStoreState.vaultID = response.VaultID!;
         vault.filterStoreState.filterStoreStateID = response.FilterStoreStateID!;
-        vault.filterStoreState.state = JSON.stringify(defaultFilterStoreState);
+        vault.filterStoreState.state = JSON.stringify(defaultFilterStoreState());
         vault.groupStoreState.vaultID = response.VaultID!;
         vault.groupStoreState.groupStoreStateID = response.GroupStoreStateID!;
-        vault.groupStoreState.state = JSON.stringify(defaultGroupStoreState);
+        vault.groupStoreState.state = JSON.stringify(defaultGroupStoreState());
 
         return [userVault, vault];
 
@@ -997,6 +997,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const states: StoreRetriever = {};
         states[StoreType.Vault] =
         {
+            saveKey: vaultKey,
             repository: environment.repositories.vaultStoreStates,
             serverState: serverVault?.vaultStoreState?.state,
             getState: async () =>
@@ -1012,6 +1013,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         states[StoreType.Password] =
         {
+            saveKey: vaultKey,
             repository: environment.repositories.passwordStoreStates,
             serverState: serverVault?.passwordStoreState?.state,
             getState: async () =>
@@ -1027,6 +1029,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         states[StoreType.Value] =
         {
+            saveKey: vaultKey,
             repository: environment.repositories.valueStoreStates,
             serverState: serverVault?.valueStoreState?.state,
             getState: async () =>
@@ -1042,6 +1045,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         states[StoreType.Filter] =
         {
+            saveKey: vaultKey,
             repository: environment.repositories.filterStoreStates,
             serverState: serverVault?.filterStoreState?.state,
             getState: async () =>
@@ -1057,6 +1061,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         states[StoreType.Group] =
         {
+            saveKey: vaultKey,
             repository: environment.repositories.groupStoreStates,
             serverState: serverVault?.groupStoreState?.state,
             getState: async () =>

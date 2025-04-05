@@ -1,6 +1,6 @@
 <template>
     <ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition" :hideButtons="readOnly">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly" :isSensitive="true">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
                 v-model="passwordState.f" :width="'50%'" :maxWidth="''" :maxHeight="''" />
@@ -172,7 +172,7 @@ export default defineComponent({
         function onSave()
         {
             passwordInputField.value?.toggleMask(true);
-            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled, true);
 
             return new Promise((resolve, reject) =>
             {
@@ -234,6 +234,8 @@ export default defineComponent({
             // custom ref but that's ok since we are creating
             Object.assign(passwordState, defaultPassword());
             pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+            securityQuestions.updateValues([]);
 
             allSecurityQuestions = {};
             addedSecurityQuestions = [];

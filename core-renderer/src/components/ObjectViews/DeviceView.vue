@@ -59,6 +59,11 @@ export default defineComponent({
 
         async function onSave()
         {
+            app.popups.showRequestAuthentication(color.value, doSave, () => {}, true);
+        }
+
+        async function doSave(key: string)
+        {
             app.popups.showLoadingIndicator(color.value, props.creating ? 'Registering Device' : 'Saving Device');
 
             deviceState.value.RequiresMFA = displayRequiresMFAToRequiresMFA(requiresMFA.value);

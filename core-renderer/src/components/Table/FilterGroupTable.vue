@@ -154,9 +154,14 @@ export default defineComponent({
             }
         ];
 
-        function toggleFilter(f: Filter)
+        async function toggleFilter(f: Filter)
         {
-            app.currentVault.filterStore.toggleFilter(f.id);
+            await app.userPreferences.toggleFilter(f.id);
+        }
+
+        function isFilterActive(f: Filter)
+        {
+            return app.userPreferences.activeFilters[f.id];
         }
 
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() =>
@@ -165,7 +170,7 @@ export default defineComponent({
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
                 models.push(new TableColumnModel("Active", "a").setComponent("SelectorButtonTableRowCell")
-                    .setData({ 'color': color, onClick: toggleFilter, startingWidth: '105px' }).setOnClick(toggleFilter));
+                    .setData({ 'color': color, onClick: toggleFilter, isActive: isFilterActive, startingWidth: '105px' }).setOnClick(toggleFilter));
 
                 models.push(new TableColumnModel("Name", "n"));
             }
@@ -392,6 +397,7 @@ export default defineComponent({
         watch(() => app.activePasswordValuesTable, () =>
         {
             setTableRowDatas();
+            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.filterStore.passwordFilters.length, () =>

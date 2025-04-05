@@ -53,6 +53,12 @@
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                            :label="'Require Master Key to View or Update Sensitive Information'" v-model="reactiveAppSettings.q" />
+                        <ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
+                            :message="'If checked, will prompt you to enter your Master Key when updating your settings, adding, updating, or deleting Passwords, Values, Vaults, Devices or Organizations, and unlocking fields on edit popups. This is to prevent tampering with your sensitive data if you happent to forget to lock your vault.'" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
                             :label="'Include Ambiguous Characters in Random Password'" v-model="reactiveAppSettings.m" />
                     </div>
                     <div class="settingsView__inputSection">
@@ -105,6 +111,7 @@ import VaulticAccordion from '../Accordion/VaulticAccordion.vue';
 import VaulticAccordionPanel from '../Accordion/VaulticAccordionPanel.vue';
 import VaulticAccordionHeader from '../Accordion/VaulticAccordionHeader.vue';
 import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
+import ToolTip from '../ToolTip.vue';
 
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
@@ -128,7 +135,8 @@ export default defineComponent({
         VaulticAccordion,
         VaulticAccordionPanel,
         VaulticAccordionHeader,
-        VaulticAccordionContent
+        VaulticAccordionContent,
+        ToolTip
     },
     props: ['creating', 'currentView'],
     setup(props)
@@ -172,7 +180,7 @@ export default defineComponent({
 
         function onSave()
         {
-            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled, true);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;

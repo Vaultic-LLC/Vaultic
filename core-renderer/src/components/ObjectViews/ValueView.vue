@@ -1,6 +1,6 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition" :hideButtons="readOnly">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly" :isSensitive="true">
         <VaulticFieldset :centered="true">
             <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.n" :width="'50%'"
                 :maxWidth="''" />
@@ -111,7 +111,7 @@ export default defineComponent({
         function onSave()
         {
             valueInputField.value?.toggleMask(true);
-            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled, true);
 
             return new Promise((resolve, reject) =>
             {

@@ -352,6 +352,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         const states: StoreRetriever = {};
         states[StoreType.VaultPreferences] =
         {
+            saveKey: masterKey,
             repository: environment.repositories.vaultPreferencesStoreStates,
             serverState: serverUserVault?.vaultPreferencesStoreState?.state,
             getState: async () =>
