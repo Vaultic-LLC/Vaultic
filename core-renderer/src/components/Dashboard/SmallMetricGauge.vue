@@ -53,7 +53,11 @@ export default defineComponent({
         const textWidth: ComputedRef<string> = computed(() =>
         {
             const digits = props.model.filledAmount.toString().length + props.model.totalAmount.toString().length;
-            if (digits > 5)
+            if (digits > 6)
+            {
+                return "0.9vw";
+            }
+            else if (digits > 5)
             {
                 return "1vw";
             }

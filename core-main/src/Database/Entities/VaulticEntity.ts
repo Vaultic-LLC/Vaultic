@@ -216,11 +216,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return false;
         }
 
-        if (this.userPreferencesStoreStateID)
-        {
-            console.log(`\n\nSigning UserPreferences with: ${key}, from :${Error().stack}\n\n`);
-        }
-
         try 
         {
             let keyToUse = key;
@@ -268,11 +263,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         if (!signatureMakeup)
         {
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_MAKEUP);
-        }
-
-        if (this.userPreferencesStoreStateID)
-        {
-            console.log(`\n\nVerifying UserPreferences with: ${key}, from: ${Error().stack}\n\n`);
         }
 
         const serializedMakeup = JSON.stringify(signatureMakeup);
