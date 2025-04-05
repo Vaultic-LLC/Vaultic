@@ -121,14 +121,14 @@ export default defineComponent({
             const memberChanges = memberTable.value?.getChanges()!;
             if (props.creating)
             {
-                handleSaveResponse((await app.organizations.createOrganization(key, orgState.value, 
-                addedVaults, memberChanges.addedMembers.valueArray())));
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.organizations.createOrganization(key, orgState.value, 
+                addedVaults, memberChanges.addedMembers.valueArray()))));
             }
             else
             {
-                handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value, unchangedVaults,
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value, unchangedVaults,
                     addedVaults, removedVaults, orgState.value.membersByUserID.valueArray(), memberChanges.addedMembers.valueArray(), 
-                    memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray())));
+                    memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray()))));
             }
 
             if (props.creating)

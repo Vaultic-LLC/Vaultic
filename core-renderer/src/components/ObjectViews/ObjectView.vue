@@ -32,7 +32,7 @@ import Message from 'primevue-vaultic/message';
 
 import app from "../../Objects/Stores/AppStore";
 import { ClosePopupFuncctionKey, DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Constants/Keys';
-import { PopupName, popups } from '../../Objects/Stores/PopupStore';
+import { PopupNames, popups } from '../../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: "ObjectView",
@@ -46,7 +46,7 @@ export default defineComponent({
         'minButtonHeight', 'hideButtons', 'popupInfoOverride'],
     setup(props)
     {
-        const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupName] : popups.defaultObjectPopup;
+        const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupNames] : popups.defaultObjectPopup;
 
         const primaryColor: ComputedRef<string> = computed(() => props.color);
         const buttonText: Ref<string> = ref(props.buttonText ? props.buttonText : props.creating ? "Create" : "Save and Close");

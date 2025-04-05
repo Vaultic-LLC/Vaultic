@@ -12,18 +12,21 @@ import { api } from "../../API";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
-export type PopupName = "loading" |
-    "alert" |
-    "devicePopup" |
-    "globalAuth" |
-    "requestAuth" |
-    "enterMFACode" |
-    "accountSetup" |
-    "breachedPasswords" |
-    "toast" |
-    "importSelection" |
-    "defaultObjectPopup" |
-    "emergencyDeactivation";
+export enum PopupNames 
+{
+    Loading = "loading",
+    Alert = "alert",
+    DevicePopup = "devicePopup",
+    GlobalAuth = "globalAuth",
+    RequestAuth = "requestAuth",
+    EnterMFACode = "enterMFACode",
+    AccountSetup = "accountSetup",
+    BreachedPaswords = "breachedPasswords",
+    Toast = "toast",
+    ImportSelection = "importSelection",
+    DefaultObjectPopup = "defaultObjectPopup",
+    EmergencyDeactivaion = "emergencyDeactivation"
+};
 
 interface PopupInfo
 {
@@ -32,7 +35,7 @@ interface PopupInfo
 }
 
 export type Popups = {
-    [key in PopupName]: PopupInfo;
+    [key in PopupNames]: PopupInfo;
 }
 
 export const popups: Popups =

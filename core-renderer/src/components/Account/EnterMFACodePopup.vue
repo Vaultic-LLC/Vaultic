@@ -1,14 +1,14 @@
 <template>
     <div class="enterMFACodePopup">
         <ObjectPopup :minWidth="'500px'" :minHeight="'200px'" :width="'31%'" :height="'24%'"
-            :closePopup="() => $.emit('onClose')" :popupInfoOverride="'enterMFACode'">
+            :closePopup="() => $.emit('onClose')" :popupInfoOverride="PopupNames.EnterMFACode">
             <div class="enterMFACodePopup__container">
                 <div class="mfaView__header">
                     <h2>Enter Multifactor Authentication Code</h2>
                 </div>
                 <div class="mfaView__content">
                     <ObjectView :color="color" :creating="false" :buttonText="'Confirm'" :defaultSave="onConfirm" :skipOnSaveFunctionality="true"
-                        :minButtonHeight="'30px'" :popupInfoOverride="'enterMFACode'">
+                        :minButtonHeight="'30px'" :popupInfoOverride="PopupNames.EnterMFACode">
                         <div class="flex flex-col gap-1">
                             <VaulticOTP ref="otp" v-model="mfaCode" :color="color" />
                         </div>
@@ -31,6 +31,7 @@ import VaulticOTP from './VaulticOTP.vue';
 import app from '../../Objects/Stores/AppStore';
 import { popups } from '../../Objects/Stores/PopupStore';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
+import { PopupNames } from '../../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: "EnterMFACodePopup",
@@ -82,6 +83,7 @@ export default defineComponent({
             background,
             currentPrimaryColor,
             currentErrorColor,
+            PopupNames,
             onConfirm,
             invalidate
         }

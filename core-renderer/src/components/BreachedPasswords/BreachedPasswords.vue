@@ -164,7 +164,7 @@ export default defineComponent({
             }
 
             scanning.value = true;
-            await app.vaultDataBreaches.checkPasswordForBreach(password);
+            await app.runAsAsyncProcess(() => app.vaultDataBreaches.checkPasswordForBreach(password));
             scanning.value = false;          
         }
 
@@ -176,7 +176,7 @@ export default defineComponent({
             }
 
             scanning.value = true;
-            await app.vaultDataBreaches.checkPasswordsForBreach(passwords);
+            await app.runAsAsyncProcess(() => app.vaultDataBreaches.checkPasswordsForBreach(passwords));
             scanning.value = false;          
         }
 

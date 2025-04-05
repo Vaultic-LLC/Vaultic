@@ -62,15 +62,15 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, props.creating ? 'Registering Device' : 'Saving Device');
 
             deviceState.value.RequiresMFA = displayRequiresMFAToRequiresMFA(requiresMFA.value);
-            let succeeded: boolean = false;
+            let succeeded: boolean | undefined = false;
 
             if (props.creating)
             {
-                succeeded = await app.devices.addDevice(deviceState.value);
+                succeeded = await app.runAsAsyncProcess(() => app.devices.addDevice(deviceState.value));
             }
             else
             {
-                succeeded = await app.devices.updateDevice(deviceState.value);
+                succeeded = await app.runAsAsyncProcess(() => app.devices.updateDevice(deviceState.value));
             }
 
             if (succeeded)

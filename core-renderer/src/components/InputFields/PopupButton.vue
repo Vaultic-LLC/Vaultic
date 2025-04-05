@@ -20,7 +20,7 @@ export default defineComponent({
     },
     emits: ['onClick'],
     props: ['color', 'text', 'width', 'maxWidth', 'minWidth', 'height', 'minHeight', 'maxHeight', 'fontSize',
-        'disabled', 'isSubmit', 'fadeIn'],
+        'disabled', 'isSubmit', 'fadeIn', 'fallbackClickHandler'],
     setup(props, ctx)
     {
         const button: Ref<HTMLElement | null> = ref(null);
@@ -37,7 +37,16 @@ export default defineComponent({
             }
 
             button.value?.blur();
-            ctx.emit('onClick');
+
+            // For some reason emitting onClick doesn't work when the butto is in a primevue/Popover
+            if (props.fallbackClickHandler)
+            {
+                props.fallbackClickHandler();
+            }
+            else
+            {
+                ctx.emit('onClick');
+            }
         }
 
         function onKeyUp(e: KeyboardEvent)

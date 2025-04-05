@@ -8,10 +8,10 @@ import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType, Group } from "../Types/DataTypes";
 import { ImportableDisplayField } from "../Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { GroupStoreState, IGroupStoreState } from "../Objects/Stores/GroupStore";
-import { FilterStoreState, FilterStoreStateKeys, IFilterStoreState } from "../Objects/Stores/FilterStore";
-import { IPasswordStoreState, PasswordStoreState, PasswordStoreStateKeys } from "../Objects/Stores/PasswordStore";
-import { IValueStoreState, ValueStoreState } from "../Objects/Stores/ValueStore";
+import { GroupStoreState } from "../Objects/Stores/GroupStore";
+import { FilterStoreState, FilterStoreStateKeys } from "../Objects/Stores/FilterStore";
+import { PasswordStoreState, PasswordStoreStateKeys } from "../Objects/Stores/PasswordStore";
+import { ValueStoreState } from "../Objects/Stores/ValueStore";
 import StoreUpdateTransaction from "../Objects/StoreUpdateTransaction";
 import { PendingStoreState } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
@@ -76,7 +76,7 @@ export async function importPasswords(color: string)
     const records: string[][] = parse(content, { bom: true });
     const importer = new PasswordCSVImporter();
     app.popups.showImportPopup(color, records[0], importablePasswordProperties,
-        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
+        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => app.runAsAsyncProcess(() => importer.import(color, masterKey, records, columnToProperty)));
 }
 
 export async function importValues(color: string)
@@ -97,7 +97,7 @@ export async function importValues(color: string)
 
     const importer = new ValueCSVImporter();
     app.popups.showImportPopup(color, records[0], importableValueProperties,
-        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
+        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => app.runAsAsyncProcess(() => importer.import(color, masterKey, records, columnToProperty)));
 }
 
 export async function getExportablePasswords(color: string, masterKey: string): Promise<string>

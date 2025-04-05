@@ -73,7 +73,7 @@
         <Teleport to="#body">
 			<Transition name="fade">
 				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'600px'" :minHeight="'480px'" :width="'40%'"
-					:height="'60%'" :popupInfoOverride="popupInfo.emergencyDeactivation" :closePopup="popupStore.hideEmergencyDeactivationPopup">
+					:height="'60%'" :popupInfoOverride="PopupNames.EmergencyDeactivaion" :closePopup="popupStore.hideEmergencyDeactivationPopup">
 					<EmergencyDeactivationView />
 				</ObjectPopup>
 			</Transition>
@@ -132,7 +132,7 @@ import SyncingPopup from './Loading/SyncingPopup.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
-import { Popups, popups } from '../Objects/Stores/PopupStore';
+import { PopupNames } from '../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: 'Popups',
@@ -157,10 +157,9 @@ export default defineComponent({
     },
     setup()
     {
-        const popupInfo: Popups = JSON.parse(JSON.stringify(popups));
         return {
             popupStore: app.popups,
-            popupInfo,
+            PopupNames,
             DataType,
         }
     }

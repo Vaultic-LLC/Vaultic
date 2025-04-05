@@ -122,6 +122,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     private internalIsSyncing: Ref<boolean>;
     private internalForceReadOnly: Ref<boolean>;
 
+    private internalProcessIsRunning: boolean;
+
     get loadedUser() { return this.internaLoadedUser; }
     get settings() { return this.state.s; }
     get isOnline() { return this.internalIsOnline.value; }
@@ -215,6 +217,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
         this.internalIsSyncing = ref(false);
         this.internalForceReadOnly = ref(false);
+
+        this.internalProcessIsRunning = false;
     }
 
     protected defaultState()
@@ -291,6 +295,11 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         clearTimeout(this.autoLockTimeoutID);
         this.autoLockTimeoutID = setTimeout(() =>
         {
+            if (this.internalProcessIsRunning)
+            {
+                this.autoLockTimeoutID = undefined;
+            }
+
             this.lock();
         }, this.internalAutoLockNumberTime.value);
 
@@ -704,6 +713,57 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             }, 15000);
         }
         catch { }
+    }
+
+    /**
+     * Prevents the app from locking while func is running
+     * @param func the funciton to run
+     * @returns 
+     */
+    public async runAsProcess(func: () => void)
+    {
+        await this.runAsAsyncProcess(async () => func());
+    }
+
+    /**
+     * Prevents the app from locking while func is running
+     * @param func the async funciton to run
+     * @returns 
+     */
+    public async runAsAsyncProcess<T>(func: () => Promise<T>): Promise<T | undefined>
+    {
+        this.internalProcessIsRunning = true;
+        let result: T | undefined;
+        try
+        {
+            result = await func();
+        }
+        catch (e: any)
+        {
+            if (e?.error instanceof Error)
+            {
+                const error: Error = e.error as Error
+
+                try
+                {
+                    if (!app.isOnline)
+                    {
+                        return;
+                    }
+
+                    await api.server.app.log(error.message, error.stack ?? "ErrorHandler");
+                }
+                catch { }
+            }
+        }
+
+        this.internalProcessIsRunning = false;
+        if (!this.autoLockTimeoutID)
+        {
+            await this.lock();
+        }
+
+        return result;
     }
 }
 

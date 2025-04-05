@@ -59,14 +59,14 @@
                         <div class="signInViewContainer__helpPopoverSectionTitle">Deactivate Subscription</div>
                         <PopupButton :color="color" :text="'Deactivate'"
                             :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" @onClick="openDeactivationPopup" />
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="openDeactivationPopup" />
                     </div>
                     <div class="signInViewContainer__helpPopoverSectionSeperator"></div>
                     <div class="signInViewContainer__helpPopoverSection">
                         <div class="signInViewContainer__helpPopoverSectionTitle">Export Logs</div>
                         <PopupButton :color="color" :text="'Export'"
                             :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" @onClick="doExportLogs" />
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="doExportLogs"/>
                     </div>
                 </div>
             </Popover>

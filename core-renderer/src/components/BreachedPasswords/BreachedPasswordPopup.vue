@@ -86,7 +86,7 @@ export default defineComponent({
             app.popups.showLoadingIndicator(primaryColor.value);
             disabled.value = true;
 
-            const succeeded = await app.vaultDataBreaches.dismissVaultDataBreach(vaultDataBreach.value?.VaultDataBreachID!);
+            const succeeded = await app.runAsAsyncProcess(() => app.vaultDataBreaches.dismissVaultDataBreach(vaultDataBreach.value?.VaultDataBreachID!));
             app.popups.hideLoadingIndicator();
 
             if (succeeded)

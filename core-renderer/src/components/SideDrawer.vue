@@ -170,7 +170,7 @@ export default defineComponent({
             app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
             async function onKeySuccess(key: string)
             {
-                if (!(await app.updateArchiveStatus(key, data['userVaultID'], false)))
+                if (!(await app.runAsAsyncProcess(() => app.updateArchiveStatus(key, data['userVaultID'], false))))
                 {
                     app.popups.showToast('Failed to unarchive vault', false);
                 }
@@ -208,14 +208,14 @@ export default defineComponent({
                     {
                         if (archive)
                         {
-                            if (!(await app.updateArchiveStatus(key, data['userVaultID'], true)))
+                            if (!(await app.runAsAsyncProcess(() => app.updateArchiveStatus(key, data['userVaultID'], true))))
                             {
                                 app.popups.showToast('Failed to archived vault', false);
                             }
                         }
                         else
                         {
-                            if (!(await app.permanentlyDeleteVault(key, data['userVaultID'])))
+                            if (!(await app.runAsAsyncProcess(() => app.permanentlyDeleteVault(key, data['userVaultID']))))
                             {
                                 app.popups.showToast('Failed to delete vault', false);
                             }
@@ -297,7 +297,7 @@ export default defineComponent({
             app.popups.showRequestAuthentication(primaryColor.value, async (masterKey: string) => 
             {
                 app.popups.showLoadingIndicator(primaryColor.value, "Syncing Vaults");
-                const success = await app.syncVaults(masterKey);
+                const success = await app.syncVaults(masterKey, app.userInfo!.email!);
                 if (success)
                 {
                     app.popups.showToast("Sync Succeeded", true);

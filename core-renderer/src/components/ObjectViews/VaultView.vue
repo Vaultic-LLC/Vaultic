@@ -121,14 +121,14 @@ export default defineComponent({
             const sharedIndividualsChanges: MemberChanges | undefined = memberTable.value?.getChanges()!;
             if (props.creating)
             {
-                handleSaveResponse((await app.createNewVault(key, vaultState.value.name, shareVault.value, true, 
-                    addedOrgs, sharedIndividualsChanges?.addedMembers.valueArray() ?? [])));
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.createNewVault(key, vaultState.value.name, shareVault.value, true, 
+                    addedOrgs, sharedIndividualsChanges?.addedMembers.valueArray() ?? []))));
             }
             else
             {
-                handleSaveResponse((await app.updateVault(key, vaultState.value, shareVault.value, 
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.updateVault(key, vaultState.value, shareVault.value, 
                     addedOrgs, removedOrgs, sharedIndividualsChanges?.addedMembers.valueArray() ?? [], 
-                    sharedIndividualsChanges?.updatedMembers.valueArray() ?? [], sharedIndividualsChanges?.removedMembers.valueArray() ?? [])));
+                    sharedIndividualsChanges?.updatedMembers.valueArray() ?? [], sharedIndividualsChanges?.removedMembers.valueArray() ?? []))));
             }
 
             if (props.creating)

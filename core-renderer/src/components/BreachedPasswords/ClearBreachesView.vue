@@ -42,7 +42,7 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Clearing Data Breaches");
 
             const vaultIDs: number[] = selectedVaults.value.map(v => v.backingObject.vaultID);
-            const success = await app.vaultDataBreaches.clearDataBreaches(vaultIDs);
+            const success = await app.runAsAsyncProcess(() => app.vaultDataBreaches.clearDataBreaches(vaultIDs));
 
             if (success)
             {

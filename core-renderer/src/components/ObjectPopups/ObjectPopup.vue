@@ -31,7 +31,7 @@ import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import { hideAll } from 'tippy.js';
 import app from "../../Objects/Stores/AppStore";
-import { PopupName, popups } from "../../Objects/Stores/PopupStore";
+import { PopupNames, popups } from "../../Objects/Stores/PopupStore";
 import { ClosePopupFuncctionKey } from '../../Constants/Keys';
 import { AppView } from '../../Types/App';
 
@@ -45,7 +45,7 @@ export default defineComponent({
         "popupInfoOverride"],
     setup(props)
     {
-        const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupName] : popups.defaultObjectPopup;
+        const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupNames] : popups.defaultObjectPopup;
 
         const objectPopup: Ref<HTMLElement | null> = ref(null);
         const resizeObserver: ResizeObserver = new ResizeObserver(() => checkWidthToHeightRatio());

@@ -200,9 +200,16 @@ export default defineComponent({
             app.popups.showDevicePopup(device);
         }
 
-        function onDeleteDevice(device: ClientDevice)
+        async function onDeleteDevice(device: ClientDevice)
         {
-            app.devices.deleteDevice(device.id);
+            if (await app.runAsAsyncProcess(() => app.devices.deleteDevice(device.id)))
+            {
+                app.popups.showToast("Device Unregistered", true);
+            }
+            else
+            {
+                app.popups.showToast("Unregister Failed", false);
+            }
         }
 
         function onPinOrganization(isPinned: boolean, org: Organization)
@@ -230,7 +237,7 @@ export default defineComponent({
         async function onDeleteOrganization(organization: Organization)
         {
             app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Deleting Organization");
-            if (await app.organizations.deleteOrganization(organization.organizationID))
+            if (await app.runAsAsyncProcess(() => app.organizations.deleteOrganization(organization.organizationID)))
             {
                 app.popups.showToast("Organization Deleted", true);
             }
