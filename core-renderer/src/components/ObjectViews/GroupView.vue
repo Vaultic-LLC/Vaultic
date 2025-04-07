@@ -37,7 +37,7 @@ export default defineComponent({
         ObjectMultiSelect,
         ObjectSingleSelect
     },
-    props: ['creating', 'model'],
+    props: ['creating', 'model', 'currentPrimaryDataType'],
     setup(props)
     {
         let pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
@@ -45,8 +45,8 @@ export default defineComponent({
         const groupState: Reactive<Group> = props.creating ? reactive(props.model) : getCustomRef(props.model);
         const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.g);
 
-        const selectLabel: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values");
-        const selectedDataObjectOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectLabel: ComputedRef<string> = computed(() => props.currentPrimaryDataType == DataType.Passwords ? "Passwords" : "Values");
+        const selectedDataObjectOptions: Ref<ObjectSelectOptionModel[]> = ref(getInitalSelectedItems());
         const allDataObjectsOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
 
         const selectedIcon: Ref<ObjectSelectOptionModel | undefined> = ref();
@@ -83,7 +83,7 @@ export default defineComponent({
             {
                 // only want to set these directly on the object when we are creating
                 // since we want to just track the entire object as an Add
-                if (app.activePasswordValuesTable == DataType.Passwords)
+                if (props.currentPrimaryDataType == DataType.Passwords)
                 {
                     groupState.p = {};
                     selectedDataObjectOptions.value.forEach(g => 
@@ -107,6 +107,7 @@ export default defineComponent({
                     pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
                     Object.assign(groupState, defaultGroup(groupState.t));
                     selectedDataObjectOptions.value = [];
+                    selectedIcon.value = undefined;
                     refreshKey.value = Date.now().toString();
 
                     handleSaveResponse(true);
@@ -119,7 +120,7 @@ export default defineComponent({
             {
                 // need to track each individual added / removed group as an update
                 const primaryDataObjects: DictionaryAsList = {};
-                if (app.activePasswordValuesTable == DataType.Passwords)
+                if (props.currentPrimaryDataType == DataType.Passwords)
                 {
                     selectedDataObjectOptions.value.forEach(g =>
                     {
@@ -186,28 +187,11 @@ export default defineComponent({
             }
         }
 
-        onMounted(() =>
+        function getInitalSelectedItems()
         {
-            const foundIcon = icons.filter(i => i.icon == groupState.i);
-            if (foundIcon.length == 1)
+            const selected: ObjectSelectOptionModel[] = [];
+            if (props.currentPrimaryDataType == DataType.Passwords)
             {
-                selectedIcon.value = foundIcon[0];
-            }
-
-            if (app.activePasswordValuesTable == DataType.Passwords)
-            {
-                allDataObjectsOptions.value = app.currentVault.passwordStore.passwords.map(p => 
-                {
-                    const label: string = p.f;
-                    const option: ObjectSelectOptionModel = 
-                    {
-                        label: label,
-                        id: p.id,
-                    };
-
-                    return option
-                });
-
                 OH.forEachKey(groupState.p, k => 
                 {
                     const password = app.currentVault.passwordStore.passwordsByID[k];
@@ -217,25 +201,15 @@ export default defineComponent({
                     }
 
                     const label: string = password.f;
-                    selectedDataObjectOptions.value.push({
-                        label: label,
+                    selected.push({
                         id: password.id,
+                        label: label,
+                        backingObject: password
                     });
                 });
             }
             else 
             {
-                allDataObjectsOptions.value = app.currentVault.valueStore.nameValuePairs.map(v => 
-                {
-                    const option: ObjectSelectOptionModel = 
-                    {
-                        label: v.n,
-                        backingObject: v,
-                    };
-
-                    return option
-                });
-
                 OH.forEachKey(groupState.v, k => 
                 {
                     const value = app.currentVault.valueStore.nameValuePairsByID[k];
@@ -244,10 +218,52 @@ export default defineComponent({
                         return;
                     }
 
-                    selectedDataObjectOptions.value.push({
+                    selected.push({
+                        id: value.id,
                         label: value.n,
                         backingObject: value,
                     });
+                });
+            } 
+
+            return selected;
+        }
+
+        onMounted(() =>
+        {
+            const foundIcon = icons.filter(i => i.icon == groupState.i);
+            if (foundIcon.length == 1)
+            {
+                selectedIcon.value = foundIcon[0];
+            }
+
+            if (props.currentPrimaryDataType == DataType.Passwords)
+            {
+                allDataObjectsOptions.value = app.currentVault.passwordStore.passwords.map(p => 
+                {
+                    const label: string = p.f;
+                    const option: ObjectSelectOptionModel = 
+                    {
+                        id: p.id,
+                        label: label,
+                        backingObject: p
+                    };
+
+                    return option
+                });
+            }
+            else 
+            {
+                allDataObjectsOptions.value = app.currentVault.valueStore.nameValuePairs.map(v => 
+                {
+                    const option: ObjectSelectOptionModel = 
+                    {
+                        id: v.id,
+                        label: v.n,
+                        backingObject: v,
+                    };
+
+                    return option
                 });
             }
         });

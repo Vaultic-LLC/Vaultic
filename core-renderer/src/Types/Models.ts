@@ -120,6 +120,7 @@ export interface ObjectSelectOptionModel
     icon?: string;
     color?: string;
     label: string;
+    id: string;
     backingObject?: any;
 }
 
@@ -152,7 +153,7 @@ export interface AtRiskModel
 
 export interface SelectorButtonModel
 {
-    isActive: Ref<boolean>;
+    isActive: Ref<boolean> | ComputedRef<boolean>;
     color: Ref<string>;
     onClick: () => void;
 }
@@ -176,7 +177,8 @@ export interface GridDefinition
 
 export interface GroupIconModel
 {
-    icon: string;
+    icon?: string;
+    text?: string;
     toolTipText: string;
     color: string;
 }

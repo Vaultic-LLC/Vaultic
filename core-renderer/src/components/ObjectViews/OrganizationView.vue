@@ -57,7 +57,7 @@ export default defineComponent({
         const emptyMessage: Ref<string> = ref(`You currently don't have any Members in this Organization. Click '+' to add one`);
 
         const allVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
-        const selectedVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedVaults: Ref<ObjectSelectOptionModel[]> = ref(getSelectedVaults());
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -162,6 +162,32 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        function getSelectedVaults()
+        {
+            const selected: ObjectSelectOptionModel[] = [];
+            orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
+            {
+                const vault = app.userVaults.value.find(v => v.vaultID == k);
+                if (vault)
+                {
+                    const currentVaultModel: ObjectSelectOptionModel = 
+                    {
+                        id: vault.vaultID.toString(),
+                        label: vault.name,
+                        backingObject: 
+                        {
+                            userVaultID: vault.userVaultID,
+                            vaultID: vault.vaultID
+                        }
+                    };
+                    
+                    selected.push(currentVaultModel)
+                }
+            });
+
+            return selected;
+        }
+
         onMounted(() =>
         {
             allVaults.value = app.userVaults.value.filter(v => v.shared).map(v => 
@@ -174,30 +200,12 @@ export default defineComponent({
 
                 const model: ObjectSelectOptionModel =
                 {
+                    id: v.vaultID.toString(),
                     label: v.name,
                     backingObject: ids
                 };
 
                 return model;
-            });
-
-            orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
-            {
-                const vault = app.userVaults.value.find(v => v.vaultID == k);
-                if (vault)
-                {
-                    const currentVaultModel: ObjectSelectOptionModel = 
-                    {
-                        label: vault.name,
-                        backingObject: 
-                        {
-                            userVaultID: vault.userVaultID,
-                            vaultID: vault.vaultID
-                        }
-                    };
-                    
-                    selectedVaults.value.push(currentVaultModel)
-                }
             });
         });
 

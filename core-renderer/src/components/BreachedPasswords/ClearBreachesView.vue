@@ -93,6 +93,7 @@ export default defineComponent({
 
                 const model: ObjectSelectOptionModel =
                 {
+                    id: v.vaultID.toString(),
                     label: v.name,
                     backingObject: ids
                 };

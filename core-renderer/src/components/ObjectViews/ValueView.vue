@@ -84,7 +84,7 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.v.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref(getInitalSelectedGroups());
         const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
         const isInitiallyEncrypted: ComputedRef<boolean> = computed(() => !props.creating);
         const valueIsDirty: Ref<boolean> = ref(false);
@@ -198,21 +198,9 @@ export default defineComponent({
             refreshKey.value = Date.now().toString();
         }
 
-        onMounted(() =>
+        function getInitalSelectedGroups()
         {
-            groupOptions.value = app.currentVault.groupStore.valuesGroups.map(g => 
-            {
-                const option: ObjectSelectOptionModel = 
-                {
-                    label: g.n,
-                    backingObject: g,
-                    icon: g.i,
-                    color: g.c
-                };
-
-                return option
-            });
-
+            const selected: ObjectSelectOptionModel[] = [];
             OH.forEachKey(valuesState.g, (k) => 
             {
                 const group = app.currentVault.groupStore.valueGroupsByID[k];
@@ -221,12 +209,32 @@ export default defineComponent({
                     return;
                 }
 
-                selectedGroups.value.push({
+                selected.push({
+                    id: group.id,
                     label: group.n,
                     backingObject: group,
                     icon: group.i,
                     color: group.c
                 });
+            });
+
+            return selected;
+        }
+
+        onMounted(() =>
+        {
+            groupOptions.value = app.currentVault.groupStore.valuesGroups.map(g => 
+            {
+                const option: ObjectSelectOptionModel = 
+                {
+                    id: g.id,
+                    label: g.n,
+                    backingObject: g,
+                    icon: g.i,
+                    color: g.c
+                };
+
+                return option
             });
         });
 

@@ -138,7 +138,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
             group.id = uniqueIDGenerator.generate();
             pendingGroupStoreState.addValue('valueDataTypesByID', group.id, group);
 
-            if (OH.size(group.p) == 0)
+            if (OH.size(group.v) == 0)
             {
                 pendingGroupStoreState.addValue("emptyValueDataTypes", group.id, true);
                 this.checkUpdateDuplicateSecondaryObjects(group.id, group.v, "v", pendingGroupStoreState.state.u, pendingGroupStoreState.state.v,
@@ -147,7 +147,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
             else
             {
                 this.syncPrimaryDataObjectsForGroup(group, "v", new RelatedDataTypeChanges(group.v), pendingValueStoreState!.state.v,
-                    "dataTypesByID.dataType.groups", "valueDataTypesByID.dataType.values", pendingPasswordStoreState!, pendingGroupStoreState.state.l,
+                    "dataTypesByID.dataType.groups", "valueDataTypesByID.dataType.values", pendingValueStoreState!, pendingGroupStoreState.state.l,
                     pendingGroupStoreState.state.u, pendingGroupStoreState.state.v, 'emptyValueDataTypes', 'duplicateValueDataTypes',
                     'duplicateValueDataTypes.dataTypes', pendingGroupStoreState, false);
 
@@ -350,6 +350,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
      * @param primaryObjectChanges The current group changes
      * @param allPrimaryObjects  All passwords or values
      * @param pathToSecondaryDataObjectOnPrimaryDataObject Path to groups on Password or Value
+     * @param pathToPrimaryDataObjectOnSecondaryDataObject Path to passwords or values on Group
      * @param primaryDataObjectStoreState Current pending store state for passwords or values
      * @param currentEmptyGroups Current empty groups, either "emptyPasswordDataTypes" or "emptyValueDataTypes"
      * @param currentDuplicateGroups Current duplicate groups, either "duplicatePasswordDataTypes" or "duplicateValueDataTyeps"

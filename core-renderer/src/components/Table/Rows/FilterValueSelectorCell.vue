@@ -42,7 +42,7 @@ export default defineComponent({
         watch(() => inputType.value, () =>
         {
             props.model[props.field] = "";
-            modelField.value.value = "";
+            modelField.value = "";
         });
 
 		return {

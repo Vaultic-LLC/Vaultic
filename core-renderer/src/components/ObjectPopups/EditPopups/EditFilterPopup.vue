@@ -3,7 +3,7 @@
 		<h2>Edit Filter</h2>
 	</div>
 	<div class="filterViewContainer">
-		<FilterView :creating="false" :model="filterModel" />
+		<FilterView :creating="false" :model="filterModel" :currentPrimaryDataType="currentPrimaryDataType" />
 	</div>
 </template>
 <script lang="ts">
@@ -11,7 +11,8 @@ import { defineComponent, ComputedRef, computed } from 'vue';
 
 import FilterView from "../../ObjectViews/FilterView.vue";
 
-import { Filter } from '../../../Types/DataTypes';
+import { DataType, Filter } from '../../../Types/DataTypes';
+import app from '../../../Objects/Stores/AppStore';
 
 export default defineComponent({
 	name: "EditGroupPopup",
@@ -24,9 +25,11 @@ export default defineComponent({
 	{
         // copy the object so that we don't edit the original one. Also needed for change tracking
 		const filterModel: ComputedRef<Filter> = computed(() => JSON.parse(JSON.stringify(props.model)));
+        const currentPrimaryDataType: ComputedRef<DataType> = computed(() => app.activePasswordValuesTable);
 
 		return {
 			filterModel,
+            currentPrimaryDataType
 		}
 	}
 })

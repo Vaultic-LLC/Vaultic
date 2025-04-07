@@ -274,7 +274,7 @@ export class IGroupableSortedCollection extends FieldedSortedCollection
 
     private getLowestGroup(item: TableRowModel, sortedGroups: Group[]): number
     {
-        return Math.min(...this.backingValues()[item.id]?.g.map((id: string) => sortedGroups.findIndex(g => g.id == id)));
+        return Math.min(...OH.map(this.backingValues()[item.id]?.g, (id: string, _: any) => sortedGroups.findIndex(g => g.id == id)));
     }
 
     private internalGroupSearch(search: string, groupIds: Map<string, string>, allGroups: Group[]): boolean

@@ -4,7 +4,7 @@
             :pt="{
                 root: 'objectMultiSelectContainer__floatLabel'
             }">
-            <MultiSelect :fluid="true" :id="id" v-model="selectedItemsPlaceHolder" :options="options" :optionLabel="'label'" :optionValue="'id'"
+            <MultiSelect :fluid="true" :id="id" v-model="selectedItemsPlaceHolder" :options="options" :optionLabel="'label'" :dataKey="'id'"
                 filter :virtualScrollerOptions="{ itemSize: 50 }" @selectall-change="onSelectAllChange($event)" @change="onChange($event)" :appendTo="'self'"
                 :emptyMessage="computedEmptyMessage" 
                 :pt="{
@@ -80,6 +80,10 @@ import { widgetBackgroundHexString } from '../../Constants/Colors';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
 import { ObjectSelectOptionModel } from '../../Types/Models';
 
+/**
+ * NOTE: in order for initally selected options to show up correctly, the value for 'modelValue' needs to be
+ * provided right away. I.e. when declaring the variable. See PasswordView for example
+ */
 export default defineComponent({
     name: "ObjectMultiSelect",
     components:
@@ -96,7 +100,7 @@ export default defineComponent({
     {
         const popoverRefs: Ref<any[]> = ref([]);
         const id = ref(useId());
-        const selectedItemsPlaceHolder = ref(props.modelValue);
+        const selectedItemsPlaceHolder: Ref<any[]> = ref(props.modelValue);
         const options: ComputedRef<ObjectSelectOptionModel[]> = computed(() => props.options)
         const validationFunction: Ref<{ (): boolean; }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const selectAll = ref(false);
@@ -142,12 +146,8 @@ export default defineComponent({
 
         watch(() => props.modelValue, (newValue) =>
         {
-            selectedItemsPlaceHolder.value = newValue;
-        });
-
-        watch(() => props.modelValue.length, () =>
-        {
-            selectedItemsPlaceHolder.value = props.modelValue;
+            // selectedItemsPlaceHolder.value = newValue;
+            //selectedItemsPlaceHolder.value.push(...newValue);
         });
 
         onMounted(() =>

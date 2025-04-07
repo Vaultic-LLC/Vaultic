@@ -69,7 +69,7 @@ export default defineComponent({
         const shareVault: Ref<boolean> = ref(vaultState.value.shared);
         const vaultMembers: Ref<Map<number, Member>> = ref(new Map());
 
-        const selectedOrganizations: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedOrganizations: Ref<ObjectSelectOptionModel[]> = ref(getSelectedOrds());
         const allOrganizations: Ref<ObjectSelectOptionModel[]> = ref([]);
 
         const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
@@ -161,11 +161,11 @@ export default defineComponent({
             saveFailed(false);
         }
 
-        onMounted(async () =>
+        function getSelectedOrds()
         {
-            loadingIndividuals.value = true;
-
+            const selected: ObjectSelectOptionModel[] = [];
             const selectedOrgs = app.organizations.organizationIDsByVaultIDs.get(vaultState.value.vaultID);
+
             if (selectedOrgs)
             {
                 selectedOrgs.forEach(o => 
@@ -173,18 +173,27 @@ export default defineComponent({
                     const org = app.organizations.organizationsByID.get(o);
                     const model: ObjectSelectOptionModel = 
                     {
+                        id: o.toString(),
                         label: org?.name!,
                         backingObject: org
                     };
 
-                    selectedOrganizations.value.push(model)
+                    selected.push(model)
                 });
             }
+
+            return selected;
+        }
+
+        onMounted(async () =>
+        {
+            loadingIndividuals.value = true;
 
             allOrganizations.value = app.organizations.organizations.value.map(o => 
             {
                 const model: ObjectSelectOptionModel = 
                 {
+                    id: o.organizationID.toString(),
                     label: o.name,
                     backingObject: o
                 };

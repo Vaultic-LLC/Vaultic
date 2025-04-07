@@ -230,6 +230,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         pendingPasswordState.commitProxyObject("dataTypesByID.dataType", updatingPassword, updatingPassword.id);
 
         await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
+        this.syncGroupsForPrimaryObject(updatingPassword.id, changedGroups, pendingPasswordState);
 
         const pendingGroupState = this.vault.groupStore.getPendingState()!;
         this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id, changedGroups, pendingGroupState);

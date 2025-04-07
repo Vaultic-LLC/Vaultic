@@ -129,7 +129,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         }
 
         // retrieve these before updating
-        const channgedGroups = this.getRelatedDataTypeChanges(currentValue.g, groups);
+        const changedGroups = this.getRelatedDataTypeChanges(currentValue.g, groups);
 
         if (valueWasUpdated)
         {
@@ -156,8 +156,10 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         await this.incrementCurrentAndSafe(pendingValueStoreState, this.valueIsSafe);
         pendingValueStoreState.commitProxyObject('dataTypesByID.dataType', updatedValue, updatedValue.id);
 
+        this.syncGroupsForPrimaryObject(updatedValue.id, changedGroups, pendingValueStoreState);
+
         const pendingGroupState = this.vault.groupStore.getPendingState()!;
-        this.vault.groupStore.syncGroupsForValues(updatedValue.id, channgedGroups, pendingGroupState);
+        this.vault.groupStore.syncGroupsForValues(updatedValue.id, changedGroups, pendingGroupState);
 
         const pendingFilterState = this.vault.filterStore.getPendingState()!;
         this.vault.filterStore.syncFiltersForValues([currentValue], pendingValueStoreState, pendingGroupState.state.v, pendingFilterState);

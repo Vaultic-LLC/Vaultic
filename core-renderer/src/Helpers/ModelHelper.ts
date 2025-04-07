@@ -240,8 +240,9 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
 
         const groupModels: GroupIconModel[] = [];
-        if (app.activePasswordValuesTable == DataType.Passwords)
+        if (dataType == DataType.Passwords)
         {
+            let added = 0;
             OH.forEachKey(v.g, k => 
             {
                 const group = app.currentVault.groupStore.passwordGroupsByID[k];
@@ -250,7 +251,8 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                     return;
                 }
 
-                addToModels(groupModels, group);
+                added += 1;
+                addToModels(added, groupModels, group);
             });
 
             if (OH.has(app.userPreferences.pinnedPasswords, v.id))
@@ -268,6 +270,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
         else 
         {
+            let added = 0;
             OH.forEachKey(v.g, k => 
             {
                 const group = app.currentVault.groupStore.valueGroupsByID[k];
@@ -276,7 +279,8 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                     return;
                 }
 
-                addToModels(groupModels, group);
+                added += 1;
+                addToModels(added, groupModels, group);
             });
 
             if (OH.has(app.userPreferences.pinnedValues, v.id))
@@ -294,9 +298,9 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
     }
 
-    function addToModels(currentModels: GroupIconModel[], group: Group)
+    function addToModels(alreadyAdded: number, currentModels: GroupIconModel[], group: Group)
     {
-        if (currentModels.length < 4)
+        if (alreadyAdded < 5)
         {
             currentModels.push({
                 icon: group.i,
@@ -306,9 +310,10 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
         else
         {
-            currentModels[3].icon = `+${currentModels.length - 3}`;
+            currentModels[3].icon = undefined;
+            currentModels[3].text = `+${alreadyAdded - 3}`;
             currentModels[3].toolTipText += `, ${group.n}`;
-            currentModels[3].color = color
+            currentModels[3].color = color;
         }
     }
 }

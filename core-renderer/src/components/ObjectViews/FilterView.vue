@@ -48,7 +48,7 @@ export default defineComponent({
         VaulticTable,
         VaulticFieldset
     },
-    props: ['creating', 'model'],
+    props: ['creating', 'model', 'currentPrimaryDataType'],
     setup(props)
     {
         let filterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
@@ -57,7 +57,7 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref("");
         const filterState: Reactive<Filter> = props.creating ? reactive(props.model) : setupProxies(props.model);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.f);
-        const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
+        const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => props.currentPrimaryDataType == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
         let allConditions: { [key: string]: FilterCondition } = {};

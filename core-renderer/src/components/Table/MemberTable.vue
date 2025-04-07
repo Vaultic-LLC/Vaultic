@@ -35,7 +35,6 @@ import Popover from 'primevue-vaultic/popover';
 import ObjectSingleSelect from '../InputFields/ObjectSingleSelect.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
-import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 
 import { ComponentSizeModel, HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
@@ -58,7 +57,6 @@ export default defineComponent({
         ObjectSingleSelect,
         EnumInputField,
         PopupButton,
-        ObjectMultiSelect
     },
     props: ['tabOverride', 'currentMembers', 'emptyMessage', 'color', 'externalLoading', 'id', 'hidePermissions', 'hideEdit', 'disable'],
     setup(props)
@@ -183,6 +181,7 @@ export default defineComponent({
                 {
                     const model: ObjectSelectOptionModel = 
                     {
+                        id: u.UserID.toString(),
                         label: u.Username,
                         backingObject: u
                     }
@@ -216,6 +215,7 @@ export default defineComponent({
                 editingPermission.value = serverPermissionToViewableServerPermission(editingMember.value!.permission);
                 selectedUserDemographics.value = 
                 {
+                    id: editingMember.value!.userID.toString(),
                     label: editingMember.value!.username,
                     backingObject: editingMember.value
                 };
@@ -280,6 +280,7 @@ export default defineComponent({
             members.value.set(editingMember.value!.userID, editingMember.value!);
             selectedUserDemographics.value = 
             {
+                id: "",
                 label: "",
                 backingObject: {}
             };

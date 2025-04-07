@@ -121,7 +121,7 @@ const icons: ObjectSelectOptionModel[] = [
     { icon: 'pi-external-link', label: 'External Link' },
     { icon: 'pi-eye', label: 'Eye' },
     { icon: 'pi-eye-slash', label: 'Eye Slash' },
-    { icon: 'pi-face-smile', label: 'Face Smail' },
+    { icon: 'pi-face-smile', label: 'Face Smaile' },
     { icon: 'pi-facebook', label: 'Facebook' },
     { icon: 'pi-fast-backward', label: 'Fast Backward' },
     { icon: 'pi-fast-forward', label: 'Fast Forward' },

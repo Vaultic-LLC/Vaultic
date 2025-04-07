@@ -103,7 +103,7 @@ export default defineComponent({
         const securityQuestions: SortedCollection = new SortedCollection([], () => allSecurityQuestions);
         const locked: Ref<boolean> = ref(!props.creating);
 
-        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref(getSelectedGroups());
         const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
 
         const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
@@ -354,6 +354,29 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
+        function getSelectedGroups()
+        {
+            const selected: ObjectSelectOptionModel[] = [];
+            OH.forEachKey(passwordState.g, (k) => 
+            {
+                const group = app.currentVault.groupStore.passwordGroupsByID[k];
+                if (!group)
+                {
+                    return;
+                }
+
+                selected.push({
+                    id: group.id,
+                    label: group.n,
+                    backingObject: group,
+                    icon: group.i,
+                    color: group.c
+                });
+            });
+
+            return selected;
+        }
+
         onMounted(() =>
         {
             allSecurityQuestions = JSON.parse(JSON.stringify(passwordState.q));
@@ -363,6 +386,7 @@ export default defineComponent({
             {
                 const option: ObjectSelectOptionModel = 
                 {
+                    id: g.id,
                     label: g.n,
                     backingObject: g,
                     icon: g.i,
@@ -370,22 +394,6 @@ export default defineComponent({
                 };
 
                 return option
-            });
-
-            OH.forEachKey(passwordState.g, (k) => 
-            {
-                const group = app.currentVault.groupStore.passwordGroupsByID[k];
-                if (!group)
-                {
-                    return;
-                }
-
-                selectedGroups.value.push({
-                    label: group.n,
-                    backingObject: group,
-                    icon: group.i,
-                    color: group.c
-                });
             });
         });
 

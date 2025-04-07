@@ -104,12 +104,14 @@
                             @click.right.stop="!column.isGroupIconCell && !column.component ? 
                                 onTextClick(column, (slotProps.data as TableRowModel).id) : undefined">
                         <div class="vaulticTableContainer__cell">
+                            <!-- TODO this doesn't show tooltip anymroe -->
                             <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
                                 <div v-for="model in (slotProps.data as TableRowModel).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
-                                    :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
+                                    :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}" @mouseenter="(e) => showGroupTooltip(e, model)"
+                                        @mouseleave="hideGroupTooltip">
                                     <span class="vaulticTableContainer__groupIconSpan">
                                         <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
-                                        <template v-else class="vaulticTableContainer__groupIcon" :style="{color: model.color}">{{ model.toolTipText[0] }}</template>
+                                        <template v-else class="vaulticTableContainer__groupIcon" :style="{color: model.color}">{{ model.text }}</template>
                                     </span>
                                 </div>
                             </div>
@@ -179,7 +181,7 @@ import PermissionsCell from './Rows/PermissionsCell.vue';
 import VaultListCell from "./Rows/VaultListCell.vue";
 import IonIcon from '../Icons/IonIcon.vue';
 
-import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
+import { GroupIconModel, TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
@@ -188,6 +190,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { useConfirm } from "primevue-vaultic/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
 import app from '../../Objects/Stores/AppStore';
+import tippy, { Instance, Tippy } from 'tippy.js';
 
 // Base Component for all Tables.
 // --- Scrollbar Color Usage ---
@@ -493,6 +496,25 @@ export default defineComponent({
             return activeTableDataSource.collection.getBackingObject(id);
         }
 
+        let currentTippy: Instance | undefined;
+        function showGroupTooltip(e: MouseEvent, model: GroupIconModel)
+        {
+            // @ts-ignore
+            currentTippy = tippy(e.target, {
+                content: model.toolTipText,
+                inertia: true,
+                animation: 'scale',
+                theme: 'material',
+            });
+
+            currentTippy.show();
+        }
+
+        function hideGroupTooltip()
+        {
+            currentTippy?.destroy();
+        }
+
         watch(tableDataSources.activeIndex, (newValue) =>
         {
             activeTableDataSource = tableDataSources.dataSources[newValue];
@@ -578,7 +600,9 @@ export default defineComponent({
             onSortField,
             onSearch,
             onPage,
-            getBackingObject
+            getBackingObject,
+            showGroupTooltip,
+            hideGroupTooltip
         }
     },
 })

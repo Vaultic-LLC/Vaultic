@@ -7,11 +7,14 @@
     </div>
     <div class="actionControl">
         <Transition name="addObjectFade" mode="out-in">
-            <FilterView v-if="activeContent == 2 && currentPasswordValueType == 0" :creating="true" :model="passwordFilterModel" />
-            <FilterView v-else-if="activeContent == 2 && currentPasswordValueType == 1" :creating="true" :model="valueFilterModel" />
-            <GroupView v-else-if="activeContent == 3 && currentPasswordValueType == 0" :creating="true"
-                :model="passwordGroupModel" />
-            <GroupView v-else-if="activeContent == 3 && currentPasswordValueType == 1" :creating="true" :model="valueGroupModel" />
+            <FilterView v-if="activeContent == 2 && currentPasswordValueType == 0" :creating="true" :model="passwordFilterModel" 
+                :currentPrimaryDataType="currentPasswordValueType" />
+            <FilterView v-else-if="activeContent == 2 && currentPasswordValueType == 1" :creating="true" :model="valueFilterModel"
+                :currentPrimaryDataType="currentPasswordValueType" />
+            <GroupView v-else-if="activeContent == 3 && currentPasswordValueType == 0" :creating="true" :model="passwordGroupModel" 
+                :currentPrimaryDataType="currentPasswordValueType" />
+            <GroupView v-else-if="activeContent == 3 && currentPasswordValueType == 1" :creating="true" :model="valueGroupModel"
+                :currentPrimaryDataType="currentPasswordValueType" />
             <PasswordView v-else-if="activeContent < 2 && currentPasswordValueType == 0" :creating="true" :model="passwordModel" />
             <ValueView v-else-if="activeContent < 2 && currentPasswordValueType == 1" :creating="true" :model="valueModel" />
         </Transition>

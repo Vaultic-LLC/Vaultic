@@ -19,12 +19,11 @@ export default defineComponent({
 	props: ["model", "data"],
 	setup(props)
 	{
-        const isActive: Ref<boolean> = ref(false)
         const selectorButtonModel: ComputedRef<SelectorButtonModel> = computed(() =>
 		{
             const model: SelectorButtonModel = 
             {
-                isActive: isActive,
+                isActive: computed(() => props.data.isActive(props.model)),
                 color: ref(props.data["color"]),
                 onClick
             }
@@ -35,18 +34,7 @@ export default defineComponent({
         async function onClick()
         {
             await props.data["onClick"](props.model);
-            checkIsActive();
         }
-
-        function checkIsActive()
-        {
-            isActive.value = props.data.isActive(props.model);
-        }
-
-        onMounted(() =>
-        {
-            checkIsActive();
-        });
 
 		return {
             selectorButtonModel

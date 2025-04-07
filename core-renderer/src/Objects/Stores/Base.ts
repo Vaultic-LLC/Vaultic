@@ -513,6 +513,22 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
         const safePasswords = OH.countWhere(dataTypes, (v) => isSafe(duplicates, v));
         pendingStoreState.addValue('currentAndSafeDataTypes.safe', '', safePasswords);
     }
+
+    protected async syncGroupsForPrimaryObject(
+        primaryObjectID: string,
+        groupChanges: RelatedDataTypeChanges,
+        pendingStoreState: PendingStoreState<T, K>)
+    {
+        OH.forEachKey(groupChanges.added, (key: string) =>
+        {
+            pendingStoreState.addValue('dataTypesByID.dataType.groups', key, true, primaryObjectID);
+        });
+
+        OH.forEachKey(groupChanges.removed, (key: string) =>
+        {
+            pendingStoreState.deleteValue('dataTypesByID.dataType.groups', key, primaryObjectID);
+        });
+    }
 }
 
 export interface SecondarydataTypeStoreStateKeys extends StateKeys

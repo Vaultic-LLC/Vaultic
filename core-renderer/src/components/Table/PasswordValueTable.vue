@@ -83,6 +83,9 @@ export default defineComponent({
         let deletePassword: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
         let deleteValue: Ref<(key: string) => Promise<boolean>> = ref((_: string) => Promise.reject());
 
+        let initalizedPasswordModels = false;
+        let initalizedValueModels = false;
+
         const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
             width: '9vw',
             minWidth: '110px',
@@ -246,20 +249,28 @@ export default defineComponent({
             }
         }
 
-        async function setModels()
+        async function setModels(onlyPinned: boolean)
         {
             switch (app.activePasswordValuesTable)
             {
                 case DataType.NameValuePairs:
                     const [valueModels, valuePinnedModels] = getPasswordValueTableRowModels(color.value, DataType.NameValuePairs, app.currentVault.valueStore.nameValuePairs);
-                    nameValuePairs.updateValues(valueModels);
+                    if (!onlyPinned)
+                    {
+                        nameValuePairs.updateValues(valueModels);
+                    }
                     pinnedNameValuePairs.updateValues(valuePinnedModels);
+                    initalizedValueModels = true;
                     break;
                 case DataType.Passwords:
                 default:
                     const [passwordModels, passwordPinnedModels] = getPasswordValueTableRowModels(color.value, DataType.Passwords, app.currentVault.passwordStore.passwords);
-                    passwords.updateValues(passwordModels);
+                    if (!onlyPinned)
+                    {
+                        passwords.updateValues(passwordModels);
+                    }
                     pinnedPasswords.updateValues(passwordPinnedModels);
+                    initalizedPasswordModels = true;
             }
 
             if (tableRef.value)
@@ -275,27 +286,46 @@ export default defineComponent({
 
         function initPasswords()
         {
+            setModels(false);
             filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.passwords);
 
-            setModels();
+            if (app.currentVault.filterStore.activePasswordFilters.length == 0)
+            {
+                setModels(false);
+            }
+            else
+            {
+                setModels(true);
+                filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.passwords);
+            }
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         function initValues()
         {
-            filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.nameValuePairs);
+            if (app.currentVault.filterStore.activeNameValuePairFilters.length == 0)
+            {
+                setModels(false);
+            }
+            else
+            {
+                setModels(true);
+                filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.nameValuePairs);
+            }
 
-            setModels();
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
         function init()
         {
-            filter(DataType.Passwords, app.currentVault.filterStore.activePasswordFilters, [], passwords, app.currentVault.passwordStore.passwords);
-            filter(DataType.NameValuePairs, app.currentVault.filterStore.activeNameValuePairFilters, [], nameValuePairs, app.currentVault.valueStore.nameValuePairs);
-
-            setModels();
-            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
+            if (app.activePasswordValuesTable == DataType.Passwords)
+            {
+                initPasswords();
+            }
+            else
+            {
+                initValues();
+            }
         }
 
         function onPin(isPinned: boolean, dataType: any)
@@ -462,13 +492,24 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            init();
             app.vaultDataBreaches.addEvent('onBreachDismissed', initPasswords);
         });
 
         onUnmounted(() =>
         {
             app.vaultDataBreaches.removeEvent('onBreachDismissed', initPasswords);
+        });
+
+        watch(() => app.activePasswordValuesTable, (newValue) =>
+        {
+            if (newValue == DataType.Passwords && !initalizedPasswordModels)
+            {
+                initPasswords();
+            }
+            else if (newValue == DataType.NameValuePairs && !initalizedValueModels)
+            {
+                initValues();
+            }
         });
 
         watch(() => app.loadedUser.value, () =>
@@ -523,6 +564,14 @@ export default defineComponent({
         {
             init();
         });
+
+        watch(() => app.loadedUser.value, (newValue) =>
+        {
+            if (newValue)
+            {
+                init();
+            }
+        })
 
         return {
             tableColumns,
