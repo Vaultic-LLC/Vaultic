@@ -70,6 +70,16 @@ export class VaulticCache
         };
     }
 
+    async getDecryptedCurrentUserSigningKey()
+    {
+        if (!environment.cache.masterKey || !environment.cache.currentUser)
+        {
+            throw TypedMethodResponse.fail(undefined, undefined, "No user or master key");
+        }
+
+        return (await environment.utilities.crypt.symmetricDecrypt(environment.cache.masterKey, environment.cache.currentUser.privateSigningKey)).value;
+    }
+
     async setSessionInfo(sessionKey: string, exportKey: string, tokenHash: string)
     {
         const sessionVaulticKey: VaulticKey =

@@ -85,28 +85,17 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         addedMembers?: Member[]): Promise<boolean | [UserVault, Vault]>
     {
         const vaultKey: string = JSON.stringify(environment.utilities.crypt.generateSymmetricKey());
-        let privateSigningKey: string | undefined;
 
         let orgsAndUserKeys: AddedOrgInfo;
         if (currentUser && addedOrganizations && addedOrganizations.length > 0)
         {
-            if (!await trySetSigningKey())
-            {
-                return false;
-            }
-
-            orgsAndUserKeys = await vaultAddedOrgsToAddedOrgInfo(currentUser.userID, privateSigningKey, vaultKey, addedOrganizations);
+            orgsAndUserKeys = await vaultAddedOrgsToAddedOrgInfo(currentUser.userID, vaultKey, addedOrganizations);
         }
 
         let modifiedOrgMembers: AddedVaultMembersInfo;
         if (currentUser && addedMembers && addedMembers.length > 0)
         {
-            if (!await trySetSigningKey())
-            {
-                return false;
-            }
-
-            modifiedOrgMembers = await vaultAddedMembersToOrgMembers(currentUser.userID, privateSigningKey, vaultKey, addedMembers);
+            modifiedOrgMembers = await vaultAddedMembersToOrgMembers(currentUser.userID, vaultKey, addedMembers);
         }
 
         const response = await vaulticServer.vault.create(name, shared, orgsAndUserKeys, modifiedOrgMembers);
@@ -161,22 +150,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         vault.groupStoreState.state = JSON.stringify(defaultGroupStoreState());
 
         return [userVault, vault];
-
-        async function trySetSigningKey()
-        {
-            if (!privateSigningKey)
-            {
-                const result = await environment.utilities.crypt.symmetricDecrypt(masterKey, currentUser.privateSigningKey);
-                if (!result.success)
-                {
-                    return false;
-                }
-
-                privateSigningKey = result.value;
-            }
-
-            return true;
-        }
     }
 
     public async createNewVaultForUser(masterKey: string, updateVaultData: string): Promise<TypedMethodResponse<CondensedVaultData | undefined>>
@@ -297,7 +270,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             let addedOrgInfo: AddedOrgInfo;
             let removedOrgIDs: number[];
 
-            let privateKey: string | undefined;
             let addedVaultMemberInfo: AddedVaultMembersInfo;
             let updatedModifiedOrgMembers: ModifiedOrgMember[];
             let removedMemberIDs: number[];
@@ -318,12 +290,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (parsedUpdateVaultData.addedOrganizations != undefined && parsedUpdateVaultData.addedOrganizations.length > 0)
             {
-                if (!await trySetPrivateKey())
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed to get private signing key");
-                }
-
-                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(environment.cache.currentUser.userID, privateKey, userVaults[1][0], parsedUpdateVaultData.addedOrganizations);
+                addedOrgInfo = await vaultAddedOrgsToAddedOrgInfo(environment.cache.currentUser.userID, userVaults[1][0], parsedUpdateVaultData.addedOrganizations);
                 needToUpdateSharing = true;
             }
 
@@ -335,12 +302,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (parsedUpdateVaultData.addedMembers != undefined && parsedUpdateVaultData.addedMembers.length > 0)
             {
-                if (!await trySetPrivateKey())
-                {
-                    return TypedMethodResponse.fail(undefined, undefined, "Failed to get private signing key");
-                }
-
-                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(environment.cache.currentUser.userID, privateKey, userVaults[1][0], parsedUpdateVaultData.addedMembers);
+                addedVaultMemberInfo = await vaultAddedMembersToOrgMembers(environment.cache.currentUser.userID, userVaults[1][0], parsedUpdateVaultData.addedMembers);
                 needToUpdateSharing = true;
             }
 
@@ -390,22 +352,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
 
             return TypedMethodResponse.success();
-
-            async function trySetPrivateKey(): Promise<boolean>
-            {
-                if (!privateKey)
-                {
-                    const result = await environment.utilities.crypt.symmetricDecrypt(masterKey, environment.cache.currentUser.privateSigningKey);
-                    if (!result.success)
-                    {
-                        return false;
-                    }
-
-                    privateKey = result.value;
-                }
-
-                return true;
-            }
         }
     }
 

@@ -8,7 +8,7 @@ import { StoreState } from "../Database/Entities/States/StoreState";
 
 class VaultHelper 
 {
-    public async prepareVaultKeyForRecipient(senderUserID: number, sendingPrivateSigningKey: string,
+    public async prepareVaultKeyForRecipient(senderUserID: number,
         recipientPublicEncryptingKey: string, vaultKey: string): Promise<TypedMethodResponse<string | undefined>>
     {
         const asymmetricEncryptResult = await environment.utilities.crypt.asymmeticEncrypt(recipientPublicEncryptingKey, vaultKey);
@@ -25,7 +25,9 @@ class VaultHelper
             vaultKey: keyResult.value
         };
 
-        const signature = await environment.utilities.crypt.sign(sendingPrivateSigningKey, JSON.stringify(message));
+        const signingKey = await environment.cache.getDecryptedCurrentUserSigningKey();
+        const signature = await environment.utilities.crypt.sign(signingKey, JSON.stringify(message));
+
         if (!signature.success)
         {
             return TypedMethodResponse.propagateFail(signature);
